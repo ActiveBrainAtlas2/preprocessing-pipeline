@@ -1,0 +1,48 @@
+classifier_id,model,margin_um,train_set_id,neg_composition,sample_weighting,input_img_version,svm_id,comment,num_samples_per_class
+30,lr,500,20/21,neg_has_all_surround,,cropped_gray,30,
+31,lr,500,21/22,neg_has_all_surround,,cropped_gray,31,
+32,lr,500,20/22,neg_has_all_surround,,cropped_gray,32,
+33,gb1,500,20/21,neg_has_all_surround,,cropped_gray,33,
+34,gb1,500,21/22,neg_has_all_surround,,cropped_gray,34,
+35,gb1,500,20/22,neg_has_all_surround,,cropped_gray,35,
+36,gb1,500,23/24,neg_has_all_surround,,cropped_gray,36,
+37,lr,500,23/24,neg_has_all_surround,,cropped_gray,37,
+38,lr,500,23/24/27/28,neg_has_surround_and_negative,,cropped_gray,38,
+39,lr,200,30/31/27/28,neg_has_surround_and_negative,,cropped_gray,39,
+40,lr,1000,33/34/27/28,neg_has_surround_and_negative,,cropped_gray,40,
+41,lr,500,36/37/27/28,neg_has_surround_and_negative,,cropped_gray,41,
+42,lr,500,39/40/27/28,neg_has_surround_and_negative,,cropped_gray,42,
+50,lr,500,27/28/29/60/61/62,neg_has_surround_and_negative,,cropped_gray,50,using mirror variations of patches to train
+70,inception-bn-blue-softmax,500,60/61,neg_has_all_surround,,cropped_gray,,
+71,inception-bn-blue-softmax,500,60/61/62,neg_has_all_surround,,cropped_gray,,
+72,lr,500,66/67/68,neg_has_surround_and_negative,,,72,using mirror variations of patches to train; use both surround and far as negative
+73,lr,500,66/67/68,neg_has_all_surround,,,73,using mirror variations for training; use only surround as negative,
+74,lr,500,72/73/74,neg_has_all_surround,,,74,using rotation and intensity variations for training; use only surround as negative
+75,lr,500,72/73/74,neg_has_surround_and_negative,,,75,using rotation and intensity variations for training; use both surr and neg
+76,lr,500,75/76/77,neg_has_surround_and_negative,,,76,using no rotation for training; use both surr and neg
+77,lr,500,66/67/68,neg_has_all_surround,,,77,using mirror variations for training; use only surround as negative;100 samples,100
+78,xgb2,500,66/67/68,neg_has_all_surround,,,78,using mirror variations for training; use only surround as negative;sklearn gradient boost,10000
+79,lin_svc,500,66/67/68,neg_has_all_surround,,,79,using mirror variations for training; use only surround as negative;svm,10000
+80,lr,500,23/24,neg_has_all_surround,,cropped_gray_linearNormalized500,37,
+81,lr,500,23/24,neg_has_all_surround,,cropped_gray_linearNormalized1000,37,
+82,lr,500,23/24,neg_has_all_surround,,cropped_gray_linearNormalized1500,37,
+83,lr,500,23/24,neg_has_all_surround,,cropped_gray_linearNormalized2000,37,
+84,lr,500,23/24,neg_has_all_surround,,cropped_gray_linearNormalized2500,37,
+95,gb2,500,93,neg_has_all_surround,,cropped_gray,95,
+96,gb2,500,95,neg_has_all_surround,,cropped_gray,96,
+97,gb2,500,97,neg_has_all_surround,,cropped_gray,97,
+98,gb2,500,99,neg_has_all_surround,,cropped_gray,98,
+99,lr,500,99,neg_has_all_surround,,cropped_gray,99,
+110,lr,500,66/67/68,neg_has_all_surround,,,110,using mirror variations for training; use only surround as negative;1000 samples,1000
+111,lr,500,66/67/68,neg_has_all_surround,,,111,using mirror variations for training; use only surround as negative;10000 samples,10000
+112,lr,500,66/67,neg_has_all_surround,,,112,using mirror variations for training; use only surround as negative;1000 samples,1000
+113,lr,500,66/67,neg_has_all_surround,,,113,using mirror variations for training; use only surround as negative;10000 samples,10000
+114,lr,500,78/79,neg_has_all_surround,,,114,using mirror variations for training; use only surround as negative;100000 samples,100000
+115,xgb2,500,66/67,neg_has_all_surround,,,115,using mirror variations for training; use only surround as negative;sklearn gradient boost,10000
+116,lin_svc,500,66/67,neg_has_all_surround,,,116,using mirror variations for training; use only surround as negative;svm,10000
+120,lr,500,75/76/77,neg_has_all_surround,,,120,classifier based on greylevel intensity,1000
+130,lr,500,110/111/112,neg_has_all_surround,,,130,twice as large patch,10000
+131,lr,500,113/114,neg_has_all_surround,,,131,trained using MD585 and MD589;twice as large patch,10000
+132,lr,500,113/115,neg_has_all_surround,,,132,trained using MD585 and MD594;twice as large patch,10000
+133,lr,500,114/115,neg_has_all_surround,,,133,trained using MD589 and MD594;twice as large patch,10000
+134,lr,500,113/114/115,neg_has_all_surround,,,134,trained using three stacks;twice as large patch;1000 samples,1000

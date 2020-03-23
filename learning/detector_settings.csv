@@ -1,0 +1,6 @@
+detector_id,input_version,windowing_id,feature_network,feature_classifier_id,comments
+15,gray,5,inception-bn-blue,73
+19,gray,7,inception-bn-blue,73
+799,NtbNormalizedAdaptiveInvertedGamma,7,inception-bn-blue,899
+998,normalized_-1_5,7,inception-bn-blue,998,trained using normalized MD589/MD594/MD585 with 500um margin for negatives
+999,normalized_-1_5,7,inception-bn-blue,999,trained from auto-aligned MD661/MD662 before correction
