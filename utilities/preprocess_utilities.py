@@ -4,22 +4,18 @@ import time
 from collections import deque
 
 import numpy as np
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'preprocess'))
 import morphsnakes
+from skimage import img_as_ubyte
 from skimage.measure import label
-
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-from utilities2015 import *
-from metadata import *
-from registration_utilities import find_contour_points
-from annotation_utilities import contours_to_mask
-from skimage.measure import label
+from skimage.exposure import rescale_intensity
 
 # DEFAULT_BORDER_DISSIMILARITY_PERCENTILE = 30
 # DEFAULT_FOREGROUND_DISSIMILARITY_THRESHOLD = .2
 # DEFAULT_FOREGROUND_DISSIMILARITY_THRESHOLD = None
 # DEFAULT_MINSIZE = 1000 # If tissues are separate pieces, 1000 is not small enough to capture them.
 # DEFAULT_MINSIZE = 100
+from annotation_utilities import contours_to_mask
+from utilities2015 import find_contour_points, bbox_2d
 
 DEFAULT_MASK_CHANNEL = 0
 VMAX_PERCENTILE = 99
@@ -172,7 +168,6 @@ def contrast_stretch_image(img):
 
     sys.stderr.write('%d(%d percentile), %d(%d percentile)\n' % (vmin, vmin_perc, vmax, vmax_perc) )
 
-    from skimage.exposure import rescale_intensity
     img = img_as_ubyte(rescale_intensity(img, in_range=(vmin, vmax)))
 
     # img[(img <= vmax) & (img >= vmin)] = 255./(vmax-vmin)*(img[(img <= vmax) & (img >= vmin)]-vmin)
@@ -285,7 +280,7 @@ def snake(img, init_submasks=None, init_contours=None, lambda1=MORPHSNAKE_LAMBDA
                     elif component_area < min_size:
                         msnake.levelset[m] = 0
                         sys.stderr.write('Component area is too small - nullified.\n')
-            print 'Morphsnake iter', i, 'Component sizes:', component_sizes
+            print('Morphsnake iter', i, 'Component sizes:', component_sizes)
 
             if  np.count_nonzero(msnake.levelset)/float(init_area) < AREA_CHANGE_RATIO_MIN:
                 discard = True

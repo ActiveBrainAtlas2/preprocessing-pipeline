@@ -2,7 +2,7 @@ import sys
 import subprocess
 import argparse
 import time
-sys.path.append("./")
+sys.path.append("./utilities")
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton,QMessageBox

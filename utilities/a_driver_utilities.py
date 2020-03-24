@@ -9,8 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-from utilities.data_manager_v2 import DataManager
-from utilities.metadata import ordered_pipeline_steps, orientation_argparse_str_to_imagemagick_str, prep_id_short_str_to_full
+from data_manager_v2 import DataManager
+from metadata import ordered_pipeline_steps, orientation_argparse_str_to_imagemagick_str, prep_id_short_str_to_full
 
 
 def save_dict_as_ini( input_dict, fp ):

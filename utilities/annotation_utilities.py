@@ -1,7 +1,5 @@
 import sys
 import os
-from collections import defaultdict
-
 import numpy as np
 import pandas as pd
 from skimage.measure import grid_points_in_poly
@@ -11,9 +9,8 @@ from collections import defaultdict
 
 from utilities2015 import crop_and_pad_volume, deprecated, volume_origin_to_bbox
 from metadata import (all_landmark_names_unsided,
-                      convert_name_to_unsided, convert_to_left_name, convert_to_right_name,
-                      convert_to_unsided_label, convert_resolution_string_to_voxel_size, 
-                      section_range_lookup,
+                      convert_to_left_name, convert_to_right_name,
+                      convert_to_unsided_label, convert_resolution_string_to_voxel_size,
                       singular_structures)
 from data_manager_v2 import CoordinatesConverter, DataManager, metadata_cache
 
@@ -38,7 +35,6 @@ def get_structure_contours_from_structure_volumes(volumes, stack, sections, reso
         dict {int: {str: (n,2)-ndarray}}: dict of {section: {name_s: contour vertices}}. The vertex coordinates are wrt wholebrain and in volume resolution.
     """
 
-    from collections import defaultdict
 
     # xmin_vol_f, ymin_vol_f, zmin_vol_f = volume_origin
 
@@ -448,7 +444,7 @@ def get_landmark_range_limits_v3(stack=None, label_indices_lookup=None, filtered
 
     return landmark_limits
 
-def generate_annotaion_list(stack, username, filepath=None):
+def generate_annotation_list(stack, username, filepath=None):
 
     if filepath is None:
         filepath = os.path.join('/oasis/projects/nsf/csd395/yuncong/CSHL_data_labelings_losslessAlignCropped/',

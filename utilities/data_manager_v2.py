@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import cv2
 import json
 
-from utilities.utilities2015 import (crop_volume_to_minimal, load_hdf_v2, one_liner_to_arr, load_ini, save_json,
+from utilities2015 import (crop_volume_to_minimal, load_hdf_v2, one_liner_to_arr, load_ini, save_json,
                            create_if_not_exists,
                            load_pickle, convert_volume_forms, save_data, create_parent_dir_if_not_exists,
                            rescale_by_resampling,

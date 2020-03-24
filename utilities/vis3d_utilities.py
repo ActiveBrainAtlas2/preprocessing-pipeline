@@ -1,10 +1,10 @@
+import os
 import numpy as np
 import sys
 import time
 import bloscpack as bp
 from skimage import img_as_ubyte
 
-from data_manager_v2 import DataManager
 import vtk
 from vtk.util import numpy_support
 
@@ -15,12 +15,10 @@ except:
 
 from skimage.measure import marching_cubes_classic, correct_mesh_orientation, mesh_surface_area
 
-import os
-#sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
+from data_manager_v2 import DataManager
 from utilities2015 import create_if_not_exists, execute_command, convert_volume_forms, create_parent_dir_if_not_exists, \
     convert_vol_bbox_dict_to_overall_vol
 from metadata import REPO_DIR
-#from data_manager import *
 
 #######################################################################
 

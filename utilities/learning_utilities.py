@@ -2,42 +2,40 @@ import sys
 import os
 import time
 
-import numpy as np
-#import matplotlib.pyplot as plt
 from matplotlib.path import Path
-from shapely.geometry import Polygon
-from pandas import read_hdf, DataFrame, read_csv
-from itertools import groupby
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import bloscpack as bp
+from itertools import groupby, chain
+import mxnet as mx
+import joblib
+from multiprocessing import Pool
 from collections import defaultdict
-try:
-    import mxnet as mx
-except Exception as e:
-    print e
-    print '********************************************************************************************************************************'
-    print 'Error, CANNOT PROCEED UNTIL THIS IS RESOLVED!'
-    print 'UNABLE TO LOAD MXNET'
-    print '/src/utilities/learning_utilities.py'
-    sys.stderr.write("Cannot import mxnet.\n")
-    print '********************************************************************************************************************************'
-
-sys.path.append(os.environ['REPO_DIR'] + '/utilities')
-from utilities2015 import *
-from metadata import *
-from data_manager import *
-from visualization_utilities import *
-from annotation_utilities import *
-
-from sklearn.externals import joblib
+from shapely.geometry import Polygon
+from skimage import img_as_ubyte
+from xgboost.sklearn import XGBClassifier
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC, SVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import GradientBoostingClassifier
 from skimage.feature import local_binary_pattern, greycoprops, greycomatrix
+from skimage.transform import rotate
+
+from annotation_utilities import (convert_annotation_v3_original_to_aligned_cropped,
+                                  convert_annotation_v3_original_to_aligned_cropped_v2,
+                                  get_structure_contours_from_structure_volumes,
+                                  get_structure_contours_from_aligned_atlas)
+from data_manager_v2 import DataManager, metadata_cache, is_invalid
+from distributed_utilities import download_from_s3
+from metadata import convert_to_surround_name, all_known_structures, MXNET_MODEL_ROOTDIR, XY_PIXEL_DISTANCE_LOSSLESS, \
+    NUM_CORES, CLF_ROOTDIR, stack_metadata, stain_to_metainfo, all_nissl_stacks, windowing_settings, \
+    convert_resolution_string_to_voxel_size, ANNOTATION_ROOTDIR, convert_to_unsided_label
+from utilities2015 import load_pickle, load_hdf_v2, rescale_intensity_v2, rescale_by_resampling, apply_function_to_dict
 
 try:
     sys.path.append('/home/yuncong/csd395/xgboost/python-package')
-    from xgboost.sklearn import XGBClassifier
 except:
     sys.stderr.write('xgboost is not loaded.\n')
 
@@ -386,7 +384,7 @@ def convert_image_patches_to_features_v2(patches, model, mean_img, batch_size):
             n_pad = batch_size - ni
             patches_mean_subtracted_input = np.concatenate([patches_mean_subtracted_input, np.zeros((n_pad,1) + mean_img.shape, mean_img.dtype)])
 
-        print patches_mean_subtracted_input.shape
+        print(patches_mean_subtracted_input.shape)
         data_iter = mx.io.NDArrayIter(
                         patches_mean_subtracted_input,
                         batch_size=batch_size,
@@ -418,7 +416,7 @@ def convert_image_patches_to_features(patches, model, mean_img, batch_size):
         n_pad = batch_size - len(patches)
         patches_mean_subtracted_input = np.concatenate([patches_mean_subtracted_input, np.zeros((n_pad,1) + mean_img.shape, mean_img.dtype)])
 
-    print patches_mean_subtracted_input.shape
+    print(patches_mean_subtracted_input.shape)
     data_iter = mx.io.NDArrayIter(
                     patches_mean_subtracted_input,
                     batch_size=batch_size,
@@ -727,8 +725,8 @@ xlabel='Predicted label', ylabel='True label', **kwargs):
         fmt = '%.2f'
 
     if text:
-        for x in xrange(len(labels)):
-            for y in xrange(len(labels)):
+        for x in range(len(labels)):
+            for y in range(len(labels)):
                 if not np.isnan(cm[y,x]):
                     axis.text(x,y, fmt % cm[y,x],
                              horizontalalignment='center',
@@ -824,7 +822,6 @@ def extract_patches_given_locations(patch_size,
         list of (patch_size, patch_size)-arrays.
     """
 
-    from utilities2015 import rescale_intensity_v2 # Without this, rescale_intensity_v2 has wrong behavior. WHY?
 
     if img is None:
         t = time.time()
@@ -977,7 +974,7 @@ def extract_patches_given_locations(patch_size,
                 if mu == 0 and sigma == 0:
                     mu = p.mean()
                     sigma = p.std()
-                print p.mean(),  p.std(), mu, sigma
+                print(p.mean(),  p.std(), mu, sigma)
                 p_normalized = (p - mu) / sigma
                 if stack in all_nissl_stacks:
                     p_normalized_uint8 = rescale_intensity_v2(p_normalized, -6, 1)
@@ -1031,7 +1028,6 @@ def extract_patches_given_locations_multiple_sections(addresses,
         list of (patch_size, patch_size)-arrays.
     """
 
-    from collections import defaultdict
 
     locations_grouped = {}
     for stack_sec, list_index_and_address_grouper in groupby(sorted(enumerate(addresses), key=lambda (i, x): (x[0],x[1])),
@@ -1096,7 +1092,7 @@ def get_names_given_locations_multiple_sections(addresses, location_or_grid_inde
 
     names_all = []
     list_indices_all = []
-    for stack, locations_allSections in locations_grouped.iteritems():
+    for stack, locations_allSections in locations_grouped.items():
 
         structure_grid_indices = locate_annotated_patches(stack=stack, username=username, force=True,
                                                         annotation_rootdir=annotation_midbrainIncluded_v2_rootdir)
@@ -1147,7 +1143,7 @@ def label_regions_multisections(stack, region_contours, surround_margins=None):
 
     labeled_region_indices_all_sections = {}
 
-    for sec, region_contours_curr_sec in region_contours.iteritems():
+    for sec, region_contours_curr_sec in region_contours.items():
 
         sys.stderr.write('Analyzing section %d..\n' % section)
 
@@ -1215,7 +1211,7 @@ def identify_regions_inside(region_contours, stack=None, image_shape=None, mask_
     n_regions = len(region_contours)
 
     if isinstance(polygons, dict):
-        polygon_list = [(name, cnt) for name, cnts in polygons.iteritems() for cnt in cnts] # This is to deal with when one name has multiple contours
+        polygon_list = [(name, cnt) for name, cnts in polygons.items() for cnt in cnts] # This is to deal with when one name has multiple contours
     elif isinstance(polygons, list):
         assert isinstance(polygons[0], tuple)
         polygon_list = polygons
@@ -1310,7 +1306,7 @@ def locate_annotated_patches_v2(stack, grid_spec=None, sections=None, surround_m
         locate_patches_v2(grid_spec=grid_spec, mask_tb=mask_tb, polygons=polygons_this_sec, \
                                             surround_margins=surround_margins)
 
-    return DataFrame(patch_indices_allSections_allStructures)
+    return pd.DataFrame(patch_indices_allSections_allStructures)
 
 
 def win_id_to_gridspec(win_id, stack=None, image_shape=None):
@@ -1637,9 +1633,9 @@ def generate_annotation_to_grid_indices_lookup_v2(stack, by_human, win_id,
 
 
     if return_timestamp:
-        return DataFrame(patch_indices_allSections_allStructures).T, timestamp
+        return pd.DataFrame(patch_indices_allSections_allStructures).T, timestamp
     else:
-        return DataFrame(patch_indices_allSections_allStructures).T
+        return pd.DataFrame(patch_indices_allSections_allStructures).T
 
 
 
@@ -1804,8 +1800,8 @@ def generate_annotation_to_grid_indices_lookup(stack, by_human, win_id,
 
                 structure_contours_pos_level_wrt_prep2_rawResol = \
                 {sec: {name_s: cnt_wrt_wholebrain_volResol * convert_resolution_string_to_voxel_size(resolution=warped_volumes_resolution, stack=stack) / convert_resolution_string_to_voxel_size(resolution='raw', stack=stack) - prep2_origin_rawResol[:2]
-                for name_s, cnt_wrt_wholebrain_volResol in x.iteritems()}
-                for sec, x in structure_contours_pos_level.iteritems()}
+                for name_s, cnt_wrt_wholebrain_volResol in x.items()}
+                for sec, x in structure_contours_pos_level.items()}
 
                 structure_contours_neg_level_wrt_prep2_rawResol = \
                 {sec: {name_s: cnt_wrt_wholebrain_volResol * convert_resolution_string_to_voxel_size(resolution=warped_volumes_resolution, stack=stack) / convert_resolution_string_to_voxel_size(resolution='raw', stack=stack) - prep2_origin_rawResol[:2]
@@ -1937,9 +1933,9 @@ def generate_annotation_to_grid_indices_lookup(stack, by_human, win_id,
 
 
     if return_timestamp:
-        return DataFrame(patch_indices_allSections_allStructures).T, timestamp
+        return pd.DataFrame(patch_indices_allSections_allStructures).T, timestamp
     else:
-        return DataFrame(patch_indices_allSections_allStructures).T
+        return pd.DataFrame(patch_indices_allSections_allStructures).T
 
 
 def sample_locations(grid_indices_lookup, labels, num_samples_per_polygon=None, num_samples_per_landmark=None):
@@ -2200,7 +2196,7 @@ def generate_dataset_addresses(num_samples_per_label, stacks, labels_to_sample, 
         try:
             grid_indices_per_label = load_hdf_v2(grid_indices_lookup_fps[stack])
         except:
-            grid_indices_per_label = read_hdf(grid_indices_lookup_fps[stack], 'grid_indices').T
+            grid_indices_per_label = pd.read_hdf(grid_indices_lookup_fps[stack], 'grid_indices').T
 
         def convert_data_from_sided_to_unsided(data):
             """
@@ -2212,7 +2208,7 @@ def generate_dataset_addresses(num_samples_per_label, stacks, labels_to_sample, 
                 name_u = convert_to_unsided_label(name_s)
                 for sec, grid_indices in data[name_s].iteritems():
                     new_data[name_u][sec] = grid_indices
-            return DataFrame(new_data)
+            return pd.DataFrame(new_data)
 
         grid_indices_per_label = convert_data_from_sided_to_unsided(grid_indices_per_label)
 
@@ -2279,7 +2275,7 @@ def generate_dataset(num_samples_per_label, stacks, labels_to_sample, model_name
                 name_u = convert_to_unsided_label(name_s)
                 for sec, grid_indices in data[name_s].iteritems():
                     new_data[name_u][sec] = grid_indices
-            return DataFrame(new_data)
+            return pd.DataFrame(new_data)
 
         grid_indices_per_label = convert_data_from_sided_to_unsided(grid_indices_per_label)
         labels_this_stack = set(grid_indices_per_label.columns) & set(labels_to_sample)
@@ -2439,7 +2435,6 @@ def addresses_to_features_parallel(addresses, model_name, win_id, n_processes=16
 
         return features_ret, list_indices
 
-    from multiprocess import Pool
     pool = Pool(n_processes)
     res = pool.map(f, groups)
     pool.close()

@@ -1,17 +1,10 @@
 import os
-import subprocess
-from a_driver_utilities import *
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-from utilities2015 import *
-from registration_utilities import *
-from annotation_utilities import *
-# from metadata import *
-from data_manager import DataManager
-from a_driver_utilities import *
 
-import sys
-#from PyQt4.QtCore import *
-#from PyQt4.QtGui import *
+import cv2
+import numpy as np
+
+from data_manager_v2 import DataManager, metadata_cache
+from metadata import all_known_structures_sided, stack_metadata
 
 script_list = ['initial setup gui',         # 0
                'a_script_preprocess_setup', # 1
@@ -273,7 +266,7 @@ def get_pipeline_status( stack ):
                 resol = contents['resol']
                 if version=='None':
                     version = None
-                all_files_present, _ = all_img_files_present( \
+                all_files_present, _ = all_img_files_present(
                                          stack, prep_id=prep_id, version=version, resol=resol )
 
             if all_files_present:

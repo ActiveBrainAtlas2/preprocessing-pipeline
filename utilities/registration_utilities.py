@@ -25,7 +25,6 @@ from metadata import (all_known_structures_sided,
                       REGISTRATION_SETTINGS_CSV,
                       section_thickness)
 from data_manager_v2 import DataManager, bbox, bbox_2d, bbox_3d
-#from data_manager import *
 
 def plot_alignment_results(traj, scores, select_best):
     """
