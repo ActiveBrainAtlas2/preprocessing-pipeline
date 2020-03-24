@@ -1,14 +1,17 @@
-import os
-import sys
+import os, sys
+import json
 import time
 from subprocess import call, check_output
-import cPickle as pickle
-import json
+import paramiko
+from itertools import chain
 
 # import boto3
 
 from utilities2015 import execute_command, shell_escape, create_if_not_exists
-from metadata import *
+from metadata import (DATA_ROOTDIR,
+                      ENABLE_UPLOAD_S3, ENABLE_DOWNLOAD_S3,
+                      HOST_ID,
+                      S3_DATA_BUCKET, S3_RAWDATA_BUCKET, ROOT_DIR)
 
 default_root = dict(localhost='/home/yuncong',
                     # workstation='/media/yuncong/BstemAtlasData',
@@ -23,7 +26,7 @@ def upload_to_s3(fp, local_root=None, is_dir=False):
     """
 
     if not ENABLE_UPLOAD_S3:
-	sys.stderr.write("ENABLE_UPLOAD_S3 is False. Skip uploading to S3.\n")
+        sys.stderr.write("ENABLE_UPLOAD_S3 is False. Skip uploading to S3.\n")
         return
 
     # Not using keyword default value because ROOT_DIR might be dynamically assigned rather than set at module importing.
@@ -160,19 +163,19 @@ def first_last_tuples_distribute_over(first_sec, last_sec, n_host):
     return first_last_tuples
 
 def detect_responsive_nodes(exclude_nodes=[], use_nodes=None):
-
-    all_nodes = range(31,39)+range(41,49)
-
+    #FIXME the original code is:
+    ##FIXME all_nodes = range(31,39)+range(41,49)
+    # Is this correct?
+    all_nodes = chain(range(31,39),range(41,49))
     if use_nodes is not None:
         hostids = use_nodes
     else:
-        print ['gcn-20-%d.sdsc.edu'%i for i in exclude_nodes], 'are excluded'
+        print(['gcn-20-%d.sdsc.edu'%i for i in exclude_nodes], 'are excluded')
         hostids = [i for i in all_nodes if i not in exclude_nodes]
 
     # hostids = range(31,33) + range(34,39) + range(41,49)
     n_hosts = len(hostids)
 
-    import paramiko
     # paramiko.util.log_to_file("filename.log")
 
     ssh = paramiko.SSHClient()
@@ -185,7 +188,7 @@ def detect_responsive_nodes(exclude_nodes=[], use_nodes=None):
             ssh.connect(hostname, timeout=5)
             up_hostids.append(h)
         except:
-            print hostname, 'is down'
+            print(hostname, 'is down')
 
     return up_hostids
 
@@ -219,7 +222,7 @@ def request_compute_nodes(cluster_size, cluster_name, keep=True):
     if keep:
         call("aws autoscaling update-auto-scaling-group --auto-scaling-group-name %s --min-size %d" % (asg, cluster_size), shell=True)
 
-    print "Setting autoscaling group %s capaticy to %d...it may take more than 5 minutes for SGE to know new hosts." % (asg, cluster_size)
+    print("Setting autoscaling group %s capaticy to %d...it may take more than 5 minutes for SGE to know new hosts." % (asg, cluster_size))
     # else:
     #     sys.stderr.write("All nodes are ready.\n")
 
@@ -229,7 +232,7 @@ def wait_num_nodes(desired_nodes, timeout=300):
 
     sys.stderr.write("Wait for SGE to know all nodes (timeout in %d seconds)...\n" % timeout)
     success = False
-    for _ in range(timeout/5):
+    for _ in range(timeout//5):
         if get_num_nodes() == desired_nodes:
             success = True
             break
@@ -241,10 +244,11 @@ def wait_num_nodes(desired_nodes, timeout=300):
         sys.stderr.write("All nodes are ready.\n")
 
 def get_node_list():
-    s = check_output("qhost | awk 'NR >= 4 { print $1 }'", shell=True).strip()
-    print "qhost | awk 'NR >= 4 { print $1 }'"
-    print check_output("qhosst | awk 'NR >= 4 { print $1 }'", shell=True)
-    print s
+    s = check_output("qhost | awk 'NR >= 4 { print($1) }'", shell=True).strip()
+    #print("qhost | awk 'NR >= 4 { print $1 }'")
+    #print(check_output("qhosst | awk 'NR >= 4 { print($1) }'", shell=True))
+    s = str(s)
+    print(s)
     if len(s) == 0:
         return []
     else:
@@ -285,7 +289,7 @@ def run_distributed5(command, argument_type='single', kwargs_list=None, jobs_per
         n_hosts = len(node_list)
         sys.stderr.write('%d nodes available.\n' % (n_hosts))
         if n_hosts == 0:
-            print 'NODE LIST LENGTH IS 0. NO HOSTS AVAILABLE'
+            print('NODE LIST LENGTH IS 0. NO HOSTS AVAILABLE')
             return
 
     if kwargs_list is None:
@@ -315,7 +319,7 @@ def run_distributed5(command, argument_type='single', kwargs_list=None, jobs_per
             if argument_type == 'list':
                 line = command % {'kwargs_str': json.dumps(kwargs_list_as_list[fj:lj+1])}
             elif argument_type == 'list2':
-                line = command % {key: json.dumps(vals[fj:lj+1]) for key, vals in kwargs_list_as_dict.iteritems()}
+                line = command % {key: json.dumps(vals[fj:lj+1]) for key, vals in kwargs_list_as_dict.items()}
             elif argument_type == 'single':
                 # It is important to wrap command_templates and kwargs_list_str in apostrphes.
                 # That lets bash treat them as single strings.
@@ -348,8 +352,8 @@ def run_distributed5(command, argument_type='single', kwargs_list=None, jobs_per
             stderr_f = open(stderr_template % node_i, "w")
             call(temp_script, shell=True, stdout=stdout_f, stderr=stderr_f)
         else:
-            print 'qsub -V -q all.q@%(node)s -o %(stdout_log)s -e %(stderr_log)s %(script)s' % \
-dict(node=node_list[node_i], script=temp_script, stdout_log=stdout_template % node_i, stderr_log=stderr_template % node_i)
+            print('qsub -V -q all.q@%(node)s -o %(stdout_log)s -e %(stderr_log)s %(script)s' % \
+dict(node=node_list[node_i], script=temp_script, stdout_log=stdout_template % node_i, stderr_log=stderr_template % node_i))
 
             call('qsub -V -q all.q@%(node)s -o %(stdout_log)s -e %(stderr_log)s %(script)s' % \
              dict(node=node_list[node_i], script=temp_script,
@@ -376,7 +380,7 @@ def wait_qsub_complete(timeout=None):
                 break
             time.sleep(5)
     else:
-        for _ in range(0, timeout/5):
+        for _ in range(0, timeout//5):
             op = check_output('qstat')
             if "runall.sh" not in op:
                 sys.stderr.write('qsub returned.\n')

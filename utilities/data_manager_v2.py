@@ -1,6 +1,5 @@
 import sys
 import os
-import subprocess
 
 import pandas as pd
 import numpy as np
@@ -18,27 +17,41 @@ import matplotlib.pyplot as plt
 import cv2
 import json
 
-from .utilities2015 import (crop_volume_to_minimal, load_hdf_v2, one_liner_to_arr, load_ini, save_json,
+from utilities2015 import (crop_volume_to_minimal, load_hdf_v2, one_liner_to_arr, load_ini, save_json,
                            create_if_not_exists,
                            load_pickle, convert_volume_forms, save_data, create_parent_dir_if_not_exists,
                            rescale_by_resampling,
                            convert_vol_bbox_dict_to_overall_vol)
 
-from .metadata import (convert_resolution_string_to_um, ANNOTATION_VIZ_ROOTDIR, planar_resolution,
-                      SECTION_THICKNESS, DATA_ROOTDIR, REPO_DIR, ROOT_DIR, CSHL_SPM_ROOTDIR, ANNOTATION_ROOTDIR,
-                      CLF_ROOTDIR, SPARSE_SCORES_ROOTDIR, MESH_ROOTDIR, convert_to_nonsurround_label,
-                      convert_to_surround_name, all_known_structures, all_known_structures_sided,
-                      PATCH_LOCATIONS_ROOTDIR, PATCH_FEATURES_ROOTDIR, ENABLE_UPLOAD_S3, CELL_FEATURES_CLF_ROOTDIR,
-                      REGISTRATION_PARAMETERS_ROOTDIR, REGISTRATION_VIZ_ROOTDIR, VOLUME_ROOTDIR, SCOREMAP_VIZ_ROOTDIR,
-                      SCOREMAP_ROOTDIR, RAW_DATA_DIR, DATA_DIR, THUMBNAIL_DATA_DIR, LABELED_NEURONS_ROOTDIR,
-                      all_nissl_stacks, all_stacks, all_ntb_stacks, all_alt_nissl_ntb_stacks,
-                      prep_str_to_id_2d, convert_resolution_string_to_voxel_size, prep_id_to_str_2d)
+from metadata import (all_alt_nissl_ntb_stacks, all_known_structures, all_known_structures_sided,
+                       all_nissl_stacks, all_ntb_stacks, all_stacks, convert_resolution_string_to_um,
+                       convert_resolution_string_to_voxel_size, convert_to_nonsurround_label, convert_to_surround_name,
+                       prep_str_to_id_2d, prep_id_to_str_2d,
+                       planar_resolution)
 
-from .distributed_utilities import download_from_s3, upload_to_s3
-from .learning_utilities import grid_parameters_to_sample_locations
-from .preprocess_utilities import parse_elastix_parameter_file
-from .registration_utilities import convert_transform_forms
-from .vis3d_utilities import load_mesh_stl
+from metadata import (ANNOTATION_ROOTDIR, ANNOTATION_VIZ_ROOTDIR,
+                       CELL_FEATURES_CLF_ROOTDIR, CLF_ROOTDIR,
+                       CSHL_SPM_ROOTDIR,
+                       DATA_ROOTDIR,
+                       DATA_DIR,
+                       ENABLE_UPLOAD_S3,
+                       LABELED_NEURONS_ROOTDIR,
+                       MESH_ROOTDIR,
+                       PATCH_FEATURES_ROOTDIR, PATCH_LOCATIONS_ROOTDIR,
+                       REGISTRATION_PARAMETERS_ROOTDIR, REGISTRATION_VIZ_ROOTDIR,
+                       RAW_DATA_DIR,
+                       REPO_DIR,
+                       ROOT_DIR,
+                       SCOREMAP_ROOTDIR, SCOREMAP_VIZ_ROOTDIR,
+                       SECTION_THICKNESS,
+                       SPARSE_SCORES_ROOTDIR,
+                       THUMBNAIL_DATA_DIR, VOLUME_ROOTDIR)
+
+from distributed_utilities import download_from_s3, upload_to_s3
+from learning_utilities import grid_parameters_to_sample_locations
+from preprocess_utilities import parse_elastix_parameter_file
+from registration_utilities import convert_transform_forms
+from vis3d_utilities import load_mesh_stl
 
 use_image_cache = False
 image_cache = {}

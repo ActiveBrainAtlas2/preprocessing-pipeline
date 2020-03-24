@@ -11,13 +11,12 @@ from utilities.metadata import all_stacks
 
 #from a_GUI_utilities_pipeline_status import *
 from utilities.metadata import stack_metadata
-import time
 import sys
 #from PyQt4.QtCore import *
 #from PyQt4.QtGui import *
 
 from PyQt5.QtCore import *
-from PyQt5.QtGui import *
+from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComboBox, QPushButton
 
 def format_grid_button_initial( button ):
