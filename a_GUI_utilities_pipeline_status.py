@@ -1,13 +1,14 @@
-import os
+import os, sys
 import subprocess
 from a_driver_utilities import *
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
 from utilities2015 import *
 from registration_utilities import *
 from annotation_utilities import *
 # from metadata import *
-from data_manager import DataManager
-from a_driver_utilities import *
+
+
+#from utilities.data_manager_v2 import DataManager
+#from a_driver_utilities import *
 
 import sys
 #from PyQt4.QtCore import *

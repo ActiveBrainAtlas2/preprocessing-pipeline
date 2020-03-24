@@ -1,20 +1,14 @@
 import subprocess
-#from a_driver_utilities import *
-
-#sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-#from utilities2015 import *
-#from registration_utilities import *
-#from annotation_utilities import *
-from utilities.metadata import ordered_pipeline_steps
-from utilities.data_manager_v2 import DataManager
-from utilities.a_driver_utilities import set_step_completed_in_progress_ini
-
 import sys, os
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComboBox, QPushButton
-
 import argparse
+
+sys.path.append("utilities")
+from utilities.metadata import ordered_pipeline_steps
+from utilities.data_manager_v2 import DataManager
+from utilities.a_driver_utilities import set_step_completed_in_progress_ini
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,

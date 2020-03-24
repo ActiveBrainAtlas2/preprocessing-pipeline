@@ -10,7 +10,6 @@ import configparser
 from ipywidgets import FloatProgress
 from IPython.display import display
 from IPython.display import FileLink
-from itertools import chain
 import joblib
 from datetime import datetime
 from tempfile import mkstemp
@@ -33,11 +32,12 @@ import warnings
 import functools
 import matplotlib.pyplot as plt
 
-#from randomcolor import Randomcolor
+from utilities.randomcolor import RandomColor
 from distributed_utilities import download_from_s3, upload_to_s3
-from vis3d_utilities import load_mesh_stl, save_mesh_stl
-from metadata import ENABLE_UPLOAD_S3, ENABLE_DOWNLOAD_S3, convert_resolution_string_to_um
-from metadata import all_known_structures, singular_structures, convert_to_left_name, convert_to_right_name
+from utilities.vis3d_utilities import load_mesh_stl, save_mesh_stl
+from utilities.metadata import ENABLE_UPLOAD_S3, ENABLE_DOWNLOAD_S3, convert_resolution_string_to_um
+from utilities.metadata import all_known_structures, singular_structures, convert_to_left_name, convert_to_right_name
+from utilities.data_manager_v2 import DataManager
 
 
 #######################################
@@ -83,7 +83,7 @@ def compute_gradient_v2(volume, smooth_first=False, dtype=np.float16):
         #     # sys.stderr.write("Overall: %.2f seconds.\n" % (time.time()-t1))
 
         gradients = {ind: compute_gradient_v2((v, o), smooth_first=smooth_first)
-                     for ind, (v, o) in volume.iteritems()}
+                     for ind, (v, o) in volume.items()}
 
         return gradients
 
@@ -214,8 +214,8 @@ def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
         raise Exception("ini file %s does not exist." % fp)
     config.read(fp)
     input_spec = dict(config.items(section))
-    input_spec = {k: v.split('\n') if '\n' in v else v for k, v in input_spec.iteritems()}
-    for k, v in input_spec.iteritems():
+    input_spec = {k: v.split('\n') if '\n' in v else v for k, v in input_spec.items()}
+    for k, v in input_spec.items():
         if not isinstance(v, list):
             if '.' not in v and v.isdigit():
                 input_spec[k] = int(v)
@@ -402,13 +402,13 @@ def plot_by_method_by_structure(data_all_stacks_all_structures, structures, stac
                structures, rotation='60', fontsize=xticks_fontsize)
     plt.yticks(np.arange(ylim[0], ylim[1] + yspacing, yspacing),
                map(lambda x: '%.2f'%x, np.arange(ylim[0], ylim[1]+yspacing, yspacing)),
-               fontsize=20);
-    plt.xlabel(xlabel, fontsize=20);
-    plt.ylabel(ylabel, fontsize=20);
-    plt.xlim([-1, len(structures) * (n_stacks + spacing_btw_stacks) + 1]);
-    plt.ylim(ylim);
-    plt.legend(loc=legend_loc, fontsize=legend_fontsize);
-    plt.title(title, fontsize=20);
+               fontsize=20)
+    plt.xlabel(xlabel, fontsize=20)
+    plt.ylabel(ylabel, fontsize=20)
+    plt.xlim([-1, len(structures) * (n_stacks + spacing_btw_stacks) + 1])
+    plt.ylim(ylim)
+    plt.legend(loc=legend_loc, fontsize=legend_fontsize)
+    plt.title(title, fontsize=20)
 
 
 def plot_by_stack_by_structure(data_all_stacks_all_structures, structures,
@@ -432,7 +432,7 @@ def plot_by_stack_by_structure(data_all_stacks_all_structures, structures,
             data_all_structures = data_all_stacks_all_structures[stack]
             vals = [data_all_structures[s] if s in data_all_structures else None
                     for i, s in enumerate(structures)]
-            ax.scatter(range(len(vals)), vals, marker='o', s=100, label=stack, c=np.array(stack_to_color[stack])/255.);
+            ax.scatter(range(len(vals)), vals, marker='o', s=100, label=stack, c=np.array(stack_to_color[stack])/255.)
             
     elif style == 'boxplot2': # {stack: {structure: [v1,v2,v3...]}}
         
@@ -444,7 +444,7 @@ def plot_by_stack_by_structure(data_all_stacks_all_structures, structures,
                  for struct in structures 
                  if struct in data_all_stacks_all_structures[stack]]
         
-            bplot = plt.boxplot(np.array(D).T, positions=range(0, len(structures)), patch_artist=True);
+            bplot = plt.boxplot(np.array(D).T, positions=range(0, len(structures)), patch_artist=True)
             boxes.append(bplot['boxes'][0])
             
             for patch in bplot['boxes']:
@@ -467,7 +467,7 @@ def plot_by_stack_by_structure(data_all_stacks_all_structures, structures,
              if struct in data_all_stacks_all_structures[stack]]
             for struct in structures]
 
-        bplot = plt.boxplot(np.array(D), positions=range(0, len(structures)), patch_artist=True);
+        bplot = plt.boxplot(np.array(D), positions=range(0, len(structures)), patch_artist=True)
 #         for patch in bplot['boxes']:
 #             patch.set_facecolor(np.array(stack_to_color[stack])/255.)
 
@@ -477,20 +477,20 @@ def plot_by_stack_by_structure(data_all_stacks_all_structures, structures,
     else:
         raise Exception("%s is not recognized." % style)
 
-    plt.xticks(range(len(structures)), structures, rotation='60', fontsize=xticks_fontsize);
+    plt.xticks(range(len(structures)), structures, rotation='60', fontsize=xticks_fontsize)
 
     # plt.yticks(np.arange(ylim[0], ylim[1] + yspacing, yspacing),
     #            map(lambda x: '%.2f'%x, np.arange(ylim[0], ylim[1]+yspacing, yspacing)),
     #            fontsize=20);
-    plt.yticks(yticks, [yticklabel_fmt % y for y in yticks], fontsize=yticks_fontsize);
-    plt.xlabel(xlabel, fontsize=20);
-    plt.ylabel(ylabel, fontsize=20);
+    plt.yticks(yticks, [yticklabel_fmt % y for y in yticks], fontsize=yticks_fontsize)
+    plt.xlabel(xlabel, fontsize=20)
+    plt.ylabel(ylabel, fontsize=20)
     if xlim is None:
         xlim = [-1, len(structures)+1]
-    ax.set_xlim(xlim);
-    ax.set_ylim([yticks[0], yticks[-1]+yticks[-1]-yticks[-2]]);
-    plt.legend();
-    ax.set_title(title, fontsize=20);
+    ax.set_xlim(xlim)
+    ax.set_ylim([yticks[0], yticks[-1]+yticks[-1]-yticks[-2]])
+    plt.legend()
+    ax.set_title(title, fontsize=20)
 
     return fig, ax
 
@@ -609,7 +609,7 @@ def get_centroid_3d(v):
 
     if isinstance(v, dict):
         centroids = {}
-        for n, s in v.iteritems():
+        for n, s in v.items():
             if isinstance(s, tuple): # volume, origin_or_bbox
                 vol, origin_or_bbox = s
                 if len(origin_or_bbox) == 3:
@@ -780,8 +780,8 @@ def plot_centroid_means_and_covars_3d(instance_centroids,
         # Plot mid-sagittal plane
         if canonical_normal is not None:
             canonical_midplane_xx, canonical_midplane_yy = np.meshgrid(range(xlim[0], xlim[1], 100), range(ylim[0], ylim[1], 100), indexing='xy')
-            canonical_midplane_z = -(canonical_normal[0]*(canonical_midplane_xx-canonical_centroid[0]) + \
-            canonical_normal[1]*(canonical_midplane_yy-canonical_centroid[1]) + \
+            canonical_midplane_z = -(canonical_normal[0]*(canonical_midplane_xx-canonical_centroid[0]) +
+            canonical_normal[1]*(canonical_midplane_yy-canonical_centroid[1]) +
             canonical_normal[2]*(-canonical_centroid[2]))/canonical_normal[2]
             ax.plot_surface(canonical_midplane_xx, canonical_midplane_yy, canonical_midplane_z, alpha=.1)
     else:
@@ -791,9 +791,9 @@ def plot_centroid_means_and_covars_3d(instance_centroids,
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     # ax.set_axis_off()
-    ax.set_xlim3d([xlim[0], xlim[1]]);
-    ax.set_ylim3d([ylim[0], ylim[1]]);
-    ax.set_zlim3d([zlim[0], zlim[1]]);
+    ax.set_xlim3d([xlim[0], xlim[1]])
+    ax.set_ylim3d([ylim[0], ylim[1]])
+    ax.set_zlim3d([zlim[0], zlim[1]])
     # ax.view_init(azim = 90 + 20,elev = 0 - 20)
     ax.view_init(azim = 270, elev = 0)
 
@@ -924,7 +924,7 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
     pool.close()
     pool.join()
 
-    contours = {p: cnt for p, cnt in contours.iteritems() if cnt is not None}
+    contours = {p: cnt for p, cnt in contours.items() if cnt is not None}
 
     return contours
 
@@ -1004,7 +1004,7 @@ def draw_alignment(warped_atlas, fixed_volumes, level_spacing=10, zs=None, ncols
 
     for zi in range(len(axes)):
         if zi >= n:
-            axes[zi].axis('off');
+            axes[zi].axis('off')
         else:
             z = zs[zi]
 
@@ -1049,8 +1049,8 @@ def draw_alignment(warped_atlas, fixed_volumes, level_spacing=10, zs=None, ncols
 
             axes[zi].imshow(viz)
             axes[zi].set_title("z=%d" % z)
-            axes[zi].set_xticks([]);
-            axes[zi].set_yticks([]);
+            axes[zi].set_xticks([])
+            axes[zi].set_yticks([])
 
     plt.show()
 
@@ -1256,16 +1256,16 @@ def crop_and_pad_volumes(out_bbox=None, vol_bbox_dict=None, vol_bbox_tuples=None
 
     if vol_bbox is not None:
         if isinstance(vol_bbox, dict):
-            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in volumes.iteritems()}
+            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in DataManager.volumes.items()}
         elif isinstance(vol_bbox, list):
-            vols = [crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for (v, b) in volumes]
+            vols = [crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for (v, b) in DataManager.volumes]
         else:
             raise
     else:
         if vol_bbox_tuples is not None:
             vols = [crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for (v, b) in vol_bbox_tuples]
         elif vol_bbox_dict is not None:
-            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in vol_bbox_dict.iteritems()}
+            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in vol_bbox_dict.items()}
         else:
             raise
 
@@ -1316,6 +1316,7 @@ def crop_and_pad_volume(in_vol, in_bbox=None, in_origin=(0,0,0), out_bbox=None):
     else:
         in_bbox = np.array(in_bbox).astype(np.int)
         in_xmin, in_xmax, in_ymin, in_ymax, in_zmin, in_zmax = in_bbox
+    #FIXME what is this code doing below?
     in_xdim = in_xmax - in_xmin + 1
     in_ydim = in_ymax - in_ymin + 1
     in_zdim = in_zmax - in_zmin + 1
@@ -2157,7 +2158,7 @@ def apply_function_to_dict(func, d):
 
 
 def random_colors(count):
-    rand_color = randomcolor.RandomColor()
+    rand_color = RandomColor()
     random_colors = [map(int, rgb_str[4:-1].replace(',', ' ').split())
                      for rgb_str in rand_color.generate(luminosity="bright", count=count, format_='rgb')]
     return random_colors

@@ -1,23 +1,12 @@
 import os, sys
 import subprocess
-# insert at 1, 0 is the script path (or '' in REPL)
-#sys.path.insert(1, 'utilities')
-#from utilities.utilities2015 import *
-#from registration_utilities import *
-#from annotation_utilities import *
-from utilities.metadata import all_stacks
-#from data_manager_v2 import DataManager
-#from a_driver_utilities import *
-
-#from a_GUI_utilities_pipeline_status import *
-from utilities.metadata import stack_metadata
-import sys
-#from PyQt4.QtCore import *
-#from PyQt4.QtGui import *
-
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComboBox, QPushButton
+sys.path.append("utilities")
+from utilities.metadata import all_stacks
+from utilities.metadata import stack_metadata
+
 
 def format_grid_button_initial( button ):
     button.setDefault( True )

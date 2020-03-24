@@ -7,8 +7,8 @@ from itertools import chain
 
 # import boto3
 
-from utilities2015 import execute_command, shell_escape, create_if_not_exists
-from metadata import (DATA_ROOTDIR,
+from utilities.utilities2015 import execute_command, shell_escape, create_if_not_exists
+from utilities.metadata import (DATA_ROOTDIR,
                       ENABLE_UPLOAD_S3, ENABLE_DOWNLOAD_S3,
                       HOST_ID,
                       S3_DATA_BUCKET, S3_RAWDATA_BUCKET, ROOT_DIR)

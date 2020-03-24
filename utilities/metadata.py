@@ -5,7 +5,6 @@ import os, sys
 import numpy as np
 import subprocess
 import configparser
-import json
 
 ########### Data Directories #############
 
