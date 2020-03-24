@@ -1,9 +1,17 @@
 import os
-import numpy as np
-import cv2
+import subprocess
+from a_driver_utilities import *
+sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
+from utilities2015 import *
+from registration_utilities import *
+from annotation_utilities import *
+# from metadata import *
+from data_manager import DataManager
+from a_driver_utilities import *
 
-from data_manager_v2 import DataManager, metadata_cache
-from utilities.metadata import stack_metadata, all_known_structures_sided
+import sys
+#from PyQt4.QtCore import *
+#from PyQt4.QtGui import *
 
 script_list = ['initial setup gui',         # 0
                'a_script_preprocess_setup', # 1
@@ -24,12 +32,16 @@ necessary_files_by_script['ntb'] = {}
 necessary_files_by_script['thionin'] = {}
 
 # initial setup gui
-necessary_files_by_script['ntb'][script_list[0]] = {'image_set_1': {'prep_id':'None', 'version':'None', 'resol':'raw'}}
-necessary_files_by_script['thionin'][script_list[0]] = {'image_set_1': {'prep_id':'None', 'version':'None', 'resol':'raw'}}
+necessary_files_by_script['ntb'][script_list[0]] = {
+    'image_set_1': {'prep_id':'None', 'version':'None', 'resol':'raw'}}
+necessary_files_by_script['thionin'][script_list[0]] = {
+    'image_set_1': {'prep_id':'None', 'version':'None', 'resol':'raw'}}
 
 # a_script_preprocess_setup
-necessary_files_by_script['ntb'][script_list[1]] = {'output_file_1':'setup_files'}
-necessary_files_by_script['thionin'][script_list[1]] = {'output_file_1':'setup_files'}
+necessary_files_by_script['ntb'][script_list[1]] = {
+    'output_file_1':'setup_files'}
+necessary_files_by_script['thionin'][script_list[1]] = {
+    'output_file_1':'setup_files'}
 
 # a_script_preprocess_1
 necessary_files_by_script['ntb'][script_list[2]] = {
@@ -42,12 +54,16 @@ necessary_files_by_script['thionin'][script_list[2]] = {
     'image_set_3': {'prep_id':'None', 'version':'gray', 'resol':'thumbnail'}}
 
 # a_script_preprocess_2
-necessary_files_by_script['ntb'][script_list[3]] = {'image_set_1': {'prep_id':1, 'version':'NtbNormalized', 'resol':'thumbnail'}}
-necessary_files_by_script['thionin'][script_list[3]] = {'image_set_1': {'prep_id':1, 'version':'gray', 'resol':'thumbnail'}}
+necessary_files_by_script['ntb'][script_list[3]] = {
+    'image_set_1': {'prep_id':1, 'version':'NtbNormalized', 'resol':'thumbnail'}}
+necessary_files_by_script['thionin'][script_list[3]] = {
+    'image_set_1': {'prep_id':1, 'version':'gray', 'resol':'thumbnail'}}
 
 # a_script_preprocess_3
-necessary_files_by_script['ntb'][script_list[4]] = {'image_set_1': 'autoSubmasks'}
-necessary_files_by_script['thionin'][script_list[4]] = {'image_set_1': 'autoSubmasks'}
+necessary_files_by_script['ntb'][script_list[4]] = {
+    'image_set_1': 'autoSubmasks'}
+necessary_files_by_script['thionin'][script_list[4]] = {
+    'image_set_1': 'autoSubmasks'}
 
 # a_script_preprocess_4
 necessary_files_by_script['ntb'][script_list[5]] = {
@@ -229,11 +245,8 @@ def check_for_file( file_to_check, stack ):
             missing_files.append(fp)
     return all_files_present, missing_files
 
-def get_text_of_pipeline_status( stack, stain ):
-    text = ""
-    all_correct = True
-    
-    stain = stain.lower()
+def get_pipeline_status( stack ):
+    stain = stack_metadata[stack]['stain'].lower()
 
     for script_name in script_list:
 
@@ -243,65 +256,36 @@ def get_text_of_pipeline_status( stack, stain ):
 
             if type(contents)==str:
                 if contents=='setup_files':
-                    all_files_present, missing_files = all_setupFiles_present( stack )
-                    # Setup always gives a weird error
-                    if len(missing_files)>0:
-                        text += 'Please run '+script_name+' and then continue to the next script.'
-                        break
+                    all_files_present, _ = all_setupFiles_present( stack )
                 elif contents=='autoSubmasks':
-                    all_files_present, missing_files = all_autoSubmasks_present( stack )
+                    all_files_present, _ = all_autoSubmasks_present( stack )
                 elif contents=='floatHistogram':
-                    all_files_present, missing_files = all_adaptive_intensity_floatHistograms_present( stack )
+                    all_files_present, _ = all_adaptive_intensity_floatHistograms_present( stack )
                 elif contents=='atlas_wrt_canonicalAtlasSpace_subject_wrt_wholebrain_atlasResol':
-                    all_files_present, missing_files = check_for_file( contents, stack )
+                    all_files_present, _ = check_for_file( contents, stack )
                 elif contents=='registered_atlas_structures_wrt_wholebrainXYcropped_xysecTwoCorners':
-                    all_files_present, missing_files = check_for_file( contents, stack )
+                    all_files_present, _ = check_for_file( contents, stack )
                 elif contents=='classifier_setup_files':
-                    all_files_present, missing_files = all_setupFiles_present_classifier( stack )
+                    all_files_present, _ = all_setupFiles_present_classifier( stack )
             else:
                 prep_id = contents['prep_id']
                 version = contents['version']
                 resol = contents['resol']
                 if version=='None':
                     version = None
-                all_files_present, missing_files = all_img_files_present(
+                all_files_present, _ = all_img_files_present( \
                                          stack, prep_id=prep_id, version=version, resol=resol )
 
             if all_files_present:
-                #text += script_name + " " + image_set + " has been run successfully!\n"
-                pass
+                all_correct = True
             else:
-                num_missing_files = len(missing_files)
-                num_total_files = len(DataManager.load_sorted_filenames(stack)[0].keys())
-                if num_missing_files == num_total_files:
-                    text += "" + script_name + " is the next script you need to run.\n"
-                    all_correct = False
-                    break
-
-                for fn in missing_files[0]:
-                    img_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, resol=resol, version=version, fn=fn)
-                    img_root_fp = img_fp[0:img_fp.rfind('/')+1]
-                #text += "\n"+script_name + " " + image_set + " is missing files:\n\n"
-                text += "\n" + script_name + " did not run properly and has missing files:\n"
-                text += "(" + str(num_missing_files) + " missing out of "+str(num_total_files)+")\n\n"
-                text += "Missing Directory:   "+img_root_fp+"\n\n"
-                #text += "`" + img_root_fp + "` is the image directory in which there are the following missing files:\n\n"
-                text += "Missing Files:\n"
-                missing_files.sort()
-                for fn in missing_files:
-                    img_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, resol=resol, version=version, fn=fn)
-                    text += fn+"\n"
                 all_correct = False
-                break
+                
         if not all_correct:
-            break
+            return script_name
         elif all_correct:
-            if script_name=='a_script_processing`':
-                text += script_name + " runs the brain through the classifiers and fits the atlas to the images. Ready to run!"
-            else:
-                text += script_name + " has been run successfully!\n\n"
-
-    return text, script_name
+            continue
+    return script_name
 
 def get_script_command( curr_script_name, stack, stain, detector_id, script_or_manual ):
     if script_or_manual=='script':

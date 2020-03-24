@@ -33,7 +33,8 @@ import functools
 import matplotlib.pyplot as plt
 
 from utilities.randomcolor import RandomColor
-from distributed_utilities import download_from_s3, upload_to_s3
+#from distributed_utilities import download_from_s3, upload_to_s3
+import utilities.distributed_utilities as DU
 from utilities.vis3d_utilities import load_mesh_stl, save_mesh_stl
 from utilities.metadata import ENABLE_UPLOAD_S3, ENABLE_DOWNLOAD_S3, convert_resolution_string_to_um
 from utilities.metadata import all_known_structures, singular_structures, convert_to_left_name, convert_to_right_name
@@ -231,7 +232,7 @@ def load_data(fp, polydata_instead_of_face_vertex_list=True, download_s3=True):
 
 
     if ENABLE_DOWNLOAD_S3 and download_s3:
-        download_from_s3(fp)
+        DU.download_from_s3(fp)
 
     if fp.endswith('.bp'):
         try:
@@ -295,7 +296,7 @@ def save_data(data, fp, upload_s3=True):
         raise
 
     if ENABLE_UPLOAD_S3 and upload_s3: # in the future, use only one flag.
-        upload_to_s3(fp)
+        DU.upload_to_s3(fp)
 
 ##################################################################
 

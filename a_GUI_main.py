@@ -3,9 +3,12 @@ import subprocess
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComboBox, QPushButton
+
+from a_driver_utilities import get_current_step_from_progress_ini
+
 sys.path.append("utilities")
-from utilities.metadata import all_stacks
-from utilities.metadata import stack_metadata
+from utilities.metadata import all_stacks, stain_to_metainfo
+from utilities.metadata import stack_metadata, BRAINS_INFO_DIR
 
 
 def format_grid_button_initial( button ):

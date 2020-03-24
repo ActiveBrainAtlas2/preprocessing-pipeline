@@ -1,11 +1,11 @@
-import subprocess
 import sys, os
+import argparse
+import subprocess
+
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComboBox, QPushButton
-import argparse
 
-sys.path.append("utilities")
 from utilities.metadata import ordered_pipeline_steps
 from utilities.data_manager_v2 import DataManager
 from utilities.a_driver_utilities import set_step_completed_in_progress_ini
