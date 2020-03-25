@@ -1,19 +1,20 @@
-import configparser
-import json
+#!/usr/bin/env python
+
 import os
 import sys
-import time
 import subprocess
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
+import time
+import json
 
-
-from utilities.data_manager_v2 import DataManager
-from metadata import ordered_pipeline_steps, orientation_argparse_str_to_imagemagick_str, prep_id_short_str_to_full
+sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
+#from utilities2015 import *
+from data_manager_v2 import *
+#from distributed_utilities import *
+from metadata import *
 
 
 def save_dict_as_ini( input_dict, fp ):
+    import configparser
     assert 'DEFAULT' in input_dict.keys()
 
     config = configparser.ConfigParser()
@@ -350,8 +351,8 @@ def get_prep5_limits_from_prep1_thumbnail_masks( stack, max_distance_to_scan_fro
                 break
 
         # update caudal lim
-        caudal_range = reversed(range( curr_caudal_lim_d16, width_d16))
-        #caudal_range.reversed() # Goes from right of image to left
+        caudal_range = range( curr_caudal_lim_d16, width_d16) 
+        caudal_range.reverse() # Goes from right of image to left
         for col_i in caudal_range:
             col = img_thumbnail_mask_down16[ :, col_i]
 
@@ -372,7 +373,8 @@ def get_prep5_limits_from_prep1_thumbnail_masks( stack, max_distance_to_scan_fro
                 break
 
         # update ventral lim
-        ventral_range = reversed(range( curr_ventral_lim_d16, height_d16)) # Goes from right of image to left
+        ventral_range = range( curr_ventral_lim_d16, height_d16) 
+        ventral_range.reverse() # Goes from right of image to left
         for row_i in ventral_range:
             row = img_thumbnail_mask_down16[ row_i, :]
 
@@ -413,7 +415,6 @@ def close_main_gui_old( ex, reopen=True ):
     #  (in case there are multiple hanging instances)
     ps = subprocess.Popen(('ps','aux'), stdout=subprocess.PIPE)
     output = subprocess.check_output(('grep', 'python a_GUI_main.py'), stdin=ps.stdout)
-    #output = str(output)
     python_GUI_initial_processes = output.split('\n')
     
     for process_str in python_GUI_initial_processes:
@@ -445,6 +446,6 @@ def call_and_time( command_list, completion_message='' ):
     
     if command_list[0]=='python':
         print('**************************************************************************************************')
-        print('\nScript '+command_list[1]+' completed. Took ',round(end_t - start_t,1),' seconds')
-        print(completion_message +'\n')
+        print '\nScript '+command_list[1]+' completed. Took ',round(end_t - start_t,1),' seconds'
+        print completion_message +'\n'
         print('**************************************************************************************************')

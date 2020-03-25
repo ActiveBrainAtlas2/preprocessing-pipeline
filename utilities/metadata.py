@@ -5,6 +5,7 @@ import os, sys
 import numpy as np
 import subprocess
 import configparser
+from itertools import chain
 
 ########### Data Directories #############
 
@@ -226,6 +227,7 @@ else:
     REPO_DIR = PROJECT_DIR
     DATA_ROOTDIR = ROOT_DIR
     THUMBNAIL_DATA_ROOTDIR = ROOT_DIR
+    HOST_ID = 'workstation'
 
     # ON_AWS = False
     S3_DATA_BUCKET = 'mousebrainatlas-data'
@@ -487,7 +489,6 @@ labelMap_unsidedToSided = dict([(name, [name+'_L', name+'_R']) for name in paire
 
 labelMap_sidedToUnsided = {n: nu for nu, ns in labelMap_unsidedToSided.items() for n in ns}
 
-from itertools import chain
 labels_sided = list(chain(*(labelMap_unsidedToSided[name_u] for name_u in labels_unsided)))
 labels_sided_indices = dict((j, i+1) for i, j in enumerate(labels_sided)) # BackG always 0
 
@@ -560,8 +561,8 @@ def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
         raise Exception("ini file %s does not exist." % fp)
     config.read(fp)
     input_spec = dict(config.items(section))
-    input_spec = {k: v.split('\n') if '\n' in v else v for k, v in input_spec.iteritems()}
-    for k, v in input_spec.iteritems():
+    input_spec = {k: v.split('\n') if '\n' in v else v for k, v in input_spec.items()}
+    for k, v in input_spec.items():
         if not isinstance(v, list):
             if '.' not in v and v.isdigit():
                 input_spec[k] = int(v)

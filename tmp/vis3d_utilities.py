@@ -1,24 +1,25 @@
-import os
 import numpy as np
 import sys
 import time
-import bloscpack as bp
-from skimage import img_as_ubyte
 
-import vtk
-from vtk.util import numpy_support
+try:
+    import vtk
+    from vtk.util import numpy_support
+except:
+    sys.stderr.write('No vtk\n')
 
 try:
     import mcubes # https://github.com/pmneila/PyMCubes
 except:
     sys.stderr.write('No mcubes\n')
 
-#from skimage.measure import marching_cubes_classic, mesh_surface_area
+from skimage.measure import marching_cubes_classic, correct_mesh_orientation, mesh_surface_area
 
-from data_manager_v2 import DataManager
-from utilities2015 import create_if_not_exists, execute_command, convert_volume_forms, create_parent_dir_if_not_exists, \
-    convert_vol_bbox_dict_to_overall_vol
-from metadata import REPO_DIR
+import os
+sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
+from utilities2015 import *
+from metadata import *
+from data_manager import *
 
 #######################################################################
 
@@ -40,8 +41,8 @@ def download_volume(stack, what, dest_dir, name_u=None):
         os.system('scp gcn:/oasis/projects/nsf/csd395/yuncong/CSHL_volumes/%(stack)s/%(stack)s_scoreVolume_%(name_u)s.bp %(volume_d)s/' % \
                       {'stack': stack, 'volume_d':dest_dir, 'name_u': name_u})
 
-        print('scp gcn:/oasis/projects/nsf/csd395/yuncong/CSHL_volumes/%(stack)s/%(stack)s_scoreVolume_%(name_u)s.bp %(volume_d)s/' % \
-                      {'stack': stack, 'volume_d':dest_dir, 'name_u': name_u})
+        print 'scp gcn:/oasis/projects/nsf/csd395/yuncong/CSHL_volumes/%(stack)s/%(stack)s_scoreVolume_%(name_u)s.bp %(volume_d)s/' % \
+                      {'stack': stack, 'volume_d':dest_dir, 'name_u': name_u}
 
 
 ################ Conversion between volume representations #################
@@ -138,8 +139,8 @@ def vertices_to_surface(vertices, num_simplify_iter=3, smooth=True, neighborhood
     # plt.colorbar();
 
     cf = vtk.vtkContourFilter()
-    cf.SetInputConnection(surf.GetOutputPort())
-    cf.SetValue(0, 0.)
+    cf.SetInputConnection(surf.GetOutputPort());
+    cf.SetValue(0, 0.);
     # print cf.GetNumberOfContours()
     cf.Update()
     # polydata = cf.GetOutput()
@@ -692,11 +693,11 @@ try: # for environment that does not have vtk.
         def keyPressEvent(self,obj,event):
             key = self.iren.GetKeySym()
             if key == 'g':
-                print('viewup: %f, %f, %f\n' % self.camera.GetViewUp())
-                print('focal point: %f, %f, %f\n' % self.camera.GetFocalPoint())
-                print('position: %f, %f, %f\n' % self.camera.GetPosition())
+                print 'viewup: %f, %f, %f\n' % self.camera.GetViewUp()
+                print 'focal point: %f, %f, %f\n' % self.camera.GetFocalPoint()
+                print 'position: %f, %f, %f\n' % self.camera.GetPosition()
             elif key == 'e':
-                print('Quit.')
+                print 'Quit.'
                 self.renWin.Finalize()
                 self.iren.TerminateApp()
             elif key == 's':

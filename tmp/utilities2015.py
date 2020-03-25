@@ -1,48 +1,45 @@
-#import matplotlib
-#matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 
 import os
+import csv
 import sys
+from operator import itemgetter
 from subprocess import check_output, call
 import json
-import pickle
-import configparser
-from ipywidgets import FloatProgress
-from IPython.display import display
-from IPython.display import FileLink
-import joblib
+import cPickle as pickle
 from datetime import datetime
-from tempfile import mkstemp
-from networkx.algorithms import dfs_successors, dfs_postorder_nodes
-from itertools import chain
+import time
+from operator import itemgetter
+from itertools import izip
+from collections import defaultdict
 
-from multiprocess import pool as Pool
+from multiprocess import Pool
 from skimage.io import imread, imsave
 from skimage.util import img_as_ubyte, img_as_float
-from skimage.color import gray2rgb, label2rgb
-from skimage.measure import find_contours, regionprops
-from skimage.filters import gaussian
-from skimage.exposure import rescale_intensity
-from skimage.feature import peak_local_max
+from skimage.color import gray2rgb, rgb2gray
 import numpy as np
-import pandas as pd
-import cv2
-import bloscpack as bp
-import warnings
-import functools
+
 import matplotlib.pyplot as plt
 
-from utilities.randomcolor import RandomColor
-#from distributed_utilities import download_from_s3, upload_to_s3
-import utilities.distributed_utilities as DU
-from utilities.vis3d_utilities import load_mesh_stl, save_mesh_stl
-from utilities.metadata import ENABLE_UPLOAD_S3, ENABLE_DOWNLOAD_S3, convert_resolution_string_to_um
-from utilities.metadata import all_known_structures, singular_structures, convert_to_left_name, convert_to_right_name
-from utilities.data_manager_v2 import DataManager
+try:
+    import cv2
+except:
+    sys.stderr.write('Cannot load cv2.\n')
 
+import bloscpack as bp
+
+from skimage.measure import grid_points_in_poly, subdivide_polygon, approximate_polygon
+from skimage.measure import find_contours, regionprops
+
+from skimage.filters import gaussian
+
+from metadata import ENABLE_UPLOAD_S3, ENABLE_DOWNLOAD_S3, convert_resolution_string_to_um
 
 #######################################
 
+import warnings
+import functools
 
 def deprecated(func):
     """This is a decorator which can be used to mark functions
@@ -59,6 +56,11 @@ def deprecated(func):
     return new_func
 
 #########################################
+
+def convert_defaultdict_to_dict(d):
+    if isinstance(d, defaultdict):
+        d = {k: default_to_regular(v) for k, v in d.items()}
+    return d
 
 
 def compute_gradient_v2(volume, smooth_first=False, dtype=np.float16):
@@ -84,7 +86,7 @@ def compute_gradient_v2(volume, smooth_first=False, dtype=np.float16):
         #     # sys.stderr.write("Overall: %.2f seconds.\n" % (time.time()-t1))
 
         gradients = {ind: compute_gradient_v2((v, o), smooth_first=smooth_first)
-                     for ind, (v, o) in volume.items()}
+                     for ind, (v, o) in volume.iteritems()}
 
         return gradients
 
@@ -174,7 +176,7 @@ def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack=None):
         elif in_fmt == 'arr_xxyy':
             arr_xywh = np.array([data[0], data[2], data[1] - data[0] + 1, data[3] - data[2] + 1])
         else:
-            print(in_fmt, data)
+            print in_fmt, data
             raise
 
     arr_xywh_1um = arr_xywh * convert_resolution_string_to_um(stack=stack, resolution=in_resol)
@@ -196,12 +198,14 @@ def csv_to_dict(fp):
     """
     First column contains keys.
     """
+    import pandas as pd
     df = pd.read_csv(fp, index_col=0, header=None)
     d = df.to_dict(orient='index')
     d = {k: v.values() for k, v in d.iteritems()}
     return d
 
 def dict_to_csv(d, fp):
+    import pandas as pd
     df = pd.DataFrame.from_dict({k: np.array(v).flatten() for k, v in d.iteritems()}, orient='index')
     df.to_csv(fp, header=False)
 
@@ -210,13 +214,14 @@ def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
     """
     Value of string None will be converted to Python None.
     """
-    config = configparser.ConfigParser()
+    import ConfigParser
+    config = ConfigParser.ConfigParser()
     if not os.path.exists(fp):
         raise Exception("ini file %s does not exist." % fp)
     config.read(fp)
     input_spec = dict(config.items(section))
-    input_spec = {k: v.split('\n') if '\n' in v else v for k, v in input_spec.items()}
-    for k, v in input_spec.items():
+    input_spec = {k: v.split('\n') if '\n' in v else v for k, v in input_spec.iteritems()}
+    for k, v in input_spec.iteritems():
         if not isinstance(v, list):
             if '.' not in v and v.isdigit():
                 input_spec[k] = int(v)
@@ -230,9 +235,11 @@ def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
 
 def load_data(fp, polydata_instead_of_face_vertex_list=True, download_s3=True):
 
+    from vis3d_utilities import load_mesh_stl
+    from distributed_utilities import download_from_s3
 
     if ENABLE_DOWNLOAD_S3 and download_s3:
-        DU.download_from_s3(fp)
+        download_from_s3(fp)
 
     if fp.endswith('.bp'):
         try:
@@ -263,6 +270,8 @@ def load_data(fp, polydata_instead_of_face_vertex_list=True, download_s3=True):
 
 def save_data(data, fp, upload_s3=True):
 
+    from distributed_utilities import upload_to_s3
+    from vis3d_utilities import save_mesh_stl
 
     create_parent_dir_if_not_exists(fp)
 
@@ -280,7 +289,7 @@ def save_data(data, fp, upload_s3=True):
     elif fp.endswith('.pkl'):
         save_pickle(data, fp)
     elif fp.endswith('.hdf'):
-        save_hdf(data, fp)
+        save_hdf_v2(data, fp)
     elif fp.endswith('.stl'):
         save_mesh_stl(data, fp)
     elif fp.endswith('.txt'):
@@ -289,6 +298,7 @@ def save_data(data, fp, upload_s3=True):
         else:
             raise
     elif fp.endswith('.dump'): # sklearn classifiers
+        import joblib
         joblib.dump(data, fp)
     elif fp.endswith('.png') or fp.endswith('.tif') or fp.endswith('.jpg'):
         imsave(fp, data)
@@ -296,7 +306,7 @@ def save_data(data, fp, upload_s3=True):
         raise
 
     if ENABLE_UPLOAD_S3 and upload_s3: # in the future, use only one flag.
-        DU.upload_to_s3(fp)
+        upload_to_s3(fp)
 
 ##################################################################
 
@@ -384,7 +394,7 @@ def plot_by_method_by_structure(data_all_stacks_all_structures, structures, stac
     n_structures = len(structures)
     n_stacks = len(data_all_stacks_all_structures.keys())
 
-    plt.figure(figsize=figsize)
+    plt.figure(figsize=figsize);
     for stack_i, stack in enumerate(stacks):
         data_all_structures = data_all_stacks_all_structures[stack]
         data_mean = [np.mean(data_all_structures[s]) for s in structures]
@@ -395,21 +405,21 @@ def plot_by_method_by_structure(data_all_stacks_all_structures, structures, stac
         # Hide these grid behind plot objects
         plt.gca().set_axisbelow(True)
 
-    for structure_i in range(0, n_structures):
+    for structure_i in xrange(0, n_structures):
         plt.axvline(x = n_stacks + (n_stacks + spacing_btw_stacks) * structure_i + spacing_btw_stacks / 2.,
                     color='k', linewidth=.3)
 
     plt.xticks(np.arange((n_stacks)/2, n_structures*(n_stacks + spacing_btw_stacks), (n_stacks + spacing_btw_stacks)),
-               structures, rotation='60', fontsize=xticks_fontsize)
+               structures, rotation='60', fontsize=xticks_fontsize);
     plt.yticks(np.arange(ylim[0], ylim[1] + yspacing, yspacing),
                map(lambda x: '%.2f'%x, np.arange(ylim[0], ylim[1]+yspacing, yspacing)),
-               fontsize=20)
-    plt.xlabel(xlabel, fontsize=20)
-    plt.ylabel(ylabel, fontsize=20)
-    plt.xlim([-1, len(structures) * (n_stacks + spacing_btw_stacks) + 1])
-    plt.ylim(ylim)
-    plt.legend(loc=legend_loc, fontsize=legend_fontsize)
-    plt.title(title, fontsize=20)
+               fontsize=20);
+    plt.xlabel(xlabel, fontsize=20);
+    plt.ylabel(ylabel, fontsize=20);
+    plt.xlim([-1, len(structures) * (n_stacks + spacing_btw_stacks) + 1]);
+    plt.ylim(ylim);
+    plt.legend(loc=legend_loc, fontsize=legend_fontsize);
+    plt.title(title, fontsize=20);
 
 
 def plot_by_stack_by_structure(data_all_stacks_all_structures, structures,
@@ -433,7 +443,7 @@ def plot_by_stack_by_structure(data_all_stacks_all_structures, structures,
             data_all_structures = data_all_stacks_all_structures[stack]
             vals = [data_all_structures[s] if s in data_all_structures else None
                     for i, s in enumerate(structures)]
-            ax.scatter(range(len(vals)), vals, marker='o', s=100, label=stack, c=np.array(stack_to_color[stack])/255.)
+            ax.scatter(range(len(vals)), vals, marker='o', s=100, label=stack, c=np.array(stack_to_color[stack])/255.);
             
     elif style == 'boxplot2': # {stack: {structure: [v1,v2,v3...]}}
         
@@ -445,7 +455,7 @@ def plot_by_stack_by_structure(data_all_stacks_all_structures, structures,
                  for struct in structures 
                  if struct in data_all_stacks_all_structures[stack]]
         
-            bplot = plt.boxplot(np.array(D).T, positions=range(0, len(structures)), patch_artist=True)
+            bplot = plt.boxplot(np.array(D).T, positions=range(0, len(structures)), patch_artist=True);
             boxes.append(bplot['boxes'][0])
             
             for patch in bplot['boxes']:
@@ -468,7 +478,7 @@ def plot_by_stack_by_structure(data_all_stacks_all_structures, structures,
              if struct in data_all_stacks_all_structures[stack]]
             for struct in structures]
 
-        bplot = plt.boxplot(np.array(D), positions=range(0, len(structures)), patch_artist=True)
+        bplot = plt.boxplot(np.array(D), positions=range(0, len(structures)), patch_artist=True);
 #         for patch in bplot['boxes']:
 #             patch.set_facecolor(np.array(stack_to_color[stack])/255.)
 
@@ -478,20 +488,20 @@ def plot_by_stack_by_structure(data_all_stacks_all_structures, structures,
     else:
         raise Exception("%s is not recognized." % style)
 
-    plt.xticks(range(len(structures)), structures, rotation='60', fontsize=xticks_fontsize)
+    plt.xticks(range(len(structures)), structures, rotation='60', fontsize=xticks_fontsize);
 
     # plt.yticks(np.arange(ylim[0], ylim[1] + yspacing, yspacing),
     #            map(lambda x: '%.2f'%x, np.arange(ylim[0], ylim[1]+yspacing, yspacing)),
     #            fontsize=20);
-    plt.yticks(yticks, [yticklabel_fmt % y for y in yticks], fontsize=yticks_fontsize)
-    plt.xlabel(xlabel, fontsize=20)
-    plt.ylabel(ylabel, fontsize=20)
+    plt.yticks(yticks, [yticklabel_fmt % y for y in yticks], fontsize=yticks_fontsize);
+    plt.xlabel(xlabel, fontsize=20);
+    plt.ylabel(ylabel, fontsize=20);
     if xlim is None:
         xlim = [-1, len(structures)+1]
-    ax.set_xlim(xlim)
-    ax.set_ylim([yticks[0], yticks[-1]+yticks[-1]-yticks[-2]])
-    plt.legend()
-    ax.set_title(title, fontsize=20)
+    ax.set_xlim(xlim);
+    ax.set_ylim([yticks[0], yticks[-1]+yticks[-1]-yticks[-2]]);
+    plt.legend();
+    ax.set_title(title, fontsize=20);
 
     return fig, ax
 
@@ -503,6 +513,7 @@ def identify_shape(img_fp):
 #####################################################################
 
 def get_timestamp_now(fmt="%m%d%Y%H%M%S"):
+    from datetime import datetime
     return datetime.now().strftime(fmt)
 
 ######################################################################
@@ -595,7 +606,7 @@ def get_structure_centroids(vol_bbox_dict=None, vol_origin_dict=None, vol_dict=N
             structure_centroids[label] = (xm+xmin, ym+ymin, zm+zmin)
     elif vol_dict is not None:
         for label, v in vol_dict.iteritems():
-            print(np.where(v))
+            print np.where(v)
             ym, xm, zm = np.mean(np.nonzero(v), axis=1)
             structure_centroids[label] = (xm, ym, zm)
     return structure_centroids
@@ -610,7 +621,7 @@ def get_centroid_3d(v):
 
     if isinstance(v, dict):
         centroids = {}
-        for n, s in v.items():
+        for n, s in v.iteritems():
             if isinstance(s, tuple): # volume, origin_or_bbox
                 vol, origin_or_bbox = s
                 if len(origin_or_bbox) == 3:
@@ -636,6 +647,7 @@ def compute_midpoints(structure_centroids):
         dict of (3,)-array: {unsided name: mid-point}
     """
 
+    from metadata import all_known_structures, singular_structures, convert_to_left_name, convert_to_right_name
 
     midpoints = {}
     for s in all_known_structures:
@@ -734,6 +746,8 @@ def plot_centroid_means_and_covars_3d(instance_centroids,
 
     # Plot in 3D.
 
+    from mpl_toolkits.mplot3d import Axes3D
+    from metadata import name_unsided_to_color, convert_to_original_name
 
     fig = plt.figure(figsize=(20, 20))
     ax = fig.add_subplot(111, projection='3d')
@@ -781,8 +795,8 @@ def plot_centroid_means_and_covars_3d(instance_centroids,
         # Plot mid-sagittal plane
         if canonical_normal is not None:
             canonical_midplane_xx, canonical_midplane_yy = np.meshgrid(range(xlim[0], xlim[1], 100), range(ylim[0], ylim[1], 100), indexing='xy')
-            canonical_midplane_z = -(canonical_normal[0]*(canonical_midplane_xx-canonical_centroid[0]) +
-            canonical_normal[1]*(canonical_midplane_yy-canonical_centroid[1]) +
+            canonical_midplane_z = -(canonical_normal[0]*(canonical_midplane_xx-canonical_centroid[0]) + \
+            canonical_normal[1]*(canonical_midplane_yy-canonical_centroid[1]) + \
             canonical_normal[2]*(-canonical_centroid[2]))/canonical_normal[2]
             ax.plot_surface(canonical_midplane_xx, canonical_midplane_yy, canonical_midplane_z, alpha=.1)
     else:
@@ -792,9 +806,9 @@ def plot_centroid_means_and_covars_3d(instance_centroids,
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     # ax.set_axis_off()
-    ax.set_xlim3d([xlim[0], xlim[1]])
-    ax.set_ylim3d([ylim[0], ylim[1]])
-    ax.set_zlim3d([zlim[0], zlim[1]])
+    ax.set_xlim3d([xlim[0], xlim[1]]);
+    ax.set_ylim3d([ylim[0], ylim[1]]);
+    ax.set_zlim3d([zlim[0], zlim[1]]);
     # ax.view_init(azim = 90 + 20,elev = 0 - 20)
     ax.view_init(azim = 270, elev = 0)
 
@@ -863,6 +877,7 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
         For example, If `along_direction=y`, returns (z,x); if direction=x, returns (z,y).
     """
 
+    import multiprocessing
     # nproc = multiprocessing.cpu_count()
     nproc = 1
 
@@ -925,7 +940,7 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
     pool.close()
     pool.join()
 
-    contours = {p: cnt for p, cnt in contours.items() if cnt is not None}
+    contours = {p: cnt for p, cnt in contours.iteritems() if cnt is not None}
 
     return contours
 
@@ -995,7 +1010,7 @@ def draw_alignment(warped_atlas, fixed_volumes, level_spacing=10, zs=None, ncols
     aspect_ratio = float(xdim_f)/ydim_f # width / height
 
     if zs is None:
-        zs = np.arange(0, zdim_f, level_spacing)
+        zs = np.arange(0, zdim, level_spacing)
     n = len(zs)
 
     nrows = int(np.ceil(len(zs) / float(ncols)))
@@ -1005,7 +1020,7 @@ def draw_alignment(warped_atlas, fixed_volumes, level_spacing=10, zs=None, ncols
 
     for zi in range(len(axes)):
         if zi >= n:
-            axes[zi].axis('off')
+            axes[zi].axis('off');
         else:
             z = zs[zi]
 
@@ -1050,8 +1065,8 @@ def draw_alignment(warped_atlas, fixed_volumes, level_spacing=10, zs=None, ncols
 
             axes[zi].imshow(viz)
             axes[zi].set_title("z=%d" % z)
-            axes[zi].set_xticks([])
-            axes[zi].set_yticks([])
+            axes[zi].set_xticks([]);
+            axes[zi].set_yticks([]);
 
     plt.show()
 
@@ -1257,16 +1272,16 @@ def crop_and_pad_volumes(out_bbox=None, vol_bbox_dict=None, vol_bbox_tuples=None
 
     if vol_bbox is not None:
         if isinstance(vol_bbox, dict):
-            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in DataManager.volumes.items()}
+            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in volumes.iteritems()}
         elif isinstance(vol_bbox, list):
-            vols = [crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for (v, b) in DataManager.volumes]
+            vols = [crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for (v, b) in volumes]
         else:
             raise
     else:
         if vol_bbox_tuples is not None:
             vols = [crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for (v, b) in vol_bbox_tuples]
         elif vol_bbox_dict is not None:
-            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in vol_bbox_dict.items()}
+            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in vol_bbox_dict.iteritems()}
         else:
             raise
 
@@ -1317,7 +1332,6 @@ def crop_and_pad_volume(in_vol, in_bbox=None, in_origin=(0,0,0), out_bbox=None):
     else:
         in_bbox = np.array(in_bbox).astype(np.int)
         in_xmin, in_xmax, in_ymin, in_ymax, in_zmin, in_zmax = in_bbox
-    #FIXME what is this code doing below?
     in_xdim = in_xmax - in_xmin + 1
     in_ydim = in_ymax - in_ymin + 1
     in_zdim = in_zmax - in_zmin + 1
@@ -1401,6 +1415,7 @@ def rescale_intensity_v2(im, low, high):
         im (2d array of float): input image.
     """
 
+    from skimage.exposure import rescale_intensity, adjust_gamma
     if low > high:
         im_out = rescale_intensity(low-im.astype(np.float), (0, low-high), (0, 255)).astype(np.uint8)
     else:
@@ -1416,6 +1431,7 @@ def visualize_blob_contour(binary_img, bg_img):
     Returns:
         Contoured image.
     """
+    from registration_utilities import find_contour_points
 
     viz = gray2rgb(bg_img)
     for cnt in find_contour_points(binary_img)[1]:
@@ -1427,6 +1443,7 @@ def shell_escape(s):
     """
     Escape a string (treat it as a single complete string) in shell commands.
     """
+    from tempfile import mkstemp
     fd, path = mkstemp()
     try:
         with os.fdopen(fd, 'w') as f:
@@ -1506,6 +1523,8 @@ def array_to_one_liner(arr):
     return ' '.join(map(str, arr)) + '\n'
 
 def show_progress_bar(min, max):
+    from ipywidgets import FloatProgress
+    from IPython.display import display
 
     bar = FloatProgress(min=min, max=max)
     display(bar)
@@ -1543,6 +1562,7 @@ def execute_command(cmd, stdout=None, stderr=None):
 #     print stdout
 #     print stderr
 
+    # import os
     # retcode = os.system(cmd)
     retcode = call(cmd, shell=True, stdout=stdout, stderr=stderr)
     sys.stderr.write('return code: %d\n' % retcode)
@@ -1558,6 +1578,7 @@ def execute_command(cmd, stdout=None, stderr=None):
 def draw_arrow(image, p, q, color, arrow_magnitude=9, thickness=5, line_type=8, shift=0):
     # adapted from http://mlikihazar.blogspot.com.au/2013/02/draw-arrow-opencv.html
 
+    import cv2
 
     # draw arrow tail
     cv2.line(image, p, q, color, thickness, line_type, shift)
@@ -1575,7 +1596,7 @@ def draw_arrow(image, p, q, color, arrow_magnitude=9, thickness=5, line_type=8, 
     cv2.line(image, p, q, color, thickness, line_type, shift)
 
 
-def save_hdf(data, fn, key='data', mode='w'):
+def save_hdf_v2(data, fn, key='data', mode='w'):
     """
     Save data as a hdf file.
     If data is dict of dict, convert to DataFrame before saving as hdf.
@@ -1585,23 +1606,30 @@ def save_hdf(data, fn, key='data', mode='w'):
         mode (str): if 'w', overwrite original content. If 'a', append.
     """
 
+    import pandas
     create_parent_dir_if_not_exists(fn)
-    if isinstance(data, pd.DataFrame):
+    if isinstance(data, pandas.DataFrame):
         data.to_hdf(fn, key=key, mode=mode) # important to set mode='w', default is 'a' (append)
     elif isinstance(data, dict):
         if isinstance(data.values()[0], dict): # dict of dict
-            pd.DataFrame(data).T.to_hdf(fn, key=key, mode='w')
+            pandas.DataFrame(data).T.to_hdf(fn, key=key, mode='w')
         else:
-            pd.Series(data=data).to_hdf(fn, key, mode='w')
+            pandas.Series(data=data).to_hdf(fn, key, mode='w')
 
 def load_hdf_v2(fn, key='data'):
-    return pd.read_hdf(fn, key)
+    import pandas
+    return pandas.read_hdf(fn, key)
+
+def save_hdf(data, fn, complevel=9, key='data'):
+    filters = Filters(complevel=complevel, complib='blosc')
+    with open_file(fn, mode="w") as f:
+        _ = f.create_carray('/', key, Atom.from_dtype(data.dtype), filters=filters, obj=data)
 
 def load_hdf(fn, key='data'):
     """
     Used by loading features.
     """
-    with open(fn, mode="r") as f:
+    with open_file(fn, mode="r") as f:
         data = f.get_node('/'+key).read()
     return data
 
@@ -1623,6 +1651,7 @@ def unique_rows2(a):
 
 def order_nodes(sps, neighbor_graph, verbose=False):
 
+    from networkx.algorithms import dfs_successors, dfs_postorder_nodes
 
 
     subg = neighbor_graph.subgraph(sps)
@@ -1631,15 +1660,15 @@ def order_nodes(sps, neighbor_graph, verbose=False):
     x = [(a,b) for a,b in d_suc.iteritems() if len(b) == 2]
 
     if verbose:
-        print('root, two_leaves', x)
+        print 'root, two_leaves', x
 
     if len(x) == 0:
         trav = list(dfs_postorder_nodes(subg))
     else:
         if verbose:
-            print('d_succ')
+            print 'd_succ'
             for it in d_suc.iteritems():
-                print(it)
+                print it
 
         root, two_leaves = x[0]
 
@@ -1661,14 +1690,15 @@ def order_nodes(sps, neighbor_graph, verbose=False):
         trav = left_branch[::-1] + [root] + right_branch
 
         if verbose:
-            print('left_branch', left_branch)
-            print('right_branch', right_branch)
+            print 'left_branch', left_branch
+            print 'right_branch', right_branch
 
     return trav
 
 def find_score_peaks(scores, min_size = 4, min_distance=10, threshold_rel=.3, threshold_abs=0, peakedness_lim=0,
                     peakedness_radius=1, verbose=False):
 
+    from skimage.feature import peak_local_max
 
     scores2 = scores.copy()
     scores2[np.isnan(scores)] = np.nanmin(scores)
@@ -1693,7 +1723,7 @@ def find_score_peaks(scores, min_size = 4, min_distance=10, threshold_rel=.3, th
             peaks_shifted = np.unique(np.r_[peaks_shifted, np.argmax(scores_shifted)])
 
             if verbose:
-                print('raw peaks', np.atleast_1d(np.squeeze(min_size - 1 + peaks_shifted)))
+                print 'raw peaks', np.atleast_1d(np.squeeze(min_size - 1 + peaks_shifted))
 
             if len(peaks_shifted) > 0:
                 peaks = min_size - 1 + peaks_shifted
@@ -1707,8 +1737,8 @@ def find_score_peaks(scores, min_size = 4, min_distance=10, threshold_rel=.3, th
                 peakedness[i] = scores[p]-np.mean(nbrs)
 
             if verbose:
-                print('peakedness', peakedness)
-                print('filtered peaks', np.atleast_1d(np.squeeze(peaks)))
+                print 'peakedness', peakedness
+                print 'filtered peaks', np.atleast_1d(np.squeeze(peaks))
 
             high_peaks = peaks[peakedness > peakedness_lim]
             high_peaks = np.unique(np.r_[high_peaks, min_size - 1 + np.argmax(scores_shifted)])
@@ -1783,6 +1813,7 @@ def display_image(vis, filename='tmp.jpg'):
     else:
         imsave(filename, vis)
 
+    from IPython.display import FileLink
     return FileLink(filename)
 
 
@@ -1801,7 +1832,7 @@ def pad_patches_to_same_size(vizs, pad_value=0, keep_center=False, common_shape=
     if ndim == 2:
         common_box = (pad_value*np.ones((common_shape[0], common_shape[1]))).astype(dt)
     elif ndim == 3:
-        common_box = (pad_value*np.ones((common_shape[0], common_shape[1], np.shape[2]))).astype(dt)
+        common_box = (pad_value*np.ones((common_shape[0], common_shape[1], p.shape[2]))).astype(dt)
 
     patches_padded = []
     for p in vizs:
@@ -1986,6 +2017,62 @@ def display_images_in_grids(vizs, nc, titles=None, export_fn=None, maintain_shap
 
 # <codecell>
 
+# import numpy as np
+# from scipy.ndimage.filters import maximum_filter
+# from scipy.ndimage.morphology import generate_binary_structure, binary_erosion
+
+# def detect_peaks(image):
+#     """
+#     Takes an image and detect the peaks usingthe local maximum filter.
+#     Returns a boolean mask of the peaks (i.e. 1 when
+#     the pixel's value is the neighborhood maximum, 0 otherwise)
+#     """
+
+#     # define an 8-connected neighborhood
+#     neighborhood = generate_binary_structure(2,2)
+
+#     #apply the local maximum filter; all pixel of maximal value
+#     #in their neighborhood are set to 1
+#     local_max = maximum_filter(image, footprint=neighborhood)==image
+#     #local_max is a mask that contains the peaks we are
+#     #looking for, but also the background.
+#     #In order to isolate the peaks we must remove the background from the mask.
+
+#     #we create the mask of the background
+#     background = (image==0)
+
+#     #a little technicality: we must erode the background in order to
+#     #successfully subtract it form local_max, otherwise a line will
+#     #appear along the background border (artifact of the local maximum filter)
+#     eroded_background = binary_erosion(background, structure=neighborhood, border_value=1)
+
+#     #we obtain the final mask, containing only peaks,
+#     #by removing the background from the local_max mask
+#     detected_peaks = local_max - eroded_background
+
+#     return detected_peaks
+
+# <codecell>
+
+# def visualize_cluster(scores, cluster='all', title='', filename=None):
+#     '''
+#     Generate black and white image with the cluster of superpixels highlighted
+#     '''
+
+#     vis = scores[segmentation]
+#     if cluster != 'all':
+#         cluster_selection = np.equal.outer(segmentation, cluster).any(axis=2)
+#         vis[~cluster_selection] = 0
+
+#     plt.matshow(vis, cmap=plt.cm.Greys_r);
+#     plt.axis('off');
+#     plt.title(title)
+#     if filename is not None:
+#         plt.savefig(os.path.join(result_dir, 'stages', filename + '.png'), bbox_inches='tight')
+# #     plt.show()
+#     plt.close();
+
+
 def paint_superpixels_on_image(superpixels, segmentation, img):
     '''
     Highlight a cluster of superpixels on the real image
@@ -2139,6 +2226,7 @@ def apply_function_to_nested_list(func, l):
     Func applies to the list consisting of all elements of l, and return a list.
     l: a list of list
     """
+    from itertools import chain
     result = func(list(chain(*l)))
     csum = np.cumsum(map(len, l))
     new_l = [result[(0 if i == 0 else csum[i-1]):csum[i]] for i in range(len(l))]
@@ -2152,14 +2240,52 @@ def apply_function_to_dict(func, d):
             a function that takes as input the list consisting of a flatten list of values of `d`, and return a list.
         d (dict {key: list}):
     """
+    from itertools import chain
     result = func(list(chain(*d.values())))
     csum = np.cumsum(map(len, d.values()))
     new_d = {k: result[(0 if i == 0 else csum[i-1]):csum[i]] for i, k in enumerate(d.keys())}
     return new_d
 
+def smart_map(data, keyfunc, func):
+    """
+    Args:
+        data (list): data
+        keyfunc (func): a lambda function for data key.
+        func (func): a function that takes f(key, group). `group` is a sublist of `data`.
+                    func does a global operation using key.
+                    then does a same operation on each entry of group.
+                    return a list.
+    """
+
+    from itertools import groupby
+    from multiprocess import Pool
+
+    keyfunc_with_enum = lambda (i, x): keyfunc(x)
+
+    grouping = groupby(sorted(enumerate(data), key=keyfunc_with_enum), keyfunc_with_enum)
+    grouping_noidx = {}
+    grouping_idx = {}
+    for k, group in grouping:
+        grouping_idx[k], grouping_noidx[k] = zip(*group)
+
+    pool = Pool(15)
+    results_by_key = pool.map(lambda (k, group): func(k, group), grouping_noidx.iteritems())
+    pool.close()
+    pool.join()
+
+    # results_by_key = [func(k, group) for k, group in grouping_noidx.iteritems()]
+
+    keys = grouping_noidx.keys()
+    results_inOrigOrder = {i: res for k, results in zip(keys, results_by_key)
+                           for i, res in zip(grouping_idx[k], results)}
+
+    return results_inOrigOrder.values()
+
+
+import randomcolor
 
 def random_colors(count):
-    rand_color = RandomColor()
+    rand_color = randomcolor.RandomColor()
     random_colors = [map(int, rgb_str[4:-1].replace(',', ' ').split())
                      for rgb_str in rand_color.generate(luminosity="bright", count=count, format_='rgb')]
     return random_colors

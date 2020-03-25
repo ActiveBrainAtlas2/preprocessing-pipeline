@@ -7,7 +7,7 @@ from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComboBox, QPushButton
 
-from metadata import ordered_pipeline_steps
+from metadata import ordered_pipeline_steps, PROJECT_DIR
 from data_manager_v2 import DataManager
 from a_driver_utilities import set_step_completed_in_progress_ini
 
@@ -378,7 +378,7 @@ def save_dict_as_ini( input_dict, fp ):
 
 # Save the brain_metadata.sh file
 def save_metadata_in_shell_script( stack, stain, plane, thickness, resolution ):
-    fp = os.path.join( os.environ['PROJECT_DIR'], 'setup', 'set_'+stack+'_metadata.sh' )
+    fp = os.path.join( PROJECT_DIR, 'setup', 'set_'+stack+'_metadata.sh' )
     
     # Change ntb->NTB and thionin->Thionin
     if stain=='ntb':

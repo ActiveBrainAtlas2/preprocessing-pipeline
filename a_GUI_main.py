@@ -4,9 +4,9 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComboBox, QPushButton
 sys.path.append(os.path.join(os.getcwd(),'utilities'))
-print(sys.path)
-from metadata import all_stacks, stain_to_metainfo, stack_metadata, BRAINS_INFO_DIR
-from a_driver_utilities import get_current_step_from_progress_ini
+#print(sys.path)
+from utilities.metadata import all_stacks, stain_to_metainfo, stack_metadata, BRAINS_INFO_DIR
+from utilities.a_driver_utilities import get_current_step_from_progress_ini
 # get_current_step_from_progress_ini
 
 
