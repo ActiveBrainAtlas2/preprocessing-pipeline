@@ -5,9 +5,8 @@ from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComboBox, QPushButton
 sys.path.append(os.path.join(os.getcwd(),'utilities'))
 #print(sys.path)
-from utilities.metadata import all_stacks, stain_to_metainfo, stack_metadata, BRAINS_INFO_DIR
+from utilities.metadata import all_stacks, stain_to_metainfo, stack_metadata, ROOT_DIR
 from utilities.a_driver_utilities import get_current_step_from_progress_ini
-# get_current_step_from_progress_ini
 
 
 def format_grid_button_initial( button ):
@@ -211,7 +210,7 @@ class init_GUI(QWidget):
             
         # If there are no stacks/brains that have been started
         except KeyError:
-            for grid_button in [self.b_setup, self.b_align, self.b_mask, self.b_crop, 
+            for grid_button in [self.b_setup, self.b_align, self.b_mask, self.b_crop,
                             self.b_globalFit, self.b_localFit]:
                 format_grid_button_cantStart( grid_button )
                 
@@ -220,13 +219,13 @@ class init_GUI(QWidget):
     
     def updateStackDropdownMenu(self):
         new_stacks = []
-        if os.path.exists( BRAINS_INFO_DIR ):
-            for brain_ini in os.listdir( BRAINS_INFO_DIR ):
+        if os.path.exists( ROOT_DIR ):
+            for brain_ini in os.listdir( ROOT_DIR ):
                 # Two kinds of brain_ini files: 'progress' and 'metadata'
-                if 'progress' in brain_ini:
+                if os.path.exists(os.path.join(ROOT_DIR, brain_ini, 'brains_info','progress.ini')):
                     continue
 
-                brain_name = os.path.splitext(brain_ini)[0].replace('_metadata', '')
+                brain_name = brain_ini
                 if brain_name in all_stacks:
                     continue
                 # Add a brain to "new_stack" list if it is found and is not a part of "all_stacks"

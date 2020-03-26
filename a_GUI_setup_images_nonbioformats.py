@@ -256,7 +256,7 @@ def copy_over_tif_files( stack, raw_tiff_input_fp ):
         
     # Make STACKNAME_raw/ folder
     try:
-        raw_fp = DataManager.get_image_filepath_v2(stack, None, version=None, resol="raw", fn="$")
+        raw_fp = DataManager.get_image_filepath(stack, None, version=None, resol="raw", fn="$")
         os.makedirs( raw_fp[:raw_fp.index('$')] )
     except Exception as e:
         #print(e)
@@ -269,7 +269,7 @@ def copy_over_tif_files( stack, raw_tiff_input_fp ):
             if fn in raw_tiff_input_fn:
                 old_fp = os.path.join( raw_tiff_input_fp, raw_tiff_input_fn )
                 new_fp = DataManager.get_image_filepath_v2(stack, None, version=None, resol="raw", fn=fn)
-                command = ["cp", old_fp, new_fp]
+                command = ["cp -vi", old_fp, new_fp]
                 completion_message = 'Finished copying and renaming tiff file into the proper location.'
                 call_and_time( command, completion_message=completion_message)
                     

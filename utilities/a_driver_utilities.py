@@ -5,15 +5,13 @@ from data_manager_v2 import DataManager
 from metadata import ordered_pipeline_steps
 
 def get_current_step_from_progress_ini( stack ):
-    #try:
-    if True:
-        progress_dict = DataManager.get_brain_info_progress( stack )
+    progress_dict = DataManager.get_brain_info_progress( stack )
 
-        for pipeline_step in ordered_pipeline_steps:
-            completed = progress_dict[ pipeline_step ] in ['True','true']
-            if not completed:
-                return pipeline_step
-        return None
+    for pipeline_step in ordered_pipeline_steps:
+        completed = progress_dict[ pipeline_step ] in ['True','true']
+        if not completed:
+            return pipeline_step
+    return None
 
 def set_step_completed_in_progress_ini(stack, step):
     progress_dict = DataManager.get_brain_info_progress(stack)

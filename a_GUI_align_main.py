@@ -1,4 +1,4 @@
-import sys
+import os, sys
 import subprocess
 import argparse
 
@@ -6,6 +6,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton
 
+sys.path.append(os.path.join(os.getcwd(),'utilities'))
 from utilities.a_driver_utilities import get_current_step_from_progress_ini, set_step_completed_in_progress_ini
 from utilities.metadata import stack_metadata
 

@@ -27,254 +27,58 @@ else:
     #sys.stderr.write("ENABLE_DOWNLOAD_S3 is not set, default to False.\n")
 
 ON_DOCKER = False
-if hostname == 'atlasDocker':
-    print('Setting environment for the Docker Container')
-    ON_DOCKER = True
-    
-    try:
-        #ROOT_DIR = os.environ['ROOT_DIR']
-        #DATA_ROOTDIR = os.environ['ROOT_DIR']
-        #THUMBNAIL_DATA_ROOTDIR = os.environ['ROOT_DIR']
-        ROOT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
-        DATA_ROOTDIR = ROOT_DIR
-        THUMBNAIL_DATA_ROOTDIR = ROOT_DIR
-    except KeyError:
-        print("Please ensure you are inside the virtual environment.")
-        print("Run `source ./app`")
-        sys.exit(0)
-        
 
-    ON_AWS = False
-    S3_DATA_BUCKET = 'mousebrainatlas-data'
-    S3_RAWDATA_BUCKET = 'mousebrainatlas-rawdata'
-    
-    RAW_DATA_DIR = os.path.join(DATA_ROOTDIR, 'CSHL_data')
-    DATA_DIR = os.path.join(DATA_ROOTDIR, 'CSHL_data_processed')
-    THUMBNAIL_DATA_DIR = os.path.join(THUMBNAIL_DATA_ROOTDIR, 'CSHL_data_processed')
-    VOLUME_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_volumes')
-    MESH_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_meshes')
+PROJECT_DIR = os.getcwd()
+ROOT_DIR = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data"
 
-    # annotation_rootdir =  os.path.join(ROOT_DIR, 'CSHL_data_labelings_losslessAlignCropped')
-#     annotation_midbrainIncluded_v2_rootdir = '/home/yuncong/CSHL_labelings_v3/'
-    PATCH_FEATURES_ROOTDIR = os.path.join(DATA_ROOTDIR, 'CSHL_patch_features')
-    PATCH_LOCATIONS_ROOTDIR = os.path.join(DATA_ROOTDIR, 'CSHL_patch_locations')
+BRAINS_INFO_DIR = 'brains_info'
 
-    SCOREMAP_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_scoremaps')
-    SCOREMAP_VIZ_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_scoremap_viz')
-    SPARSE_SCORES_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_patch_scores')
+REPO_DIR = PROJECT_DIR
+DATA_ROOTDIR = ROOT_DIR
+THUMBNAIL = 'thumbnail'
+HOST_ID = 'workstation'
 
-    ANNOTATION_ROOTDIR =  os.path.join(ROOT_DIR, 'CSHL_labelings_v3')
-    ANNOTATION_THALAMUS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_labelings_thalamus')
-    CLF_ROOTDIR =  os.path.join(DATA_ROOTDIR, 'classifiers')
+# ON_AWS = False
+S3_DATA_BUCKET = 'mousebrainatlas-data'
+S3_RAWDATA_BUCKET = 'mousebrainatlas-rawdata'
+S3_DATA_DIR = 'CSHL_data_processed'
+RAW_DATA_DIR = 'CSHL_data'
+DATA_DIR = 'CSHL_data_processed'
+VOLUME_ROOTDIR = 'CSHL_volumes'
 
-    REGISTRATION_PARAMETERS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_registration_parameters')
-    REGISTRATION_VIZ_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_registration_visualization')
+MESH_ROOTDIR = 'CSHL_meshes'
 
-    KDU_EXPAND_BIN = '/app/KDU7A2_Demo_Apps_for_Ubuntu-x86-64_170827/kdu_expand'
+ANNOTATION_ROOTDIR = 'CSHL_labelings_'
+ANNOTATION_THALAMUS_ROOTDIR = 'CSHL_labelings_thalamus'
+ANNOTATION_VIZ_ROOTDIR = 'CSHL_annotation_viz'
+PATCH_FEATURES_ROOTDIR = 'CSHL_patch_features'
+PATCH_LOCATIONS_ROOTDIR = 'CSHL_patch_locations'
+SCOREMAP_ROOTDIR = 'CSHL_scoremaps'
+SCOREMAP_VIZ_ROOTDIR = 'CSHL_scoremap_viz'
+SPARSE_SCORES_ROOTDIR = 'CSHL_patch_scores'
+REGISTRATION_PARAMETERS_ROOTDIR = 'CSHL_registration_parameters'
+REGISTRATION_VIZ_ROOTDIR = 'CSHL_registration_visualization'
+ELASTIX_BIN = 'elastix'
+KDU_EXPAND_BIN = '/usr/local/bin/kdu_expand'
 
-    CLASSIFIER_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'classifier_settings.csv')
-    DATASET_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'dataset_settings.csv')
-    REGISTRATION_SETTINGS_CSV = os.path.join(REPO_DIR, 'registration', 'registration_settings.csv')
-    PREPROCESS_SETTINGS_CSV = os.path.join(REPO_DIR, 'preprocess', 'preprocess_settings.csv')
-    DETECTOR_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'detector_settings.csv')
+CELLS_ROOTDIR = 'CSHL_cells_v2'
 
-    MXNET_MODEL_ROOTDIR = os.path.join(ROOT_DIR, 'mxnet_models')
+DETECTED_CELLS_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'detected_cells')
+CELL_EMBEDDING_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'embedding')
+D3JS_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'd3js')
+CELL_FEATURES_CLF_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'classifiers')
 
-    ELASTIX_BIN = 'elastix'
+CLF_ROOTDIR = 'CSHL_classifiers'
 
-elif hostname == 'ratto.dk.ucsd.edu' and username == 'adnewber':
-    print('Setting environment for Precision WorkStation for Alex Newberry')
-    HOST_ID = 'workstation'
+CLASSIFIER_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'classifier_settings.csv')
+DATASET_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'dataset_settings.csv')
+REGISTRATION_SETTINGS_CSV = os.path.join(REPO_DIR, 'registration', 'registration_settings.csv')
+PREPROCESS_SETTINGS_CSV = os.path.join(REPO_DIR, 'preprocess', 'preprocess_settings.csv')
+DETECTOR_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'detector_settings.csv')
 
-    if 'ROOT_DIR' in os.environ:
-        ROOT_DIR = os.environ['ROOT_DIR']
-    else:
-        ROOT_DIR = '/home/alexn/'
-
-    if 'DATA_ROOTDIR' in os.environ:
-        DATA_ROOTDIR = os.environ['DATA_ROOTDIR']
-    else:
-        DATA_ROOTDIR = '/home/alexn/data'
-
-    if 'THUMBNAIL_DATA_ROOTDIR' in os.environ:
-        THUMBNAIL_DATA_ROOTDIR = os.environ['THUMBNAIL_DATA_ROOTDIR']
-    else:
-        THUMBNAIL_DATA_ROOTDIR = '/home/alexn/data'
-
-    RAW_DATA_DIR = os.path.join(DATA_ROOTDIR, 'CSHL_data')
-
-    ON_AWS = False
-    S3_DATA_BUCKET = 'mousebrainatlas-data'
-    S3_RAWDATA_BUCKET = 'mousebrainatlas-rawdata'
-
-    REPO_DIR = os.environ['REPO_DIR']
-
-    DATA_DIR = os.path.join(DATA_ROOTDIR, 'CSHL_data_processed')
-
-    THUMBNAIL_DATA_DIR = os.path.join(THUMBNAIL_DATA_ROOTDIR, 'CSHL_data_processed')
-    VOLUME_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_volumes')
-    # MESH_ROOTDIR =  '/home/alexn/CSHL_meshes'
-    MESH_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_meshes')
-
-    # annotation_rootdir =  os.path.join(ROOT_DIR, 'CSHL_data_labelings_losslessAlignCropped')
-#     annotation_midbrainIncluded_v2_rootdir = '/home/yuncong/CSHL_labelings_v3/'
-    PATCH_FEATURES_ROOTDIR = os.path.join(DATA_ROOTDIR, 'CSHL_patch_features')
-    PATCH_LOCATIONS_ROOTDIR = os.path.join(DATA_ROOTDIR, 'CSHL_patch_locations')
-
-    SCOREMAP_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_scoremaps')
-    SCOREMAP_VIZ_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_scoremap_viz')
-    SPARSE_SCORES_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_patch_scores')
-
-    ANNOTATION_ROOTDIR =  os.path.join(ROOT_DIR, 'CSHL_labelings_v3')
-    ANNOTATION_THALAMUS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_labelings_thalamus')
-    CLF_ROOTDIR =  os.path.join(DATA_ROOTDIR, 'CSHL_classifiers')
-
-    REGISTRATION_PARAMETERS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_registration_parameters')
-    REGISTRATION_VIZ_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_registration_visualization')
-
-    KDU_EXPAND_BIN = '/home/yuncong/KDU7A2_Demo_Apps_for_Centos7-x86-64_170827/kdu_expand'
-
-    CLASSIFIER_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'classifier_settings.csv')
-    DATASET_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'dataset_settings.csv')
-    REGISTRATION_SETTINGS_CSV = os.path.join(REPO_DIR, 'registration', 'registration_settings.csv')
-    PREPROCESS_SETTINGS_CSV = os.path.join(REPO_DIR, 'preprocess', 'preprocess_settings.csv')
-    DETECTOR_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'detector_settings.csv')
-
-    MXNET_MODEL_ROOTDIR = os.path.join(ROOT_DIR, 'mxnet_models')
-
-    ELASTIX_BIN = 'elastix'
-
-
-elif hostname.startswith('ip'):
-    print('Setting environment for AWS compute node')
-    HOST_ID = 'ec2'
-
-    if 'ROOT_DIR' in os.environ:
-        ROOT_DIR = os.environ['ROOT_DIR']
-    else:
-        ROOT_DIR = '/shared'
-
-    if 'DATA_ROOTDIR' in os.environ:
-        DATA_ROOTDIR = os.environ['DATA_ROOTDIR']
-    else:
-        DATA_ROOTDIR = '/shared'
-
-    if 'THUMBNAIL_DATA_ROOTDIR' in os.environ:
-        THUMBNAIL_DATA_ROOTDIR = os.environ['THUMBNAIL_DATA_ROOTDIR']
-    else:
-        THUMBNAIL_DATA_ROOTDIR = '/shared'
-
-    ON_AWS = True
-    S3_DATA_BUCKET = 'mousebrainatlas-data'
-    S3_RAWDATA_BUCKET = 'mousebrainatlas-rawdata'
-    S3_DATA_DIR = 'CSHL_data_processed'
-    REPO_DIR = os.environ['REPO_DIR']
-    RAW_DATA_DIR = os.path.join(ROOT_DIR, 'CSHL_data')
-    DATA_DIR = os.path.join(DATA_ROOTDIR, 'CSHL_data_processed')
-    THUMBNAIL_DATA_DIR = os.path.join(THUMBNAIL_DATA_ROOTDIR, 'CSHL_data_processed')
-    VOLUME_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_volumes')
-
-    MESH_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_meshes')
-
-    # SCOREMAP_VIZ_ROOTDIR = '/shared/CSHL_scoremap_viz_Sat16ClassFinetuned_v2'
-    ANNOTATION_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_labelings_v3')
-    ANNOTATION_THALAMUS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_labelings_thalamus')
-    ANNOTATION_VIZ_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_annotation_viz')
-    # SVM_ROOTDIR = '/shared/CSHL_patch_features_Sat16ClassFinetuned_v2_classifiers/'
-    # SVM_NTBLUE_ROOTDIR = '/shared/CSHL_patch_features_Sat16ClassFinetuned_v2_classifiers_neurotraceBlue/'
-    PATCH_FEATURES_ROOTDIR = os.path.join(DATA_ROOTDIR, 'CSHL_patch_features')
-    PATCH_LOCATIONS_ROOTDIR = os.path.join(DATA_ROOTDIR, 'CSHL_patch_locations')
-    SCOREMAP_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_scoremaps')
-    SCOREMAP_VIZ_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_scoremap_viz')
-    SPARSE_SCORES_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_patch_scores')
-    REGISTRATION_PARAMETERS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_registration_parameters')
-    REGISTRATION_VIZ_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_registration_visualization')
-    # SPARSE_SCORES_ROOTDIR = '/shared/CSHL_patch_Sat16ClassFinetuned_v2_predictions'
-    # SCOREMAPS_ROOTDIR = '/shared/CSHL_lossless_scoremaps_Sat16ClassFinetuned_v2'
-    # HESSIAN_ROOTDIR = '/shared/CSHL_hessians/'
-    ELASTIX_BIN = 'elastix'
-    KDU_EXPAND_BIN = '/home/ubuntu/KDU79_Demo_Apps_for_Linux-x86-64_170108/kdu_expand'
-    CELLPROFILER_EXEC = 'python /shared/CellProfiler/CellProfiler.py' # /usr/local/bin/cellprofiler
-    CELLPROFILER_PIPELINE_FP = '/shared/CSHL_cells_v2/SegmentCells.cppipe'
-
-    if 'CELLS_ROOTDIR' in os.environ:
-        CELLS_ROOTDIR = os.environ['CELLS_ROOTDIR']
-    else:
-        CELLS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_cells_v2')
-
-    DETECTED_CELLS_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'detected_cells')
-    CELL_EMBEDDING_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'embedding')
-    D3JS_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'd3js')
-    CELL_FEATURES_CLF_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'classifiers')
-
-    CLF_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_classifiers')
-
-    CLASSIFIER_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'classifier_settings.csv')
-    DATASET_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'dataset_settings.csv')
-    REGISTRATION_SETTINGS_CSV = os.path.join(REPO_DIR, 'registration', 'registration_settings.csv')
-    PREPROCESS_SETTINGS_CSV = os.path.join(REPO_DIR, 'preprocess', 'preprocess_settings.csv')
-    DETECTOR_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'detector_settings.csv')
-
-    MXNET_MODEL_ROOTDIR = os.path.join(ROOT_DIR, 'mxnet_models')
-
-    LABELED_NEURONS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_labeled_neurons')
-
-    CSHL_SPM_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_SPM')
-
-else:
-    PROJECT_DIR = os.getcwd()
-    ROOT_DIR = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK43"
-    REPO_DIR = PROJECT_DIR
-    DATA_ROOTDIR = ROOT_DIR
-    THUMBNAIL_DATA_ROOTDIR = ROOT_DIR
-    HOST_ID = 'workstation'
-
-    # ON_AWS = False
-    S3_DATA_BUCKET = 'mousebrainatlas-data'
-    S3_RAWDATA_BUCKET = 'mousebrainatlas-rawdata'
-    S3_DATA_DIR = 'CSHL_data_processed'
-    RAW_DATA_DIR = os.path.join(ROOT_DIR, 'CSHL_data')
-    DATA_DIR = os.path.join(DATA_ROOTDIR, 'CSHL_data_processed')
-    THUMBNAIL_DATA_DIR = os.path.join(THUMBNAIL_DATA_ROOTDIR, 'CSHL_data_processed')
-    VOLUME_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_volumes')
-
-    MESH_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_meshes')
-
-    ANNOTATION_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_labelings_v3')
-    ANNOTATION_THALAMUS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_labelings_thalamus')
-    ANNOTATION_VIZ_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_annotation_viz')
-    PATCH_FEATURES_ROOTDIR = os.path.join(DATA_ROOTDIR, 'CSHL_patch_features')
-    PATCH_LOCATIONS_ROOTDIR = os.path.join(DATA_ROOTDIR, 'CSHL_patch_locations')
-    SCOREMAP_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_scoremaps')
-    SCOREMAP_VIZ_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_scoremap_viz')
-    SPARSE_SCORES_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_patch_scores')
-    REGISTRATION_PARAMETERS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_registration_parameters')
-    REGISTRATION_VIZ_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_registration_visualization')
-    ELASTIX_BIN = 'elastix'
-    #KDU_EXPAND_BIN = '/home/ubuntu/KDU79_Demo_Apps_for_Linux-x86-64_170108/kdu_expand'
-
-    CELLS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_cells_v2')
-
-    DETECTED_CELLS_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'detected_cells')
-    CELL_EMBEDDING_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'embedding')
-    D3JS_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'd3js')
-    CELL_FEATURES_CLF_ROOTDIR = os.path.join(CELLS_ROOTDIR, 'classifiers')
-
-    CLF_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_classifiers')
-
-    CLASSIFIER_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'classifier_settings.csv')
-    DATASET_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'dataset_settings.csv')
-    REGISTRATION_SETTINGS_CSV = os.path.join(REPO_DIR, 'registration', 'registration_settings.csv')
-    PREPROCESS_SETTINGS_CSV = os.path.join(REPO_DIR, 'preprocess', 'preprocess_settings.csv')
-    DETECTOR_SETTINGS_CSV = os.path.join(REPO_DIR, 'learning', 'detector_settings.csv')
-
-    MXNET_MODEL_ROOTDIR = os.path.join(ROOT_DIR, 'mxnet_models')
-
-    LABELED_NEURONS_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_labeled_neurons')
-
-    CSHL_SPM_ROOTDIR = os.path.join(ROOT_DIR, 'CSHL_SPM')
-
-
+MXNET_MODEL_ROOTDIR = 'mxnet_models'
+LABELED_NEURONS_ROOTDIR = 'CSHL_labeled_neurons'
+CSHL_SPM_ROOTDIR = 'CSHL_SPM'
 
 #################### Resolution conversions ############
 
@@ -548,7 +352,6 @@ if False:
     #all_stacks = ['MD603','MD635','MD585']
 
 
-BRAINS_INFO_DIR = os.path.join(DATA_ROOTDIR, 'brains_info')
 
 # from utilities2015 import load_ini
 
@@ -576,33 +379,28 @@ def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
 
 planar_resolution = {}
 stack_metadata = {}
-if os.path.exists( BRAINS_INFO_DIR ):
-    for brain_ini in os.listdir( BRAINS_INFO_DIR ):
-        # Two kinds of brain_ini files: 'progress' and 'metadata'
-        if 'progress' in brain_ini:
-            continue
-        
-        brain_name = os.path.splitext(brain_ini)[0]
-        brain_name = brain_name.replace('_metadata', '')
-        
-        brain_info = load_ini(os.path.join(BRAINS_INFO_DIR, brain_ini))
-        planar_resolution[brain_name] = float(brain_info['planar_resolution_um'])
-        stain = brain_info['stain']
-        cutting_plane = brain_info['cutting_plane']
-        cutting_plane = brain_info['cutting_plane']
-        section_thickness = brain_info['section_thickness_um']
-        
-        all_stacks.append( brain_name )
-        if stain == "NTB":
-            all_ntb_stacks.append( brain_name )
-        elif stain == "Thionin":
-            all_nissl_stacks.append( brain_name )
-        # Fill in stack_metadata:
-        stack_metadata[brain_name] = {'stain': stain,
-                                      'cutting_plane': cutting_plane,
-                                      'resolution': float(brain_info['planar_resolution_um']),
-                                      'section_thickness': section_thickness}
-            
+if os.path.exists( ROOT_DIR ):
+    for brain in os.listdir( ROOT_DIR ):
+        inifile = os.path.join(ROOT_DIR, brain, 'brains_info', 'metadata.ini')
+        if os.path.exists(inifile):
+            brain_info = load_ini(inifile)
+            planar_resolution[brain] = float(brain_info['planar_resolution_um'])
+            stain = brain_info['stain']
+            cutting_plane = brain_info['cutting_plane']
+            cutting_plane = brain_info['cutting_plane']
+            section_thickness = brain_info['section_thickness_um']
+
+            all_stacks.append( brain )
+            if stain == "NTB":
+                all_ntb_stacks.append( brain )
+            elif stain == "Thionin":
+                all_nissl_stacks.append( brain )
+            # Fill in stack_metadata:
+            stack_metadata[brain] = {'stain': stain,
+                                          'cutting_plane': cutting_plane,
+                                          'resolution': float(brain_info['planar_resolution_um']),
+                                          'section_thickness': section_thickness}
+
 
 #print planar_resolution
 stain_to_metainfo = {'ntb': {'detector_id': 799, 'img_version_1': 'NtbNormalized', 

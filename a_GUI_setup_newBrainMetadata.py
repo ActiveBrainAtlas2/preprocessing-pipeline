@@ -342,7 +342,7 @@ def set_stack_metadata( stack, stain, plane, thickness, resolution):
     
     fp = DataManager.get_brain_info_metadata_fp( stack )
     try:
-        os.makedirs( DataManager.get_brain_info_root_folder() )
+        os.makedirs( DataManager.get_brain_info_root_folder(stack) )
     except:
         pass
     
