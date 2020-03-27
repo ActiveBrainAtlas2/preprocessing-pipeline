@@ -38,7 +38,7 @@ class DataManager(object):
                 continue
             # Try to load metadata_cache.json file before doing anything else
             try:
-                with open(ROOT_DIR + 'CSHL_data_processed/' + stack + '/' + stack + '_metadata_cache.json') as json_file:
+                with open(os.path.join(ROOT_DIR, stack , 'brains_info', 'metadata_cache.json')) as json_file:
                     saved_metadata = json.load(json_file)
                 for key in saved_metadata.keys():
                     # The metadata_cache json file has extraneous keys. (currently only "stack")
@@ -78,14 +78,14 @@ class DataManager(object):
                 pass
 
             try:
-                self.metadata_cache['section_limits'][stack] = DataManager.load_section_limits_v2(stack, prep_id=2)
+                self.metadata_cache['section_limits'][stack] = DataManager.load_section_limits_v2(stack, operation=2)
             except Exception as e:
                 # sys.stderr.write("Failed to cache %s section_limits: %s\n" % (stack, e.message))
                 pass
 
             try:
                 # alignedBrainstemCrop cropping box relative to alignedpadded
-                self.metadata_cache['cropbox'][stack] = DataManager.load_cropbox_v2(stack, prep_id=2)
+                self.metadata_cache['cropbox'][stack] = DataManager.load_cropbox_v2(stack, operation=2)
             except Exception as e:
                 # sys.stderr.write("Failed to cache %s cropbox: %s\n" % (stack, e.message))
                 pass
@@ -233,7 +233,7 @@ class DataManager(object):
 
 
     @staticmethod
-    def get_image_filepath(prep_id, version=None, resol=None,
+    def get_image_filepath(stack, version=None, resol=None,
                            section=None, fn=None, ext=None, sorted_filenames_fp=None):
         """
         Args:
@@ -242,17 +242,15 @@ class DataManager(object):
         Returns:
             Absolute path of the image file.
         """
-        print('prep_id is ', prep_id, type(prep_id))
-        data_dir = os.path.join(ROOT_DIR, prep_id, 'tif')
-        thumbnail_data_dir = os.path.join(ROOT_DIR, prep_id, 'thumbnail')
+        print('stack is ', stack, type(stack))
+        data_dir = os.path.join(ROOT_DIR, stack, 'tif')
+        thumbnail_data_dir = os.path.join(ROOT_DIR, stack, 'thumbnail')
         if section is not None:
             try:
-                DataManager.metadata_cache['sections_to_filenames'][prep_id]
+                DataManager.metadata_cache['sections_to_filenames'][stack]
             except:
-                sys.stderr.write( 'No sorted filenames could be loaded for '+prep_id+'. May not have been set up correctly.' )
+                sys.stderr.write('No sorted filenames could be loaded for {}. May not have been set up correctly.'.format(stack) )
                 return
-
-
 
             if sorted_filenames_fp is not None:
                 _, sections_to_filenames = DataManager.load_sorted_filenames(fp=sorted_filenames_fp)
@@ -260,19 +258,19 @@ class DataManager(object):
                     raise Exception('Section %d is not specified in sorted list.' % section)
                 fn = sections_to_filenames[section]
             else:
-                if section not in DataManager.metadata_cache['sections_to_filenames'][prep_id]:
+                if section not in DataManager.metadata_cache['sections_to_filenames'][stack]:
                     raise Exception('Section %d is not specified in sorted list.' % section)
-                fn = DataManager.metadata_cache['sections_to_filenames'][prep_id][section]
+                fn = DataManager.metadata_cache['sections_to_filenames'][stack][section]
 
-            if DataManager.is_invalid(fn=fn, stack=prep_id):
+            if DataManager.is_invalid(fn=fn, stack=stack):
                 raise Exception('Section is invalid: %s.' % fn)
         else:
             assert fn is not None
 
-        image_dir = DataManager.get_image_dir(prep_id=prep_id, resol=resol, version=version)
-        image_dir = os.path.join(ROOT_DIR, prep_id, 'raw')
+        image_dir = DataManager.get_image_dir(stack=stack, resol=resol, version=version)
+        image_dir = os.path.join(ROOT_DIR, stack, 'raw')
         if version is None:
-            image_name = '{}_{}_{}.tif'.format(fn, prep_id, resol)
+            image_name = '{}_{}_{}.tif'.format(fn, stack, resol)
         else:
             if ext is None:
                 if version == 'mask':
@@ -281,7 +279,7 @@ class DataManager(object):
                     ext = 'jpg'
                 else:
                     ext = 'tif'
-            image_name = '{}_{}_{}_{}.{}'.format(fn, prep_id, resol, version, ext)
+            image_name = '{}_{}_{}_{}.{}'.format(fn, stack, resol, version, ext)
 
         image_path = os.path.join(image_dir, image_name)
         return image_path
@@ -297,7 +295,7 @@ class DataManager(object):
         return os.path.join( ROOT_DIR, stack, 'tif')
 
     @staticmethod
-    def get_image_dir(prep_id, version=None, resol=None):
+    def get_image_dir(stack, version=None, resol=None):
         """
         Args:
             version (str): version string
@@ -305,12 +303,12 @@ class DataManager(object):
             Absolute path of the image directory.
         """
         data_dir = ROOT_DIR
-        print('prep_id is ', prep_id, type(prep_id))
+        print('stack is ', stack, type(stack))
 
         if resol == 'thumbnail' or resol == 'down64':
-            image_dir = os.path.join( ROOT_DIR, prep_id, 'thumbnail')
+            image_dir = os.path.join( ROOT_DIR, stack, 'thumbnail')
         else:
-            image_dir = os.path.join( ROOT_DIR, prep_id, 'tif')
+            image_dir = os.path.join( ROOT_DIR, stack, 'tif')
 
         return image_dir
 
@@ -327,19 +325,198 @@ class DataManager(object):
         return os.path.join(ROOT_DIR, stack, '{}'.format(channel) )
 
 
+    """
+    Note: 3/27/2020, stack and prep_id are sometimes the same variable.
+    stack is prep_id from the database.
+    For the method below, the original argument was prep_id, which i have 
+    changed to operation
+    """
+    @staticmethod
+    def get_image_dimension(stack, operation='alignedBrainstemCrop'):
+        """
+        Returns the dimensions at raw resolution for the alignedBrainstemCrop images.
+
+        Returns:
+            (raw image width, raw image height)
+        """
+
+        # first_sec, last_sec = DataManager.load_cropbox(stack)[4:]
+        # anchor_fn = DataManager.load_anchor_filename(stack)
+        # filename_to_section, section_to_filename = DataManager.load_sorted_filenames(stack)
+
+        xmin, xmax, ymin, ymax = DataManager.load_cropbox_v2(stack=stack, operation=operation)
+        return (xmax - xmin + 1) * 32, (ymax - ymin + 1) * 32
 
 
+    @staticmethod
+    def load_anchor_filename(stack):
+        fp = DataManager.get_anchor_filename_filename(stack)
+        if not os.path.exists(fp):
+            #sys.stderr.write("No anchor.txt is found. Seems we are using the operation ini to provide anchor. Try to load operation ini.\n")
+            fp = DataManager.get_anchor_filename_filename_v2(stack) # ini
+            anchor_image_name = load_ini(fp)['anchor_image_name']
+        else:
+            # download_from_s3(fp, local_root=THUMBNAIL_DATA_ROOTDIR)
+            anchor_image_name = DataManager.load_data(fp, filetype='anchor')
+        return anchor_image_name
 
 
-    def is_invalid(self, fn=None, sec=None, prep_id=None):
+    @staticmethod
+    def load_section_limits_v2(stack, anchor_fn=None, operation=2):
+        """
+        """
+
+        d = DataManager.load_data(DataManager.get_section_limits_filename_v2(stack=stack, anchor_fn=anchor_fn, operation=operation))
+        return np.r_[d['left_section_limit'], d['right_section_limit']]
+
+
+    @staticmethod
+    def get_section_limits_filename_v2(stack, anchor_fn=None, operation=2):
+        """
+        Return path to file that specified the cropping box of the given crop specifier.
+
+        Args:
+            operation (int or str): 2D frame specifier
+        """
+
+
+        if anchor_fn is None:
+            anchor_fn = DataManager.load_anchor_filename(stack=stack)
+
+        fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_alignedTo_' + anchor_fn + '_prep' + str(operation) + '_sectionLimits.json')
+        if not os.path.exists(fp):
+            fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_prep' + str(operation) + '_sectionLimits.ini')
+
+        return fp
+
+
+    @staticmethod
+    def load_cropbox_v2(stack, anchor_fn=None, convert_section_to_z=False, operation=2,
+                        return_origin_instead_of_bbox=False,
+                       return_dict=False, only_2d=True):
+        """
+        Loads the cropping box for the given crop at thumbnail (downsample 32 times from raw) resolution.
+
+        Args:
+            convert_section_to_z (bool): If true, return (xmin,xmax,ymin,ymax,zmin,zmax) where z=0 is section #1; if false, return (xmin,xmax,ymin,ymax,secmin,secmax)
+            operation (int)
+        """
+
+        if isinstance(operation, str):
+            fp = DataManager.get_cropbox_filename_v2(stack=stack, anchor_fn=anchor_fn, operation=operation)
+        elif isinstance(operation, int):
+            # fp = DataManager.get_cropbox_filename(stack=stack, anchor_fn=anchor_fn, operation=operation)
+            fp = DataManager.get_cropbox_filename_v2(stack=stack, anchor_fn=anchor_fn, operation=operation)
+        else:
+            raise Exception("operation %s must be either str or int" % operation)
+
+        if not os.path.exists(fp):
+            #sys.stderr.write("Seems you are using operation INIs to provide cropbox.\n")
+            if operation == 2 or operation == 'alignedBrainstemCrop':
+                fp = os.path.join(ROOT_DIR, stack, 'brains_info', 'from_padded_to_brainstem.ini')
+            elif operation == 5 or operation == 'alignedWithMargin':
+                fp = os.path.join(ROOT_DIR, stack, 'brains_info', 'from_padded_to_wholeslice.ini')
+            else:
+                raise Exception("Not implemented")
+        else:
+            print('TESTING')
+            #raise Exception("Cannot find any cropbox specification.")
+
+            # download_from_s3(fp, local_root=THUMBNAIL_DATA_ROOTDIR)
+
+        if fp.endswith('.txt'):
+            xmin, xmax, ymin, ymax, secmin, secmax = DataManager.load_data(fp).astype(np.int)
+
+            if convert_section_to_z:
+                zmin = int(DataManager.convert_section_to_z(stack=stack, sec=secmin, downsample=32, z_begin=0, mid=True))
+                zmax = int(DataManager.convert_section_to_z(stack=stack, sec=secmax, downsample=32, z_begin=0, mid=True))
+
+        elif fp.endswith('.json') or fp.endswith('.ini'):
+            if fp.endswith('.json'):
+                cropbox_dict = DataManager.load_data(fp)
+            else:
+
+                if fp.endswith('cropbox.ini'):
+                    cropbox_dict = load_ini(fp, section=operation)
+                elif '_to_' in fp:
+                    cropbox_dict = load_ini(fp)
+                else:
+                    raise Exception("Do not know how to parse %s for cropbox" % fp)
+
+        assert cropbox_dict['resolution'] == 'thumbnail', "Provided cropbox must have thumbnail resolution."
+
+        xmin = cropbox_dict['rostral_limit']
+        xmax = cropbox_dict['caudal_limit']
+        ymin = cropbox_dict['dorsal_limit']
+        ymax = cropbox_dict['ventral_limit']
+
+        if 'left_limit_section_number' in cropbox_dict:
+            secmin = cropbox_dict['left_limit_section_number']
+        else:
+            secmin = None
+
+        if 'right_limit_section_number' in cropbox_dict:
+            secmax = cropbox_dict['right_limit_section_number']
+        else:
+            secmax = None
+
+        if 'left_limit' in cropbox_dict:
+            zmin = cropbox_dict['left_limit']
+        else:
+            zmin = None
+
+        if 'right_limit' in cropbox_dict:
+            zmax = cropbox_dict['right_limit']
+        else:
+            zmax = None
+
+        if return_dict:
+            if convert_section_to_z:
+                cropbox_dict = {'rostral_limit': xmin,
+                'caudal_limit': xmax,
+                'dorsal_limit': ymin,
+                'ventral_limit': ymax,
+                'left_limit': zmin,
+                'right_limit': zmax}
+            else:
+                cropbox_dict = {'rostral_limit': xmin,
+                'caudal_limit': xmax,
+                'dorsal_limit': ymin,
+                'ventral_limit': ymax,
+                'left_limit_section_number': secmin,
+                'right_limit_section_number': secmax}
+            return cropbox_dict
+
+        else:
+            if convert_section_to_z:
+                cropbox = np.array((xmin, xmax, ymin, ymax, zmin, zmax))
+                if return_origin_instead_of_bbox:
+                    return cropbox[[0,2,4]].astype(np.int)
+                else:
+                    if only_2d:
+                        return cropbox[:4].astype(np.int)
+                    else:
+                        return cropbox.astype(np.int)
+            else:
+                assert not return_origin_instead_of_bbox
+                cropbox = np.array((xmin, xmax, ymin, ymax, secmin, secmax))
+                print(cropbox)
+                if only_2d:
+                    return cropbox[:4].astype(np.int)
+                else:
+                    return cropbox.astype(np.int)
+
+
+    @staticmethod
+    def is_invalid(fn=None, sec=None, stack=None):
         """
         Determine if a section is invalid (i.e. tagged nonexisting, rescan or placeholder in the brain labeling GUI).
         """
         if sec is not None:
-            assert prep_id is not None, 'is_invalid: if section is given, prep_id must not be None.'
-            if sec not in self.metadata_cache['sections_to_filenames'][prep_id]:
+            assert stack is not None, 'is_invalid: if section is given, stack must not be None.'
+            if sec not in DataManager.metadata_cache['sections_to_filenames'][stack]:
                 return True
-            fn = self.metadata_cache['sections_to_filenames'][prep_id][sec]
+            fn = DataManager.metadata_cache['sections_to_filenames'][stack][sec]
         else:
             assert fn is not None, 'If sec is not provided, must provide fn'
         return fn in ['Nonexisting', 'Rescan', 'Placeholder']
