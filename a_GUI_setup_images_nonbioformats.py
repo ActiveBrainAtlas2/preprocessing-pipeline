@@ -1,4 +1,4 @@
-import os, sys
+import os
 import subprocess
 import argparse
 import json
@@ -7,16 +7,10 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QTextEdit, QPushButton
 
-#import tkFileDialog as filedialog
-#from Tkinter import *
-
 from tkinter import filedialog
 from tkinter import *
 
-
-
 sys.path.append(os.path.join(os.getcwd(),'utilities'))
-#print(sys.path)
 from utilities.metadata import ON_DOCKER
 from utilities.a_driver_utilities import set_step_completed_in_progress_ini, call_and_time
 from data_manager_v2 import DataManager
@@ -211,7 +205,7 @@ class init_GUI(QWidget):
         #if self.filepath_sfns != "":
             #set_step_completed_in_progress_ini( stack, '1-4_setup_sorted_filenames')
         
-        subprocess.call( ['python', 'a_script_preprocess_setup.py', stack, 'unknown'] )
+        subprocess.call( ['python', 'utilities/a_script_preprocess_setup.py', stack, 'unknown'] )
         
         set_step_completed_in_progress_ini( stack, '1-2_setup_images')
         
@@ -221,7 +215,7 @@ class init_GUI(QWidget):
             
 def create_parent_folder_for_files( stack ):
     try:
-        raw_fp = DataManager.get_image_filepath_v2(stack, None, version=None, resol="raw", fn='$')
+        raw_fp = DataManager.get_image_filepath(stack, resol="raw", fn='$')
         raw_fp = raw_fp[0:raw_fp.index('$')]
         os.makedirs( raw_fp )
     except:
@@ -239,10 +233,10 @@ def copy_over_jp2_files( stack, raw_jp2_input_fn_fp, raw_jp2_input_fp ):
     # CONVERT *.jp2 to *.tif
     json_fn = stack+'_raw_input_spec.json'
     # Create the data file necessary to run the jp2_to_tiff script
-    json_data = [{"version": None, \
-                 "resolution": "raw", \
-                 "data_dirs": raw_jp2_input_fp, \
-                 "filepath_to_imageName_mapping": raw_jp2_input_fp+"/(.*?)"+resolution+".jp2", \
+    json_data = [{"version": None,
+                 "resolution": "raw",
+                 "data_dirs": raw_jp2_input_fp,
+                 "filepath_to_imageName_mapping": raw_jp2_input_fp+"/(.*?)"+resolution+".jp2",
                  "imageName_to_filepath_mapping": raw_jp2_input_fp+"/%s"+resolution+".jp2"}]
     with open( json_fn, 'w') as outfile:
         json.dump( json_data, outfile)
@@ -256,7 +250,7 @@ def copy_over_tif_files( stack, raw_tiff_input_fp ):
         
     # Make STACKNAME_raw/ folder
     try:
-        raw_fp = DataManager.get_image_filepath(stack, None, version=None, resol="raw", fn="$")
+        raw_fp = DataManager.get_image_filepath(stack, resol="raw", fn="$")
         os.makedirs( raw_fp[:raw_fp.index('$')] )
     except Exception as e:
         #print(e)
@@ -268,8 +262,8 @@ def copy_over_tif_files( stack, raw_tiff_input_fp ):
         for raw_tiff_input_fn in raw_tiff_input_fns:
             if fn in raw_tiff_input_fn:
                 old_fp = os.path.join( raw_tiff_input_fp, raw_tiff_input_fn )
-                new_fp = DataManager.get_image_filepath_v2(stack, None, version=None, resol="raw", fn=fn)
-                command = ["cp -vi", old_fp, new_fp]
+                new_fp = DataManager.get_image_filepath(stack, resol="raw", fn=fn)
+                command = ["cp", old_fp, new_fp]
                 completion_message = 'Finished copying and renaming tiff file into the proper location.'
                 call_and_time( command, completion_message=completion_message)
                     
@@ -329,8 +323,8 @@ def get_selected_fp( initialdir='/', default_filetype=("jp2 files","*.jp2") ):
         initialdir = '/mnt/computer_root/'
         
     root = Tk()
-    root.filename = filedialog.askopenfilename(initialdir = initialdir,\
-                                                title = "Select file",\
+    root.filename = filedialog.askopenfilename(initialdir = initialdir,
+                                                title = "Select file",
                                                 filetypes = default_filetype)
     fn = root.filename
     root.destroy()

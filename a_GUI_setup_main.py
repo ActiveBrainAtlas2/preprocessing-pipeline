@@ -195,7 +195,7 @@ class init_GUI(QWidget):
         elif button == self.b_2:
             try:
                 QMessageBox.about(self, "Popup Message", "This operation will take roughly 30 seconds per image.")
-                subprocess.call(['python','create_thumbnails_from_raw_images.py', self.stack])
+                subprocess.call(['python','utilities/create_thumbnails_from_raw_images.py', self.stack])
                 set_step_completed_in_progress_ini( self.stack, '1-3_setup_thumbnails')
             except Exception as e:
                 sys.stderr.write( str(e) )

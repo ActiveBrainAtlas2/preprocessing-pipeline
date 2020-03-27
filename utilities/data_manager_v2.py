@@ -227,11 +227,12 @@ class DataManager(object):
 
     @staticmethod
     def get_sorted_filenames_filename(stack):
-        fn = os.path.join( DataManager.get_images_root_folder(stack), stack + '_sorted_filenames.txt')
+        fn = os.path.join( ROOT_DIR, stack, 'brains_info', 'sorted_filenames.txt')
         return fn
 
+
     @staticmethod
-    def get_image_filepath(stack, prep_id, version=None, resol=None,
+    def get_image_filepath(prep_id, version=None, resol=None,
                            section=None, fn=None, ext=None, sorted_filenames_fp=None):
         """
         Args:
@@ -240,14 +241,16 @@ class DataManager(object):
         Returns:
             Absolute path of the image file.
         """
+        print('prep_id is ', prep_id, type(prep_id))
         data_dir = os.path.join(ROOT_DIR, prep_id, 'tif')
         thumbnail_data_dir = os.path.join(ROOT_DIR, prep_id, 'thumbnail')
         if section is not None:
             try:
-                metadata_cache['sections_to_filenames'][stack]
+                metadata_cache['sections_to_filenames'][prep_id]
             except:
-                sys.stderr.write( 'No sorted filenames could be loaded for '+stack+'. May not have been set up correctly.' )
+                sys.stderr.write( 'No sorted filenames could be loaded for '+prep_id+'. May not have been set up correctly.' )
                 return
+
 
 
             if sorted_filenames_fp is not None:
@@ -256,26 +259,19 @@ class DataManager(object):
                     raise Exception('Section %d is not specified in sorted list.' % section)
                 fn = sections_to_filenames[section]
             else:
-                if section not in metadata_cache['sections_to_filenames'][stack]:
+                if section not in metadata_cache['sections_to_filenames'][prep_id]:
                     raise Exception('Section %d is not specified in sorted list.' % section)
-                fn = metadata_cache['sections_to_filenames'][stack][section]
+                fn = metadata_cache['sections_to_filenames'][prep_id][section]
 
-            if is_invalid(fn=fn, stack=stack):
+            if is_invalid(fn=fn, stack=prep_id):
                 raise Exception('Section is invalid: %s.' % fn)
         else:
             assert fn is not None
 
-
-        if prep_id is not None and (isinstance(prep_id, str) or isinstance(prep_id, str)):
-            if prep_id == 'None':
-                prep_id = None
-            else:
-                prep_id = prep_str_to_id_2d[prep_id]
-
-        image_dir = DataManager.get_image_dir_v2(stack=stack, prep_id=prep_id, resol=resol, version=version, data_dir=data_dir, thumbnail_data_dir=thumbnail_data_dir)
-
+        image_dir = DataManager.get_image_dir(prep_id=prep_id, resol=resol, version=version)
+        image_dir = os.path.join(ROOT_DIR, prep_id, 'raw')
         if version is None:
-            image_name = fn + ('_prep%d' % prep_id if prep_id is not None else '') + '_%s' % resol + '.' + 'tif'
+            image_name = '{}_{}_{}.tif'.format(fn, prep_id, resol)
         else:
             if ext is None:
                 if version == 'mask':
@@ -284,7 +280,7 @@ class DataManager(object):
                     ext = 'jpg'
                 else:
                     ext = 'tif'
-            image_name = fn + ('_prep%d' % prep_id if prep_id is not None else '') + '_' + resol + '_' + version + '.' + ext
+            image_name = '{}_{}_{}_{}.{}'.format(fn, prep_id, resol, version, ext)
 
         image_path = os.path.join(image_dir, image_name)
         return image_path
@@ -300,7 +296,7 @@ class DataManager(object):
         return os.path.join( ROOT_DIR, stack, 'tif')
 
     @staticmethod
-    def get_image_dir(stack, prep_id=None, version=None, resol=None):
+    def get_image_dir(prep_id, version=None, resol=None):
         """
         Args:
             version (str): version string
@@ -310,39 +306,41 @@ class DataManager(object):
             Absolute path of the image directory.
         """
         data_dir = ROOT_DIR
+        print('prep_id is ', prep_id, type(prep_id))
 
-
-        if prep_id is not None and (isinstance(prep_id, str) or isinstance(prep_id, str)):
-            prep_id = prep_str_to_id_2d[prep_id]
-
-        if version is None:
-            if resol == 'thumbnail' or resol == 'down64':
-                image_dir = os.path.join( DataManager.get_images_root_folder(stack),
-                                         stack + ('_prep%d' % prep_id if prep_id is not None else '') + '_%s' % resol)
-            else:
-                image_dir = os.path.join( DataManager.get_images_root_folder(stack),
-                                         stack + ('_prep%d' % prep_id if prep_id is not None else '') + '_%s' % resol)
+        if resol == 'thumbnail' or resol == 'down64':
+            image_dir = os.path.join( ROOT_DIR, prep_id, 'thumbnail')
         else:
-            if resol == 'thumbnail' or resol == 'down64':
-                image_dir = os.path.join( DataManager.get_images_root_folder(stack),
-                                         stack + ('_prep%d' % prep_id if prep_id is not None else '') + '_%s' % resol + '_' + version)
-            else:
-                image_dir = os.path.join( DataManager.get_images_root_folder(stack),
-                                         stack + ('_prep%d' % prep_id if prep_id is not None else '') + '_%s' % resol + '_' + version)
+            image_dir = os.path.join( ROOT_DIR, prep_id, 'tif')
 
         return image_dir
 
+    @staticmethod
+    def setup_get_raw_fp(stack):
+        return os.path.join(ROOT_DIR, stack,  'raw' )
+
+    @staticmethod
+    def setup_get_thumbnail_fp(stack):
+        return os.path.join(ROOT_DIR, stack, 'thumbnail' )
+
+    @staticmethod
+    def setup_get_raw_fp_secondary_channel(stack, channel):
+        return os.path.join(ROOT_DIR, stack, '{}'.format(channel) )
 
 
-def is_invalid(fn=None, sec=None, stack=None):
+
+
+
+
+def is_invalid(fn=None, sec=None, prep_id=None):
     """
     Determine if a section is invalid (i.e. tagged nonexisting, rescan or placeholder in the brain labeling GUI).
     """
     if sec is not None:
-        assert stack is not None, 'is_invalid: if section is given, stack must not be None.'
-        if sec not in metadata_cache['sections_to_filenames'][stack]:
+        assert prep_id is not None, 'is_invalid: if section is given, prep_id must not be None.'
+        if sec not in metadata_cache['sections_to_filenames'][prep_id]:
             return True
-        fn = metadata_cache['sections_to_filenames'][stack][sec]
+        fn = metadata_cache['sections_to_filenames'][prep_id][sec]
     else:
         assert fn is not None, 'If sec is not provided, must provide fn'
     return fn in ['Nonexisting', 'Rescan', 'Placeholder']

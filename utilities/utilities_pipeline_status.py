@@ -3,7 +3,7 @@ import os
 import cv2
 import numpy as np
 
-from data_manager_v2 import DataManager, metadata_cache
+from data_manager_v2 import DataManager
 from metadata import all_known_structures_sided, stack_metadata
 
 script_list = ['initial setup gui',         # 0
@@ -165,8 +165,8 @@ def all_img_files_present( stack, prep_id='None', version='Ntb', resol='thumbnai
 def all_autoSubmasks_present( stack ):
     all_files_present = True
     missing_files = []
-    for fn in metadata_cache['filenames_to_sections'][stack].keys():
-        sec = metadata_cache['filenames_to_sections'][stack][fn]
+    for fn in DataManager.metadata_cache['filenames_to_sections'][stack].keys():
+        sec = DataManager.metadata_cache['filenames_to_sections'][stack][fn]
         img_fp = DataManager.get_auto_submask_filepath(stack=stack, what='submask', submask_ind=0,
                                                       fn=fn, sec=sec)
         if not os.path.isfile( img_fp ):
@@ -177,8 +177,8 @@ def all_autoSubmasks_present( stack ):
 def all_adaptive_intensity_floatHistograms_present( stack ):
     all_files_present = True
     missing_files = []
-    for fn in metadata_cache['filenames_to_sections'][stack].keys():
-        sec = metadata_cache['filenames_to_sections'][stack][fn]
+    for fn in DataManager.metadata_cache['filenames_to_sections'][stack].keys():
+        sec = DataManager.metadata_cache['filenames_to_sections'][stack][fn]
         img_fp = DataManager.get_intensity_normalization_result_filepath(what='float_histogram_png', stack=stack,
                                                                          fn=fn, section=sec)
         if not os.path.isfile( img_fp ):
