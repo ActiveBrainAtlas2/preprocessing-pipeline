@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 
@@ -8,7 +9,6 @@ from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPush
 from a_GUI_utilities_pipeline_status import get_text_of_pipeline_status
 from utilities.metadata import (stack_metadata, structures_sided_sorted_by_rostral_caudal_position, detector_settings,
     stain_to_metainfo)
-from utilities.data_manager_v2 import create_input_spec_ini_all
 from utilities.a_driver_utilities import call_and_time
 
 parser = argparse.ArgumentParser(
@@ -52,6 +52,38 @@ def probability_volumes_finished():
     
 def registration_finished():
     return False
+
+def create_input_spec_ini_all( name, stack, prep_id, version, resol):
+    f = open(name, "w")
+
+    f.write('[DEFAULT]\n')
+    f.write('image_name_list = all\n')
+    f.write('stack = '+stack+'\n')
+    f.write('prep_id = '+prep_id+'\n')
+    f.write('version = '+version+'\n')
+    f.write('resol = '+resol+'\n')
+
+def get_fn_list_from_sorted_filenames( stack):
+    '''
+        get_fn_list_from_sorted_filenames( stack ) returns a list of all the valid
+        filenames for the current stack.
+    '''
+    fp = os.environ['DATA_ROOTDIR']+'CSHL_data_processed/'+stack+'/'
+    fn = stack+'_sorted_filenames.txt'
+
+    file0 = open( fp+fn, 'r')
+    section_names = []
+
+    for line in file0:
+        if 'Placeholder' in line:
+            #print line
+            continue
+        else:
+            space_index = line.index(" ")
+            section_name = line[ 0 : space_index ]
+            section_number = line[ space_index+1 : ]
+            section_names.append( section_name )
+    return section_names
 
 class init_GUI(QWidget):
     def __init__(self, parent = None):
