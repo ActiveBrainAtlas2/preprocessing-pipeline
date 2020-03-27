@@ -4,10 +4,12 @@ import numpy as np
 import pandas as pd
 import bloscpack as bp
 from skimage.io import imread
-from metadata import ROOT_DIR, prep_str_to_id_2d
+from metadata import ROOT_DIR
 from utilities2015 import load_ini, load_hdf_v2, one_liner_to_arr
 
 class DataManager(object):
+
+    metadata_cache = {}
 
     def __init__(self):
         """ setup the attributes for the data manager
@@ -18,17 +20,16 @@ class DataManager(object):
 
         all_stacks = os.listdir(ROOT_DIR)
 
-        global metadata_cache
-        metadata_cache['image_shape'] = {}
-        metadata_cache['anchor_fn'] = {}
-        metadata_cache['sections_to_filenames'] = {}
-        metadata_cache['filenames_to_sections'] = {}
-        metadata_cache['section_limits'] = {}
-        metadata_cache['cropbox'] = {}
-        metadata_cache['valid_sections'] = {}
-        metadata_cache['valid_filenames'] = {}
-        metadata_cache['valid_sections_all'] = {}
-        metadata_cache['valid_filenames_all'] = {}
+        self.metadata_cache['image_shape'] = {}
+        self.metadata_cache['anchor_fn'] = {}
+        self.metadata_cache['sections_to_filenames'] = {}
+        self.metadata_cache['filenames_to_sections'] = {}
+        self.metadata_cache['section_limits'] = {}
+        self.metadata_cache['cropbox'] = {}
+        self.metadata_cache['valid_sections'] = {}
+        self.metadata_cache['valid_filenames'] = {}
+        self.metadata_cache['valid_sections_all'] = {}
+        self.metadata_cache['valid_filenames_all'] = {}
         for stack in all_stacks:
 
             # Don't print out long error messages if base folder not found
@@ -44,80 +45,80 @@ class DataManager(object):
                     if key == 'stack':
                         continue
                     if key == 'sections_to_filenames':
-                        metadata_cache[key][stack] = {int(k): v for k, v in saved_metadata[key].items()}
+                        self.metadata_cache[key][stack] = {int(k): v for k, v in saved_metadata[key].items()}
                     else:
-                        metadata_cache[key][stack] = saved_metadata[key]
+                        self.metadata_cache[key][stack] = saved_metadata[key]
                 print('Loaded data from saved metadata_cache for ' + stack)
                 continue
             except:
                 pass
 
             try:
-                metadata_cache['anchor_fn'][stack] = DataManager.load_anchor_filename(stack)
+                self.metadata_cache['anchor_fn'][stack] = DataManager.load_anchor_filename(stack)
             except Exception as e:
                 # sys.stderr.write("Failed to cache %s anchor: %s\n" % (stack, e.message))
                 pass
 
             try:
-                metadata_cache['sections_to_filenames'][stack] = DataManager.load_sorted_filenames(stack)[1]
+                self.metadata_cache['sections_to_filenames'][stack] = DataManager.load_sorted_filenames(stack)[1]
             except Exception as e:
                 # sys.stderr.write("Failed to cache %s sections_to_filenames: %s\n" % (stack, e.message))
                 pass
 
             try:
-                metadata_cache['filenames_to_sections'][stack] = DataManager.load_sorted_filenames(stack)[0]
-                if 'Placeholder' in metadata_cache['filenames_to_sections'][stack]:
-                    metadata_cache['filenames_to_sections'][stack].pop('Placeholder')
-                if 'Nonexisting' in metadata_cache['filenames_to_sections'][stack]:
-                    metadata_cache['filenames_to_sections'][stack].pop('Nonexisting')
-                if 'Rescan' in metadata_cache['filenames_to_sections'][stack]:
-                    metadata_cache['filenames_to_sections'][stack].pop('Rescan')
+                self.metadata_cache['filenames_to_sections'][stack] = DataManager.load_sorted_filenames(stack)[0]
+                if 'Placeholder' in self.metadata_cache['filenames_to_sections'][stack]:
+                    self.metadata_cache['filenames_to_sections'][stack].pop('Placeholder')
+                if 'Nonexisting' in self.metadata_cache['filenames_to_sections'][stack]:
+                    self.metadata_cache['filenames_to_sections'][stack].pop('Nonexisting')
+                if 'Rescan' in self.metadata_cache['filenames_to_sections'][stack]:
+                    self.metadata_cache['filenames_to_sections'][stack].pop('Rescan')
             except Exception as e:
                 # sys.stderr.write("Failed to cache %s filenames_to_sections: %s\n" % (stack, e.message))
                 pass
 
             try:
-                metadata_cache['section_limits'][stack] = DataManager.load_section_limits_v2(stack, prep_id=2)
+                self.metadata_cache['section_limits'][stack] = DataManager.load_section_limits_v2(stack, prep_id=2)
             except Exception as e:
                 # sys.stderr.write("Failed to cache %s section_limits: %s\n" % (stack, e.message))
                 pass
 
             try:
                 # alignedBrainstemCrop cropping box relative to alignedpadded
-                metadata_cache['cropbox'][stack] = DataManager.load_cropbox_v2(stack, prep_id=2)
+                self.metadata_cache['cropbox'][stack] = DataManager.load_cropbox_v2(stack, prep_id=2)
             except Exception as e:
                 # sys.stderr.write("Failed to cache %s cropbox: %s\n" % (stack, e.message))
                 pass
 
             try:
-                first_sec, last_sec = metadata_cache['section_limits'][stack]
-                metadata_cache['valid_sections'][stack] = [sec for sec in range(first_sec, last_sec + 1) \
-                                                           if sec in metadata_cache['sections_to_filenames'][stack] and \
-                                                           not is_invalid(stack=stack, sec=sec)]
-                metadata_cache['valid_filenames'][stack] = [metadata_cache['sections_to_filenames'][stack][sec] for sec
+                first_sec, last_sec = self.metadata_cache['section_limits'][stack]
+                self.metadata_cache['valid_sections'][stack] = [sec for sec in range(first_sec, last_sec + 1) \
+                                                           if sec in self.metadata_cache['sections_to_filenames'][stack] and \
+                                                           not self.is_invalid(stack=stack, sec=sec)]
+                self.metadata_cache['valid_filenames'][stack] = [self.metadata_cache['sections_to_filenames'][stack][sec] for sec
                                                             in
-                                                            metadata_cache['valid_sections'][stack]]
+                                                            self.metadata_cache['valid_sections'][stack]]
             except Exception as e:
                 # sys.stderr.write("Failed to cache %s valid_sections/filenames: %s\n" % (stack, e.message))
                 pass
 
             try:
-                metadata_cache['valid_sections_all'][stack] = [sec for sec, fn in
-                                                               metadata_cache['sections_to_filenames'][
-                                                                   stack].iteritems() if not is_invalid(fn=fn)]
-                metadata_cache['valid_filenames_all'][stack] = [fn for sec, fn in
-                                                                metadata_cache['sections_to_filenames'][
-                                                                    stack].iteritems() if not is_invalid(fn=fn)]
+                self.metadata_cache['valid_sections_all'][stack] = [sec for sec, fn in
+                                                               self.metadata_cache['sections_to_filenames'][
+                                                                   stack].iteritems() if not self.is_invalid(fn=fn)]
+                self.metadata_cache['valid_filenames_all'][stack] = [fn for sec, fn in
+                                                                self.metadata_cache['sections_to_filenames'][
+                                                                    stack].iteritems() if not self.is_invalid(fn=fn)]
             except:
                 pass
 
             try:
-                metadata_cache['image_shape'][stack] = DataManager.get_image_dimension(stack)
+                self.metadata_cache['image_shape'][stack] = DataManager.get_image_dimension(stack)
             except Exception as e:
                 # sys.stderr.write("Failed to cache %s image_shape: %s\n" % (stack, e.message))
                 pass
 
-        return metadata_cache
+        return self.metadata_cache
 
     @staticmethod
     def get_brain_info_root_folder(stack):
@@ -246,7 +247,7 @@ class DataManager(object):
         thumbnail_data_dir = os.path.join(ROOT_DIR, prep_id, 'thumbnail')
         if section is not None:
             try:
-                metadata_cache['sections_to_filenames'][prep_id]
+                DataManager.metadata_cache['sections_to_filenames'][prep_id]
             except:
                 sys.stderr.write( 'No sorted filenames could be loaded for '+prep_id+'. May not have been set up correctly.' )
                 return
@@ -259,11 +260,11 @@ class DataManager(object):
                     raise Exception('Section %d is not specified in sorted list.' % section)
                 fn = sections_to_filenames[section]
             else:
-                if section not in metadata_cache['sections_to_filenames'][prep_id]:
+                if section not in DataManager.metadata_cache['sections_to_filenames'][prep_id]:
                     raise Exception('Section %d is not specified in sorted list.' % section)
-                fn = metadata_cache['sections_to_filenames'][prep_id][section]
+                fn = DataManager.metadata_cache['sections_to_filenames'][prep_id][section]
 
-            if is_invalid(fn=fn, stack=prep_id):
+            if DataManager.is_invalid(fn=fn, stack=prep_id):
                 raise Exception('Section is invalid: %s.' % fn)
         else:
             assert fn is not None
@@ -300,8 +301,6 @@ class DataManager(object):
         """
         Args:
             version (str): version string
-            data_dir: This by default is DATA_DIR, but one can change this ad-hoc when calling the function
-
         Returns:
             Absolute path of the image directory.
         """
@@ -332,15 +331,15 @@ class DataManager(object):
 
 
 
-def is_invalid(fn=None, sec=None, prep_id=None):
-    """
-    Determine if a section is invalid (i.e. tagged nonexisting, rescan or placeholder in the brain labeling GUI).
-    """
-    if sec is not None:
-        assert prep_id is not None, 'is_invalid: if section is given, prep_id must not be None.'
-        if sec not in metadata_cache['sections_to_filenames'][prep_id]:
-            return True
-        fn = metadata_cache['sections_to_filenames'][prep_id][sec]
-    else:
-        assert fn is not None, 'If sec is not provided, must provide fn'
-    return fn in ['Nonexisting', 'Rescan', 'Placeholder']
+    def is_invalid(self, fn=None, sec=None, prep_id=None):
+        """
+        Determine if a section is invalid (i.e. tagged nonexisting, rescan or placeholder in the brain labeling GUI).
+        """
+        if sec is not None:
+            assert prep_id is not None, 'is_invalid: if section is given, prep_id must not be None.'
+            if sec not in self.metadata_cache['sections_to_filenames'][prep_id]:
+                return True
+            fn = self.metadata_cache['sections_to_filenames'][prep_id][sec]
+        else:
+            assert fn is not None, 'If sec is not provided, must provide fn'
+        return fn in ['Nonexisting', 'Rescan', 'Placeholder']
