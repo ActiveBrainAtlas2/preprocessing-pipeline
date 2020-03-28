@@ -5,6 +5,7 @@ import argparse
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton, QComboBox
+sys.path.append("utilities")
 
 from a_GUI_utilities_pipeline_status import get_text_of_pipeline_status
 from utilities.metadata import (stack_metadata, structures_sided_sorted_by_rostral_caudal_position, detector_settings,

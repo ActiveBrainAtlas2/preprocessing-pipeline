@@ -508,6 +508,74 @@ class DataManager(object):
 
 
     @staticmethod
+    def get_auto_submask_dir_filepath(stack, fn=None, sec=None):
+        submasks_dir = DataManager.get_auto_submask_rootdir_filepath(stack)
+        if fn is None:
+            fn = DataManager.metadata_cache['sections_to_filenames'][stack][sec]
+        dir_path = os.path.join(submasks_dir, fn)
+        return dir_path
+
+
+    @staticmethod
+    def get_auto_submask_rootdir_filepath(stack):
+        return os.path.join(ROOT_DIR, stack,  'prep1', 'thumbnail_autoSubmasks')
+
+    @staticmethod
+    def get_auto_submask_filepath(stack, what, submask_ind=None, fn=None, sec=None):
+        """
+        Args:
+            what (str): submask or decisions.
+            submask_ind (int): if what is submask, must provide submask_ind.
+        """
+        dir_path = DataManager.get_auto_submask_dir_filepath(stack=stack, fn=fn, sec=sec)
+
+        if what == 'submask':
+            assert submask_ind is not None, "Must provide submask_ind."
+            fp = os.path.join(dir_path, fn + '_prep1_thumbnail_autoSubmask_%d.png' % submask_ind)
+        elif what == 'decisions':
+            fp = os.path.join(dir_path, fn + '_prep1_thumbnail_autoSubmaskDecisions.csv')
+        else:
+            raise Exception("Input %s is not recognized." % what)
+
+        return fp
+
+
+    @staticmethod
+    def get_intensity_normalization_result_filepath(what, stack, fn=None, section=None):
+
+        if fn is None:
+            fn = DataManager.metadata_cache['sections_to_filenames'][stack][section]
+            if DataManager.is_invalid(fn=fn):
+                raise Exception('Section is invalid: %s.' % fn)
+
+        if what == 'region_centers':
+            fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_intensity_normalization_results', 'regionCenters',
+                         stack + '_' + fn + '_raw_regionCenters.npy')
+        elif what == 'mean_std_all_regions':
+            fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_intensity_normalization_results', 'meanStdAllRegions',
+                         stack + '_' + fn + '_raw_meanStdAllRegions.npy')
+        elif what == 'mean_map':
+            fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_intensity_normalization_results', 'meanMap',
+                         stack + '_' + fn + '_raw_meanMap.npy')
+        elif what == 'std_map':
+            fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_intensity_normalization_results', 'stdMap',
+                         stack + '_' + fn + '_raw_stdMap.npy')
+        elif what == 'float_histogram_png':
+            fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_intensity_normalization_results', 'floatHistogram',
+                         stack + '_' + fn + '_raw_floatHistogram.png')
+        elif what == 'normalized_float_map':
+            fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_intensity_normalization_results', 'normalizedFloatMap',
+                         stack + '_' + fn + '_raw_normalizedFloatMap.npy')
+        elif what == 'float_percentiles':
+            fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_intensity_normalization_results', 'floatPercentiles',
+                         stack + '_' + fn + '_raw_floatPercentiles.npy')
+        else:
+            raise Exception("what = %s is not recognized." % what)
+
+        return fp
+
+
+    @staticmethod
     def is_invalid(fn=None, sec=None, stack=None):
         """
         Determine if a section is invalid (i.e. tagged nonexisting, rescan or placeholder in the brain labeling GUI).

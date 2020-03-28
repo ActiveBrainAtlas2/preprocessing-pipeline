@@ -1,9 +1,10 @@
-import os
+import os, sys
 import numpy as np
 import cv2
+sys.path.append("utilities")
 
-from data_manager_v2 import DataManager, metadata_cache
-from utilities.metadata import stack_metadata, all_known_structures_sided
+from utilities.data_manager_v2 import DataManager
+from utilities.metadata import stack_metadata, all_known_structures_sided, ROOT_DIR
 
 script_list = ['initial setup gui',         # 0
                'a_script_preprocess_setup', # 1
@@ -124,7 +125,7 @@ def all_img_files_valid( stack, prep_id='None', version='Ntb', resol='thumbnail'
 
     filenames_list = DataManager.load_sorted_filenames(stack)[0].keys()
     for img_name in filenames_list:
-        img_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, resol=resol, version=version, fn=img_name)
+        img_fp = DataManager.get_image_filepath(stack=stack, resol=resol, version=version, fn=img_name)
 
         try:
             img = cv2.imread(img_fp)
@@ -146,7 +147,7 @@ def all_img_files_present( stack, prep_id='None', version='Ntb', resol='thumbnai
 
     filenames_list = DataManager.load_sorted_filenames(stack)[0].keys()
     for img_name in filenames_list:
-        img_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, resol=resol, version=version, fn=img_name)
+        img_fp = DataManager.get_image_filepath(stack=stack, resol=resol, version=version, fn=img_name)
         if not os.path.isfile( img_fp ):
             all_files_present = False
             missing_files.append(img_name)
@@ -156,8 +157,8 @@ def all_img_files_present( stack, prep_id='None', version='Ntb', resol='thumbnai
 def all_autoSubmasks_present( stack ):
     all_files_present = True
     missing_files = []
-    for fn in metadata_cache['filenames_to_sections'][stack].keys():
-        sec = metadata_cache['filenames_to_sections'][stack][fn]
+    for fn in DataManager.metadata_cache['filenames_to_sections'][stack].keys():
+        sec = DataManager.metadata_cache['filenames_to_sections'][stack][fn]
         img_fp = DataManager.get_auto_submask_filepath(stack=stack, what='submask', submask_ind=0,
                                                       fn=fn, sec=sec)
         if not os.path.isfile( img_fp ):
@@ -168,8 +169,8 @@ def all_autoSubmasks_present( stack ):
 def all_adaptive_intensity_floatHistograms_present( stack ):
     all_files_present = True
     missing_files = []
-    for fn in metadata_cache['filenames_to_sections'][stack].keys():
-        sec = metadata_cache['filenames_to_sections'][stack][fn]
+    for fn in DataManager.metadata_cache['filenames_to_sections'][stack].keys():
+        sec = DataManager.metadata_cache['filenames_to_sections'][stack][fn]
         img_fp = DataManager.get_intensity_normalization_result_filepath(what='float_histogram_png', stack=stack,
                                                                          fn=fn, section=sec)
         if not os.path.isfile( img_fp ):
@@ -183,14 +184,14 @@ def all_setupFiles_present( stack ):
 
     # Check atlas is downloaded
     for struct in all_known_structures_sided:
-        img_fp = os.path.join( os.environ['ROOT_DIR'], 'CSHL_volumes', 'atlasV7',
+        img_fp = os.path.join( ROOT_DIR, stack, 'brains_info', 'CSHL_volumes', 'atlasV7',
                               'atlasV7_10.0um_scoreVolume', 'score_volumes', 'atlasV7_10.0um_scoreVolume_'+struct+'.bp' )
         if not os.path.isfile( img_fp ):
             all_files_present = False
             missing_files.append(img_fp)
             
     # Check operation configs
-    op_config_fp = os.path.join( os.environ['ROOT_DIR'], 'CSHL_data_processed', stack, 'operation_configs' )
+    op_config_fp = os.path.join( ROOT_DIR, stack, 'CSHL_data_processed', 'operation_configs' )
     for op_config_name in ['from_aligned_to_none.ini', 'from_aligned_to_padded.ini', 
                            'from_none_to_brainstem.ini', 'from_wholeslice_to_brainstem.ini', 'from_padded_to_wholeslice.ini', 
                            'from_padded_to_none.ini', 'from_padded_to_brainstem.ini', 'from_none_to_wholeslice.ini']:
@@ -279,7 +280,7 @@ def get_text_of_pipeline_status( stack, stain ):
                     break
 
                 for fn in missing_files[0]:
-                    img_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, resol=resol, version=version, fn=fn)
+                    img_fp = DataManager.get_image_filepath(stack=stack, resol=resol, version=version, fn=fn)
                     img_root_fp = img_fp[0:img_fp.rfind('/')+1]
                 #text += "\n"+script_name + " " + image_set + " is missing files:\n\n"
                 text += "\n" + script_name + " did not run properly and has missing files:\n"
@@ -289,7 +290,7 @@ def get_text_of_pipeline_status( stack, stain ):
                 text += "Missing Files:\n"
                 missing_files.sort()
                 for fn in missing_files:
-                    img_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, resol=resol, version=version, fn=fn)
+                    img_fp = DataManager.get_image_filepath(stack=stack, resol=resol, version=version, fn=fn)
                     text += fn+"\n"
                 all_correct = False
                 break

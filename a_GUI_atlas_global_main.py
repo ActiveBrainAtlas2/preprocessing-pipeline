@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import argparse
+sys.path.append("utilities")
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
