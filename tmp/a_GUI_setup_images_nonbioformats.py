@@ -1,28 +1,32 @@
-import os
 import subprocess
-import argparse
-import json
-
-from PyQt5.QtCore import *
-from PyQt5.QtGui import QFont, QIntValidator
-from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QTextEdit, QPushButton
-
-from tkinter import filedialog
-from tkinter import *
-
-sys.path.append(os.path.join(os.getcwd(),'utilities'))
-from utilities.metadata import ON_DOCKER, ROOT_DIR
-from utilities.a_driver_utilities import set_step_completed_in_progress_ini, call_and_time
+from a_driver_utilities import *
+sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
+from utilities2015 import *
+from registration_utilities import *
+from annotation_utilities import *
+# from metadata import *
 from data_manager_v2 import DataManager
+from a_driver_utilities import *
+
+import sys, os
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+
+#from tkinter import filedialog
+#from tkinter import *
+import tkFileDialog as filedialog
+from Tkinter import *
+
+import argparse
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description='')
 parser.add_argument("stack", type=str, help="The name of the stack")
-#parser.add_argument("input_filetype", type=str, help="The file type of the images")
+parser.add_argument("input_filetype", type=str, help="The name of the stack")
 args = parser.parse_args()
 stack = args.stack
-#input_filetype = args.input_filetype
+input_filetype = args.input_filetype
 
 def is_number(s):
     try:
@@ -71,7 +75,7 @@ class init_GUI(QWidget):
         self.e1.setReadOnly( True )
         self.e1.setText( "You must select your sorted filenames (.txt) file created for "+self.stack+
                         ". This must be a text file formatted as described in the github page.\n"+
-                       "Your raw image files are expected to be in TIFF format and must all be "+
+                       "Your raw image files are expected to be in "+input_filetype+" format and must all be "+
                        "located inside the same directory. Each filename in the sorted filenames must "+
                        "appear in the filename of a raw image file.")
         self.grid_top.addWidget( self.e1, 1, 0)
@@ -138,8 +142,9 @@ class init_GUI(QWidget):
         self.setWindowTitle("Select tiffs/jp2 images")
         
     def validateEntries(self):
-        if self.filepath_sfns=="" or self.filepath_img=="":
-            print('No filepath_sfns or filepath_img')
+        if self.filepath_sfns=="" and self.filepath_img=="":
+            return False
+        if self.filepath_img=="":
             return False
         
         return True
@@ -166,9 +171,9 @@ class init_GUI(QWidget):
                     self.e1.repaint()
                     copy_over_jp2_files( self.stack, self.filepath_img, self.filepath_img_folder )
                 elif '.tif' in self.filepath_img:
-                    self.e1.setText( "The tiff images are now being copied. This will take about 30s - 1m per image.")
+                    self.e1.setText( "The tiff images are now being renamed and copied. This will take about 30s - 1m per image.")
                     self.e1.repaint()
-                    copy_over_tif_files(self.stack)
+                    copy_over_tif_files( self.stack, self.filepath_img_folder )
                     
                 self.finished()
                                 
@@ -204,7 +209,7 @@ class init_GUI(QWidget):
         #if self.filepath_sfns != "":
             #set_step_completed_in_progress_ini( stack, '1-4_setup_sorted_filenames')
         
-        subprocess.call( ['python', 'utilities/a_script_preprocess_setup.py', stack, 'unknown'] )
+        subprocess.call( ['python', 'a_script_preprocess_setup.py', stack, 'unknown'] )
         
         set_step_completed_in_progress_ini( stack, '1-2_setup_images')
         
@@ -214,7 +219,7 @@ class init_GUI(QWidget):
             
 def create_parent_folder_for_files( stack ):
     try:
-        raw_fp = DataManager.get_image_filepath(stack, resol="raw", fn='$')
+        raw_fp = DataManager.get_image_filepath_v2(stack, None, version=None, resol="raw", fn='$')
         raw_fp = raw_fp[0:raw_fp.index('$')]
         os.makedirs( raw_fp )
     except:
@@ -232,10 +237,10 @@ def copy_over_jp2_files( stack, raw_jp2_input_fn_fp, raw_jp2_input_fp ):
     # CONVERT *.jp2 to *.tif
     json_fn = stack+'_raw_input_spec.json'
     # Create the data file necessary to run the jp2_to_tiff script
-    json_data = [{"version": None,
-                 "resolution": "raw",
-                 "data_dirs": raw_jp2_input_fp,
-                 "filepath_to_imageName_mapping": raw_jp2_input_fp+"/(.*?)"+resolution+".jp2",
+    json_data = [{"version": None, \
+                 "resolution": "raw", \
+                 "data_dirs": raw_jp2_input_fp, \
+                 "filepath_to_imageName_mapping": raw_jp2_input_fp+"/(.*?)"+resolution+".jp2", \
                  "imageName_to_filepath_mapping": raw_jp2_input_fp+"/%s"+resolution+".jp2"}]
     with open( json_fn, 'w') as outfile:
         json.dump( json_data, outfile)
@@ -243,7 +248,29 @@ def copy_over_jp2_files( stack, raw_jp2_input_fn_fp, raw_jp2_input_fp ):
     command = ["python", "jp2_to_tiff.py", stack, json_fn]
     completion_message = 'Completed converting and copying jp2 to tiff for all files in folder.'
     call_and_time( command, completion_message=completion_message)
+    
+def copy_over_tif_files( stack, raw_tiff_input_fp ):
+    raw_tiff_input_fns = os.listdir( raw_tiff_input_fp )
+        
+    # Make STACKNAME_raw/ folder
+    try:
+        raw_fp = DataManager.get_image_filepath_v2(stack, None, version=None, resol="raw", fn="$")
+        os.makedirs( raw_fp[:raw_fp.index('$')] )
+    except Exception as e:
+        #print(e)
+        pass
 
+    filenames_list = DataManager.load_sorted_filenames(stack)[0].keys()
+    # Rename and copy over all tiff files in the selected folder
+    for fn in filenames_list:
+        for raw_tiff_input_fn in raw_tiff_input_fns:
+            if fn in raw_tiff_input_fn:
+                old_fp = os.path.join( raw_tiff_input_fp, raw_tiff_input_fn )
+                new_fp = DataManager.get_image_filepath_v2(stack, None, version=None, resol="raw", fn=fn)
+                command = ["cp", old_fp, new_fp]
+                completion_message = 'Finished copying and renaming tiff file into the proper location.'
+                call_and_time( command, completion_message=completion_message)
+                    
 def copy_over_sorted_filenames( stack, sfns_input_fp ):
     correct_sorted_fns_fp = DataManager.get_sorted_filenames_filename(stack)
     command = ["cp", sfns_input_fp, correct_sorted_fns_fp]
@@ -300,8 +327,8 @@ def get_selected_fp( initialdir='/', default_filetype=("jp2 files","*.jp2") ):
         initialdir = '/mnt/computer_root/'
         
     root = Tk()
-    root.filename = filedialog.askopenfilename(initialdir = initialdir,
-                                                title = "Select file",
+    root.filename = filedialog.askopenfilename(initialdir = initialdir,\
+                                                title = "Select file",\
                                                 filetypes = default_filetype)
     fn = root.filename
     root.destroy()

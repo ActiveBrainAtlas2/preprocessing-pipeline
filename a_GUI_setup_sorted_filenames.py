@@ -39,13 +39,12 @@ fn_list = os.listdir(thumbnail_folder)
 fn_list.sort()
 for i, img_name in enumerate(fn_list):
     print(img_name)
-    img_name = img_name.replace('_raw.tiff', '').replace('_raw.tif', '')
     sections_to_filenames[i] = img_name
     fn_to_quality[img_name] = 'good'
 
 
 def get_thumbnail_img_fp_from_section(fn):
-    img_fp = os.path.join(thumbnail_folder, '{}_raw.tif'.format(fn))
+    img_fp = os.path.join(thumbnail_folder, fn)
     return img_fp
 
 
@@ -167,7 +166,8 @@ class init_GUI(QWidget):
         self.curr_section = self.valid_sections[self.curr_section_index]
         self.prev_section = self.getPrevValidSection(self.curr_section_index)
         self.next_section = self.getNextValidSection(self.curr_section_index)
-
+        # create a dataManager object
+        self.dataManager = DataManager()
         self.initUI()
 
     def initUI(self):
@@ -321,7 +321,8 @@ class init_GUI(QWidget):
         fn_to_quality[curr_fn] = dropdown_selection
 
     def load_sorted_filenames(self):
-        self.valid_sections = DataManager.metadata_cache['sections_to_filenames'][stack]
+        #self.dataManager.generate_metadata_cache()
+        self.valid_sections = self.dataManager.metadata_cache['sections_to_filenames'][stack]
         self.valid_section_keys = self.valid_sections.keys()
         self.curr_section_index = len(self.valid_section_keys) // 2
         self.curr_section = self.valid_sections[self.curr_section_index]
@@ -333,7 +334,7 @@ class init_GUI(QWidget):
         for section, img_name in self.valid_sections.items():
             fn_to_quality[img_name] = 'good'
 
-        self.setCurrSection(self.curr_section)
+        self.setCurrSection(self.curr_section_index)
 
     def loadImage(self):
         curr_fn = self.valid_sections[int(self.curr_section_index)]
@@ -375,7 +376,7 @@ class init_GUI(QWidget):
         else:
             print(key)
 
-    def setCurrSection(self, section=-1):
+    def setCurrSection(self, section_index=-1):
         """
         Sets the current section to the section passed in.
         
@@ -383,11 +384,12 @@ class init_GUI(QWidget):
         Updates the header fields and loads the current section image.
         
         """
-        if section == -1:
-            section = self.curr_section_index
+        if section_index == -1:
+            section_index = self.curr_section_index
 
         # Update curr, prev, and next section
-        self.curr_section_index = section
+        self.curr_section_index = section_index
+        self.curr_section = self.valid_sections[self.curr_section_index]
         self.prev_section = self.getPrevValidSection(self.curr_section_index)
         self.next_section = self.getNextValidSection(self.curr_section_index)
         # Update the section and filename at the top
@@ -432,7 +434,7 @@ class init_GUI(QWidget):
                 pass
 
             # Update the Viewer info and displayed image
-            self.setCurrSection(self.curr_section)
+            self.setCurrSection(self.curr_section_index)
 
         elif button == self.b_done:
             self.finished()
@@ -510,7 +512,9 @@ class init_GUI(QWidget):
         self.e5.setText(str(self.curr_section))
 
     def updateQualityField(self):
-        curr_fn = self.valid_sections[int(self.curr_section_index)]
+        curr_fn = self.valid_sections[self.curr_section_index]
+        print('curr_fn', curr_fn)
+        print()
         if curr_fn == 'Placeholder':
             text = 'unusable'
         else:

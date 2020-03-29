@@ -6,6 +6,8 @@ import numpy as np
 import subprocess
 import configparser
 from itertools import chain
+import multiprocessing
+import pandas as pd
 
 ########### Data Directories #############
 
@@ -14,17 +16,17 @@ username = str(subprocess.check_output("whoami", shell=True).strip())
 
 if 'ENABLE_UPLOAD_S3' in os.environ:
     ENABLE_UPLOAD_S3 = bool(int(os.environ['ENABLE_UPLOAD_S3']))
-    #sys.stderr.write("ENABLE_UPLOAD_S3 set to %s\n" % ENABLE_UPLOAD_S3)
+    # sys.stderr.write("ENABLE_UPLOAD_S3 set to %s\n" % ENABLE_UPLOAD_S3)
 else:
     ENABLE_UPLOAD_S3 = False
-    #sys.stderr.write("ENABLE_UPLOAD_S3 is not set, default to False.\n")
+    # sys.stderr.write("ENABLE_UPLOAD_S3 is not set, default to False.\n")
 
 if 'ENABLE_DOWNLOAD_S3' in os.environ:
     ENABLE_DOWNLOAD_S3 = bool(int(os.environ['ENABLE_DOWNLOAD_S3']))
-    #sys.stderr.write("ENABLE_DOWNLOAD_S3 set to %s\n" % ENABLE_DOWNLOAD_S3)
+    # sys.stderr.write("ENABLE_DOWNLOAD_S3 set to %s\n" % ENABLE_DOWNLOAD_S3)
 else:
     ENABLE_DOWNLOAD_S3 = False
-    #sys.stderr.write("ENABLE_DOWNLOAD_S3 is not set, default to False.\n")
+    # sys.stderr.write("ENABLE_DOWNLOAD_S3 is not set, default to False.\n")
 
 ON_DOCKER = False
 
@@ -35,7 +37,7 @@ BRAINS_INFO_DIR = 'brains_info'
 
 REPO_DIR = PROJECT_DIR
 DATA_ROOTDIR = ROOT_DIR
-THUMBNAIL = 'thumbnail'
+THUMBNAILRAW = 'thumbnail_raw'
 HOST_ID = 'workstation'
 
 # ON_AWS = False
@@ -80,10 +82,12 @@ MXNET_MODEL_ROOTDIR = 'mxnet_models'
 LABELED_NEURONS_ROOTDIR = 'CSHL_labeled_neurons'
 CSHL_SPM_ROOTDIR = 'CSHL_SPM'
 
+
 #################### Resolution conversions ############
 
 def convert_resolution_string_to_um(resolution, stack=None):
     return convert_resolution_string_to_voxel_size(resolution, stack=stack)
+
 
 def convert_resolution_string_to_voxel_size(resolution, stack=None):
     """
@@ -112,6 +116,7 @@ def convert_resolution_string_to_voxel_size(resolution, stack=None):
         print(resolution)
         raise Exception("Unknown resolution string %s" % resolution)
 
+
 #################### Name conversions ##################
 
 def parse_label(label, singular_as_s=False):
@@ -138,11 +143,13 @@ def parse_label(label, singular_as_s=False):
 
     return structure_name, side, surround_margin, surround_structure_name
 
+
 is_sided_label = lambda label: parse_label(label)[1] is not None
 # is_surround_label = lambda label: parse_label(label)[2] is not None
 is_surround_label = lambda label: 'surround' in label
 get_side_from_label = lambda label: parse_label(label)[1]
 get_margin_from_label = lambda label: parse_label(label)[2]
+
 
 def compose_label(structure_name, side=None, surround_margin=None, surround_structure_name=None, singular_as_s=False):
     label = structure_name
@@ -157,14 +164,18 @@ def compose_label(structure_name, side=None, surround_margin=None, surround_stru
         label += '_' + surround_structure_name
     return label
 
+
 def convert_to_unsided_label(label):
     structure_name, side, surround_margin, surround_structure_name = parse_label(label)
-    return compose_label(structure_name, side=None, surround_margin=surround_margin, surround_structure_name=surround_structure_name)
+    return compose_label(structure_name, side=None, surround_margin=surround_margin,
+                         surround_structure_name=surround_structure_name)
+
 
 def convert_to_nonsurround_label(name):
     return convert_to_nonsurround_name(name)
 
     # return convert_name_to_unsided(name)
+
 
 # def convert_name_to_unsided(name):
 #     if '_' not in name:
@@ -179,6 +190,7 @@ def convert_to_left_name(name):
     else:
         return convert_to_unsided_label(name) + '_L'
 
+
 def convert_to_right_name(name):
     if name in singular_structures:
         # sys.stderr.write("Asked for right name for singular structure %s, returning itself.\n" % name)
@@ -186,8 +198,10 @@ def convert_to_right_name(name):
     else:
         return convert_to_unsided_label(name) + '_R'
 
+
 def convert_to_original_name(name):
     return name.split('_')[0]
+
 
 def convert_to_nonsurround_name(name):
     if is_surround_label(name):
@@ -196,6 +210,7 @@ def convert_to_nonsurround_name(name):
         return m.groups()[0]
     else:
         return name
+
 
 def convert_to_surround_name(name, margin=None, suffix=None):
     """
@@ -230,130 +245,109 @@ def convert_to_surround_name(name, margin=None, suffix=None):
 
 #######################################
 
-from pandas import read_csv
-dataset_settings = read_csv(DATASET_SETTINGS_CSV, header=0, index_col=0)
-classifier_settings = read_csv(CLASSIFIER_SETTINGS_CSV, header=0, index_col=0)
-registration_settings = read_csv(REGISTRATION_SETTINGS_CSV, header=0, index_col=0)
-preprocess_settings = read_csv(PREPROCESS_SETTINGS_CSV, header=0, index_col=0)
-detector_settings = read_csv(DETECTOR_SETTINGS_CSV, header=0, index_col=0)
+dataset_settings = pd.read_csv(DATASET_SETTINGS_CSV, header=0, index_col=0)
+classifier_settings = pd.read_csv(CLASSIFIER_SETTINGS_CSV, header=0, index_col=0)
+registration_settings = pd.read_csv(REGISTRATION_SETTINGS_CSV, header=0, index_col=0)
+preprocess_settings = pd.read_csv(PREPROCESS_SETTINGS_CSV, header=0, index_col=0)
+detector_settings = pd.read_csv(DETECTOR_SETTINGS_CSV, header=0, index_col=0)
 windowing_settings = {1: {"patch_size": 224, "spacing": 56},
-                      2: {'patch_size':224, 'spacing':56, 'comment':'larger margin'},
-                     3: {'patch_size':224, 'spacing':32, 'comment':'smaller spacing'},
-                     4: {'patch_size':224, 'spacing':128, 'comment':'smaller spacing'},
-                     5: {'patch_size':224, 'spacing':64, 'comment':'smaller spacing'},
-                     6: {'patch_size': 448, 'spacing':64, 'comment': 'twice as large patch'},
-                     7: {'patch_size_um':103.04, 'spacing_um':30, 'comment':'specify size/spacing in terms of microns rather than pixels'},
-                     8: {'patch_size_um':206.08, 'spacing_um':30, 'comment':'larger patch'},
-                     9: {'patch_size_um':412.16, 'spacing_um':30, 'comment':'larger patch'},
-                    10: {'patch_size_um':824.32, 'spacing_um':30, 'comment':'larger patch'},
-                    11: {'patch_size_um':51.52, 'spacing_um':30, 'comment':'larger patch'},
-                    12: {'patch_size_um':25.76, 'spacing_um':30, 'comment':'larger patch'},
-                     }
+                      2: {'patch_size': 224, 'spacing': 56, 'comment': 'larger margin'},
+                      3: {'patch_size': 224, 'spacing': 32, 'comment': 'smaller spacing'},
+                      4: {'patch_size': 224, 'spacing': 128, 'comment': 'smaller spacing'},
+                      5: {'patch_size': 224, 'spacing': 64, 'comment': 'smaller spacing'},
+                      6: {'patch_size': 448, 'spacing': 64, 'comment': 'twice as large patch'},
+                      7: {'patch_size_um': 103.04, 'spacing_um': 30,
+                          'comment': 'specify size/spacing in terms of microns rather than pixels'},
+                      8: {'patch_size_um': 206.08, 'spacing_um': 30, 'comment': 'larger patch'},
+                      9: {'patch_size_um': 412.16, 'spacing_um': 30, 'comment': 'larger patch'},
+                      10: {'patch_size_um': 824.32, 'spacing_um': 30, 'comment': 'larger patch'},
+                      11: {'patch_size_um': 51.52, 'spacing_um': 30, 'comment': 'larger patch'},
+                      12: {'patch_size_um': 25.76, 'spacing_um': 30, 'comment': 'larger patch'},
+                      }
 
 ############ Class Labels #############
 
 paired_structures = ['5N', '6N', '7N', '7n', 'Amb', 'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC', 'SNC', 'SNR', '3N', '4N',
-                    'Sp5I', 'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
+                     'Sp5I', 'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
 # singular_structures = ['AP', '12N', 'RtTg', 'sp5', 'outerContour', 'SC', 'IC']
 singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
 singular_structures_with_side_suffix = ['AP_S', '12N_S', 'RtTg_S', 'SC_S', 'IC_S']
 all_known_structures = paired_structures + singular_structures
 all_known_structures_sided = sum([[n] if n in singular_structures
-                        else [convert_to_left_name(n), convert_to_right_name(n)]
-                        for n in all_known_structures], [])
+                                  else [convert_to_left_name(n), convert_to_right_name(n)]
+                                  for n in all_known_structures], [])
 all_known_structures_sided_singular_as_s = sum([[n] if n in singular_structures_with_side_suffix
-                        else [convert_to_left_name(n), convert_to_right_name(n)]
-                        for n in all_known_structures], [])
-#all_known_structures_sided_surround_only = [convert_to_surround_name(s, margin='x1.5') for s in all_known_structures_sided]
-all_known_structures_sided_surround_200um = [convert_to_surround_name(s, margin='200um') for s in all_known_structures_sided]
-all_known_structures_sided_including_surround_200um = sorted(all_known_structures_sided + all_known_structures_sided_surround_200um)
-all_known_structures_unsided_including_surround_200um = all_known_structures + [convert_to_surround_name(u, margin='200um') for u in all_known_structures]
+                                                else [convert_to_left_name(n), convert_to_right_name(n)]
+                                                for n in all_known_structures], [])
+# all_known_structures_sided_surround_only = [convert_to_surround_name(s, margin='x1.5') for s in all_known_structures_sided]
+all_known_structures_sided_surround_200um = [convert_to_surround_name(s, margin='200um') for s in
+                                             all_known_structures_sided]
+all_known_structures_sided_including_surround_200um = sorted(
+    all_known_structures_sided + all_known_structures_sided_surround_200um)
+all_known_structures_unsided_including_surround_200um = all_known_structures + [
+    convert_to_surround_name(u, margin='200um') for u in all_known_structures]
 
 all_structures_with_classifiers = sorted([l for l in all_known_structures if l not in {'outerContour', 'sp5'}])
 
-motor_nuclei = ['3N', '4N', '5N','6N', '7N', 'Amb', '12N', '10N']
+motor_nuclei = ['3N', '4N', '5N', '6N', '7N', 'Amb', '12N', '10N']
 
 motor_nuclei_sided_sorted_by_rostral_caudal_position = \
-['3N_R', '3N_L', '4N_R', '4N_L', '5N_R', '5N_L', '6N_R', '6N_L', '7N_R', '7N_L', 'Amb_R', 'Amb_L', '12N', '10N_R', '10N_L']
+    ['3N_R', '3N_L', '4N_R', '4N_L', '5N_R', '5N_L', '6N_R', '6N_L', '7N_R', '7N_L', 'Amb_R', 'Amb_L', '12N', '10N_R',
+     '10N_L']
 
-structures_sided_sorted_by_size = ['4N_L', '4N_R', '6N_L', '6N_R', 'Amb_L', 'Amb_R', 'PBG_L', 'PBG_R', '10N_L', '10N_R', 'AP', '3N_L', '3N_R', 'LC_L', 'LC_R', 'SNC_L', 'SNC_R', 'Tz_L', 'Tz_R', '7n_L', '7n_R', 'RMC_L', 'RMC_R', '5N_L', '5N_R', 'VCP_L', 'VCP_R', '12N', 'LRt_L', 'LRt_R', '7N_L', '7N_R', 'VCA_L', 'VCA_R', 'VLL_L', 'VLL_R', 'DC_L', 'DC_R', 'Sp5O_L', 'Sp5O_R', 'Sp5I_L', 'Sp5I_R', 'Pn_L', 'Pn_R', 'RtTg', 'SNR_L', 'SNR_R', 'Sp5C_L', 'Sp5C_R', 'IC', 'SC']
-structures_sided_sorted_by_rostral_caudal_position = ['SNC_R', 'SNC_L', 'SC', 'SNR_R', 'SNR_L', 'RMC_R', 'RMC_L', '3N_R', '3N_L', 'PBG_R', 'PBG_L', '4N_R', '4N_L', 'Pn_R', 'Pn_L', 'VLL_R', 'VLL_L', 'RtTg', '5N_R', '5N_L', 'LC_R', 'LC_L', 'Tz_R', 'Tz_L', 'VCA_R', 'VCA_L', '7n_R', '7n_L', '6N_R', '6N_L', 'DC_R', 'DC_L','VCP_R', 'VCP_L', '7N_R', '7N_L', 'Sp5O_R', 'Sp5O_L', 'Amb_R', 'Amb_L', 'Sp5I_R', 'Sp5I_L', 'AP', '12N', '10N_R', '10N_L', 'LRt_R', 'LRt_L', 'Sp5C_R', 'Sp5C_L']
-structures_unsided_sorted_by_rostral_caudal_position = ['SNC', 'SC', 'IC', 'SNR', 'RMC', '3N', 'PBG','4N', 'Pn','VLL','RtTg', '5N', 'LC', 'Tz', 'VCA', '7n', '6N', 'DC', 'VCP', '7N', 'Sp5O', 'Amb', 'Sp5I', 'AP', '12N', '10N', 'LRt', 'Sp5C']
+structures_sided_sorted_by_size = ['4N_L', '4N_R', '6N_L', '6N_R', 'Amb_L', 'Amb_R', 'PBG_L', 'PBG_R', '10N_L', '10N_R',
+                                   'AP', '3N_L', '3N_R', 'LC_L', 'LC_R', 'SNC_L', 'SNC_R', 'Tz_L', 'Tz_R', '7n_L',
+                                   '7n_R', 'RMC_L', 'RMC_R', '5N_L', '5N_R', 'VCP_L', 'VCP_R', '12N', 'LRt_L', 'LRt_R',
+                                   '7N_L', '7N_R', 'VCA_L', 'VCA_R', 'VLL_L', 'VLL_R', 'DC_L', 'DC_R', 'Sp5O_L',
+                                   'Sp5O_R', 'Sp5I_L', 'Sp5I_R', 'Pn_L', 'Pn_R', 'RtTg', 'SNR_L', 'SNR_R', 'Sp5C_L',
+                                   'Sp5C_R', 'IC', 'SC']
+structures_sided_sorted_by_rostral_caudal_position = ['SNC_R', 'SNC_L', 'SC', 'SNR_R', 'SNR_L', 'RMC_R', 'RMC_L',
+                                                      '3N_R', '3N_L', 'PBG_R', 'PBG_L', '4N_R', '4N_L', 'Pn_R', 'Pn_L',
+                                                      'VLL_R', 'VLL_L', 'RtTg', '5N_R', '5N_L', 'LC_R', 'LC_L', 'Tz_R',
+                                                      'Tz_L', 'VCA_R', 'VCA_L', '7n_R', '7n_L', '6N_R', '6N_L', 'DC_R',
+                                                      'DC_L', 'VCP_R', 'VCP_L', '7N_R', '7N_L', 'Sp5O_R', 'Sp5O_L',
+                                                      'Amb_R', 'Amb_L', 'Sp5I_R', 'Sp5I_L', 'AP', '12N', '10N_R',
+                                                      '10N_L', 'LRt_R', 'LRt_L', 'Sp5C_R', 'Sp5C_L']
+structures_unsided_sorted_by_rostral_caudal_position = ['SNC', 'SC', 'IC', 'SNR', 'RMC', '3N', 'PBG', '4N', 'Pn', 'VLL',
+                                                        'RtTg', '5N', 'LC', 'Tz', 'VCA', '7n', '6N', 'DC', 'VCP', '7N',
+                                                        'Sp5O', 'Amb', 'Sp5I', 'AP', '12N', '10N', 'LRt', 'Sp5C']
 
-#linear_landmark_names_unsided = ['outerContour']
+# linear_landmark_names_unsided = ['outerContour']
 linear_landmark_names_unsided = []
-volumetric_landmark_names_unsided = list(set(paired_structures + singular_structures) - set(linear_landmark_names_unsided))
+volumetric_landmark_names_unsided = list(
+    set(paired_structures + singular_structures) - set(linear_landmark_names_unsided))
 all_landmark_names_unsided = volumetric_landmark_names_unsided + linear_landmark_names_unsided
 
 labels_unsided = volumetric_landmark_names_unsided + linear_landmark_names_unsided
-labels_unsided_indices = dict((j, i+1) for i, j in enumerate(labels_unsided))  # BackG always 0
+labels_unsided_indices = dict((j, i + 1) for i, j in enumerate(labels_unsided))  # BackG always 0
 
-labelMap_unsidedToSided = dict([(name, [name+'_L', name+'_R']) for name in paired_structures] + \
-                            [(name, [name]) for name in singular_structures])
+labelMap_unsidedToSided = dict([(name, [name + '_L', name + '_R']) for name in paired_structures] + \
+                               [(name, [name]) for name in singular_structures])
 
 labelMap_sidedToUnsided = {n: nu for nu, ns in labelMap_unsidedToSided.items() for n in ns}
 
 labels_sided = list(chain(*(labelMap_unsidedToSided[name_u] for name_u in labels_unsided)))
-labels_sided_indices = dict((j, i+1) for i, j in enumerate(labels_sided)) # BackG always 0
+labels_sided_indices = dict((j, i + 1) for i, j in enumerate(labels_sided))  # BackG always 0
 
 ############ Physical Dimension #############
 
 # section_thickness = 20 # in um
-SECTION_THICKNESS = 20. # in um
+SECTION_THICKNESS = 20.  # in um
 # xy_pixel_distance_lossless = 0.46
-XY_PIXEL_DISTANCE_LOSSLESS = 0.46 # This is the spec for Nanozoomer
-XY_PIXEL_DISTANCE_TB = XY_PIXEL_DISTANCE_LOSSLESS * 32 # in um, thumbnail
+XY_PIXEL_DISTANCE_LOSSLESS = 0.46  # This is the spec for Nanozoomer
+XY_PIXEL_DISTANCE_TB = XY_PIXEL_DISTANCE_LOSSLESS * 32  # in um, thumbnail
 
 # This is the spec for Axioscan (our data)
-XY_PIXEL_DISTANCE_LOSSLESS_AXIOSCAN = 0.325 # unit is micron
+XY_PIXEL_DISTANCE_LOSSLESS_AXIOSCAN = 0.325  # unit is micron
 XY_PIXEL_DISTANCE_TB_AXIOSCAN = XY_PIXEL_DISTANCE_LOSSLESS_AXIOSCAN * 32
 
 #######################################
-
-#all_nissl_stacks = ['MD585', 'MD589', 'MD590', 'MD591', 'MD592', 'MD593', 'MD594', 'MD595', 'MD598', 'MD599', 'MD602', 'MD603']
-#all_ntb_stacks = ['MD635']
-#all_dk_ntb_stacks = ['CHATM2', 'CHATM3', 'UCSD001']
-#all_alt_nissl_ntb_stacks = ['MD653', 'MD652', 'MD642']
-#all_alt_nissl_tracing_stacks = ['MD657', 'MD658', 'MD661', 'MD662']
-# all_stacks = all_nissl_stacks + all_ntb_stacks
-#all_stacks = all_nissl_stacks + all_ntb_stacks + all_alt_nissl_ntb_stacks + all_alt_nissl_tracing_stacks + all_dk_ntb_stacks \
-#                + ['DEMO999', 'MD998']
-#all_annotated_nissl_stacks = ['MD585', 'MD589', 'MD594']
-#all_annotated_ntb_stacks = ['MD635']
-#all_annotated_stacks = all_annotated_nissl_stacks + all_annotated_ntb_stacks
-
-#all_nissl_stacks = ['MD585', 'MD594', 'MD589']
-#all_nissl_stacks = ['MD585']
-#all_ntb_stacks = ['UCSD001','DK1-2']
-#all_stacks = all_nissl_stacks + all_ntb_stacks
 
 
 all_stacks = []
 all_ntb_stacks = []
 all_nissl_stacks = []
-if False:
-    with open(os.environ['REPO_DIR']+'utilities/registered_brains.json', 'r') as json_file:
-        contents = json.load( json_file )
 
-    # Load Nissl and Ntb stacks
-    all_nissl_stacks = contents['all_thionin_stacks']
-    all_ntb_stacks = contents['all_ntb_stacks']
-    #all_stacks = all_nissl_stacks + all_ntb_stacks
-
-    # Load annotated stacks
-    all_annotated_ntb_stacks = contents['all_annotated_ntb_stacks']
-    all_annotated_nissl_stacks = contents['all_annotated_thionin_stacks']
-    all_annotated_stacks = all_annotated_nissl_stacks + all_annotated_ntb_stacks
-
-    all_dk_ntb_stacks = contents['all_dk_ntb_stacks']
-    all_alt_nissl_ntb_stacks = contents['all_alt_thionin_ntb_stacks']
-    all_alt_nissl_tracing_stacks = contents['all_alt_thionin_tracing_stacks']
-    all_stacks = all_nissl_stacks + all_ntb_stacks + all_alt_nissl_ntb_stacks + all_alt_nissl_tracing_stacks + all_dk_ntb_stacks
-    #all_stacks = ['MD603','MD635','MD585']
-
-
-
-# from utilities2015 import load_ini
 
 def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
     """
@@ -369,7 +363,7 @@ def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
         if not isinstance(v, list):
             if '.' not in v and v.isdigit():
                 input_spec[k] = int(v)
-            elif v.replace('.','',1).isdigit():
+            elif v.replace('.', '', 1).isdigit():
                 input_spec[k] = float(v)
         elif v == 'None':
             if convert_none_str:
@@ -377,58 +371,60 @@ def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
     assert len(input_spec) > 0, "Failed to read data from ini file."
     return input_spec
 
+
 planar_resolution = {}
 stack_metadata = {}
-if os.path.exists( ROOT_DIR ):
-    for brain in os.listdir( ROOT_DIR ):
-        inifile = os.path.join(ROOT_DIR, brain, 'brains_info', 'metadata.ini')
-        if os.path.exists(inifile):
-            brain_info = load_ini(inifile)
-            planar_resolution[brain] = float(brain_info['planar_resolution_um'])
-            stain = brain_info['stain']
-            cutting_plane = brain_info['cutting_plane']
-            cutting_plane = brain_info['cutting_plane']
-            section_thickness = brain_info['section_thickness_um']
+new_stacks = []
+for brain in os.listdir(ROOT_DIR):
+    inifile = os.path.join(ROOT_DIR, brain, 'brains_info', 'metadata.ini')
+    if os.path.exists(inifile):
+        brain_info = load_ini(inifile)
+        planar_resolution[brain] = float(brain_info['planar_resolution_um'])
+        stain = brain_info['stain']
+        cutting_plane = brain_info['cutting_plane']
+        section_thickness = brain_info['section_thickness_um']
 
-            all_stacks.append( brain )
-            if stain == "NTB":
-                all_ntb_stacks.append( brain )
-            elif stain == "Thionin":
-                all_nissl_stacks.append( brain )
-            # Fill in stack_metadata:
-            stack_metadata[brain] = {'stain': stain,
-                                          'cutting_plane': cutting_plane,
-                                          'resolution': float(brain_info['planar_resolution_um']),
-                                          'section_thickness': section_thickness}
+        all_stacks.append(brain)
+        if stain == "NTB":
+            all_ntb_stacks.append(brain)
+        elif stain == "Thionin":
+            all_nissl_stacks.append(brain)
+        # Fill in stack_metadata:
+        stack_metadata[brain] = {'stain': stain,
+                                 'cutting_plane': cutting_plane,
+                                 'resolution': float(brain_info['planar_resolution_um']),
+                                 'section_thickness': section_thickness}
+    else:
+        new_stacks.append(brain)
 
 
-#print planar_resolution
-stain_to_metainfo = {'ntb': {'detector_id': 799, 'img_version_1': 'NtbNormalized', 
+# print planar_resolution
+stain_to_metainfo = {'ntb': {'detector_id': 799, 'img_version_1': 'NtbNormalized',
                              'img_version_2': 'NtbNormalizedAdaptiveInvertedGamma'},
-                    'thionin': {'detector_id': 19, 'img_version_1': 'gray', 'img_version_2': 'gray'}}
+                     'thionin': {'detector_id': 19, 'img_version_1': 'gray', 'img_version_2': 'gray'}}
 
 ########################################
 
 # prep_id_to_str_2d = {0: 'raw', 1: 'alignedPadded', 2: 'alignedCroppedBrainstem', 3: 'alignedCroppedThalamus', 4: 'alignedNoMargin', 5: 'alignedWithMargin', 6: 'rawCropped'}
-prep_id_to_str_2d = {0: 'raw', 1: 'alignedPadded', 2: 'alignedBrainstemCrop', 3: 'alignedThalamusCrop', 4: 'alignedNoMargin', 5: 'alignedWithMargin', 6: 'rawCropped', 7: 'rawBeforeRotation'}
+prep_id_to_str_2d = {0: 'raw', 1: 'alignedPadded', 2: 'alignedBrainstemCrop', 3: 'alignedThalamusCrop',
+                     4: 'alignedNoMargin', 5: 'alignedWithMargin', 6: 'rawCropped', 7: 'rawBeforeRotation'}
 prep_str_to_id_2d = {s: i for i, s in prep_id_to_str_2d.items()}
 
 #######################################
 
-import multiprocessing
 NUM_CORES = multiprocessing.cpu_count()
 
 ############## Colors ##############
 
-boynton_colors = dict(blue=(0,0,255),
-    red=(255,0,0),
-    green=(0,255,0),
-    yellow=(255,255,0),
-    magenta=(255,0,255),
-    pink=(255,128,128),
-    gray=(128,128,128),
-    brown=(128,0,0),
-    orange=(255,128,0))
+boynton_colors = dict(blue=(0, 0, 255),
+                      red=(255, 0, 0),
+                      green=(0, 255, 0),
+                      yellow=(255, 255, 0),
+                      magenta=(255, 0, 255),
+                      pink=(255, 128, 128),
+                      gray=(128, 128, 128),
+                      brown=(128, 0, 0),
+                      orange=(255, 128, 0))
 
 kelly_colors = dict(vivid_yellow=(255, 179, 0),
                     strong_purple=(128, 62, 117),
@@ -453,47 +449,47 @@ kelly_colors = dict(vivid_yellow=(255, 179, 0),
                     vivid_reddish_orange=(241, 58, 19),
                     dark_olive_green=(35, 44, 22))
 
-#high_contrast_colors = boynton_colors.values() + kelly_colors.values()
+# high_contrast_colors = boynton_colors.values() + kelly_colors.values()
 
 bc = list(chain.from_iterable(boynton_colors.values()))
 kc = list(chain.from_iterable(kelly_colors.values()))
 high_contrast_colors = bc + kc
 
-hc_perm = [ 0,  5, 28, 26, 12, 11,  4,  8, 25, 22,  3,  1, 20, 19, 27, 13, 24,
-       17, 16, 15,  7, 14, 21, 18, 23,  2, 10,  9,  6]
+hc_perm = [0, 5, 28, 26, 12, 11, 4, 8, 25, 22, 3, 1, 20, 19, 27, 13, 24,
+           17, 16, 15, 7, 14, 21, 18, 23, 2, 10, 9, 6]
 high_contrast_colors = [high_contrast_colors[i] for i in hc_perm]
-name_sided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
-                     for i, s in enumerate(all_known_structures_sided) }
-name_sided_to_color_float = {s: np.array(c)/255. for s, c in name_sided_to_color.items()}
+name_sided_to_color = {s: high_contrast_colors[i % len(high_contrast_colors)]
+                       for i, s in enumerate(all_known_structures_sided)}
+name_sided_to_color_float = {s: np.array(c) / 255. for s, c in name_sided_to_color.items()}
 
-name_unsided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
-                     for i, s in enumerate(all_known_structures) }
-name_unsided_to_color_float = {s: np.array(c)/255. for s, c in name_unsided_to_color.items()}
+name_unsided_to_color = {s: high_contrast_colors[i % len(high_contrast_colors)]
+                         for i, s in enumerate(all_known_structures)}
+name_unsided_to_color_float = {s: np.array(c) / 255. for s, c in name_unsided_to_color.items()}
 
-stack_to_color = {n: high_contrast_colors[i%len(high_contrast_colors)] for i, n in enumerate(all_stacks)}
-stack_to_color_float = {s: np.array(c)/255. for s, c in stack_to_color.items()}
+stack_to_color = {n: high_contrast_colors[i % len(high_contrast_colors)] for i, n in enumerate(all_stacks)}
+stack_to_color_float = {s: np.array(c) / 255. for s, c in stack_to_color.items()}
 
 # Colors for the iso-contours or iso-surfaces of different probabilities.
-LEVEL_TO_COLOR_LINE = {0.1: (125,0,125), 0.25: (0,255,0), 0.5: (255,0,0), 0.75: (0,125,0), 0.99: (0,0,255)}
-LEVEL_TO_COLOR_VERTEX = {0.1: (0,0,255), 0.25: (125,0,125), 0.5: (0,255,0), 0.75: (255,0,0), 0.99: (0,125,0)}
-LEVEL_TO_COLOR_LINE2 = {0.1: (0,125,0), 0.25: (0,0,255), 0.5: (125,0,125), 0.75: (0,255,0), 0.99: (255,0,0)}
-LEVEL_TO_COLOR_VERTEX2 = {0.1: (0,125,0), 0.25: (0,0,255), 0.5: (125,0,125), 0.75: (0,255,0), 0.99: (255,0,0)}
+LEVEL_TO_COLOR_LINE = {0.1: (125, 0, 125), 0.25: (0, 255, 0), 0.5: (255, 0, 0), 0.75: (0, 125, 0), 0.99: (0, 0, 255)}
+LEVEL_TO_COLOR_VERTEX = {0.1: (0, 0, 255), 0.25: (125, 0, 125), 0.5: (0, 255, 0), 0.75: (255, 0, 0), 0.99: (0, 125, 0)}
+LEVEL_TO_COLOR_LINE2 = {0.1: (0, 125, 0), 0.25: (0, 0, 255), 0.5: (125, 0, 125), 0.75: (0, 255, 0), 0.99: (255, 0, 0)}
+LEVEL_TO_COLOR_VERTEX2 = {0.1: (0, 125, 0), 0.25: (0, 0, 255), 0.5: (125, 0, 125), 0.75: (0, 255, 0), 0.99: (255, 0, 0)}
 
 ####################################
 
 orientation_argparse_str_to_imagemagick_str = \
-{'transpose': '-transpose',
- 'transverse': '-transverse',
- 'rotate90': '-rotate 90',
- 'rotate180': '-rotate 180',
- 'rotate270': '-rotate 270',
- 'rotate45': '-rotate 45',
- 'rotate135': '-rotate 135',
- 'rotate225': '-rotate 225',
- 'rotate315': '-rotate 315',
- 'flip': '-flip',
- 'flop': '-flop'
-}
+    {'transpose': '-transpose',
+     'transverse': '-transverse',
+     'rotate90': '-rotate 90',
+     'rotate180': '-rotate 180',
+     'rotate270': '-rotate 270',
+     'rotate45': '-rotate 45',
+     'rotate135': '-rotate 135',
+     'rotate225': '-rotate 225',
+     'rotate315': '-rotate 315',
+     'flip': '-flip',
+     'flop': '-flop'
+     }
 
 prep_id_short_str_to_full = {
     'None': 'None',
@@ -503,31 +499,31 @@ prep_id_short_str_to_full = {
     'wholeslice': 'alignedWithMargin'}
 
 prep_id_num_to_str = {
-    0:'raw',
-    1:'alignedPadded',
-    2:'alignedBrainstemCrop',
-    3:'alignedThalamusCrop',
-    4:'alignedNoMargin',
-    5:'alignedWithMargin',
-    6:'rawCropped',
-    7:'rawBeforeRotation'}
+    0: 'raw',
+    1: 'alignedPadded',
+    2: 'alignedBrainstemCrop',
+    3: 'alignedThalamusCrop',
+    4: 'alignedNoMargin',
+    5: 'alignedWithMargin',
+    6: 'rawCropped',
+    7: 'rawBeforeRotation'}
 
 prep_id_str_to_num = dict(map(reversed, prep_id_num_to_str.items()))
 
-#ordered_pipeline_steps = ['1_setup_metadata', '1_setup_images', '1_setup_sorted_filenames', '1_setup_scripts',
+# ordered_pipeline_steps = ['1_setup_metadata', '1_setup_images', '1_setup_sorted_filenames', '1_setup_scripts',
 #                     '2_align', '3_mask', '4_crop', '5_fit_atlas_global', '6_fit_atlas_local']
 
-ordered_pipeline_steps = ['1-1_setup_metadata', 
-                          '1-2_setup_images', 
+ordered_pipeline_steps = ['1-1_setup_metadata',
+                          '1-2_setup_images',
                           '1-3_setup_thumbnails',
-                          '1-4_setup_sorted_filenames', 
+                          '1-4_setup_sorted_filenames',
                           '1-5_setup_orientations',
                           '1-6_setup_scripts',
-                          '2_align', 
-                          '3-1_mask_initial_contours', 
-                          '3-2_mask_scripts_1', 
-                          '3-3_mask_correct_contours', 
-                          '3-4_mask_scripts_2', 
-                          '4_crop', 
-                          '5_fit_atlas_global', 
+                          '2_align',
+                          '3-1_mask_initial_contours',
+                          '3-2_mask_scripts_1',
+                          '3-3_mask_correct_contours',
+                          '3-4_mask_scripts_2',
+                          '4_crop',
+                          '5_fit_atlas_global',
                           '6_fit_atlas_local']
