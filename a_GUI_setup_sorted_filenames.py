@@ -32,7 +32,7 @@ sfns_already_exists = os.path.exists(sfns_fp)
 quality_options = ['unusable', 'blurry', 'good']
 
 # Cannot assume we have the sorted_filenames file. Load images a different way
-thumbnail_folder = os.path.join(ROOT_DIR, stack, 'thumbnail')
+thumbnail_folder = os.path.join(ROOT_DIR, stack, 'preps', 'thumbnail')
 sections_to_filenames = {}
 fn_to_quality = {}
 fn_list = os.listdir(thumbnail_folder)
@@ -470,22 +470,19 @@ class init_GUI(QWidget):
             pass
         # Yes
         elif ret == 2:
+            print('aaa', self.valid_sections)
             curr_fn = self.valid_sections[int(self.curr_section_index)]
             # Remove the current section from "self.valid_sections
-            self.valid_sections.remove(int(self.curr_section_index))
+            try:
+                del self.valid_sections[self.curr_section_index]
+            except KeyError:
+                print('Key {} missing'.format(self.curr_section_index))
+            print('bbb', self.valid_sections)
 
-            new_sections_to_filenames = {}
-            # Copy all "sections_to_filenames" info into "new_self.valid_sections", skip the cur_section
-            for i in range(len(self.valid_sections) - 1):
-                # Directly copy sections if it is before the section to be removed
-                if i < self.curr_section:
-                    new_sections_to_filenames[i] = self.valid_sections[i]
-                else:
-                    new_sections_to_filenames[i] = self.valid_sections[i + 1]
-            # Save changes
-            self.valid_sections = new_sections_to_filenames
-            self.valid_section_keys = self.valid_sections.keys()
+            new_sections_to_filenames = sorted(self.valid_sections.values())
 
+            for i, v in enumerate(new_sections_to_filenames):
+                self.valid_sections[i] = v
             # Go back a section if you deleted the last section
             if int(self.curr_section_index) == len(self.valid_sections):
                 self.curr_section_index = self.curr_section_index - 1

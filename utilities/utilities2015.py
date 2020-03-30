@@ -12,12 +12,10 @@ import joblib
 from skimage.io import imsave
 from skimage.measure import find_contours, regionprops
 
-
-
 from vis3d_utilities import save_mesh_stl
-from metadata import ENABLE_UPLOAD_S3
+from metadata import ROOT_DIR
 #from utilities.metadata import all_known_structures, singular_structures, convert_to_left_name, convert_to_right_name
-from distributed_utilities import upload_to_s3
+#from distributed_utilities import upload_to_s3
 #from data_manager_v2 import DataManager
 
 def crop_volume_to_minimal(vol, origin=(0,0,0), margin=0, return_origin_instead_of_bbox=True):
@@ -176,8 +174,8 @@ def save_data(data, fp, upload_s3=True):
     else:
         raise
 
-    if ENABLE_UPLOAD_S3 and upload_s3:  # in the future, use only one flag.
-        upload_to_s3(fp)
+    #if ENABLE_UPLOAD_S3 and upload_s3:  # in the future, use only one flag.
+    #    upload_to_s3(fp)
 
 
 def create_parent_dir_if_not_exists(fp):
@@ -456,8 +454,13 @@ def bbox_2d(img):
 
     return cmin, cmax, rmin, rmax
 
-def load_hdf_v2(fn, key='data'):
-    return pd.read_hdf(fn, key)
+def create_thumbnails(stack):
+    ## Downsample and normalize images in the "_raw" folder
+    raw_folder = os.path.join(ROOT_DIR, stack, 'raw')
+    for img_name in os.listdir(raw_folder):
+        input_fp = os.path.join(raw_folder, img_name)
+        output_fp = os.path.join(ROOT_DIR, stack, 'preps', 'thumbnail', img_name)
 
-def one_liner_to_arr(line, func):
-    return np.array(map(func, line.strip().split()))
+        # Create thumbnails
+        execute_command("convert \"" + input_fp + "\" -resize 3.125% -auto-level -normalize \
+                        -compress lzw \"" + output_fp + "\"")

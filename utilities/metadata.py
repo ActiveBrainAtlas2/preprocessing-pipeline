@@ -1,7 +1,7 @@
 """
 This module stores static meta information.
 """
-import os, sys
+import os
 import numpy as np
 import subprocess
 import configparser

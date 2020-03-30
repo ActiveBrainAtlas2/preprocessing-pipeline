@@ -11,7 +11,7 @@ from tkinter import filedialog
 from tkinter import *
 
 sys.path.append(os.path.join(os.getcwd(),'utilities'))
-from utilities.metadata import ON_DOCKER, ROOT_DIR
+from utilities.metadata import ON_DOCKER
 from utilities.a_driver_utilities import set_step_completed_in_progress_ini, call_and_time
 from data_manager_v2 import DataManager
 

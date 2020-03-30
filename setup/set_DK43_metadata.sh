@@ -1,5 +1,0 @@
-export stack=DK43
-export stain=NTB
-export detector_id=799
-export img_version_1=NtbNormalized
-export img_version_2=NtbNormalizedAdaptiveInvertedGamma

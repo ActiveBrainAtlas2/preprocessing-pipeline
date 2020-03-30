@@ -134,7 +134,7 @@ class DataManager(object):
         try:
             os.makedirs(ROOT_DIR, stack, 'raw')
         except Exception as e:
-            # print(e)
+            print(e)
             pass
 
         filenames_list = DataManager.load_sorted_filenames(stack)[0].keys()
@@ -164,13 +164,10 @@ class DataManager(object):
         else:
             return contents_dict
 
-    @staticmethod
-    def get_brain_info_progress_fp(stack):
-        return os.path.join(ROOT_DIR, stack, 'brains_info', 'progress.ini')
 
     @staticmethod
     def get_brain_info_progress(stack):
-        fp = DataManager.get_brain_info_progress_fp(stack)
+        fp = os.path.join(ROOT_DIR, stack, 'brains_info', 'progress.ini')
         print('test fp ', fp)
         contents_dict = load_ini(fp)
         if contents_dict is None:
@@ -275,8 +272,6 @@ class DataManager(object):
             Absolute path of the image file.
         """
         print('stack is ', stack, type(stack))
-        data_dir = os.path.join(ROOT_DIR, stack, 'tif')
-        thumbnail_data_dir = os.path.join(ROOT_DIR, stack, 'thumbnail')
         if section is not None:
             try:
                 DataManager.metadata_cache['sections_to_filenames'][stack]
@@ -334,7 +329,6 @@ class DataManager(object):
         Returns:
             Absolute path of the image directory.
         """
-        data_dir = ROOT_DIR
         print('stack is ', stack, type(stack))
 
         if resol == 'thumbnail' or resol == 'down64':

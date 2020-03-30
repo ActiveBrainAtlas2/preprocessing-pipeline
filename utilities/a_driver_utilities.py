@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 import numpy as np
@@ -5,7 +6,7 @@ import cv2
 import matplotlib.pyplot as plt
 
 from data_manager_v2 import DataManager
-from metadata import ordered_pipeline_steps
+from metadata import ordered_pipeline_steps, ROOT_DIR
 
 def get_current_step_from_progress_ini( stack ):
     progress_dict = DataManager.get_brain_info_progress( stack )
@@ -25,7 +26,7 @@ def set_step_completed_in_progress_ini(stack, step):
     progress_ini_to_save['DEFAULT'] = progress_dict
 
     # Get filepath and save ini
-    fp = DataManager.get_brain_info_progress_fp(stack)
+    fp = os.path.join(ROOT_DIR, stack, 'brains_info', 'progress.ini')
     save_dict_as_ini(progress_ini_to_save, fp)
 
 

@@ -8,6 +8,7 @@ sys.path.append(os.path.join(os.getcwd(), 'utilities'))
 # print(sys.path)
 from utilities.metadata import all_stacks, stain_to_metainfo, stack_metadata, ROOT_DIR
 from utilities.a_driver_utilities import get_current_step_from_progress_ini
+from utilities.data_manager_v2 import DataManager
 
 def format_grid_button_initial(button):
     button.setDefault(True)
@@ -54,7 +55,7 @@ class init_GUI(QWidget):
         self.curr_step = ""
 
         self.initial_bottom_text = "Push `Finished` to exit the GUI"
-
+        self.dataManager = DataManager()
         self.initUI()
 
     def initUI(self):
@@ -100,7 +101,7 @@ class init_GUI(QWidget):
         self.e3.setAlignment(Qt.AlignLeft)
         self.e3.setFont(self.font1)
         self.e3.setReadOnly(True)
-        self.e3.setText("")
+        self.e3.setText("XXX")
         self.e3.setFrame(False)
         self.grid_top.addWidget(self.e3, 0, 3)
         # Button Text Field
@@ -143,25 +144,26 @@ class init_GUI(QWidget):
 
         ### Grid Bottom ###
         # Button Text Field
-        self.b_newBrain = QPushButton("New Brain")
-        self.b_newBrain.setDefault(True)
-        self.b_newBrain.clicked.connect(lambda: self.button_push(self.b_newBrain))
-        self.grid_bottom.addWidget(self.b_newBrain, 0, 1)
+        #self.b_newBrain = QPushButton("New Brain")
+        #self.b_newBrain.setDefault(True)
+        #self.b_newBrain.clicked.connect(lambda: self.button_push(self.b_newBrain))
+        #self.grid_bottom.addWidget(self.b_newBrain, 0, 1)
         # Button Text Field
         self.b_prevStep = QPushButton("Go to Previous Step")
         self.b_prevStep.setDefault(True)
+        self.b_prevStep.setEnabled(False)
         self.b_prevStep.clicked.connect(lambda: self.button_push(self.b_prevStep))
         self.grid_bottom.addWidget(self.b_prevStep, 0, 2)
         # Button Text Field
-        self.b_neuroglancer = QPushButton("Neuroglancer Utilities")
-        self.b_neuroglancer.setDefault(True)
-        self.b_neuroglancer.clicked.connect(lambda: self.button_push(self.b_neuroglancer))
-        self.grid_bottom.addWidget(self.b_neuroglancer, 0, 3)
+        #self.b_neuroglancer = QPushButton("Neuroglancer Utilities")
+        #self.b_neuroglancer.setDefault(True)
+        #self.b_neuroglancer.clicked.connect(lambda: self.button_push(self.b_neuroglancer))
+        #self.grid_bottom.addWidget(self.b_neuroglancer, 0, 3)
         # Button Text Field
-        self.b_datajoint = QPushButton("Datajoint Utilities")
-        self.b_datajoint.setDefault(True)
-        self.b_datajoint.clicked.connect(lambda: self.button_push(self.b_datajoint))
-        self.grid_bottom.addWidget(self.b_datajoint, 0, 4)
+        #self.b_datajoint = QPushButton("Datajoint Utilities")
+        #self.b_datajoint.setDefault(True)
+        #self.b_datajoint.clicked.connect(lambda: self.button_push(self.b_datajoint))
+        #self.grid_bottom.addWidget(self.b_datajoint, 0, 4)
         # Button Text Field
         self.b_exit = QPushButton("Exit")
         self.b_exit.setDefault(True)
@@ -196,13 +198,20 @@ class init_GUI(QWidget):
         self.stack = dropdown_selection_str
         try:
             self.stain = stack_metadata[self.stack]['stain']
+            self.e3.setText(self.stain)
+        except Exception:
+            print('Error, cannot get stain info.')
+
+        try:
+            self.curr_step = get_current_step_from_progress_ini(self.stack)
+        except:
+            print('Error, there is no progress ini file.')
+
+        try:
             self.detector_id = stain_to_metainfo[self.stain.lower()]['detector_id']
             self.img_version_1 = stain_to_metainfo[self.stain.lower()]['img_version_1']
             self.img_version_2 = stain_to_metainfo[self.stain.lower()]['img_version_1']
-            # Update "stain" field to self.stack's stain
-            self.e3.setText(self.stain)
             # Check the brains_info/STACK_progress.ini file for which step we're on
-            self.curr_step = get_current_step_from_progress_ini(self.stack)
             # Disable all grid buttons except for the one corresponding to our current step
             self.format_grid_buttons()
 
@@ -345,12 +354,6 @@ class init_GUI(QWidget):
 
             # Update interactive windows
             self.updateFields()
-        elif button == self.b_neuroglancer:
-            pass
-        elif button == self.b_datajoint:
-            pass
-        elif button == self.b_newBrain:
-            subprocess.call(['python', 'a_GUI_setup_newBrainMetadata.py'])
         elif button == self.b_refresh:
             self.updateFields()
 
