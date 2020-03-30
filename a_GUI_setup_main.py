@@ -11,6 +11,7 @@ from utilities.a_driver_utilities import get_current_step_from_progress_ini, set
 from utilities.metadata import stack_metadata
 from utilities.utilities_pipeline_status import get_pipeline_status
 from utilities.utilities2015 import create_thumbnails
+from utilities.data_manager_v2 import DataManager
 
 parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -58,6 +59,7 @@ class init_GUI(QWidget):
         self.curr_step = ""
 
         set_step_completed_in_progress_ini(self.stack, '1-2_setup_images')
+        self.dataManager = DataManager()
         self.initUI()
 
     def initUI(self):

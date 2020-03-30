@@ -184,7 +184,6 @@ class DataManager(object):
         Returns:
             filename_to_section, section_to_filename
         """
-
         if fp is None:
             assert stack is not None, 'Must specify stack'
             fp = DataManager.get_sorted_filenames_filename(stack=stack)
@@ -700,6 +699,11 @@ class DataManager(object):
         # print "sec_float =", sec_float
         sec = int(np.ceil(sec_float))
         return sec
+
+    @staticmethod
+    def get_version(stack):
+        stain = DataManager.stack_metadata[stack]['stain']
+        return DataManager.stain_to_metainfo[stain.lower()]['img_version_1']
 
     @staticmethod
     def is_invalid(fn=None, sec=None, stack=None):

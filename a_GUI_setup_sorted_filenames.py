@@ -35,8 +35,8 @@ quality_options = ['unusable', 'blurry', 'good']
 thumbnail_folder = os.path.join(ROOT_DIR, stack, 'preps', 'thumbnail')
 sections_to_filenames = {}
 fn_to_quality = {}
-fn_list = os.listdir(thumbnail_folder)
-fn_list.sort()
+fn_list = sorted(os.listdir(thumbnail_folder))
+
 for i, img_name in enumerate(fn_list):
     print(img_name)
     sections_to_filenames[i] = img_name
@@ -399,6 +399,20 @@ class init_GUI(QWidget):
 
         self.loadImage()
 
+    def getNextValidSection(self, section_index):
+        self.next_section_index = section_index + 1
+        if self.next_section_index > len(self.valid_sections) - 1:
+            self.next_section_index = 0
+        self.next_section = self.valid_sections[self.next_section_index]
+        return self.next_section
+
+    def getPrevValidSection(self, section_index):
+        self.prev_section_index = int(section_index) - 1
+        if self.prev_section_index < 0:
+            self.prev_section_index = len(self.valid_sections) - 1
+        self.prev_section = self.valid_sections[self.prev_section_index]
+        return self.prev_section
+
     def buttonPress(self, button):
         # Brighten an image
         if button in [self.b_left, self.b_right, self.b_addPlaceholder, self.b_remove]:
@@ -438,20 +452,6 @@ class init_GUI(QWidget):
 
         elif button == self.b_done:
             self.finished()
-
-    def getNextValidSection(self, section_index):
-        self.next_section_index = section_index + 1
-        if self.next_section_index > len(self.valid_sections) - 1:
-            self.next_section_index = 0
-        self.next_section = self.valid_sections[self.next_section_index]
-        return self.next_section
-
-    def getPrevValidSection(self, section_index):
-        self.prev_section_index = int(section_index) - 1
-        if self.prev_section_index < 0:
-            self.prev_section_index = len(self.valid_sections) - 1
-        self.prev_section = self.valid_sections[self.prev_section_index]
-        return self.prev_section
 
     def removeCurrSection(self):
         msgBox = QMessageBox()
@@ -522,9 +522,7 @@ class init_GUI(QWidget):
 
     def finished(self):
         set_step_completed_in_progress_ini(stack, '1-4_setup_sorted_filenames')
-
         write_results_to_sorted_filenames(self.valid_sections, fn_to_quality)
-
         # close_main_gui( ex )
         sys.exit(app.exec_())
 
@@ -544,34 +542,31 @@ def write_results_to_sorted_filenames(sections_to_filenames, fn_to_quality):
         - good: Write to the file as usual
         - blurry: Write to a special file meant to be used until intra-stack alignment, ignored after
     """
-
-    first_section = min(sections_to_filenames.keys())
-    offset = 1 - first_section
-
+    print(fn_to_quality)
     sfns_text = ""
     sfns_till_alignment_text = ""
-    for section, fn in sections_to_filenames.items():
+    for k, filename in sections_to_filenames.items():
 
-        if fn == 'Placeholder':
+        if filename == 'Placeholder':
             quality = 'unusable'
         else:
-            quality = fn_to_quality[fn]
+            quality = fn_to_quality[filename]
 
         # section_str is the section encoded as a string, padded with zeros
-        section_str = str(section + offset).zfill(3)
+        #section_str = str(section + offset).zfill(3)
 
         # If section is marked "unusable"
         if quality == 'unusable':
-            sfns_text += 'Placeholder ' + section_str + '\n'
-            sfns_till_alignment_text += 'Placeholder ' + section_str + '\n'
+            sfns_text += 'Placeholder ' + str(k) + '\n'
+            sfns_till_alignment_text += 'Placeholder ' + str(k) + '\n'
             continue
         elif quality == 'good':
-            sfns_text += fn + ' ' + section_str + '\n'
-            sfns_till_alignment_text += fn + ' ' + section_str + '\n'
+            sfns_text += filename + ' ' + str(k) + '\n'
+            sfns_till_alignment_text += filename + ' ' + str(k) + '\n'
             continue
         elif quality == 'blurry':
-            sfns_text += 'Placeholder ' + section_str + '\n'
-            sfns_till_alignment_text += fn + ' ' + section_str + '\n'
+            sfns_text += 'Placeholder ' + str(k) + '\n'
+            sfns_till_alignment_text += filename + ' ' + str(k) + '\n'
             continue
     # Remove trailing '\n' at the end of each file
     sfns_text = sfns_text[:-1]
@@ -582,12 +577,12 @@ def write_results_to_sorted_filenames(sections_to_filenames, fn_to_quality):
         f.write(sfns_till_alignment_text)
 
     # Write the "post alignment" version
-    sfns_post_alignment_fp = sfns_fp.replace('_sorted_filenames', '_sorted_filenames_post_slice_alignment')
+    sfns_post_alignment_fp = sfns_fp.replace('sorted_filenames', 'sorted_filenames_post_slice_alignment')
     with open(sfns_post_alignment_fp, 'w') as f:
         f.write(sfns_text)
 
     # Write the "pre alignment" version
-    sfns_till_alignment_fp = sfns_fp.replace('_sorted_filenames', '_sorted_filenames_till_slice_alignment')
+    sfns_till_alignment_fp = sfns_fp.replace('sorted_filenames', 'sorted_filenames_till_slice_alignment')
     with open(sfns_till_alignment_fp, 'w') as f:
         f.write(sfns_till_alignment_text)
 
