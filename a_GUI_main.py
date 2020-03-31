@@ -6,9 +6,10 @@ from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComb
 
 sys.path.append(os.path.join(os.getcwd(), 'utilities'))
 # print(sys.path)
-from utilities.metadata import all_stacks, stain_to_metainfo, stack_metadata, ROOT_DIR
+from utilities.metadata import all_stacks, stain_to_metainfo, ROOT_DIR
 from utilities.a_driver_utilities import get_current_step_from_progress_ini
 from utilities.data_manager_v2 import DataManager
+from utilities.sqlcontroller import SqlController
 
 def format_grid_button_initial(button):
     button.setDefault(True)
@@ -55,6 +56,7 @@ class init_GUI(QWidget):
         self.curr_step = ""
 
         self.initial_bottom_text = "Push `Finished` to exit the GUI"
+        self.sqlController = SqlController()
         self.dataManager = DataManager()
         self.initUI()
 
@@ -182,7 +184,6 @@ class init_GUI(QWidget):
         # Set layout and window title
         self.setLayout(self.supergrid)
         self.setWindowTitle("Align to Active Brainstem Atlas - Main Page")
-
         # Update interactive windows
         self.updateFields()
 
@@ -197,7 +198,7 @@ class init_GUI(QWidget):
         # Set stack-specific variables
         self.stack = dropdown_selection_str
         try:
-            self.stain = stack_metadata[self.stack]['stain']
+            self.stain = self.sqlController.stack_metadata[self.stack]['stain']
             self.e3.setText(self.stain)
         except Exception:
             print('Error, cannot get stain info.')
@@ -221,7 +222,8 @@ class init_GUI(QWidget):
                 self.updateStackDropdownMenu()
 
         # If there are no stacks/brains that have been started
-        except KeyError:
+        except KeyError as k:
+            print('key error',k)
             for grid_button in [self.b_setup, self.b_align, self.b_mask, self.b_crop,
                                 self.b_globalFit, self.b_localFit]:
                 format_grid_button_cantStart(grid_button)

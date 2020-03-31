@@ -14,8 +14,9 @@ from tkinter import *
 
 sys.path.append(os.path.join(os.getcwd(), 'utilities'))
 from utilities.a_driver_utilities import set_step_completed_in_progress_ini
-from data_manager_v2 import DataManager
-from metadata import ON_DOCKER, ROOT_DIR
+from utilities.data_manager_v2 import DataManager
+from utilities.metadata import ON_DOCKER, ROOT_DIR
+from utilities.utilities2015 import create_if_not_exists
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -33,6 +34,7 @@ quality_options = ['unusable', 'blurry', 'good']
 
 # Cannot assume we have the sorted_filenames file. Load images a different way
 thumbnail_folder = os.path.join(ROOT_DIR, stack, 'preps', 'thumbnail')
+create_if_not_exists(thumbnail_folder)
 sections_to_filenames = {}
 fn_to_quality = {}
 fn_list = sorted(os.listdir(thumbnail_folder))
