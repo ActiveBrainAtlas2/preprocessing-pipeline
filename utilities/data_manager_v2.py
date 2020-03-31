@@ -5,9 +5,14 @@ import pandas as pd
 import bloscpack as bp
 import pickle
 import shutil
+import cv2
+from skimage import img_as_ubyte
+from skimage.color import rgb2gray
 from skimage.io import imread
-from metadata import ROOT_DIR, convert_resolution_string_to_voxel_size, SECTION_THICKNESS
-from utilities2015 import load_ini, load_hdf_v2, one_liner_to_arr
+
+from utilities.metadata import ROOT_DIR, convert_resolution_string_to_voxel_size, SECTION_THICKNESS, DATA_DIR, THUMBNAILRAW, \
+    convert_resolution_string_to_um, planar_resolution
+from utilities.utilities2015 import load_ini, load_hdf_v2, one_liner_to_arr, rescale_by_resampling, load_data
 
 
 class DataManager(object):
@@ -512,6 +517,34 @@ class DataManager(object):
                 else:
                     return cropbox.astype(np.int)
 
+
+    @staticmethod
+    def load_cropbox_v2_relative(stack, prep_id, wrt_prep_id, out_resolution):
+        """
+        Returns:
+            xmin, xmax, ymin, ymax
+        """
+        alignedBrainstemCrop_xmin_down32, alignedBrainstemCrop_xmax_down32, \
+        alignedBrainstemCrop_ymin_down32, alignedBrainstemCrop_ymax_down32 = DataManager.load_cropbox(stack=stack,
+                                                                                                      only_2d=True)
+
+        alignedWithMargin_xmin_down32, alignedWithMargin_xmax_down32, \
+        alignedWithMargin_ymin_down32, alignedWithMargin_ymax_down32 = DataManager.load_cropbox(stack=stack, anchor_fn=None,
+                                                                                                return_dict=False, only_2d=True)
+
+        alignedBrainstemCrop_xmin_wrt_alignedWithMargin_down32 = alignedBrainstemCrop_xmin_down32 - alignedWithMargin_xmin_down32
+        alignedBrainstemCrop_xmax_wrt_alignedWithMargin_down32 = alignedBrainstemCrop_xmax_down32 - alignedWithMargin_xmin_down32
+        alignedBrainstemCrop_ymin_wrt_alignedWithMargin_down32 = alignedBrainstemCrop_ymin_down32 - alignedWithMargin_ymin_down32
+        alignedBrainstemCrop_ymax_wrt_alignedWithMargin_down32 = alignedBrainstemCrop_ymax_down32 - alignedWithMargin_ymin_down32
+
+        scale_factor = convert_resolution_string_to_um('down32', stack) / convert_resolution_string_to_um(out_resolution, stack)
+
+        return np.round([alignedBrainstemCrop_xmin_wrt_alignedWithMargin_down32 * scale_factor,
+                         alignedBrainstemCrop_xmax_wrt_alignedWithMargin_down32 * scale_factor,
+                         alignedBrainstemCrop_ymin_wrt_alignedWithMargin_down32 * scale_factor,
+                         alignedBrainstemCrop_ymax_wrt_alignedWithMargin_down32 * scale_factor]).astype(np.int)
+
+
     @staticmethod
     def get_auto_submask_dir_filepath(stack, fn=None, sec=None):
         submasks_dir = DataManager.get_auto_submask_rootdir_filepath(stack)
@@ -718,3 +751,231 @@ class DataManager(object):
         else:
             assert fn is not None, 'If sec is not provided, must provide fn'
         return fn in ['Nonexisting', 'Rescan', 'Placeholder']
+
+    @staticmethod
+    def load_image(stack, prep_id, resol='raw', version=None, section=None, fn=None, data_dir=DATA_DIR, ext=None,
+                      thumbnail_data_dir=THUMBNAILRAW, convert_from_alternative=True):
+
+        img_fp = DataManager.get_image_filepath(stack=stack, resol=resol, version=version, section=section, fn=fn, ext=ext)
+
+        sys.stderr.write("Trying to load %s\n" % img_fp)
+
+        if not os.path.exists(img_fp):
+            sys.stderr.write('File not on local disk. Download from S3.\n')
+            # if resol == 'lossless' or resol == 'raw' or resol == 'down8':
+            #     download_from_s3(img_fp, local_root=DATA_ROOTDIR)
+            # else:
+            #     download_from_s3(img_fp, local_root=THUMBNAIL_DATA_ROOTDIR)
+
+
+        # sys.stderr.write("Not using image_cache.\n")
+        img = cv2.imread(img_fp, -1)
+        if not os.path.exists(img_fp):
+            sys.stderr.write("File %s does not exists. Give up loading.\n" % img_fp)
+            img = None
+        elif img is None:
+            sys.stderr.write("cv2.imread fails to load %s. Try skimage.imread.\n" % img_fp)
+            try:
+                img = imread(img_fp, -1)
+            except:
+                sys.stderr.write("skimage.imread fails to load %s.\n" % img_fp)
+                img = None
+
+        if img is None and convert_from_alternative:
+            sys.stderr.write("Image fails to load. Trying to convert from other resol/versions.\n")
+
+            if resol != 'raw':
+                try:
+                    sys.stderr.write("Resolution %s is not available. Try to load raw and then downscale.\n" % resol)
+                    img = DataManager.load_image(stack=stack, prep_id=prep_id, resol='raw', version=version, section=section, fn=fn, data_dir=data_dir, ext=ext, thumbnail_data_dir=thumbnail_data_dir, convert_from_other=False)
+
+                    downscale_factor = convert_resolution_string_to_um(resolution='raw', stack=stack)/convert_resolution_string_to_um(resolution=resol, stack=stack)
+                    img = rescale_by_resampling(img, downscale_factor)
+                except:
+                    sys.stderr.write('Cannot load raw.\n')
+
+                    if version == 'blue':
+                        img = DataManager.load_image(stack=stack, prep_id=prep_id, resol=resol, version=None, section=section, fn=fn, data_dir=data_dir, ext=ext, thumbnail_data_dir=thumbnail_data_dir)[..., 2]
+                    elif version == 'grayJpeg':
+                        sys.stderr.write("Version %s is not available. Instead, load raw RGB JPEG and convert to uint8 grayscale...\n" % version)
+                        img = DataManager.load_image(stack=stack, prep_id=prep_id, resol=resol, version='jpeg', section=section, fn=fn, data_dir=data_dir, ext=ext, thumbnail_data_dir=thumbnail_data_dir)
+                        img = img_as_ubyte(rgb2gray(img))
+                    elif version == 'gray':
+                        sys.stderr.write("Version %s is not available. Instead, load raw RGB and convert to uint8 grayscale...\n" % version)
+                        img = DataManager.load_image(stack=stack, prep_id=prep_id, resol=resol, version=None, section=section, fn=fn, data_dir=data_dir, ext=ext, thumbnail_data_dir=thumbnail_data_dir)
+                        img = img_as_ubyte(rgb2gray(img))
+                    elif version == 'Ntb':
+                        sys.stderr.write("Version %s is not available. Instead, load lossless and take the blue channel...\n" % version)
+                        img = DataManager.load_image(stack=stack, prep_id=prep_id, resol=resol, version=None, section=section, fn=fn, data_dir=data_dir, ext=ext, thumbnail_data_dir=thumbnail_data_dir)
+                        img = img[..., 2]
+                    elif version == 'mask' and (resol == 'down32' or resol == 'thumbnail'):
+                        sys.stderr.write("prep_id = %s\n" % prep_id)
+
+                        if prep_id == 5 or prep_id == 'alignedWithMargin':
+                            sys.stderr.write('Cannot load mask %s, section=%s, fn=%s, prep=%s\n' % (stack, section, fn, prep_id))
+                            sys.stderr.write('Try finding prep1 masks.\n')
+                            mask_prep1 = DataManager.load_image(stack=stack, section=section, fn=fn, prep_id=1, version='mask', resol='thumbnail', convert_from_alternative=False)
+                            xmin,xmax,ymin,ymax = DataManager.load_cropbox(stack=stack, return_dict=False, only_2d=True)
+                            mask_prep2 = mask_prep1[ymin:ymax+1, xmin:xmax+1].copy()
+                            return mask_prep2.astype(np.bool)
+
+                        elif prep_id == 2 or prep_id == 'alignedBrainstemCrop':
+                            # get prep 2 masks directly from prep 5 masks.
+                            try:
+                                sys.stderr.write('Try to find prep5 mask.\n')
+                                mask_prep5 = DataManager.load_image(stack=stack, section=section, fn=fn, prep_id=5, version='mask', resol='thumbnail', convert_from_alternative=False)
+                                xmin,xmax,ymin,ymax = DataManager.load_cropbox_v2_relative(stack=stack, prep_id=prep_id, wrt_prep_id=5, out_resolution='down32')
+                                mask_prep2 = mask_prep5[ymin:ymax+1, xmin:xmax+1].copy()
+                                return mask_prep2.astype(np.bool)
+                            except:
+                                # get prep 2 masks directly from prep 1 masks.
+                                sys.stderr.write('Failed to load prep5 mask.\n')
+                                sys.stderr.write('Try to find prep1 mask.\n')
+                                try:
+                                    mask_prep1 = DataManager.load_image(stack=stack, section=section, fn=fn, prep_id=1, version='mask', resol='thumbnail', convert_from_alternative=False)
+                                    sys.stderr.write('Loaded prep1 mask.\n')
+                                except:
+                                    sys.stderr.write('Failed to find prep1 mask. Give up.\n')
+                                    raise
+                                xmin,xmax,ymin,ymax = DataManager.load_cropbox(stack=stack, return_dict=False, only_2d=True)
+                                mask_prep2 = mask_prep1[ymin:ymax+1, xmin:xmax+1].copy()
+                                return mask_prep2.astype(np.bool)
+                        else:
+                            try:
+                                mask = DataManager.load_image(stack=stack, section=section, fn=fn, prep_id=prep_id, version='mask', resol='thumbnail', convert_from_alternative=False)
+                                return mask.astype(np.bool)
+                            except:
+                                sys.stderr.write('Cannot load mask %s, section=%s, fn=%s, prep=%s\n' % (stack, section, fn, prep_id))
+                    else:
+                        sys.stderr.write('Cannot load stack=%s, section=%s, fn=%s, prep=%s, version=%s, resolution=%s\n' % (stack, section, fn, prep_id, version, resol))
+                        raise Exception("Image loading failed.")
+
+        assert img is not None, "Failed to load image after trying different ways. Give up."
+
+        if version == 'mask':
+            img = img.astype(np.bool)
+
+        if img.ndim == 3:
+            return img[...,::-1] # cv2 load images in BGR, this converts it to RGB.
+        else:
+            return img
+
+    @staticmethod
+    def load_transforms_v2(stack, in_image_resolution, out_image_resolution, use_inverse=True, anchor_fn=None):
+        """
+        Args:
+            use_inverse (bool): If True, load the 2-d rigid transforms that when multiplied
+                                to coordinates on the raw image space converts it to on aligned space.
+                                In preprocessing, set to False, which means simply parse the transform files as they are.
+            in_image_resolution (str): resolution of the image that the loaded transforms are derived from.
+            out_image_resolution (str): resolution of the image that the output transform will be applied to.
+        """
+
+        rescale_in_resol_to_1um = convert_resolution_string_to_um(stack=stack, resolution=in_image_resolution)
+        rescale_1um_to_out_resol = convert_resolution_string_to_um(stack=stack, resolution=out_image_resolution)
+
+        Ts_anchor_to_individual_section_image_resol = DataManager.load_transforms(stack=stack, resolution='1um', use_inverse=True, anchor_fn=anchor_fn)
+
+        Ts = {}
+
+        for fn, T in Ts_anchor_to_individual_section_image_resol.iteritems():
+
+            if use_inverse:
+                T = np.linalg.inv(T)
+
+            T_rescale_1um_to_out_resol = np.diag([1./rescale_1um_to_out_resol, 1./rescale_1um_to_out_resol, 1.])
+            T_rescale_in_resol_to_1um = np.diag([rescale_in_resol_to_1um, rescale_in_resol_to_1um, 1.])
+
+            T_overall = np.dot(T_rescale_1um_to_out_resol, np.dot(T, T_rescale_in_resol_to_1um))
+            Ts[fn] = T_overall
+
+        return Ts
+
+    @staticmethod
+    def get_transforms_filename(stack, anchor_fn=None):
+        if anchor_fn is None:
+            anchor_fn = DataManager.metadata_cache['anchor_fn'][stack]
+        fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_transformsTo_%s.pkl' % anchor_fn)
+        if not os.path.exists(fp):
+            fp = os.path.join( DataManager.get_images_root_folder(stack), stack + '_transforms_to_anchor.csv')
+        return fp
+
+    @staticmethod
+    def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_fn=None):
+        """
+        Args:
+            use_inverse (bool): If True, load the 2-d rigid transforms that when multiplied
+                                to a point on original space converts it to on aligned space.
+                                In preprocessing, set to False, which means simply parse the transform files as they are.
+            downsample_factor (float): the downsample factor of images that the output transform will be applied to.
+            resolution (str): resolution of the image that the output transform will be applied to.
+        """
+
+        if resolution is None:
+            assert downsample_factor is not None
+            resolution = 'down%d' % downsample_factor
+
+        fp = DataManager.get_transforms_filename(stack, anchor_fn=anchor_fn)
+
+        Ts_down32 = load_data(fp)
+        if isinstance(Ts_down32.values()[0], list): # csv, the returned result are dict of lists
+            Ts_down32 = {k: np.reshape(v, (3,3)) for k, v in Ts_down32.items()}
+
+        if use_inverse:
+            Ts_inv_rescaled = {}
+            for fn, T_down32 in sorted(Ts_down32.items()):
+                T_rescaled = T_down32.copy()
+                T_rescaled[:2, 2] = T_down32[:2, 2] * 32. * planar_resolution[stack] / convert_resolution_string_to_voxel_size(stack=stack, resolution=resolution)
+                T_rescaled_inv = np.linalg.inv(T_rescaled)
+                Ts_inv_rescaled[fn] = T_rescaled_inv
+            return Ts_inv_rescaled
+        else:
+            Ts_rescaled = {}
+            for fn, T_down32 in sorted(Ts_down32.items()):
+                T_rescaled = T_down32.copy()
+                T_rescaled[:2, 2] = T_down32[:2, 2] * 32. * planar_resolution[stack] / convert_resolution_string_to_voxel_size(stack=stack, resolution=resolution)
+                Ts_rescaled[fn] = T_rescaled
+
+            return Ts_rescaled
+
+    @staticmethod
+    def load_consecutive_section_transform(moving_fn, fixed_fn, elastix_output_dir=None, custom_output_dir=None, stack=None):
+        """
+        Load pairwise transform.
+
+        Returns:
+            (3,3)-array.
+        """
+        assert stack is not None
+
+        if elastix_output_dir is None:
+            elastix_output_dir = DataManager.get_elastix_output_dir(stack)
+        if custom_output_dir is None:
+            custom_output_dir = DataManager.get_custom_output_dir(stack)
+
+        from utilities.preprocess_utilities import parse_elastix_parameter_file
+
+        custom_tf_fp = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, moving_fn + '_to_' + fixed_fn + '_customTransform.txt')
+
+        custom_tf_fp2 = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
+
+        print(custom_tf_fp)
+        if os.path.exists(custom_tf_fp):
+            # if custom transform is provided
+            sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp)
+            with open(custom_tf_fp, 'r') as f:
+                t11, t12, t13, t21, t22, t23 = map(float, f.readline().split())
+            transformation_to_previous_sec = np.linalg.inv(np.array([[t11, t12, t13], [t21, t22, t23], [0,0,1]]))
+        elif os.path.exists(custom_tf_fp2):
+            sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp2)
+            transformation_to_previous_sec = parse_elastix_parameter_file(custom_tf_fp2)
+        else:
+            # otherwise, load elastix output
+            param_fp = os.path.join(elastix_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
+            sys.stderr.write('Load elastix-computed transform: %s\n' % param_fp)
+            if not os.path.exists(param_fp):
+                raise Exception('Transform file does not exist: %s to %s, %s' % (moving_fn, fixed_fn, param_fp))
+            transformation_to_previous_sec = parse_elastix_parameter_file(param_fp)
+
+        return transformation_to_previous_sec
+

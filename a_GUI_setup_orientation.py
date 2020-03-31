@@ -133,11 +133,13 @@ class ImageViewer(QGraphicsView):
         self.fitInView()
 
 
+    '''
     def paintOverlayImage(self, pixmap=None):
         painter = QPainter()
         painter.begin(image)
         painter.drawImage(0, 0, overlay)
         painter.end()
+    '''
 
     def wheelEvent(self, event):
         if self.hasPhoto():

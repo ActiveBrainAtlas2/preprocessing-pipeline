@@ -3,24 +3,24 @@
 import sys, os
 import argparse
 import math
+import cv2
+import numpy as np
 
-#import matplotlib.pyplot as plt
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from multiprocess import Pool
+from PyQt5.QtCore import *
+from PyQt5.QtGui import QFont, QIntValidator, QBrush, QColor, QPixmap, QPainter, QImage
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QFrame, QWidget, QGridLayout, QLineEdit, \
+    QPushButton, QMessageBox, QApplication
+from matplotlib import image
+
+from a_GUI_atlas_local_main import create_input_spec_ini_all
+from utilities.a_driver_utilities import call_and_time
+from utilities.data_manager_v2 import DataManager
+from utilities.utilities2015 import execute_command
+from utilities.metadata import stack_metadata, stain_to_metainfo
 
 sys.path.append( os.path.join(os.environ['REPO_DIR'] , 'utilities') )
 sys.path.append( os.path.join(os.environ['REPO_DIR'] , 'gui', 'widgets') )
 sys.path.append( os.path.join(os.environ['REPO_DIR'] , 'gui') )
-
-from utilities2015 import *
-from metadata import *
-from data_manager import *
-from registration_utilities import find_contour_points
-from gui_utilities import *
-from qt_utilities import *
-from preprocess_utilities import *
-from a_driver_utilities import *
 sys.path.append(os.path.join(os.environ['REPO_DIR'], 'web_services'))
 
 def get_padding_color(stack):
@@ -41,7 +41,7 @@ def get_img( section, prep_id='None', resol='thumbnail', version='' ):
     if version=='':
         version = get_version(stack)
         
-    return DataManager.load_image_v2(stack=stack, 
+    return DataManager.load_image(stack=stack,
                           section=section, prep_id=prep_id,
                           resol=resol, version=version)
 
@@ -49,9 +49,7 @@ def get_fp( section, prep_id='None', resol='thumbnail', version='' ):
     if version=='':
         version = get_version(stack)
     
-    return DataManager.get_image_filepath_v2(stack=stack, 
-                          section=section, prep_id=prep_id,
-                          resol=resol, version=version)
+    return DataManager.get_image_filepath(stack=stack, section=section, resol=resol, version=version)
 
 def apply_transform( stack, T, fn, output_fp=None ):
     """
@@ -60,8 +58,7 @@ def apply_transform( stack, T, fn, output_fp=None ):
     
     version = get_version(stack)
     
-    img_fp = DataManager.get_image_filepath_v2(stack=stack, section=metadata_cache['filenames_to_sections'][stack][fn], 
-                            prep_id='None', resol='thumbnail', version=version)
+    img_fp = DataManager.get_image_filepath(stack=stack, section=DataManager.metadata_cache['filenames_to_sections'][stack][fn], resol='thumbnail', version=version)
     
     op_str = ''
     op_str += " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
@@ -108,7 +105,7 @@ def apply_transform( stack, T, fn, output_fp=None ):
             pass
         return img
     except Exception as e:
-        print e
+        print(e)
         return None
     
 def get_anchor_transform( stack, fn ):
@@ -128,8 +125,8 @@ def get_comulative_pairwise_transform( stack, fn):
     T = np.zeros((3,3))#[[0,0,0],[0,0,0],[0,0,1]]
     T[2,2]=1
     
-    #valid_fn_prev = metadata_cache['valid_filenames_all'][stack][0]
-    #for valid_fn in metadata_cache['valid_filenames_all'][stack][1:]:
+    #valid_fn_prev = DataManager.metadata_cache['valid_filenames_all'][stack][0]
+    #for valid_fn in DataManager.metadata_cache['valid_filenames_all'][stack][1:]:
     #    if valid_fn == fn:
     #        break
     #    T_i = DataManager.load_consecutive_section_transform(
@@ -137,14 +134,14 @@ def get_comulative_pairwise_transform( stack, fn):
     #                fixed_fn=valid_fn_prev, 
     #                stack=stack)
     
-    valid_sections = metadata_cache['valid_sections_all'][stack]
+    valid_sections = DataManager.metadata_cache['valid_sections_all'][stack]
     valid_sections.sort()
     valid_sections.reverse()
     
     valid_sec = valid_sections[0]
     for valid_sec_prev in valid_sections[1:]:
-        valid_fn = metadata_cache['sections_to_filenames'][stack][valid_sec]
-        valid_fn_prev = metadata_cache['sections_to_filenames'][stack][valid_sec_prev]
+        valid_fn = DataManager.metadata_cache['sections_to_filenames'][stack][valid_sec]
+        valid_fn_prev = DataManager.metadata_cache['sections_to_filenames'][stack][valid_sec_prev]
         
         if valid_fn == fn:
             break
@@ -155,7 +152,6 @@ def get_comulative_pairwise_transform( stack, fn):
                     fixed_fn=valid_fn_prev, 
                     stack=stack)
     
-        print T_i
         T_i = np.linalg.inv(T_i)
         
         T[0,0] = math.cos( math.acos( T[0,0] ) +  math.acos( T_i[0,0] ) )
@@ -170,34 +166,30 @@ def get_comulative_pairwise_transform( stack, fn):
         
     #T[0,2] = 0
     #T[1,2] = 0
-    print T
     return T
 
-def get_transformed_image( section, transformation='anchor', prev_section=-1 ):
+def get_transformed_image(section, transformation='anchor', prev_section=-1):
     assert transformation in ['anchor', 'pairwise']
 
-    fn = metadata_cache['sections_to_filenames'][stack][section]
+    fn = DataManager.metadata_cache['sections_to_filenames'][stack][section]
         
-    img_fp = DataManager.get_image_filepath_v2(stack=stack, section=section, 
-                            prep_id='None', resol='thumbnail', version='NtbNormalized')
+    img_fp = DataManager.get_image_filepath(stack=stack, section=section, resol='thumbnail', version='NtbNormalized')
     
     if transformation=='anchor':
-        T = get_anchor_transform( stack, fn )
+        T = get_anchor_transform(stack, fn)
     elif transformation=='pairwise':
         assert prev_section!=-1
-        prev_fn = metadata_cache['sections_to_filenames'][stack][prev_section]
-        T = get_pairwise_transform( stack, fn, prev_fn )
+        prev_fn = DataManager.metadata_cache['sections_to_filenames'][stack][prev_section]
+        T = get_pairwise_transform(stack, fn, prev_fn)
         
-    img_transformed = apply_transform( stack, T, fn )
+    img_transformed = apply_transform(stack, T, fn)
     
     return img_transformed, T
 
-def apply_pairwise_transform( img ):
+def apply_pairwise_transform(img):
     pass
 
-#from PyQt4 import QtCore, QtGui
-
-class ImageViewer( QGraphicsView):
+class ImageViewer(QGraphicsView):
     photoClicked = pyqtSignal( QPoint )
 
     def __init__(self, parent):
@@ -232,7 +224,7 @@ class ImageViewer( QGraphicsView):
                 self.scale(factor, factor)
             self._zoom = 0
         else:
-            print 'RECT IS NULL'
+            print('RECT IS NULL')
 
     def setPhoto(self, pixmap=None):
         self._zoom = 0
@@ -286,8 +278,8 @@ class init_GUI(QWidget):
         self.font_h1 = QFont("Arial",32)
         self.font_p1 = QFont("Arial",16)
         
-        self.valid_sections = metadata_cache['valid_sections_all'][stack]
-        self.sections_to_filenames = metadata_cache['sections_to_filenames'][stack]
+        self.valid_sections = DataManager.metadata_cache['valid_sections_all'][stack]
+        self.sections_to_filenames = DataManager.metadata_cache['sections_to_filenames'][stack]
         self.curr_section = self.valid_sections[ len(self.valid_sections)/2 ]
         self.prev_section = self.getPrevValidSection( self.curr_section )
         self.next_section = self.getNextValidSection( self.curr_section )
@@ -499,9 +491,9 @@ before you finish this step."
         
         
         #T = get_comulative_pairwise_transform( stack, 
-        #               metadata_cache['sections_to_filenames'][stack][self.curr_section] )
+        #               DataManager.metadata_cache['sections_to_filenames'][stack][self.curr_section] )
         #img = apply_transform( stack, T,  
-        #               metadata_cache['sections_to_filenames'][stack][self.curr_section])
+        #               DataManager.metadata_cache['sections_to_filenames'][stack][self.curr_section])
         
         #height, width, channel = img.shape
         #bytesPerLine = 3 * width
@@ -579,13 +571,13 @@ before you finish this step."
         if self.transform_type=='anchor':
         # Load anchor-transformed images
             img_curr_red = apply_transform( stack, self.curr_T,  
-                                 metadata_cache['sections_to_filenames'][stack][self.curr_section])
+                                 DataManager.metadata_cache['sections_to_filenames'][stack][self.curr_section])
             img_prev_blue, Tb = get_transformed_image( self.prev_section, transformation='anchor' )
         elif self.transform_type=='pairwise':
             # Load pairwise-transformed images
             # The current red image is transformed to the previous blue image
             img_curr_red = apply_transform(stack, self.curr_T,  
-                                 metadata_cache['sections_to_filenames'][stack][self.curr_section])
+                                 DataManager.metadata_cache['sections_to_filenames'][stack][self.curr_section])
             # Blue image does not change
             img_prev_blue = cv2.imread( fp_prev_blue )
         

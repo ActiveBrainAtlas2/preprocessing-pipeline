@@ -9,14 +9,16 @@ import pickle
 import bloscpack as bp
 import joblib
 
-from skimage.io import imsave
+from skimage.io import imsave, imread
 from skimage.measure import find_contours, regionprops
 
-from vis3d_utilities import save_mesh_stl
-from metadata import ROOT_DIR
+from utilities.vis3d_utilities import save_mesh_stl
+from utilities.metadata import ENABLE_DOWNLOAD_S3
+from utilities.metadata import ROOT_DIR
 #from utilities.metadata import all_known_structures, singular_structures, convert_to_left_name, convert_to_right_name
 #from distributed_utilities import upload_to_s3
 #from data_manager_v2 import DataManager
+
 
 def crop_volume_to_minimal(vol, origin=(0,0,0), margin=0, return_origin_instead_of_bbox=True):
     """
@@ -464,3 +466,52 @@ def create_thumbnails(stack):
         # Create thumbnails
         execute_command("convert \"" + input_fp + "\" -resize 3.125% -auto-level -normalize \
                         -compress lzw \"" + output_fp + "\"")
+
+def csv_to_dict(fp):
+    """
+    First column contains keys.
+    """
+    import pandas as pd
+    df = pd.read_csv(fp, index_col=0, header=None)
+    d = df.to_dict(orient='index')
+    d = {k: v.values() for k, v in d.iteritems()}
+    return d
+
+def load_json(fp):
+    with open(fp, 'r') as f:
+        return json.load(f)
+
+def load_data(fp, polydata_instead_of_face_vertex_list=True, download_s3=True):
+    from .vis3d_utilities import load_mesh_stl
+    from .distributed_utilities import download_from_s3
+
+    if ENABLE_DOWNLOAD_S3 and download_s3:
+        download_from_s3(fp)
+
+    if fp.endswith('.bp'):
+        try:
+            data = bp.unpack_ndarray_file(fp)
+        except:
+            fp = fp.replace('.bp','.npy')
+            data = np.load(fp)
+    elif fp.endswith('.npy'):
+        data = np.load(fp)
+    elif fp.endswith('.json'):
+        data = load_json(fp)
+    elif fp.endswith('.pkl'):
+        data = load_pickle(fp)
+    elif fp.endswith('.stl'):
+        data = load_mesh_stl(fp, return_polydata_only=polydata_instead_of_face_vertex_list)
+    elif fp.endswith('.txt'):
+        data = np.loadtxt(fp)
+    elif fp.endswith('.png') or fp.endswith('.tif'):
+        data = imread(fp)
+    elif fp.endswith('.ini'):
+        data = load_ini(fp)
+    elif fp.endswith('.csv'):
+        data = csv_to_dict(fp)
+    else:
+        raise
+
+    return data
+
