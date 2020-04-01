@@ -4,7 +4,8 @@ import cv2
 import numpy as np
 
 from data_manager_v2 import DataManager
-from metadata import all_known_structures_sided, stack_metadata
+from metadata import all_known_structures_sided
+from sqlcontroller import SqlController
 
 script_list = ['initial setup gui',         # 0
                'a_script_preprocess_setup', # 1
@@ -239,7 +240,7 @@ def check_for_file( file_to_check, stack ):
     return all_files_present, missing_files
 
 def get_pipeline_status( stack ):
-    stain = stack_metadata[stack]['stain'].lower()
+    stain = SqlController.stack_metadata[stack]['stain'].lower()
 
     for script_name in script_list:
 
@@ -285,7 +286,7 @@ def get_script_command( curr_script_name, stack, stain, detector_id, script_or_m
         script_str = script_name_to_full_command[curr_script_name]
     elif script_or_manual=='manual':
         script_str = script_name_to_prev_manual_command[curr_script_name]
-        resolution = stack_metadata[stack]['resolution']
+        resolution = SqlController.stack_metadata[stack]['resolution']
         if curr_script_name == 'a_script_preprocess_7' and float(resolution) != 0.46:
             script_str = script_str + ' --resolution 1um'
     

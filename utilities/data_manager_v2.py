@@ -10,9 +10,9 @@ from skimage import img_as_ubyte
 from skimage.color import rgb2gray
 from skimage.io import imread
 
-from utilities.metadata import ROOT_DIR, convert_resolution_string_to_voxel_size, SECTION_THICKNESS, DATA_DIR, THUMBNAILRAW, \
-    convert_resolution_string_to_um, planar_resolution
+from utilities.metadata import ROOT_DIR, SECTION_THICKNESS, DATA_DIR, THUMBNAILRAW
 from utilities.utilities2015 import load_ini, load_hdf_v2, one_liner_to_arr, rescale_by_resampling, load_data
+from utilities.sqlcontroller import SqlController
 
 
 class DataManager(object):
@@ -22,6 +22,7 @@ class DataManager(object):
         """ setup the attributes for the data manager
         """
         self.metadata_cache = self.generate_metadata_cache()
+        self.sqlController = SqlController()
 
     def generate_metadata_cache(self):
 
@@ -261,7 +262,7 @@ class DataManager(object):
             sys.stderr.write('File type %s not recognized.\n' % filetype)
 
     @staticmethod
-    def get_sorted_filenames_filename(stack):
+    def get_sorted_filenames_filenameXXX(stack):
         fn = os.path.join(ROOT_DIR, stack, 'brains_info', 'sorted_filenames.txt')
         return fn
 
@@ -537,7 +538,7 @@ class DataManager(object):
         alignedBrainstemCrop_ymin_wrt_alignedWithMargin_down32 = alignedBrainstemCrop_ymin_down32 - alignedWithMargin_ymin_down32
         alignedBrainstemCrop_ymax_wrt_alignedWithMargin_down32 = alignedBrainstemCrop_ymax_down32 - alignedWithMargin_ymin_down32
 
-        scale_factor = convert_resolution_string_to_um('down32', stack) / convert_resolution_string_to_um(out_resolution, stack)
+        scale_factor = DataManager.sqlController.convert_resolution_string_to_um('down32', stack) / DataManager.sqlController.convert_resolution_string_to_um(out_resolution, stack)
 
         return np.round([alignedBrainstemCrop_xmin_wrt_alignedWithMargin_down32 * scale_factor,
                          alignedBrainstemCrop_xmax_wrt_alignedWithMargin_down32 * scale_factor,
@@ -679,7 +680,7 @@ class DataManager(object):
         if downsample is not None:
             resolution = 'down%d' % downsample
 
-        voxel_size_um = convert_resolution_string_to_voxel_size(resolution=resolution, stack=stack)
+        voxel_size_um = DataManager.sqlController.convert_resolution_string_to_voxel_size(resolution=resolution, stack=stack)
         section_thickness_in_voxel = SECTION_THICKNESS / voxel_size_um  # Voxel size in z direction in unit of x,y pixel.
         # if first_sec is None:
         #     # first_sec, _ = DataManager.load_cropbox(stack)[4:]
@@ -718,7 +719,7 @@ class DataManager(object):
         if downsample is not None:
             resolution = 'down%d' % downsample
 
-        voxel_size_um = convert_resolution_string_to_voxel_size(resolution=resolution, stack=stack)
+        voxel_size_um = DataManager.sqlController.convert_resolution_string_to_voxel_size(resolution=resolution, stack=stack)
         section_thickness_in_voxel = SECTION_THICKNESS / voxel_size_um
 
         if z_first_sec is not None:
@@ -789,7 +790,7 @@ class DataManager(object):
                     sys.stderr.write("Resolution %s is not available. Try to load raw and then downscale.\n" % resol)
                     img = DataManager.load_image(stack=stack, prep_id=prep_id, resol='raw', version=version, section=section, fn=fn, data_dir=data_dir, ext=ext, thumbnail_data_dir=thumbnail_data_dir, convert_from_other=False)
 
-                    downscale_factor = convert_resolution_string_to_um(resolution='raw', stack=stack)/convert_resolution_string_to_um(resolution=resol, stack=stack)
+                    downscale_factor = DataManager.sqlController.convert_resolution_string_to_um(resolution='raw', stack=stack)/DataManager.sqlController.convert_resolution_string_to_um(resolution=resol, stack=stack)
                     img = rescale_by_resampling(img, downscale_factor)
                 except:
                     sys.stderr.write('Cannot load raw.\n')
@@ -871,8 +872,8 @@ class DataManager(object):
             out_image_resolution (str): resolution of the image that the output transform will be applied to.
         """
 
-        rescale_in_resol_to_1um = convert_resolution_string_to_um(stack=stack, resolution=in_image_resolution)
-        rescale_1um_to_out_resol = convert_resolution_string_to_um(stack=stack, resolution=out_image_resolution)
+        rescale_in_resol_to_1um = DataManager.sqlController.convert_resolution_string_to_um(stack=stack, resolution=in_image_resolution)
+        rescale_1um_to_out_resol = DataManager.sqlController.convert_resolution_string_to_um(stack=stack, resolution=out_image_resolution)
 
         Ts_anchor_to_individual_section_image_resol = DataManager.load_transforms(stack=stack, resolution='1um', use_inverse=True, anchor_fn=anchor_fn)
 
@@ -916,6 +917,8 @@ class DataManager(object):
             resolution = 'down%d' % downsample_factor
 
         fp = DataManager.get_transforms_filename(stack, anchor_fn=anchor_fn)
+        DataManager.sqlController.get_animal_info(stack)
+        planar_resolution = DataManager.sqlController.scan_run.resolution
 
         Ts_down32 = load_data(fp)
         if isinstance(Ts_down32.values()[0], list): # csv, the returned result are dict of lists
@@ -925,7 +928,7 @@ class DataManager(object):
             Ts_inv_rescaled = {}
             for fn, T_down32 in sorted(Ts_down32.items()):
                 T_rescaled = T_down32.copy()
-                T_rescaled[:2, 2] = T_down32[:2, 2] * 32. * planar_resolution[stack] / convert_resolution_string_to_voxel_size(stack=stack, resolution=resolution)
+                T_rescaled[:2, 2] = T_down32[:2, 2] * 32. * planar_resolution / DataManager.sqlController.convert_resolution_string_to_voxel_size(stack=stack, resolution=resolution)
                 T_rescaled_inv = np.linalg.inv(T_rescaled)
                 Ts_inv_rescaled[fn] = T_rescaled_inv
             return Ts_inv_rescaled
@@ -933,7 +936,7 @@ class DataManager(object):
             Ts_rescaled = {}
             for fn, T_down32 in sorted(Ts_down32.items()):
                 T_rescaled = T_down32.copy()
-                T_rescaled[:2, 2] = T_down32[:2, 2] * 32. * planar_resolution[stack] / convert_resolution_string_to_voxel_size(stack=stack, resolution=resolution)
+                T_rescaled[:2, 2] = T_down32[:2, 2] * 32. * planar_resolution / DataManager.sqlController.convert_resolution_string_to_voxel_size(stack=stack, resolution=resolution)
                 Ts_rescaled[fn] = T_rescaled
 
             return Ts_rescaled

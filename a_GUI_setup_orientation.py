@@ -428,22 +428,19 @@ class init_GUI(QWidget):
 
             # "Flip image(s) across central vertical line"
             if button == self.b1:
-                self.transform_images('flip',
-                                      only_on_current_img=only_on_current_img)
+                self.transform_images('flip', only_on_current_img=only_on_current_img)
             # "Flop image(s) across central horozontal line"
             elif button == self.b2:
-                self.transform_images('flop',
-                                      only_on_current_img=only_on_current_img)
+                self.transform_images('flop', only_on_current_img=only_on_current_img)
             # "Rotate Image(s)"
             elif button == self.b3:
-                self.transform_images('rotate',
-                                      degrees=str(self.cb.currentText()),
+                self.transform_images('rotate', degrees=str(self.cb.currentText()),
                                       only_on_current_img=only_on_current_img)
             # Update the Viewer info and displayed image
-            self.setCurrSection(self.curr_section)
+            self.setCurrSection(self.curr_section_index)
         elif button == self.b_done:
             QMessageBox.about(self, "Popup Message", "All selected operations will now be performed on the\
- full sized raw images. This may take an hour or two, depending on how many operations are queued.")
+                full sized raw images. This may take an hour or two, depending on how many operations are queued.")
             apply_queued_transformations(queued_transformations)
 
             self.finished()
@@ -486,7 +483,7 @@ class init_GUI(QWidget):
             'Transforming all files'
 
             # Apply transforms to just the thumbnails
-            thumbnail_folder = DataManager.setup_get_thumbnail_fp(stack)
+            thumbnail_folder = os.path.join(ROOT_DIR, stack, 'preps', 'thumbnail')
             for img_name in os.listdir(thumbnail_folder):
                 full_fp = os.path.join(thumbnail_folder, img_name)
                 subprocess.call(base_cmd + [full_fp, full_fp])
@@ -499,6 +496,7 @@ class init_GUI(QWidget):
 
 
 def apply_queued_transformations(queued_transformations):
+    print('queued_transformations',  queued_transformations)
     if queued_transformations == []:
         return None
 
@@ -511,12 +509,15 @@ def apply_queued_transformations(queued_transformations):
             continue
 
         # Apply to "raw" images
-        raw_folder = DataManager.setup_get_raw_fp(stack)
+        raw_folder = os.path.join(ROOT_DIR, stack, 'tif')
         for img_name in os.listdir(raw_folder):
             full_fp = os.path.join(raw_folder, img_name)
             subprocess.call(base_cmd + [full_fp, full_fp])
 
         # Apply to "raw" images on all secondary channels
+        # why???? they get applied above in the listing of raw folder
+        # EOD, 4/1/2020, i am commenting this out
+        """
         for channel_i in range(0, 8):
             raw_folder = DataManager.setup_get_raw_fp_secondary_channel(stack, channel_i)
 
@@ -528,7 +529,7 @@ def apply_queued_transformations(queued_transformations):
             for img_name in os.listdir(raw_folder):
                 full_fp = os.path.join(raw_folder, img_name)
                 subprocess.call(base_cmd + [full_fp, full_fp])
-
+        """
     # Clear the queued transformations
     queued_transformations = []
 

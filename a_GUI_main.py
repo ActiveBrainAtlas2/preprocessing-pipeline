@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComb
 
 sys.path.append(os.path.join(os.getcwd(), 'utilities'))
 # print(sys.path)
-from utilities.metadata import all_stacks, stain_to_metainfo, ROOT_DIR
+from utilities.metadata import stain_to_metainfo, ROOT_DIR
 from utilities.a_driver_utilities import get_current_step_from_progress_ini
 from utilities.data_manager_v2 import DataManager
 from utilities.sqlcontroller import SqlController
@@ -82,7 +82,7 @@ class init_GUI(QWidget):
         self.grid_top.addWidget(self.e1, 0, 0)
         # Dropbown Menu (ComboBox) for selecting Stack
         self.cb = QComboBox()
-        self.cb.addItems(all_stacks)
+        self.cb.addItems(self.sqlController.all_stacks)
         self.cb.setFont(self.font1)
         self.cb.currentIndexChanged.connect(self.newDropdownSelection)
         self.grid_top.addWidget(self.cb, 0, 1)
@@ -238,14 +238,14 @@ class init_GUI(QWidget):
             if not os.path.exists(os.path.join(ROOT_DIR, stack, 'brains_info', 'progress.ini')):
                 continue
 
-            if stack in all_stacks:
+            if stack in self.sqlController.all_stacks:
                 continue
             # Add a brain to "new_stack" list if it is found and is not a part of "all_stacks"
             new_stacks.append(stack)
 
         if not new_stacks == []:
             self.cb.clear()
-            self.cb.addItems(all_stacks + new_stacks)
+            self.cb.addItems(self.sqlController.all_stacks + new_stacks)
 
     def format_grid_buttons(self):
         """

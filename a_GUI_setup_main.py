@@ -8,10 +8,10 @@ from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton,QMessageBox
 
 from utilities.a_driver_utilities import get_current_step_from_progress_ini, set_step_completed_in_progress_ini
-from utilities.metadata import stack_metadata
 from utilities.utilities_pipeline_status import get_pipeline_status
 from utilities.utilities2015 import create_thumbnails
 from utilities.data_manager_v2 import DataManager
+from utilities.sqlcontroller import SqlController
 
 parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -60,6 +60,7 @@ class init_GUI(QWidget):
 
         set_step_completed_in_progress_ini(self.stack, '1-2_setup_images')
         self.dataManager = DataManager()
+        self.sqlController = SqlController()
         self.initUI()
 
     def initUI(self):
@@ -138,9 +139,9 @@ class init_GUI(QWidget):
     def updateFields(self):        
         # Set stack-specific variables
         self.stack = stack
-        self.stain = stack_metadata[stack]
+        self.stain = self.sqlController.stack_metadata[stack]
         try:
-            self.stain = stack_metadata[ self.stack ]['stain']
+            #self.stain = self.sqlController.stack_metadata[ self.stack ]['stain']
             # Check the brains_info/STACK_progress.ini file for which step we're on
             self.curr_step = get_current_step_from_progress_ini( self.stack )
             # Disable all grid buttons except for the one corresponding to our current step
@@ -218,9 +219,9 @@ class init_GUI(QWidget):
             message += " Several minutes per image."
             QMessageBox.about(self, "Popup Message", message)
             try:
-                subprocess.call(['python','a_script_preprocess_setup.py', self.stack, self.stain])
-                subprocess.call(['python','a_script_preprocess_1.py', self.stack, self.stain])
-                subprocess.call(['python','a_script_preprocess_2.py', self.stack, self.stain])
+                subprocess.call(['python','utilities/a_script_preprocess_setup.py', self.stack, self.stain])
+                subprocess.call(['python','utilities/a_script_preprocess_1.py', self.stack, self.stain])
+                subprocess.call(['python','utilities/a_script_preprocess_2.py', self.stack, self.stain])
                 
                 time.sleep(5)
                 pipeline_status = get_pipeline_status( self.stack )
@@ -242,6 +243,7 @@ class init_GUI(QWidget):
                 #    #set_step_completed_in_progress_ini( self.stack, '1-6_setup_scripts')
                     
             except Exception as e:
+                print('Exception on auto scripts')
                 sys.stderr.write( str(e) )
             
         self.updateFields()

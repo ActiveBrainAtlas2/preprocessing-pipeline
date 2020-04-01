@@ -85,11 +85,11 @@ CSHL_SPM_ROOTDIR = 'CSHL_SPM'
 
 #################### Resolution conversions ############
 
-def convert_resolution_string_to_um(resolution, stack=None):
-    return convert_resolution_string_to_voxel_size(resolution, stack=stack)
+def convert_resolution_string_to_umXXX(resolution, stack=None):
+    return convert_resolution_string_to_voxel_sizeXXX(resolution, stack=stack)
 
 
-def convert_resolution_string_to_voxel_size(resolution, stack=None):
+def convert_resolution_string_to_voxel_sizeXXX(resolution, stack=None):
     """
     Args:
         resolution (str):
@@ -101,13 +101,13 @@ def convert_resolution_string_to_voxel_size(resolution, stack=None):
 
     if resolution in ['down32', 'thumbnail']:
         assert stack is not None
-        return planar_resolution[stack] * 32.
+        return planar_resolutionXXX[stack] * 32.
     elif resolution == 'lossless' or resolution == 'down1' or resolution == 'raw':
         assert stack is not None
-        return planar_resolution[stack]
+        return planar_resolutionXXX[stack]
     elif resolution.startswith('down'):
         assert stack is not None
-        return planar_resolution[stack] * int(resolution[4:])
+        return planar_resolutionXXX[stack] * int(resolution[4:])
     elif resolution == 'um':
         return 1.
     elif resolution.endswith('um'):
@@ -344,9 +344,9 @@ XY_PIXEL_DISTANCE_TB_AXIOSCAN = XY_PIXEL_DISTANCE_LOSSLESS_AXIOSCAN * 32
 #######################################
 
 
-all_stacks = []
-all_ntb_stacks = []
-all_nissl_stacks = []
+all_stacksXXX = []
+all_ntb_stacksXXX = []
+all_nissl_stacksXXX = []
 
 
 def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
@@ -372,30 +372,30 @@ def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
     return input_spec
 
 
-planar_resolution = {}
-stack_metadata = {}
-new_stacks = []
+planar_resolutionXXX = {}
+stack_metadataXXX = {}
+new_stacksXXX = []
 for brain in os.listdir(ROOT_DIR):
     inifile = os.path.join(ROOT_DIR, brain, 'brains_info', 'metadata.ini')
     if os.path.exists(inifile):
         brain_info = load_ini(inifile)
-        planar_resolution[brain] = float(brain_info['planar_resolution_um'])
+        planar_resolutionXXX[brain] = float(brain_info['planar_resolution_um'])
         stain = brain_info['stain']
         cutting_plane = brain_info['cutting_plane']
         section_thickness = brain_info['section_thickness_um']
 
-        all_stacks.append(brain)
+        all_stacksXXX.append(brain)
         if stain == "NTB":
-            all_ntb_stacks.append(brain)
+            all_ntb_stacksXXX.append(brain)
         elif stain == "Thionin":
-            all_nissl_stacks.append(brain)
+            all_nissl_stacksXXX.append(brain)
         # Fill in stack_metadata:
-        stack_metadata[brain] = {'stain': stain,
+        stack_metadataXXX[brain] = {'stain': stain,
                                  'cutting_plane': cutting_plane,
                                  'resolution': float(brain_info['planar_resolution_um']),
                                  'section_thickness': section_thickness}
     else:
-        new_stacks.append(brain)
+        new_stacksXXX.append(brain)
 
 
 # print planar_resolution
@@ -466,8 +466,8 @@ name_unsided_to_color = {s: high_contrast_colors[i % len(high_contrast_colors)]
                          for i, s in enumerate(all_known_structures)}
 name_unsided_to_color_float = {s: np.array(c) / 255. for s, c in name_unsided_to_color.items()}
 
-stack_to_color = {n: high_contrast_colors[i % len(high_contrast_colors)] for i, n in enumerate(all_stacks)}
-stack_to_color_float = {s: np.array(c) / 255. for s, c in stack_to_color.items()}
+stack_to_colorXXX = {n: high_contrast_colors[i % len(high_contrast_colors)] for i, n in enumerate(all_stacksXXX)}
+stack_to_color_float = {s: np.array(c) / 255. for s, c in stack_to_colorXXX.items()}
 
 # Colors for the iso-contours or iso-surfaces of different probabilities.
 LEVEL_TO_COLOR_LINE = {0.1: (125, 0, 125), 0.25: (0, 255, 0), 0.5: (255, 0, 0), 0.75: (0, 125, 0), 0.99: (0, 0, 255)}

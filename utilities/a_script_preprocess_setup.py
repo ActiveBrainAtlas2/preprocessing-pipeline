@@ -28,28 +28,32 @@ def create_folder_if_nonexistant(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
+
+CSHL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
 # Download operation config files
 s3_fp = 's3://mousebrainatlas-data/operation_configs/'
-local_fp = os.path.join( ROOT_DIR, stack, 'brains_info' )
-create_folder_if_nonexistant( local_fp )
-command = ["aws", "s3", "cp", '--recursive', '--no-sign-request',s3_fp, local_fp]
-subprocess.call( command )
-     
+local_fp = os.path.join(CSHL_DIR, 'all_brains_info')
+create_folder_if_nonexistant(local_fp)
+command = ["aws", "s3", "cp", '--recursive', '--no-sign-request', s3_fp, local_fp]
+subprocess.call(command)
+
 # Download mxnet files
 s3_fp = 's3://mousebrainatlas-data/mxnet_models/inception-bn-blue/'
-local_fp = os.path.join( ROOT_DIR, stack, 'brains_info', 'mxnet_models', 'inception-bn-blue/')
-create_folder_if_nonexistant( local_fp )
+local_fp = os.path.join(CSHL_DIR, 'all_brains_brains_info', 'mxnet_models', 'inception-bn-blue/')
+create_folder_if_nonexistant(local_fp)
 command = ["aws", "s3", "cp", '--recursive', '--no-sign-request', s3_fp, local_fp]
-subprocess.call( command )
-    
+subprocess.call(command)
+
 # Download AtlasV7 volume files
 s3_fp = 's3://mousebrainatlas-data/CSHL_volumes/atlasV7/atlasV7_10.0um_scoreVolume/score_volumes/'
-local_fp = os.path.join( ROOT_DIR, stack, 'brains_info', 'CSHL_volumes', 'atlasV7', 'atlasV7_10.0um_scoreVolume', 'score_volumes/')
-create_folder_if_nonexistant( local_fp )
+local_fp = os.path.join(CSHL_DIR, 'all_brains_brains_info', 'atlasV7', 'atlasV7_10.0um_scoreVolume',
+                        'score_volumes/')
+create_folder_if_nonexistant(local_fp)
 command = ["aws", "s3", "cp", '--recursive', '--no-sign-request', s3_fp, local_fp]
-subprocess.call( command )
+subprocess.call(command)
 
 # Download all classifiers according to the list of detectors
+"""
 for id_detector in id_detectors:
     # Get the classifier ID from the detector ID
     id_classifier = detector_settings.loc[id_detector]['feature_classifier_id']
@@ -60,3 +64,4 @@ for id_detector in id_detectors:
     create_folder_if_nonexistant( local_fp )
     command = ["aws", "s3", "cp", '--recursive', '--no-sign-request', s3_fp, local_fp]
     subprocess.call( command )
+"""
