@@ -8,7 +8,7 @@ from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComboBox, QPushButton, QMessageBox
 
-from metadata import ordered_pipeline_steps, new_stacks, ROOT_DIR
+from metadata import ordered_pipeline_steps, ROOT_DIR
 from data_manager_v2 import DataManager
 from a_driver_utilities import set_step_completed_in_progress_ini
 

@@ -15,6 +15,7 @@ from tkinter import *
 sys.path.append(os.path.join(os.getcwd(), 'utilities'))
 from utilities.a_driver_utilities import set_step_completed_in_progress_ini
 from utilities.data_manager_v2 import DataManager
+from utilities.sqlcontroller import SqlController
 from utilities.metadata import ON_DOCKER, ROOT_DIR
 from utilities.utilities2015 import create_if_not_exists
 
@@ -26,23 +27,25 @@ args = parser.parse_args()
 stack = args.stack
 
 # Check if a sorted_filenames already exists
-sfns_fp = DataManager.get_sorted_filenames_filename(stack=stack)
-sfns_already_exists = os.path.exists(sfns_fp)
+#sfns_fp = SqlController.get_sorted_filenames_filename(stack=stack)
+#sfns_already_exists = os.path.exists(sfns_fp)
 
 # Defining possible quality options for each slice
 quality_options = ['unusable', 'blurry', 'good']
-
-# Cannot assume we have the sorted_filenames file. Load images a different way
 thumbnail_folder = os.path.join(ROOT_DIR, stack, 'preps', 'thumbnail')
 create_if_not_exists(thumbnail_folder)
-sections_to_filenames = {}
-fn_to_quality = {}
-fn_list = sorted(os.listdir(thumbnail_folder))
 
-for i, img_name in enumerate(fn_list):
-    print(img_name)
-    sections_to_filenames[i] = img_name
-    fn_to_quality[img_name] = 'good'
+
+# Cannot assume we have the sorted_filenames file. Load images a different way
+#sections_to_filenames = {}
+
+def setup_section_quality():
+    fn_list = sorted(os.listdir(thumbnail_folder))
+    fn_to_quality = {}
+    for i, img_name in enumerate(fn_list):
+        print(img_name)
+        fn_to_quality[img_name] = 'good'
+    return fn_to_quality
 
 
 def get_thumbnail_img_fp_from_section(fn):
@@ -160,16 +163,19 @@ class init_GUI(QWidget):
         super(init_GUI, self).__init__(parent)
         self.font_h1 = QFont("Arial", 32)
         self.font_p1 = QFont("Arial", 16)
-        self.valid_sections = sections_to_filenames
-        self.valid_section_keys = sections_to_filenames.keys()
+        # create a dataManager object
+        self.dataManager = DataManager()
+        self.sqlController = SqlController()
+        self.sqlController.get_animal_info(stack)
+        self.fn_to_quality = setup_section_quality()
+        self.valid_sections = self.sqlController.get_valid_sections(stack)
+        self.valid_section_keys = self.valid_sections.keys()
         self.curr_section_index = len(self.valid_section_keys) // 2
         self.prev_section_index = self.curr_section_index
         self.next_section_index = self.curr_section_index
         self.curr_section = self.valid_sections[self.curr_section_index]
         self.prev_section = self.getPrevValidSection(self.curr_section_index)
         self.next_section = self.getNextValidSection(self.curr_section_index)
-        # create a dataManager object
-        self.dataManager = DataManager()
         self.initUI()
 
     def initUI(self):
@@ -319,8 +325,8 @@ class init_GUI(QWidget):
     def updateDropdown(self):
         # Get dropdown selection
         dropdown_selection = self.dd.currentText()
-        curr_fn = self.valid_sections[int(self.curr_section_index)]
-        fn_to_quality[curr_fn] = dropdown_selection
+        curr_filename = self.valid_sections[int(self.curr_section_index)]
+        self.fn_to_quality[curr_filename] = dropdown_selection
 
     def load_sorted_filenames(self):
         #self.dataManager.generate_metadata_cache()
@@ -517,14 +523,15 @@ class init_GUI(QWidget):
         if curr_fn == 'Placeholder':
             text = 'unusable'
         else:
-            text = fn_to_quality[curr_fn]
+            text = self.fn_to_quality[curr_fn]
         index = self.dd.findText(text, Qt.MatchFixedString)
         if index >= 0:
             self.dd.setCurrentIndex(index)
 
     def finished(self):
+        # TODO change this to database update
         set_step_completed_in_progress_ini(stack, '1-4_setup_sorted_filenames')
-        write_results_to_sorted_filenames(self.valid_sections, fn_to_quality)
+        write_results_to_sorted_filenames(self.valid_sections, self.fn_to_quality)
         # close_main_gui( ex )
         sys.exit(app.exec_())
 
@@ -536,6 +543,7 @@ def close_gui():
 
 def write_results_to_sorted_filenames(sections_to_filenames, fn_to_quality):
     """
+    TODO this needs to get changed to updating the database table raw_section
     Create the sorted_filenames.txt file from the user's "sections_to_filenames".
     Determine quality of each slice from "fn_to_quality".
     
@@ -575,18 +583,9 @@ def write_results_to_sorted_filenames(sections_to_filenames, fn_to_quality):
     sfns_till_alignment_text = sfns_till_alignment_text[:-1]
 
     # Save the "sorted_filenames_till_alignment" as the active sfns file
-    with open(sfns_fp, 'w') as f:
-        f.write(sfns_till_alignment_text)
+    #with open(sfns_fp, 'w') as f:
+    #    f.write(sfns_till_alignment_text)
 
-    # Write the "post alignment" version
-    sfns_post_alignment_fp = sfns_fp.replace('sorted_filenames', 'sorted_filenames_post_slice_alignment')
-    with open(sfns_post_alignment_fp, 'w') as f:
-        f.write(sfns_text)
-
-    # Write the "pre alignment" version
-    sfns_till_alignment_fp = sfns_fp.replace('sorted_filenames', 'sorted_filenames_till_slice_alignment')
-    with open(sfns_till_alignment_fp, 'w') as f:
-        f.write(sfns_till_alignment_text)
 
 
 def main():
