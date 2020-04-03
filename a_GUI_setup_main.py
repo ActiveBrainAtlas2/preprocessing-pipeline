@@ -285,12 +285,15 @@ class init_GUI(QWidget):
             source = section['source']
             destination = section['destination']
             input_fp = os.path.join(TIF, source)
-            raw_destination = os.path.join(RAW, destination)
-            shutil.copy(input_fp, raw_destination)
-            thumbnail_destination = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', destination)
-            # Create thumbnails
-            execute_command("convert \"" + input_fp + "\" -resize 3.125% -auto-level -normalize \
-                            -compress lzw \"" + thumbnail_destination + "\"")
+            if os.path.exists(input_fp):
+                raw_destination = os.path.join(RAW, destination)
+                shutil.copy(input_fp, raw_destination)
+                thumbnail_destination = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', destination)
+                # Create thumbnails
+                execute_command("convert \"" + input_fp + "\" -resize 3.125% -auto-level -normalize \
+                                -compress lzw \"" + thumbnail_destination + "\"")
+            else:
+                print('File {} does not exist'.format(input_fp))
 
 
 def main():

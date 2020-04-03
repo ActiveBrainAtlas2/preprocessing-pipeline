@@ -389,42 +389,25 @@ class init_GUI(QWidget):
     def buttonPress(self, button):
         # Brighten an image
         if button in [self.b_left, self.b_right, self.b_addPlaceholder, self.b_remove]:
-            # Get all relevant filenames
-            curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
-            prev_fn = self.valid_sections[self.valid_section_keys[self.prev_section_index]]['destination']
-            next_fn = self.valid_sections[self.valid_section_keys[self.next_section_index]]['destination']
+            section_number = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['section_number']
 
-            # Move fn behind one section (100 -> 99)
             if button == self.b_left:
-                # Swap mappings of 'curr_fn' and 'prev_fn'
-                self.valid_sections[int(self.prev_section_index)] = curr_fn
-                self.valid_sections[int(self.curr_section_index)] = prev_fn
-                self.curr_section = self.getPrevValidSection(self.curr_section_index)
-
-            # Move fn ahead one section (100 -> 101)
+                self.sqlController.move_section(self.stack, section_number, -1)
             elif button == self.b_right:
-                # Swap mappings of 'curr_fn' and 'next_fn'
-                self.valid_sections[int(self.next_section_index)] = curr_fn
-                self.valid_sections[int(self.curr_section_index)] = next_fn
-                self.curr_section = self.getNextValidSection(self.curr_section_index)
-
-            elif button == self.b_addPlaceholder:
-                # Set this current slice as a placeholder
-                self.insertPlaceholder()
-                # Go one section to the right
-                self.keyPressEvent(93)
-                pass
-
+                self.sqlController.move_section(self.stack, section_number, 1)
             elif button == self.b_remove:
-                # Totally remove the current slice
+                # Set the sections to inactive
                 self.removeCurrSection()
+            else:
                 pass
 
             # Update the Viewer info and displayed image
+            self.valid_sections = self.sqlController.get_valid_sections(self.stack)
+            self.valid_section_keys = sorted(list(self.valid_sections))
             self.setCurrSection(self.curr_section_index)
-
-        elif button == self.b_done:
+        if button == self.b_done:
             self.finished()
+
 
     def removeCurrSection(self):
         msgBox = QMessageBox()
@@ -444,11 +427,8 @@ class init_GUI(QWidget):
         # Yes
         elif ret == 2:
             # Remove the current section from "self.valid_sections
-            try:
-                self.sqlController.inactivate_section(self.valid_section_keys[self.curr_section_index])
-            except KeyError:
-                print('Key {} missing'.format(self.curr_section_index))
-
+            section_number = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['section_number']
+            self.sqlController.inactivate_section(self.stack, section_number)
             self.valid_sections = self.sqlController.get_valid_sections(self.stack)
             self.valid_section_keys = sorted(list(self.valid_sections))
 
@@ -456,9 +436,6 @@ class init_GUI(QWidget):
                 self.curr_section_index = len(self.valid_section_keys) - 1
             else:
                 self.curr_section_index = self.curr_section_index - 1
-
-            print('remove curr_section_index', self.curr_section_index)
-            self.setCurrSection(self.curr_section_index)
 
 
     def insertPlaceholder(self):

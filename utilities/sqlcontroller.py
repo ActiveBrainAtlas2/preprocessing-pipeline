@@ -63,22 +63,75 @@ class SqlController(object):
             .order_by(RawSection.section_number).order_by(RawSection.source_file).all()
 
         for r in self.raw_sections:
-            self.valid_sections[r.section_number] = {'source': r.source_file,
+            self.valid_sections[r.id] = {'section_number': r.section_number,
+                                                     'channel': r.channel,
+                                                     'source': r.source_file,
                                                      'destination': r.destination_file,
                                                      'quality': r.file_status}
 
         #print(self.valid_sections)
         return self.valid_sections
 
-    def inactivate_section(self, section_number):
+    def move_section(self, stack, section_number, change):
+        min_id = session.query(func.min(RawSection.section_number)).filter(RawSection.prep_id == stack)\
+            .filter(RawSection.active == 1).scalar()
+        max_id = session.query(func.max(RawSection.section_number)).filter(RawSection.prep_id == stack)\
+            .filter(RawSection.active == 1).scalar()
+        set_to = section_number
+        """
+         for both operations, you need to set the next/previous section to a dummy number,
+         There is a unique constraint on prep_id, section_number, channel
+        
+         if we are moving a section to the left, set the preceding section number to the current section
+         and the current section to the preceding. Two updates.
+         Likewise, if we are moving it to right, set the next section number to the current section
+         and the current section the to next. Two updates. 
+         Only do either of these updates if there is an allowable active section number to move
+         them to.
+        """
+        DUMMY_SECTION_NUMBER = 9999
+        if change == -1:
+            if section_number > min_id:
+                set_to += change
+                preceding_section = section_number - 1
+                self.change_section_number(stack, preceding_section, DUMMY_SECTION_NUMBER)
+                self.change_section_number(stack, section_number, set_to)
+                self.change_section_number(stack, DUMMY_SECTION_NUMBER, section_number)
+        else:
+            if section_number < max_id:
+                set_to += change
+                next_section = section_number + 1
+                self.change_section_number(stack, next_section, DUMMY_SECTION_NUMBER)
+                self.change_section_number(stack, section_number, set_to)
+                self.change_section_number(stack, DUMMY_SECTION_NUMBER, section_number)
+
+
+    def change_section_number(self, stack, section_number, set_to):
         try:
-            raw_section = self.session.query(RawSection).filter(RawSection.section_number == section_number).one()
+            raw_sections = self.session.query(RawSection)\
+                .filter(RawSection.prep_id == stack)\
+                .filter(RawSection.section_number == section_number).all()
         except NoResultFound as nrf:
             print('No section for id {} error: {}'.format(id, nrf))
             return
-        raw_section.active = 0
-        print('raw section id ', raw_section.id)
-        self.session.merge(raw_section)
+        for section in raw_sections:
+            section.section_number = set_to
+            self.session.merge(section)
+
+        self.session.commit()
+
+
+    def inactivate_section(self, prep_id, section_number):
+        try:
+            raw_sections = self.session.query(RawSection)\
+                .filter(RawSection.prep_id == prep_id)\
+                .filter(RawSection.section_number == section_number).all()
+        except NoResultFound as nrf:
+            print('No section for id {} error: {}'.format(id, nrf))
+            return
+        for section in raw_sections:
+            section.active = 0
+            self.session.merge(section)
         self.session.commit()
 
     def save_valid_sections(self, valid_sections):

@@ -9,6 +9,7 @@ class RawSection(Base, AtlasModel):
 
     prep_id = Column(String, ForeignKey('animal.prep_id'), nullable=False)
     section_number = Column(Integer, nullable=False)
+    channel = Column(Integer, nullable=False)
     source_file = Column(String, nullable=False)
     destination_file = Column(String, nullable=False)
     file_status = Column(Enum('unusable', 'blurry', 'good'), nullable=False, default='good')
