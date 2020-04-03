@@ -29,8 +29,8 @@ class Animal(Base, AtlasModel):
     aliases_5 = Column(String)
     comments = Column(String)
 
-    histology = relationship("Histology")
-    scan_runs = relationship('ScanRun', lazy=True)
+    #histology = relationship(Histology, uselist=False, backref="animal")
+    #scan_runs = relationship(ScanRun, backref="animal")
     
 
     #def __repr__(self):

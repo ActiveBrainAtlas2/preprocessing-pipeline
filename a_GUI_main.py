@@ -57,6 +57,7 @@ class init_GUI(QWidget):
 
         self.initial_bottom_text = "Push `Finished` to exit the GUI"
         self.sqlController = SqlController()
+        self.stack_metadata = self.sqlController.generate_stack_metadata()
         self.dataManager = DataManager()
         self.initUI()
 
@@ -103,7 +104,7 @@ class init_GUI(QWidget):
         self.e3.setAlignment(Qt.AlignLeft)
         self.e3.setFont(self.font1)
         self.e3.setReadOnly(True)
-        self.e3.setText("XXX")
+        self.e3.setText("")
         self.e3.setFrame(False)
         self.grid_top.addWidget(self.e3, 0, 3)
         # Button Text Field

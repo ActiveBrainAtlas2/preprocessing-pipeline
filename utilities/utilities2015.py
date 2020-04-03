@@ -458,7 +458,9 @@ def bbox_2d(img):
 
 def create_thumbnails(stack):
     ## Downsample and normalize images in the "_raw" folder
-    raw_folder = os.path.join(ROOT_DIR, stack, 'raw')
+
+    raw_folder = os.path.join(ROOT_DIR, stack, 'tif')
+    sections = SqlController.get_valid_sections(stack)
     for img_name in os.listdir(raw_folder):
         input_fp = os.path.join(raw_folder, img_name)
         output_fp = os.path.join(ROOT_DIR, stack, 'preps', 'thumbnail', img_name)

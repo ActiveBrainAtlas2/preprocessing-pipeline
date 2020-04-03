@@ -1,5 +1,4 @@
 import os
-import subprocess
 import argparse
 import numpy as np
 
@@ -9,48 +8,12 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout, QLineEdit,
                              QPushButton, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QFrame, QComboBox,
                              QMessageBox)
 
-from tkinter import filedialog
 from tkinter import *
 
 sys.path.append(os.path.join(os.getcwd(), 'utilities'))
 from utilities.a_driver_utilities import set_step_completed_in_progress_ini
-from utilities.data_manager_v2 import DataManager
 from utilities.sqlcontroller import SqlController
-from utilities.metadata import ON_DOCKER, ROOT_DIR
-from utilities.utilities2015 import create_if_not_exists
-
-parser = argparse.ArgumentParser(
-    formatter_class=argparse.RawDescriptionHelpFormatter,
-    description='GUI for sorting filenames')
-parser.add_argument("stack", type=str, help="stack name")
-args = parser.parse_args()
-stack = args.stack
-
-# Check if a sorted_filenames already exists
-#sfns_fp = SqlController.get_sorted_filenames_filename(stack=stack)
-#sfns_already_exists = os.path.exists(sfns_fp)
-
-# Defining possible quality options for each slice
-quality_options = ['unusable', 'blurry', 'good']
-thumbnail_folder = os.path.join(ROOT_DIR, stack, 'preps', 'thumbnail')
-create_if_not_exists(thumbnail_folder)
-
-
-# Cannot assume we have the sorted_filenames file. Load images a different way
-#sections_to_filenames = {}
-
-def setup_section_quality():
-    fn_list = sorted(os.listdir(thumbnail_folder))
-    fn_to_quality = {}
-    for i, img_name in enumerate(fn_list):
-        print(img_name)
-        fn_to_quality[img_name] = 'good'
-    return fn_to_quality
-
-
-def get_thumbnail_img_fp_from_section(fn):
-    img_fp = os.path.join(thumbnail_folder, fn)
-    return img_fp
+from utilities.metadata import ROOT_DIR
 
 
 class ImageViewer(QGraphicsView):
@@ -159,23 +122,27 @@ class QVLine(QFrame):
 
 class init_GUI(QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, stack, parent=None):
         super(init_GUI, self).__init__(parent)
         self.font_h1 = QFont("Arial", 32)
         self.font_p1 = QFont("Arial", 16)
         # create a dataManager object
-        self.dataManager = DataManager()
         self.sqlController = SqlController()
-        self.sqlController.get_animal_info(stack)
-        self.fn_to_quality = setup_section_quality()
+        self.stack = stack
+        self.sqlController.get_animal_info(self.stack)
+
         self.valid_sections = self.sqlController.get_valid_sections(stack)
-        self.valid_section_keys = self.valid_sections.keys()
-        self.curr_section_index = len(self.valid_section_keys) // 2
+        self.valid_section_keys = sorted(list(self.valid_sections))
+
+        section_length =  len(self.valid_section_keys)
+
+        self.curr_section_index = section_length // 2
         self.prev_section_index = self.curr_section_index
         self.next_section_index = self.curr_section_index
-        self.curr_section = self.valid_sections[self.curr_section_index]
+        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         self.prev_section = self.getPrevValidSection(self.curr_section_index)
         self.next_section = self.getNextValidSection(self.curr_section_index)
+
         self.initUI()
 
     def initUI(self):
@@ -246,6 +213,7 @@ class init_GUI(QWidget):
         self.grid_body_lower.addWidget(self.e7, 0, 1)
         # Dropbown Menu (ComboBox) for selecting Stack
         self.dd = QComboBox()
+        quality_options = ['unusable', 'blurry', 'good']
         self.dd.addItems(quality_options)
         self.dd.currentIndexChanged.connect(self.updateDropdown)
         self.grid_body_lower.addWidget(self.dd, 0, 2)
@@ -325,28 +293,24 @@ class init_GUI(QWidget):
     def updateDropdown(self):
         # Get dropdown selection
         dropdown_selection = self.dd.currentText()
-        curr_filename = self.valid_sections[int(self.curr_section_index)]
-        self.fn_to_quality[curr_filename] = dropdown_selection
+        curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
+
+        curr_section['quality'] = dropdown_selection
 
     def load_sorted_filenames(self):
-        #self.dataManager.generate_metadata_cache()
-        self.valid_sections = self.dataManager.metadata_cache['sections_to_filenames'][stack]
-        self.valid_section_keys = self.valid_sections.keys()
+        self.valid_sections = self.sqlController.get_valid_sections(self.stack)
+        self.valid_section_keys = sorted(list(self.valid_sections))
         self.curr_section_index = len(self.valid_section_keys) // 2
-        self.curr_section = self.valid_sections[self.curr_section_index]
+        self.prev_section_index = self.curr_section_index
+        self.next_section_index = self.curr_section_index
+        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         self.prev_section = self.getPrevValidSection(self.curr_section_index)
         self.next_section = self.getNextValidSection(self.curr_section_index)
-
-        # Repopulate "fn_to_quality"
-        fn_to_quality = {}
-        for section, img_name in self.valid_sections.items():
-            fn_to_quality[img_name] = 'good'
-
         self.setCurrSection(self.curr_section_index)
 
-    def loadImage(self):
-        curr_fn = self.valid_sections[int(self.curr_section_index)]
 
+    def loadImage(self):
+        curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         if curr_fn == 'Placeholder':
             # Set a blank image if it is a placeholder
             img = np.zeros((100, 150, 3))
@@ -359,7 +323,7 @@ class init_GUI(QWidget):
             self.viewer.setPhoto(QPixmap(qImg))
         else:
             # Get filepath of "curr_section" and set it as viewer's photo
-            img_fp = get_thumbnail_img_fp_from_section(curr_fn)
+            img_fp = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', curr_fn)
             self.viewer.setPhoto(QPixmap(img_fp))
 
     def photoClicked(self, pos):
@@ -397,9 +361,10 @@ class init_GUI(QWidget):
 
         # Update curr, prev, and next section
         self.curr_section_index = section_index
-        self.curr_section = self.valid_sections[self.curr_section_index]
+        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         self.prev_section = self.getPrevValidSection(self.curr_section_index)
         self.next_section = self.getNextValidSection(self.curr_section_index)
+
         # Update the section and filename at the top
         self.updateCurrHeaderFields()
         # Update the quality selection in the bottom left
@@ -411,23 +376,23 @@ class init_GUI(QWidget):
         self.next_section_index = section_index + 1
         if self.next_section_index > len(self.valid_sections) - 1:
             self.next_section_index = 0
-        self.next_section = self.valid_sections[self.next_section_index]
+        self.next_section = self.valid_sections[self.valid_section_keys[self.next_section_index]]['destination']
         return self.next_section
 
     def getPrevValidSection(self, section_index):
         self.prev_section_index = int(section_index) - 1
         if self.prev_section_index < 0:
             self.prev_section_index = len(self.valid_sections) - 1
-        self.prev_section = self.valid_sections[self.prev_section_index]
+        self.prev_section = self.valid_sections[self.valid_section_keys[self.prev_section_index]]['destination']
         return self.prev_section
 
     def buttonPress(self, button):
         # Brighten an image
         if button in [self.b_left, self.b_right, self.b_addPlaceholder, self.b_remove]:
             # Get all relevant filenames
-            curr_fn = self.valid_sections[int(self.curr_section_index)]
-            prev_fn = self.valid_sections[int(self.prev_section_index)]
-            next_fn = self.valid_sections[int(self.next_section_index)]
+            curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
+            prev_fn = self.valid_sections[self.valid_section_keys[self.prev_section_index]]['destination']
+            next_fn = self.valid_sections[self.valid_section_keys[self.next_section_index]]['destination']
 
             # Move fn behind one section (100 -> 99)
             if button == self.b_left:
@@ -478,22 +443,23 @@ class init_GUI(QWidget):
             pass
         # Yes
         elif ret == 2:
-            print('aaa', self.valid_sections)
-            curr_fn = self.valid_sections[int(self.curr_section_index)]
             # Remove the current section from "self.valid_sections
             try:
-                del self.valid_sections[self.curr_section_index]
+                self.sqlController.inactivate_section(self.valid_section_keys[self.curr_section_index])
             except KeyError:
                 print('Key {} missing'.format(self.curr_section_index))
-            print('bbb', self.valid_sections)
 
-            new_sections_to_filenames = sorted(self.valid_sections.values())
+            self.valid_sections = self.sqlController.get_valid_sections(self.stack)
+            self.valid_section_keys = sorted(list(self.valid_sections))
 
-            for i, v in enumerate(new_sections_to_filenames):
-                self.valid_sections[i] = v
-            # Go back a section if you deleted the last section
-            if int(self.curr_section_index) == len(self.valid_sections):
+            if self.curr_section_index == 0:
+                self.curr_section_index = len(self.valid_section_keys) - 1
+            else:
                 self.curr_section_index = self.curr_section_index - 1
+
+            print('remove curr_section_index', self.curr_section_index)
+            self.setCurrSection(self.curr_section_index)
+
 
     def insertPlaceholder(self):
         new_sections_to_filenames = {}
@@ -513,25 +479,24 @@ class init_GUI(QWidget):
         self.valid_section_keys = self.valid_sections.keys()
 
     def updateCurrHeaderFields(self):
-        self.e4.setText(str(self.valid_sections[self.curr_section_index]))
+        label = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['source']
+        self.e4.setText(label)
         self.e5.setText(str(self.curr_section))
 
     def updateQualityField(self):
-        curr_fn = self.valid_sections[self.curr_section_index]
-        print('curr_fn', curr_fn)
-        print()
-        if curr_fn == 'Placeholder':
+        curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
+        if curr_fn['destination'] == 'Placeholder':
             text = 'unusable'
         else:
-            text = self.fn_to_quality[curr_fn]
+            text = curr_fn['quality']
         index = self.dd.findText(text, Qt.MatchFixedString)
         if index >= 0:
             self.dd.setCurrentIndex(index)
 
     def finished(self):
         # TODO change this to database update
-        set_step_completed_in_progress_ini(stack, '1-4_setup_sorted_filenames')
-        write_results_to_sorted_filenames(self.valid_sections, self.fn_to_quality)
+        set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
+        self.sqlController.save_valid_sections(self.valid_sections)
         # close_main_gui( ex )
         sys.exit(app.exec_())
 
@@ -552,7 +517,6 @@ def write_results_to_sorted_filenames(sections_to_filenames, fn_to_quality):
         - good: Write to the file as usual
         - blurry: Write to a special file meant to be used until intra-stack alignment, ignored after
     """
-    print(fn_to_quality)
     sfns_text = ""
     sfns_till_alignment_text = ""
     for k, filename in sections_to_filenames.items():
@@ -589,139 +553,27 @@ def write_results_to_sorted_filenames(sections_to_filenames, fn_to_quality):
 
 
 def main():
-    global app
-    app = QApplication(sys.argv)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description='GUI for sorting filenames')
+    parser.add_argument("stack", type=str, help="stack name")
+    args = parser.parse_args()
+    stack = args.stack
+    sqlController = SqlController()
+    sections = list(sqlController.get_valid_sections(stack))
 
-    global ex
-    ex = init_GUI()
-
-    # If True, then the sorted filenames DOES exist but the user does NOT want to load it
-    not_loading_curr_sfns = False
-
-    if sfns_already_exists:
-        msgBox = QMessageBox()
-        text = 'The sorted_filenames seems to already exist in the right place, Do you want to load it?\n\n'
-        text += 'Warning: If you select no, it will be overwritten!'
-        msgBox.setText(text)
-        msgBox.addButton(QPushButton('Cancel'), QMessageBox.RejectRole)
-        msgBox.addButton(QPushButton('No'), QMessageBox.NoRole)
-        msgBox.addButton(QPushButton('Yes'), QMessageBox.YesRole)
-        ret = msgBox.exec_()
-        # Cancel
-        if ret == 0:
-            # sys.exit( app.exec_() )
-            return None
-        # No
-        elif ret == 1:
-            # Ask the user if they want to load one that already exists
-            not_loading_curr_sfns = True
-        # Yes
-        elif ret == 2:
-            # Load in information on current sorted_filenames
-            ex.load_sorted_filenames()
-            ex.show()
-            # Simulate a user's keypress because otherwise the autozoom is weird
-            ex.keyPressEvent(91)
-            # set_step_completed_in_progress_ini( stack, '1-4_setup_sorted_filenames')
-            sys.exit(app.exec_())
-    # If sorted_filenames does NOT exist, we must make a new one
-    if (not sfns_already_exists) or (not_loading_curr_sfns):
-        msgBox = QMessageBox()
-        text = 'Do you want to load a sorted_filenames text file that has already been made?\n\n'
-        text += 'If you select no, you will need to create one using a custom GUI.'
-        msgBox.setText(text)
-        msgBox.addButton(QPushButton('No'), QMessageBox.NoRole)
-        msgBox.addButton(QPushButton('Yes'), QMessageBox.YesRole)
-        ret = msgBox.exec_()
-        print(ret)
-        # Yes
-        if ret == 1:
-            fp = get_selected_fp(default_filetype=[("text files", "*.txt"), ("all files", "*.*")])
-            filepath_sfns = fp
-            filepath_sfns_folder = fp[0:max(loc for loc, val in enumerate(fp) if val == '/')]
-            validated, err_msg = validate_sorted_filenames(fp)
-
-            if validated:
-                copy_over_sorted_filenames(stack, fp)
-                sys.stderr.write('\nCopying sorted filenames was successful!\n')
-                set_step_completed_in_progress_ini(stack, '1-4_setup_sorted_filenames')
-            else:
-                sys.stderr.write('\n' + err_msg + '\n')
-
-            # sys.exit( app.exec_() )
-        # No
-        elif ret == 0:
-            # Run GUI as usual
-            ex.show()
-            # Simulate a user's keypress because otherwise the autozoom is weird
-            ex.keyPressEvent(91)
-            sys.exit(app.exec_())
-
-
-### All functions below this point are meant for copying over an existing sorted_filenames file
-def get_selected_fp(initialdir='/', default_filetype=("jp2 files", "*.jp2")):
-    if ON_DOCKER:
-        initialdir = '/mnt/computer_root/'
-
-    root = Tk()
-    root.filename = filedialog.askopenfilename(initialdir=initialdir,
-                                               title="Select file",
-                                               filetypes=default_filetype)
-    fn = root.filename
-    root.destroy()
-    return fn
-
-
-def validate_sorted_filenames(fp):
-    section_names, section_numbers = load_sorted_filenames(fp)
-
-    if len(section_names) != len(set(section_names)):
-        return False, "Error: A section name appears multiple times"
-    if len(section_numbers) != len(set(section_numbers)):
-        return False, "Error: A section number appears multiple times"
-    if len(section_numbers) != len(section_names):
-        return False, "Error: Every Section name must have a corresponding section number"
-
-    return True, ""
-
-
-def copy_over_sorted_filenames(stack, sfns_input_fp):
-    correct_sorted_fns_fp = DataManager.get_sorted_filenames_filename(stack)
-    command = ["cp", sfns_input_fp, correct_sorted_fns_fp]
-    subprocess.call(command)
-
-
-def load_sorted_filenames(fp):
-    '''
-        load_sorted_filenames( stack ) returns a list of section names
-        and their associated section numbers
-    '''
-    # fn = stack+'_sorted_filenames.txt'
-
-    file_sfns = open(fp, 'r')
-    section_names = []
-    section_numbers = []
-
-    for line in file_sfns:
-        if 'Placeholder' in line:
-            continue
-        elif line == '':
-            continue
-        elif line == '\n':
-            continue
-        else:
-            try:
-                space_index = line.index(" ")
-            except Exception as e:
-                print(e)
-                print('ignoring the line with this error')
-                continue
-            section_name = line[0: space_index]
-            section_number = line[space_index + 1:]
-            section_names.append(section_name)
-            section_numbers.append(section_number)
-    return section_names, section_numbers
-
+    if len(sections) > 0:
+        global app
+        app = QApplication(sys.argv)
+        global ex
+        ex = init_GUI(stack)
+        # Run GUI as usual
+        ex.show()
+        # Simulate a user's keypress because otherwise the autozoom is weird
+        ex.keyPressEvent(91)
+        sys.exit(app.exec_())
+    else:
+        print('There are no sections to work with.')
 
 if __name__ == '__main__':
     main()

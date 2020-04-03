@@ -1,5 +1,6 @@
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm import joinedload
 import os
 from model.animal import Animal
 from model.histology import Histology
@@ -37,37 +38,52 @@ class SqlController(object):
         self.scan_run = None
         self.slides = None
         self.tifs = None
-        self.raw_sections = None
+        self.valid_sections = {}
+        # fill up the metadata_cache variable
+
+    def generate_stack_metadata(self):
         # fill up the metadata_cache variable
         for a, h in session.query(Animal, Histology).filter(Animal.prep_id == Histology.prep_id).all():
             self.stack_metadata[a.prep_id] = {'stain': h.counterstain,
-                                 'cutting_plane': h.orientation,
-                                 'resolution': 0,
-                                 'section_thickness': h.section_thickness}
+                                              'cutting_plane': h.orientation,
+                                              'resolution': 0,
+                                              'section_thickness': h.section_thickness}
             self.all_stacks.append(a.prep_id)
-
-        print(self.stack_metadata)
+        return self.stack_metadata
 
     def get_animal_info(self, stack):
         self.animal = self.session.query(Animal).filter(Animal.prep_id == stack).one()
         self.histology = self.session.query(Histology).filter(Histology.prep_id == stack).one()
         #scan_run = self.session.query(ScanRun, func.max(ScanRun.id).label('resolution')).filter(ScanRun.prep_id == stack).group_by(ScanRun.prep_id).one()
         self.scan_run = self.session.query(ScanRun).filter(ScanRun.prep_id == stack).order_by(ScanRun.id.desc()).one()
-        self.raw_sections = self.session.query(RawSection).filter(RawSection.prep_id == stack)\
-            .order_by(RawSection.section_number)\
-            .order_by(RawSection.file_name)
 
     def get_valid_sections(self, stack):
         self.raw_sections = self.session.query(RawSection).filter(RawSection.prep_id == stack)\
-            .order_by(RawSection.section_number)\
-            .order_by(RawSection.file_name)
+            .filter(RawSection.active == 1)\
+            .order_by(RawSection.section_number).order_by(RawSection.source_file).all()
 
-        valid_sections = {}
-        for section in self.raw_sections:
-            valid_sections[section.section_number] = section.file_name
+        for r in self.raw_sections:
+            self.valid_sections[r.section_number] = {'source': r.source_file,
+                                                     'destination': r.destination_file,
+                                                     'quality': r.file_status}
 
-        return valid_sections
+        #print(self.valid_sections)
+        return self.valid_sections
 
+    def inactivate_section(self, section_number):
+        try:
+            raw_section = self.session.query(RawSection).filter(RawSection.section_number == section_number).one()
+        except NoResultFound as nrf:
+            print('No section for id {} error: {}'.format(id, nrf))
+            return
+        raw_section.active = 0
+        print('raw section id ', raw_section.id)
+        self.session.merge(raw_section)
+        self.session.commit()
+
+    def save_valid_sections(self, valid_sections):
+        for key, value in valid_sections.items():
+            print(key, value)
 
     #################### Resolution conversions ############
 
