@@ -5,8 +5,19 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-from data_manager_v2 import DataManager
-from metadata import ordered_pipeline_steps, ROOT_DIR
+from utilities.data_manager_v2 import DataManager
+from utilities.metadata import ordered_pipeline_steps, ROOT_DIR
+
+
+def create_input_spec_ini_all(name, stack, prep_id, version, resol):
+    f = open(name, "w")
+
+    f.write('[DEFAULT]\n')
+    f.write('image_name_list = all\n')
+    f.write('stack = '+stack+'\n')
+    f.write('prep_id = '+prep_id+'\n')
+    f.write('version = '+version+'\n')
+    f.write('resol = '+resol+'\n')
 
 def get_current_step_from_progress_ini( stack ):
     progress_dict = DataManager.get_brain_info_progress( stack )
@@ -50,10 +61,8 @@ def call_and_time(command_list, completion_message=''):
 
     if command_list[0] == 'python':
         print('**************************************************************************************************')
-        print
-        '\nScript ' + command_list[1] + ' completed. Took ', round(end_t - start_t, 1), ' seconds'
-        print
-        completion_message + '\n'
+        print('\nScript ' + command_list[1] + ' completed. Took ', round(end_t - start_t, 1), ' seconds')
+        print(completion_message + '\n')
         print('**************************************************************************************************')
 
 def get_prep5_limits_from_prep1_thumbnail_masks( stack, max_distance_to_scan_from_midpoint=25,
@@ -79,8 +88,7 @@ def get_prep5_limits_from_prep1_thumbnail_masks( stack, max_distance_to_scan_fro
 
 
     # Get dimensions of the first image in the list (will be the same for all)
-    img_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id,
-                                               resol=resol, version=version,
+    img_fp = DataManager.get_image_filepath(stack=stack, resol=resol, version=version,
                                                fn=sec_to_fn_dict[sec_to_fn_dict.keys()[0]])
     height, width, channels = cv2.imread( img_fp ).shape
     height_d16 = height/16
@@ -95,11 +103,7 @@ def get_prep5_limits_from_prep1_thumbnail_masks( stack, max_distance_to_scan_fro
     for img_name in sec_to_fn_dict.values():
         # Get the image filepath and then load the image, downsampling
         # an additional 16x for speed
-        img_fp = DataManager.get_image_filepath_v2(stack=stack,
-                                                   prep_id=prep_id,
-                                                   resol=resol,
-                                                   version=version,
-                                                   fn=img_name)
+        img_fp = DataManager.get_image_filepath(stack=stack, resol=resol, version=version, fn=img_name)
         img_thumbnail_mask_down16 = cv2.imread( img_fp )[::16,::16]
 
         # update rostral lim
@@ -114,7 +118,7 @@ def get_prep5_limits_from_prep1_thumbnail_masks( stack, max_distance_to_scan_fro
 
         # update caudal lim
         caudal_range = range( curr_caudal_lim_d16, width_d16)
-        caudal_range.reverse() # Goes from right of image to left
+        caudal_range = reversed(caudal_range) # Goes from right of image to left
         for col_i in caudal_range:
             col = img_thumbnail_mask_down16[ :, col_i]
 
@@ -136,7 +140,7 @@ def get_prep5_limits_from_prep1_thumbnail_masks( stack, max_distance_to_scan_fro
 
         # update ventral lim
         ventral_range = range( curr_ventral_lim_d16, height_d16)
-        ventral_range.reverse() # Goes from right of image to left
+        ventral_range = reversed(ventral_range) # Goes from right of image to left
         for row_i in ventral_range:
             row = img_thumbnail_mask_down16[ row_i, :]
 
@@ -191,5 +195,5 @@ def revert_to_prev_step( stack, target_step ):
     progress_ini_to_save['DEFAULT'] = progress_dict
 
     # Get filepath and save ini
-    fp = DataManager.get_brain_info_progress_fp( stack )
+    fp = DataManager.get_brain_info_progress( stack )
     save_dict_as_ini( progress_ini_to_save, fp )

@@ -1,6 +1,10 @@
-#!/usr/bin/env python
-
+import os
 import argparse
+
+from utilities.data_manager_v2 import DataManager
+from utilities.a_driver_utilities import call_and_time, create_input_spec_ini_all
+from utilities.metadata import REPO_DIR
+from utilities.sqlcontroller import SqlController
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -13,20 +17,6 @@ args = parser.parse_args()
 stack = args.stack
 stain = args.stain
 anchor_fn = args.anchor_fn
-
-# Import other modules and packages
-import os
-import subprocess
-import numpy as np
-import sys
-import json
-import time
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-from metadata import *
-from preprocess_utilities import *
-from data_manager_v2 import DataManager
-from a_driver_utilities import *
-
 
 def create_from_none_to_aligned_file(  ):
     DATA_ROOTDIR = os.environ['DATA_ROOTDIR'] # THUMBNAIL_DATA_DIR
@@ -65,7 +55,7 @@ def create_anchor_file( anchor_fn='auto' ):
     DATA_ROOTDIR = os.environ['DATA_ROOTDIR'] # THUMBNAIL_DATA_DIR
     
     if anchor_fn=='auto':
-        fn_list = get_fn_list_from_sorted_filenames(stack)
+        fn_list = DataManager.get_fn_list_from_sorted_filenames(stack)
         anchor_fn = fn_list[ int(len(fn_list)/2) ]
 
     # First designate an anchor to use

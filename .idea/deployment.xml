@@ -5,7 +5,7 @@
       <paths name="l1qiao@muralis.dk.ucsd.edu:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/l1qiao/pipeline_utility" local="$PROJECT_DIR$" />
+            <mapping deploy="/home/l1qiao/Projects/pipeline_utility" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

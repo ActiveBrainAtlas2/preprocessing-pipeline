@@ -1,6 +1,10 @@
-#!/usr/bin/env python
-
+import os
 import argparse
+
+from utilities.data_manager_v2 import DataManager
+from utilities.a_driver_utilities import call_and_time, create_input_spec_ini_all
+from utilities.metadata import REPO_DIR
+from utilities.sqlcontroller import SqlController
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -11,19 +15,6 @@ parser.add_argument("stain", type=str, help="Either \'NTB\' or \'Thionin\'.")
 args = parser.parse_args()
 stack = args.stack
 stain = args.stain
-
-# Import other modules and packages
-import os
-import subprocess
-import numpy as np
-import sys
-import json
-import time
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-from metadata import *
-from preprocess_utilities import *
-from data_manager_v2 import DataManager
-from a_driver_utilities import *
 
 if stain == 'NTB':
     # Generate masks

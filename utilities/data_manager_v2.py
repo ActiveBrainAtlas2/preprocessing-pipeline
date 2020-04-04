@@ -982,3 +982,26 @@ class DataManager(object):
 
         return transformation_to_previous_sec
 
+    @staticmethod
+    def get_fn_list_from_sorted_filenames(stack):
+        '''
+            get_fn_list_from_sorted_filenames( stack ) returns a list of all the valid
+            filenames for the current stack.
+        '''
+        fp = os.environ['DATA_ROOTDIR']+'CSHL_data_processed/'+stack+'/'
+        fn = stack+'_sorted_filenames.txt'
+
+        file0 = open( fp+fn, 'r')
+        section_names = []
+
+        for line in file0:
+            if 'Placeholder' in line:
+                #print line
+                continue
+            else:
+                space_index = line.index(" ")
+                section_name = line[ 0 : space_index ]
+                section_number = line[ space_index+1 : ]
+                section_names.append( section_name )
+        return section_names
+

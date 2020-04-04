@@ -1,11 +1,10 @@
 import os
-import subprocess
-import numpy as np
 import sys
-import json
-import time
-
 import argparse
+
+from utilities.data_manager_v2 import DataManager
+from utilities.a_driver_utilities import call_and_time, create_input_spec_ini_all
+from utilities.sqlcontroller import SqlController
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -17,16 +16,11 @@ args = parser.parse_args()
 stack = args.stack
 stain = args.stain
 
-# from metadata import *
-# from preprocess_utilities import *
-# from data_manager_v2 import DataManager
-# from a_driver_utilities import *
-from sqlcontroller import SqlController
 
 # Do quality check on sorted_filenames.txt
 
 # Make sure ROOT_DIR/CSHL_data_processed/STACK/STACK_raw/SLICE_raw.tif files all exist, otherwise can't continue
-sorted_fns = get_fn_list_from_sorted_filenames(stack)
+sorted_fns = DataManager.get_fn_list_from_sorted_filenames(stack)
 for fn in sorted_fns:
     fp_tif = os.path.join(DataManager.get_images_root_folder(stack), stack + '_raw', fn + '_raw.tif')
     fp_tif_generic = os.path.join(DataManager.get_images_root_folder(stack), stack + '_raw', '<FILENAME>_raw.tif')
