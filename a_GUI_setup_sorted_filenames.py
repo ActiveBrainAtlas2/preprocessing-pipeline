@@ -65,16 +65,6 @@ class ImageViewer(QGraphicsView):
             self._photo.setPixmap(QPixmap())
         self.fitInView()
 
-    """
-    EOD, 3/27/2020
-    I can't find image or overlay, They are not assigned anywhere
-    def paintOverlayImage(self, pixmap=None):
-        painter = QPainter()
-        painter.begin(image)
-        painter.drawImage(0, 0, overlay)
-        painter.end()
-    """
-
     def wheelEvent(self, event):
         if self.hasPhoto():
             if event.delta() > 0:
@@ -226,13 +216,7 @@ class init_GUI(QWidget):
         self.b_remove.clicked.connect(lambda: self.buttonPress(self.b_remove))
         self.b_remove.setStyleSheet("color: rgb(0,0,0); background-color: #C91B1B;")
         self.grid_body_lower.addWidget(self.b_remove, 2, 1)
-        # Button Text Field
-        self.b_addPlaceholder = QPushButton("Add Placeholder as prev section")
-        self.b_addPlaceholder.setDefault(True)
-        self.b_addPlaceholder.setEnabled(True)
-        self.b_addPlaceholder.clicked.connect(lambda: self.buttonPress(self.b_addPlaceholder))
-        self.b_addPlaceholder.setStyleSheet("color: rgb(0,0,0); background-color: #41C91B;")
-        self.grid_body_lower.addWidget(self.b_addPlaceholder, 2, 2)
+        #self.grid_body_lower.addWidget(self.b_addPlaceholder, 2, 2)
         # Button Text Field
         self.b_left = QPushButton("<--   Move Section Left   <--")
         self.b_left.setDefault(True)
@@ -311,20 +295,9 @@ class init_GUI(QWidget):
 
     def loadImage(self):
         curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
-        if curr_fn == 'Placeholder':
-            # Set a blank image if it is a placeholder
-            img = np.zeros((100, 150, 3))
-            img = np.array(img, dtype=np.uint8)
-
-            height, width, channels = img.shape
-            bytesPerLine = 3 * width
-            qImg = QImage(img.data, width, height, bytesPerLine, QImage.Format_RGB888)
-
-            self.viewer.setPhoto(QPixmap(qImg))
-        else:
-            # Get filepath of "curr_section" and set it as viewer's photo
-            img_fp = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', curr_fn)
-            self.viewer.setPhoto(QPixmap(img_fp))
+        # Get filepath of "curr_section" and set it as viewer's photo
+        img_fp = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', curr_fn)
+        self.viewer.setPhoto(QPixmap(img_fp))
 
     def photoClicked(self, pos):
         if self.viewer.dragMode() == QGraphicsView.NoDrag:
@@ -351,10 +324,8 @@ class init_GUI(QWidget):
     def setCurrSection(self, section_index=-1):
         """
         Sets the current section to the section passed in.
-        
         Will automatically update curr_section, prev_section, and next_section.
         Updates the header fields and loads the current section image.
-        
         """
         if section_index == -1:
             section_index = self.curr_section_index
@@ -364,12 +335,10 @@ class init_GUI(QWidget):
         self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         self.prev_section = self.getPrevValidSection(self.curr_section_index)
         self.next_section = self.getNextValidSection(self.curr_section_index)
-
         # Update the section and filename at the top
         self.updateCurrHeaderFields()
         # Update the quality selection in the bottom left
         self.updateQualityField()
-
         self.loadImage()
 
     def getNextValidSection(self, section_index):
@@ -388,7 +357,7 @@ class init_GUI(QWidget):
 
     def buttonPress(self, button):
         # Brighten an image
-        if button in [self.b_left, self.b_right, self.b_addPlaceholder, self.b_remove]:
+        if button in [self.b_left, self.b_right, self.b_remove]:
             section_number = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['section_number']
 
             if button == self.b_left:
@@ -438,23 +407,6 @@ class init_GUI(QWidget):
                 self.curr_section_index = self.curr_section_index - 1
 
 
-    def insertPlaceholder(self):
-        new_sections_to_filenames = {}
-        # Iterate through all sections
-        for i in range(len(self.valid_section_keys) + 1):
-            # If before the current section
-            if i < self.curr_section_index:
-                new_sections_to_filenames[i] = self.valid_sections[i]
-            # If on the current section
-            elif i == self.curr_section_index:
-                new_sections_to_filenames[i] = 'Placeholder'
-            # If after the current section
-            else:
-                new_sections_to_filenames[i] = self.valid_sections[i - 1]
-        # Save changes
-        self.valid_sections = new_sections_to_filenames
-        self.valid_section_keys = self.valid_sections.keys()
-
     def updateCurrHeaderFields(self):
         label = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['source']
         self.e4.setText(label)
@@ -462,10 +414,7 @@ class init_GUI(QWidget):
 
     def updateQualityField(self):
         curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
-        if curr_fn['destination'] == 'Placeholder':
-            text = 'unusable'
-        else:
-            text = curr_fn['quality']
+        text = curr_fn['quality']
         index = self.dd.findText(text, Qt.MatchFixedString)
         if index >= 0:
             self.dd.setCurrentIndex(index)
@@ -481,51 +430,6 @@ class init_GUI(QWidget):
 def close_gui():
     # ex.hide()
     sys.exit(app.exec_())
-
-
-def write_results_to_sorted_filenames(sections_to_filenames, fn_to_quality):
-    """
-    TODO this needs to get changed to updating the database table raw_section
-    Create the sorted_filenames.txt file from the user's "sections_to_filenames".
-    Determine quality of each slice from "fn_to_quality".
-    
-    Quality levels:
-        - unusable: Mark as placeholder
-        - good: Write to the file as usual
-        - blurry: Write to a special file meant to be used until intra-stack alignment, ignored after
-    """
-    sfns_text = ""
-    sfns_till_alignment_text = ""
-    for k, filename in sections_to_filenames.items():
-
-        if filename == 'Placeholder':
-            quality = 'unusable'
-        else:
-            quality = fn_to_quality[filename]
-
-        # section_str is the section encoded as a string, padded with zeros
-        #section_str = str(section + offset).zfill(3)
-
-        # If section is marked "unusable"
-        if quality == 'unusable':
-            sfns_text += 'Placeholder ' + str(k) + '\n'
-            sfns_till_alignment_text += 'Placeholder ' + str(k) + '\n'
-            continue
-        elif quality == 'good':
-            sfns_text += filename + ' ' + str(k) + '\n'
-            sfns_till_alignment_text += filename + ' ' + str(k) + '\n'
-            continue
-        elif quality == 'blurry':
-            sfns_text += 'Placeholder ' + str(k) + '\n'
-            sfns_till_alignment_text += filename + ' ' + str(k) + '\n'
-            continue
-    # Remove trailing '\n' at the end of each file
-    sfns_text = sfns_text[:-1]
-    sfns_till_alignment_text = sfns_till_alignment_text[:-1]
-
-    # Save the "sorted_filenames_till_alignment" as the active sfns file
-    #with open(sfns_fp, 'w') as f:
-    #    f.write(sfns_till_alignment_text)
 
 
 

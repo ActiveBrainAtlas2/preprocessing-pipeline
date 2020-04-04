@@ -1,87 +1,20 @@
 import os, sys
 import subprocess
 import argparse
-
+from tqdm import tqdm
 import cv2
 from skimage import img_as_ubyte
 from skimage.color import rgb2gray
 
 sys.path.append("utilities")
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QFont, QIntValidator, QColor, QBrush, QPixmap, QPainter
+from PyQt5.QtGui import QFont, QIntValidator, QColor, QBrush, QPixmap
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton, QMessageBox, QGraphicsView, \
     QGraphicsScene, QGraphicsPixmapItem, QFrame, QCheckBox, QComboBox
 
 from utilities.a_driver_utilities import set_step_completed_in_progress_ini
 from utilities.metadata import ROOT_DIR
-from utilities.data_manager_v2 import DataManager
-
-parser = argparse.ArgumentParser(
-    formatter_class=argparse.RawDescriptionHelpFormatter,
-    description='Mask Editing GUI')
-parser.add_argument("stack", type=str, help="stack name")
-args = parser.parse_args()
-stack = args.stack
-
-# Cannot assume we have the sorted_filenames file. Load images a different way
-# thumbnail_folder = DataManager.setup_get_thumbnail_fp(stack)
-# section_to_fn = {}
-# fn_list = os.listdir( thumbnail_folder )
-# fn_list.sort()
-# for i, img_name in enumerate( fn_list ):
-#    section_to_fn[i] = img_name
-
-# Assume we have the sorted_filenames file. Load images a different way
-if os.path.exists(os.path.join(ROOT_DIR, stack, 'brains_info', 'sorted_filenames.txt')):
-    try:
-        dataManager = DataManager()
-        sections_to_filenames = dataManager.metadata_cache['sections_to_filenames'][stack]
-    except Exception as e:
-        print('\n********************************************************\n')
-        print('Sorted Filenames appears to have issues')
-        print('Please go back a step and ensure it is formatted properly')
-        print('\n********************************************************\n')
-    section_to_fn = {}
-    #sections_to_filenames = {}
-    for section in sections_to_filenames.keys():
-        if sections_to_filenames[section] == 'Placeholder':
-            section_to_fn[section] = sections_to_filenames[section]
-        else:
-            section_to_fn[section] = sections_to_filenames[section]
-    fn_list = sorted(dataManager.metadata_cache['filenames_to_sections'][stack].keys())
-
-print(section_to_fn)
-
-# Queued transformations keeps track of each transformation the user wants to perform
-#   on ALL the images. The transformations are applied to the large "raw" files after
-#   the user clicks "done orienting"
-global queued_transformations
-queued_transformations = []
-
-
-def get_grayscale_thumbnail_img(section):
-    fn = section_to_fn[int(section)]
-    img_fp = os.path.join(DataManager.setup_get_thumbnail_fp(stack), fn)
-    print
-    img_fp
-    img = cv2.imread(img_fp, -1)
-    img = img_as_ubyte(rgb2gray(img))
-    return img
-
-
-def get_img(section, prep_id='None', resol='thumbnail', version='None'):
-    return DataManager.load_image_v2(stack=stack,
-                                     section=section, prep_id=prep_id,
-                                     resol=resol, version=version)
-
-
-def get_fp(section, prep_id='None', resol='thumbnail', version=''):
-    if version == '':
-        version = DataManager.get_version(stack)
-
-    return DataManager.get_image_filepath_v2(stack=stack,
-                                             section=section, prep_id=prep_id,
-                                             resol=resol, version=version)
+from utilities.sqlcontroller import SqlController
 
 class ImageViewer(QGraphicsView):
     photoClicked = pyqtSignal(QPoint)
@@ -188,29 +121,28 @@ class QVLine(QFrame):
 
 class init_GUI(QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, stack, parent=None):
         super(init_GUI, self).__init__(parent)
         self.font_h1 = QFont("Arial", 32)
         self.font_p1 = QFont("Arial", 16)
+        self.queued_transformations = []
 
-        #self.valid_sections = section_to_fn.keys()
-        #self.sections_to_filenames = section_to_fn
-        #self.curr_section = self.valid_sections[len(self.valid_sections) / 2]
-        #self.prev_section = self.getPrevValidSection(self.curr_section)
-        #self.next_section = self.getNextValidSection(self.curr_section)
+        # create a dataManager object
+        self.sqlController = SqlController()
+        self.stack = stack
+        self.sqlController.get_animal_info(self.stack)
 
+        self.valid_sections = self.sqlController.get_valid_sections(stack)
+        self.valid_section_keys = sorted(list(self.valid_sections))
 
-        self.valid_sections = sections_to_filenames
-        self.valid_section_keys = sections_to_filenames.keys()
-        self.curr_section_index = len(self.valid_section_keys) // 2
+        section_length =  len(self.valid_section_keys)
+
+        self.curr_section_index = section_length // 2
         self.prev_section_index = self.curr_section_index
         self.next_section_index = self.curr_section_index
-        self.curr_section = self.valid_sections[self.curr_section_index]
+        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         self.prev_section = self.getPrevValidSection(self.curr_section_index)
         self.next_section = self.getNextValidSection(self.curr_section_index)
-        # create a dataManager object
-        self.dataManager = DataManager()
-
 
         self.initUI()
 
@@ -295,6 +227,7 @@ class init_GUI(QWidget):
         # Checkbox
         self.cb_1 = QCheckBox("Apply transformation to ALL images")
         self.cb_1.setChecked(True)
+        self.cb_1.setEnabled(False)
         self.grid_body_lower.addWidget(self.cb_1, 0, 3)
         # Static Text Field
         self.e6 = QLineEdit()
@@ -349,11 +282,11 @@ class init_GUI(QWidget):
                                 info_text)
 
     def loadImage(self):
+        curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         # Get filepath of "curr_section" and set it as viewer's photo
-        fn = section_to_fn[int(self.curr_section_index)]
-        img_fp = os.path.join(DataManager.setup_get_thumbnail_fp(stack), fn)
-        print(img_fp)
+        img_fp = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', curr_fn)
         self.viewer.setPhoto(QPixmap(img_fp))
+
 
     def photoClicked(self, pos):
         if self.viewer.dragMode() == QGraphicsView.NoDrag:
@@ -377,214 +310,141 @@ class init_GUI(QWidget):
         else:
             print(key)
 
+
     def setCurrSection(self, section_index=-1):
         """
         Sets the current section to the section passed in.
-        
         Will automatically update curr_section, prev_section, and next_section.
         Updates the header fields and loads the current section image.
-        
         """
         if section_index == -1:
             section_index = self.curr_section_index
 
         # Update curr, prev, and next section
         self.curr_section_index = section_index
-        self.curr_section = self.valid_sections[self.curr_section_index]
+        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         self.prev_section = self.getPrevValidSection(self.curr_section_index)
         self.next_section = self.getNextValidSection(self.curr_section_index)
-
         # Update the section and filename at the top
         self.updateCurrHeaderFields()
-
-        self.curr_img_multiplier = 1
-
+        # Update the quality selection in the bottom left
         self.loadImage()
-
 
     def getNextValidSection(self, section_index):
         self.next_section_index = section_index + 1
         if self.next_section_index > len(self.valid_sections) - 1:
             self.next_section_index = 0
-        self.next_section = self.valid_sections[self.next_section_index]
+        self.next_section = self.valid_sections[self.valid_section_keys[self.next_section_index]]['destination']
         return self.next_section
 
     def getPrevValidSection(self, section_index):
         self.prev_section_index = int(section_index) - 1
         if self.prev_section_index < 0:
             self.prev_section_index = len(self.valid_sections) - 1
-        self.prev_section = self.valid_sections[self.prev_section_index]
+        self.prev_section = self.valid_sections[self.valid_section_keys[self.prev_section_index]]['destination']
         return self.prev_section
-
 
     def buttonPress(self, button):
         # Brighten an image
         if button in [self.b1, self.b2, self.b3]:
-            # Check whether to apply transform to ALL images according to checkbox value
-            if self.cb_1.isChecked():
-                only_on_current_img = False
-            else:
-                only_on_current_img = True
-
             # "Flip image(s) across central vertical line"
             if button == self.b1:
-                self.transform_images('flip', only_on_current_img=only_on_current_img)
+                self.transform_thumbnails('flip')
             # "Flop image(s) across central horozontal line"
             elif button == self.b2:
-                self.transform_images('flop', only_on_current_img=only_on_current_img)
+                self.transform_thumbnails('flop')
             # "Rotate Image(s)"
             elif button == self.b3:
-                self.transform_images('rotate', degrees=str(self.cb.currentText()),
-                                      only_on_current_img=only_on_current_img)
+                self.transform_thumbnails('rotate', degrees=str(self.cb.currentText()))
             # Update the Viewer info and displayed image
             self.setCurrSection(self.curr_section_index)
         elif button == self.b_done:
             QMessageBox.about(self, "Popup Message", "All selected operations will now be performed on the\
                 full sized raw images. This may take an hour or two, depending on how many operations are queued.")
-            apply_queued_transformations(queued_transformations)
-
+            self.apply_queued_transformations()
             self.finished()
 
     def updateCurrHeaderFields(self):
-        self.e4.setText(str(self.valid_sections[self.curr_section_index]))
+        label = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['source']
+        self.e4.setText(label)
         self.e5.setText(str(self.curr_section))
 
-    def transform_images(self, transform_type, degrees=0, only_on_current_img=False):
+
+    def transform_thumbnails(self, transform_type, degrees=0):
         """
         Transform_type must be "rotate", "flip", or "flop".
+        These transformations get applied to all the active sections. The actual
+        conversions take place on the thumbnails and the raw files.
+        The transformed raw files get placed in the preps/oriented dir.
         """
-        # Create the "base_cmd". Now just need to append input fp and output fp
         if transform_type == 'rotate':
             base_cmd = ['convert', '-' + transform_type, str(degrees)]
         else:
             base_cmd = ['convert', '-' + transform_type]
 
-        # If only performing operation on 1 image
-        if only_on_current_img:
-            # The name of the specific file to be transformed
-            fn = self.sections_to_filenames[self.curr_section]
-            # use "fn_chunk" to find the other channels that correspond to this file
-            try:
-                fn_chunk = fn[0:fn.index('_C')]
-            except:
-                fn_chunk = fn[0:fn.index('.tif')]
-
-            print
-            'Transforming ' + fn
-            # This function will actually apply the transformation
-            apply_transform_to_single_img(fn, fn_chunk, base_cmd)
-
-        # If performing operation on ALL images
-        else:
-            # Add transformation to the list of queued transformations to be applied on the raw images
-            queued_transformations.append(base_cmd)
-
-            print
-            'Transforming all files'
-
-            # Apply transforms to just the thumbnails
-            thumbnail_folder = os.path.join(ROOT_DIR, stack, 'preps', 'thumbnail')
-            for img_name in os.listdir(thumbnail_folder):
-                full_fp = os.path.join(thumbnail_folder, img_name)
-                subprocess.call(base_cmd + [full_fp, full_fp])
+        self.queued_transformations.append(base_cmd)
+        # Apply transforms to just the thumbnails
+        THUMBNAIL = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail')
+        for k,v in self.valid_sections.items():
+            thumbnail = os.path.join(THUMBNAIL, v['destination'])
+            subprocess.call(base_cmd + [thumbnail, thumbnail])
 
     def finished(self):
-        set_step_completed_in_progress_ini(stack, '1-5_setup_orientations')
-
+        set_step_completed_in_progress_ini(self.stack, '1-5_setup_orientations')
         # close_main_gui( ex )
         sys.exit(app.exec_())
 
 
-def apply_queued_transformations(queued_transformations):
-    print('queued_transformations',  queued_transformations)
-    if queued_transformations == []:
-        return None
+    def apply_queued_transformations(self):
+        print('queued_transformations',  self.queued_transformations)
+        if self.queued_transformations == []:
+            print('No transformations to do. Exit stage left ...')
+        else:
+            # Apply to "raw" images
+            RAW = os.path.join(ROOT_DIR, self.stack, 'tif')
+            ORIENTED = os.path.join(ROOT_DIR, self.stack, 'preps', 'oriented')
+            for base_cmd in tqdm(self.queued_transformations):
+                for k, v in self.valid_sections.items():
+                    raw = os.path.join(RAW, v['source'])
+                    oriented = os.path.join(ORIENTED, v['destination'])
+                    subprocess.call(base_cmd + [raw, oriented])
+                    #print(base_cmd + [raw, oriented])
+        # Clear the queued transformations
+        self.queued_transformations = []
 
-    for base_cmd in queued_transformations:
-        # 'FULL_COMMAND' signifies that the command is complete and simply needs to be run
-        if base_cmd[0] == 'FULL_COMMAND':
-            full_cmd = base_cmd[1:]
-            # Run command and move on to the next one
-            subprocess.call(full_cmd)
-            continue
-
-        # Apply to "raw" images
-        raw_folder = os.path.join(ROOT_DIR, stack, 'tif')
-        for img_name in os.listdir(raw_folder):
-            full_fp = os.path.join(raw_folder, img_name)
-            subprocess.call(base_cmd + [full_fp, full_fp])
-
-        # Apply to "raw" images on all secondary channels
-        # why???? they get applied above in the listing of raw folder
-        # EOD, 4/1/2020, i am commenting this out
-        """
-        for channel_i in range(0, 8):
-            raw_folder = DataManager.setup_get_raw_fp_secondary_channel(stack, channel_i)
-
-            # Break out if a channel doesn't exist.
-            if not os.path.exists(raw_folder):
-                break
-
-            # Searches for an image that matches the "fn_chunk" pattern from the original
-            for img_name in os.listdir(raw_folder):
-                full_fp = os.path.join(raw_folder, img_name)
-                subprocess.call(base_cmd + [full_fp, full_fp])
-        """
-    # Clear the queued transformations
-    queued_transformations = []
-
-
-def apply_transform_to_single_img(fn, fn_chunk, base_cmd, apply_tnsfm_to_raw_immediatly=False):
-    # Apply to "thumbnail" image (only main channel is necessary)
-    thumbnail_folder = DataManager.setup_get_thumbnail_fp(stack)
-    full_fp = os.path.join(thumbnail_folder, fn)
-    subprocess.call(base_cmd + [full_fp, full_fp])
-
-    # Apply to "raw" image
-    raw_folder = DataManager.setup_get_raw_fp(stack)
-    full_fp = os.path.join(raw_folder, fn)
-    full_cmd = base_cmd + [full_fp, full_fp]
-    if apply_tnsfm_to_raw_immediatly:
-        # Apply transform to raw images
-        subprocess.call(full_cmd)
-    else:
-        # Queue raw transform, prepend 'FULL_COMMAND' to signify this command is complete
-        # As opposed to incomplete batch commands
-        queued_transformations.append(['FULL_COMMAND'] + full_cmd)
-
-    # Apply to "raw" images on all secondary channels
-    for channel_i in range(0, 8):
-        raw_folder = DataManager.setup_get_raw_fp_secondary_channel(stack, channel_i)
-
-        # Break out if a channel doesn't exist.
-        if not os.path.exists(raw_folder):
-            break
-        # Searches for an image that matches the "fn_chunk" pattern from the original
-        for img_name in os.listdir(raw_folder):
-            if fn_chunk in img_name:
-                full_fp = os.path.join(raw_folder, img_name)
-                full_cmd = base_cmd + [full_fp, full_fp]
-                if apply_tnsfm_to_raw_immediatly:
-                    subprocess.call(full_cmd)
-                else:
-                    queued_transformations.append(['FULL_COMMAND'] + full_cmd)
 
 
 def close_gui():
     # ex.hide()
     sys.exit(app.exec_())
 
-
 def main():
-    global app
-    app = QApplication(sys.argv)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description='GUI for sorting filenames')
+    parser.add_argument("stack", type=str, help="stack name")
+    args = parser.parse_args()
+    stack = args.stack
+    sqlController = SqlController()
+    sections = list(sqlController.get_valid_sections(stack))
+    # Queued transformations keeps track of each transformation the user wants to perform
+    #   on ALL the images. The transformations are applied to the large "raw" files after
+    #   the user clicks "done orienting"
 
-    global ex
-    ex = init_GUI()
-    ex.show()
-    # Simulate a user's keypress because otherwise the autozoom is weird
-    ex.keyPressEvent(91)
-    sys.exit(app.exec_())
+    if len(sections) > 0:
+        global app
+        app = QApplication(sys.argv)
+        global ex
+        ex = init_GUI(stack)
+        # Run GUI as usual
+        ex.show()
+        # Simulate a user's keypress because otherwise the autozoom is weird
+        ex.keyPressEvent(91)
+        sys.exit(app.exec_())
+    else:
+        print('There are no sections to work with.')
+
+
 
 
 if __name__ == '__main__':

@@ -136,7 +136,10 @@ class SqlController(object):
 
     def save_valid_sections(self, valid_sections):
         for key, value in valid_sections.items():
-            print(key, value)
+            raw_section = session.query(RawSection).filter(RawSection.id == key).one()
+            raw_section.file_status = value['quality']
+            session.merge(raw_section)
+        session.commit()
 
     #################### Resolution conversions ############
 

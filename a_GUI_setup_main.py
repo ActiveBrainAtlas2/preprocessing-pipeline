@@ -1,10 +1,8 @@
 import os, sys
-import shutil
 import subprocess
 import argparse
 import time
-from collections import OrderedDict
-sys.path.append("./utilities")
+sys.path.append("utilities")
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton,QMessageBox
@@ -12,7 +10,6 @@ from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPush
 from utilities.a_driver_utilities import get_current_step_from_progress_ini, set_step_completed_in_progress_ini
 from utilities.utilities_pipeline_status import get_pipeline_status
 from utilities.utilities2015 import execute_command
-from utilities.data_manager_v2 import DataManager
 from utilities.sqlcontroller import SqlController
 from utilities.metadata import ROOT_DIR
 
@@ -62,7 +59,6 @@ class init_GUI(QWidget):
         self.curr_step = ""
 
         set_step_completed_in_progress_ini(self.stack, '1-2_setup_images')
-        self.dataManager = DataManager()
         self.sqlController = SqlController()
         self.sqlController.get_animal_info(self.stack)
         self.initUI()
@@ -278,16 +274,12 @@ class init_GUI(QWidget):
         create the thumbnails that are used throughout the pipeline
         """
         TIF = os.path.join(ROOT_DIR, self.stack, 'tif')
-        RAW = os.path.join(ROOT_DIR, self.stack, 'preps', 'raw')
         sections = self.sqlController.get_valid_sections(self.stack)
-        print('type sections',type(sections))
         for section in sections.values():
             source = section['source']
             destination = section['destination']
             input_fp = os.path.join(TIF, source)
             if os.path.exists(input_fp):
-                raw_destination = os.path.join(RAW, destination)
-                shutil.copy(input_fp, raw_destination)
                 thumbnail_destination = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', destination)
                 # Create thumbnails
                 execute_command("convert \"" + input_fp + "\" -resize 3.125% -auto-level -normalize \
