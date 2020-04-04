@@ -44,9 +44,11 @@ class SqlController(object):
     def generate_stack_metadata(self):
         # fill up the metadata_cache variable
         for a, h in session.query(Animal, Histology).filter(Animal.prep_id == Histology.prep_id).all():
+            resolution = session.query(func.max(ScanRun.resolution)).filter(ScanRun.prep_id == a.prep_id).scalar()
+
             self.stack_metadata[a.prep_id] = {'stain': h.counterstain,
                                               'cutting_plane': h.orientation,
-                                              'resolution': 0,
+                                              'resolution': resolution,
                                               'section_thickness': h.section_thickness}
             self.all_stacks.append(a.prep_id)
         return self.stack_metadata

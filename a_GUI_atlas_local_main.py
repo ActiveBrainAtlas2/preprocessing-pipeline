@@ -7,17 +7,11 @@ from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton, QComboBox
 sys.path.append("utilities")
 
-from a_GUI_utilities_pipeline_status import get_text_of_pipeline_status
-from utilities.metadata import (stack_metadata, structures_sided_sorted_by_rostral_caudal_position, detector_settings,
+#from a_GUI_utilities_pipeline_status import get_text_of_pipeline_status
+from utilities.metadata import (structures_sided_sorted_by_rostral_caudal_position, detector_settings,
     stain_to_metainfo)
 from utilities.a_driver_utilities import call_and_time
-
-parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description='Atlas Local Fit GUI')
-parser.add_argument("stack", type=str, help="stack name")
-args = parser.parse_args()
-stack = args.stack
+from utilities.sqlcontroller import SqlController
 
 def format_grid_button_initial( button ):
     button.setDefault( True )
@@ -87,14 +81,17 @@ def get_fn_list_from_sorted_filenames( stack):
     return section_names
 
 class init_GUI(QWidget):
-    def __init__(self, parent = None):
+    def __init__(self, stack, parent = None):
         super(init_GUI, self).__init__(parent)
         self.font1 = QFont("Arial",16)
         self.font2 = QFont("Arial",12)
 
         # Stack specific info, determined from dropdown menu selection
         self.stack = stack
-        self.stain = stack_metadata[stack]['stain']
+        self.sqlController = SqlController()
+        self.sqlController.get_animal_info(self.stack)
+
+        self.stain = self.sqlController.histology.counterstain
         self.detector_id = ""
         self.img_version_1 = ""
         self.img_version_2 = ""
@@ -244,7 +241,6 @@ class init_GUI(QWidget):
         
         # Set stack-specific variables
         #self.stack = dropdown_selection_str
-        self.stain = stack_metadata[ self.stack ]['stain']
         self.detector_id = selected_detector
         self.img_version_1 = stain_to_metainfo[ self.stain.lower() ]['img_version_1']
         self.img_version_2 = stain_to_metainfo[ self.stain.lower() ]['img_version_1']
@@ -254,9 +250,10 @@ class init_GUI(QWidget):
         self.updatePipelineStatus( )
 
     def updatePipelineStatus(self, initial_setup=False):
-        text, script_name = get_text_of_pipeline_status( self.stack, self.stain )
-        self.curr_script_name = script_name
-                
+        #text, script_name = get_text_of_pipeline_status( self.stack, self.stain )
+        #self.curr_script_name = script_name
+        self.curr_script_name = 'XXXXXX' # what is this for??????
+
     def dd1_selection( self ):
         dropdown_selection = self.dd1.currentText()
         dropdown_selection_str = str(dropdown_selection)
@@ -300,11 +297,17 @@ def close_gui():
     sys.exit( app.exec_() )
 
 def main():
-    global app 
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description='Atlas Local Fit GUI')
+    parser.add_argument("stack", type=str, help="stack name")
+    args = parser.parse_args()
+    stack = args.stack
+    global app
     app = QApplication( sys.argv )
     
     global ex
-    ex = init_GUI()
+    ex = init_GUI(stack)
     ex.show()
     sys.exit( app.exec_() )
 
