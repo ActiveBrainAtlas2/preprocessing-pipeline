@@ -10,8 +10,7 @@ from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, 
     QPushButton, QMessageBox, QApplication
 from matplotlib import image
 
-from a_GUI_atlas_local_main import create_input_spec_ini_all
-from utilities.a_driver_utilities import call_and_time
+from utilities.a_driver_utilities import call_and_time, create_input_spec_ini_all
 from utilities.data_manager_v2 import DataManager
 from utilities.utilities2015 import execute_command
 from utilities.metadata import stain_to_metainfo, ROOT_DIR

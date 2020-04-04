@@ -10,7 +10,7 @@ sys.path.append("utilities")
 #from a_GUI_utilities_pipeline_status import get_text_of_pipeline_status
 from utilities.metadata import (structures_sided_sorted_by_rostral_caudal_position, detector_settings,
     stain_to_metainfo)
-from utilities.a_driver_utilities import call_and_time
+from utilities.a_driver_utilities import call_and_time, create_input_spec_ini_all
 from utilities.sqlcontroller import SqlController
 
 def format_grid_button_initial( button ):
@@ -47,16 +47,6 @@ def probability_volumes_finished():
     
 def registration_finished():
     return False
-
-def create_input_spec_ini_all( name, stack, prep_id, version, resol):
-    f = open(name, "w")
-
-    f.write('[DEFAULT]\n')
-    f.write('image_name_list = all\n')
-    f.write('stack = '+stack+'\n')
-    f.write('prep_id = '+prep_id+'\n')
-    f.write('version = '+version+'\n')
-    f.write('resol = '+resol+'\n')
 
 def get_fn_list_from_sorted_filenames( stack):
     '''
