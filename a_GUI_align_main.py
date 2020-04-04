@@ -6,17 +6,11 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton
 
+
 sys.path.append(os.path.join(os.getcwd(),'utilities'))
 from utilities.a_driver_utilities import get_current_step_from_progress_ini, set_step_completed_in_progress_ini
-from utilities.metadata import stack_metadata
+from utilities.sqlcontroller import SqlController
 
-
-parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description='Setup main page')
-parser.add_argument("stack", type=str, help="stack name")
-args = parser.parse_args()
-stack = args.stack
 
 def format_grid_button_initial( button ):
     button.setDefault( True )
@@ -45,17 +39,16 @@ def format_grid_button_completed( button ):
                           font-size: 18px;}')
 
 class init_GUI(QWidget):
-    def __init__(self, parent = None):
+    def __init__(self, stack, parent = None):
         super(init_GUI, self).__init__(parent)
         self.font1 = QFont("Arial",16)
         self.font2 = QFont("Arial",12)
 
         # Stack specific info, determined from dropdown menu selection
-        self.stack = ""
-        self.stain = ""
-        
+        self.stack = stack
         self.curr_step = ""
-        
+        self.sqlController = SqlController()
+        self.sqlController.get_animal_info(self.stack)
         self.initUI()
 
     def initUI(self):
@@ -113,10 +106,8 @@ class init_GUI(QWidget):
     
     def updateFields(self):        
         # Set stack-specific variables
-        self.stack = stack
-        self.stain = stack_metadata[stack]
         try:
-            self.stain = stack_metadata[ self.stack ]['stain']
+            self.stain = self.sqlController.histology.counterstain
             # Check the brains_info/STACK_progress.ini file for which step we're on
             self.curr_step = get_current_step_from_progress_ini( self.stack )
             # Disable all grid buttons except for the one corresponding to our current step
@@ -186,14 +177,29 @@ class init_GUI(QWidget):
         sys.exit( app.exec_() )
         #close_main_gui( ex, reopen=True )
         
+
+
 def main():
-    global app 
-    app = QApplication( sys.argv )
-    
-    global ex
-    ex = init_GUI()
-    ex.show()
-    sys.exit( app.exec_() )
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description='GUI for sorting filenames')
+    parser.add_argument("stack", type=str, help="stack name")
+    args = parser.parse_args()
+    stack = args.stack
+    sqlController = SqlController()
+    sections = list(sqlController.get_valid_sections(stack))
+
+    if len(sections) > 0:
+        global app
+        app = QApplication(sys.argv)
+        global ex
+        ex = init_GUI(stack)
+        # Run GUI as usual
+        ex.show()
+        sys.exit(app.exec_())
+    else:
+        print('There are no sections to work with.')
+
 
 if __name__ == '__main__':
     main()
