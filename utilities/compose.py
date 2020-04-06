@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 
+import os
+import sys
 import argparse
+import numpy as np
+
+from utilities.data_manager_v2 import DataManager
+from utilities.metadata import DATA_ROOTDIR
+from utilities.utilities2015 import load_ini, dict_to_csv
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -19,17 +26,6 @@ parser.add_argument("--anchor_img_name", type=str, help="Anchor image name")
 parser.add_argument("--out", type=str, help="csv, composed transforms for each image to anchor")
 
 args = parser.parse_args()
-
-import os
-import numpy as np
-import sys
-import cPickle as pickle
-import json
-
-sys.path.append(os.environ['REPO_DIR'] + '/utilities/')
-from metadata import *
-from preprocess_utilities import *
-from data_manager import DataManager
 
 input_spec = load_ini(args.input_spec)
 image_name_list = input_spec['image_name_list']
@@ -84,7 +80,7 @@ for moving_idx in range(len(image_name_list)):
         # transformation_to_anchor_sec[moving_idx] = T_composed
         transformation_to_anchor_sec[image_name_list[moving_idx]] = T_composed
         
-    print moving_idx, image_name_list[moving_idx], transformation_to_anchor_sec[image_name_list[moving_idx]]
+    print(moving_idx, image_name_list[moving_idx], transformation_to_anchor_sec[image_name_list[moving_idx]])
 
 #################################################
 

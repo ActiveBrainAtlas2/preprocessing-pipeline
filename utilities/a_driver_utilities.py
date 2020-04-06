@@ -197,3 +197,55 @@ def revert_to_prev_step( stack, target_step ):
     # Get filepath and save ini
     fp = DataManager.get_brain_info_progress( stack )
     save_dict_as_ini( progress_ini_to_save, fp )
+
+def make_from_x_to_y_ini(stack,x,y,rostral_limit,caudal_limit,dorsal_limit,ventral_limit):
+    '''
+    Creates operation configuration files that specify the cropping boxes for either the whole brain, or the brainstem.
+    '''
+    base_prep_id=''
+    dest_prep_id=''
+    if x=='aligned':
+        base_prep_id = 'aligned'
+    elif x=='padded':
+        base_prep_id = 'alignedPadded'
+    if y=='wholeslice':
+        dest_prep_id = 'alignedWithMargin'
+    elif y=='brainstem':
+        dest_prep_id = 'alignedBrainstemCrop'
+
+    fn = os.path.join( DataManager.get_images_root_folder(stack), 'operation_configs', 'from_'+x+'_to_'+y+'.ini' )
+    f = open(fn, "w")
+    f.write('[DEFAULT]\n')
+    f.write('type = crop\n\n')
+    f.write('base_prep_id = '+base_prep_id+'\n')
+    f.write('dest_prep_id = '+dest_prep_id+'\n\n')
+    f.write('rostral_limit = '+str(rostral_limit)+'\n')
+    f.write('caudal_limit = '+str(caudal_limit)+'\n')
+    f.write('dorsal_limit = '+str(dorsal_limit)+'\n')
+    f.write('ventral_limit = '+str(ventral_limit)+'\n')
+    f.write('resolution = thumbnail')
+    f.close()
+
+def create_prep2_section_limits( stack, lower_lim, upper_lim):
+    fn = os.path.join( DataManager.get_images_root_folder(stack), stack+'_prep2_sectionLimits.ini' )
+    f = open(fn, "w")
+    f.write('[DEFAULT]\n')
+    f.write('left_section_limit = '+str(lower_lim)+'\n')
+    f.write('right_section_limit = '+str(upper_lim)+'\n')
+    f.close()
+
+def make_manual_anchor_points( stack, x_12N, y_12N, x_3N, y_3N, z_midline):
+    if not os.path.exists( DataManager.get_simple_global_root_folder(stack) ):
+        os.mkdir( DataManager.get_simple_global_root_folder(stack) )
+
+    fn = os.path.join( DataManager.get_simple_global_root_folder(stack), stack+'_manual_anchor_points.ini' )
+
+    f = open(fn, "w")
+    f.write('[DEFAULT]\n')
+    f.write('x_12N = '+str(x_12N)+'\n')
+    f.write('y_12N = '+str(y_12N)+'\n')
+    f.write('x_3N = '+str(x_3N)+'\n')
+    f.write('y_3N = '+str(y_3N)+'\n')
+    f.write('z_midline = '+str(z_midline))
+    f.close()
+

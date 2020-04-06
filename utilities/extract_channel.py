@@ -1,12 +1,8 @@
-import os
-import sys
 import argparse
 
-#from utilities2015 import *
-#from metadata import *
-#from data_manager import *
-
-from distributed_utilities import run_
+from utilities.data_manager_v2 import DataManager
+from utilities.distributed_utilities import run_distributed5
+from utilities.utilities2015 import load_ini, create_if_not_exists
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -32,23 +28,23 @@ image_name_list = input_spec['image_name_list']
 if image_name_list == 'all':
     image_name_list = DataManager.load_sorted_filenames(stack=stack)[0].keys()
 
-create_if_not_exists(DataManager.get_image_dir_v2(stack=stack, prep_id=prep_id, resol=resol, version=args.out_version))
+create_if_not_exists(DataManager.get_image_dir(stack=stack, resol=resol, version=args.out_version))
 
 if args.channel == -1:
-    run_distributed('convert \"%(in_fp)s\" -set colorspace Gray -separate -average \"%(out_fp)s\"',
-                kwargs_list=[{'in_fp': DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, 
+    run_distributed5('convert \"%(in_fp)s\" -set colorspace Gray -separate -average \"%(out_fp)s\"',
+                kwargs_list=[{'in_fp': DataManager.get_image_filepath(stack=stack, prep_id=prep_id,
                                         resol=resol, version=version, fn=img_name),
-                                       'out_fp': DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, 
+                                       'out_fp': DataManager.get_image_filepath(stack=stack, prep_id=prep_id,
                                         resol=resol, version=args.out_version, fn=img_name)}
                                        for img_name in image_name_list],
                 argument_type='single',
                 jobs_per_node=args.njobs,
                 local_only=True)
 else:
-    run_distributed('convert \"%%(in_fp)s\" -channel %(channel)s -separate \"%%(out_fp)s\"' % {'channel': 'RGB'[args.channel]},
-                kwargs_list=[{'in_fp': DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, 
+    run_distributed5('convert \"%%(in_fp)s\" -channel %(channel)s -separate \"%%(out_fp)s\"' % {'channel': 'RGB'[args.channel]},
+                kwargs_list=[{'in_fp': DataManager.get_image_filepath(stack=stack, prep_id=prep_id,
                                         resol=resol, version=version, fn=img_name),
-                                       'out_fp': DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, 
+                                       'out_fp': DataManager.get_image_filepath(stack=stack, prep_id=prep_id,
                                         resol=resol, version=args.out_version, fn=img_name)}
                                        for img_name in image_name_list],
                 argument_type='single',

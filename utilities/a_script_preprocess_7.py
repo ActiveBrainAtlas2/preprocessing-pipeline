@@ -1,6 +1,10 @@
 #!/usr/bin/env python
-
+import os
+import sys
 import argparse
+
+from utilities.a_driver_utilities import call_and_time, make_manual_anchor_points
+from utilities.sqlcontroller import SqlController
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -13,19 +17,6 @@ args = parser.parse_args()
 stack = args.stack
 stain = args.stain
 x_12N, y_12N, x_3N, y_3N, z_midline = args.list
-
-# Import other modules and packages
-import os
-import subprocess
-import numpy as np
-import sys
-import json
-import time
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-from metadata import *
-from preprocess_utilities import *
-from data_manager_v2 import DataManager
-from a_driver_utilities import *
 
 make_manual_anchor_points( stack, x_12N=x_12N, y_12N=y_12N, x_3N=x_3N, y_3N=y_3N, z_midline=z_midline)
 

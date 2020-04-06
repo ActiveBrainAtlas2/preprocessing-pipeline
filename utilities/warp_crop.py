@@ -1,6 +1,19 @@
 #!/usr/bin/env python
 
+import sys
+import os
 import argparse
+from collections import defaultdict
+from itertools import chain
+
+import numpy as np
+
+from utilities.data_manager_v2 import DataManager
+from utilities.distributed_utilities import run_distributed5
+from utilities.metadata import DATA_ROOTDIR, orientation_argparse_str_to_imagemagick_str
+from utilities.utilities2015 import csv_to_dict, convert_2d_transform_forms, convert_cropbox_fmt, load_ini, \
+    create_parent_dir_if_not_exists, execute_command
+
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description="""A versatile warp/crop script. 
@@ -25,16 +38,6 @@ parser.add_argument("-r", "--init_rotate", type=str, help="escaped imagemagick c
 
 args = parser.parse_args()
 
-import sys
-import os
-import numpy as np
-
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-from utilities2015 import *
-from data_manager import *
-from distributed_utilities import *
-from metadata import orientation_argparse_str_to_imagemagick_str
-
 def convert_operation_to_arr(op, resol, inverse=False, return_str=False, stack=None):
     """
     If op is warp, return {image_name: (3,3)-array}.
@@ -48,7 +51,7 @@ def convert_operation_to_arr(op, resol, inverse=False, return_str=False, stack=N
         transforms_to_anchor = csv_to_dict(tf_csv)
 
         transforms_resol = op['resolution']
-        transforms_scale_factor = convert_resolution_string_to_um(stack=stack, resolution=transforms_resol) / convert_resolution_string_to_um(stack=stack, resolution=resol)
+        transforms_scale_factor = DataManager.sqlController.convert_resolution_string_to_um(stack=stack, resolution=transforms_resol) / DataManager.sqlController.convert_resolution_string_to_um(stack=stack, resolution=resol)
         tf_mat_mult_factor = np.array([[1,1,transforms_scale_factor],[1,1,transforms_scale_factor]])
         if inverse:
             transforms_to_anchor = {img_name: convert_2d_transform_forms(np.linalg.inv(np.reshape(tf, (3,3)))[:2] * tf_mat_mult_factor, out_form='str') for img_name, tf in transforms_to_anchor.iteritems()}
@@ -179,7 +182,7 @@ if args.op_id is not None:
         #print '_____________________________________________'
         
         # Removes stderr and stdout
-        run_distributed('python %(script)s --input_fp \"%%(input_fp)s\" \
+        run_distributed5('python %(script)s --input_fp \"%%(input_fp)s\" \
         --output_fp \"%%(output_fp)s\" %%(ops_str)s --pad_color %%(pad_color)s' % \
         {'script':  os.path.join(os.getcwd(), 'warp_crop_v3.py'),},
         kwargs_list=[{'ops_str': ops_str_all_images[img_name],

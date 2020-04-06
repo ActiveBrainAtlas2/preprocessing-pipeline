@@ -1,6 +1,19 @@
+import os
 import numpy as np
-from metadata import planar_resolution, windowing_settings
-from data_manager_v2 import metadata_cache
+import mxnet as mx
+
+from utilities.data_manager_v2 import DataManager
+from utilities.distributed_utilities import download_from_s3
+from utilities.metadata import MXNET_MODEL_ROOTDIR, windowing_settings
+
+
+def gpu_device(gpu_number=0):
+    try:
+        _ = mx.nd.array([1, 2, 3], ctx=mx.gpu(gpu_number))
+    except mx.MXNetError:
+        return None
+    return mx.gpu(gpu_number)
+
 
 def grid_parameters_to_sample_locations(grid_spec=None, patch_size=None, stride=None, w=None, h=None, win_id=None, stack=None):
     """
@@ -54,11 +67,38 @@ def win_id_to_gridspec(win_id, stack=None, image_shape=None):
         spacing_um = windowing_properties['spacing_um']
         spacing_px = int(np.round(spacing_um / planar_resolution[stack]))
 
-    if stack in metadata_cache['image_shape']:
-        w_px, h_px = metadata_cache['image_shape'][stack]
+    if stack in DataManager.metadata_cache['image_shape']:
+        w_px, h_px = DataManager.metadata_cache['image_shape'][stack]
     else:
         assert image_shape is not None
         w_px, h_px = image_shape
 
     grid_spec = (patch_size_px, spacing_px, w_px, h_px)
     return grid_spec
+
+def load_mxnet_model(model_dir_name, model_name, num_gpus=8, batch_size = 256, output_symbol_name='flatten_output'):
+    download_from_s3(os.path.join(MXNET_MODEL_ROOTDIR, model_dir_name), is_dir=True)
+    model_iteration = 0
+    # output_symbol_name = 'flatten_output'
+    output_dim = 1024
+    mean_img = np.load(os.path.join(MXNET_MODEL_ROOTDIR, model_dir_name, 'mean_224.npy'))
+
+    # Reference on how to predict with mxnet model:
+    # https://github.com/dmlc/mxnet-notebooks/blob/master/python/how_to/predict.ipynb
+    model0, arg_params, aux_params = mx.model.load_checkpoint(os.path.join(MXNET_MODEL_ROOTDIR, model_dir_name, model_name), 0)
+    flatten_output = model0.get_internals()[output_symbol_name]
+    # if HOST_ID == 'workstation':
+    # model = mx.mod.Module(context=[mx.gpu(i) for i in range(1)], symbol=flatten_output)
+    # else:
+
+    if not gpu_device():
+        print('No GPU device found! Use CPU for mxnet feature extraction.')
+        model = mx.mod.Module(context=mx.cpu(), symbol=flatten_output)
+    else:
+        model = mx.mod.Module(context=[mx.gpu(i) for i in range(num_gpus)], symbol=flatten_output)
+
+    # Increase batch_size to 500 does not save any time.
+    model.bind(data_shapes=[('data', (batch_size,1,224,224))], for_training=False)
+    model.set_params(arg_params=arg_params, aux_params=aux_params, allow_missing=True)
+    return model, mean_img
+

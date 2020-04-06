@@ -2,15 +2,15 @@ import os
 import argparse
 import sys
 import time
+from collections import defaultdict
 
 import numpy as np
-from multiprocess import Pool
 
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-from utilities2015 import *
-from metadata import *
-from data_manager_v2 import *
-from learning_utilities import *
+from utilities.data_manager_v2 import DataManager
+from utilities.learning_utilities import load_mxnet_model
+from utilities.metadata import all_known_structures, detector_settings, DATA_ROOTDIR, structures_sided_sorted_by_size, \
+    SECTION_THICKNESS, singular_structures, convert_to_left_name, convert_to_right_name
+from utilities.utilities2015 import load_json, load_ini, save_data, rescale_by_resampling
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -59,7 +59,7 @@ model, mean_img = load_mxnet_model( model_dir_name = model_dir_name,
                                     model_name = model_name,
                                     num_gpus = 1, 
                                     batch_size = batch_size)
-print '\n\n\n\n'
+print('\n\n\n\n')
 # Loading mxnet model causes warnings!
 
 # Load windowing settings and classifier
@@ -72,10 +72,10 @@ win_id = detector_setting['windowing_id']
 # Define output resolution ('10.0um' is the standard) 
 
 output_resolution = '10.0um'
-out_resolution_um = convert_resolution_string_to_um(resolution=output_resolution, stack=stack)
+out_resolution_um = DataManager.sqlController.convert_resolution_string_to_um(resolution=output_resolution, stack=stack)
 
-valid_secmin = np.min(metadata_cache['valid_sections'][stack])
-valid_secmax = np.max(metadata_cache['valid_sections'][stack])
+valid_secmin = np.min(DataManager.metadata_cache['valid_sections'][stack])
+valid_secmax = np.max(DataManager.metadata_cache['valid_sections'][stack])
 
 # This should be changed to be in a stack-specific folder
 simple_global_bbox_fp = os.path.join(DATA_ROOTDIR, 'CSHL_simple_global_registration',
@@ -112,7 +112,7 @@ section_margin_um = 400.
 section_margin = int(section_margin_um / SECTION_THICKNESS)
 
 image_margin_um = 2000.
-image_margin = int(np.round(image_margin_um / convert_resolution_string_to_um('raw', stack)))
+image_margin = int(np.round(image_margin_um / DataManager.sqlController.convert_resolution_string_to_um('raw', stack)))
 
 # This for loop populates `registered_atlas_structures_wrt_wholebrainXYcropped_bboxes_perSection`
 for name_u in structure_list:
@@ -126,12 +126,12 @@ for name_u in structure_list:
 
         for sec in range(max(secmin - section_margin, valid_secmin), min(secmax + 1 + section_margin, valid_secmax)+1):
 
-            if is_invalid(sec=sec, stack=stack):
-                print sec
-                print 'INVALID'
+            if DataManager.is_invalid(sec=sec, stack=stack):
+                print(sec)
+                print('INVALID')
                 continue
                 
-            print sec
+            print(sec)
             print (max(xmin - image_margin, 0), xmax + image_margin, max(ymin - image_margin, 0), ymax + image_margin)
 
             registered_atlas_structures_wrt_wholebrainXYcropped_bboxes_perSection[name_u][sec] = \
@@ -155,7 +155,7 @@ for name_u in structure_list:
 
             for sec in range(max(secmin - section_margin, valid_secmin), min(secmax + 1 + section_margin, valid_secmax) + 1):
 
-                if is_invalid(sec=sec, stack=stack):
+                if DataManager.is_invalid(sec=sec, stack=stack):
                     continue
 
                 a[sec].append((max(xmin - image_margin, 0),
@@ -173,7 +173,7 @@ for name_u in structure_list:
 
             for sec in range(max(secmin - section_margin, valid_secmin), min(secmax + 1 + section_margin, valid_secmax) + 1):
 
-                if is_invalid(sec=sec, stack=stack):
+                if DataManager.is_invalid(sec=sec, stack=stack):
                     continue
 
                 a[sec].append((max(xmin - image_margin, 0),
@@ -196,18 +196,18 @@ print('____________________________________________________\n')
 
 for name_u in structure_list:
     
-    print '\n\nBeginning to generate score maps for structure: %s\n' % (name_u)
+    print('\n\nBeginning to generate score maps for structure: %s\n' % (name_u))
     
     if registered_atlas_structures_wrt_wholebrainXYcropped_bboxes_perSection[name_u] == {}:
-        print 'It appears structure %s does not appear on any slices\n'
+        print('It appears structure %s does not appear on any slices\n')
         continue
     
     for sec, bbox in sorted(registered_atlas_structures_wrt_wholebrainXYcropped_bboxes_perSection[name_u].items()):
 
-        if is_invalid(sec=sec, stack=stack):
+        if DataManager.is_invalid(sec=sec, stack=stack):
             continue
 
-        print 'Generating score map: %s, section %s' % (name_u, sec)
+        print('Generating score map: %s, section %s' % (name_u, sec))
 
         try:
 
@@ -273,7 +273,7 @@ for name_u in all_known_structures:
 
     for name_s in [convert_to_left_name(name_u), convert_to_right_name(name_u)]:
         
-        print '\n\nBeginning to generate score volumes for structure: %s\n' % (name_s)
+        print('\n\nBeginning to generate score volumes for structure: %s\n' % (name_s))
 
         scoremaps = {}
 
@@ -284,10 +284,10 @@ for name_u in all_known_structures:
 
         (xmin, ymin, s1), (xmax, ymax, s2) = registered_atlas_structures_wrt_wholebrainXYcropped_xysecTwoCorners[name_s]
 
-        for sec in range(max(s1 - section_margin, metadata_cache['section_limits'][stack][0]),
-                         min(s2 + 1 + section_margin, metadata_cache['section_limits'][stack][1])+1):
+        for sec in range(max(s1 - section_margin, DataManager.metadata_cache['section_limits'][stack][0]),
+                         min(s2 + 1 + section_margin, DataManager.metadata_cache['section_limits'][stack][1])+1):
 
-            if is_invalid(sec=sec, stack=stack):
+            if DataManager.is_invalid(sec=sec, stack=stack):
                 continue
 
             try:
@@ -299,7 +299,7 @@ for name_u in all_known_structures:
                 sys.stderr.write('%s\n' % e)
                 continue
 
-            mask = DataManager.load_image_v2(stack=stack, 
+            mask = DataManager.load_image(stack=stack,
                                              section=sec,
                                              prep_id='alignedBrainstemCrop',
                                              resol='thumbnail', 
@@ -314,7 +314,7 @@ for name_u in all_known_structures:
         try:
             t = time.time()
             volume_outVolResol, volume_origin_wrt_wholebrainXYcropped_outVolResol = \
-                    images_to_volume_v2(images=scoremaps, 
+                    images_to_volume_v2(images=scoremaps,
                                         spacing_um=20.,
                                         in_resol_um=out_resolution_um,
                                         out_resol_um=out_resolution_um)
@@ -353,7 +353,7 @@ for name_u in all_known_structures:
         # Compute gradients.
 
         t = time.time()
-        gradients = compute_gradient_v2((volume_outVolResol, 
+        gradients = compute_gradient_v2((volume_outVolResol,
                                          volume_origin_wrt_wholebrain_outVolResol),
                                          smooth_first=True)
         sys.stderr.write('Compute gradient: %.2f seconds\n' % (time.time() - t))

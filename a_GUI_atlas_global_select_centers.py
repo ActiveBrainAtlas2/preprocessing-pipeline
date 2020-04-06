@@ -1,25 +1,16 @@
 #! /usr/bin/env python
-
+import subprocess
 import sys, os
 import argparse
 
-#import matplotlib.pyplot as plt
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from multiprocess import Pool
+import cv2
+from PyQt5.QtCore import pyqtSignal, QPoint, Qt, QRectF
+from PyQt5.QtGui import QColor, QBrush, QPixmap, QFont, QIntValidator, QImage
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsPixmapItem, QGraphicsScene, QFrame, QWidget, QGridLayout, QLineEdit, \
+    QPushButton, QMessageBox, QApplication
 
-sys.path.append( os.path.join(os.environ['REPO_DIR'] , 'utilities') )
-sys.path.append( os.path.join(os.environ['REPO_DIR'] , 'gui', 'widgets') )
-sys.path.append( os.path.join(os.environ['REPO_DIR'] , 'gui') )
-
-from utilities2015 import *
-from metadata import *
-from data_manager import *
-from registration_utilities import find_contour_points
-from gui_utilities import *
-from qt_utilities import *
-from preprocess_utilities import *
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'web_services'))
+from utilities.data_manager_v2 import DataManager
+from utilities.metadata import stack_metadata, stain_to_metainfo
 
 parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -31,7 +22,7 @@ stack = args.stack
 stain = stack_metadata[stack]['stain'].lower()
 
 def get_img( section, prep_id='None', resol='thumbnail', version='NtbNormalized' ):
-    return DataManager.load_image_v2(stack=stack, 
+    return DataManager.load_image(stack=stack,
                           section=section, prep_id=prep_id,
                           resol=resol, version=version)
 
@@ -39,7 +30,7 @@ def get_fp( section, prep_id=1, resol='thumbnail', version='auto' ):
     if version=='auto':
         version = stain_to_metainfo[stain]['img_version_1']
         
-    return DataManager.get_image_filepath_v2(stack=stack, 
+    return DataManager.get_image_filepath(stack=stack,
                           section=section, prep_id=prep_id,
                           resol=resol, version=version)
 
@@ -131,8 +122,8 @@ class init_GUI(QWidget):
         self.font_h1 = QFont("Arial",32)
         self.font_p1 = QFont("Arial",16)
         
-        self.valid_sections = metadata_cache['valid_sections'][stack]
-        self.sections_to_filenames = metadata_cache['sections_to_filenames'][stack]
+        self.valid_sections = DataManager.metadata_cache['valid_sections'][stack]
+        self.sections_to_filenames = DataManager.metadata_cache['sections_to_filenames'][stack]
         self.curr_section = self.valid_sections[ len(self.valid_sections)/2 ]
         self.prev_section = self.getPrevValidSection( self.curr_section )
         self.next_section = self.getNextValidSection( self.curr_section )

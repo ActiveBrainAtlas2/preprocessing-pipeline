@@ -3,22 +3,17 @@
 import sys
 import os
 import time
-
+import argparse
 import matplotlib
-# Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg') # https://stackoverflow.com/a/3054314
 import matplotlib.pyplot as plt
 import numpy as np
 
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-from utilities2015 import *
-from registration_utilities import *
-from annotation_utilities import *
-from metadata import *
-from data_manager import *
-from learning_utilities import *
+# Force matplotlib to not use any Xwindows backend.
+from utilities.data_manager_v2 import DataManager
+from utilities.learning_utilities import load_mxnet_model
+from utilities.utilities2015 import load_ini
 
-import argparse
+matplotlib.use('Agg') # https://stackoverflow.com/a/3054314
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -92,7 +87,7 @@ for image_name in image_name_list:
 #                       method='glcm',
                         method='cnn',
                         win_id=win_id, prep_id=prep_id,
-                        stack=stack, sec=metadata_cache['filenames_to_sections'][stack][image_name], 
+                        stack=stack, sec=DataManager.metadata_cache['filenames_to_sections'][stack][image_name],
                         model=model, model_name=model_name,
                         mean_img=mean_img, 
                         batch_size=batch_size, 

@@ -1,15 +1,13 @@
 #! /usr/bin/env python
 
 import sys
-import os
-
-sys.path.append(os.environ['REPO_DIR'] + '/utilities')
-from utilities2015 import *
-from data_manager import *
-from metadata import *
-from distributed_utilities import *
-
 import argparse
+from datetime import time
+import numpy as np
+import matplotlib.pyplot as plt
+
+from utilities.data_manager_v2 import DataManager
+from utilities.utilities2015 import load_ini, create_parent_dir_if_not_exists
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -45,27 +43,26 @@ for img_name in image_name_list:
 
     t = time.time()
 
-    in_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, resol=resol, version=version, fn=img_name)
-    out_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, resol=args.out_resol, version=version, fn=img_name)
+    in_fp = DataManager.get_image_filepath(stack=stack, resol=resol, version=version, fn=img_name)
+    out_fp = DataManager.get_image_filepath(stack=stack, resol=args.out_resol, version=version, fn=img_name)
     create_parent_dir_if_not_exists(out_fp)
     
     #img = imread(in_fp, plugin='pil')
-    img = imread(in_fp)
-    print in_fp
-    print img.dtype
-    print np.shape(img)
+    img = plt.imread(in_fp)
+    print(in_fp)
+    print(img.dtype)
+    print(np.shape(img))
     
     img_tb = img[::int(1./args.rescale_factor), ::int(1./args.rescale_factor)]
     del img
     if img_tb.dtype.kind=='u':
-        import matplotlib.pyplot as plt
         #plt.imshow(img)
         pass
     elif img_tb.dtype.kind=='b':
         print( 'Image labeled as wrong type, skipping!' )
         print( out_fp+' FAILED')
         continue
-    imsave(out_fp, img_tb)
+    plt.imsave(out_fp, img_tb)
 
     # Alternative: ImageMagick introduces an artificial noisy stripe in the output image.
 #     cmd = 'convert %(in_fp)s -scale 3.125%% %(out_fp)s' % {'in_fp': in_fp, 'out_fp': out_fp}

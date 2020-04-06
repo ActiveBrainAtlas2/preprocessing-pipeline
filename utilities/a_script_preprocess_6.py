@@ -1,6 +1,11 @@
-#!/usr/bin/env python
-
+import os
+import sys
 import argparse
+
+from utilities.a_driver_utilities import call_and_time, create_input_spec_ini_all, make_from_x_to_y_ini, \
+    create_prep2_section_limits
+from utilities.metadata import REPO_DIR, DATA_ROOTDIR
+from utilities.sqlcontroller import SqlController
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -13,19 +18,6 @@ args = parser.parse_args()
 stack = args.stack
 stain = args.stain
 rostral_limit, caudal_limit, dorsal_limit, ventral_limit, prep2_section_min, prep2_section_max = args.list
-
-# Import other modules and packages
-import os
-import subprocess
-import numpy as np
-import sys
-import json
-import time
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-from metadata import *
-from preprocess_utilities import *
-from data_manager_v2 import DataManager
-from a_driver_utilities import *
 
 # Create from_padded_to_brainstem.ini
 make_from_x_to_y_ini( stack, x='padded', y='brainstem',\

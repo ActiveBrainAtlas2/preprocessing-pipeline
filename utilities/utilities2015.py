@@ -1,5 +1,5 @@
 import os, sys
-from subprocess import call
+from subprocess import call, check_output
 
 import numpy as np
 import pandas as pd
@@ -12,12 +12,11 @@ import joblib
 from skimage.io import imsave, imread
 from skimage.measure import find_contours, regionprops
 
+from utilities.data_manager_v2 import DataManager
+from utilities.sqlcontroller import SqlController
 from utilities.vis3d_utilities import save_mesh_stl
 from utilities.metadata import ENABLE_DOWNLOAD_S3
 from utilities.metadata import ROOT_DIR
-#from utilities.metadata import all_known_structures, singular_structures, convert_to_left_name, convert_to_right_name
-#from distributed_utilities import upload_to_s3
-#from data_manager_v2 import DataManager
 
 
 def crop_volume_to_minimal(vol, origin=(0,0,0), margin=0, return_origin_instead_of_bbox=True):
@@ -469,16 +468,6 @@ def create_thumbnails(stack):
         execute_command("convert \"" + input_fp + "\" -resize 3.125% -auto-level -normalize \
                         -compress lzw \"" + output_fp + "\"")
 
-def csv_to_dict(fp):
-    """
-    First column contains keys.
-    """
-    import pandas as pd
-    df = pd.read_csv(fp, index_col=0, header=None)
-    d = df.to_dict(orient='index')
-    d = {k: v.values() for k, v in d.iteritems()}
-    return d
-
 def load_json(fp):
     with open(fp, 'r') as f:
         return json.load(f)
@@ -516,4 +505,109 @@ def load_data(fp, polydata_instead_of_face_vertex_list=True, download_s3=True):
         raise
 
     return data
+
+def convert_2d_transform_forms(transform, out_form):
+
+    if isinstance(transform, str):
+        if out_form == (2,3):
+            return np.reshape(map(np.float, transform.split(',')), (2,3))
+        elif out_form == (3,3):
+            return np.vstack([np.reshape(map(np.float, transform.split(',')), (2,3)), [0,0,1]])
+    else:
+        transform = np.array(transform)
+        if transform.shape == (2,3):
+            if out_form == (3,3):
+                transform = np.vstack([transform, [0,0,1]])
+            elif out_form == 'str':
+                transform = ','.join(map(str, transform[:2].flatten()))
+        elif transform.shape == (3,3):
+            if out_form == (2,3):
+                transform = transform[:2]
+            elif out_form == 'str':
+                transform = ','.join(map(str, transform[:2].flatten()))
+
+    return transform
+
+def convert_cropbox_from_arr_xywh_1um(data, out_fmt, out_resol, stack=None):
+
+    data = data / DataManager.sqlController.convert_resolution_string_to_um(stack=stack, resolution=out_resol)
+
+    if out_fmt == 'str_xywh':
+        return ','.join(map(str, data))
+    elif out_fmt == 'dict':
+        raise Exception("too lazy to implement")
+    elif out_fmt == 'arr_xywh':
+        return data
+    elif out_fmt == 'arr_xxyy':
+        return np.array([data[0], data[0]+data[2]-1, data[1], data[1]+data[3]-1])
+    else:
+        raise
+
+def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack=None):
+
+    if isinstance(data, dict):
+        data['rostral_limit'] = float(data['rostral_limit'])
+        data['caudal_limit'] = float(data['caudal_limit'])
+        data['dorsal_limit'] = float(data['dorsal_limit'])
+        data['ventral_limit'] = float(data['ventral_limit'])
+        arr_xywh = np.array([data['rostral_limit'], data['dorsal_limit'], data['caudal_limit'] - data['rostral_limit'] + 1, data['ventral_limit'] - data['dorsal_limit'] + 1])
+        # Since this does not check for wrt, the user needs to make sure the cropbox is relative to the input prep (i.e. the wrt attribute is the same as input prep)
+    elif isinstance(data, str):
+        if in_fmt == 'str_xywh':
+            arr_xywh = np.array(map(np.round, map(eval, data.split(','))))
+        elif in_fmt == 'str_xxyy':
+            arr_xxyy = np.array(map(np.round, map(eval, data.split(','))))
+            arr_xywh = np.array([arr_xxyy[0], arr_xxyy[2], arr_xxyy[1] - arr_xxyy[0] + 1, arr_xxyy[3] - arr_xxyy[2] + 1])
+        else:
+            raise
+    else:
+        if in_fmt == 'arr_xywh':
+            arr_xywh = np.array(data)
+        elif in_fmt == 'arr_xxyy':
+            arr_xywh = np.array([data[0], data[2], data[1] - data[0] + 1, data[3] - data[2] + 1])
+        else:
+            print(in_fmt, data)
+            raise
+
+    arr_xywh_1um = arr_xywh * DataManager.sqlController.convert_resolution_string_to_um(stack=stack, resolution=in_resol)
+    return arr_xywh_1um
+
+def convert_cropbox_fmt(out_fmt, data, in_fmt=None, in_resol='1um', out_resol='1um', stack=None):
+    if in_resol == out_resol: # in this case, stack is not required/ Arbitrarily set both to 1um
+        in_resol = '1um'
+        out_resol = '1um'
+    arr_xywh_1um = convert_cropbox_to_arr_xywh_1um(data=data, in_fmt=in_fmt, in_resol=in_resol, stack=stack)
+    data_out = convert_cropbox_from_arr_xywh_1um(data=arr_xywh_1um, out_fmt=out_fmt, out_resol=out_resol, stack=stack)
+    return data_out
+
+def shell_escape(s):
+    """
+    Escape a string (treat it as a single complete string) in shell commands.
+    """
+    from tempfile import mkstemp
+    fd, path = mkstemp()
+    try:
+        with os.fdopen(fd, 'w') as f:
+            f.write(s)
+        cmd = r"""cat %s | sed -e "s/'/'\\\\''/g; 1s/^/'/; \$s/\$/'/" """ % path
+        escaped_str = check_output(cmd, shell=True)
+    finally:
+        os.remove(path)
+
+    return escaped_str
+
+def dict_to_csv(d, fp):
+    import pandas as pd
+    df = pd.DataFrame.from_dict({k: np.array(v).flatten() for k, v in d.iteritems()}, orient='index')
+    df.to_csv(fp, header=False)
+
+def csv_to_dict(fp):
+    """
+    First column contains keys.
+    """
+    import pandas as pd
+    df = pd.read_csv(fp, index_col=0, header=None)
+    d = df.to_dict(orient='index')
+    d = {k: v.values() for k, v in d.iteritems()}
+    return d
 

@@ -2,24 +2,15 @@
 
 import sys, os
 import argparse
+import numpy as np
+import cv2
+from PyQt5.QtCore import pyqtSignal, QPoint, Qt, QRectF
+from PyQt5.QtGui import QBrush, QColor, QPixmap, QFont, QIntValidator, QImage
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QFrame, QWidget, QGridLayout, QLineEdit, \
+    QPushButton, QMessageBox, QApplication
 
-#import matplotlib.pyplot as plt
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from multiprocess import Pool
-
-sys.path.append( os.path.join(os.environ['REPO_DIR'] , 'utilities') )
-sys.path.append( os.path.join(os.environ['REPO_DIR'] , 'gui', 'widgets') )
-sys.path.append( os.path.join(os.environ['REPO_DIR'] , 'gui') )
-
-from utilities2015 import *
-from metadata import *
-from data_manager import *
-from registration_utilities import find_contour_points
-from gui_utilities import *
-from qt_utilities import *
-from preprocess_utilities import *
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'web_services'))
+from utilities.data_manager_v2 import DataManager
+from utilities.metadata import stack_metadata, stain_to_metainfo
 
 parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -31,7 +22,7 @@ stack = args.stack
 
 
 def get_img( section, prep_id='None', resol='thumbnail', version='NtbNormalized' ):
-    return DataManager.load_image_v2(stack=stack, 
+    return DataManager.load_image(stack=stack,
                           section=section, prep_id=prep_id,
                           resol=resol, version=version)
 
@@ -40,7 +31,7 @@ def get_fp( section, prep_id=1, resol='thumbnail', version='auto' ):
         stain = stack_metadata[stack]['stain'].lower()
         version = stain_to_metainfo[stain]['img_version_1']
         
-    return DataManager.get_image_filepath_v2(stack=stack, 
+    return DataManager.get_image_filepath(stack=stack,
                           section=section, prep_id=prep_id,
                           resol=resol, version=version)
 
@@ -132,8 +123,8 @@ class init_GUI(QWidget):
         self.font_h1 = QFont("Arial",32)
         self.font_p1 = QFont("Arial",16)
         
-        self.valid_sections = metadata_cache['valid_sections_all'][stack]
-        self.sections_to_filenames = metadata_cache['sections_to_filenames'][stack]
+        self.valid_sections = DataManager.metadata_cache['valid_sections_all'][stack]
+        self.sections_to_filenames = DataManager.metadata_cache['sections_to_filenames'][stack]
         self.curr_section = self.valid_sections[ len(self.valid_sections)/2 ]
         self.prev_section = self.getPrevValidSection( self.curr_section )
         self.next_section = self.getNextValidSection( self.curr_section )
@@ -467,10 +458,10 @@ class init_GUI(QWidget):
                 QMessageBox.about(self, "Popup Message", "This operation will take roughly 1.5 minutes per image.")
                 self.setCurrSection( self.curr_section )
                 stain = stack_metadata[stack]['stain']
-                subprocess.call(['python','a_script_preprocess_6.py', stack, stain, 
-                                '-l', str(self.rostral), str(self.caudal), 
-                                      str(self.dorsal), str(self.ventral), 
-                                      str(self.first_slice), str(self.last_slice)])
+                os.subprocess.call(['python', 'a_script_preprocess_6.py', stack, stain,
+                                '-l', str(self.rostral), str(self.caudal),
+                                    str(self.dorsal), str(self.ventral),
+                                    str(self.first_slice), str(self.last_slice)])
                 sys.exit( app.exec_() )
             except Exception as e:
                 sys.stderr.write('\n ********************************\n')

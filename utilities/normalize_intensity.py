@@ -1,6 +1,9 @@
-#! /usr/bin/env python
-
+import sys
 import argparse
+from datetime import time
+
+from utilities.data_manager_v2 import DataManager
+from utilities.utilities2015 import load_ini, create_parent_dir_if_not_exists, execute_command
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -9,15 +12,6 @@ parser = argparse.ArgumentParser(
 parser.add_argument("input_spec", type=str, help="Input specification")
 parser.add_argument("out_version", type=str, help="Output image version")
 args = parser.parse_args()
-
-import sys
-import os
-
-sys.path.append(os.environ['REPO_DIR'] + '/utilities')
-from utilities2015 import *
-from data_manager import *
-from metadata import *
-from distributed_utilities import *
 
 
 out_version = args.out_version
@@ -38,8 +32,8 @@ if version == 'None':
 for img_name in image_name_list:
     t = time.time()
 
-    in_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, resol=resol, version=version, fn=img_name)
-    out_fp = DataManager.get_image_filepath_v2(stack=stack, prep_id=prep_id, resol=resol, version=out_version, fn=img_name)
+    in_fp = DataManager.get_image_filepath(stack=stack, resol=resol, version=version, fn=img_name)
+    out_fp = DataManager.get_image_filepath(stack=stack, resol=resol, version=out_version, fn=img_name)
     create_parent_dir_if_not_exists(out_fp)
         
     cmd = """convert "%(in_fp)s" -normalize -depth 8 "%(out_fp)s" """ % {'in_fp': in_fp, 'out_fp': out_fp}
