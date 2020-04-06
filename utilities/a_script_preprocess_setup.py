@@ -23,45 +23,40 @@ elif stain.lower() == "thionin":
 else:
     id_detectors = [799, 19]
 
-
-def create_folder_if_nonexistant(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-
+# set base root of common files
 CSHL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
+
+def check_exists_download(source, destination):
+    if os.path.exists(destination) and len(os.listdir(destination)) > 0:
+        print('Destination {} already exists and contains files',format(destination))
+    else:
+        os.makedirs(destination)
+        command = ["aws", "s3", "cp", '--recursive', '--no-sign-request', source, destination]
+        subprocess.call(command)
+
+
+
+
 # Download operation config files
-s3_fp = 's3://mousebrainatlas-data/operation_configs/'
-local_fp = os.path.join(CSHL_DIR, 'all_brains_info')
-create_folder_if_nonexistant(local_fp)
-command = ["aws", "s3", "cp", '--recursive', '--no-sign-request', s3_fp, local_fp]
-subprocess.call(command)
+S3_OPERATION_CONFIGS = 's3://mousebrainatlas-data/operation_configs/'
+LOCAL_OPERATION_CONFIGS = os.path.join(CSHL_DIR, 'all_brains')
+check_exists_download(S3_OPERATION_CONFIGS, LOCAL_OPERATION_CONFIGS)
 
 # Download mxnet files
-s3_fp = 's3://mousebrainatlas-data/mxnet_models/inception-bn-blue/'
-local_fp = os.path.join(CSHL_DIR, 'all_brains_brains_info', 'mxnet_models', 'inception-bn-blue/')
-create_folder_if_nonexistant(local_fp)
-command = ["aws", "s3", "cp", '--recursive', '--no-sign-request', s3_fp, local_fp]
-subprocess.call(command)
+S3_MXMODELS = 's3://mousebrainatlas-data/mxnet_models/inception-bn-blue/'
+LOCAL_MXMODELS = os.path.join(CSHL_DIR, 'all_brains', 'mxnet_models', 'inception-bn-blue/')
+check_exists_download(S3_MXMODELS, LOCAL_MXMODELS)
 
 # Download AtlasV7 volume files
-s3_fp = 's3://mousebrainatlas-data/CSHL_volumes/atlasV7/atlasV7_10.0um_scoreVolume/score_volumes/'
-local_fp = os.path.join(CSHL_DIR, 'all_brains_brains_info', 'atlasV7', 'atlasV7_10.0um_scoreVolume',
-                        'score_volumes/')
-create_folder_if_nonexistant(local_fp)
-command = ["aws", "s3", "cp", '--recursive', '--no-sign-request', s3_fp, local_fp]
-subprocess.call(command)
+S3_ATLAS_VOLUMES = 's3://mousebrainatlas-data/CSHL_volumes/atlasV7/atlasV7_10.0um_scoreVolume/score_volumes/'
+LOCAL_ATLAS_VOLUMES = os.path.join(CSHL_DIR, 'all_brains', 'atlasV7', 'atlasV7_10.0um_scoreVolume', 'score_volumes/')
+check_exists_download(S3_ATLAS_VOLUMES, LOCAL_ATLAS_VOLUMES)
 
-# Download all classifiers according to the list of detectors
-"""
+# Download all classifiers according to the list of detectors by detector ID
 for id_detector in id_detectors:
-    # Get the classifier ID from the detector ID
     id_classifier = detector_settings.loc[id_detector]['feature_classifier_id']
-
-    # Download pre-trained classifiers for a particular setting
-    s3_fp = 's3://mousebrainatlas-data/CSHL_classifiers/setting_'+str(id_classifier)+'/classifiers/'
-    local_fp = os.path.join( ROOT_DIR, stack, 'brains_info', 'classifiers', 'setting_{}'.format(id_classifier), 'classifiers/')
-    create_folder_if_nonexistant( local_fp )
-    command = ["aws", "s3", "cp", '--recursive', '--no-sign-request', s3_fp, local_fp]
-    subprocess.call( command )
-"""
+    # s3_fp = 's3://mousebrainatlas-data/CSHL_classifiers/setting_'+str(id_classifier)+'/classifiers/'
+    S3_FILES = 's3://mousebrainatlas-data/CSHL_classifiers/setting_{}/classifiers/'.format(str(id_classifier))
+    LOCAL_FILES = os.path.join(ROOT_DIR, stack, 'brains_info', 'classifiers', 'setting_{}'.format(id_classifier),
+                            'classifiers/')
+    check_exists_download(S3_FILES, LOCAL_FILES)

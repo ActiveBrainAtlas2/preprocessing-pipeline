@@ -184,7 +184,7 @@ class init_GUI(QWidget):
         """
         # User creates initial masks
         if button == self.b_1:
-            subprocess.call(['python', os.path.join( os.environ['REPO_DIR'], 'gui/mask_editing_tool_v4.py'), 
+            subprocess.call(['python', 'mask_editing_tool.py',
                              stack, stain_to_metainfo[self.stain.lower()]['img_version_1']  ])
             
             # Mark this step as complete if these two files were created
@@ -207,7 +207,7 @@ class init_GUI(QWidget):
         # Correct auto-generated masks
         elif button == self.b_3:
             try:
-                subprocess.call(['python', os.path.join( os.environ['REPO_DIR'], 'gui/mask_editing_tool_v4.py'), 
+                subprocess.call(['python', 'mask_editing_tool.py',
                              stack, stain_to_metainfo[self.stain.lower()]['img_version_1']  ])
                 # Mark this step as complete if all masks files exist
                 if all_img_files_present( self.stack, prep_id=1, version='mask', resol='thumbnail' ):
