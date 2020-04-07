@@ -30,7 +30,7 @@ class Animal(Base, AtlasModel):
     comments = Column(String)
 
     #histology = relationship(Histology, uselist=False, backref="animal")
-    #scan_runs = relationship(ScanRun, backref="animal")
+    scan_runs = relationship(ScanRun, backref="animal")
     
 
     #def __repr__(self):
