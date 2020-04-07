@@ -9,37 +9,14 @@ from utilities.data_manager_v2 import DataManager
 from utilities.metadata import ordered_pipeline_steps, ROOT_DIR
 
 
-def create_input_spec_ini_allXXX(name, stack, prep_id, version, resol):
+def create_input_spec_ini_all(name, stack, prep_id, version, resol):
     f = open(name, "w")
-
     f.write('[DEFAULT]\n')
     f.write('image_name_list = all\n')
     f.write('stack = '+stack+'\n')
     f.write('prep_id = '+prep_id+'\n')
     f.write('version = '+version+'\n')
     f.write('resol = '+resol+'\n')
-
-def get_current_step_from_progress_iniXXX( stack ):
-    progress_dict = DataManager.get_brain_info_progress( stack )
-
-    for pipeline_step in ordered_pipeline_steps:
-        completed = progress_dict[ pipeline_step ] in ['True','true']
-        if not completed:
-            return pipeline_step
-    return None
-
-def set_step_completed_in_progress_iniXXX(stack, step):
-    progress_dict = DataManager.get_brain_info_progress(stack)
-    progress_dict[step] = True
-
-    # Save PROGRESS ini
-    progress_ini_to_save = {}
-    progress_ini_to_save['DEFAULT'] = progress_dict
-
-    # Get filepath and save ini
-    fp = os.path.join(ROOT_DIR, stack, 'brains_info', 'progress.ini')
-    save_dict_as_ini(progress_ini_to_save, fp)
-
 
 def save_dict_as_ini(input_dict, fp):
     import configparser
@@ -235,11 +212,7 @@ def create_prep2_section_limits( stack, lower_lim, upper_lim):
     f.close()
 
 def make_manual_anchor_points( stack, x_12N, y_12N, x_3N, y_3N, z_midline):
-    if not os.path.exists( DataManager.get_simple_global_root_folder(stack) ):
-        os.mkdir( DataManager.get_simple_global_root_folder(stack) )
-
-    fn = os.path.join( DataManager.get_simple_global_root_folder(stack), stack+'_manual_anchor_points.ini' )
-
+    fn = os.path.join(ROOT_DIR, stack, 'brains_info', 'manual_anchor_points.ini' )
     f = open(fn, "w")
     f.write('[DEFAULT]\n')
     f.write('x_12N = '+str(x_12N)+'\n')

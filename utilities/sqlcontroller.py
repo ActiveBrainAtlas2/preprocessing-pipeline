@@ -1,7 +1,7 @@
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import joinedload
 import os
+from _collections import OrderedDict
 from model.animal import Animal
 from model.histology import Histology
 from model.scan_run import ScanRun
@@ -10,7 +10,7 @@ from model.slide import Slide
 from model.slide_czi_to_tif import SlideCziTif
 from model.task import Task, ProgressLookup
 from sql_setup import dj, database, session
-from metadata import ROOT_DIR
+from utilities.metadata import ROOT_DIR
 
 TIF = 'tif'
 HIS = 'histogram'
@@ -38,7 +38,7 @@ class SqlController(object):
         self.scan_run = None
         self.slides = None
         self.tifs = None
-        self.valid_sections = {}
+        self.valid_sections = OrderedDict()
         # fill up the metadata_cache variable
 
     def generate_stack_metadata(self):

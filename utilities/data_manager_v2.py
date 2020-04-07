@@ -186,15 +186,12 @@ class DataManager(object):
     def load_sorted_filenames(stack, fp=None, redownload=False):
         """
         Get the mapping between section index and image filename.
-
         Returns:
             filename_to_section, section_to_filename
         """
         if fp is None:
             assert stack is not None, 'Must specify stack'
             fp = DataManager.get_sorted_filenames_filename(stack=stack)
-        print('load sorted', fp)
-
         # download_from_s3(fp, local_root=THUMBNAIL_DATA_ROOTDIR, redownload=redownload)
         filename_to_section, section_to_filename = DataManager.load_data(fp, filetype='file_section_map')
         if 'Placeholder' in filename_to_section:
@@ -203,7 +200,6 @@ class DataManager(object):
 
     @staticmethod
     def load_data(filepath, filetype=None):
-
         if not os.path.exists(filepath):
             sys.stderr.write('File does not exist: %s\n' % filepath)
 

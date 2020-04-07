@@ -15,8 +15,7 @@ from skimage.measure import find_contours, regionprops
 #from utilities.data_manager_v2 import DataManager
 from utilities.sqlcontroller import SqlController
 from utilities.vis3d_utilities import save_mesh_stl
-from utilities.metadata import ENABLE_DOWNLOAD_S3
-from utilities.metadata import ROOT_DIR
+from utilities.metadata import ENABLE_DOWNLOAD_S3, ROOT_DIR
 
 
 def crop_volume_to_minimal(vol, origin=(0,0,0), margin=0, return_origin_instead_of_bbox=True):

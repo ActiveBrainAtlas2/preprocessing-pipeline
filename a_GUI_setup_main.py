@@ -2,7 +2,6 @@ import os, sys
 import subprocess
 import argparse
 import time
-from tqdm import tqdm
 sys.path.append("utilities")
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
@@ -12,6 +11,7 @@ from utilities.utilities_pipeline_status import get_pipeline_status
 from utilities.utilities2015 import execute_command
 from utilities.sqlcontroller import SqlController
 from utilities.metadata import ROOT_DIR
+from utilities.a_script_preprocess_setup import preprocess_setup
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -146,8 +146,6 @@ class init_GUI(QWidget):
         # Set stack-specific variables
         self.stain = self.sqlController.histology.counterstain
         try:
-            # self.stain = self.sqlController.stack_metadata[ self.stack ]['stain']
-            # Check the brains_info/STACK_progress.ini file for which step we're on
             self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
             # Disable all grid buttons except for the one corresponding to our current step
             self.format_grid_buttons()
@@ -217,33 +215,29 @@ class init_GUI(QWidget):
             message = "This operation will take a long time."
             message += " Several minutes per image."
             QMessageBox.about(self, "Popup Message", message)
-            try:
-                subprocess.call(['python', 'utilities/a_script_preprocess_setup.py', self.stack, self.stain])
-                subprocess.call(['python', 'utilities/a_script_preprocess_1.py', self.stack, self.stain])
-                subprocess.call(['python', 'utilities/a_script_preprocess_2.py', self.stack, self.stain])
+            preprocess_setup(self.stack, self.stain)
+            #subprocess.call(['python', 'utilities/a_script_preprocess_1.py', self.stack, self.stain])
+            subprocess.call(['python', 'a_script_preprocess_2.py', self.stack, self.stain])
+            self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-6_setup_scripts')
+            """
+            pipeline_status = get_pipeline_status(self.stack)
+            if not 'preprocess_1' in pipeline_status and \
+                    not 'preprocess_2' in pipeline_status and not 'setup' in pipeline_status:
+                self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-6_setup_scripts')
+                sys.exit(app.exec_())
 
-                time.sleep(5)
-                pipeline_status = get_pipeline_status(self.stack)
-                if not 'preprocess_1' in pipeline_status and \
-                        not 'preprocess_2' in pipeline_status and not 'setup' in pipeline_status:
-                    self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-6_setup_scripts')
-                    sys.exit(app.exec_())
-
-                time.sleep(1)
-                pipeline_status = get_pipeline_status(self.stack)
-                if pipeline_status == 'a_script_preprocess_3':
-                    self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-6_setup_scripts')
-                    sys.exit(app.exec_())
-                # else:
-                #    print '\n\n\n\n'
-                #    print 'pipeline_status:'
-                ##    print pipeline_status
-                #    print '\n\n\n\n'
-                #    #set_step_completed_in_progress_ini( self.stack, '1-6_setup_scripts')
-
-            except Exception as e:
-                print('Exception on auto scripts')
-                sys.stderr.write(str(e))
+            pipeline_status = get_pipeline_status(self.stack)
+            if pipeline_status == 'a_script_preprocess_3':
+                self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-6_setup_scripts')
+                sys.exit(app.exec_())
+            # else:
+            #    print '\n\n\n\n'
+            #    print 'pipeline_status:'
+            ##    print pipeline_status
+            #    print '\n\n\n\n'
+            #    #set_step_completed_in_progress_ini( self.stack, '1-6_setup_scripts')
+            print('finished in button 4')
+            """
 
         self.updateFields()
 
