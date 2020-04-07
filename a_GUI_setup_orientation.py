@@ -2,9 +2,6 @@ import os, sys
 import subprocess
 import argparse
 from tqdm import tqdm
-import cv2
-from skimage import img_as_ubyte
-from skimage.color import rgb2gray
 
 sys.path.append("utilities")
 from PyQt5.QtCore import *
@@ -12,7 +9,6 @@ from PyQt5.QtGui import QFont, QIntValidator, QColor, QBrush, QPixmap
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton, QMessageBox, QGraphicsView, \
     QGraphicsScene, QGraphicsPixmapItem, QFrame, QCheckBox, QComboBox
 
-from utilities.a_driver_utilities import set_step_completed_in_progress_ini
 from utilities.metadata import ROOT_DIR
 from utilities.sqlcontroller import SqlController
 
@@ -390,7 +386,7 @@ class init_GUI(QWidget):
             subprocess.call(base_cmd + [thumbnail, thumbnail])
 
     def finished(self):
-        set_step_completed_in_progress_ini(self.stack, '1-5_setup_orientations')
+        self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-5_setup_orientations')
         # close_main_gui( ex )
         sys.exit(app.exec_())
 

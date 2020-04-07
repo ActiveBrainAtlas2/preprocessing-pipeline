@@ -8,10 +8,10 @@ from model.scan_run import ScanRun
 from model.section import RawSection
 from model.slide import Slide
 from model.slide_czi_to_tif import SlideCziTif
+from model.task import Task, ProgressLookup
 from sql_setup import dj, database, session
+from metadata import ROOT_DIR
 
-
-DATA_ROOT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
 TIF = 'tif'
 HIS = 'histogram'
 ROTATED = 'rotated'
@@ -42,15 +42,24 @@ class SqlController(object):
         # fill up the metadata_cache variable
 
     def generate_stack_metadata(self):
-        # fill up the metadata_cache variable
+        """
+        There must be an entry in both the animal and histology and task tables
+        The task table is necessary as that is filled when the CZI dir is scanned.
+        If there are no czi and tif files, there is no point in running the pipeline on that stack
+        Returns:
+            a dictionary of stack information
+
+        """
         for a, h in session.query(Animal, Histology).filter(Animal.prep_id == Histology.prep_id).all():
             resolution = session.query(func.max(ScanRun.resolution)).filter(ScanRun.prep_id == a.prep_id).scalar()
 
-            self.stack_metadata[a.prep_id] = {'stain': h.counterstain,
-                                              'cutting_plane': h.orientation,
-                                              'resolution': resolution,
-                                              'section_thickness': h.section_thickness}
-            self.all_stacks.append(a.prep_id)
+            tif_dir = os.path.join(ROOT_DIR, a.prep_id, 'tif')
+            if (os.path.exists(tif_dir) and len(os.listdir(tif_dir)) > 0):
+                self.all_stacks.append(a.prep_id)
+                self.stack_metadata[a.prep_id] = {'stain': h.counterstain,
+                                                  'cutting_plane': h.orientation,
+                                                  'resolution': resolution,
+                                                  'section_thickness': h.section_thickness}
         return self.stack_metadata
 
     def get_animal_info(self, stack):
@@ -81,10 +90,10 @@ class SqlController(object):
             .filter(RawSection.active == 1).scalar()
         set_to = section_number
         """
-         for both operations, you need to set the next/previous section to a dummy number,
-         There is a unique constraint on prep_id, section_number, channel
+         For both operations, you need to set the next/previous section to a dummy number,
+         as there is a unique constraint on prep_id, section_number, channel.
         
-         if we are moving a section to the left, set the preceding section number to the current section
+         If we are moving a section to the left, set the preceding section number to the current section
          and the current section to the preceding. Two updates.
          Likewise, if we are moving it to right, set the next section number to the current section
          and the current section the to next. Two updates. 
@@ -138,10 +147,64 @@ class SqlController(object):
 
     def save_valid_sections(self, valid_sections):
         for key, value in valid_sections.items():
-            raw_section = session.query(RawSection).filter(RawSection.id == key).one()
+            raw_section = self.session.query(RawSection).filter(RawSection.id == key).one()
             raw_section.file_status = value['quality']
             session.merge(raw_section)
         session.commit()
+
+    #################### Get and set progress ############
+
+    def get_current_step_from_progress_ini(self, stack):
+        step = "1-2_setup_images"
+        try:
+            lookup_id = self.session.query(func.max(Task.lookup_id)).filter(Task.prep_id == stack) \
+                .filter(Task.completed.is_(True)).scalar()
+        except NoResultFound as nrf:
+            print('No results for {} error: {}'.format(stack, nrf))
+            return step
+
+        try:
+            lookup = self.session.query(ProgressLookup).filter(ProgressLookup.id == lookup_id).one()
+        except NoResultFound as nrf:
+            print('Bad lookup code for {} error: {}'.format(lookup_id, nrf))
+            return step
+
+        return lookup.original_step
+
+    def set_step_completed_in_progress_ini(self, stack, step):
+        """
+        Look up the lookup up from the step. Check if the stack already exists,
+        if not, insert, otherwise, update
+        Args:
+            stack: string of the stack you are working on
+            step: current step
+
+        Returns:
+            nothing, just merges
+        """
+        try:
+            lookup = self.session.query(ProgressLookup).filter(ProgressLookup.original_step == step).one()
+        except NoResultFound:
+            print('No lookup for {}'.format(step))
+        try:
+            task = self.session.query(Task).filter(Task.lookup_id == lookup.id)\
+                .filter(Task.prep_id == stack).one()
+        except NoResultFound:
+            print('No step for {}'.format(step))
+            task = Task(stack, lookup.id, True)
+
+        try:
+            self.session.merge(task)
+            self.session.commit()
+        except:
+            print('Bad lookup code for {}'.format(lookup.id))
+            self.session.rollback()
+        #progress_dict = DataManager.get_brain_info_progress(stack)
+        #progress_dict[step] = True
+        #progress_ini_to_save = {}
+        #progress_ini_to_save['DEFAULT'] = progress_dict
+        #fp = os.path.join(ROOT_DIR, stack, 'brains_info', 'progress.ini')
+        #save_dict_as_ini(progress_ini_to_save, fp)
 
     #################### Resolution conversions ############
 

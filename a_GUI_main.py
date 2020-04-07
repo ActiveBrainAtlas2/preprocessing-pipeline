@@ -6,8 +6,7 @@ from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComb
 
 sys.path.append(os.path.join(os.getcwd(), 'utilities'))
 # print(sys.path)
-from utilities.metadata import stain_to_metainfo, ROOT_DIR
-from utilities.a_driver_utilities import get_current_step_from_progress_ini
+from utilities.metadata import stain_to_metainfo
 from utilities.data_manager_v2 import DataManager
 from utilities.sqlcontroller import SqlController
 
@@ -191,7 +190,7 @@ class init_GUI(QWidget):
         # Center the GUI
         self.center()
 
-    def updateFields(self, update_dropdown=True):
+    def updateFields(self):
         # Get dropdown selection
         dropdown_selection = self.cb.currentText()
         dropdown_selection_str = str(dropdown_selection)
@@ -205,7 +204,7 @@ class init_GUI(QWidget):
             print('Error, cannot get stain info.')
 
         try:
-            self.curr_step = get_current_step_from_progress_ini(self.stack)
+            self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
         except:
             print('Error, there is no progress ini file.')
 
@@ -217,11 +216,6 @@ class init_GUI(QWidget):
             # Disable all grid buttons except for the one corresponding to our current step
             self.format_grid_buttons()
 
-            if update_dropdown:
-                # Update the dropdown stack list in case there's a new stack
-                # Recursion error if combobox callback activates this so it is behind an if statement
-                self.updateStackDropdownMenu()
-
         # If there are no stacks/brains that have been started
         except KeyError as k:
             print('key error',k)
@@ -230,23 +224,7 @@ class init_GUI(QWidget):
                 format_grid_button_cantStart(grid_button)
 
     def newDropdownSelection(self):
-        self.updateFields(update_dropdown=False)
-
-    def updateStackDropdownMenu(self):
-        new_stacks = []
-        for stack in os.listdir(ROOT_DIR):
-            # Two kinds of brain_ini files: 'progress' and 'metadata'
-            if not os.path.exists(os.path.join(ROOT_DIR, stack, 'brains_info', 'progress.ini')):
-                continue
-
-            if stack in self.sqlController.all_stacks:
-                continue
-            # Add a brain to "new_stack" list if it is found and is not a part of "all_stacks"
-            new_stacks.append(stack)
-
-        if not new_stacks == []:
-            self.cb.clear()
-            self.cb.addItems(self.sqlController.all_stacks + new_stacks)
+        self.updateFields()
 
     def format_grid_buttons(self):
         """
@@ -256,6 +234,7 @@ class init_GUI(QWidget):
         to future steps are marked as "unpressable" and are grayed out.
         """
         curr_step = self.curr_step
+        print('curr_step is ',curr_step)
 
         if 'setup' in curr_step:
             # Done-ish

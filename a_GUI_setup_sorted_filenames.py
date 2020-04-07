@@ -1,6 +1,5 @@
 import os
 import argparse
-import numpy as np
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator, QBrush, QColor, QPixmap, QImage
@@ -11,7 +10,6 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout, QLineEdit,
 from tkinter import *
 
 sys.path.append(os.path.join(os.getcwd(), 'utilities'))
-from utilities.a_driver_utilities import set_step_completed_in_progress_ini
 from utilities.sqlcontroller import SqlController
 from utilities.metadata import ROOT_DIR
 
@@ -421,7 +419,7 @@ class init_GUI(QWidget):
 
     def finished(self):
         # TODO change this to database update
-        set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
+        self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
         self.sqlController.save_valid_sections(self.valid_sections)
         # close_main_gui( ex )
         sys.exit(app.exec_())

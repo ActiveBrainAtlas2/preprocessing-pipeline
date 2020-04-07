@@ -12,7 +12,7 @@ import joblib
 from skimage.io import imsave, imread
 from skimage.measure import find_contours, regionprops
 
-from utilities.data_manager_v2 import DataManager
+#from utilities.data_manager_v2 import DataManager
 from utilities.sqlcontroller import SqlController
 from utilities.vis3d_utilities import save_mesh_stl
 from utilities.metadata import ENABLE_DOWNLOAD_S3
@@ -209,8 +209,6 @@ def save_hdf(data, fn, key='data', mode='w'):
 
 
 def execute_command(cmd, stdout=None, stderr=None):
-    sys.stderr.write(cmd + '\n')
-    # retcode = os.system(cmd)
     retcode = call(cmd, shell=True, stdout=stdout, stderr=stderr)
     sys.stderr.write('return code: %d\n' % retcode)
 

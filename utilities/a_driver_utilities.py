@@ -9,7 +9,7 @@ from utilities.data_manager_v2 import DataManager
 from utilities.metadata import ordered_pipeline_steps, ROOT_DIR
 
 
-def create_input_spec_ini_all(name, stack, prep_id, version, resol):
+def create_input_spec_ini_allXXX(name, stack, prep_id, version, resol):
     f = open(name, "w")
 
     f.write('[DEFAULT]\n')
@@ -19,7 +19,7 @@ def create_input_spec_ini_all(name, stack, prep_id, version, resol):
     f.write('version = '+version+'\n')
     f.write('resol = '+resol+'\n')
 
-def get_current_step_from_progress_ini( stack ):
+def get_current_step_from_progress_iniXXX( stack ):
     progress_dict = DataManager.get_brain_info_progress( stack )
 
     for pipeline_step in ordered_pipeline_steps:
@@ -28,7 +28,7 @@ def get_current_step_from_progress_ini( stack ):
             return pipeline_step
     return None
 
-def set_step_completed_in_progress_ini(stack, step):
+def set_step_completed_in_progress_iniXXX(stack, step):
     progress_dict = DataManager.get_brain_info_progress(stack)
     progress_dict[step] = True
 
