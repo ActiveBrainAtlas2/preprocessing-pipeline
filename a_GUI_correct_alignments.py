@@ -11,10 +11,9 @@ from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, 
 from matplotlib import image
 
 from utilities.a_driver_utilities import call_and_time, create_input_spec_ini_all
-from utilities.data_manager_v2 import DataManager
-from utilities.utilities2015 import execute_command
-from utilities.metadata import stain_to_metainfo, ROOT_DIR
+from utilities.metadata import stain_to_metainfo
 from utilities.sqlcontroller import SqlController
+from utilities.file_location import FileLocationManager
 from utilities.aligment_utility import apply_transform, get_transformed_image, get_padding_color
 
 sqlController = SqlController()
@@ -70,6 +69,7 @@ class ImageViewer(QGraphicsView):
             self._photo.setPixmap(QPixmap())
         self.fitInView()
 
+
     def paintOverlayImage(self, pixmap=None):
         painter = QPainter()
         painter.begin(image)
@@ -110,8 +110,9 @@ class init_GUI(QWidget):
         self.font_h1 = QFont("Arial", 32)
         self.font_p1 = QFont("Arial", 16)
 
-        self.sqlController = SqlController()
         self.stack = stack
+        self.fileLocationManager = FileLocationManager(self.stack)
+        self.sqlController = SqlController()
         self.sqlController.get_animal_info(self.stack)
         self.valid_sections = self.sqlController.get_valid_sections(stack)
         self.valid_section_keys = sorted(list(self.valid_sections))
@@ -319,7 +320,7 @@ before you finish this step."
     def loadImage(self):
         # Get filepath of "curr_section" and set it as viewer's photo
         #fp = get_fp(self.curr_section, prep_id=1)
-        input_tif = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', self.curr_section)
+        input_tif = os.path.join(self.fileLocationManager.prep_thumbnail, self.curr_section)
         print('input_tif', input_tif)
         #fp = io.imread(input_tif)
         self.viewer.setPhoto(QPixmap(input_tif))
@@ -343,7 +344,7 @@ before you finish this step."
 
     def loadImageThenNormalize(self):
         # Get filepath of "curr_section" and set it as viewer's photo
-        input_tif = os.path.join(ROOT_DIR, self.stack, 'preps', 'oriented', self.curr_section)
+        input_tif = os.path.join(self.fileLocationManager.oriented, self.curr_section)
         #fp = imread(input_tif)
         img = io.imread(input_tif) * 3
 
@@ -355,9 +356,9 @@ before you finish this step."
 
     def loadImagesColored(self):
         # we want to load RED (current section) and BLUE (previous section) channels overlayed
-        curr_tif = os.path.join(ROOT_DIR, self.stack, 'preps', 'oriented', self.curr_section)
+        curr_tif = os.path.join(self.fileLocationManager.oriented, self.curr_section)
         img_curr_red = io.imread(curr_tif)
-        prev_tif = os.path.join(ROOT_DIR, self.stack, 'preps', 'oriented', self.prev_section)
+        prev_tif = os.path.join(self.fileLocationManager.oriented, self.prev_section)
         img_prev_blue = io.imread(prev_tif)
         # Load the untransformed images
         # img_curr_red = cv2.imread( fp_curr_red )
@@ -376,16 +377,16 @@ before you finish this step."
                                                     prev_section=self.prev_section)
             self.curr_T = T
             # Blue image does not change
-            prev_tif = os.path.join(ROOT_DIR, self.stack, 'preps', 'oriented', self.prev_section)
+            prev_tif = os.path.join(self.fileLocationManager.oriented, self.prev_section)
             img_prev_blue = io.imread(prev_tif)
         elif self.transform_type == 'pairwise' and self.curr_section < self.prev_section:
             # In the case of wrapping (prev_section wrapps to the last section when curr_section is 0)
             #   We just load the red ad blue channels of curr_section making it appear purple
             self.curr_T = None
 
-            curr_tif = os.path.join(ROOT_DIR, self.stack, 'preps', 'oriented', self.curr_section)
+            curr_tif = os.path.join(self.fileLocationManager.oriented, self.curr_section)
             img_curr_red = io.imread(curr_tif)
-            prev_tif = os.path.join(ROOT_DIR, self.stack, 'preps', 'oriented', self.prev_section)
+            prev_tif = os.path.join(self.fileLocationManager.oriented, self.prev_section)
             img_prev_blue = io.imread(prev_tif)
 
         height_r, width_r, _ = img_curr_red.shape
@@ -414,25 +415,21 @@ before you finish this step."
         #fp_curr_red = get_fp(self.curr_section)
         #fp_prev_blue = get_fp(self.prev_section)
 
-        curr_tif = os.path.join(ROOT_DIR, self.stack, 'preps', 'oriented', self.curr_section)
+        curr_tif = os.path.join(self.fileLocationManager.oriented, self.curr_section)
         fp_curr_red = io.imread(curr_tif)
-        prev_tif = os.path.join(ROOT_DIR, self.stack, 'preps', 'oriented', self.prev_section)
+        prev_tif = os.path.join(self.fileLocationManager.oriented, self.prev_section)
         fp_prev_blue = io.imread(prev_tif)
 
 
 
         if self.transform_type == 'anchor':
             # Load anchor-transformed images
-            img_curr_red = apply_transform(stack, self.curr_T,
-                                           SqlController.metadata_cache['sections_to_filenames'][stack][
-                                               self.curr_section])
+            img_curr_red = apply_transform(stack, self.curr_T, self.curr_section)
             img_prev_blue, Tb = get_transformed_image(self.prev_section, transformation='anchor')
         elif self.transform_type == 'pairwise':
             # Load pairwise-transformed images
             # The current red image is transformed to the previous blue image
-            img_curr_red = apply_transform(stack, self.curr_T,
-                                           SqlController.metadata_cache['sections_to_filenames'][stack][
-                                               self.curr_section])
+            img_curr_red = apply_transform(stack, self.curr_T, self.curr_section)
             # Blue image does not change
             img_prev_blue = io.imread(fp_prev_blue)
 
@@ -621,23 +618,20 @@ before you finish this step."
 
     def saveCurrTransform(self):
         if self.transform_type == 'pairwise':
-            stack_root_dir = os.path.join(ROOT_DIR, stack, 'preps', 'CSHL_data_processed')
             curr_section_fn = self.sections_to_filenames[self.curr_section]
             prev_section_fn = self.sections_to_filenames[self.prev_section]
 
-            custom_tf_txt_fn = os.path.join(stack_root_dir, stack + '_custom_transforms',
-                                            curr_section_fn + '_to_' + prev_section_fn,
-                                            curr_section_fn + '_to_' + prev_section_fn + '_customTransform.txt')
-            custom_tf_img_fn = os.path.join(stack_root_dir, stack + '_custom_transforms',
-                                            curr_section_fn + '_to_' + prev_section_fn,
-                                            curr_section_fn + '_alignedTo_' + prev_section_fn + '.tif')
+            custom_transform_txt_name = '{}_to_{}.txt'.format(curr_section_fn, prev_section_fn)
+            custom_transform_txt_file = os.path.join(self.fileLocationManager.custom_transform, custom_transform_txt_name)
+
+            custom_transform_img_name = '{}_{}.txt'.format(curr_section_fn, prev_section_fn)
+            custom_transform_img_file = os.path.join(self.fileLocationManager.aligned_to, custom_transform_img_name)
             T = self.curr_T
 
             # Saves the transformed image since we gave a specific output_fp
-            apply_transform(stack, self.curr_T, self.sections_to_filenames[self.curr_section],
-                            output_fp=custom_tf_img_fn)
+            apply_transform(stack, self.curr_T, self.curr_section, custom_transform_img_file)
 
-            with open(custom_tf_txt_fn, 'w') as file:
+            with open(custom_transform_txt_file, 'w') as file:
                 file.write(str(T[0, 0]) + ' ' + str(T[0, 1]) + ' ' + str(T[0, 2]) + ' ' + \
                            str(T[1, 0]) + ' ' + str(T[1, 1]) + ' ' + str(T[1, 2]))
         else:

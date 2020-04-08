@@ -5,9 +5,7 @@ from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QComboBox, QPushButton
 
 sys.path.append(os.path.join(os.getcwd(), 'utilities'))
-# print(sys.path)
 from utilities.metadata import stain_to_metainfo
-from utilities.data_manager_v2 import DataManager
 from utilities.sqlcontroller import SqlController
 
 def format_grid_button_initial(button):
@@ -57,7 +55,6 @@ class init_GUI(QWidget):
         self.initial_bottom_text = "Push `Finished` to exit the GUI"
         self.sqlController = SqlController()
         self.stack_metadata = self.sqlController.generate_stack_metadata()
-        self.dataManager = DataManager()
         self.initUI()
 
     def initUI(self):

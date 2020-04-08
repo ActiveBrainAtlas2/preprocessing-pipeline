@@ -1,4 +1,3 @@
-import os
 import sys
 import subprocess
 import argparse
@@ -8,9 +7,12 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton
 
-from utilities.a_driver_utilities import get_current_step_from_progress_ini, set_step_completed_in_progress_ini
-from utilities.metadata import stack_metadata
-from utilities.utilities_pipeline_status import get_pipeline_status
+#from utilities.a_driver_utilities import get_current_step_from_progress_ini, set_step_completed_in_progress_ini
+#from utilities.metadata import stack_metadata
+#from utilities.utilities_pipeline_status import get_pipeline_status
+
+from utilities.file_location import FileLocationManager
+from utilities.sqlcontroller import SqlController
 
 parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -51,12 +53,13 @@ class init_GUI(QWidget):
         self.font1 = QFont("Arial",16)
         self.font2 = QFont("Arial",12)
 
-        # Stack specific info, determined from dropdown menu selection
-        self.stack = ""
-        self.stain = ""
-        
-        self.curr_step = ""
-        
+        self.stack = stack
+        self.fileLocationManager = FileLocationManager(self.stack)
+        self.sqlController = SqlController()
+        self.sqlController.get_animal_info(self.stack)
+        self.stain = self.sqlController.histology.counterstain
+        self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
+
         self.initUI()
 
     def initUI(self):
@@ -112,14 +115,12 @@ class init_GUI(QWidget):
         # Center the GUI
         self.center()
     
-    def updateFields(self):        
-        # Set stack-specific variables
-        self.stack = stack
-        self.stain = stack_metadata[stack]
+    def updateFields(self):
+        self.stain = self.sqlController.histology.counterstain
         try:
-            self.stain = stack_metadata[ self.stack ]['stain']
-            # Check the brains_info/STACK_progress.ini file for which step we're on
-            self.curr_step = get_current_step_from_progress_ini( self.stack )
+            self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
+            # Disable all grid buttons except for the one corresponding to our current step
+            self.format_grid_buttons()
             # Disable all grid buttons except for the one corresponding to our current step
             self.format_grid_buttons()
         # If there are no stacks/brains that have been started
@@ -163,6 +164,8 @@ class init_GUI(QWidget):
         if button == self.b_1:
             subprocess.call(['python','a_GUI_atlas_global_select_centers.py', self.stack])
 
+            """
+            TODO, fix this get_pipelinestatus
             progress = get_pipeline_status( self.stack )
             if not progress=='a_script_preprocess_7':
                 fp1 = os.path.join(os.environ['ROOT_DIR'], 'CSHL_simple_global_registration', 
@@ -173,7 +176,7 @@ class init_GUI(QWidget):
                 #                   self.stack+'_T_atlas_wrt_canonicalAtlasSpace_subject_wrt_wholebrain_atlasResol.npy')
                 if os.path.exists( fp1 ):# and ( os.path.exists( fp2 ) or os.path.exists( fp2_v2 ) ):
                     set_step_completed_in_progress_ini( self.stack, '5_fit_atlas_global')
-            
+            """
         self.updateFields()
             
     def button_push(self, button):

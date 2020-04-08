@@ -183,7 +183,10 @@ class SqlController(object):
             nothing, just merges
         """
         try:
-            lookup = self.session.query(ProgressLookup).filter(ProgressLookup.original_step == step).one()
+            lookup = self.session.query(ProgressLookup)\
+                .filter(ProgressLookup.original_step == step)\
+                .order_by(ProgressLookup.original_step.desc())\
+                .limit(1).one()
         except NoResultFound:
             print('No lookup for {}'.format(step))
         try:

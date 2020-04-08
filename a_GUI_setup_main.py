@@ -1,17 +1,17 @@
 import os, sys
 import subprocess
 import argparse
-import time
+from time import sleep
+
 sys.path.append("utilities")
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton, QMessageBox, QProgressBar
 
-from utilities.utilities_pipeline_status import get_pipeline_status
 from utilities.utilities2015 import execute_command
 from utilities.sqlcontroller import SqlController
-from utilities.metadata import ROOT_DIR
 from utilities.a_script_preprocess_setup import preprocess_setup
+from utilities.file_location import FileLocationManager
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -56,6 +56,7 @@ class init_GUI(QWidget):
 
         # Stack specific info, determined from dropdown menu selection
         self.stack = stack
+        self.fileLocationManager = FileLocationManager(self.stack)
         self.sqlController = SqlController()
         self.sqlController.get_animal_info(self.stack)
         self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-2_setup_images')
@@ -116,11 +117,16 @@ class init_GUI(QWidget):
 
         ### Grid Bottom ###
         self.progress = QProgressBar(self)
+        self.progress.hide()
         self.grid_bottom.addWidget(self.progress)
 
         # self.grid_buttons.setColumnStretch(1, 3)
         # self.grid_buttons.setRowStretch(1, 2)
-
+        # Button Text Field
+        self.b_exit = QPushButton("Exit")
+        self.b_exit.setDefault(True)
+        self.b_exit.clicked.connect(lambda: self.button_push(self.b_exit))
+        self.grid_bottom.addWidget(self.b_exit, 0, 4)
         ### SUPERGRID ###
         self.supergrid = QGridLayout()
         self.supergrid.addLayout(self.grid_top, 0, 0)
@@ -138,7 +144,6 @@ class init_GUI(QWidget):
         self.center()
 
     def updateFields(self):
-        # Set stack-specific variables
         self.stain = self.sqlController.histology.counterstain
         try:
             self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
@@ -262,26 +267,29 @@ class init_GUI(QWidget):
         This will copy the valid file to the raw dir and then
         create the thumbnails that are used throughout the pipeline
         """
-        TIF = os.path.join(ROOT_DIR, self.stack, 'tif')
+        TIF = self.fileLocationManager.tif
         sections = self.sqlController.get_valid_sections(self.stack)
-
+        self.b_exit.hide()
         size = len(sections.values()) - 1
         self.progress.setMaximum(size)
-
+        self.progress.show()
+        self.b_1.hide()
         for index, section in enumerate(sections.values()):
+            self.progress.setValue(index)
             source = section['source']
             destination = section['destination']
             input_fp = os.path.join(TIF, source)
             if os.path.exists(input_fp):
-                thumbnail_destination = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', destination)
-
+                thumbnail_destination = os.path.join(self.fileLocationManager.prep_thumbnail, destination)
+                sleep(1)
                 # Create thumbnails
-                execute_command("convert \"" + input_fp + "\" -resize 3.125% -auto-level -normalize \
-                                -compress lzw \"" + thumbnail_destination + "\"")
+                #execute_command("convert \"" + input_fp + "\" -resize 3.125% -auto-level -normalize \
+                #                -compress lzw \"" + thumbnail_destination + "\"")
             else:
                 print('File {} does not exist'.format(input_fp))
+        self.progress.hide()
+        self.b_exit.show()
 
-            self.progress.setValue(index)
 
 def main():
     global app

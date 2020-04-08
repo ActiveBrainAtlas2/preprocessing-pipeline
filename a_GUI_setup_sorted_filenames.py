@@ -2,7 +2,7 @@ import os
 import argparse
 
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QFont, QIntValidator, QBrush, QColor, QPixmap, QImage
+from PyQt5.QtGui import QFont, QIntValidator, QBrush, QColor, QPixmap
 from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout, QLineEdit,
                              QPushButton, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QFrame, QComboBox,
                              QMessageBox)
@@ -11,8 +11,7 @@ from tkinter import *
 
 sys.path.append(os.path.join(os.getcwd(), 'utilities'))
 from utilities.sqlcontroller import SqlController
-from utilities.metadata import ROOT_DIR
-
+from utilities.file_location import FileLocationManager
 
 class ImageViewer(QGraphicsView):
     photoClicked = pyqtSignal(QPoint)
@@ -117,6 +116,7 @@ class init_GUI(QWidget):
         # create a dataManager object
         self.sqlController = SqlController()
         self.stack = stack
+        self.fileLocationManager = FileLocationManager(self.stack)
         self.sqlController.get_animal_info(self.stack)
 
         self.valid_sections = self.sqlController.get_valid_sections(stack)
@@ -294,7 +294,7 @@ class init_GUI(QWidget):
     def loadImage(self):
         curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         # Get filepath of "curr_section" and set it as viewer's photo
-        img_fp = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', curr_fn)
+        img_fp = os.path.join(self.fileLocationManager.prep_thumbnail, curr_fn)
         self.viewer.setPhoto(QPixmap(img_fp))
 
     def photoClicked(self, pos):
