@@ -53,13 +53,7 @@ def format_grid_button_completed(button):
 class init_GUI(QWidget):
     def __init__(self, parent=None):
         super(init_GUI, self).__init__(parent)
-        self.font1 = QFont("Arial", 16)
-        self.font2 = QFont("Arial", 12)
-        #self.progress = QProgressBar(self)
-        #self.progress.setGeometry(0, 0, 300, 25)
-        #self.progress.setMaximum(100)
-        #self.progress.setValue(0)
-        #self.progress.hide()
+
         # Stack specific info, determined from dropdown menu selection
         self.stack = stack
         self.sqlController = SqlController()
@@ -67,9 +61,13 @@ class init_GUI(QWidget):
         self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-2_setup_images')
         self.stain = self.sqlController.histology.counterstain
         self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
+
         self.initUI()
 
     def initUI(self):
+        self.font1 = QFont("Arial", 16)
+        self.font2 = QFont("Arial", 12)
+
         # Set Layout and Geometry of Window
         self.grid_top = QGridLayout()
         self.grid_buttons = QGridLayout()
@@ -87,7 +85,7 @@ class init_GUI(QWidget):
         self.e1.setReadOnly(True)
         self.e1.setText("Setup Step: Main Page")
         self.e1.setFrame(False)
-        self.grid_top.addWidget(self.e1, 0, 0)
+        self.grid_top.addWidget(self.e1)
 
         ### Grid Buttons ###
         # Button
@@ -99,29 +97,26 @@ class init_GUI(QWidget):
         self.b_1 = QPushButton("1) Create Initial Thumbnails")
         format_grid_button_initial(self.b_1)
         self.b_1.clicked.connect(lambda: self.button_grid_push(self.b_1))
-        self.grid_buttons.addWidget(self.b_1, 0, 0)
+        self.grid_buttons.addWidget(self.b_1)
         # Button
         self.b_2 = QPushButton("2) Setup Sorted Filenames")
         format_grid_button_initial(self.b_2)
         self.b_2.clicked.connect(lambda: self.button_grid_push(self.b_2))
-        self.grid_buttons.addWidget(self.b_2, 1, 0)
+        self.grid_buttons.addWidget(self.b_2)
         # Button
         self.b_3 = QPushButton("3) Orient Images (rotating)")
         format_grid_button_initial(self.b_3)
         self.b_3.clicked.connect(lambda: self.button_grid_push(self.b_3))
-        self.grid_buttons.addWidget(self.b_3, 2, 0)
+        self.grid_buttons.addWidget(self.b_3)
         # Button
         self.b_4 = QPushButton("4) Run automatic setup scripts")
         format_grid_button_initial(self.b_4)
         self.b_4.clicked.connect(lambda: self.button_grid_push(self.b_4))
-        self.grid_buttons.addWidget(self.b_4, 3, 0)
+        self.grid_buttons.addWidget(self.b_4)
 
         ### Grid Bottom ###
-        # Button Text Field
-        self.b_exit = QPushButton("Exit")
-        self.b_exit.setDefault(True)
-        self.b_exit.clicked.connect(lambda: self.button_push(self.b_exit))
-        self.grid_bottom.addWidget(self.b_exit, 0, 4)
+        self.progress = QProgressBar(self)
+        self.grid_bottom.addWidget(self.progress)
 
         # self.grid_buttons.setColumnStretch(1, 3)
         # self.grid_buttons.setRowStretch(1, 2)
@@ -269,24 +264,24 @@ class init_GUI(QWidget):
         """
         TIF = os.path.join(ROOT_DIR, self.stack, 'tif')
         sections = self.sqlController.get_valid_sections(self.stack)
-        # TODO fix progress bar to display only when this method is called and then hide it afterwards
-        #self.progress.setMaximum(len(sections.values() - 1))
-        #self.progress.show()
-        for count, section in enumerate(sections.values()):
+
+        size = len(sections.values()) - 1
+        self.progress.setMaximum(size)
+
+        for index, section in enumerate(sections.values()):
             source = section['source']
             destination = section['destination']
             input_fp = os.path.join(TIF, source)
             if os.path.exists(input_fp):
-                print('count', count)
-                #self.progress.setValue(count)
                 thumbnail_destination = os.path.join(ROOT_DIR, self.stack, 'preps', 'thumbnail', destination)
+
                 # Create thumbnails
                 execute_command("convert \"" + input_fp + "\" -resize 3.125% -auto-level -normalize \
                                 -compress lzw \"" + thumbnail_destination + "\"")
             else:
                 print('File {} does not exist'.format(input_fp))
-        #self.progress.hide()
 
+            self.progress.setValue(index)
 
 def main():
     global app

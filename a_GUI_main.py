@@ -250,6 +250,7 @@ class init_GUI(QWidget):
         elif 'fit_atlas_local' in curr_step:
             active_button = self.b_localFit
         else:
+            active_button = None
             print(curr_step)
 
         passed_curr_step = False
