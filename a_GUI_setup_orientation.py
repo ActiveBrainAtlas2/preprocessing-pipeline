@@ -381,7 +381,7 @@ class init_GUI(QWidget):
 
         self.queued_transformations.append(base_cmd)
         # Apply transforms to just the thumbnails
-        THUMBNAIL = os.path.join(self.fileLocationManager.prep_thumbnail, 'thumbnail')
+        THUMBNAIL = self.fileLocationManager.prep_thumbnail
         for k,v in self.valid_sections.items():
             thumbnail = os.path.join(THUMBNAIL, v['destination'])
             subprocess.call(base_cmd + [thumbnail, thumbnail])
