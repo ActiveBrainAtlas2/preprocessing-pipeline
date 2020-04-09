@@ -21,35 +21,7 @@ args = parser.parse_args()
 stack = args.stack
 
 
-def format_grid_button_initial(button):
-    button.setDefault(True)
-    button.setEnabled(True)
-    button.setStyleSheet('QPushButton { \
-                          background-color: #FDB0B0; \
-                          color: black; \
-                          border-radius: 15px; \
-                          font-size: 18px;}')
-    button.setMinimumSize(QSize(50, 40))
-
-
-def format_grid_button_cantStart(button):
-    button.setEnabled(False)
-    button.setStyleSheet('QPushButton { \
-                          background-color: #868686; \
-                          color: black; \
-                          border-radius: 15px; \
-                          font-size: 18px;}')
-
-
-def format_grid_button_completed(button):
-    # button.setEnabled(False)
-    button.setStyleSheet('QPushButton { \
-                          background-color: #B69696; \
-                          color: black; \
-                          border-radius: 15px; \
-                          font-size: 18px;}')
-
-
+# noinspection PyAttributeOutsideInit
 class init_GUI(QWidget):
     def __init__(self, parent=None):
         super(init_GUI, self).__init__(parent)
@@ -63,128 +35,80 @@ class init_GUI(QWidget):
         self.stain = self.sqlController.histology.counterstain
         self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
 
+        # Init UI
         self.initUI()
 
-    def initUI(self):
-        self.font1 = QFont("Arial", 16)
-        self.font2 = QFont("Arial", 12)
+        # Set buttons functionality
+        self.b_1.clicked.connect(lambda: self.clickButton(self.b_1))
+        self.b_2.clicked.connect(lambda: self.clickButton(self.b_2))
+        self.b_3.clicked.connect(lambda: self.clickButton(self.b_3))
+        self.b_4.clicked.connect(lambda: self.clickButton(self.b_4))
+        self.b_exit.clicked.connect(lambda: self.clickButton(self.b_exit))
 
-        # Set Layout and Geometry of Window
-        self.grid_top = QGridLayout()
-        self.grid_buttons = QGridLayout()
-        self.grid_bottom = QGridLayout()
-
-        # self.setFixedSize(1000, 450)
-        self.resize(1000, 450)
-
-        ### Grid Top (1 row) ###
-        # Static Text Field
-        self.e1 = QLineEdit()
-        self.e1.setValidator(QIntValidator())
-        self.e1.setAlignment(Qt.AlignCenter)
-        self.e1.setFont(self.font1)
-        self.e1.setReadOnly(True)
-        self.e1.setText("Setup Step: Main Page")
-        self.e1.setFrame(False)
-        self.grid_top.addWidget(self.e1)
-
-        ### Grid Buttons ###
-        # Button
-        # self.b_1 = QPushButton("1) Setup Image Files")
-        # format_grid_button_initial( self.b_1 )
-        # self.b_1.clicked.connect( lambda:self.button_grid_push(self.b_1) )
-        # self.grid_buttons.addWidget( self.b_1, 0, 0)
-        # Button
-        self.b_1 = QPushButton("1) Create Initial Thumbnails")
-        format_grid_button_initial(self.b_1)
-        self.b_1.clicked.connect(lambda: self.button_grid_push(self.b_1))
-        self.grid_buttons.addWidget(self.b_1)
-        # Button
-        self.b_2 = QPushButton("2) Setup Sorted Filenames")
-        format_grid_button_initial(self.b_2)
-        self.b_2.clicked.connect(lambda: self.button_grid_push(self.b_2))
-        self.grid_buttons.addWidget(self.b_2)
-        # Button
-        self.b_3 = QPushButton("3) Orient Images (rotating)")
-        format_grid_button_initial(self.b_3)
-        self.b_3.clicked.connect(lambda: self.button_grid_push(self.b_3))
-        self.grid_buttons.addWidget(self.b_3)
-        # Button
-        self.b_4 = QPushButton("4) Run automatic setup scripts")
-        format_grid_button_initial(self.b_4)
-        self.b_4.clicked.connect(lambda: self.button_grid_push(self.b_4))
-        self.grid_buttons.addWidget(self.b_4)
-
-        ### Grid Bottom ###
-        self.progress = QProgressBar(self)
-        self.progress.hide()
-        self.grid_bottom.addWidget(self.progress)
-
-        # self.grid_buttons.setColumnStretch(1, 3)
-        # self.grid_buttons.setRowStretch(1, 2)
-        # Button Text Field
-        self.b_exit = QPushButton("Exit")
-        self.b_exit.setDefault(True)
-        self.b_exit.clicked.connect(lambda: self.button_push(self.b_exit))
-        self.grid_bottom.addWidget(self.b_exit, 0, 4)
-        ### SUPERGRID ###
-        self.supergrid = QGridLayout()
-        self.supergrid.addLayout(self.grid_top, 0, 0)
-        self.supergrid.addLayout(self.grid_buttons, 1, 0)
-        self.supergrid.addLayout(self.grid_bottom, 2, 0)
-
-        # Set layout and window title
-        self.setLayout(self.supergrid)
-        self.setWindowTitle("Align to Active Brainstem Atlas - Setup Page")
-
-        # Update interactive windows
-        self.updateFields()
+        # Update buttons
+        self.updateButtons()
 
         # Center the GUI
         self.center()
 
-    def updateFields(self):
-        self.stain = self.sqlController.histology.counterstain
-        try:
-            self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
-            # Disable all grid buttons except for the one corresponding to our current step
-            self.format_grid_buttons()
-        # If there are no stacks/brains that have been started
-        except KeyError:
-            for grid_button in [self.b_1, self.b_2, self.b_3, self.b_4]:
-                format_grid_button_cantStart(grid_button)
+    def initUI(self):
+        self.grid_buttons = QGridLayout()
+        self.grid_bottom = QGridLayout()
 
-    def format_grid_buttons(self):
+        # Grid buttons
+        self.b_1 = QPushButton("1) Create Initial Thumbnails")
+        self.grid_buttons.addWidget(self.b_1)
+        self.b_2 = QPushButton("2) Setup Sorted Filenames")
+        self.grid_buttons.addWidget(self.b_2)
+        self.b_3 = QPushButton("3) Orient Images (rotating)")
+        self.grid_buttons.addWidget(self.b_3)
+        self.b_4 = QPushButton("4) Run automatic setup scripts")
+        self.grid_buttons.addWidget(self.b_4)
+
+        # Grid bottom
+        self.progress = QProgressBar(self)
+        self.progress.hide()
+        self.grid_bottom.addWidget(self.progress)
+
+        self.b_exit = QPushButton("Exit")
+        self.b_exit.setDefault(True)
+        self.grid_bottom.addWidget(self.b_exit)
+
+        # Super grid
+        self.super_grid = QGridLayout()
+        self.super_grid.addLayout(self.grid_buttons, 1, 0)
+        self.super_grid.addLayout(self.grid_bottom, 2, 0)
+        self.setLayout(self.super_grid)
+        self.setWindowTitle("Align to Active Brainstem Atlas - Setup Page")
+        self.resize(1000, 450)
+
+    def updateButtons(self):
         """
         Locates where you are in the pipeline by reading the brains_info/STACK_progress.ini
-        
+
         Buttons corresponding to previous steps are marked as "completed", buttons corresponding
         to future steps are marked as "unpressable" and are grayed out.
         """
-        print('format grid buttons current step is', self.curr_step)
-        if '1-2' in self.curr_step:
-            active_button = self.b_1
-        elif '1-3' in self.curr_step:
-            active_button = self.b_2
-        elif '1-4' in self.curr_step:
-            active_button = self.b_3
-        elif '1-5' in self.curr_step:
-            active_button = self.b_4
-        else:
-            active_button = None
-            print(self.curr_step)
 
-        passed_curr_step = False
-        for grid_button in [self.b_1, self.b_2, self.b_3, self.b_4]:
-            if not passed_curr_step and grid_button != active_button:
-                format_grid_button_completed(grid_button)
-            elif grid_button == active_button:
-                passed_curr_step = True
-                format_grid_button_initial(active_button)
-            elif passed_curr_step and grid_button != active_button:
-                format_grid_button_cantStart(grid_button)
+        self.stain = self.sqlController.histology.counterstain
 
-    def button_grid_push(self, button):
+        try:
+            self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
+            print('format grid buttons current step is', self.curr_step)
+
+            curr_step_index = ['1-3', '1-4', '1-5', '1-6'].index(self.curr_step[:3])
+            for index, button in enumerate([self.b_1, self.b_2, self.b_3, self.b_4]):
+                if index <= curr_step_index + 1:
+                    button.setEnabled(True)
+                else:
+                    button.setEnabled(False)
+
+        # If there are no stacks/brains that have been started
+        except KeyError:
+            for button in [self.b_1, self.b_2, self.b_3, self.b_4]:
+                button.setEnabled(False)
+
+    def clickButton(self, button):
         """
         If any of the "grid" buttons are pressed, this is the callback function.
         In this case, "grid" buttons have a one-to_one correspondance to the steps in the pipeline.
@@ -193,7 +117,7 @@ class init_GUI(QWidget):
         # Create thumbnails
         if button == self.b_1:
             try:
-                self.create_thumbnails()
+                self.createThumbnails()
                 self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-3_setup_thumbnails')
             except Exception as e:
                 sys.stderr.write(str(e))
@@ -201,7 +125,7 @@ class init_GUI(QWidget):
         elif button == self.b_2:
             try:
                 subprocess.call(['python', 'a_GUI_setup_sorted_filenames.py', self.stack])
-                self.updateFields()
+                self.updateButtons()
             except Exception as e:
                 sys.stderr.write(str(e))
         # Adjust image orientations
@@ -216,9 +140,12 @@ class init_GUI(QWidget):
             message += " Several minutes per image."
             QMessageBox.about(self, "Popup Message", message)
             preprocess_setup(self.stack, self.stain)
+
             #subprocess.call(['python', 'utilities/a_script_preprocess_1.py', self.stack, self.stain])
             subprocess.call(['python', 'a_script_preprocess_2.py', self.stack, self.stain])
+
             self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-6_setup_scripts')
+
             """
             pipeline_status = get_pipeline_status(self.stack)
             if not 'preprocess_1' in pipeline_status and \
@@ -238,15 +165,10 @@ class init_GUI(QWidget):
             #    #set_step_completed_in_progress_ini( self.stack, '1-6_setup_scripts')
             print('finished in button 4')
             """
+        elif button == self.b_exit:
+            self.closeEvent(None)
 
-        self.updateFields()
-
-    def button_push(self, button):
-        """
-        Secondary button callback function
-        """
-        if button == self.b_exit:
-            sys.exit(app.exec_())
+        self.updateButtons()
 
     def center(self):
         """
@@ -258,11 +180,7 @@ class init_GUI(QWidget):
         frameGm.moveCenter(centerPoint)
         self.move(frameGm.topLeft())
 
-    def closeEvent(self, event):
-        sys.exit(app.exec_())
-        # close_main_gui( ex, reopen=True )
-
-    def create_thumbnails(self):
+    def createThumbnails(self):
         """
         This will copy the valid file to the raw dir and then
         create the thumbnails that are used throughout the pipeline
@@ -289,6 +207,10 @@ class init_GUI(QWidget):
                 print('File {} does not exist'.format(input_fp))
         self.progress.hide()
         self.b_exit.show()
+
+    def closeEvent(self, event):
+        sys.exit(app.exec_())
+        # close_main_gui( ex, reopen=True )
 
 
 def main():

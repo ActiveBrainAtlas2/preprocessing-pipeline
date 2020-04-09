@@ -1,4 +1,5 @@
 import os
+import sys
 import argparse
 
 from PyQt5.QtCore import *
@@ -7,9 +8,6 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout, QLineEdit,
                              QPushButton, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QFrame, QComboBox,
                              QMessageBox)
 
-from tkinter import *
-
-sys.path.append(os.path.join(os.getcwd(), 'utilities'))
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 
