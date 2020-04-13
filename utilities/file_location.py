@@ -25,10 +25,10 @@ class FileLocationManager(object):
         self.root = ROOT_DIR
         self.czi = os.path.join(ROOT_DIR, stack, CZI)
         self.tif = os.path.join(ROOT_DIR, stack, TIF)
-        self.web_thumbnail = os.path.join(ROOT_DIR, stack, THUMBNAIL)
+        self.thumbnail_web = os.path.join(ROOT_DIR, stack, THUMBNAIL)
+        self.thumbnail_prep = os.path.join(ROOT_DIR, stack, PREPS, THUMBNAIL)
         self.brain_info = os.path.join(ROOT_DIR, stack, BRAIN_INFO)
         self.oriented = os.path.join(ROOT_DIR, stack, PREPS, ORIENTED)
         self.histogram = os.path.join(ROOT_DIR, stack, HISTOGRAM)
-        self.prep_thumbnail = os.path.join(ROOT_DIR, stack, PREPS, THUMBNAIL)
         self.custom_transform = os.path.join(self.brain_info, CUSTOM_TRANSFORM)
         self.aligned_to = os.path.join(ROOT_DIR, stack, PREPS, ALIGNEDTO)

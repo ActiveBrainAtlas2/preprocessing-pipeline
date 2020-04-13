@@ -8,24 +8,19 @@ from model.atlas_schema import manipulate_images
 from sql_setup import session
 
 def fetch_and_run(prep_id, limit):
-    try: 
-        animal = session.query(Animal).filter(Animal.prep_id == prep_id).one()
-    except (NoResultFound):
-        print('No results found for prep_id: {}.'.format(prep_id))
-        sys.exit()
-        
-    slide_processor = SlideProcessor(animal, session)
-    #slide_processor.process_czi_dir()
-    manipulate_images(prep_id, limit)
+
+    slide_processor = SlideProcessor(prep_id, session)
+    slide_processor.process_czi_dir()
+    #manipulate_images(prep_id, limit)
     #slide_processor.update_tif_data()
     #slide_processor.test_tables()
 
 def download(prep_id, session, engine):
-    download_spreadsheet(prep_id, session, engine)    
-    
+    download_spreadsheet(prep_id, session, engine)
+
 def upload(xlsx, session, engine):
-    upload_spreadsheet(xlsx, session, engine)      
-    
+    upload_spreadsheet(xlsx, session, engine)
+
 if __name__ == '__main__':
     # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')
