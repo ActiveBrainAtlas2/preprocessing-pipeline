@@ -109,8 +109,7 @@ class init_GUI(QWidget):
 
     def __init__(self, stack, parent=None):
         super(init_GUI, self).__init__(parent)
-        self.font_h1 = QFont("Arial", 32)
-        self.font_p1 = QFont("Arial", 16)
+
         # create a dataManager object
         self.sqlController = SqlController()
         self.stack = stack
@@ -120,9 +119,7 @@ class init_GUI(QWidget):
         self.valid_sections = self.sqlController.get_valid_sections(stack)
         self.valid_section_keys = sorted(list(self.valid_sections))
 
-        section_length =  len(self.valid_section_keys)
-
-        self.curr_section_index = section_length // 2
+        self.curr_section_index = len(self.valid_section_keys) // 2
         self.prev_section_index = self.curr_section_index
         self.next_section_index = self.curr_section_index
         self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
@@ -132,6 +129,9 @@ class init_GUI(QWidget):
         self.initUI()
 
     def initUI(self):
+        self.font_h1 = QFont("Arial", 32)
+        self.font_p1 = QFont("Arial", 16)
+
         # Set Layout and Geometry of Window
         self.grid_top = QGridLayout()
         self.grid_body_upper = QGridLayout()
@@ -209,7 +209,7 @@ class init_GUI(QWidget):
         self.b_remove = QPushButton("Remove section")
         self.b_remove.setDefault(True)
         self.b_remove.setEnabled(True)
-        self.b_remove.clicked.connect(lambda: self.buttonPress(self.b_remove))
+        self.b_remove.clicked.connect(lambda: self.clickButton(self.b_remove))
         self.b_remove.setStyleSheet("color: rgb(0,0,0); background-color: #C91B1B;")
         self.grid_body_lower.addWidget(self.b_remove, 2, 1)
         #self.grid_body_lower.addWidget(self.b_addPlaceholder, 2, 2)
@@ -217,14 +217,14 @@ class init_GUI(QWidget):
         self.b_left = QPushButton("<--   Move Section Left   <--")
         self.b_left.setDefault(True)
         self.b_left.setEnabled(True)
-        self.b_left.clicked.connect(lambda: self.buttonPress(self.b_left))
+        self.b_left.clicked.connect(lambda: self.clickButton(self.b_left))
         self.b_left.setStyleSheet("color: rgb(0,0,0); background-color: rgb(200,250,250);")
         self.grid_body_lower.addWidget(self.b_left, 0, 5)
         # Button Text Field
         self.b_right = QPushButton("-->   Move Section Right   -->")
         self.b_right.setDefault(True)
         self.b_right.setEnabled(True)
-        self.b_right.clicked.connect(lambda: self.buttonPress(self.b_right))
+        self.b_right.clicked.connect(lambda: self.clickButton(self.b_right))
         self.b_right.setStyleSheet("color: rgb(0,0,0); background-color: rgb(200,250,250);")
         self.grid_body_lower.addWidget(self.b_right, 0, 6)
         # Horozontal Line
@@ -233,7 +233,7 @@ class init_GUI(QWidget):
         self.b_done = QPushButton("Finished")
         self.b_done.setDefault(True)
         self.b_done.setEnabled(True)
-        self.b_done.clicked.connect(lambda: self.buttonPress(self.b_done))
+        self.b_done.clicked.connect(lambda: self.clickButton(self.b_done))
         self.b_done.setStyleSheet("color: rgb(0,0,0); background-color: #dfbb19;")
         self.grid_body_lower.addWidget(self.b_done, 2, 6)
 
@@ -331,10 +331,19 @@ class init_GUI(QWidget):
         self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         self.prev_section = self.getPrevValidSection(self.curr_section_index)
         self.next_section = self.getNextValidSection(self.curr_section_index)
+
         # Update the section and filename at the top
-        self.updateCurrHeaderFields()
+        label = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['source']
+        self.e4.setText(label)
+        self.e5.setText(str(self.curr_section))
+
         # Update the quality selection in the bottom left
-        self.updateQualityField()
+        curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
+        text = curr_fn['quality']
+        index = self.dd.findText(text, Qt.MatchFixedString)
+        if index >= 0:
+            self.dd.setCurrentIndex(index)
+
         self.loadImage()
 
     def getNextValidSection(self, section_index):
@@ -351,7 +360,7 @@ class init_GUI(QWidget):
         self.prev_section = self.valid_sections[self.valid_section_keys[self.prev_section_index]]['destination']
         return self.prev_section
 
-    def buttonPress(self, button):
+    def clickButton(self, button):
         # Brighten an image
         if button in [self.b_left, self.b_right, self.b_remove]:
             section_number = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['section_number']
@@ -361,8 +370,22 @@ class init_GUI(QWidget):
             elif button == self.b_right:
                 self.sqlController.move_section(self.stack, section_number, 1)
             elif button == self.b_remove:
-                # Set the sections to inactive
-                self.removeCurrSection()
+                result = self.warnMessageBox(
+                    'Are you sure you want to totally remove this section from this brain?\n\n' +
+                    'Warning: The image will be marked as irrelevant to the current brain!'
+                )
+
+                # The answer is Yes
+                if result == 2:
+                    # Remove the current section from "self.valid_sections
+                    self.sqlController.inactivate_section(self.stack, section_number)
+                    self.valid_sections = self.sqlController.get_valid_sections(self.stack)
+                    self.valid_section_keys = sorted(list(self.valid_sections))
+
+                    if self.curr_section_index == 0:
+                        self.curr_section_index = len(self.valid_section_keys) - 1
+                    else:
+                        self.curr_section_index = self.curr_section_index - 1
             else:
                 pass
 
@@ -370,66 +393,30 @@ class init_GUI(QWidget):
             self.valid_sections = self.sqlController.get_valid_sections(self.stack)
             self.valid_section_keys = sorted(list(self.valid_sections))
             self.setCurrSection(self.curr_section_index)
+
         if button == self.b_done:
-            self.finished()
+            # TODO change this to database update
+            self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
+            self.sqlController.save_valid_sections(self.valid_sections)
+
+            sys.exit(app.exec_())
+
+    def warnMessageBox(self, text):
+        msg_box = QMessageBox()
+        msg_box.setText(text)
+        msg_box.addButton(QPushButton('Cancel'), QMessageBox.RejectRole)
+        msg_box.addButton(QPushButton('No'), QMessageBox.NoRole)
+        msg_box.addButton(QPushButton('Yes'), QMessageBox.YesRole)
+
+        return msg_box.exec_()
 
 
-    def removeCurrSection(self):
-        msgBox = QMessageBox()
-        text = 'Are you sure you want to totally remove this section from this brain?\n\n'
-        text += 'Warning: The image will be marked as irrelevant to the current brain!'
-        msgBox.setText(text)
-        msgBox.addButton(QPushButton('Cancel'), QMessageBox.RejectRole)
-        msgBox.addButton(QPushButton('No'), QMessageBox.NoRole)
-        msgBox.addButton(QPushButton('Yes'), QMessageBox.YesRole)
-        ret = msgBox.exec_()
-        # Cancel
-        if ret == 0:
-            pass
-        # No
-        elif ret == 1:
-            pass
-        # Yes
-        elif ret == 2:
-            # Remove the current section from "self.valid_sections
-            section_number = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['section_number']
-            self.sqlController.inactivate_section(self.stack, section_number)
-            self.valid_sections = self.sqlController.get_valid_sections(self.stack)
-            self.valid_section_keys = sorted(list(self.valid_sections))
-
-            if self.curr_section_index == 0:
-                self.curr_section_index = len(self.valid_section_keys) - 1
-            else:
-                self.curr_section_index = self.curr_section_index - 1
-
-
-    def updateCurrHeaderFields(self):
-        label = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['source']
-        self.e4.setText(label)
-        self.e5.setText(str(self.curr_section))
-
-    def updateQualityField(self):
-        curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
-        text = curr_fn['quality']
-        index = self.dd.findText(text, Qt.MatchFixedString)
-        if index >= 0:
-            self.dd.setCurrentIndex(index)
-
-    def finished(self):
-        # TODO change this to database update
-        self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
-        self.sqlController.save_valid_sections(self.valid_sections)
-        # close_main_gui( ex )
+    def closeEvent(self, event):
         sys.exit(app.exec_())
+        # close_main_gui( ex, reopen=True )
 
 
-def close_gui():
-    # ex.hide()
-    sys.exit(app.exec_())
-
-
-
-def main():
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description='GUI for sorting filenames')
@@ -440,9 +427,7 @@ def main():
     sections = list(sqlController.get_valid_sections(stack))
 
     if len(sections) > 0:
-        global app
         app = QApplication(sys.argv)
-        global ex
         ex = init_GUI(stack)
         # Run GUI as usual
         ex.show()
@@ -451,6 +436,3 @@ def main():
         sys.exit(app.exec_())
     else:
         print('There are no sections to work with.')
-
-if __name__ == '__main__':
-    main()

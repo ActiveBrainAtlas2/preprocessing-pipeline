@@ -175,6 +175,7 @@ class init_GUI(QWidget):
         """
         TIF = self.fileLocationManager.tif
         sections = self.sqlController.get_valid_sections(self.stack)
+        # The size has to be a separate variable, or the progress bar doesn't work, don't know why
         size = len(sections.values()) - 1
 
         self.b_exit.hide()
