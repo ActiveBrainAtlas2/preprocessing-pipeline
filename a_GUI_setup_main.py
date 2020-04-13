@@ -3,26 +3,15 @@ import subprocess
 import argparse
 from time import sleep
 
-sys.path.append("utilities")
-from PyQt5.QtCore import *
-from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton, QMessageBox, QProgressBar
 
 from utilities.sqlcontroller import SqlController
 from utilities.a_script_preprocess_setup import preprocess_setup
 from utilities.file_location import FileLocationManager
 
-parser = argparse.ArgumentParser(
-    formatter_class=argparse.RawDescriptionHelpFormatter,
-    description='Setup main page')
-parser.add_argument("stack", type=str, help="stack name")
-args = parser.parse_args()
-stack = args.stack
 
-
-# noinspection PyAttributeOutsideInit
 class init_GUI(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, stack, parent=None):
         super(init_GUI, self).__init__(parent)
 
         # Stack specific info, determined from dropdown menu selection
@@ -176,15 +165,15 @@ class init_GUI(QWidget):
         # close_main_gui( ex, reopen=True )
 
 
-def main():
-    global app
-    app = QApplication(sys.argv)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description='Setup main page')
+    parser.add_argument("stack", type=str, help="stack name")
+    args = parser.parse_args()
+    stack = args.stack
 
-    global ex
-    ex = init_GUI()
+    app = QApplication(sys.argv)
+    ex = init_GUI(stack)
     ex.show()
     sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    main()

@@ -15,7 +15,6 @@ Here is ID, values for the progress lookup table:
 """
 
 from sqlalchemy.orm.exc import NoResultFound
-from itertools import zip_longest
 import os, sys, subprocess, time
 from datetime import datetime
 from matplotlib import pyplot as plt
@@ -28,7 +27,6 @@ from model.animal import Animal
 from model.histology import Histology as AlcHistology
 from model.scan_run import ScanRun as AlcScanRun
 from model.slide import Slide as AlcSlide
-from model.section import RawSection as AlcRawSection
 from model.slide_czi_to_tif import SlideCziTif as AlcSlideCziTif
 from model.task import Task
 from sql_setup import dj, database
@@ -80,9 +78,7 @@ class SlideProcessor(object):
         except OSError as e:
             print(e)
             sys.exit()
-        no_czi = len(czi_files)
-        no_scenes = 4
-        total_sections = no_czi * no_scenes
+
         section_number = 1
         for i, czi_file in enumerate(czi_files):
             extension = os.path.splitext(czi_file)[1]
@@ -116,7 +112,7 @@ class SlideProcessor(object):
                         tif = AlcSlideCziTif()
                         tif.slide_id = slide.id
                         tif.section_number = section_number
-                        tif.scene_number = j
+                        tif.scene_number = j + 1
                         tif.channel = channel_counter
                         tif.file_name = newtif
                         tif.file_size = 0
@@ -137,45 +133,6 @@ class SlideProcessor(object):
         self.session.merge(task)
 
         self.session.commit()
-
-
-
-
-    def create_sections(self):
-        """
-        """
-        prep_id = self.animal.prep_id
-        self.session.query(AlcRawSection).filter(AlcRawSection.prep_id == prep_id).delete(synchronize_session=False)
-        slides = self.session.query(AlcSlide).filter(AlcSlide.scan_run_id.in_(self.scan_ids)).all()
-        slide_ids = [slide.id for slide in slides]
-        no_slides = len(slide_ids)
-        no_scenes = 4
-        total_sections = no_slides * no_scenes
-        section_list = [i for i in range(1,total_sections + 1)]
-        tifs = self.session.query(AlcSlideCziTif).filter(AlcSlideCziTif.slide_id.in_(slide_ids)).filter(AlcSlideCziTif.channel_index==0).all()
-        for tif, section_number in zip_longest(tifs, section_list):
-            if tif is not None:
-                name = '{}_{}'.format(tif.file_name, section_number)
-            else:
-                name = '{}_{}'.format(prep_id, section_number)
-            print(name, section_number)
-            section = AlcRawSection()
-            section.source_file = '{}'.format(name)
-            section.prep_id = prep_id
-            section.section_number = int(section_number)
-            section.active = True
-            section.created = datetime.now()
-            self.session.add(section)
-        self.session.commit()
-
-
-
-
-
-
-
-
-
 
 
     def update_tif_data(self):
