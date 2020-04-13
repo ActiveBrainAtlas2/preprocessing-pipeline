@@ -1,8 +1,8 @@
 """
 Working with OpenCV
-It is possible that you may need to use an image created using skimage with OpenCV or vice versa. 
-OpenCV image data can be accessed (without copying) in NumPy (and, thus, in scikit-image). 
-OpenCV uses BGR (instead of scikit-image’s RGB) for color images, and its dtype is 
+It is possible that you may need to use an image created using skimage with OpenCV or vice versa.
+OpenCV image data can be accessed (without copying) in NumPy (and, thus, in scikit-image).
+OpenCV uses BGR (instead of scikit-image’s RGB) for color images, and its dtype is
 uint8 by default (See Image data types and what they mean). BGR stands for Blue Green Red.
 Here is ID, values for the progress lookup table:
 |  1 | Slides are scanned                     | prepipeline |
@@ -15,6 +15,7 @@ Here is ID, values for the progress lookup table:
 """
 
 from sqlalchemy.orm.exc import NoResultFound
+from itertools import zip_longest
 import os, sys, subprocess, time
 from datetime import datetime
 from matplotlib import pyplot as plt
@@ -27,21 +28,12 @@ from model.animal import Animal
 from model.histology import Histology as AlcHistology
 from model.scan_run import ScanRun as AlcScanRun
 from model.slide import Slide as AlcSlide
+from model.section import RawSection as AlcRawSection
 from model.slide_czi_to_tif import SlideCziTif as AlcSlideCziTif
-from model.task import Task, ProgressLookup
+from model.task import Task
 from sql_setup import dj, database
+from utilities.file_location import FileLocationManager
 
-
-DATA_ROOT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
-CZI = 'czi'
-TIF = 'tif'
-HIS = 'histogram'
-ROTATED = 'rotated'
-MASKED = 'masked'
-NORMALIZED = 'normalized'
-PRECOMPUTED = 'precomputed'
-PREPS = 'preps'
-THUMBNAIL = 'thumbnail'
 schema = dj.schema(database)
 
 
@@ -49,18 +41,22 @@ class SlideProcessor(object):
     """ Create a class for processing the pipeline,
     """
 
-    def __init__(self, animal, session):
+    def __init__(self, prep_id, session):
         """ setup the attributes for the SlidesProcessor class
             Args:
                 animal: object of animal to process
                 session: sql session to run queries
         """
+        try:
+            animal = session.query(Animal).filter(Animal.prep_id == prep_id).one()
+        except (NoResultFound):
+            print('No results found for prep_id: {}.'.format(prep_id))
+            sys.exit()
+
         self.animal = animal
         self.session = session
         self.scan_ids = [scan.id for scan in self.animal.scan_runs]
-                
-        self.CZI_FOLDER = os.path.join(DATA_ROOT, self.animal.prep_id, CZI)
-        self.TIF_FOLDER = os.path.join(DATA_ROOT, self.animal.prep_id, TIF)
+        self.fileLocationManager = FileLocationManager(animal.prep_id)
 
     def process_czi_dir(self):
         """
@@ -78,61 +74,62 @@ class SlideProcessor(object):
             self.session.add(task)
 
         self.session.commit()
-        
+
         try:
-            czi_files = sorted(os.listdir(self.CZI_FOLDER))
+            czi_files = sorted(os.listdir(self.fileLocationManager.czi))
         except OSError as e:
             print(e)
             sys.exit()
-            
+        no_czi = len(czi_files)
+        no_scenes = 4
+        total_sections = no_czi * no_scenes
         section_number = 1
-        #czi_files = ['DK43_slide060_2020_01_23__8024.czi']
         for i, czi_file in enumerate(czi_files):
-            slide = AlcSlide()
-            slide.scan_run_id = scan_id
-            slide.slide_physical_id = int(re.findall(r'\d+', czi_file)[1])
-            slide.rescan_number = "1"
-            slide.slide_status = 'Good'
-            slide.processed = False
-            slide.file_size = os.path.getsize(os.path.join(self.CZI_FOLDER, czi_file))
-            slide.file_name = czi_file
-            slide.created = datetime.fromtimestamp(os.path.getmtime(os.path.join(self.CZI_FOLDER, czi_file)))
-            self.session.add(slide)
-            self.session.flush()
-            
-            # Get metadata from the czi file
-            czi_file_path = os.path.join(self.CZI_FOLDER, czi_file)
-            metadata_dict = get_czi_metadata(czi_file_path)
-            series = get_fullres_series_indices(metadata_dict)
-            scene_counter = 0
-            for j, series_index in enumerate(series):
-                scene_counter += 1
-                channels = range(metadata_dict[series_index]['channels'])
-                channel_counter = 0
-                width = metadata_dict[series_index]['width']
-                height = metadata_dict[series_index]['height']
-                for channel in channels:
-                    channel_counter += 1
-                    newtif = os.path.splitext(czi_file)[0]
-                    newtif = '{}_S{}_C{}.tif'.format(czi_file, scene_counter, channel_counter)
-                    newtif = newtif.replace('.czi','')
-                    tif = AlcSlideCziTif()
-                    tif.slide_id = slide.id
-                    tif.section_number = section_number
-                    tif.scene_number = scene_counter
-                    tif.channel = channel_counter
-                    tif.file_name = newtif
-                    tif.file_size = 0
-                    tif.active = 1
-                    tif.width = width
-                    tif.height = height
-                    tif.channel_index = channel
-                    tif.scene_index = series_index
-                    tif.processing_duration = 0
-                    tif.created = time.strftime('%Y-%m-%d %H:%M:%S')
-                    print('{}\t{}\t{}\t{}\t{}\t{}'.format(newtif, tif.slide_id, tif.scene_number, tif.channel, width, height))
-                    self.session.add(tif)
-                section_number += 1
+            extension = os.path.splitext(czi_file)[1]
+            if extension.endswith('czi'):
+                slide = AlcSlide()
+                slide.scan_run_id = scan_id
+                slide.slide_physical_id = int(re.findall(r'\d+', czi_file)[1])
+                slide.rescan_number = "1"
+                slide.slide_status = 'Good'
+                slide.processed = False
+                slide.file_size = os.path.getsize(os.path.join(self.fileLocationManager.czi, czi_file))
+                slide.file_name = czi_file
+                slide.created = datetime.fromtimestamp(os.path.getmtime(os.path.join(self.fileLocationManager.czi, czi_file)))
+                self.session.add(slide)
+                self.session.flush()
+
+                # Get metadata from the czi file
+                czi_file_path = os.path.join(self.fileLocationManager.czi, czi_file)
+                metadata_dict = get_czi_metadata(czi_file_path)
+                #print(metadata_dict)
+                series = get_fullres_series_indices(metadata_dict)
+                for j, series_index in enumerate(series):
+                    channels = range(metadata_dict[series_index]['channels'])
+                    channel_counter = 0
+                    width = metadata_dict[series_index]['width']
+                    height = metadata_dict[series_index]['height']
+                    for channel in channels:
+                        channel_counter += 1
+                        newtif = '{}_S{}_C{}.tif'.format(czi_file, series_index, channel_counter)
+                        newtif = newtif.replace('.czi','')
+                        tif = AlcSlideCziTif()
+                        tif.slide_id = slide.id
+                        tif.section_number = section_number
+                        tif.scene_number = j
+                        tif.channel = channel_counter
+                        tif.file_name = newtif
+                        tif.file_size = 0
+                        tif.active = 1
+                        tif.width = width
+                        tif.height = height
+                        tif.channel_index = channel
+                        tif.scene_index = series_index
+                        tif.processing_duration = 0
+                        tif.created = time.strftime('%Y-%m-%d %H:%M:%S')
+                        print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(newtif, tif.section_number, tif.slide_id, tif.scene_index, tif.channel, width, height))
+                        self.session.add(tif)
+                    section_number += 1
         # lookup_id=3 is for the scanning CZI
         task =   self.session.query(Task).filter(Task.lookup_id == 3)\
         .filter(Task.prep_id == self.animal.prep_id).one()
@@ -141,9 +138,49 @@ class SlideProcessor(object):
 
         self.session.commit()
 
+
+
+
+    def create_sections(self):
+        """
+        """
+        prep_id = self.animal.prep_id
+        self.session.query(AlcRawSection).filter(AlcRawSection.prep_id == prep_id).delete(synchronize_session=False)
+        slides = self.session.query(AlcSlide).filter(AlcSlide.scan_run_id.in_(self.scan_ids)).all()
+        slide_ids = [slide.id for slide in slides]
+        no_slides = len(slide_ids)
+        no_scenes = 4
+        total_sections = no_slides * no_scenes
+        section_list = [i for i in range(1,total_sections + 1)]
+        tifs = self.session.query(AlcSlideCziTif).filter(AlcSlideCziTif.slide_id.in_(slide_ids)).filter(AlcSlideCziTif.channel_index==0).all()
+        for tif, section_number in zip_longest(tifs, section_list):
+            if tif is not None:
+                name = '{}_{}'.format(tif.file_name, section_number)
+            else:
+                name = '{}_{}'.format(prep_id, section_number)
+            print(name, section_number)
+            section = AlcRawSection()
+            section.source_file = '{}'.format(name)
+            section.prep_id = prep_id
+            section.section_number = int(section_number)
+            section.active = True
+            section.created = datetime.now()
+            self.session.add(section)
+        self.session.commit()
+
+
+
+
+
+
+
+
+
+
+
     def update_tif_data(self):
         try:
-            os.listdir(self.TIF_FOLDER)
+            os.listdir(self.fileLocationManager.tif)
         except OSError as e:
             print(e)
             sys.exit()
@@ -152,15 +189,15 @@ class SlideProcessor(object):
         slide_ids = [slide.id for slide in slides]
         tifs = self.session.query(AlcSlideCziTif).filter(AlcSlideCziTif.slide_id.in_(slide_ids)).filter(AlcSlideCziTif.active==1).all()
         for tif in tifs:
-            if os.path.exists(os.path.join(self.TIF_FOLDER, tif.file_name)):
-                tif.file_size = os.path.getsize(os.path.join(self.TIF_FOLDER, tif.file_name))
+            if os.path.exists(os.path.join(self.fileLocationManager.tif, tif.file_name)):
+                tif.file_size = os.path.getsize(os.path.join(self.fileLocationManager.tif, tif.file_name))
                 self.session.merge(tif)
         self.session.commit()
 
 
     def compare_tif(self):
-        INPUT = os.path.join(DATA_ROOT, self.brain, TIF)
-        
+        INPUT = self.fileLocationManager.tif
+
         slides = self.session.query(AlcSlide).filter(AlcSlide.scan_run_id.in_(self.scan_ids))
         slide_ids = [slide.id for slide in slides]
         tifs = self.session.query(AlcSlideCziTif).filter(AlcSlideCziTif.slide_id.in_(slide_ids)).filter(active=1)
@@ -171,19 +208,19 @@ class SlideProcessor(object):
             print(tif.width, tif.height)
             if img.shape[3] != tif.height or img.shape[4] != tif.width:
                 print(f'The information about {tif.file_name} is inconsistent')
-                
+
     def test_tables(self):
-        try: 
+        try:
             animal = self.session.query(Animal).filter(Animal.prep_id == self.animal.prep_id).one()
         except (NoResultFound):
             print('No results found for prep_id: {}.'.format(animal.prep_id))
 
-        try: 
+        try:
             self.session.query(AlcHistology).filter(AlcHistology.prep_id == animal.prep_id).all()
         except (NoResultFound):
             print('No histology results found for prep_id: {}.'.format(animal.prep_id))
 
-        try: 
+        try:
             self.session.query(AlcScanRun).filter(AlcScanRun.prep_id == animal.prep_id).all()
         except (NoResultFound):
             print('No scan run results found for prep_id: {}.'.format(animal.prep_id))
@@ -193,7 +230,7 @@ class SlideProcessor(object):
         except (NoResultFound):
             print('No slides found for prep_id: {}.'.format(animal.prep_id))
 
-        try: 
+        try:
             slides = self.session.query(AlcSlide).filter(AlcSlide.scan_run_id.in_(self.scan_ids)).all()
             slides_ids = [slide.id for slide in slides]
             tifs = self.session.query(AlcSlideCziTif).filter(AlcSlideCziTif.slide_id.in_(slides_ids))
@@ -202,34 +239,36 @@ class SlideProcessor(object):
             print('No tifs found for prep_id: {}.'.format(animal.prep_id))
 
 
+    # End of table definitions
+
+    def make_thumbnail(self, file_name):
+        """
+        This will create a png in the web thumbnail dir, and another one
+        in the preps dir that are used throughout the pipeline
+        """
+        result = 0
+
+        source = os.path.join(self.fileLocationManager.tif, file_name)
+        web_destination = os.path.join(self.fileLocationManager.thumbnail_web, file_name)
+        prep_destination = os.path.join(self.fileLocationManager.thumbnail_prep, file_name)
+        if os.path.exists(source):
+            # Create thumbnails
+            command = ['convert', source, '-resize 3.125%', '-auto-level',
+                       '-normalize', ',-compress lzw', prep_destination]
+            #print('prep:', " ".join(command))
+            #subprocess.run(command)
+            base = os.path.splitext(file_name)[0]
+            output_png = os.path.join(web_destination, base + '.png')
+            command = ['convert', prep_destination, output_png]
+            #print('web:', " ".join(command))
+            #subprocess.run(command)
+            result = 1
+        else:
+            print('File {} does not exist'.format(source))
+
+        return result
 
 
-
-# End of table definitions
-
-
-def make_thumbnail(prep_id, file_name):
-    io.use_plugin('tifffile')
-
-    OUTPUT = os.path.join(DATA_ROOT, prep_id, THUMBNAIL)
-    input_tif = os.path.join(DATA_ROOT, prep_id, TIF, file_name)
-
-    try:
-        img = io.imread(input_tif)
-    except:
-        return 0
-
-    img = get_last_2d(img)
-    img = everything_cv(img, 1)
-    base = os.path.splitext(file_name)[0]
-    output_png = os.path.join(OUTPUT, base + '.png')
-    try:
-        io.imsave(output_png, img, check_contrast=False)
-        del img
-    except:
-        return 0
-
-    return 1
 
 def everything_cv(img, rotation):
     scale = 1 / float(32)
@@ -249,7 +288,7 @@ def everything_cv(img, rotation):
     # use linear interpolation of cdf to find new pixel values
     img_norm = np.interp(flat, bins[:-1], cdf)
     img_norm = np.reshape(img_norm, img.shape)
-    img_norm = two_16 - img_norm
+    #img_norm = two_16 - img_norm
     return img_norm.astype('uint16')
 
 def get_last_2d(data):
@@ -302,9 +341,9 @@ def make_tif(session, prep_id, file_id):
     tif = session.query(AlcSlideCziTif).filter(AlcSlideCziTif.id==file_id).one()
     slide = session.query(AlcSlide).filter(AlcSlide.id==tif.slide_id).one()
     czi_file = os.path.join(CZI_FOLDER, slide.file_name)
-        
+
     tif_file = os.path.join(TIF_FOLDER, tif.file_name)
-    command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate', 
+    command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate',
                               '-series', str(tif.scene_index), '-channel', str(tif.channel_index), '-nooverwrite', czi_file, tif_file]
     #cli = " ".join(command)
     #command = ['touch', tif_file]
@@ -341,39 +380,4 @@ def linnorm(img, limit):
     img_norm = np.reshape(img_norm, img.shape)
     img_norm = limit - img_norm
     return img_norm
-
-
-def flip_rotate(prep_id, tif):
-    io.use_plugin('tifffile')
-    INPUT = os.path.join(DATA_ROOT, prep_id, TIF)
-    OUTPUT = os.path.join(DATA_ROOT, prep_id, ROTATED)
-    input_tif = os.path.join(INPUT, tif)
-    output_tif = os.path.join(OUTPUT, tif)
-
-    try:
-        img = io.imread(input_tif)
-    except:
-        return 'Bad file size'
-
-    try:
-        img = np.rot90(img, 1)
-    except:
-        print('could not rotate', tif)
-
-    try:
-        img = np.fliplr(img)
-    except:
-        print('could not flip', tif)
-
-    try:
-        img = img_as_uint(img)
-    except:
-        print('could not convert to 16bit', tif)
-
-    try:
-        io.imsave(output_tif, img)
-    except:
-        print('Could not save {}'.format(output_tif))
-
-    return " Flipped and rotated"
 

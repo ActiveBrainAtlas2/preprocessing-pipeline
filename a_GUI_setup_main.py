@@ -8,7 +8,6 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton, QMessageBox, QProgressBar
 
-from utilities.utilities2015 import execute_command
 from utilities.sqlcontroller import SqlController
 from utilities.a_script_preprocess_setup import preprocess_setup
 from utilities.file_location import FileLocationManager
@@ -31,7 +30,7 @@ class init_GUI(QWidget):
         self.fileLocationManager = FileLocationManager(self.stack)
         self.sqlController = SqlController()
         self.sqlController.get_animal_info(self.stack)
-        self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-2_setup_images')
+        self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-3_setup_images')
         self.stain = self.sqlController.histology.counterstain
         self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
 
@@ -39,7 +38,6 @@ class init_GUI(QWidget):
         self.initUI()
 
         # Set buttons functionality
-        self.b_1.clicked.connect(lambda: self.clickButton(self.b_1))
         self.b_2.clicked.connect(lambda: self.clickButton(self.b_2))
         self.b_3.clicked.connect(lambda: self.clickButton(self.b_3))
         self.b_4.clicked.connect(lambda: self.clickButton(self.b_4))
@@ -56,8 +54,8 @@ class init_GUI(QWidget):
         self.grid_bottom = QGridLayout()
 
         # Grid buttons
-        self.b_1 = QPushButton("1) Create Initial Thumbnails")
-        self.grid_buttons.addWidget(self.b_1)
+        #self.b_1 = QPushButton("1) Create Initial Thumbnails")
+        #self.grid_buttons.addWidget(self.b_1)
         self.b_2 = QPushButton("2) Setup Sorted Filenames")
         self.grid_buttons.addWidget(self.b_2)
         self.b_3 = QPushButton("3) Orient Images (rotating)")
@@ -96,8 +94,8 @@ class init_GUI(QWidget):
             self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
             print('format grid buttons current step is', self.curr_step)
 
-            curr_step_index = ['1-3', '1-4', '1-5', '1-6'].index(self.curr_step[:3])
-            for index, button in enumerate([self.b_1, self.b_2, self.b_3, self.b_4]):
+            curr_step_index = ['1-4', '1-5', '1-6'].index(self.curr_step[:3])
+            for index, button in enumerate([self.b_2, self.b_3, self.b_4]):
                 if index <= curr_step_index + 1:
                     button.setEnabled(True)
                 else:
@@ -105,7 +103,7 @@ class init_GUI(QWidget):
 
         # If there are no stacks/brains that have been started
         except KeyError:
-            for button in [self.b_1, self.b_2, self.b_3, self.b_4]:
+            for button in [self.b_2, self.b_3, self.b_4]:
                 button.setEnabled(False)
 
     def clickButton(self, button):
@@ -114,15 +112,8 @@ class init_GUI(QWidget):
         In this case, "grid" buttons have a one-to_one correspondance to the steps in the pipeline.
         The completion of each step means you move onto the next one.
         """
-        # Create thumbnails
-        if button == self.b_1:
-            try:
-                self.createThumbnails()
-                self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-3_setup_thumbnails')
-            except Exception as e:
-                sys.stderr.write(str(e))
         # Setup/Create sorted filenames
-        elif button == self.b_2:
+        if button == self.b_2:
             try:
                 subprocess.call(['python', 'a_GUI_setup_sorted_filenames.py', self.stack])
                 self.updateButtons()
@@ -179,34 +170,6 @@ class init_GUI(QWidget):
         centerPoint = QApplication.desktop().screenGeometry(screen).center()
         frameGm.moveCenter(centerPoint)
         self.move(frameGm.topLeft())
-
-    def createThumbnails(self):
-        """
-        This will copy the valid file to the raw dir and then
-        create the thumbnails that are used throughout the pipeline
-        """
-        TIF = self.fileLocationManager.tif
-        sections = self.sqlController.get_valid_sections(self.stack)
-        self.b_exit.hide()
-        size = len(sections.values()) - 1
-        self.progress.setMaximum(size)
-        self.progress.show()
-        self.b_1.hide()
-        for index, section in enumerate(sections.values()):
-            self.progress.setValue(index)
-            source = section['source']
-            destination = section['destination']
-            input_fp = os.path.join(TIF, source)
-            if os.path.exists(input_fp):
-                thumbnail_destination = os.path.join(self.fileLocationManager.prep_thumbnail, destination)
-                sleep(1)
-                # Create thumbnails
-                #execute_command("convert \"" + input_fp + "\" -resize 3.125% -auto-level -normalize \
-                #                -compress lzw \"" + thumbnail_destination + "\"")
-            else:
-                print('File {} does not exist'.format(input_fp))
-        self.progress.hide()
-        self.b_exit.show()
 
     def closeEvent(self, event):
         sys.exit(app.exec_())

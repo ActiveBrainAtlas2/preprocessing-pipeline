@@ -1,6 +1,7 @@
 import numpy as np
 from datetime import datetime
-from controller.preprocessor import make_thumbnail, make_histogram, make_tif
+#from controller.preprocessor import make_thumbnail, make_histogram, make_tif
+from controller.preprocessor import SlideProcessor
 from sql_setup import session, dj, database
 import sys
 import time
@@ -77,24 +78,24 @@ class Slide(dj.Manual): # prior to segregation of animals and scenes on each sli
     """
 
 @schema
-class SlideCziToTif(dj.Manual): # Used to populate sections after Bioconverter; this is the replacement for the "text file"
+class RawSection(dj.Manual): # Used to populate sections after Bioconverter; this is the replacement for the "text file"
     definition = """
     id : int auto_increment
-    -> Slide
     ----------------
-    slide_number    : int
-    scan_date       : date
-    scene_number    : tinyint
+    prep_id    : varchar(20)
+    section_number    : int
     channel         : tinyint
     scanner_counter : int
-    file_name       : varchar(200)
+    source_file       : varchar(200)
+    file_status  : varchar(25)
+    active : tinyint
        """
        
 @schema
 class FileOperation(dj.Computed):
     definition = """
     id : int
-    -> SlideCziToTif
+    -> RawSection
     ---
     file_name :  varchar(200) 
     thumbnail: tinyint
@@ -105,43 +106,35 @@ class FileOperation(dj.Computed):
     """
     
     def make(self, key):
+        slide_processor = SlideProcessor(prep_id, session)
+        # slide_processor.process_czi_dir()
         start = time.time()
-        file_id = (SlideCziToTif & key).fetch1('id')
-        file_name = (SlideCziToTif & key).fetch1('file_name')
-        czi_to_tif = make_tif(session, prep_id, np.asscalar(file_id))
-        #czi_to_tif = 1
+        file_id = (RawSection & key).fetch1('id')
+        file_name = (RawSection & key).fetch1('source_file')
+        print(file_name)
+
+        #czi_to_tif = make_tif(session, prep_id, np.asscalar(file_id))
+        czi_to_tif = 1
         #histogram = make_histogram(session, prep_id, np.asscalar(file_id))
         #thumbnail = make_thumbnail(prep_id, file_name)
-        histogram = 1
-        thumbnail = 0
+        thumbnail = slide_processor.make_thumbnail(file_name)
+        histogram = 0
+        #thumbnail = 0
         end = time.time()
+
         self.insert1(dict(key, file_name=file_name,
                           created=datetime.now(),
                           thumbnail=thumbnail,
                           czi_to_tif = czi_to_tif,
                           processing_duration=end - start,
                           histogram = histogram), skip_duplicates=True)
+
 # End of table definitions
 
 
 def manipulate_images(id, limit):
     global prep_id
     prep_id = id
-    scans = (ScanRun & ('prep_id = "{}"'.format(prep_id))).fetch("KEY")
-    if not scans:
-        print('No scan data for {}'.format(prep_id))
-        sys.exit()
-    scan_run_ids = [v for sublist in scans for k, v in sublist.items()]
-    slides = [(Slide & 'slide_status = "Good"' & 'scan_run_id={}'.format(i)).fetch("KEY") for i in scan_run_ids][0]
-    if not slides:
-        print('No slide data for {}'.format(prep_id))
-        sys.exit()
-    slide_ids = [v for sublist in slides for k, v in sublist.items()]
-    slide_ids = tuple(slide_ids)
-    restriction = 'slide_id IN {}'.format(slide_ids)
-    if len(slide_ids) == 1:
-        slide_ids = (slide_ids[0])
-        restriction = 'slide_id = {}'.format(slide_ids)
-    #print(restriction)
-    FileOperation.populate([SlideCziToTif & 'active=1' & restriction ], display_progress=True, reserve_jobs=True, limit=limit)
+    restriction = 'prep_id = "{}"'.format(prep_id)
+    FileOperation.populate([RawSection & 'active=1' & restriction ], display_progress=True, reserve_jobs=True, limit=limit)
 
