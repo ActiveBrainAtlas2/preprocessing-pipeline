@@ -19,7 +19,6 @@ class init_GUI(QWidget):
         self.fileLocationManager = FileLocationManager(self.stack)
         self.sqlController = SqlController()
         self.sqlController.get_animal_info(self.stack)
-        self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-3_setup_images')
         self.stain = self.sqlController.histology.counterstain
         self.curr_step = self.sqlController.get_current_step_from_progress_ini(self.stack)
 
