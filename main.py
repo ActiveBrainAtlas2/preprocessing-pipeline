@@ -10,8 +10,8 @@ from sql_setup import session
 def fetch_and_run(prep_id, limit):
 
     slide_processor = SlideProcessor(prep_id, session)
-    slide_processor.process_czi_dir()
-    #manipulate_images(prep_id, limit)
+    #slide_processor.process_czi_dir()
+    manipulate_images(prep_id, limit)
     #slide_processor.update_tif_data()
     #slide_processor.test_tables()
 

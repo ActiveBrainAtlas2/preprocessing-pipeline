@@ -22,6 +22,8 @@ from skimage import io
 from skimage.util import img_as_uint
 import numpy as np
 import re
+
+from model.section import RawSection
 from .bioformats_utilities import get_czi_metadata, get_fullres_series_indices
 from model.animal import Animal
 from model.histology import Histology as AlcHistology
@@ -92,27 +94,31 @@ class SlideProcessor(object):
                 slide.file_size = os.path.getsize(os.path.join(self.fileLocationManager.czi, czi_file))
                 slide.file_name = czi_file
                 slide.created = datetime.fromtimestamp(os.path.getmtime(os.path.join(self.fileLocationManager.czi, czi_file)))
-                self.session.add(slide)
-                self.session.flush()
 
                 # Get metadata from the czi file
                 czi_file_path = os.path.join(self.fileLocationManager.czi, czi_file)
                 metadata_dict = get_czi_metadata(czi_file_path)
                 #print(metadata_dict)
                 series = get_fullres_series_indices(metadata_dict)
+                slide.scenes = len(series)
+                self.session.add(slide)
+                self.session.flush()
+
+
                 for j, series_index in enumerate(series):
+                    scene_number = j + 1
                     channels = range(metadata_dict[series_index]['channels'])
                     channel_counter = 0
                     width = metadata_dict[series_index]['width']
                     height = metadata_dict[series_index]['height']
                     for channel in channels:
                         channel_counter += 1
-                        newtif = '{}_S{}_C{}.tif'.format(czi_file, series_index, channel_counter)
+                        newtif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
                         newtif = newtif.replace('.czi','')
                         tif = AlcSlideCziTif()
                         tif.slide_id = slide.id
                         tif.section_number = section_number
-                        tif.scene_number = j + 1
+                        tif.scene_number = scene_number
                         tif.channel = channel_counter
                         tif.file_name = newtif
                         tif.file_size = 0
@@ -123,7 +129,7 @@ class SlideProcessor(object):
                         tif.scene_index = series_index
                         tif.processing_duration = 0
                         tif.created = time.strftime('%Y-%m-%d %H:%M:%S')
-                        print('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(newtif, tif.section_number, tif.slide_id, tif.scene_index, tif.channel, width, height))
+                        print(newtif)
                         self.session.add(tif)
                     section_number += 1
         # lookup_id=3 is for the scanning CZI
@@ -212,15 +218,16 @@ class SlideProcessor(object):
             # Create thumbnails
             command = ['convert', source, '-resize 3.125%', '-auto-level',
                        '-normalize', ',-compress lzw', prep_destination]
-            #print('prep:', " ".join(command))
+            print('prep:', " ".join(command))
             #subprocess.run(command)
             base = os.path.splitext(file_name)[0]
             output_png = os.path.join(web_destination, base + '.png')
             command = ['convert', prep_destination, output_png]
-            #print('web:', " ".join(command))
+            print('web:', " ".join(command))
             #subprocess.run(command)
             result = 1
         else:
+            pass
             print('File {} does not exist'.format(source))
 
         return result
@@ -291,21 +298,23 @@ def make_histogram(session, prep_id, file_id):
     return 1
 
 
-def make_tif(session, prep_id, file_id):
-    CZI_FOLDER = os.path.join(DATA_ROOT, prep_id, CZI)
-    TIF_FOLDER = os.path.join(DATA_ROOT, prep_id, TIF)
+def make_tif(session, prep_id, tif_id, file_id):
+    slide_processor = SlideProcessor(prep_id, session)
+    CZI_FOLDER = slide_processor.fileLocationManager.czi
+    TIF_FOLDER = slide_processor.fileLocationManager.tif
     start = time.time()
-    tif = session.query(AlcSlideCziTif).filter(AlcSlideCziTif.id==file_id).one()
+    tif = session.query(AlcSlideCziTif).filter(AlcSlideCziTif.id==tif_id).one()
     slide = session.query(AlcSlide).filter(AlcSlide.id==tif.slide_id).one()
     czi_file = os.path.join(CZI_FOLDER, slide.file_name)
-
-    tif_file = os.path.join(TIF_FOLDER, tif.file_name)
+    rsection = session.query(RawSection).filter(RawSection.id==file_id).one()
+    tif_file = os.path.join(TIF_FOLDER, rsection.destination_file)
     command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate',
                               '-series', str(tif.scene_index), '-channel', str(tif.channel_index), '-nooverwrite', czi_file, tif_file]
-    #cli = " ".join(command)
+    cli = " ".join(command)
     #command = ['touch', tif_file]
     subprocess.run(command)
     #print(cli)
+    #return 1
 
     end = time.time()
     if os.path.exists(tif_file):
@@ -315,7 +324,6 @@ def make_tif(session, prep_id, file_id):
     session.merge(tif)
     session.commit()
 
-    #session.commit()
     return 1
 
 

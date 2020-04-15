@@ -12,6 +12,7 @@ class Slide(Base, AtlasModel):
     slide_physical_id = Column(Integer)
     rescan_number = Column(Enum("1", "2", "3"), default="1", nullable=False)
     slide_status = Column(Enum("Bad", "Good"), nullable=False)
+    scenes = Column(Integer, nullable=False)
     scene_qc_1 = Column(Enum("Out-of-Focus", "Bad tissue", "End"), nullable=True)
     scene_qc_2 = Column(Enum("Out-of-Focus", "Bad tissue", "End"), nullable=True)
     scene_qc_3 = Column(Enum("Out-of-Focus", "Bad tissue", "End"), nullable=True)
