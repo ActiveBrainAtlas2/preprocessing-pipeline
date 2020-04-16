@@ -33,7 +33,7 @@ from model.slide_czi_to_tif import SlideCziTif as AlcSlideCziTif
 from model.task import Task
 from sql_setup import dj, database
 from utilities.file_location import FileLocationManager
-
+from utilities.sqlcontroller import SqlController
 schema = dj.schema(database)
 
 
@@ -210,7 +210,8 @@ class SlideProcessor(object):
         in the preps dir that are used throughout the pipeline
         """
         result = 0
-        #self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-3_setup_thumbnails')
+        sqlController = SqlController()
+        sqlController.set_step_completed_in_progress_ini(self.stack, '1-3_setup_thumbnails')
 
         source = os.path.join(self.fileLocationManager.tif, file_name)
         web_destination = os.path.join(self.fileLocationManager.thumbnail_web, file_name)

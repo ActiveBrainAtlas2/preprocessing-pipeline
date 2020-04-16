@@ -281,7 +281,7 @@ class init_GUI(QWidget):
     def loadImage(self):
         curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
         # Get filepath of "curr_section" and set it as viewer's photo
-        img_fp = os.path.join(self.fileLocationManager.prep_thumbnail, curr_fn)
+        img_fp = os.path.join(self.fileLocationManager.thumbnail_prep, curr_fn)
         self.viewer.setPhoto(QPixmap(img_fp))
 
 

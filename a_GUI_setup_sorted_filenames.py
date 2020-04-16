@@ -12,16 +12,15 @@ from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 
 class ImageViewer(QGraphicsView):
-    photoClicked = pyqtSignal(QPoint)
-
     def __init__(self, parent):
         super(ImageViewer, self).__init__(parent)
-        self._zoom = 0
-        self._empty = True
-        self._scene = QGraphicsScene(self)
-        self._photo = QGraphicsPixmapItem()
-        self._scene.addItem(self._photo)
-        self.setScene(self._scene)
+        self.zoom = 0
+        self.empty = True
+        self.scene = QGraphicsScene(self)
+        self.photo = QGraphicsPixmapItem()
+
+        self.scene.addItem(self.photo)
+        self.setScene(self.scene)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -29,14 +28,29 @@ class ImageViewer(QGraphicsView):
         self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
         self.setFrameShape(QFrame.NoFrame)
 
-    def hasPhoto(self):
-        return not self._empty
+    def set_photo(self, pixmap=None):
+        self.zoom = 0
+        if pixmap and not pixmap.isNull():
+            self.empty = False
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
+            self.photo.setPixmap(pixmap)
+        else:
+            self.empty = True
+            self.setDragMode(QGraphicsView.NoDrag)
+            self.photo.setPixmap(QPixmap())
+        self.fitInView()
+
+    def toggle_drag_mode(self):
+        if self.dragMode() == QGraphicsView.ScrollHandDrag:
+            self.setDragMode(QGraphicsView.NoDrag)
+        elif not self.photo.pixmap().isNull():
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
 
     def fitInView(self, scale=True):
-        rect = QRectF(self._photo.pixmap().rect())
+        rect = QRectF(self.photo.pixmap().rect())
         if not rect.isNull():
             self.setSceneRect(rect)
-            if self.hasPhoto():
+            if not self.empty:
                 unity = self.transform().mapRect(QRectF(0, 0, 1, 1))
                 self.scale(1 / unity.width(), 1 / unity.height())
                 viewrect = self.viewport().rect()
@@ -44,71 +58,31 @@ class ImageViewer(QGraphicsView):
                 factor = min(viewrect.width() / scenerect.width(),
                              viewrect.height() / scenerect.height())
                 self.scale(factor, factor)
-            self._zoom = 0
+            self.zoom = 0
         else:
             print('RECT IS NULL')
 
-    def setPhoto(self, pixmap=None):
-        self._zoom = 0
-        if pixmap and not pixmap.isNull():
-            self._empty = False
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
-            self._photo.setPixmap(pixmap)
-        else:
-            self._empty = True
-            self.setDragMode(QGraphicsView.NoDrag)
-            self._photo.setPixmap(QPixmap())
-        self.fitInView()
-
     def wheelEvent(self, event):
-        if self.hasPhoto():
-            if event.delta() > 0:
+        if not self.empty:
+            if event.angleDelta().y() > 0:
                 factor = 1.25
-                self._zoom += 1
+                self.zoom += 1
             else:
                 factor = 0.8
-                self._zoom -= 1
-            if self._zoom > 0:
+                self.zoom -= 1
+
+            if self.zoom > 0:
                 self.scale(factor, factor)
-            elif self._zoom == 0:
+            elif self.zoom == 0:
                 self.fitInView()
             else:
-                self._zoom = 0
-
-    def toggleDragMode(self):
-        if self.dragMode() == QGraphicsView.ScrollHandDrag:
-            self.setDragMode(QGraphicsView.NoDrag)
-        elif not self._photo.pixmap().isNull():
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
-
-    def mousePressEvent(self, event):
-        if self._photo.isUnderMouse():
-            self.photoClicked.emit(QPoint(event.pos()))
-        super(ImageViewer, self).mousePressEvent(event)
+                self.zoom = 0
 
 
-class QHLine(QFrame):
-    def __init__(self):
-        # https://doc.qt.io/qt-5/qframe.html
-        # https://stackoverflow.com/questions/5671354/how-to-programmatically-make-a-horizontal-line-in-qt
-        super(QHLine, self).__init__()
-        self.setFrameShape(QFrame.HLine)
-        self.setFrameShadow(QFrame.Plain)
-        self.setLineWidth(5)
-
-
-class QVLine(QFrame):
-    def __init__(self):
-        super(QVLine, self).__init__()
-        self.setFrameShape(QFrame.VLine)
-        self.setFrameShadow(QFrame.Plain)
-        self.setLineWidth(5)
-
-
-class init_GUI(QWidget):
+class GUISortedFilenames(QWidget):
 
     def __init__(self, stack, parent=None):
-        super(init_GUI, self).__init__(parent)
+        super(GUISortedFilenames, self).__init__(parent)
 
         # create a dataManager object
         self.sqlController = SqlController()
@@ -119,16 +93,22 @@ class init_GUI(QWidget):
         self.valid_sections = self.sqlController.get_valid_sections(stack)
         self.valid_section_keys = sorted(list(self.valid_sections))
 
-        self.curr_section_index = len(self.valid_section_keys) // 2
-        self.prev_section_index = self.curr_section_index
-        self.next_section_index = self.curr_section_index
-        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
-        self.prev_section = self.getPrevValidSection(self.curr_section_index)
-        self.next_section = self.getNextValidSection(self.curr_section_index)
+        #self.curr_section_index = len(self.valid_section_keys) // 2
+        self.curr_section_index = 0
+        self.curr_section = None
 
-        self.initUI()
+        self.init_ui()
 
-    def initUI(self):
+        self.dd.currentIndexChanged.connect(lambda: self.click_button(self.dd))
+        self.b_left.clicked.connect(lambda: self.click_button(self.b_left))
+        self.b_right.clicked.connect(lambda: self.click_button(self.b_right))
+        self.b_remove.clicked.connect(lambda: self.click_button(self.b_remove))
+        self.b_help.clicked.connect(lambda: self.click_button(self.b_help))
+        self.b_done.clicked.connect(lambda: self.click_button(self.b_done))
+
+        self.set_curr_section(self.curr_section_index)
+
+    def init_ui(self):
         self.font_h1 = QFont("Arial", 32)
         self.font_p1 = QFont("Arial", 16)
 
@@ -140,12 +120,10 @@ class init_GUI(QWidget):
         self.grid_bottom = QGridLayout()
         self.grid_blank = QGridLayout()
 
-        # self.setFixedSize(1600, 1100)
         self.resize(1600, 1100)
 
         ### VIEWER ### (Grid Body)
         self.viewer = ImageViewer(self)
-        self.viewer.photoClicked.connect(self.photoClicked)
 
         ### Grid TOP ###
         # Static Text Field (Title)
@@ -161,7 +139,6 @@ class init_GUI(QWidget):
         self.b_help = QPushButton("HELP")
         self.b_help.setDefault(True)
         self.b_help.setEnabled(True)
-        self.b_help.clicked.connect(lambda: self.help_button_press(self.b_help))
         self.b_help.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,250,250);")
         self.grid_top.addWidget(self.b_help, 0, 1)
 
@@ -188,8 +165,6 @@ class init_GUI(QWidget):
         self.grid_body.addWidget(self.viewer, 0, 0)
 
         ### Grid BODY LOWER ###
-        # Vertical line
-        self.grid_body_lower.addWidget(QVLine(), 0, 0, 1, 1)
         # Static Text Field
         self.e7 = QLineEdit()
         self.e7.setMaximumWidth(250)
@@ -201,15 +176,11 @@ class init_GUI(QWidget):
         self.dd = QComboBox()
         quality_options = ['unusable', 'blurry', 'good']
         self.dd.addItems(quality_options)
-        self.dd.currentIndexChanged.connect(self.updateDropdown)
         self.grid_body_lower.addWidget(self.dd, 0, 2)
-        # Vertical line
-        self.grid_body_lower.addWidget(QVLine(), 0, 3, 1, 1)
         # Button Text Field
         self.b_remove = QPushButton("Remove section")
         self.b_remove.setDefault(True)
         self.b_remove.setEnabled(True)
-        self.b_remove.clicked.connect(lambda: self.clickButton(self.b_remove))
         self.b_remove.setStyleSheet("color: rgb(0,0,0); background-color: #C91B1B;")
         self.grid_body_lower.addWidget(self.b_remove, 2, 1)
         #self.grid_body_lower.addWidget(self.b_addPlaceholder, 2, 2)
@@ -217,23 +188,18 @@ class init_GUI(QWidget):
         self.b_left = QPushButton("<--   Move Section Left   <--")
         self.b_left.setDefault(True)
         self.b_left.setEnabled(True)
-        self.b_left.clicked.connect(lambda: self.clickButton(self.b_left))
         self.b_left.setStyleSheet("color: rgb(0,0,0); background-color: rgb(200,250,250);")
         self.grid_body_lower.addWidget(self.b_left, 0, 5)
         # Button Text Field
         self.b_right = QPushButton("-->   Move Section Right   -->")
         self.b_right.setDefault(True)
         self.b_right.setEnabled(True)
-        self.b_right.clicked.connect(lambda: self.clickButton(self.b_right))
         self.b_right.setStyleSheet("color: rgb(0,0,0); background-color: rgb(200,250,250);")
         self.grid_body_lower.addWidget(self.b_right, 0, 6)
-        # Horozontal Line
-        self.grid_body_lower.addWidget(QHLine(), 1, 0, 1, 7)
         # Button Text Field
         self.b_done = QPushButton("Finished")
         self.b_done.setDefault(True)
         self.b_done.setEnabled(True)
-        self.b_done.clicked.connect(lambda: self.clickButton(self.b_done))
         self.b_done.setStyleSheet("color: rgb(0,0,0); background-color: #dfbb19;")
         self.grid_body_lower.addWidget(self.b_done, 2, 6)
 
@@ -247,77 +213,13 @@ class init_GUI(QWidget):
         self.supergrid.addLayout(self.grid_top, 0, 0)
         self.supergrid.addLayout(self.grid_body_upper, 1, 0)
         self.supergrid.addLayout(self.grid_body, 2, 0)
-        # self.supergrid.addLayout( self.grid_body_lower, 4, 0)
-        self.supergrid.addWidget(QHLine(), 6, 0, 1, 2)
-        # self.supergrid.addLayout( self.grid_bottom, 6, 0)
         self.supergrid.addLayout(self.grid_body_lower, 7, 0)
-        self.supergrid.addWidget(QHLine(), 8, 0, 1, 2)
 
         # Set layout and window title
         self.setLayout(self.supergrid)
         self.setWindowTitle("Q")
-        self.setCurrSection(self.curr_section_index)
 
-        # Loads self.curr_section as the current image and sets all fields appropriatly
-        # self.setCurrSection( self.curr_section )
-
-    def help_button_press(self, button):
-        info_text = "This GUI is used to align slices to each other. The shortcut commands are as follows: \n\n\
-    -  `[`: Go back one section. \n\
-    -  `]`: Go forward one section. \n\n"
-        info_text += "Use the buttons on the bottom panel to move"
-
-        QMessageBox.information(self, "Empty Field",
-                                info_text)
-
-    def updateDropdown(self):
-        # Get dropdown selection
-        dropdown_selection = self.dd.currentText()
-        curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
-
-        curr_section['quality'] = dropdown_selection
-
-    def load_sorted_filenames(self):
-        self.valid_sections = self.sqlController.get_valid_sections(self.stack)
-        self.valid_section_keys = sorted(list(self.valid_sections))
-        self.curr_section_index = len(self.valid_section_keys) // 2
-        self.prev_section_index = self.curr_section_index
-        self.next_section_index = self.curr_section_index
-        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
-        self.prev_section = self.getPrevValidSection(self.curr_section_index)
-        self.next_section = self.getNextValidSection(self.curr_section_index)
-        self.setCurrSection(self.curr_section_index)
-
-
-    def loadImage(self):
-        curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
-        # Get filepath of "curr_section" and set it as viewer's photo
-        img_fp = os.path.join(self.fileLocationManager.prep_thumbnail, curr_fn)
-        self.viewer.setPhoto(QPixmap(img_fp))
-
-    def photoClicked(self, pos):
-        if self.viewer.dragMode() == QGraphicsView.NoDrag:
-            print('%d, %d' % (pos.x(), pos.y()))
-
-    def pixInfo(self):
-        self.viewer.toggleDragMode()
-
-    def keyPressEvent(self, event):
-        try:
-            key = event.key()
-        except AttributeError:
-            key = event
-
-        if key == 91:  # [
-            self.getPrevValidSection(self.curr_section_index)
-            self.setCurrSection(self.prev_section_index)
-        elif key == 93:  # ]
-            self.getNextValidSection(self.curr_section_index)
-            self.setCurrSection(self.next_section_index)
-        else:
-            print(key)
-
-    def setCurrSection(self, section_index=-1):
+    def set_curr_section(self, section_index=-1):
         """
         Sets the current section to the section passed in.
         Will automatically update curr_section, prev_section, and next_section.
@@ -329,8 +231,6 @@ class init_GUI(QWidget):
         # Update curr, prev, and next section
         self.curr_section_index = section_index
         self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
-        self.prev_section = self.getPrevValidSection(self.curr_section_index)
-        self.next_section = self.getNextValidSection(self.curr_section_index)
 
         # Update the section and filename at the top
         label = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['source']
@@ -344,24 +244,19 @@ class init_GUI(QWidget):
         if index >= 0:
             self.dd.setCurrentIndex(index)
 
-        self.loadImage()
+        # Get filepath of "curr_section" and set it as viewer's photo
+        img_fp = os.path.join(self.fileLocationManager.thumbnail_prep, self.curr_section)
+        self.viewer.set_photo(QPixmap(img_fp))
 
-    def getNextValidSection(self, section_index):
-        self.next_section_index = section_index + 1
-        if self.next_section_index > len(self.valid_sections) - 1:
-            self.next_section_index = 0
-        self.next_section = self.valid_sections[self.valid_section_keys[self.next_section_index]]['destination']
-        return self.next_section
+    def get_valid_section_index(self, section_index):
+        if section_index >= len(self.valid_sections):
+            return 0
+        elif section_index < 0:
+            return len(self.valid_sections) - 1
+        else:
+            return section_index
 
-    def getPrevValidSection(self, section_index):
-        self.prev_section_index = int(section_index) - 1
-        if self.prev_section_index < 0:
-            self.prev_section_index = len(self.valid_sections) - 1
-        self.prev_section = self.valid_sections[self.valid_section_keys[self.prev_section_index]]['destination']
-        return self.prev_section
-
-    def clickButton(self, button):
-        # Brighten an image
+    def click_button(self, button):
         if button in [self.b_left, self.b_right, self.b_remove]:
             section_number = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['section_number']
 
@@ -370,9 +265,10 @@ class init_GUI(QWidget):
             elif button == self.b_right:
                 self.sqlController.move_section(self.stack, section_number, 1)
             elif button == self.b_remove:
-                result = self.warnMessageBox(
+                result = self.message_box(
                     'Are you sure you want to totally remove this section from this brain?\n\n' +
-                    'Warning: The image will be marked as irrelevant to the current brain!'
+                    'Warning: The image will be marked as irrelevant to the current brain!',
+                    True
                 )
 
                 # The answer is Yes
@@ -392,24 +288,50 @@ class init_GUI(QWidget):
             # Update the Viewer info and displayed image
             self.valid_sections = self.sqlController.get_valid_sections(self.stack)
             self.valid_section_keys = sorted(list(self.valid_sections))
-            self.setCurrSection(self.curr_section_index)
-
-        if button == self.b_done:
-            # TODO change this to database update
+            self.set_curr_section(self.curr_section_index)
+        elif button == self.b_help:
+            self.message_box(
+                'This GUI is used to align slices to each other. The shortcut commands are as follows: \n\n' +
+                '-  `[`: Go back one section. \n' +
+                '-  `]`: Go forward one section. \n\n' +
+                'Use the buttons on the bottom panel to move',
+                False
+            )
+        elif button == self.dd:
+            # Get dropdown selection
+            dropdown_selection = self.dd.currentText()
+            curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
+            curr_section['quality'] = dropdown_selection
+        elif button == self.b_done:
             self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
             self.sqlController.save_valid_sections(self.valid_sections)
-
             sys.exit(app.exec_())
 
-    def warnMessageBox(self, text):
+    def message_box(self, text, is_warn):
         msg_box = QMessageBox()
         msg_box.setText(text)
-        msg_box.addButton(QPushButton('Cancel'), QMessageBox.RejectRole)
-        msg_box.addButton(QPushButton('No'), QMessageBox.NoRole)
-        msg_box.addButton(QPushButton('Yes'), QMessageBox.YesRole)
+
+        if is_warn:
+            msg_box.addButton(QPushButton('Cancel'), QMessageBox.RejectRole)
+            msg_box.addButton(QPushButton('No'), QMessageBox.NoRole)
+            msg_box.addButton(QPushButton('Yes'), QMessageBox.YesRole)
 
         return msg_box.exec_()
 
+    def keyPressEvent(self, event):
+        try:
+            key = event.key()
+        except AttributeError:
+            key = event
+
+        if key == 91:  # [
+            index = self.get_valid_section_index(self.curr_section_index - 1)
+            self.set_curr_section(index)
+        elif key == 93:  # ]
+            index = self.get_valid_section_index(self.curr_section_index + 1)
+            self.set_curr_section(index)
+        else:
+            print(key)
 
     def closeEvent(self, event):
         sys.exit(app.exec_())
@@ -423,16 +345,9 @@ if __name__ == '__main__':
     parser.add_argument("stack", type=str, help="stack name")
     args = parser.parse_args()
     stack = args.stack
-    sqlController = SqlController()
-    sections = list(sqlController.get_valid_sections(stack))
 
-    if len(sections) > 0:
-        app = QApplication(sys.argv)
-        ex = init_GUI(stack)
-        # Run GUI as usual
-        ex.show()
-        # Simulate a user's keypress because otherwise the autozoom is weird
-        ex.keyPressEvent(91)
-        sys.exit(app.exec_())
-    else:
-        print('There are no sections to work with.')
+    app = QApplication(sys.argv)
+    ex = GUISortedFilenames(stack)
+    ex.keyPressEvent(91)
+    ex.show()
+    sys.exit(app.exec_())
