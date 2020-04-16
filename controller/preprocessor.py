@@ -210,7 +210,6 @@ class SlideProcessor(object):
         in the preps dir that are used throughout the pipeline
         """
         result = 0
-        self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-3_setup_thumbnails')
 
         source = os.path.join(self.fileLocationManager.tif, file_name)
         web_destination = os.path.join(self.fileLocationManager.thumbnail_web, file_name)
