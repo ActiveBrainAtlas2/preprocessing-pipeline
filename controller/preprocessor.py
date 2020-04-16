@@ -210,22 +210,21 @@ class SlideProcessor(object):
         in the preps dir that are used throughout the pipeline
         """
         result = 0
-        self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-3_setup_thumbnails')
+        #self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-3_setup_thumbnails')
 
         source = os.path.join(self.fileLocationManager.tif, file_name)
         web_destination = os.path.join(self.fileLocationManager.thumbnail_web, file_name)
         prep_destination = os.path.join(self.fileLocationManager.thumbnail_prep, file_name)
         if os.path.exists(source):
             # Create thumbnails
-            command = ['convert', source, '-resize 3.125%', '-auto-level',
-                       '-normalize', ',-compress lzw', prep_destination]
-            print('prep:', " ".join(command))
+            command = ['convert', source, '-resize', '3.125%', '-auto-level',
+                       '-normalize', '-compress', 'lzw', prep_destination]
             #subprocess.run(command)
             base = os.path.splitext(file_name)[0]
-            output_png = os.path.join(web_destination, base + '.png')
+            output_png = os.path.join(self.fileLocationManager.thumbnail_web, base + '.png')
             command = ['convert', prep_destination, output_png]
-            print('web:', " ".join(command))
-            #subprocess.run(command)
+            subprocess.run(command)
+            #print(" ".join(command))
             result = 1
         else:
             pass
@@ -233,6 +232,42 @@ class SlideProcessor(object):
 
         return result
 
+    def make_histogram(self, file_id, file_name):
+        source = os.path.join(self.fileLocationManager.tif, file_name)
+        HIS_FOLDER = self.fileLocationManager.histogram
+        TIF_FOLDER = self.fileLocationManager.tif
+        base = os.path.splitext(file_name)[0]
+        output_png = os.path.join(HIS_FOLDER, base + '.png')
+        rsection = self.session.query(RawSection).filter(RawSection.id == file_id).one()
+        try:
+            img = io.imread(source)
+        except:
+            print('Could not read file')
+            return 0
+
+        colors = {1: 'b', 2: 'r', 3: 'g'}
+        fig = plt.figure()
+        plt.rcParams['figure.figsize'] = [10, 6]
+        if img.shape[0] * img.shape[1] > 1000000000:
+            scale = 1 / float(2)
+            img = img[::int(1. / scale), ::int(1. / scale)]
+        try:
+            flat = img.flatten()
+        except:
+            return 0
+        del img
+        fmax = flat.max()
+        plt.hist(flat, fmax, [0, fmax], color=colors[rsection.channel])
+        plt.style.use('ggplot')
+        plt.yscale('log')
+        plt.grid(axis='y', alpha=0.75)
+        plt.xlabel('Value')
+        plt.ylabel('Frequency')
+        plt.title('{} @16bit'.format(file_name))
+        fig.savefig(output_png, bbox_inches='tight')
+        plt.close()
+        del flat
+        return 1
 
 
 def everything_cv(img, rotation):
@@ -261,42 +296,6 @@ def get_last_2d(data):
         return data
     m,n = data.shape[-2:]
     return data.flat[:m*n].reshape(m,n)
-
-def make_histogram(session, prep_id, file_id):
-    tif = session.query(AlcSlideCziTif).filter(AlcSlideCziTif.id==file_id).one()
-    HIS_FOLDER = os.path.join(DATA_ROOT, prep_id, HIS)
-    TIF_FOLDER = os.path.join(DATA_ROOT, prep_id, TIF)
-    input_tif = os.path.join(TIF_FOLDER, tif.file_name)
-    base = os.path.splitext(tif.file_name)[0]
-    output_png = os.path.join(HIS_FOLDER, base + '.png')
-    try:
-        img = io.imread(input_tif)
-    except:
-        return 0
-
-    colors = {1:'b', 2:'r', 3:'g'}
-    fig = plt.figure()
-    plt.rcParams['figure.figsize'] = [10, 6]
-    if img.shape[0] * img.shape[1] > 1000000000:
-        scale = 1 / float(2)
-        img = img[::int(1. / scale), ::int(1. / scale)]
-    try:
-        flat = img.flatten()
-    except:
-        return 0
-    del img
-    fmax = flat.max()
-    plt.hist(flat, fmax, [0, fmax], color=colors[tif.channel])
-    plt.style.use('ggplot')
-    plt.yscale('log')
-    plt.grid(axis='y', alpha=0.75)
-    plt.xlabel('Value')
-    plt.ylabel('Frequency')
-    plt.title('{} @16bit'.format(tif.file_name))
-    fig.savefig(output_png, bbox_inches='tight')
-    plt.close()
-    del flat
-    return 1
 
 
 def make_tif(session, prep_id, tif_id, file_id):

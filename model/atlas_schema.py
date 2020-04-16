@@ -1,7 +1,7 @@
 import numpy as np
 from datetime import datetime
 #from controller.preprocessor import make_thumbnail, make_histogram, make_tif
-from controller.preprocessor import SlideProcessor, make_tif
+from controller.preprocessor import SlideProcessor
 from sql_setup import session, dj, database
 import sys
 import time
@@ -109,16 +109,14 @@ class FileOperation(dj.Computed):
         slide_processor = SlideProcessor(prep_id, session)
         start = time.time()
         file_id = (RawSection & key).fetch1('id')
-        file_name = (RawSection & key).fetch1('source_file')
+        file_name = (RawSection & key).fetch1('destination_file')
         tif_id = (RawSection & key).fetch1('tif_id')
         #print(file_name)
-        czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), np.asscalar(file_id))
-        #czi_to_tif = 1
-        #histogram = make_histogram(session, prep_id, np.asscalar(file_id))
-        #thumbnail = make_thumbnail(prep_id, file_name)
-        thumbnail = slide_processor.make_thumbnail(file_name)
-        histogram = 0
-        #thumbnail = 0
+        #czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), np.asscalar(file_id))
+        czi_to_tif = 1
+        histogram = slide_processor.make_histogram(np.asscalar(file_id), file_name)
+        #thumbnail = slide_processor.make_thumbnail(file_name)
+        thumbnail = 0
         end = time.time()
 
         self.insert1(dict(key, file_name=file_name,
@@ -135,5 +133,5 @@ def manipulate_images(id, limit):
     global prep_id
     prep_id = id
     restriction = 'prep_id = "{}"'.format(prep_id)
-    FileOperation.populate([RawSection & 'active=1' & restriction ], display_progress=False, reserve_jobs=True, limit=limit)
+    FileOperation.populate([RawSection & 'active=1' & restriction ], display_progress=True, reserve_jobs=True, limit=limit)
 
