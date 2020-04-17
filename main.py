@@ -2,6 +2,7 @@ import argparse
 from sqlalchemy.orm.exc import NoResultFound
 from model.animal import Animal
 import sys
+from utilities.sqlcontroller import SqlController
 from controller.preprocessor import SlideProcessor
 from controller.spreadsheet_utilities import upload_spreadsheet, download_spreadsheet
 from model.atlas_schema import manipulate_images
@@ -10,13 +11,16 @@ from sql_setup import session
 def fetch_and_run(prep_id, limit, image=False, czi=False):
 
     slide_processor = SlideProcessor(prep_id, session)
+    sqlController = SqlController()
     if czi:
         slide_processor.process_czi_dir()
     if image:
         manipulate_images(prep_id, limit)
+        sqlController.set_step_completed_in_progress_ini(prep_id, '1-3_setup_thumbnails')
+        sqlController.set_step_completed_in_progress_ini(prep_id, '1-4_setup_sorted_filenames')
     #slide_processor.update_tif_data()
     #slide_processor.test_tables()
-    print('Finished')
+    print('Finished manipulating images')
 
 def download(prep_id, session, engine):
     download_spreadsheet(prep_id, session, engine)

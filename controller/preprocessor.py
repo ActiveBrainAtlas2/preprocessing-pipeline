@@ -210,8 +210,6 @@ class SlideProcessor(object):
         in the preps dir that are used throughout the pipeline
         """
         result = 0
-        sqlController = SqlController()
-        sqlController.set_step_completed_in_progress_ini(self.stack, '1-3_setup_thumbnails')
 
         source = os.path.join(self.fileLocationManager.tif, file_name)
         web_destination = os.path.join(self.fileLocationManager.thumbnail_web, file_name)
@@ -220,7 +218,7 @@ class SlideProcessor(object):
             # Create thumbnails
             command = ['convert', source, '-resize', '3.125%', '-auto-level',
                        '-normalize', '-compress', 'lzw', prep_destination]
-            #subprocess.run(command)
+            subprocess.run(command)
             base = os.path.splitext(file_name)[0]
             output_png = os.path.join(self.fileLocationManager.thumbnail_web, base + '.png')
             command = ['convert', prep_destination, output_png]
