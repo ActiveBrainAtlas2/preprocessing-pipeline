@@ -30,7 +30,8 @@ else:
 
 ON_DOCKER = False
 
-PROJECT_DIR = os.getcwd()
+UTILITY_DIR = os.path.dirname(__file__)
+PROJECT_DIR = os.path.join(UTILITY_DIR, '..')
 ROOT_DIR = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data"
 
 BRAINS_INFO_DIR = 'brains_info'

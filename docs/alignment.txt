@@ -1,0 +1,19 @@
+Initial alignment occurs when the user clicks the 'Automatic setup scripts' in the a_GUI_setup_main.py.
+This file in turn calls:
+utilties/a_script_preprocess_2.py which in turn calls:
+utilities/align_compose.py which in turn calls:
+align_v3.py just calls: align_sequential.py which runs elastix on each file, which aligns current to previous
+compose_v3.py creates a dictionary of image name,
+
+and then:
+
+warp_crop.py
+
+add inline at bottom of slide admin.
+with active
+take RL RL from histology
+DK39 goes from l to R
+send alex a message about DK39 whereabouts
+fix link on DK37
+run elastix on one image
+run it on a hemisphere

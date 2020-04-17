@@ -1,0 +1,4 @@
+Files are converted into 8 bit depth early on in the process.
+This occurs when the user selects 'Automatic setup scripts' in the A_GUI_main_setup.py
+That button calls this file: utilities/a_script_preprocess_1.py, which in turn calls:
+utilities/normalize_intensity.

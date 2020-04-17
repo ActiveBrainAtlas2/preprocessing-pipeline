@@ -1,11 +1,11 @@
-import argparse
 import yaml
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import datajoint as dj
-
-
-with open('parameters.yaml') as file:
+import os
+dirname = os.path.dirname(__file__)
+file_path = os.path.join(dirname, 'parameters.yaml')
+with open(file_path) as file:
     parameters = yaml.load(file, Loader=yaml.FullLoader)
 
 user = parameters['user']

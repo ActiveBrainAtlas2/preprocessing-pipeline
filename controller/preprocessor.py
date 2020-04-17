@@ -204,22 +204,23 @@ class SlideProcessor(object):
 
     # End of table definitions
 
-    def make_thumbnail(self, file_name):
+    def make_thumbnail(self, file_id, file_name):
         """
         This will create a png in the web thumbnail dir, and another one
         in the preps dir that are used throughout the pipeline
         """
         result = 0
 
+        rsection = self.session.query(RawSection).filter(RawSection.id == file_id).one()
         source = os.path.join(self.fileLocationManager.tif, file_name)
-        web_destination = os.path.join(self.fileLocationManager.thumbnail_web, file_name)
-        prep_destination = os.path.join(self.fileLocationManager.thumbnail_prep, file_name)
+        web_destination = os.path.join(self.fileLocationManager.thumbnail_web, rsection.destination_file)
+        prep_destination = os.path.join(self.fileLocationManager.thumbnail_prep, rsection.destination_file)
         if os.path.exists(source):
             # Create thumbnails
             command = ['convert', source, '-resize', '3.125%', '-auto-level',
                        '-normalize', '-compress', 'lzw', prep_destination]
             subprocess.run(command)
-            base = os.path.splitext(file_name)[0]
+            base = os.path.splitext(rsection.destination_file)[0]
             output_png = os.path.join(self.fileLocationManager.thumbnail_web, base + '.png')
             command = ['convert', prep_destination, output_png]
             subprocess.run(command)
@@ -234,7 +235,6 @@ class SlideProcessor(object):
     def make_histogram(self, file_id, file_name):
         source = os.path.join(self.fileLocationManager.tif, file_name)
         HIS_FOLDER = self.fileLocationManager.histogram
-        TIF_FOLDER = self.fileLocationManager.tif
         base = os.path.splitext(file_name)[0]
         output_png = os.path.join(HIS_FOLDER, base + '.png')
         rsection = self.session.query(RawSection).filter(RawSection.id == file_id).one()
