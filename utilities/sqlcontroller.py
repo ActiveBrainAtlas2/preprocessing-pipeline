@@ -188,7 +188,7 @@ class SqlController(object):
                 .order_by(ProgressLookup.original_step.desc())\
                 .limit(1).one()
         except NoResultFound:
-            print('No lookup for {}'.format(step))
+            print('No lookup for {} so we will enter one.'.format(step))
         try:
             task = self.session.query(Task).filter(Task.lookup_id == lookup.id)\
                 .filter(Task.prep_id == stack).one()
