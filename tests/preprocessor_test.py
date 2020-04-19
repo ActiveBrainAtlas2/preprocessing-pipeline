@@ -62,10 +62,10 @@ def test_tif():
             if not dir_exists:
                 print("{} does not exist.".format(dir))
 
-            if valid_file_length != lfiles:
-                missings = find_missing(dir, db_files)
-                print("There are {} {} entries in the database but we found {} {}s on the server"\
-                        .format(animal, valid_file_length, lfiles, name))
+            missings = find_missing(dir, db_files)
+            print("There are {} {} entries in the database and we found {} {}s on the server"\
+                    .format(animal, valid_file_length, lfiles, name))
+
 
 if __name__ == '__main__':
     test_tif()
