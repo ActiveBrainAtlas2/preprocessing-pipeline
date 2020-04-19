@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import argparse
 
@@ -99,9 +100,13 @@ class GUISortedFilenames(QWidget):
 
         self.init_ui()
 
-        self.dd.currentIndexChanged.connect(lambda: self.click_button(self.dd))
-        self.b_left.clicked.connect(lambda: self.click_button(self.b_left))
-        self.b_right.clicked.connect(lambda: self.click_button(self.b_right))
+        self.b_quality.currentIndexChanged.connect(lambda: self.click_button(self.b_quality))
+        self.b_move_left.clicked.connect(lambda: self.click_button(self.b_move_left))
+        self.b_move_right.clicked.connect(lambda: self.click_button(self.b_move_right))
+        self.b_rotate_left.clicked.connect(lambda: self.click_button(self.b_rotate_left))
+        self.b_rotate_right.clicked.connect(lambda: self.click_button(self.b_rotate_right))
+        self.b_flip_vertical.clicked.connect(lambda: self.click_button(self.b_flip_vertical))
+        self.b_flip_horozontal.clicked.connect(lambda: self.click_button(self.b_flip_horozontal))
         self.b_remove.clicked.connect(lambda: self.click_button(self.b_remove))
         self.b_help.clicked.connect(lambda: self.click_button(self.b_help))
         self.b_done.clicked.connect(lambda: self.click_button(self.b_done))
@@ -122,11 +127,7 @@ class GUISortedFilenames(QWidget):
 
         self.resize(1600, 1100)
 
-        ### VIEWER ### (Grid Body)
-        self.viewer = ImageViewer(self)
-
-        ### Grid TOP ###
-        # Static Text Field (Title)
+        # Grid Top
         self.e1 = QLineEdit()
         self.e1.setValidator(QIntValidator())
         self.e1.setAlignment(Qt.AlignCenter)
@@ -135,78 +136,68 @@ class GUISortedFilenames(QWidget):
         self.e1.setText("Setup Sorted Filenames")
         self.e1.setFrame(False)
         self.grid_top.addWidget(self.e1, 0, 0)
-        # Button Text Field
+
         self.b_help = QPushButton("HELP")
         self.b_help.setDefault(True)
         self.b_help.setEnabled(True)
         self.b_help.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,250,250);")
         self.grid_top.addWidget(self.b_help, 0, 1)
 
-        ### Grid BODY UPPER ###
-        # Static Text Field
+        # Grid BODY UPPER
         self.e4 = QLineEdit()
         self.e4.setAlignment(Qt.AlignCenter)
         self.e4.setFont(self.font_p1)
         self.e4.setReadOnly(True)
         self.e4.setText("Filename: ")
-        # self.e4.setStyleSheet("color: rgb(250,50,50); background-color: rgb(250,250,250);")
         self.grid_body_upper.addWidget(self.e4, 0, 2)
-        # Static Text Field
+
         self.e5 = QLineEdit()
         self.e5.setAlignment(Qt.AlignCenter)
         self.e5.setFont(self.font_p1)
         self.e5.setReadOnly(True)
         self.e5.setText("Section: ")
-        # self.e5.setStyleSheet("color: rgb(250,50,50); background-color: rgb(250,250,250);")
         self.grid_body_upper.addWidget(self.e5, 0, 3)
 
-        ### Grid BODY ###
-        # Custom VIEWER
+        # Grid BODY
+        self.viewer = ImageViewer(self)
         self.grid_body.addWidget(self.viewer, 0, 0)
 
-        ### Grid BODY LOWER ###
-        # Static Text Field
-        self.e7 = QLineEdit()
-        self.e7.setMaximumWidth(250)
-        self.e7.setAlignment(Qt.AlignRight)
-        self.e7.setReadOnly(True)
-        self.e7.setText("Select section quality:")
-        self.grid_body_lower.addWidget(self.e7, 0, 1)
-        # Dropbown Menu (ComboBox) for selecting Stack
-        self.dd = QComboBox()
-        quality_options = ['unusable', 'blurry', 'good']
-        self.dd.addItems(quality_options)
-        self.grid_body_lower.addWidget(self.dd, 0, 2)
-        # Button Text Field
-        self.b_remove = QPushButton("Remove section")
-        self.b_remove.setDefault(True)
-        self.b_remove.setEnabled(True)
-        self.b_remove.setStyleSheet("color: rgb(0,0,0); background-color: #C91B1B;")
-        self.grid_body_lower.addWidget(self.b_remove, 2, 1)
-        #self.grid_body_lower.addWidget(self.b_addPlaceholder, 2, 2)
-        # Button Text Field
-        self.b_left = QPushButton("<--   Move Section Left   <--")
-        self.b_left.setDefault(True)
-        self.b_left.setEnabled(True)
-        self.b_left.setStyleSheet("color: rgb(0,0,0); background-color: rgb(200,250,250);")
-        self.grid_body_lower.addWidget(self.b_left, 0, 5)
-        # Button Text Field
-        self.b_right = QPushButton("-->   Move Section Right   -->")
-        self.b_right.setDefault(True)
-        self.b_right.setEnabled(True)
-        self.b_right.setStyleSheet("color: rgb(0,0,0); background-color: rgb(200,250,250);")
-        self.grid_body_lower.addWidget(self.b_right, 0, 6)
-        # Button Text Field
-        self.b_done = QPushButton("Finished")
-        self.b_done.setDefault(True)
-        self.b_done.setEnabled(True)
-        self.b_done.setStyleSheet("color: rgb(0,0,0); background-color: #dfbb19;")
-        self.grid_body_lower.addWidget(self.b_done, 2, 6)
+        # Grid BODY LOWER
+        self.b_quality = QComboBox()
+        self.b_quality.addItems(['Section quality: unusable', 'Section quality: blurry', 'Section quality: good'])
+        self.grid_body_lower.addWidget(self.b_quality, 0, 0, 1, 2)
 
-        # Grid stretching
-        # self.grid_body_upper.setColumnStretch(0, 2)
-        self.grid_body_upper.setColumnStretch(2, 2)
-        # self.grid_body_lower.setColumnStretch(3, 1)
+        self.b_move_left = QPushButton("<--   Move Section Left   <--")
+        self.b_move_left.setStyleSheet("color: rgb(0,0,0); background-color: rgb(200,250,250);")
+        self.grid_body_lower.addWidget(self.b_move_left, 0, 2)
+
+        self.b_move_right = QPushButton("-->   Move Section Right   -->")
+        self.b_move_right.setStyleSheet("color: rgb(0,0,0); background-color: rgb(200,250,250);")
+        self.grid_body_lower.addWidget(self.b_move_right, 0, 3)
+
+        self.b_flip_vertical = QPushButton("Flip vertically")
+        self.b_flip_vertical.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,250,200);")
+        self.grid_body_lower.addWidget(self.b_flip_vertical, 1, 0)
+
+        self.b_flip_horozontal = QPushButton("Flop horizontally")
+        self.b_flip_horozontal.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,250,200);")
+        self.grid_body_lower.addWidget(self.b_flip_horozontal, 1, 1)
+
+        self.b_rotate_left = QPushButton("Rotate Left")
+        self.b_rotate_left.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,200,250);")
+        self.grid_body_lower.addWidget(self.b_rotate_left, 1, 2)
+
+        self.b_rotate_right = QPushButton("Rotate Right")
+        self.b_rotate_right.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,200,250);")
+        self.grid_body_lower.addWidget(self.b_rotate_right, 1, 3)
+
+        self.b_remove = QPushButton("Remove section")
+        self.b_remove.setStyleSheet("color: rgb(0,0,0); background-color: #C91B1B;")
+        self.grid_body_lower.addWidget(self.b_remove, 2, 0)
+
+        self.b_done = QPushButton("Finished")
+        self.b_done.setStyleSheet("color: rgb(0,0,0); background-color: #dfbb19;")
+        self.grid_body_lower.addWidget(self.b_done, 2, 3)
 
         ### SUPERGRID ###
         self.supergrid = QGridLayout()
@@ -240,9 +231,9 @@ class GUISortedFilenames(QWidget):
         # Update the quality selection in the bottom left
         curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
         text = curr_fn['quality']
-        index = self.dd.findText(text, Qt.MatchFixedString)
+        index = self.b_quality.findText(text, Qt.MatchFixedString)
         if index >= 0:
-            self.dd.setCurrentIndex(index)
+            self.b_quality.setCurrentIndex(index)
 
         # Get filepath of "curr_section" and set it as viewer's photo
         img_fp = os.path.join(self.fileLocationManager.thumbnail_prep, self.curr_section)
@@ -257,12 +248,12 @@ class GUISortedFilenames(QWidget):
             return section_index
 
     def click_button(self, button):
-        if button in [self.b_left, self.b_right, self.b_remove]:
+        if button in [self.b_move_left, self.b_move_right, self.b_remove]:
             section_number = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['section_number']
 
-            if button == self.b_left:
+            if button == self.b_move_left:
                 self.sqlController.move_section(self.stack, section_number, -1)
-            elif button == self.b_right:
+            elif button == self.b_move_right:
                 self.sqlController.move_section(self.stack, section_number, 1)
             elif button == self.b_remove:
                 result = self.message_box(
@@ -289,6 +280,23 @@ class GUISortedFilenames(QWidget):
             self.valid_sections = self.sqlController.get_valid_sections(self.stack)
             self.valid_section_keys = sorted(list(self.valid_sections))
             self.set_curr_section(self.curr_section_index)
+        elif button in [self.b_flip_vertical, self.b_flip_horozontal, self.b_rotate_right, self.b_rotate_left]:
+            """
+            Transform_type must be "rotate", "flip", or "flop".
+            These transformations get applied to all the active sections. The actual
+            conversions take place on the thumbnails and the raw files.
+            The transformed raw files get placed in the preps/oriented dir.
+            """
+
+            index = [self.b_flip_vertical, self.b_flip_horozontal, self.b_rotate_right, self.b_rotate_left].index(button)
+            cmd = ['-flip', '-flop', '-rotate 90', '-rotate -90'][index]
+
+            for section in self.valid_sections.values():
+                thumbnail_path = os.path.join(self.fileLocationManager.thumbnail_prep, section['destination'])
+                subprocess.run(['convert', cmd, thumbnail_path, thumbnail_path])
+
+            self.setCurrSection(self.curr_section_index)
+
         elif button == self.b_help:
             self.message_box(
                 'This GUI is used to align slices to each other. The shortcut commands are as follows: \n\n' +
@@ -297,14 +305,21 @@ class GUISortedFilenames(QWidget):
                 'Use the buttons on the bottom panel to move',
                 False
             )
-        elif button == self.dd:
-            # Get dropdown selection
-            dropdown_selection = self.dd.currentText()
+        elif button == self.b_quality:
             curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
-            curr_section['quality'] = dropdown_selection
-        elif button == self.b_done:
-            self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
+            curr_section['quality'] = self.b_quality.currentText()
+
             self.sqlController.save_valid_sections(self.valid_sections)
+        elif button == self.b_done:
+            self.message_box(
+                "All selected operations will now be performed on the full sized raw images" +
+                "This may take an hour or two, depending on how many operations are queued.",
+                False
+            )
+
+            # self.apply_queued_transformations()
+            self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
+            self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-5_setup_orientations')
             sys.exit(app.exec_())
 
     def message_box(self, text, is_warn):
