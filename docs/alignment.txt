@@ -3,6 +3,20 @@ This file in turn calls:
 utilties/a_script_preprocess_2.py which in turn calls:
 utilities/align_compose.py which in turn calls:
 align_v3.py just calls: align_sequential.py which runs elastix on each file, which aligns current to previous
+
+elastic command is:
+-f fixed_image is: previous image
+-m moving image is: current image
+-p parameter file is : preprocess/parameters/Parameters_Rigid_MutualInfo.txt
+elastix -f previous.tif -m current.tif -out newtif -p parameter_file,
+            'param_fp': param_fp,
+            'output_subdir': output_subdir,
+            'fixed_fp': prev_fp,
+            'moving_fp': curr_fp
+            })
+
+
+
 compose_v3.py creates a dictionary of image name,
 
 and then:
