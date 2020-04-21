@@ -5,14 +5,14 @@ import os
 import argparse
 from collections import defaultdict
 from itertools import chain
-
 import numpy as np
 
 from utilities.data_manager_v2 import DataManager
-from utilities.distributed_utilities import run_distributed5
+from utilities.distributed_utilities import run_distributed
 from utilities.metadata import DATA_ROOTDIR, orientation_argparse_str_to_imagemagick_str
 from utilities.utilities2015 import csv_to_dict, convert_2d_transform_forms, convert_cropbox_fmt, load_ini, \
     create_parent_dir_if_not_exists, execute_command
+from utilities.sqlcontroller import SqlController
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -27,8 +27,8 @@ This is the low-level usage. Note that the user must ensure the warp parameters 
 
 parser.add_argument("--input_spec", type=str, help="input specifier. ini")
 parser.add_argument("--op_id", type=str, help="operation id")
-parser.add_argument("--op", action='append', nargs=2, 
-    #metavar=('op_type', 'op_params'), 
+parser.add_argument("--op", action='append', nargs=2,
+    #metavar=('op_type', 'op_params'),
     help="operation list")
 parser.add_argument("--input_fp", type=str, help="input filepath")
 parser.add_argument("--output_fp", type=str, help="output filepath")
@@ -51,7 +51,7 @@ def convert_operation_to_arr(op, resol, inverse=False, return_str=False, stack=N
         transforms_to_anchor = csv_to_dict(tf_csv)
 
         transforms_resol = op['resolution']
-        transforms_scale_factor = DataManager.sqlController.convert_resolution_string_to_um(stack=stack, resolution=transforms_resol) / DataManager.sqlController.convert_resolution_string_to_um(stack=stack, resolution=resol)
+        transforms_scale_factor = DataManager.convert_resolution_string_to_um(stack=stack, resolution=transforms_resol) / DataManager.sqlController.convert_resolution_string_to_um(stack=stack, resolution=resol)
         tf_mat_mult_factor = np.array([[1,1,transforms_scale_factor],[1,1,transforms_scale_factor]])
         if inverse:
             transforms_to_anchor = {img_name: convert_2d_transform_forms(np.linalg.inv(np.reshape(tf, (3,3)))[:2] * tf_mat_mult_factor, out_form='str') for img_name, tf in transforms_to_anchor.iteritems()}
@@ -62,7 +62,7 @@ def convert_operation_to_arr(op, resol, inverse=False, return_str=False, stack=N
 
     elif op['type'] == 'crop':
         cropbox_resol = op['resolution']
-        
+
         if 'cropboxes_csv' in op: # each image has a different cropbox
             cropboxes_all = csv_to_dict(op['cropboxes_csv'])
 
@@ -123,37 +123,38 @@ pad_color = args.pad_color
 
 
 if args.op_id is not None:
-    
+
     #print 'args.op_id'
     #print args.op_id
-    
+
     input_spec = load_ini(args.input_spec)
     stack = input_spec['stack']
     prep_id = input_spec['prep_id']
     version = input_spec['version']
     resol = input_spec['resol']
-
+    sqlController = SqlController()
     image_name_list = input_spec['image_name_list']
     if image_name_list == 'all':
-        image_name_list = DataManager.load_sorted_filenames(stack=stack)[0].keys()
+        #image_name_list = DataManager.load_sorted_filenames(stack=stack)[0].keys()
+        image_name_list = sqlController.get_image_list(stack, 'source')
 
     op_seq = parse_operation_sequence(args.op_id, resol=resol, return_str=True, stack=stack)
 
     ops_in_prep_id = op_seq[0][2]
     out_prep_id = op_seq[-1][3]
-    
+
     #print op_seq
     #print ops_in_prep_id
     #print out_prep_id
-    
+
     if prep_id==None:
         prep_id = "None"
     if ops_in_prep_id==None:
         ops_in_prep_id = "None"
-        
+
     if version=="None":
         version = None
-        
+
     # Choose pad color
     if version=="NtbNormalized":
         pad_color = 'black'
@@ -163,7 +164,7 @@ if args.op_id is not None:
         pad_color = 'white'
 
     assert ops_in_prep_id == prep_id, "Input prep according to operation configs is %s, but the provided input_spec is %s." % (ops_in_prep_id, prep_id)
-   
+
     ops_str_all_images = defaultdict(str)
     for op_type, op_params_str_all_images, _, _ in op_seq:
         for img_name, op_params_str in op_params_str_all_images.items():
@@ -172,17 +173,17 @@ if args.op_id is not None:
                 op_params_str = '^' + op_params_str[1:]
 
             ops_str_all_images[img_name] += ' --op %s %s ' % (op_type, op_params_str)
-            
+
     # sequantial_dispatcher argument cannot be too long, so we must limit the number of images processed each time
     batch_size = 100
     for batch_id in range(0, len(image_name_list), batch_size):
-        
+
         #print '_____________________________________________'
         #print batch_id
         #print '_____________________________________________'
-        
+
         # Removes stderr and stdout
-        run_distributed5('python %(script)s --input_fp \"%%(input_fp)s\" \
+        run_distributed('python %(script)s --input_fp \"%%(input_fp)s\" \
         --output_fp \"%%(output_fp)s\" %%(ops_str)s --pad_color %%(pad_color)s' % \
         {'script':  os.path.join(os.getcwd(), 'warp_crop_v3.py'),},
         kwargs_list=[{'ops_str': ops_str_all_images[img_name],
@@ -193,7 +194,7 @@ if args.op_id is not None:
         argument_type='single',
         jobs_per_node=args.njobs,
         local_only=True)
-        
+
 elif args.op is not None:
 # Usage 1
 
@@ -221,7 +222,7 @@ elif args.op is not None:
                              'w': str(w),
                              'h': str(h)}
 
-        
+
         elif op_type == 'rotate':
             #print op_params
             #print orientation_argparse_str_to_imagemagick_str.keys()

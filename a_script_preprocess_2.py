@@ -62,7 +62,7 @@ def create_anchor_file(stack, anchor_fn='auto'):
         anchor_fn = valid_sections[valid_section_keys[curr_section_index]]['destination']
 
     # First designate an anchor to use
-    anchor_text_fp = os.path.join(ROOT_DIR, stack, 'brains_info', 'anchor.txt')
+    anchor_text_fp = os.path.join(fileLocationManager.brain_info, 'anchor.txt')
 
     f = open( anchor_text_fp , "w")
     f.write( anchor_fn )

@@ -8,8 +8,8 @@ import json
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities2015 import dict_to_csv
-from utilities.data_manager_v2 import load_consecutive_section_transform
-
+#from utilities.data_manager_v2 import load_consecutive_section_transform
+from utilities.data_manager_v2 import DataManager
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description="""Generate a csv file that stores a dict. Keys are image names and values are flattened (3,3)-matrices.
