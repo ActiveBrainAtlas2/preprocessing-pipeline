@@ -9,6 +9,7 @@ from utilities.metadata import (ENABLE_UPLOAD_S3, ENABLE_DOWNLOAD_S3,
 
 from utilities.metadata import DATA_ROOTDIR
 from utilities.utilities2015 import create_if_not_exists, shell_escape, execute_command
+from utilities.file_location import FileLocationManager
 
 default_root = dict(localhost='/home/yuncong',
                     # workstation='/media/yuncong/BstemAtlasData',
@@ -195,10 +196,9 @@ def first_last_tuples_distribute_over(first_sec, last_sec, n_host):
         first_last_tuples = [(int(first_sec+i*secs_per_job), int(first_sec+(i+1)*secs_per_job-1) if i != n_host - 1 else last_sec) for i in range(n_host)]
     return first_last_tuples
 
-def run_distributed5(command, argument_type='single', kwargs_list=None, jobs_per_node=1, node_list=None, local_only=False, use_aws=False):
+def run_distributed(command, argument_type='single', kwargs_list=None, jobs_per_node=1, node_list=None, local_only=False, use_aws=False):
     """
     Distributed executing a command.
-
     Args:
         local_only: run on local computer instead of AWS cluster
         jobs_per_node:

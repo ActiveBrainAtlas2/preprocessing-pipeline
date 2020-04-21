@@ -13,10 +13,7 @@ parser.add_argument("--op", type=str, help="operation id")
 
 args = parser.parse_args()
 
-import os
-import sys
-sys.path.append(os.environ['REPO_DIR'] + '/utilities')
-from utilities2015 import execute_command
+from utilities.utilities2015 import execute_command
 
 execute_command('python align_v3.py %s --op %s' % (args.input_spec, args.op))
 execute_command('python compose_v3.py %s --op %s' % (args.input_spec, args.op))

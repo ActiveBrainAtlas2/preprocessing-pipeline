@@ -13,6 +13,8 @@ from skimage.io import imread
 from utilities.metadata import ROOT_DIR, SECTION_THICKNESS, DATA_DIR, THUMBNAILRAW
 from utilities.utilities2015 import load_ini, load_hdf_v2, one_liner_to_arr, rescale_by_resampling, load_data
 from utilities.sqlcontroller import SqlController
+from utilities.file_location import FileLocationManager
+from utilities.preprocess_utilities import parse_elastix_parameter_file
 
 
 class DataManager(object):
@@ -946,13 +948,13 @@ class DataManager(object):
             (3,3)-array.
         """
         assert stack is not None
+        fileLocationManager = FileLocationManager(stack)
 
         if elastix_output_dir is None:
-            elastix_output_dir = DataManager.get_elastix_output_dir(stack)
+            elastix_output_dir = fileLocationManager.elastix_dir
         if custom_output_dir is None:
-            custom_output_dir = DataManager.get_custom_output_dir(stack)
+            custom_output_dir = fileLocationManager.custom_output
 
-        from utilities.preprocess_utilities import parse_elastix_parameter_file
 
         custom_tf_fp = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, moving_fn + '_to_' + fixed_fn + '_customTransform.txt')
 
@@ -1000,4 +1002,45 @@ class DataManager(object):
                 section_number = line[ space_index+1 : ]
                 section_names.append( section_name )
         return section_names
+
+    @staticmethod
+    def load_consecutive_section_transform(moving_fn, fixed_fn, elastix_output_dir=None, custom_output_dir=None, stack=None):
+        """
+        Load pairwise transform.
+
+        Returns:
+            (3,3)-array.
+        """
+        assert stack is not None
+
+        if elastix_output_dir is None:
+            elastix_output_dir = DataManager.get_elastix_output_dir(stack)
+        if custom_output_dir is None:
+            custom_output_dir = DataManager.get_custom_output_dir(stack)
+
+        from preprocess_utilities import parse_elastix_parameter_file
+
+        custom_tf_fp = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, moving_fn + '_to_' + fixed_fn + '_customTransform.txt')
+
+        custom_tf_fp2 = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
+
+        print(custom_tf_fp)
+        if os.path.exists(custom_tf_fp):
+            # if custom transform is provided
+            sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp)
+            with open(custom_tf_fp, 'r') as f:
+                t11, t12, t13, t21, t22, t23 = map(float, f.readline().split())
+            transformation_to_previous_sec = np.linalg.inv(np.array([[t11, t12, t13], [t21, t22, t23], [0,0,1]]))
+        elif os.path.exists(custom_tf_fp2):
+            sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp2)
+            transformation_to_previous_sec = parse_elastix_parameter_file(custom_tf_fp2)
+        else:
+            # otherwise, load elastix output
+            param_fp = os.path.join(elastix_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
+            sys.stderr.write('Load elastix-computed transform: %s\n' % param_fp)
+            if not os.path.exists(param_fp):
+                raise Exception('Transform file does not exist: %s to %s, %s' % (moving_fn, fixed_fn, param_fp))
+            transformation_to_previous_sec = parse_elastix_parameter_file(param_fp)
+
+        return transformation_to_previous_sec
 

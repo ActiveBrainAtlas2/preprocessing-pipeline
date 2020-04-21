@@ -1,5 +1,7 @@
-#!/usr/bin/env python
-
+import os
+import sys
+import json
+import re
 import argparse
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -19,20 +21,19 @@ parser.add_argument("--param_fp", type=str, help="elastix parameter file path")
 
 args = parser.parse_args()
 
-import os
-import sys
-import json
-import re
 
-sys.path.append(os.environ['REPO_DIR'] + '/utilities')
-from utilities2015 import *
-from data_manager import *
-from metadata import *
-from distributed_utilities import *
+#from utilities2015 import *
+#from data_manager import *
+from utilities.metadata import load_ini
+from utilities.distributed_utilities import run_distributed
+from utilities.sqlcontroller import SqlController
+from utilities.file_location import FileLocationManager
 
 input_spec = load_ini(args.input_spec)
-print input_spec
 stack = input_spec['stack']
+sqlController = SqlController()
+fileLocationManager = FileLocationManager(stack)
+
 prep_id = input_spec['prep_id']
 if prep_id == 'None':
     prep_id = None
@@ -42,11 +43,12 @@ if version == 'None':
     version = None
 image_name_list = input_spec['image_name_list']
 if image_name_list == 'all':
-    image_name_list = map(lambda x: x[0], sorted(DataManager.load_sorted_filenames(stack=stack)[0].items(), key=lambda x: x[1]))
+    image_name_list = sqlController.get_image_list(stack, 'source')
+    #image_name_list = map(lambda x: x[0], sorted(DataManager.load_sorted_filenames(stack=stack)[0].items(), key=lambda x: x[1]))
     #image_name_list = DataManager.load_sorted_filenames(stack=stack)[0].keys()
 
 if args.op is not None:
-    op = load_ini(os.path.join(DATA_ROOTDIR, 'CSHL_data_processed', stack, 'operation_configs', args.op + '.ini'))
+    op = load_ini(os.path.join(fileLocationManager.operation_configs, args.op + '.ini'))
     assert op['type'] == 'warp', "Op must be a warp"
     elastix_output_dir = op['elastix_output_dir']
     params_fp = op['elastix_parameter_fp']
@@ -67,8 +69,8 @@ run_distributed("python %(script)s \"%(output_dir)s\" \'%%(kwargs_str)s\' -p %(p
                 },
                 kwargs_list=[{'prev_img_name': image_name_list[i-1],
                               'curr_img_name': image_name_list[i],
-                              'prev_fp': DataManager.get_image_filepath_v2(stack=stack, fn=image_name_list[i-1], prep_id=prep_id, resol=resol, version=version),
-                              'curr_fp': DataManager.get_image_filepath_v2(stack=stack, fn=image_name_list[i], prep_id=prep_id, resol=resol, version=version)
+                              'prev_fp': os.path.join(fileLocationManager.oriented, image_name_list[i-1]),
+                              'curr_fp': os.path.join(fileLocationManager.oriented, image_name_list[i])
                              }
                             for i in range(1, len(image_name_list))],
                 argument_type='list',

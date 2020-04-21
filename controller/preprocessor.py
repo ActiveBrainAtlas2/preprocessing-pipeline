@@ -204,7 +204,7 @@ class SlideProcessor(object):
 
     # End of table definitions
 
-    def make_thumbnail(self, file_id, file_name):
+    def make_thumbnail(self, file_id, file_name, testing=False):
         """
         This will create a png in the web thumbnail dir, and another one
         in the preps dir that are used throughout the pipeline
@@ -219,10 +219,14 @@ class SlideProcessor(object):
             # Create thumbnails
             command = ['convert', source, '-resize', '3.125%', '-auto-level',
                        '-normalize', '-compress', 'lzw', prep_destination]
+            if testing:
+                command = ['touch', prep_destination]
             subprocess.run(command)
             base = os.path.splitext(rsection.destination_file)[0]
             output_png = os.path.join(self.fileLocationManager.thumbnail_web, base + '.png')
             command = ['convert', prep_destination, output_png]
+            if testing:
+                command = ['touch', output_png]
             subprocess.run(command)
             #print(" ".join(command))
             result = 1
@@ -232,11 +236,16 @@ class SlideProcessor(object):
 
         return result
 
-    def make_histogram(self, file_id, file_name):
+    def make_histogram(self, file_id, file_name, testing=False):
         source = os.path.join(self.fileLocationManager.tif, file_name)
         HIS_FOLDER = self.fileLocationManager.histogram
         base = os.path.splitext(file_name)[0]
         output_png = os.path.join(HIS_FOLDER, base + '.png')
+        if testing:
+            command = ['touch', output_png]
+            subprocess.run(command)
+            return 1
+
         rsection = self.session.query(RawSection).filter(RawSection.id == file_id).one()
         try:
             img = io.imread(source)
@@ -297,7 +306,7 @@ def get_last_2d(data):
     return data.flat[:m*n].reshape(m,n)
 
 
-def make_tif(session, prep_id, tif_id, file_id):
+def make_tif(session, prep_id, tif_id, file_id, testing=False):
     slide_processor = SlideProcessor(prep_id, session)
     CZI_FOLDER = slide_processor.fileLocationManager.czi
     TIF_FOLDER = slide_processor.fileLocationManager.tif
@@ -310,10 +319,9 @@ def make_tif(session, prep_id, tif_id, file_id):
     command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate',
                               '-series', str(tif.scene_index), '-channel', str(tif.channel_index), '-nooverwrite', czi_file, tif_file]
     cli = " ".join(command)
-    #command = ['touch', tif_file]
+    if testing:
+        command = ['touch', tif_file]
     subprocess.run(command)
-    #print(cli)
-    #return 1
 
     end = time.time()
     if os.path.exists(tif_file):

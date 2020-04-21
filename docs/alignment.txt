@@ -1,3 +1,23 @@
+1. sorting of files
+2. orientation of files
+3. automatic pre processing
+
+| utilities/a_script_preprocess_setup.py                        |
+| utilities/a_script_preprocess_1.py                            |
+| utilities/extract_channel.py                                  |
+| utilities/rescale.py                                          |
+| utilities/normalize_intensity.py                              |
+| utilities/a_script_preprocess_2.py                            |
+    command = ['python', 'align_compose.py', 'input_spec.ini', '--op', 'from_none_to_aligned']
+        command('python align_v3.py %s --op %s' % (args.input_spec, args.op))
+            align_sequential.py
+                elastix
+        command('python compose_v3.py %s --op %s' % (args.input_spec, args.op))
+    command = ['python', 'warp_crop.py','--input_spec', 'input_spec.ini', '--op_id', 'from_none_to_padded','--njobs','8','--pad_color','black']
+
+| utilities/align_compose.py                                    |
+| utilities/warp_crop.py
+
 Initial alignment occurs when the user clicks the 'Automatic setup scripts' in the a_GUI_setup_main.py.
 This file in turn calls:
 utilties/a_script_preprocess_2.py which in turn calls:

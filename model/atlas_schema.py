@@ -112,9 +112,9 @@ class FileOperation(dj.Computed):
         file_id = (RawSection & key).fetch1('id')
         file_name = (RawSection & key).fetch1('destination_file')
         tif_id = (RawSection & key).fetch1('tif_id')
-        czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), np.asscalar(file_id))
-        histogram = slide_processor.make_histogram(np.asscalar(file_id), file_name)
-        thumbnail = slide_processor.make_thumbnail(np.asscalar(file_id), file_name)
+        czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), np.asscalar(file_id), testing)
+        histogram = slide_processor.make_histogram(np.asscalar(file_id), file_name, testing)
+        thumbnail = slide_processor.make_thumbnail(np.asscalar(file_id), file_name, testing)
         end = time.time()
 
         self.insert1(dict(key, file_name=file_name,
@@ -122,14 +122,16 @@ class FileOperation(dj.Computed):
                           thumbnail=thumbnail,
                           czi_to_tif = czi_to_tif,
                           processing_duration=end - start,
-                          histogram = histogram), skip_duplicates=True)
+                          histogram = histogram), skip_duplicates=False)
 
 # End of table definitions
 
 
-def manipulate_images(id, limit):
+def manipulate_images(id, limit, testing_param=False):
     global prep_id
+    global testing
     prep_id = id
+    testing = testing_param
     restriction = 'prep_id = "{}"'.format(prep_id)
     FileOperation.populate([RawSection & 'active=1' & restriction ], display_progress=True, reserve_jobs=True, limit=limit)
 

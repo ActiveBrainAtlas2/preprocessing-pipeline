@@ -1,7 +1,10 @@
 import os
 import subprocess
 
-from utilities.metadata import detector_settings, ROOT_DIR
+from utilities.metadata import detector_settings
+from utilities.file_location import FileLocationManager
+
+
 
 
 def check_exists_download(source, destination):
@@ -14,7 +17,7 @@ def check_exists_download(source, destination):
 
 def preprocess_setup(stack, stain):
     # set base root of common files
-    CSHL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
+    fileLocationManager = FileLocationManager(stack)
 
     if stain == "unknown":
         id_detectors = [799, 19]
@@ -28,24 +31,21 @@ def preprocess_setup(stack, stain):
 
     # Download operation config files
     S3_OPERATION_CONFIGS = 's3://mousebrainatlas-data/operation_configs/'
-    LOCAL_OPERATION_CONFIGS = os.path.join(CSHL_DIR, 'all_brains')
-    check_exists_download(S3_OPERATION_CONFIGS, LOCAL_OPERATION_CONFIGS)
+    check_exists_download(S3_OPERATION_CONFIGS, fileLocationManager.operation_configs)
 
     # Download mxnet files
     S3_MXMODELS = 's3://mousebrainatlas-data/mxnet_models/inception-bn-blue/'
-    LOCAL_MXMODELS = os.path.join(CSHL_DIR, 'all_brains', 'mxnet_models', 'inception-bn-blue/')
+    LOCAL_MXMODELS = os.path.join(fileLocationManager.mxnet_models, 'inception-bn-blue/')
     check_exists_download(S3_MXMODELS, LOCAL_MXMODELS)
 
     # Download AtlasV7 volume files
     S3_ATLAS_VOLUMES = 's3://mousebrainatlas-data/CSHL_volumes/atlasV7/atlasV7_10.0um_scoreVolume/score_volumes/'
-    LOCAL_ATLAS_VOLUMES = os.path.join(CSHL_DIR, 'all_brains', 'atlasV7', 'atlasV7_10.0um_scoreVolume', 'score_volumes/')
-    check_exists_download(S3_ATLAS_VOLUMES, LOCAL_ATLAS_VOLUMES)
+    check_exists_download(S3_ATLAS_VOLUMES, fileLocationManager.atlas_volume)
 
     # Download all classifiers according to the list of detectors by detector ID
     for id_detector in id_detectors:
         id_classifier = detector_settings.loc[id_detector]['feature_classifier_id']
         # s3_fp = 's3://mousebrainatlas-data/CSHL_classifiers/setting_'+str(id_classifier)+'/classifiers/'
         S3_FILES = 's3://mousebrainatlas-data/CSHL_classifiers/setting_{}/classifiers/'.format(str(id_classifier))
-        LOCAL_FILES = os.path.join(ROOT_DIR, stack, 'brains_info', 'classifiers', 'setting_{}'.format(id_classifier),
-                                'classifiers/')
+        LOCAL_FILES = os.path.join(fileLocationManager.classifiers, 'setting_{}'.format(id_classifier))
         check_exists_download(S3_FILES, LOCAL_FILES)

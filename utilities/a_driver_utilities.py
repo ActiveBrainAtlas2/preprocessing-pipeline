@@ -6,7 +6,8 @@ import cv2
 import matplotlib.pyplot as plt
 
 from utilities.data_manager_v2 import DataManager
-from utilities.metadata import ordered_pipeline_steps, ROOT_DIR
+from utilities.metadata import ordered_pipeline_steps
+from utilities.file_location import FileLocationManager
 
 
 def create_input_spec_ini_all(name, stack, prep_id, version, resol):
@@ -179,6 +180,7 @@ def make_from_x_to_y_ini(stack,x,y,rostral_limit,caudal_limit,dorsal_limit,ventr
     '''
     Creates operation configuration files that specify the cropping boxes for either the whole brain, or the brainstem.
     '''
+    fileLocationManager = FileLocationManager(stack)
     base_prep_id=''
     dest_prep_id=''
     if x=='aligned':
@@ -190,7 +192,7 @@ def make_from_x_to_y_ini(stack,x,y,rostral_limit,caudal_limit,dorsal_limit,ventr
     elif y=='brainstem':
         dest_prep_id = 'alignedBrainstemCrop'
 
-    fn = os.path.join( DataManager.get_images_root_folder(stack), 'operation_configs', 'from_'+x+'_to_'+y+'.ini' )
+    fn = os.path.join(fileLocationManager.operation_configs, 'from_'+x+'_to_'+y+'.ini' )
     f = open(fn, "w")
     f.write('[DEFAULT]\n')
     f.write('type = crop\n\n')
@@ -204,7 +206,8 @@ def make_from_x_to_y_ini(stack,x,y,rostral_limit,caudal_limit,dorsal_limit,ventr
     f.close()
 
 def create_prep2_section_limits( stack, lower_lim, upper_lim):
-    fn = os.path.join( DataManager.get_images_root_folder(stack), stack+'_prep2_sectionLimits.ini' )
+    fileLocationManager = FileLocationManager(stack)
+    fn = os.path.join(fileLocationManager.brain_info, 'prep2_sectionLimits.ini' )
     f = open(fn, "w")
     f.write('[DEFAULT]\n')
     f.write('left_section_limit = '+str(lower_lim)+'\n')
@@ -212,7 +215,9 @@ def create_prep2_section_limits( stack, lower_lim, upper_lim):
     f.close()
 
 def make_manual_anchor_points( stack, x_12N, y_12N, x_3N, y_3N, z_midline):
-    fn = os.path.join(ROOT_DIR, stack, 'brains_info', 'manual_anchor_points.ini' )
+    fileLocationManager = FileLocationManager(stack)
+
+    fn = os.path.join(fileLocationManager.brain_info, 'manual_anchor_points.ini' )
     f = open(fn, "w")
     f.write('[DEFAULT]\n')
     f.write('x_12N = '+str(x_12N)+'\n')

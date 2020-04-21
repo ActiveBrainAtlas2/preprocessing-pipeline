@@ -5,8 +5,8 @@ import sys
 import json
 import re
 
-sys.path.append(os.path.join(os.environ['REPO_DIR'], 'utilities'))
-from metadata import *
+from metadata import REPO_DIR
+sys.path.append(REPO_DIR)
 from utilities2015 import *
 
 import argparse
@@ -26,31 +26,31 @@ output_dir = args.output_dir
 kwargs_str = json.loads(args.kwargs_str)
 param_fp = args.param_fp
 regenerate = args.r
-    
+
 if param_fp is None:
     param_fp = os.path.join(os.environ['REPO_DIR'], 'preprocess', 'parameters', "Parameters_Rigid_MutualInfo.txt")
-    
+
 failed_pairs = []
 
 # every "kwarg" corresponds to a pair of images
 for kwarg in kwargs_str:
-    
+
     prev_img_name = kwarg['prev_img_name']
     curr_img_name = kwarg['curr_img_name']
     prev_fp = kwarg['prev_fp']
     curr_fp = kwarg['curr_fp']
-    
+
     output_subdir = os.path.join(output_dir, curr_img_name + '_to_' + prev_img_name)
-    
+
     if os.path.exists(output_subdir) and 'TransformParameters.0.txt' in os.listdir(output_subdir):
         sys.stderr.write('Result for aligning %s to %s already exists.\n' % (curr_img_name, prev_img_name))
         if not regenerate:
             sys.stderr.write('Skip.\n' % (curr_img_name, prev_img_name))
             continue
-    
+
     execute_command('rm -rf \"%s\"' % output_subdir)
     create_if_not_exists(output_subdir)
-    
+
     ret = execute_command('%(elastix_bin)s -f \"%(fixed_fp)s\" -m \"%(moving_fp)s\" -out \"%(output_subdir)s\" -p \"%(param_fp)s\"' % \
             {'elastix_bin': ELASTIX_BIN,
             'param_fp': param_fp,
@@ -76,4 +76,4 @@ if len(failed_pairs) > 0:
     with open(os.path.join(output_dir, 'intra_stack_alignment_failed_pairs_%s.txt' % (hostname.split('.')[0])), 'w') as f:
         for pf, cf in failed_pairs:
             f.write(pf + ' ' + cf + '\n')
-            
+

@@ -1,8 +1,9 @@
 import os
 import argparse
 from utilities.a_driver_utilities import call_and_time, create_input_spec_ini_all
-from utilities.metadata import ROOT_DIR, REPO_DIR
 from utilities.sqlcontroller import SqlController
+from utilities.file_location import FileLocationManager
+from utilities.metadata import REPO_DIR
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -17,12 +18,15 @@ stain = args.stain
 stain = stain.lower()
 anchor_fn = args.anchor_fn
 
+fileLocationManager = FileLocationManager(stack)
+
+
 def create_from_none_to_aligned_file():
-    images_root_folder = os.path.join(ROOT_DIR, stack, 'preps')
-    elastix_output = os.path.join(images_root_folder, 'elastix_output')
-    custom_output = os.path.join(images_root_folder, 'custom_output')
-    none_to_aligned_fp = os.path.join(ROOT_DIR, stack, 'brains_info', 'from_none_to_aligned.ini')
-    transforms_to_anchor = os.path.join(ROOT_DIR, stack, 'brains_info', 'transforms_to_anchor.csv')
+    #images_root_folder = os.path.join(ROOT_DIR, stack, 'preps')
+    elastix_output = fileLocationManager.elastix_dir
+    custom_output = fileLocationManager.custom_output
+    none_to_aligned_fp = os.path.join(fileLocationManager.brain_info, 'from_none_to_aligned.ini')
+    transforms_to_anchor = os.path.join(fileLocationManager.brain_info, 'transforms_to_anchor.csv')
     from_none_to_aligned_content = '[DEFAULT]\n\
 type=warp\n\
 \n\
@@ -48,7 +52,7 @@ resolution=thumbnail'
     f = open(none_to_aligned_fp , "w")
     f.write(from_none_to_aligned_content)
     f.close()
-    
+
 def create_anchor_file(stack, anchor_fn='auto'):
     if anchor_fn=='auto':
         sqlController = SqlController()
@@ -65,7 +69,7 @@ def create_anchor_file(stack, anchor_fn='auto'):
     f.close()
     # Returns the chosen anchor filename just in case it is being suto-selected
     return anchor_fn
-    
+
 # Create 2 files necessary for running the following 2 scripts
 anchor_fn = create_anchor_file(stack, anchor_fn=anchor_fn)
 create_from_none_to_aligned_file()
@@ -80,9 +84,9 @@ if stain == 'ntb':
     command = ['python', 'warp_crop.py','--input_spec', 'input_spec.ini', '--op_id', 'from_none_to_padded','--njobs','8','--pad_color','black']
     completion_message = 'Finished transformation to padded (prep1).'
     call_and_time( command, completion_message=completion_message)
-    
+
 if stain == 'thionin':
-    
+
     create_input_spec_ini_all( name='input_spec.ini', \
             stack=stack, prep_id='None', version='gray', resol='thumbnail')
     command = ['python', 'align_compose.py', 'input_spec.ini', '--op', 'from_none_to_aligned']
@@ -92,6 +96,6 @@ if stain == 'thionin':
     command = ['python', 'warp_crop.py','--input_spec', 'input_spec.ini', '--op_id', 'from_none_to_padded','--njobs','8','--pad_color','white']
     completion_message = 'Finished transformation to padded (prep1).'
     call_and_time( command, completion_message=completion_message)
-    
+
 print('\nNow manually fix any incorrect alignments. Custom GUI available with the following command:\n')
 print('`python ../src/gui/preprocess_tool_v3.py UCSD001 --tb_version NtbNormalized/gray`')

@@ -13,8 +13,8 @@ from skimage.exposure import rescale_intensity
 # DEFAULT_FOREGROUND_DISSIMILARITY_THRESHOLD = None
 # DEFAULT_MINSIZE = 1000 # If tissues are separate pieces, 1000 is not small enough to capture them.
 # DEFAULT_MINSIZE = 100
-from annotation_utilities import contours_to_mask
-from utilities2015 import find_contour_points, bbox_2d
+from utilities.annotation_utilities import contours_to_mask
+from utilities.utilities2015 import find_contour_points, bbox_2d
 
 DEFAULT_MASK_CHANNEL = 0
 VMAX_PERCENTILE = 99
@@ -61,9 +61,9 @@ def parse_elastix_parameter_file(filepath, tf_type=None):
     """
     Parse elastix parameter result file.
     """
-    
+
     d = parameter_elastix_parameter_file_to_dict(filepath)
-    
+
     if tf_type is None:
         # For alignment composition script
         rot_rad, x_mm, y_mm = d['TransformParameters']
@@ -78,12 +78,12 @@ def parse_elastix_parameter_file(filepath, tf_type=None):
         shift = center + (xshift, yshift) - np.dot(R, center)
         T = np.vstack([np.column_stack([R, shift]), [0,0,1]])
         return T
-    
+
     elif tf_type == 'rigid3d':
         p = np.array(d['TransformParameters'])
         center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
         shift = p[3:] / np.array(d['Spacing'])
-        
+
         thetax, thetay, thetaz = p[:3]
         # Important to use the negative angle.
         cx = np.cos(-thetax)
@@ -99,9 +99,9 @@ def parse_elastix_parameter_file(filepath, tf_type=None):
         R = np.dot(np.dot(Rz, Ry), Rx)
         # R = np.dot(np.dot(Rx, Ry), Rz)
         # The order could be Rx,Ry,Rz - not sure.
-        
+
         return R, shift, center
-    
+
     elif tf_type == 'affine3d':
         p = np.array( d['TransformParameters'])
         L = p[:9].reshape((3,3))
@@ -110,14 +110,14 @@ def parse_elastix_parameter_file(filepath, tf_type=None):
         # shift = center + shift - np.dot(L, center)
         # T = np.column_stack([L, shift])
         return L, shift, center
-    
+
     elif tf_type == 'bspline3d':
         n_params = d['NumberOfParameters']
         p = np.array(d['TransformParameters'])
         grid_size = d['GridSize']
         grid_spacing = d['GridSpacing']
         grid_origin = d['GridOrigin']
-        
+
         return L, shift, center
 
 def brightfieldize_image(img):
@@ -125,7 +125,7 @@ def brightfieldize_image(img):
     Infer if the image is brightfield or dark-background fluorescent.
     If the latter, invert the intensities.
     """
-    
+
     border = np.median(np.concatenate([img[:10, :].flatten(), img[-10:, :].flatten(), img[:, :10].flatten(), img[:, -10:].flatten()]))
     if border < 123:
         # dark background, fluorescent
@@ -146,7 +146,7 @@ def contrast_stretch_image(img):
         img_flattened = img[(img > 0) & (img < 255)] # ignore 0 and 255 which are likely artificial background
 
     vmax_perc = VMAX_PERCENTILE
-    
+
     vmax = np.percentile(img_flattened, vmax_perc)
 #     while vmax_perc > 80:
 #         vmax = np.percentile(img_flattened, vmax_perc)
@@ -156,7 +156,7 @@ def contrast_stretch_image(img):
 #             vmax_perc -= 1
 
     vmin_perc = VMIN_PERCENTILE
-    
+
     vmin = np.percentile(img_flattened, vmin_perc)
 #     while vmin_perc < 20:
 #         vmin = np.percentile(img_flattened, vmin_perc)

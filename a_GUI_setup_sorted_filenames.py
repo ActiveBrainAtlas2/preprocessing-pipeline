@@ -2,6 +2,8 @@ import os
 import subprocess
 import sys
 import argparse
+from skimage import io
+import numpy as np
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QFont, QIntValidator, QBrush, QColor, QPixmap
@@ -289,13 +291,25 @@ class GUISortedFilenames(QWidget):
             """
 
             index = [self.b_flip_vertical, self.b_flip_horozontal, self.b_rotate_right, self.b_rotate_left].index(button)
-            cmd = ['-flip', '-flop', '-rotate 90', '-rotate -90'][index]
+            cmd = ['flip', 'flop', 'rotate90', 'rotate270'][index]
 
             for section in self.valid_sections.values():
                 thumbnail_path = os.path.join(self.fileLocationManager.thumbnail_prep, section['destination'])
-                subprocess.run(['convert', cmd, thumbnail_path, thumbnail_path])
 
-            self.setCurrSection(self.curr_section_index)
+                if cmd == 'flip':
+                    flip(thumbnail_path)
+                elif cmd == 'flop':
+                    flop(thumbnail_path)
+                elif cmd == 'rotate90':
+                    rotate_img(thumbnail_path, 1)
+                elif cmd == 'rotate270':
+                    rotate_img(thumbnail_path, 3)
+                else:
+                    print('Nothing to do')
+                #subprocess.run(command)
+
+            #self.setCurrSection(self.curr_section_index)
+            self.set_curr_section(section_index=-1)
 
         elif button == self.b_help:
             self.message_box(
@@ -351,6 +365,33 @@ class GUISortedFilenames(QWidget):
     def closeEvent(self, event):
         sys.exit(app.exec_())
         # close_main_gui( ex, reopen=True )
+
+
+def rotate_img(filename, rotation):
+    img = io.imread(filename)
+    img = get_last_2d(img)
+    img = np.rot90(img, rotation)
+    io.imsave(filename, img)
+
+def flip(filename):
+    img = io.imread(filename)
+    img = get_last_2d(img)
+    img = np.flipud(img)
+    io.imsave(filename, img)
+
+def flop(filename):
+    img = io.imread(filename)
+    img = get_last_2d(img)
+    img = np.fliplr(img)
+    io.imsave(filename, img)
+
+
+
+def get_last_2d(data):
+    if data.ndim <= 2:
+        return data
+    m,n = data.shape[-2:]
+    return data.flat[:m*n].reshape(m,n)
 
 
 if __name__ == '__main__':

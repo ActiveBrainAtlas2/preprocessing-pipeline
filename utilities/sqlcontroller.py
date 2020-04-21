@@ -83,6 +83,15 @@ class SqlController(object):
         #print(self.valid_sections)
         return self.valid_sections
 
+    def get_image_list(self, stack, source='source'):
+        valid_sections = self.get_valid_sections(stack)
+        files = []
+        for key, file in valid_sections.items():
+            # print(file['source'])
+            files.append(file[source])
+        return files
+
+
     def move_section(self, stack, section_number, change):
         min_id = session.query(func.min(RawSection.section_number)).filter(RawSection.prep_id == stack)\
             .filter(RawSection.active == 1).scalar()
