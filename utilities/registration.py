@@ -12,7 +12,7 @@ ORIENTED = os.path.join(DIR, 'preps', 'oriented')
 ALIGNED = os.path.join(DIR, 'preps', 'aligned')
 PREALIGNED = os.path.join(DIR, 'preps', 'prealigned')
 INPUTS = sorted(os.listdir(INPUT))
-BADS = ['DK39_ID_0001_slide001_S1_C1.tif', 'DK39_ID_0004_slide001_S4_C1.tif', 
+BADS = ['DK39_ID_0001_slide001_S1_C1.tif', 'DK39_ID_0004_slide001_S4_C1.tif',
         'DK39_ID_0007_slide001_S2_C1.tif', 'DK39_ID_0010_slide001_S3_C1.tif', 'DK39_ID_0013_slide002_S1_C1.tif']
 INPUTS = sorted([i for i in INPUTS if i not in BADS and '_C1' in i])
 
@@ -24,7 +24,7 @@ def everything(img, rotation):
 
 def get_last_2d(data):
     if data.ndim <= 2:
-        return data    
+        return data
     m,n = data.shape[-2:]
     return data.flat[:m*n].reshape(m,n)
 
@@ -46,25 +46,25 @@ ORIENTS = sorted(os.listdir(ORIENTED))
 
 fixedFilename = os.path.join(ORIENTED, ORIENTS[0])
 movingFilename = os.path.join(ORIENTED, ORIENTS[1])
+
 fixedImage = sitk.ReadImage(fixedFilename)
 movingImage = sitk.ReadImage(movingFilename)
-print('Loaded fixed and moving')
 parameterMap = sitk.GetDefaultParameterMap('translation')
 #parameterMap = sitk.GetDefaultParameterMap("rigid")
 #parameterMap["Transform"] = ["AffineTransform"]
-print('Post parameter map')
 elastixImageFilter = sitk.ElastixImageFilter()
+elastixImageFilter.LogToConsoleOn()
 elastixImageFilter.SetFixedImage(fixedImage)
 elastixImageFilter.SetMovingImage(movingImage)
 elastixImageFilter.SetParameterMap(parameterMap)
 elastixImageFilter.Execute()
-print('Post execute')
+
 resultImage = elastixImageFilter.GetResultImage()
 transformParameterMap = elastixImageFilter.GetTransformParameterMap()
 
 transformixImageFilter = sitk.TransformixImageFilter()
 transformixImageFilter.SetTransformParameterMap(transformParameterMap)
-print(ORIENTS)    
+
 for filename in ORIENTS:
     input_file = os.path.join(ORIENTED, filename)
     transformixImageFilter.SetMovingImage(sitk.ReadImage(input_file))
