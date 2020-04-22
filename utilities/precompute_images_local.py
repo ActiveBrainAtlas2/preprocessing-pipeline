@@ -16,10 +16,9 @@ HOME = expanduser("~")
 
 #DIR = os.path.join(HOME, 'programming', 'dk39', 'preps')
 DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
-INPUT = os.path.join(DIR, 'prealigned')
-OUTPUT = os.path.join(DIR, 'neuroglancer')
+NUEROGLANCER = os.path.join(DIR, 'neuroglancer')
 RESIZED = os.path.join(DIR, 'resized')
-
+ORIENTED = os.path.join(DIR, 'oriented')
 
 
 def unlink_file(folder):
@@ -35,9 +34,9 @@ def get_avg_size():
 
     widths = []
     heights = []
-    files = os.listdir(INPUT)
+    files = os.listdir(ORIENTED)
     for file in files:
-        img = io.imread(os.path.join(INPUT, file))
+        img = io.imread(os.path.join(ORIENTED, file))
         widths.append(img.shape[0])
         heights.append(img.shape[1])
 
@@ -69,6 +68,7 @@ def resize_canvas(old_image_path, new_image_path,
     # Center the image
     x1 = int(math.floor((canvas_width - old_width) / 2))
     y1 = int(math.floor((canvas_height - old_height) / 2))
+
     mode = im.mode
     if len(mode) == 1:  # L, 1
         new_background = (255)
@@ -76,10 +76,14 @@ def resize_canvas(old_image_path, new_image_path,
         new_background = (255, 255, 255)
     if len(mode) == 4:  # RGBA, CMYK
         new_background = (255, 255, 255, 255)
-    newImage = Image.new(mode, (canvas_width, canvas_height), new_background)
+    #newImage = Image.new(mode, (canvas_width, canvas_height), new_background)
+    newImage = Image.new(mode, (canvas_width, canvas_height))
     newImage.paste(im, (x1, y1, x1 + old_width, y1 + old_height))
     newImage.save(new_image_path)
 
+    #im = Image.open(infile)
+    #im.thumbnail(size)
+    #im.save(file + ".thumbnail", "JPEG")
 
 def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
 
@@ -136,13 +140,13 @@ def main(argv=sys.argv):
     #canvas_width = 500
     #canvas_height = 500
     canvas_width, canvas_height = get_avg_size()
-    unlink_file(OUTPUT)
-    for img in os.listdir(INPUT):
-        original_image = os.path.join(INPUT, img)
+    print('w and h:', canvas_width, canvas_height)
+    for img in os.listdir(ORIENTED):
+        original_image = os.path.join(ORIENTED, img)
         new_file = os.path.join(RESIZED, img)
         resize_canvas(original_image, new_file, canvas_width, canvas_height)
 
-    convert_to_precomputed(folder_to_convert_from=RESIZED, folder_to_convert_to=OUTPUT)
+    convert_to_precomputed(RESIZED, NUEROGLANCER)
 
 if __name__ == "__main__":
     sys.exit(main())
