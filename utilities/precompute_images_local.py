@@ -35,6 +35,7 @@ def get_avg_size():
     widths = []
     heights = []
     files = os.listdir(ORIENTED)
+    files = files[0:50]
     for file in files:
         img = io.imread(os.path.join(ORIENTED, file))
         widths.append(img.shape[0])
