@@ -89,7 +89,7 @@ class SqlController(object):
         for key, file in valid_sections.items():
             # print(file['source'])
             files.append(file[source])
-        return files
+        return sorted(files)
 
 
     def move_section(self, stack, section_number, change):
