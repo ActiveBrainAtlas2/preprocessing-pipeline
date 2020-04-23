@@ -26,7 +26,6 @@ class GUISetupMain(QWidget):
 
         # Set buttons functionality
         self.b_1_4.clicked.connect(lambda: self.click_button(self.b_1_4))
-        self.b_1_5.clicked.connect(lambda: self.click_button(self.b_1_5))
         self.b_1_6.clicked.connect(lambda: self.click_button(self.b_1_6))
         self.b_exit.clicked.connect(lambda: self.click_button(self.b_exit))
 
@@ -43,8 +42,6 @@ class GUISetupMain(QWidget):
         # Grid buttons
         self.b_1_4 = QPushButton("Setup Sorted Filenames")
         self.grid_buttons.addWidget(self.b_1_4)
-        self.b_1_5 = QPushButton("Orient Images (rotating)")
-        self.grid_buttons.addWidget(self.b_1_5)
         self.b_1_6 = QPushButton("Run automatic setup scripts")
         self.grid_buttons.addWidget(self.b_1_6)
 
@@ -80,7 +77,7 @@ class GUISetupMain(QWidget):
             print('format grid buttons current step is', self.curr_step)
 
             curr_step_index = ['1-4', '1-5', '1-6'].index(self.curr_step[:3])
-            for index, button in enumerate([self.b_1_4, self.b_1_5, self.b_1_6]):
+            for index, button in enumerate([self.b_1_4, self.b_1_6]):
                 if index <= curr_step_index + 1:
                     button.setEnabled(True)
                 else:
@@ -88,7 +85,7 @@ class GUISetupMain(QWidget):
 
         # If there are no stacks/brains that have been started
         except KeyError:
-            for button in [self.b_1_4, self.b_1_5, self.b_1_6]:
+            for button in [self.b_1_4, self.b_1_6]:
                 button.setEnabled(False)
 
     def click_button(self, button):
@@ -102,12 +99,6 @@ class GUISetupMain(QWidget):
             try:
                 subprocess.call(['python', 'a_GUI_setup_sorted_filenames.py', self.stack])
                 self.update_buttons()
-            except Exception as e:
-                sys.stderr.write(str(e))
-        # Adjust image orientations
-        elif button == self.b_1_5:
-            try:
-                subprocess.call(['python', 'a_GUI_setup_orientation.py', self.stack])
             except Exception as e:
                 sys.stderr.write(str(e))
         # Run automatic scripts

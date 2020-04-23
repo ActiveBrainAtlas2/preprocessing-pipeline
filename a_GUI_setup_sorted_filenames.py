@@ -1,15 +1,14 @@
 import os
-import subprocess
 import sys
 import argparse
 from skimage import io
 import numpy as np
 
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QFont, QIntValidator, QBrush, QColor, QPixmap
+from PyQt5.QtGui import QFont, QIntValidator, QBrush, QColor, QPixmap, QImageReader
 from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout, QLineEdit,
                              QPushButton, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QFrame, QComboBox,
-                             QMessageBox)
+                             QMessageBox, QProgressBar)
 
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
@@ -31,7 +30,8 @@ class ImageViewer(QGraphicsView):
         self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
         self.setFrameShape(QFrame.NoFrame)
 
-    def set_photo(self, pixmap=None):
+    def set_photo(self, img_fp=None):
+        pixmap = QPixmap(img_fp)
         self.zoom = 0
         if pixmap and not pixmap.isNull():
             self.empty = False
@@ -62,8 +62,6 @@ class ImageViewer(QGraphicsView):
                              viewrect.height() / scenerect.height())
                 self.scale(factor, factor)
             self.zoom = 0
-        else:
-            print('RECT IS NULL')
 
     def wheelEvent(self, event):
         if not self.empty:
@@ -170,35 +168,31 @@ class GUISortedFilenames(QWidget):
         self.grid_body_lower.addWidget(self.b_quality, 0, 0, 1, 2)
 
         self.b_move_left = QPushButton("<--   Move Section Left   <--")
-        self.b_move_left.setStyleSheet("color: rgb(0,0,0); background-color: rgb(200,250,250);")
         self.grid_body_lower.addWidget(self.b_move_left, 0, 2)
 
         self.b_move_right = QPushButton("-->   Move Section Right   -->")
-        self.b_move_right.setStyleSheet("color: rgb(0,0,0); background-color: rgb(200,250,250);")
         self.grid_body_lower.addWidget(self.b_move_right, 0, 3)
 
         self.b_flip_vertical = QPushButton("Flip vertically")
-        self.b_flip_vertical.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,250,200);")
         self.grid_body_lower.addWidget(self.b_flip_vertical, 1, 0)
 
         self.b_flip_horozontal = QPushButton("Flop horizontally")
-        self.b_flip_horozontal.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,250,200);")
         self.grid_body_lower.addWidget(self.b_flip_horozontal, 1, 1)
 
         self.b_rotate_left = QPushButton("Rotate Left")
-        self.b_rotate_left.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,200,250);")
         self.grid_body_lower.addWidget(self.b_rotate_left, 1, 2)
 
         self.b_rotate_right = QPushButton("Rotate Right")
-        self.b_rotate_right.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,200,250);")
         self.grid_body_lower.addWidget(self.b_rotate_right, 1, 3)
 
         self.b_remove = QPushButton("Remove section")
-        self.b_remove.setStyleSheet("color: rgb(0,0,0); background-color: #C91B1B;")
         self.grid_body_lower.addWidget(self.b_remove, 2, 0)
 
+        self.progress = QProgressBar(self)
+        self.grid_body_lower.addWidget(self.progress, 2, 1, 1, 2)
+        self.progress.hide()
+
         self.b_done = QPushButton("Finished")
-        self.b_done.setStyleSheet("color: rgb(0,0,0); background-color: #dfbb19;")
         self.grid_body_lower.addWidget(self.b_done, 2, 3)
 
         ### SUPERGRID ###
@@ -239,7 +233,7 @@ class GUISortedFilenames(QWidget):
 
         # Get filepath of "curr_section" and set it as viewer's photo
         img_fp = os.path.join(self.fileLocationManager.thumbnail_prep, self.curr_section)
-        self.viewer.set_photo(QPixmap(img_fp))
+        self.viewer.set_photo(img_fp)
 
     def get_valid_section_index(self, section_index):
         if section_index >= len(self.valid_sections):
@@ -293,22 +287,26 @@ class GUISortedFilenames(QWidget):
             index = [self.b_flip_vertical, self.b_flip_horozontal, self.b_rotate_right, self.b_rotate_left].index(button)
             cmd = ['flip', 'flop', 'rotate90', 'rotate270'][index]
 
-            for section in self.valid_sections.values():
+            size = len(self.valid_sections.values()) - 1
+            self.progress_bar(True, size)
+
+            for index, section in enumerate(self.valid_sections.values()):
                 thumbnail_path = os.path.join(self.fileLocationManager.thumbnail_prep, section['destination'])
 
-                if cmd == 'flip':
-                    flip(thumbnail_path)
-                elif cmd == 'flop':
-                    flop(thumbnail_path)
-                elif cmd == 'rotate90':
-                    rotate_img(thumbnail_path, 1)
-                elif cmd == 'rotate270':
-                    rotate_img(thumbnail_path, 3)
-                else:
-                    print('Nothing to do')
-                #subprocess.run(command)
+                if os.path.isfile(thumbnail_path):
+                    if cmd == 'flip':
+                        flip(thumbnail_path)
+                    elif cmd == 'flop':
+                        flop(thumbnail_path)
+                    elif cmd == 'rotate90':
+                        rotate_img(thumbnail_path, 1)
+                    elif cmd == 'rotate270':
+                        rotate_img(thumbnail_path, 3)
+                    else:
+                        print('Nothing to do')
+                self.progress.setValue(index)
 
-            #self.setCurrSection(self.curr_section_index)
+            self.progress_bar(False, size)
             self.set_curr_section(section_index=-1)
 
         elif button == self.b_help:
@@ -335,6 +333,23 @@ class GUISortedFilenames(QWidget):
             self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
             self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-5_setup_orientations')
             sys.exit(app.exec_())
+
+    def progress_bar(self, show, max_value):
+        if show:
+            self.progress.setMaximum(max_value)
+            self.progress.show()
+        else:
+            self.progress.hide()
+
+        self.b_quality.setDisabled(show)
+        self.b_move_left.setDisabled(show)
+        self.b_move_right.setDisabled(show)
+        self.b_flip_vertical.setDisabled(show)
+        self.b_flip_horozontal.setDisabled(show)
+        self.b_rotate_right.setDisabled(show)
+        self.b_rotate_left.setDisabled(show)
+        self.b_remove.setDisabled(show)
+        self.b_done.setDisabled(show)
 
     def message_box(self, text, is_warn):
         msg_box = QMessageBox()
@@ -384,8 +399,6 @@ def flop(filename):
     img = get_last_2d(img)
     img = np.fliplr(img)
     io.imsave(filename, img)
-
-
 
 def get_last_2d(data):
     if data.ndim <= 2:
