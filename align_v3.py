@@ -1,6 +1,7 @@
 import os
 import argparse
-#import SimpleITK as sitk
+import SimpleITK as sitk
+import itk
 import  subprocess
 
 from utilities.metadata import REPO_DIR, ELASTIX_BIN
@@ -57,17 +58,23 @@ stop = len(image_name_list) - 1
 params_fp = os.path.join(REPO_DIR, 'preprocess', 'parameters', 'Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt')
 ##### TODO, this is only working on the thumbnail dir for now
 for i, file in enumerate(image_name_list):
+    if os.path.exists(os.path.join(fileLocationManager.elastix_dir, image_name_list[i])):
+        continue
     if i == stop:
         break
     print('len of images ', stop, i)
-    fixed_image = os.path.join(fileLocationManager.thumbnail_prep, image_name_list[i])
-    moving_image = os.path.join(fileLocationManager.thumbnail_prep, image_name_list[i+1])
+    fixed_image = os.path.join(fileLocationManager.oriented, image_name_list[i])
+    moving_image = os.path.join(fileLocationManager.oriented, image_name_list[i+1])
     command = [ELASTIX_BIN, '-f', fixed_image, '-m', moving_image, '-p', params_fp, '-out', fileLocationManager.elastix_dir]
     #command = ['touch', os.path.join(fileLocationManager.elastix_dir, 'result.0.tif')]
     print(" ".join(command))
     ret = subprocess.run(command)
+    transfilename = os.path.splitext(image_name_list[i])[0]
     os.rename(os.path.join(fileLocationManager.elastix_dir, 'result.0.tif'),
               os.path.join(fileLocationManager.elastix_dir, image_name_list[i]))
+
+    os.rename(os.path.join(fileLocationManager.elastix_dir, 'TransformParameters.0.txt'),
+              os.path.join(fileLocationManager.elastix_dir, transfilename + '.txt' ))
     print('command returned ', ret.returncode)
 
 """
@@ -93,7 +100,7 @@ transformParameterMap = elastixImageFilter.GetTransformParameterMap()
 
 transformixImageFilter = sitk.TransformixImageFilter()
 transformixImageFilter.SetTransformParameterMap(transformParameterMap)
-transformixImageFilter.
+
 
 
 for filename in ORIENTS:

@@ -136,7 +136,7 @@ if args.op_id is not None:
     image_name_list = input_spec['image_name_list']
     if image_name_list == 'all':
         #image_name_list = DataManager.load_sorted_filenames(stack=stack)[0].keys()
-        image_name_list = sqlController.get_image_list(stack, 'source')
+        image_name_list = sqlController.get_image_list(stack, 'destination')
 
     op_seq = parse_operation_sequence(args.op_id, resol=resol, return_str=True, stack=stack)
 

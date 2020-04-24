@@ -1,9 +1,6 @@
 import argparse
 import os
 import numpy as np
-import sys
-import pickle
-import json
 
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
@@ -51,8 +48,8 @@ op = load_ini(os.path.join(fileLocationManager.operation_configs,  args.op + '.i
 assert op['type'] == 'warp', "Op type  must be warp."
 assert op['base_prep_id'] == input_spec['prep_id'], "Op requires %s, but input has prep %s." % (op['base_prep_id'], input_spec['prep_id'])
 
-elastix_output_dir = op['elastix_output_dir']
-custom_output_dir = op['custom_output_dir']
+elastix_output_dir = fileLocationManager.elastix_dir
+custom_output_dir = fileLocationManager.custom_output
 toanchor_transforms_fp = op['transforms_csv']
 anchor_img_name = op['anchor_image_name']
 base_prep_id = op['base_prep_id']

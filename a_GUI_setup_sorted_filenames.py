@@ -295,13 +295,13 @@ class GUISortedFilenames(QWidget):
 
                 if os.path.isfile(thumbnail_path):
                     if cmd == 'flip':
-                        flip(thumbnail_path)
+                        self.flip(thumbnail_path)
                     elif cmd == 'flop':
-                        flop(thumbnail_path)
+                        self.flop(thumbnail_path)
                     elif cmd == 'rotate90':
-                        rotate_img(thumbnail_path, 1)
+                        self.rotate_img(thumbnail_path, 1)
                     elif cmd == 'rotate270':
-                        rotate_img(thumbnail_path, 3)
+                        self.rotate_img(thumbnail_path, 3)
                     else:
                         print('Nothing to do')
                 self.progress.setValue(index)
@@ -382,23 +382,39 @@ class GUISortedFilenames(QWidget):
         # close_main_gui( ex, reopen=True )
 
 
-def rotate_img(filename, rotation):
-    img = io.imread(filename)
-    img = get_last_2d(img)
-    img = np.rot90(img, rotation)
-    io.imsave(filename, img)
+    def rotate_img(self, filename, rotation):
+        img = io.imread(filename)
+        img = get_last_2d(img)
+        img = np.rot90(img, rotation)
+        os.unlink(filename)
+        io.imsave(filename, img)
+        self.save_to_web_thumbnail(filename, img)
 
-def flip(filename):
-    img = io.imread(filename)
-    img = get_last_2d(img)
-    img = np.flipud(img)
-    io.imsave(filename, img)
+    def flip(self, filename):
+        img = io.imread(filename)
+        img = get_last_2d(img)
+        img = np.flipud(img)
+        os.unlink(filename)
+        io.imsave(filename, img)
+        self.save_to_web_thumbnail(filename, img)
 
-def flop(filename):
-    img = io.imread(filename)
-    img = get_last_2d(img)
-    img = np.fliplr(img)
-    io.imsave(filename, img)
+    def flop(self, filename):
+        img = io.imread(filename)
+        img = get_last_2d(img)
+        img = np.fliplr(img)
+        os.unlink(filename)
+        io.imsave(filename, img)
+        self.save_to_web_thumbnail(filename, img)
+
+    def save_to_web_thumbnail(self, filename, img):
+        filename = os.path.basename(filename)
+        png_file = os.path.splitext(filename)[0] + '.png'
+        png_path = os.path.join(self.fileLocationManager.thumbnail_web, png_file)
+        if os.path.exists(png_path):
+            os.unlink(png_path)
+        io.imsave(png_path, img)
+
+
 
 def get_last_2d(data):
     if data.ndim <= 2:
