@@ -107,4 +107,4 @@ if stain == 'thionin':
     call_and_time(command, completion_message=completion_message)
 
 print('\nNow manually fix any incorrect alignments. Custom GUI available with the following command:\n')
-print('`python ../src/gui/preprocess_tool_v3.py UCSD001 --tb_version NtbNormalized/gray`')
+print('`python ../src/gui/preprocess_tool.py UCSD001 --tb_version NtbNormalized/gray`')

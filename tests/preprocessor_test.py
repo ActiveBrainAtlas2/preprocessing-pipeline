@@ -47,14 +47,12 @@ def test_tif():
     stack_metadata = sqlController.generate_stack_metadata()
     animals = list(stack_metadata.keys())
     checks = ['tif', 'histogram', 'prep_thumbnail', 'web thumbnail']
+    checks = ['prep_thumbnail']
     animals = ['DK39']
     for animal in animals:
         fileLocationManager = FileLocationManager(animal)
         # tifs
-        for name, dir in zip(checks, [fileLocationManager.tif,
-                         fileLocationManager.histogram,
-                         fileLocationManager.thumbnail_prep,
-                         fileLocationManager.thumbnail_web]):
+        for name, dir in zip(checks, [fileLocationManager.thumbnail_prep]):
             db_files = sqlController.get_valid_sections(animal)
             valid_file_length = len(db_files)
             dir_exists, lfiles, badsize = directory_filled(dir)
@@ -65,8 +63,8 @@ def test_tif():
             missings = find_missing(dir, db_files)
             print("There are {} {} entries in the database and we found {} {}s on the server"\
                     .format(animal, valid_file_length, lfiles, name))
-            if name in ['tif', 'prep_thumbnail']:
-                print('Missing {} {}'.format(name, missings))
+            #if name in ['tif', 'prep_thumbnail']:
+            #    print('Missing {} {}'.format(name, missings))
 
 
 if __name__ == '__main__':

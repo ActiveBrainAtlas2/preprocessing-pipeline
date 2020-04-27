@@ -57,21 +57,22 @@ else:
 stop = len(image_name_list) - 1
 params_fp = os.path.join(REPO_DIR, 'preprocess', 'parameters', 'Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt')
 ##### TODO, this is only working on the thumbnail dir for now
+image_name_list.insert(image_name_list[0])
 for i, file in enumerate(image_name_list):
     if os.path.exists(os.path.join(fileLocationManager.elastix_dir, image_name_list[i])):
         continue
     if i == stop:
         break
     print('len of images ', stop, i)
-    fixed_image = os.path.join(fileLocationManager.oriented, image_name_list[i])
-    moving_image = os.path.join(fileLocationManager.oriented, image_name_list[i+1])
+    fixed_image = os.path.join(fileLocationManager.thumbnail_prep, image_name_list[i])
+    moving_image = os.path.join(fileLocationManager.thumbnail_prep, image_name_list[i+1])
     command = [ELASTIX_BIN, '-f', fixed_image, '-m', moving_image, '-p', params_fp, '-out', fileLocationManager.elastix_dir]
     #command = ['touch', os.path.join(fileLocationManager.elastix_dir, 'result.0.tif')]
     print(" ".join(command))
     ret = subprocess.run(command)
     transfilename = os.path.splitext(image_name_list[i])[0]
     os.rename(os.path.join(fileLocationManager.elastix_dir, 'result.0.tif'),
-              os.path.join(fileLocationManager.elastix_dir, image_name_list[i]))
+              os.path.join(fileLocationManager.elastix_dir, image_name_list[i+1]))
 
     os.rename(os.path.join(fileLocationManager.elastix_dir, 'TransformParameters.0.txt'),
               os.path.join(fileLocationManager.elastix_dir, transfilename + '.txt' ))
@@ -93,6 +94,9 @@ elastixImageFilter.LogToConsoleOn()
 elastixImageFilter.SetFixedImage(fixedImage)
 elastixImageFilter.SetMovingImage(movingImage)
 elastixImageFilter.SetParameterMap(parameterMap)
+
+elastixImageFilter.GetParameterMap()
+
 elastixImageFilter.Execute()
 
 resultImage = elastixImageFilter.GetResultImage()
@@ -100,6 +104,7 @@ transformParameterMap = elastixImageFilter.GetTransformParameterMap()
 
 transformixImageFilter = sitk.TransformixImageFilter()
 transformixImageFilter.SetTransformParameterMap(transformParameterMap)
+transformixImageFilter.SetF
 
 
 
@@ -126,4 +131,5 @@ run_distributed(stack, "python %(script)s \"%(output_dir)s\" \'%%(kwargs_str)s\'
                 argument_type='list',
                 jobs_per_node=8,
                local_only=True)
+
 """

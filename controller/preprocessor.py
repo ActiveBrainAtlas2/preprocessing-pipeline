@@ -220,9 +220,13 @@ class SlideProcessor(object):
                        '-normalize', '-compress', 'lzw', prep_destination]
             if testing:
                 command = ['touch', prep_destination]
+            if os.path.exists(prep_destination):
+                return 1
             subprocess.run(command)
             base = os.path.splitext(rsection.destination_file)[0]
             output_png = os.path.join(self.fileLocationManager.thumbnail_web, base + '.png')
+            if os.path.exists(output_png):
+                return 1
             command = ['convert', prep_destination, output_png]
             if testing:
                 command = ['touch', output_png]
@@ -240,6 +244,8 @@ class SlideProcessor(object):
         HIS_FOLDER = self.fileLocationManager.histogram
         base = os.path.splitext(file_name)[0]
         output_png = os.path.join(HIS_FOLDER, base + '.png')
+        if os.path.exists(output_png):
+            return 1
         if testing:
             command = ['touch', output_png]
             subprocess.run(command)
