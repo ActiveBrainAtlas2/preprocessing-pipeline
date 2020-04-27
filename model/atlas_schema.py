@@ -138,6 +138,6 @@ def manipulate_images(id, limit, testing_param=False):
     prep_id = id
     testing = testing_param
     restriction = 'prep_id = "{}"'.format(prep_id)
-    FileOperation.populate([RawSection & 'active=1' & restriction ], display_progress=False, reserve_jobs=True, limit=limit)
+    FileOperation.populate([RawSection & 'active=1' & restriction ], display_progress=True, reserve_jobs=True, limit=limit)
 
 
