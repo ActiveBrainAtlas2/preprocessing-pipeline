@@ -285,23 +285,25 @@ class GUISortedFilenames(QWidget):
             """
 
             index = [self.b_flip_vertical, self.b_flip_horozontal, self.b_rotate_right, self.b_rotate_left].index(button)
+            print('index is ', index)
             cmd = ['flip', 'flop', 'rotate90', 'rotate270'][index]
 
             size = len(self.valid_sections.values()) - 1
             self.progress_bar(True, size)
 
+            ##### TODO, rotating a multidimensional image has to be done backwards.
+            ##### to rotate right, do np.rot(img, 3), to rotate left, do np.rot(img, 1)
             for index, section in enumerate(self.valid_sections.values()):
                 thumbnail_path = os.path.join(self.fileLocationManager.thumbnail_prep, section['destination'])
-
                 if os.path.isfile(thumbnail_path):
                     if cmd == 'flip':
                         self.flip(thumbnail_path)
                     elif cmd == 'flop':
                         self.flop(thumbnail_path)
                     elif cmd == 'rotate90':
-                        self.rotate_img(thumbnail_path, 1)
-                    elif cmd == 'rotate270':
                         self.rotate_img(thumbnail_path, 3)
+                    elif cmd == 'rotate270':
+                        self.rotate_img(thumbnail_path, 1)
                     else:
                         print('Nothing to do')
                 self.progress.setValue(index)
@@ -385,10 +387,11 @@ class GUISortedFilenames(QWidget):
     def rotate_img(self, filename, rotation):
         img = io.imread(filename)
         img = get_last_2d(img)
+        #print('rotating {} times with shape {}'.format(rotation, img.shape))
         img = np.rot90(img, rotation)
         os.unlink(filename)
         io.imsave(filename, img)
-        self.save_to_web_thumbnail(filename, img)
+        #self.save_to_web_thumbnail(filename, img)
 
     def flip(self, filename):
         img = io.imread(filename)

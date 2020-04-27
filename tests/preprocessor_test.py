@@ -47,12 +47,14 @@ def test_tif():
     stack_metadata = sqlController.generate_stack_metadata()
     animals = list(stack_metadata.keys())
     checks = ['tif', 'histogram', 'prep_thumbnail', 'web thumbnail']
-    checks = ['prep_thumbnail']
     animals = ['DK39']
     for animal in animals:
         fileLocationManager = FileLocationManager(animal)
         # tifs
-        for name, dir in zip(checks, [fileLocationManager.thumbnail_prep]):
+        for name, dir in zip(checks, [fileLocationManager.tif,
+                                      fileLocationManager.histogram,
+                                      fileLocationManager.thumbnail_prep,
+                                      fileLocationManager.thumbnail_web]):
             db_files = sqlController.get_valid_sections(animal)
             valid_file_length = len(db_files)
             dir_exists, lfiles, badsize = directory_filled(dir)
