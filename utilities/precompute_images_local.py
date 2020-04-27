@@ -14,11 +14,14 @@ from neuroglancer_scripts.scripts import (generate_scales_info,
 from os.path import expanduser
 HOME = expanduser("~")
 
-#DIR = os.path.join(HOME, 'programming', 'dk39', 'preps')
-DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
-NUEROGLANCER = os.path.join(DIR, 'neuroglancer')
+DIR = os.path.join(HOME, 'programming', 'dk39', 'preps')
+#DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
+NEUROGLANCER = os.path.join(DIR, 'neuroglancer')
 RESIZED = os.path.join(DIR, 'resized')
 ORIENTED = os.path.join(DIR, 'oriented')
+PREALIGNED = os.path.join(DIR, 'prealigned')
+POSTALIGNED2 = os.path.join(DIR, 'postaligned2')
+ALIGNED = os.path.join(DIR, 'aligned')
 
 
 def unlink_file(folder):
@@ -140,14 +143,16 @@ def main(argv=sys.argv):
 
     #canvas_width = 500
     #canvas_height = 500
+
+    """
     canvas_width, canvas_height = get_avg_size()
     print('w and h:', canvas_width, canvas_height)
-    for img in os.listdir(ORIENTED):
-        original_image = os.path.join(ORIENTED, img)
+    for img in os.listdir(ALIGNED):
+        original_image = os.path.join(ALIGNED, img)
         new_file = os.path.join(RESIZED, img)
         resize_canvas(original_image, new_file, canvas_width, canvas_height)
-
-    convert_to_precomputed(RESIZED, NUEROGLANCER)
+    """
+    convert_to_precomputed(POSTALIGNED2, NEUROGLANCER)
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -51,3 +51,5 @@ send alex a message about DK39 whereabouts
 fix link on DK37
 run elastix on one image
 run it on a hemisphere
+
+

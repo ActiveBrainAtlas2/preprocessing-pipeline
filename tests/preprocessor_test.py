@@ -52,9 +52,9 @@ def test_tif():
         fileLocationManager = FileLocationManager(animal)
         # tifs
         for name, dir in zip(checks, [fileLocationManager.tif,
-                         fileLocationManager.histogram,
-                         fileLocationManager.thumbnail_prep,
-                         fileLocationManager.thumbnail_web]):
+                                      fileLocationManager.histogram,
+                                      fileLocationManager.thumbnail_prep,
+                                      fileLocationManager.thumbnail_web]):
             db_files = sqlController.get_valid_sections(animal)
             valid_file_length = len(db_files)
             dir_exists, lfiles, badsize = directory_filled(dir)

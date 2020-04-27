@@ -1004,7 +1004,7 @@ class DataManager(object):
         return section_names
 
     @staticmethod
-    def load_consecutive_section_transform(moving_fn, fixed_fn, elastix_output_dir=None, custom_output_dir=None, stack=None):
+    def load_consecutive_section_transform(moving_fn, fixed_fn, stack):
         """
         Load pairwise transform.
 
@@ -1012,17 +1012,18 @@ class DataManager(object):
             (3,3)-array.
         """
         assert stack is not None
+        fileLocationManager = FileLocationManager(stack)
 
-        if elastix_output_dir is None:
-            elastix_output_dir = DataManager.get_elastix_output_dir(stack)
-        if custom_output_dir is None:
-            custom_output_dir = DataManager.get_custom_output_dir(stack)
+        elastix_output_dir = fileLocationManager.elastix_dir
+        custom_output_dir = fileLocationManager.custom_output
+        custom_tf_fp_base =  os.path.splitext(fixed_fn)[0]
+        custom_tf_fp2_base =  os.path.splitext(moving_fn)[0] + '.txt'
+        elastix_tf_fp2_base =  os.path.splitext(moving_fn)[0] + '.txt'
 
-        from preprocess_utilities import parse_elastix_parameter_file
-
-        custom_tf_fp = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, moving_fn + '_to_' + fixed_fn + '_customTransform.txt')
-
-        custom_tf_fp2 = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
+        #custom_tf_fp = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, moving_fn + '_to_' + fixed_fn + '_customTransform.txt')
+        #custom_tf_fp2 = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
+        custom_tf_fp = os.path.join(custom_output_dir, custom_tf_fp_base + '_customTransform.txt')
+        custom_tf_fp2 = os.path.join(custom_output_dir, custom_tf_fp2_base)
 
         print(custom_tf_fp)
         if os.path.exists(custom_tf_fp):
@@ -1036,7 +1037,7 @@ class DataManager(object):
             transformation_to_previous_sec = parse_elastix_parameter_file(custom_tf_fp2)
         else:
             # otherwise, load elastix output
-            param_fp = os.path.join(elastix_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
+            param_fp = os.path.join(elastix_output_dir, elastix_tf_fp2_base)
             sys.stderr.write('Load elastix-computed transform: %s\n' % param_fp)
             if not os.path.exists(param_fp):
                 raise Exception('Transform file does not exist: %s to %s, %s' % (moving_fn, fixed_fn, param_fp))

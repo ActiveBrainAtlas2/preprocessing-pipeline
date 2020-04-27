@@ -206,33 +206,47 @@ class SlideProcessor(object):
 
     def make_thumbnail(self, file_id, file_name, testing=False):
         """
-        This will create a png in the web thumbnail dir, and another one
-        in the preps dir that are used throughout the pipeline
+        This will create a tif in the preps dir that are used throughout the pipeline
         """
         result = 0
-
         rsection = self.session.query(RawSection).filter(RawSection.id == file_id).one()
         source = os.path.join(self.fileLocationManager.tif, file_name)
-        web_destination = os.path.join(self.fileLocationManager.thumbnail_web, rsection.destination_file)
         prep_destination = os.path.join(self.fileLocationManager.thumbnail_prep, rsection.destination_file)
-        if os.path.exists(source):
-            # Create thumbnails
-            command = ['convert', source, '-resize', '3.125%', '-auto-level',
-                       '-normalize', '-compress', 'lzw', prep_destination]
-            if testing:
-                command = ['touch', prep_destination]
+        # Create thumbnails
+        # if source exists
+        if testing:
+            command = ['touch', prep_destination]
             subprocess.run(command)
+            return 1
+        if os.path.exists(source):
+            # if the prep thumbnail exists
+            if  not os.path.exists(prep_destination):
+                command = ['convert', source, '-resize', '3.125%', '-auto-level',
+                           '-normalize', '-compress', 'lzw', prep_destination]
+                subprocess.run(command)
+
+        return result
+
+    def make_web_thumbnail(self, file_id, file_name, testing=False):
+        """
+        This will create a png in the web thumbnail dir
+        """
+        result = 0
+        rsection = self.session.query(RawSection).filter(RawSection.id == file_id).one()
+        prep_destination = os.path.join(self.fileLocationManager.thumbnail_prep, rsection.destination_file)
+        # Create thumbnails if prep thumbnail exists
+        if os.path.exists(prep_destination):
             base = os.path.splitext(rsection.destination_file)[0]
             output_png = os.path.join(self.fileLocationManager.thumbnail_web, base + '.png')
-            command = ['convert', prep_destination, output_png]
+            #  test for the web thumbnail
             if testing:
                 command = ['touch', output_png]
+                subprocess.run(command)
+                return 1
+            if os.path.exists(output_png):
+                return 1
+            command = ['convert', prep_destination, output_png]
             subprocess.run(command)
-            #print(" ".join(command))
-            result = 1
-        else:
-            pass
-            print('File {} does not exist'.format(source))
 
         return result
 
@@ -241,6 +255,8 @@ class SlideProcessor(object):
         HIS_FOLDER = self.fileLocationManager.histogram
         base = os.path.splitext(file_name)[0]
         output_png = os.path.join(HIS_FOLDER, base + '.png')
+        if os.path.exists(output_png):
+            return 1
         if testing:
             command = ['touch', output_png]
             subprocess.run(command)
@@ -250,7 +266,6 @@ class SlideProcessor(object):
         try:
             img = io.imread(source)
         except:
-            print('Could not read file')
             return 0
 
         colors = {1: 'b', 2: 'r', 3: 'g'}
@@ -316,11 +331,16 @@ def make_tif(session, prep_id, tif_id, file_id, testing=False):
     czi_file = os.path.join(CZI_FOLDER, slide.file_name)
     rsection = session.query(RawSection).filter(RawSection.id==file_id).one()
     tif_file = os.path.join(TIF_FOLDER, rsection.destination_file)
-    command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate',
-                              '-series', str(tif.scene_index), '-channel', str(tif.channel_index), '-nooverwrite', czi_file, tif_file]
-    cli = " ".join(command)
+    if not os.path.exists(czi_file) and not testing:
+        return 0
+    if os.path.exists(tif_file):
+        return 1
+
     if testing:
         command = ['touch', tif_file]
+    else:
+        command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate',
+                                  '-series', str(tif.scene_index), '-channel', str(tif.channel_index), '-nooverwrite', czi_file, tif_file]
     subprocess.run(command)
 
     end = time.time()

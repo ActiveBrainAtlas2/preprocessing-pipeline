@@ -1,15 +1,14 @@
-#!/usr/bin/env python
-
 import os
 import sys
 import json
 import re
-
-from metadata import REPO_DIR
-sys.path.append(REPO_DIR)
-from utilities2015 import *
-
 import argparse
+import subprocess
+
+from metadata import REPO_DIR, ELASTIX_BIN
+sys.path.append(REPO_DIR)
+from utilities.utilities2015 import execute_command, create_if_not_exists
+
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -28,12 +27,13 @@ param_fp = args.param_fp
 regenerate = args.r
 
 if param_fp is None:
-    param_fp = os.path.join(os.environ['REPO_DIR'], 'preprocess', 'parameters', "Parameters_Rigid_MutualInfo.txt")
+    param_fp = os.path.join(REPO_DIR, 'preprocess', 'parameters', "Parameters_Rigid_MutualInfo.txt")
 
 failed_pairs = []
-
+print('XXXXXXXXXXXXXXXXXX right before looping through kwargs')
 # every "kwarg" corresponds to a pair of images
 for kwarg in kwargs_str:
+    print('do we ever get here?????????????')
 
     prev_img_name = kwarg['prev_img_name']
     curr_img_name = kwarg['curr_img_name']
@@ -51,6 +51,7 @@ for kwarg in kwargs_str:
     execute_command('rm -rf \"%s\"' % output_subdir)
     create_if_not_exists(output_subdir)
 
+    """
     ret = execute_command('%(elastix_bin)s -f \"%(fixed_fp)s\" -m \"%(moving_fp)s\" -out \"%(output_subdir)s\" -p \"%(param_fp)s\"' % \
             {'elastix_bin': ELASTIX_BIN,
             'param_fp': param_fp,
@@ -58,6 +59,10 @@ for kwarg in kwargs_str:
             'fixed_fp': prev_fp,
             'moving_fp': curr_fp
             })
+    """
+    command = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_fp, '-out', output_subdir]
+    print(" ".join(command))
+    ret = subprocess.run(command)
 
     if ret == 1:
         failed_pairs.append((prev_img_name, curr_img_name))
@@ -69,7 +74,6 @@ for kwarg in kwargs_str:
             metric = float(g.groups()[0])
             sys.stderr.write("Metric = %.2f\n" % metric)
 
-import subprocess
 hostname = subprocess.check_output("hostname", shell=True).strip()
 
 if len(failed_pairs) > 0:

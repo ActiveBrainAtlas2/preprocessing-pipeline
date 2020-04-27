@@ -111,10 +111,15 @@ class FileOperation(dj.Computed):
         start = time.time()
         file_id = (RawSection & key).fetch1('id')
         file_name = (RawSection & key).fetch1('destination_file')
+        file_id = np.asscalar(file_id)
+        if file_id >= 204710 and file_id < 204720:
+            print('found ', file_name, file_id)
+
         tif_id = (RawSection & key).fetch1('tif_id')
-        czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), np.asscalar(file_id), testing)
-        histogram = slide_processor.make_histogram(np.asscalar(file_id), file_name, testing)
-        thumbnail = slide_processor.make_thumbnail(np.asscalar(file_id), file_name, testing)
+        czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), file_id, testing)
+        histogram = slide_processor.make_histogram(file_id, file_name, testing)
+        thumbnail = slide_processor.make_thumbnail(file_id, file_name, testing)
+        slide_processor.make_web_thumbnail(file_id, file_name, testing)
         end = time.time()
 
         self.insert1(dict(key, file_name=file_name,
@@ -122,7 +127,7 @@ class FileOperation(dj.Computed):
                           thumbnail=thumbnail,
                           czi_to_tif = czi_to_tif,
                           processing_duration=end - start,
-                          histogram = histogram), skip_duplicates=False)
+                          histogram = histogram), skip_duplicates=True)
 
 # End of table definitions
 

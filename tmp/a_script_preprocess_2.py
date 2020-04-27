@@ -31,7 +31,7 @@ from a_driver_utilities import *
 def create_from_none_to_aligned_file(  ):
     DATA_ROOTDIR = os.environ['DATA_ROOTDIR'] # THUMBNAIL_DATA_DIR
 
-    none_to_aligned_fp = os.path.join( DataManager.get_images_root_folder(stack), 
+    none_to_aligned_fp = os.path.join( DataManager.get_images_root_folder(stack),
                                       'operation_configs', 'from_none_to_aligned.ini')
 
     from_none_to_aligned_content = '[DEFAULT]\n\
@@ -58,12 +58,12 @@ resolution=thumbnail'
         os.makedirs(os.path.dirname(none_to_aligned_fp))
 
     f = open( none_to_aligned_fp , "w")
-    f.write( from_none_to_aligned_content ) 
+    f.write( from_none_to_aligned_content )
     f.close()
-    
+
 def create_anchor_file( anchor_fn='auto' ):
     DATA_ROOTDIR = os.environ['DATA_ROOTDIR'] # THUMBNAIL_DATA_DIR
-    
+
     if anchor_fn=='auto':
         fn_list = get_fn_list_from_sorted_filenames(stack)
         anchor_fn = fn_list[ int(len(fn_list)/2) ]
@@ -77,7 +77,7 @@ def create_anchor_file( anchor_fn='auto' ):
     f.close()
     # Returns the chosen anchor filename just in case it is being suto-selected
     return anchor_fn
-    
+
 # Create 2 files necessary for running the following 2 scripts
 anchor_fn = create_anchor_file( anchor_fn=anchor_fn )
 create_from_none_to_aligned_file()
@@ -92,9 +92,9 @@ if stain == 'NTB':
     command = ['python', 'warp_crop_v3.py','--input_spec', 'input_spec.ini', '--op_id', 'from_none_to_padded','--njobs','8','--pad_color','black']
     completion_message = 'Finished transformation to padded (prep1).'
     call_and_time( command, completion_message=completion_message)
-    
+
 if stain == 'Thionin':
-    
+
     create_input_spec_ini_all( name='input_spec.ini', \
             stack=stack, prep_id='None', version='gray', resol='thumbnail')
     command = ['python', 'align_compose.py', 'input_spec.ini', '--op', 'from_none_to_aligned']
@@ -104,6 +104,6 @@ if stain == 'Thionin':
     command = ['python', 'warp_crop_v3.py','--input_spec', 'input_spec.ini', '--op_id', 'from_none_to_padded','--njobs','8','--pad_color','white']
     completion_message = 'Finished transformation to padded (prep1).'
     call_and_time( command, completion_message=completion_message)
-    
+
 print('\nNow manually fix any incorrect alignments. Custom GUI available with the following command:\n')
-print('`python ../src/gui/preprocess_tool_v3.py UCSD001 --tb_version NtbNormalized/gray`')
+print('`python ../src/gui/preprocess_tool.py UCSD001 --tb_version NtbNormalized/gray`')
