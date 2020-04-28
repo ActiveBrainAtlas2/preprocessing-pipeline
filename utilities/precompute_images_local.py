@@ -18,11 +18,7 @@ DIR = os.path.join(HOME, 'programming', 'dk39', 'preps')
 #DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
 NEUROGLANCER = os.path.join(DIR, 'neuroglancer')
 RESIZED = os.path.join(DIR, 'resized')
-ORIENTED = os.path.join(DIR, 'oriented')
-PREALIGNED = os.path.join(DIR, 'prealigned')
-POSTALIGNED2 = os.path.join(DIR, 'postaligned2')
-ALIGNED = os.path.join(DIR, 'aligned')
-
+PADDED = os.path.join(DIR, 'padded')
 
 def unlink_file(folder):
     for filename in os.listdir(folder):
@@ -32,22 +28,6 @@ def unlink_file(folder):
                 os.unlink(file_path)
         except Exception as e:
             print('Failed to delete %s. Reason: %s' % (file_path, e))
-
-def get_avg_size():
-
-    widths = []
-    heights = []
-    files = os.listdir(ORIENTED)
-    files = files[0:50]
-    for file in files:
-        img = io.imread(os.path.join(ORIENTED, file))
-        widths.append(img.shape[0])
-        heights.append(img.shape[1])
-
-    avg_width = sum(widths) // len(widths)
-    avg_height = sum(heights) // len(heights)
-
-    return avg_width, avg_height
 
 
 
@@ -152,7 +132,7 @@ def main(argv=sys.argv):
         new_file = os.path.join(RESIZED, img)
         resize_canvas(original_image, new_file, canvas_width, canvas_height)
     """
-    convert_to_precomputed(POSTALIGNED2, NEUROGLANCER)
+    convert_to_precomputed(PADDED, NEUROGLANCER)
 
 if __name__ == "__main__":
     sys.exit(main())
