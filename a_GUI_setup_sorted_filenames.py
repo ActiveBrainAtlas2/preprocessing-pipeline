@@ -4,97 +4,27 @@ import argparse
 from skimage import io
 import numpy as np
 
-from PyQt5.QtCore import *
-from PyQt5.QtGui import QFont, QIntValidator, QBrush, QColor, QPixmap, QImageReader
-from PyQt5.QtWidgets import (QWidget, QApplication, QGridLayout, QLineEdit,
-                             QPushButton, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QFrame, QComboBox,
-                             QMessageBox, QProgressBar)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton,  QComboBox, QMessageBox, QProgressBar
 
+from image_viewer import ImageViewer
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-
-class ImageViewer(QGraphicsView):
-    def __init__(self, parent):
-        super(ImageViewer, self).__init__(parent)
-        self.zoom = 0
-        self.empty = True
-        self.scene = QGraphicsScene(self)
-        self.photo = QGraphicsPixmapItem()
-
-        self.scene.addItem(self.photo)
-        self.setScene(self.scene)
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
-        self.setFrameShape(QFrame.NoFrame)
-
-    def set_photo(self, img_fp=None):
-        pixmap = QPixmap(img_fp)
-        self.zoom = 0
-        if pixmap and not pixmap.isNull():
-            self.empty = False
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
-            self.photo.setPixmap(pixmap)
-        else:
-            self.empty = True
-            self.setDragMode(QGraphicsView.NoDrag)
-            self.photo.setPixmap(QPixmap())
-        self.fitInView()
-
-    def toggle_drag_mode(self):
-        if self.dragMode() == QGraphicsView.ScrollHandDrag:
-            self.setDragMode(QGraphicsView.NoDrag)
-        elif not self.photo.pixmap().isNull():
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
-
-    def fitInView(self, scale=True):
-        rect = QRectF(self.photo.pixmap().rect())
-        if not rect.isNull():
-            self.setSceneRect(rect)
-            if not self.empty:
-                unity = self.transform().mapRect(QRectF(0, 0, 1, 1))
-                self.scale(1 / unity.width(), 1 / unity.height())
-                viewrect = self.viewport().rect()
-                scenerect = self.transform().mapRect(rect)
-                factor = min(viewrect.width() / scenerect.width(),
-                             viewrect.height() / scenerect.height())
-                self.scale(factor, factor)
-            self.zoom = 0
-
-    def wheelEvent(self, event):
-        if not self.empty:
-            if event.angleDelta().y() > 0:
-                factor = 1.25
-                self.zoom += 1
-            else:
-                factor = 0.8
-                self.zoom -= 1
-
-            if self.zoom > 0:
-                self.scale(factor, factor)
-            elif self.zoom == 0:
-                self.fitInView()
-            else:
-                self.zoom = 0
-
 
 class GUISortedFilenames(QWidget):
 
     def __init__(self, stack, parent=None):
         super(GUISortedFilenames, self).__init__(parent)
 
-        # create a dataManager object
-        self.sqlController = SqlController()
         self.stack = stack
         self.fileLocationManager = FileLocationManager(self.stack)
+        self.sqlController = SqlController()
         self.sqlController.get_animal_info(self.stack)
 
         self.valid_sections = self.sqlController.get_valid_sections(stack)
         self.valid_section_keys = sorted(list(self.valid_sections))
 
-        #self.curr_section_index = len(self.valid_section_keys) // 2
         self.curr_section_index = 0
         self.curr_section = None
 
@@ -117,46 +47,41 @@ class GUISortedFilenames(QWidget):
         self.font_h1 = QFont("Arial", 32)
         self.font_p1 = QFont("Arial", 16)
 
-        # Set Layout and Geometry of Window
         self.grid_top = QGridLayout()
         self.grid_body_upper = QGridLayout()
         self.grid_body = QGridLayout()
         self.grid_body_lower = QGridLayout()
-        self.grid_bottom = QGridLayout()
-        self.grid_blank = QGridLayout()
 
         self.resize(1600, 1100)
 
         # Grid Top
-        self.e1 = QLineEdit()
-        self.e1.setValidator(QIntValidator())
-        self.e1.setAlignment(Qt.AlignCenter)
-        self.e1.setFont(self.font_h1)
-        self.e1.setReadOnly(True)
-        self.e1.setText("Setup Sorted Filenames")
-        self.e1.setFrame(False)
-        self.grid_top.addWidget(self.e1, 0, 0)
+        self.e_title = QLineEdit()
+        self.e_title.setAlignment(Qt.AlignCenter)
+        self.e_title.setFont(self.font_h1)
+        self.e_title.setReadOnly(True)
+        self.e_title.setText("Setup Sorted Filenames")
+        self.e_title.setFrame(False)
+        self.grid_top.addWidget(self.e_title, 0, 0)
 
         self.b_help = QPushButton("HELP")
         self.b_help.setDefault(True)
         self.b_help.setEnabled(True)
-        self.b_help.setStyleSheet("color: rgb(0,0,0); background-color: rgb(250,250,250);")
         self.grid_top.addWidget(self.b_help, 0, 1)
 
         # Grid BODY UPPER
-        self.e4 = QLineEdit()
-        self.e4.setAlignment(Qt.AlignCenter)
-        self.e4.setFont(self.font_p1)
-        self.e4.setReadOnly(True)
-        self.e4.setText("Filename: ")
-        self.grid_body_upper.addWidget(self.e4, 0, 2)
+        self.e_filename = QLineEdit()
+        self.e_filename.setAlignment(Qt.AlignCenter)
+        self.e_filename.setFont(self.font_p1)
+        self.e_filename.setReadOnly(True)
+        self.e_filename.setText("Filename: ")
+        self.grid_body_upper.addWidget(self.e_filename, 0, 2)
 
-        self.e5 = QLineEdit()
-        self.e5.setAlignment(Qt.AlignCenter)
-        self.e5.setFont(self.font_p1)
-        self.e5.setReadOnly(True)
-        self.e5.setText("Section: ")
-        self.grid_body_upper.addWidget(self.e5, 0, 3)
+        self.e_section = QLineEdit()
+        self.e_section.setAlignment(Qt.AlignCenter)
+        self.e_section.setFont(self.font_p1)
+        self.e_section.setReadOnly(True)
+        self.e_section.setText("Section: ")
+        self.grid_body_upper.addWidget(self.e_section, 0, 3)
 
         # Grid BODY
         self.viewer = ImageViewer(self)
@@ -195,12 +120,12 @@ class GUISortedFilenames(QWidget):
         self.b_done = QPushButton("Finished")
         self.grid_body_lower.addWidget(self.b_done, 2, 3)
 
-        ### SUPERGRID ###
+        # Super grid
         self.supergrid = QGridLayout()
         self.supergrid.addLayout(self.grid_top, 0, 0)
         self.supergrid.addLayout(self.grid_body_upper, 1, 0)
         self.supergrid.addLayout(self.grid_body, 2, 0)
-        self.supergrid.addLayout(self.grid_body_lower, 7, 0)
+        self.supergrid.addLayout(self.grid_body_lower, 3, 0)
 
         # Set layout and window title
         self.setLayout(self.supergrid)
@@ -221,8 +146,12 @@ class GUISortedFilenames(QWidget):
 
         # Update the section and filename at the top
         label = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['source']
-        self.e4.setText(label)
-        self.e5.setText(str(self.curr_section))
+        self.e_filename.setText(label)
+        self.e_section.setText(str(self.curr_section))
+
+        # Get filepath of "curr_section" and set it as viewer's photo
+        img_fp = os.path.join(self.fileLocationManager.thumbnail_prep, self.curr_section)
+        self.viewer.set_photo(img_fp)
 
         # Update the quality selection in the bottom left
         curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
@@ -230,10 +159,6 @@ class GUISortedFilenames(QWidget):
         index = self.b_quality.findText(text, Qt.MatchFixedString)
         if index >= 0:
             self.b_quality.setCurrentIndex(index)
-
-        # Get filepath of "curr_section" and set it as viewer's photo
-        img_fp = os.path.join(self.fileLocationManager.thumbnail_prep, self.curr_section)
-        self.viewer.set_photo(img_fp)
 
     def get_valid_section_index(self, section_index):
         if section_index >= len(self.valid_sections):
