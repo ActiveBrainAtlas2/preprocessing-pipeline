@@ -34,12 +34,20 @@ def directory_filled(dir):
 def find_missing(dir, db_files):
     source_files = []
     for key, file in db_files.items():
-        print('key', key)
-
         source_files.append(file['destination'])
     files = os.listdir(dir)
     return (list(set(source_files) - set(files)))
 
+def fix_missing(dir, db_files):
+    source_files = []
+    source_keys = []
+    for key, file in db_files.items():
+        source_files.append(file['destination'])
+        source_keys.append(key)
+    files = os.listdir(dir)
+    missing_files =  (list(set(source_files) - set(files)))
+    for missing in missing_files:
+        print(missing, source_keys[source_files.index(missing)])
 
 
 
@@ -70,6 +78,8 @@ def test_tif():
             if name in ['tif', 'prep_thumbnail']:
                 pass
                 #print('Missing {} {}'.format(name, missings))
+            if len(missings) > 0:
+                fix_missing(dir, db_files)
 
 
 if __name__ == '__main__':
