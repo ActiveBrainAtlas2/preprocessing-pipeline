@@ -41,7 +41,11 @@ def find_missing(dir, db_files):
     files = os.listdir(dir)
     return (list(set(source_files) - set(files)))
 
-def fix_missing(animal, dir, db_files):
+def fix_tifs(animal):
+    sqlController = SqlController()
+    fileLocationManager = FileLocationManager(animal)
+    dir = fileLocationManager.tif
+    db_files = sqlController.get_valid_sections(animal)
     slideProcessor = SlideProcessor(animal, session)
 
     source_files = []
@@ -55,38 +59,35 @@ def fix_missing(animal, dir, db_files):
     for i,missing in enumerate(missing_files):
         #pass
         file_id =  source_keys[source_files.index(missing)]
-        #print(i, missing, source_keys[source_files.index(missing)])
-        slideProcessor.make_thumbnail(file_id, missing, testing=False)
+        print(i, missing, file_id)
+        section = sqlController.get_section(file_id)
+        slideProcessor.make_tif(session, animal, section.tif_id, file_id, testing=False)
 
 
-
-
-def test_tif():
+def test_tif(animal):
     sqlController = SqlController()
     stack_metadata = sqlController.generate_stack_metadata()
     animals = list(stack_metadata.keys())
     checks = ['tif', 'histogram', 'prep_thumbnail', 'web thumbnail']
-    animals = ['DK39']
-    for animal in animals:
-        fileLocationManager = FileLocationManager(animal)
-        # tifs
-        for name, dir in zip(checks, [fileLocationManager.tif,
-                                      fileLocationManager.histogram,
-                                      fileLocationManager.thumbnail_prep,
-                                      fileLocationManager.thumbnail_web]):
-            db_files = sqlController.get_valid_sections(animal)
-            valid_file_length = len(db_files)
-            dir_exists, lfiles, badsize = directory_filled(dir)
+    fileLocationManager = FileLocationManager(animal)
+    # tifs
+    for name, dir in zip(checks, [fileLocationManager.tif,
+                                  fileLocationManager.histogram,
+                                  fileLocationManager.thumbnail_prep,
+                                  fileLocationManager.thumbnail_web]):
+        db_files = sqlController.get_valid_sections(animal)
+        valid_file_length = len(db_files)
+        dir_exists, lfiles, badsize = directory_filled(dir)
 
-            if not dir_exists:
-                print("{} does not exist.".format(dir))
+        if not dir_exists:
+            print("{} does not exist.".format(dir))
 
-            missings = find_missing(dir, db_files)
-            print("There are {} {} entries in the database and we found {} {}s on the server"\
-                    .format(animal, valid_file_length, lfiles, name))
-            if name in ['tif', 'prep_thumbnail'] and len(missings) > 0:
-                fix_missing(animal, dir, db_files)
+        #missings = find_missing(dir, db_files)
+        print("There are {} {} entries in the database and we found {} {}s on the server"\
+                .format(animal, valid_file_length, lfiles, name))
+
 
 
 if __name__ == '__main__':
-    test_tif()
+    test_tif('DK39')
+    fix_tifs('DK39')

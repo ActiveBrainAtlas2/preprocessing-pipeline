@@ -68,6 +68,16 @@ class SqlController(object):
         #scan_run = self.session.query(ScanRun, func.max(ScanRun.id).label('resolution')).filter(ScanRun.prep_id == stack).group_by(ScanRun.prep_id).one()
         self.scan_run = self.session.query(ScanRun).filter(ScanRun.prep_id == stack).order_by(ScanRun.id.desc()).one()
 
+    def get_section(self, file_id):
+        section = None
+        try:
+            section = self.session.query(RawSection).filter(RawSection.id == file_id).one()
+        except NoResultFound as nrf:
+            print('No section for id {} error: {}'.format(id, nrf))
+
+        return section
+
+
     def get_valid_sections(self, stack):
         self.raw_sections = self.session.query(RawSection).filter(RawSection.prep_id == stack)\
             .filter(RawSection.active == 1)\
