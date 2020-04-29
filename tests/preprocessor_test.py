@@ -47,9 +47,9 @@ def fix_missing(dir, db_files):
     files = os.listdir(dir)
     missing_files =  (list(set(source_files) - set(files)))
     print(len(missing_files))
-    for missing in missing_files:
-        pass
-        #print(dir,missing, source_keys[source_files.index(missing)])
+    for i,missing in enumerate(missing_files):
+        #pass
+        print(i,dir,missing, source_keys[source_files.index(missing)])
 
 
 
