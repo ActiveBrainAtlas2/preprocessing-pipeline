@@ -63,6 +63,27 @@ def fix_tifs(animal):
         section = sqlController.get_section(file_id)
         make_tif(session, animal, section.tif_id, file_id, testing=False)
 
+def fix_prep_thumbnail(animal):
+    sqlController = SqlController()
+    fileLocationManager = FileLocationManager(animal)
+    dir = fileLocationManager.thumbnail_prep
+    db_files = sqlController.get_valid_sections(animal)
+    slideProcessor = SlideProcessor(animal, session)
+
+    source_files = []
+    source_keys = []
+    for key, file in db_files.items():
+        source_files.append(file['destination'])
+        source_keys.append(key)
+    files = os.listdir(dir)
+    missing_files =  (list(set(source_files) - set(files)))
+    print(len(missing_files))
+    for i,missing in enumerate(missing_files):
+        file_id =  source_keys[source_files.index(missing)]
+        print(i, missing, file_id)
+        slideProcessor.make_thumbnail(file_id, missing, testing=False)
+        slideProcessor.make_web_thumbnail(file_id, missing, testing=False
+
 
 def test_tif(animal):
     sqlController = SqlController()
@@ -89,5 +110,7 @@ def test_tif(animal):
 
 
 if __name__ == '__main__':
-    test_tif('DK39')
-    fix_tifs('DK39')
+    animal = 'DK39'
+    test_tif(animal)
+    fix_tifs(animal)
+    fix_prep_thumbnail(animal)
