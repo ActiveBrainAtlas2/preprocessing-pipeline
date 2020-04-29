@@ -55,7 +55,7 @@ def fix_missing(animal, dir, db_files):
     for i,missing in enumerate(missing_files):
         #pass
         file_id =  source_keys[source_files.index(missing)]
-        print(i, missing, source_keys[source_files.index(missing)])
+        #print(i, missing, source_keys[source_files.index(missing)])
         slideProcessor.make_thumbnail(file_id, missing, testing=False)
 
 

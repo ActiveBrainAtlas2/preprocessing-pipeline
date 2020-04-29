@@ -224,6 +224,8 @@ class SlideProcessor(object):
                 command = ['convert', source, '-resize', '3.125%', '-auto-level',
                            '-normalize', '-compress', 'lzw', prep_destination]
                 subprocess.run(command)
+        else:
+            print('No source file', source)
 
         return result
 
