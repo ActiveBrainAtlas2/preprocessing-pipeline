@@ -30,13 +30,13 @@ class GUISortedFilenames(QWidget):
 
         self.init_ui()
 
-        self.b_quality.currentIndexChanged.connect(lambda: self.click_button(self.b_quality))
-        self.b_move_left.clicked.connect(lambda: self.click_button(self.b_move_left))
-        self.b_move_right.clicked.connect(lambda: self.click_button(self.b_move_right))
         self.b_rotate_left.clicked.connect(lambda: self.click_button(self.b_rotate_left))
         self.b_rotate_right.clicked.connect(lambda: self.click_button(self.b_rotate_right))
         self.b_flip_vertical.clicked.connect(lambda: self.click_button(self.b_flip_vertical))
         self.b_flip_horozontal.clicked.connect(lambda: self.click_button(self.b_flip_horozontal))
+        self.b_move_left.clicked.connect(lambda: self.click_button(self.b_move_left))
+        self.b_move_right.clicked.connect(lambda: self.click_button(self.b_move_right))
+        self.b_quality.currentIndexChanged.connect(lambda: self.click_button(self.b_quality))
         self.b_remove.clicked.connect(lambda: self.click_button(self.b_remove))
         self.b_help.clicked.connect(lambda: self.click_button(self.b_help))
         self.b_done.clicked.connect(lambda: self.click_button(self.b_done))
@@ -88,33 +88,33 @@ class GUISortedFilenames(QWidget):
         self.grid_body.addWidget(self.viewer, 0, 0)
 
         # Grid BODY LOWER
-        self.b_quality = QComboBox()
-        self.b_quality.addItems(['Section quality: unusable', 'Section quality: blurry', 'Section quality: good'])
-        self.grid_body_lower.addWidget(self.b_quality, 0, 0, 1, 2)
-
-        self.b_move_left = QPushButton("<--   Move Section Left   <--")
-        self.grid_body_lower.addWidget(self.b_move_left, 0, 2)
-
-        self.b_move_right = QPushButton("-->   Move Section Right   -->")
-        self.grid_body_lower.addWidget(self.b_move_right, 0, 3)
-
         self.b_flip_vertical = QPushButton("Flip vertically")
-        self.grid_body_lower.addWidget(self.b_flip_vertical, 1, 0)
+        self.grid_body_lower.addWidget(self.b_flip_vertical, 0, 0)
 
         self.b_flip_horozontal = QPushButton("Flop horizontally")
-        self.grid_body_lower.addWidget(self.b_flip_horozontal, 1, 1)
+        self.grid_body_lower.addWidget(self.b_flip_horozontal, 0, 1)
 
         self.b_rotate_left = QPushButton("Rotate Left")
-        self.grid_body_lower.addWidget(self.b_rotate_left, 1, 2)
+        self.grid_body_lower.addWidget(self.b_rotate_left, 0, 2)
 
         self.b_rotate_right = QPushButton("Rotate Right")
-        self.grid_body_lower.addWidget(self.b_rotate_right, 1, 3)
+        self.grid_body_lower.addWidget(self.b_rotate_right, 0, 3)
+
+        self.b_move_left = QPushButton("<--   Move Section Left   <--")
+        #self.grid_body_lower.addWidget(self.b_move_left, 1, 0)
+
+        self.b_move_right = QPushButton("-->   Move Section Right   -->")
+        #self.grid_body_lower.addWidget(self.b_move_right, 1, 1)
+
+        self.b_quality = QComboBox()
+        self.b_quality.addItems(['Section quality: unusable', 'Section quality: blurry', 'Section quality: good'])
+        #self.grid_body_lower.addWidget(self.b_quality, 1, 2)
 
         self.b_remove = QPushButton("Remove section")
-        self.grid_body_lower.addWidget(self.b_remove, 2, 0)
+        #self.grid_body_lower.addWidget(self.b_remove, 1, 3)
 
         self.progress = QProgressBar(self)
-        self.grid_body_lower.addWidget(self.progress, 2, 1, 1, 2)
+        self.grid_body_lower.addWidget(self.progress, 2, 0, 1, 3)
         self.progress.hide()
 
         self.b_done = QPushButton("Finished")
@@ -243,7 +243,9 @@ class GUISortedFilenames(QWidget):
                 False
             )
 
-            # self.apply_queued_transformations()
+            # Apply the transformations to the real images
+            self.apply_queued_transformations()
+
             self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
             self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-5_setup_orientations')
             sys.exit(app.exec_())
@@ -280,6 +282,9 @@ class GUISortedFilenames(QWidget):
         if os.path.exists(png_path):
             os.unlink(png_path)
         io.imsave(png_path, img)
+
+    def apply_queued_transformations(self):
+        pass
 
     def progress_bar(self, show, max_value):
         if show:
