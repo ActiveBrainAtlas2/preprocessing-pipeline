@@ -13,7 +13,7 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from controller.preprocessor import SlideProcessor
+from controller.preprocessor import SlideProcessor, make_tif
 from sql_setup import session
 
 
@@ -61,7 +61,7 @@ def fix_tifs(animal):
         file_id =  source_keys[source_files.index(missing)]
         print(i, missing, file_id)
         section = sqlController.get_section(file_id)
-        slideProcessor.make_tif(session, animal, section.tif_id, file_id, testing=False)
+        make_tif(session, animal, section.tif_id, file_id, testing=False)
 
 
 def test_tif(animal):
