@@ -112,9 +112,6 @@ class FileOperation(dj.Computed):
         file_id = (RawSection & key).fetch1('id')
         file_name = (RawSection & key).fetch1('destination_file')
         file_id = np.asscalar(file_id)
-        if file_id >= 204710 and file_id < 204720:
-            print('found ', file_name, file_id)
-
         tif_id = (RawSection & key).fetch1('tif_id')
         czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), file_id, testing)
         histogram = slide_processor.make_histogram(file_id, file_name, testing)
