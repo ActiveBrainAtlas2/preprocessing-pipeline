@@ -75,8 +75,8 @@ def test_tif():
             missings = find_missing(dir, db_files)
             print("There are {} {} entries in the database and we found {} {}s on the server"\
                     .format(animal, valid_file_length, lfiles, name))
-            #if name in ['tif', 'prep_thumbnail'] and len(missings) > 0:
-            #    fix_missing(dir, db_files)
+            if name in ['tif', 'prep_thumbnail'] and len(missings) > 0:
+                fix_missing(dir, db_files)
 
 
 if __name__ == '__main__':
