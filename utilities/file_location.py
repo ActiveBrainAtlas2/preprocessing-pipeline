@@ -31,6 +31,8 @@ class FileLocationManager(object):
         self.histogram = os.path.join(ROOT_DIR, stack, 'histogram')
         self.custom_transform = os.path.join(self.brain_info, 'custom_transform')
         self.aligned = os.path.join(ROOT_DIR, stack, PREPS, 'aligned')
+        self.prealigned = os.path.join(ROOT_DIR, stack, PREPS, 'prealigned')
+        self.padded = os.path.join(ROOT_DIR, stack, PREPS, 'padded')
         self.elastix_dir = os.path.join(ROOT_DIR, stack, PREPS, 'elastix')
         self.custom_output = os.path.join(ROOT_DIR, stack, PREPS, 'custom_output')
         self.mouseatlas_tmp = os.path.join(self.brain_info, 'mouseatlas_tmp')

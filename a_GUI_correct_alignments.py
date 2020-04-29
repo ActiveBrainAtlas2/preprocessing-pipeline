@@ -70,6 +70,7 @@ class ImageViewer(QGraphicsView):
         self.fitInView()
 
 
+    ##### TODO what is this?
     def paintOverlayImage(self, pixmap=None):
         painter = QPainter()
         painter.begin(image)
@@ -320,7 +321,7 @@ before you finish this step."
     def loadImage(self):
         # Get filepath of "curr_section" and set it as viewer's photo
         #fp = get_fp(self.curr_section, prep_id=1)
-        input_tif = os.path.join(self.fileLocationManager.prep_thumbnail, self.curr_section)
+        input_tif = os.path.join(self.fileLocationManager.thumbnail_prep, self.curr_section)
         print('input_tif', input_tif)
         #fp = io.imread(input_tif)
         self.viewer.setPhoto(QPixmap(input_tif))
