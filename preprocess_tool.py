@@ -6,14 +6,14 @@ import argparse
 
 from PyQt5.QtGui import QImage, QPainter
 from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton, QMessageBox, QProgressBar, \
-    QMainWindow
+    QMainWindow, QDialog
 
 import pandas
 
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from ui.ui_PreprocessGui_v2 import Ui_PreprocessGui
-from ui.ui_AlignmentGui import Ui_AlignmentGui
+from utilities.ui.ui_PreprocessGui_v2 import Ui_PreprocessGui
+from utilities.ui.ui_AlignmentGui import Ui_AlignmentGui
 
 from widgets.ZoomableBrowsableGraphicsScene import ZoomableBrowsableGraphicsScene, SimpleGraphicsScene2, SimpleGraphicsScene3, SimpleGraphicsScene4
 from widgets.ZoomableBrowsableGraphicsSceneWithReadonlyPolygon import ZoomableBrowsableGraphicsSceneWithReadonlyPolygon
@@ -23,13 +23,15 @@ from widgets.SignalEmittingItems import *
 
 from utilities.gui.DataFeeder import ImageDataFeeder_v2
 
-sys.path.append(os.environ['REPO_DIR'] + '/utilities')
-#from utilities2015 import *
-#from metadata import *
-#from preprocess_utilities import *
+#sys.path.append(os.environ['REPO_DIR'] + '/utilities')
+from utilities.utilities2015 import execute_command
+#from metadata import invert_section_to_filename_mapping
+#from preprocess_utilities import invert_section_to_filename_mapping
 #from gui_utilities import *
 #from qt_utilities import *
-
+from utilities.data_manager_v2 import DataManager
+from utilities.distributed_utilities import download_from_s3, upload_to_s3
+from utilities.metadata import UTILITY_DIR
 # Use the third method in http://pyqt.sourceforge.net/Docs/PyQt4/designer.html
 class PreprocessGUI(QMainWindow, Ui_PreprocessGui):
 
@@ -164,7 +166,7 @@ class PreprocessGUI(QMainWindow, Ui_PreprocessGui):
             self.first_section = self.section_to_filename[first_section]
             self.last_section = self.section_to_filename[last_section]
             self.sorted_sections_gscene.set_box(ul_x, lr_x, ul_y, lr_y)
-            print ul_x, lr_x, ul_y, lr_y, self.first_section, self.last_section
+            print(ul_x, lr_x, ul_y, lr_y, self.first_section, self.last_section)
 
     def save_crop(self):
         ul_pos = self.sorted_sections_gscene.corners['ul'].scenePos()
@@ -282,7 +284,7 @@ class PreprocessGUI(QMainWindow, Ui_PreprocessGui):
 
     def align_using_elastix(self):
         selected_elastix_parameter_name = str(self.alignment_ui.comboBox_parameters.currentText())
-        param_fn = os.path.join(REPO_DIR, 'preprocess', 'parameters', 'Parameters_' + selected_elastix_parameter_name + '.txt')
+        param_fn = os.path.join(UTILITY_DIR, 'preprocess', 'parameters', 'Parameters_' + selected_elastix_parameter_name + '.txt')
 
         curr_fn = self.curr_gscene.active_section
         prev_fn = self.prev_gscene.active_section
@@ -330,8 +332,8 @@ class PreprocessGUI(QMainWindow, Ui_PreprocessGui):
             pos = c.scenePos()
             prev_points.append((pos.x(), pos.y()))
 
-        print self.curr_gscene.active_section, np.array(curr_points)
-        print self.prev_gscene.active_section, np.array(prev_points)
+        print(self.curr_gscene.active_section, np.array(curr_points))
+        print(self.prev_gscene.active_section, np.array(prev_points))
 
         curr_points = np.array(curr_points)
         prev_points = np.array(prev_points)
@@ -346,7 +348,7 @@ class PreprocessGUI(QMainWindow, Ui_PreprocessGui):
 
         t = -np.dot(R, curr_centroid) + prev_centroid
 
-        print R, t
+        print(R, t)
 
         # Write to custom transform file
         curr_section_fn = self.curr_gscene.active_section
@@ -415,7 +417,7 @@ class PreprocessGUI(QMainWindow, Ui_PreprocessGui):
         curr_section_fn = self.overlay_gscene.active_sections['moving']
         prev_section_fn = self.overlay_gscene.active_sections['fixed']
 
-        print "Problematic pairs:", self.problematic_pairs
+        print("Problematic pairs:", self.problematic_pairs)
 
         if (prev_section_fn, curr_section_fn) in self.problematic_pairs:
             self.alignment_ui.label_current_filename.setText('(CHECK)' + str(curr_section_fn))
@@ -432,7 +434,7 @@ class PreprocessGUI(QMainWindow, Ui_PreprocessGui):
         curr_section_fn = self.curr_gscene.active_section
         prev_section_fn = section_filenames[section_filenames.index(curr_section_fn) - 1]
 
-        print "Problematic pairs:", self.problematic_pairs
+        print("Problematic pairs:", self.problematic_pairs)
 
         if (prev_section_fn, curr_section_fn) in self.problematic_pairs:
             self.alignment_ui.label_current_filename.setText('(CHECK)' + str(curr_section_fn))
@@ -510,9 +512,9 @@ class PreprocessGUI(QMainWindow, Ui_PreprocessGui):
                     [identify_shape(DataManager.get_image_filepath_v2(stack=self.stack, fn=fn, prep_id=None, version=self.tb_version, resol=self.tb_res))
                     for fn in imageNames_to_load]
                 largest_idx = np.argmax([h*w for h, w in shapes])
-                print 'largest section is ', imageNames_to_load[largest_idx]
+                print('largest section is ', imageNames_to_load[largest_idx])
                 self.set_anchor(imageNames_to_load[largest_idx])
-                print imageNames_to_load[largest_idx]
+                print(imageNames_to_load[largest_idx])
 
         if self.currently_showing == 'original':
 
@@ -680,7 +682,7 @@ class PreprocessGUI(QMainWindow, Ui_PreprocessGui):
             self.label_sorted_sections_status.setText('LAST')
         elif hasattr(self, 'anchor_fn') and self.sorted_sections_gscene.active_section is not None and \
             self.sorted_sections_gscene.active_section == self.anchor_fn:
-            print self.sorted_sections_gscene.active_section
+            print(self.sorted_sections_gscene.active_section)
             self.label_sorted_sections_status.setText('ANCHOR')
         else:
             self.label_sorted_sections_status.setText('')
@@ -753,7 +755,7 @@ class PreprocessGUI(QMainWindow, Ui_PreprocessGui):
             return
         else:
             self.currently_showing = showing
-            print self.currently_showing
+            print(self.currently_showing)
             self.update_sorted_sections_gscene_from_sorted_filenames()
 
     def slide_position_image_updated(self):

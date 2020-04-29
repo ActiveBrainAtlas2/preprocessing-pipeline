@@ -13,6 +13,7 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
+from controller.preprocessor import SlideProcessor
 
 def directory_filled(dir):
     MINSIZE = 1000
@@ -33,7 +34,8 @@ def directory_filled(dir):
 def find_missing(dir, db_files):
     source_files = []
     for key, file in db_files.items():
-        #print(file['source'])
+        print('key', key)
+
         source_files.append(file['destination'])
     files = os.listdir(dir)
     return (list(set(source_files) - set(files)))
@@ -66,7 +68,8 @@ def test_tif():
             print("There are {} {} entries in the database and we found {} {}s on the server"\
                     .format(animal, valid_file_length, lfiles, name))
             if name in ['tif', 'prep_thumbnail']:
-                print('Missing {} {}'.format(name, missings))
+                pass
+                #print('Missing {} {}'.format(name, missings))
 
 
 if __name__ == '__main__':

@@ -316,7 +316,7 @@ class GUISortedFilenames(QWidget):
         img = np.rot90(img, rotation)
         os.unlink(filename)
         io.imsave(filename, img)
-        #self.save_to_web_thumbnail(filename, img)
+        self.save_to_web_thumbnail(filename, img)
 
     def flip(self, filename):
         img = io.imread(filename)

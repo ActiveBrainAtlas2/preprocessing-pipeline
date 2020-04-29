@@ -6,7 +6,12 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt4 import QtCore, QtGui
+
+from PyQt5.QtGui import QImage, QPainter
+from PyQt5.QtWidgets import QWidget, QApplication, QGridLayout, QLineEdit, QPushButton, QMessageBox, QProgressBar, \
+    QMainWindow, QDialog
+from PyQt5.uic.properties import QtCore
+from qtgui import QtGui
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
