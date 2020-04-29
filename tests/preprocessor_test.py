@@ -82,7 +82,7 @@ def fix_prep_thumbnail(animal):
         file_id =  source_keys[source_files.index(missing)]
         print(i, missing, file_id)
         slideProcessor.make_thumbnail(file_id, missing, testing=False)
-        slideProcessor.make_web_thumbnail(file_id, missing, testing=False)
+        #slideProcessor.make_web_thumbnail(file_id, missing, testing=False)
 
 
 def test_tif(animal):
