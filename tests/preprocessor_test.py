@@ -47,7 +47,7 @@ def fix_missing(dir, db_files):
     files = os.listdir(dir)
     missing_files =  (list(set(source_files) - set(files)))
     for missing in missing_files:
-        print(missing, source_keys[source_files.index(missing)])
+        print(dir,missing, source_keys[source_files.index(missing)])
 
 
 
@@ -75,10 +75,7 @@ def test_tif():
             missings = find_missing(dir, db_files)
             print("There are {} {} entries in the database and we found {} {}s on the server"\
                     .format(animal, valid_file_length, lfiles, name))
-            if name in ['tif', 'prep_thumbnail']:
-                pass
-                #print('Missing {} {}'.format(name, missings))
-            if len(missings) > 0:
+            if name in ['tif', 'prep_thumbnail'] and len(missings) > 0:
                 fix_missing(dir, db_files)
 
 
