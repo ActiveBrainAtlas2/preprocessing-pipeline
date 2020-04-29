@@ -14,6 +14,9 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from controller.preprocessor import SlideProcessor
+from sql_setup import session
+
+
 
 def directory_filled(dir):
     MINSIZE = 1000
@@ -38,7 +41,9 @@ def find_missing(dir, db_files):
     files = os.listdir(dir)
     return (list(set(source_files) - set(files)))
 
-def fix_missing(dir, db_files):
+def fix_missing(animal, dir, db_files):
+    slideProcessor = SlideProcessor(animal, session)
+
     source_files = []
     source_keys = []
     for key, file in db_files.items():
@@ -49,7 +54,9 @@ def fix_missing(dir, db_files):
     print(len(missing_files))
     for i,missing in enumerate(missing_files):
         #pass
-        print(i,dir,missing, source_keys[source_files.index(missing)])
+        file_id =  source_keys[source_files.index(missing)]
+        print(i, source_keys[source_files.index(missing)])
+        slideProcessor.make_thumbnail(file_id, missing, testing=False)
 
 
 
@@ -78,7 +85,7 @@ def test_tif():
             print("There are {} {} entries in the database and we found {} {}s on the server"\
                     .format(animal, valid_file_length, lfiles, name))
             if name in ['tif', 'prep_thumbnail'] and len(missings) > 0:
-                fix_missing(dir, db_files)
+                fix_missing(animal, dir, db_files)
 
 
 if __name__ == '__main__':
