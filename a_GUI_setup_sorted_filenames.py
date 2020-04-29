@@ -142,21 +142,18 @@ class GUISortedFilenames(QWidget):
 
         # Update curr, prev, and next section
         self.curr_section_index = section_index
-        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
+        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
 
         # Update the section and filename at the top
-        label = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['source']
-        self.e_filename.setText(label)
-        self.e_section.setText(str(self.curr_section))
+        self.e_filename.setText(self.curr_section['destination'])
+        self.e_section.setText(str(self.curr_section['section_number']))
 
         # Get filepath of "curr_section" and set it as viewer's photo
-        img_fp = os.path.join(self.fileLocationManager.thumbnail_prep, self.curr_section)
+        img_fp = os.path.join(self.fileLocationManager.thumbnail_prep, self.curr_section['destination'])
         self.viewer.set_photo(img_fp)
 
         # Update the quality selection in the bottom left
-        curr_fn = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
-        text = curr_fn['quality']
-        index = self.b_quality.findText(text, Qt.MatchFixedString)
+        index = self.b_quality.findText(self.curr_section['quality'], Qt.MatchFixedString)
         if index >= 0:
             self.b_quality.setCurrentIndex(index)
 
@@ -169,13 +166,16 @@ class GUISortedFilenames(QWidget):
             return section_index
 
     def click_button(self, button):
-        if button in [self.b_move_left, self.b_move_right, self.b_remove]:
-            section_number = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['section_number']
+        if button == self.b_quality:
+            curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
+            curr_section['quality'] = self.b_quality.currentText()
+            self.sqlController.save_valid_sections(self.valid_sections)
 
+        elif button in [self.b_move_left, self.b_move_right, self.b_remove]:
             if button == self.b_move_left:
-                self.sqlController.move_section(self.stack, section_number, -1)
+                self.sqlController.move_section(self.stack, self.curr_section['section_number'], -1)
             elif button == self.b_move_right:
-                self.sqlController.move_section(self.stack, section_number, 1)
+                self.sqlController.move_section(self.stack, self.curr_section['section_number'], 1)
             elif button == self.b_remove:
                 result = self.message_box(
                     'Are you sure you want to totally remove this section from this brain?\n\n' +
@@ -186,7 +186,8 @@ class GUISortedFilenames(QWidget):
                 # The answer is Yes
                 if result == 2:
                     # Remove the current section from "self.valid_sections
-                    self.sqlController.inactivate_section(self.stack, section_number)
+                    self.sqlController.inactivate_section(self.stack, self.curr_section['section_number'])
+
                     self.valid_sections = self.sqlController.get_valid_sections(self.stack)
                     self.valid_section_keys = sorted(list(self.valid_sections))
 
@@ -201,6 +202,7 @@ class GUISortedFilenames(QWidget):
             self.valid_sections = self.sqlController.get_valid_sections(self.stack)
             self.valid_section_keys = sorted(list(self.valid_sections))
             self.set_curr_section(self.curr_section_index)
+
         elif button in [self.b_flip_vertical, self.b_flip_horozontal, self.b_rotate_right, self.b_rotate_left]:
             """
             Transform_type must be "rotate", "flip", or "flop".
@@ -210,27 +212,16 @@ class GUISortedFilenames(QWidget):
             """
 
             index = [self.b_flip_vertical, self.b_flip_horozontal, self.b_rotate_right, self.b_rotate_left].index(button)
-            print('index is ', index)
-            cmd = ['flip', 'flop', 'rotate90', 'rotate270'][index]
+            op = ['flip', 'flop', 'right', 'left'][index]
 
             size = len(self.valid_sections.values()) - 1
             self.progress_bar(True, size)
 
-            ##### TODO, rotating a multidimensional image has to be done backwards.
-            ##### to rotate right, do np.rot(img, 3), to rotate left, do np.rot(img, 1)
             for index, section in enumerate(self.valid_sections.values()):
                 thumbnail_path = os.path.join(self.fileLocationManager.thumbnail_prep, section['destination'])
                 if os.path.isfile(thumbnail_path):
-                    if cmd == 'flip':
-                        self.flip(thumbnail_path)
-                    elif cmd == 'flop':
-                        self.flop(thumbnail_path)
-                    elif cmd == 'rotate90':
-                        self.rotate_img(thumbnail_path, 3)
-                    elif cmd == 'rotate270':
-                        self.rotate_img(thumbnail_path, 1)
-                    else:
-                        print('Nothing to do')
+                    self.transform_image(thumbnail_path, op)
+
                 self.progress.setValue(index)
 
             self.progress_bar(False, size)
@@ -244,11 +235,7 @@ class GUISortedFilenames(QWidget):
                 'Use the buttons on the bottom panel to move',
                 False
             )
-        elif button == self.b_quality:
-            curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
-            curr_section['quality'] = self.b_quality.currentText()
 
-            self.sqlController.save_valid_sections(self.valid_sections)
         elif button == self.b_done:
             self.message_box(
                 "All selected operations will now be performed on the full sized raw images" +
@@ -260,6 +247,39 @@ class GUISortedFilenames(QWidget):
             self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-4_setup_sorted_filenames')
             self.sqlController.set_step_completed_in_progress_ini(self.stack, '1-5_setup_orientations')
             sys.exit(app.exec_())
+
+    def transform_image(self, filename, op):
+        def get_last_2d(data):
+            if data.ndim <= 2:
+                return data
+            m,n = data.shape[-2:]
+            return data.flat[:m*n].reshape(m,n)
+
+        img = io.imread(filename)
+        img = get_last_2d(img)
+
+        # Rotating a multidimensional image has to be done backwards.
+        # To rotate right, do np.rot(img, 3), to rotate left, do np.rot(img, 1)
+        if op == 'left':
+            img = np.rot90(img, 3)
+        elif op == 'right':
+            img = np.rot90(img, 1)
+        elif op == 'flip':
+            img = np.flipud(img)
+        elif op == 'flop':
+            img = np.fliplr(img)
+
+        os.unlink(filename)
+        io.imsave(filename, img)
+        self.save_to_web_thumbnail(filename, img)
+
+    def save_to_web_thumbnail(self, filename, img):
+        filename = os.path.basename(filename)
+        png_file = os.path.splitext(filename)[0] + '.png'
+        png_path = os.path.join(self.fileLocationManager.thumbnail_web, png_file)
+        if os.path.exists(png_path):
+            os.unlink(png_path)
+        io.imsave(png_path, img)
 
     def progress_bar(self, show, max_value):
         if show:
@@ -306,49 +326,6 @@ class GUISortedFilenames(QWidget):
 
     def closeEvent(self, event):
         sys.exit(app.exec_())
-        # close_main_gui( ex, reopen=True )
-
-
-    def rotate_img(self, filename, rotation):
-        img = io.imread(filename)
-        img = get_last_2d(img)
-        #print('rotating {} times with shape {}'.format(rotation, img.shape))
-        img = np.rot90(img, rotation)
-        os.unlink(filename)
-        io.imsave(filename, img)
-        self.save_to_web_thumbnail(filename, img)
-
-    def flip(self, filename):
-        img = io.imread(filename)
-        img = get_last_2d(img)
-        img = np.flipud(img)
-        os.unlink(filename)
-        io.imsave(filename, img)
-        self.save_to_web_thumbnail(filename, img)
-
-    def flop(self, filename):
-        img = io.imread(filename)
-        img = get_last_2d(img)
-        img = np.fliplr(img)
-        os.unlink(filename)
-        io.imsave(filename, img)
-        self.save_to_web_thumbnail(filename, img)
-
-    def save_to_web_thumbnail(self, filename, img):
-        filename = os.path.basename(filename)
-        png_file = os.path.splitext(filename)[0] + '.png'
-        png_path = os.path.join(self.fileLocationManager.thumbnail_web, png_file)
-        if os.path.exists(png_path):
-            os.unlink(png_path)
-        io.imsave(png_path, img)
-
-
-
-def get_last_2d(data):
-    if data.ndim <= 2:
-        return data
-    m,n = data.shape[-2:]
-    return data.flat[:m*n].reshape(m,n)
 
 
 if __name__ == '__main__':
