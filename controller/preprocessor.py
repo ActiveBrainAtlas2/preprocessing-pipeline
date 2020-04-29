@@ -212,6 +212,8 @@ class SlideProcessor(object):
         rsection = self.session.query(RawSection).filter(RawSection.id == file_id).one()
         source = os.path.join(self.fileLocationManager.tif, file_name)
         prep_destination = os.path.join(self.fileLocationManager.thumbnail_prep, rsection.destination_file)
+        print(source,prep_destination)
+        return 1
         # Create thumbnails
         # if source exists
         if testing:
