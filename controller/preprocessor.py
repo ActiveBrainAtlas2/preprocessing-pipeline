@@ -213,19 +213,18 @@ class SlideProcessor(object):
         source = os.path.join(self.fileLocationManager.tif, file_name)
         prep_destination = os.path.join(self.fileLocationManager.thumbnail_prep, rsection.destination_file)
         print(source,prep_destination)
-        return 1
         # Create thumbnails
         # if source exists
         if testing:
             command = ['touch', prep_destination]
             subprocess.run(command)
             return 1
+
         if os.path.exists(source):
             # if the prep thumbnail exists
-            if  not os.path.exists(prep_destination):
-                command = ['convert', source, '-resize', '3.125%', '-auto-level',
-                           '-normalize', '-compress', 'lzw', prep_destination]
-                subprocess.run(command)
+            command = ['convert', source, '-resize', '3.125%', '-auto-level',
+                       '-normalize', '-compress', 'lzw', prep_destination]
+            subprocess.run(command)
         else:
             print('No source file', source)
 
