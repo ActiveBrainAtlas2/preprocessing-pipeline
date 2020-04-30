@@ -1,9 +1,9 @@
-#! /usr/bin/env python
-
-import sys, os
+import os
+import sys
 import argparse
 import numpy as np
 import cv2
+
 from PyQt5.QtCore import pyqtSignal, QPoint, Qt, QRectF
 from PyQt5.QtGui import QBrush, QColor, QPixmap, QFont, QIntValidator, QImage
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QFrame, QWidget, QGridLayout, QLineEdit, \
@@ -174,6 +174,106 @@ class GUICropBrainStem(QWidget):
         self.setLayout( self.supergrid )
         self.setWindowTitle("Q")
 
+    def set_curr_section(self, section_index=-1):
+        """
+        Sets the current section to the section passed in.
+        Will automatically update curr_section, prev_section, and next_section.
+        Updates the header fields and loads the current section image.
+        """
+        if section_index == -1:
+            section_index = self.curr_section_index
+
+        # Update curr, prev, and next section
+        self.curr_section_index = section_index
+        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]
+
+        # Update the section and filename at the top
+        self.e_filename.setText(self.curr_section['destination'])
+        self.e_section.setText(str(self.curr_section['section_number']))
+
+        # Get filepath of "curr_section" and set it as viewer's photo
+        img_fp = os.path.join(self.fileLocationManager.thumbnail_prep, self.curr_section['destination'])
+        if os.path.isfile(img_fp):
+            img = cv2.imread(img_fp) * 3
+            self.img_height, self.img_width, channel = img.shape
+
+            if self.rostral != -1:
+                x_coordinate = int(self.rostral)
+                img[:, x_coordinate - 2 : x_coordinate + 2, :] = np.ones((self.img_height, 4, 3)) * 255
+            if self.caudal != -1:
+                x_coordinate = int(self.caudal)
+                img[:, x_coordinate - 2 : x_coordinate + 2, :] = np.ones((self.img_height, 4, 3)) * 255
+            if self.dorsal != -1:
+                y_coordinate = int(self.dorsal)
+                img[y_coordinate - 2 : y_coordinate + 2, :, :] = np.ones((4, self.img_width, 3)) * 255
+            if self.ventral != -1:
+                y_coordinate = int(self.ventral)
+                img[y_coordinate - 2 : y_coordinate + 2, :, :] = np.ones((4, self.img_width, 3)) * 255
+
+            qImg = QImage(img.data, self.img_width, self.img_height, 3*self.img_width, QImage.Format_RGB888)
+            self.viewer.set_photo(QPixmap(qImg))
+
+        # Update the internal crop values based on text boxes
+        #self.updateCropVals()
+
+    def get_valid_section_index(self, section_index):
+        if section_index >= len(self.valid_sections):
+            return 0
+        elif section_index < 0:
+            return len(self.valid_sections) - 1
+        else:
+            return section_index
+
+    def click_button(self, button):
+        if button in [self.b_rostral, self.b_caudal, self.b_dorsal, self.b_ventral]:
+            self.viewer.set_drag_mode(0)
+
+            if button == self.b_rostral:
+                self.active_selection = 'rostral'
+            elif button == self.b_caudal:
+                self.active_selection = 'caudal'
+            elif button == self.b_dorsal:
+                self.active_selection = 'dorsal'
+            elif button == self.b_ventral:
+                self.active_selection = 'ventral'
+
+        # Prep2 section limits
+        elif button in [self.b_first_slice, self.b_last_slice]:
+            if button == self.b_first_slice:
+                self.first_slice = int( self.curr_section )
+                self.e_first_slice.setText(str(self.curr_section))
+            elif button == self.b_last_slice:
+                self.last_slice = int( self.curr_section )
+                self.e_last_slice.setText(str(self.curr_section))
+
+        elif button == self.b_done:
+            if -1 in [self.rostral, self.caudal, self.dorsal, self.ventral, self.first_slice, self.last_slice]:
+                QMessageBox.about(self, "Popup Message", "Make sure all six fields have values!")
+                return
+            elif self.rostral >= self.caudal:
+                QMessageBox.about(self, "Popup Message", "Rostral Limit must be smaller than caudal limit!")
+                return
+            elif self.dorsal >= self.ventral:
+                QMessageBox.about(self, "Popup Message", "Dorsal Limit must be smaller than Ventral limit!")
+                return
+            elif self.first_slice >= self.last_slice:
+                QMessageBox.about(self, "Popup Message", "Last slice must be after the first slice!")
+                return
+
+            try:
+                QMessageBox.about(self, "Popup Message", "This operation will take roughly 1.5 minutes per image.")
+                self.setCurrSection( self.curr_section )
+                stain = stack_metadata[stack]['stain']
+                os.subprocess.call(['python', 'a_script_preprocess_6.py', stack, stain,
+                                    '-l', str(self.rostral), str(self.caudal),
+                                    str(self.dorsal), str(self.ventral),
+                                    str(self.first_slice), str(self.last_slice)])
+                sys.exit( app.exec_() )
+            except Exception as e:
+                sys.stderr.write('\n ********************************\n')
+                sys.stderr.write( str(e) )
+                sys.stderr.write('\n ********************************\n')
+
     def click_photo(self, pos):
         if self.viewer.dragMode() == QGraphicsView.NoDrag:
             x = pos.x()
@@ -246,117 +346,6 @@ class GUICropBrainStem(QWidget):
                 self.last_slice = -1
                 self.e_last_slice.setText("")
 
-    def loadImage(self):
-        # Get filepath of "curr_section" and set it as viewer's photo
-        fp = get_fp( self.curr_section )
-        img = cv2.imread(fp) * 3
-        height, width, channel = img.shape
-        self.img_width = width
-        self.img_height = height
-
-        if self.rostral != -1:
-            x_coordinate = int( self.rostral )
-            img[:,x_coordinate-2:x_coordinate+2,:] = np.ones( ( height, 4, 3 ) ) *255
-        if self.caudal != -1:
-            x_coordinate = int( self.caudal )
-            img[:,x_coordinate-2:x_coordinate+2,:] = np.ones( ( height, 4, 3 ) ) *255
-        if self.dorsal != -1:
-            y_coordinate = int( self.dorsal )
-            img[y_coordinate-2:y_coordinate+2,:,:] = np.ones( ( 4, width, 3 ) ) *255
-        if self.ventral != -1:
-            y_coordinate = int( self.ventral )
-            img[y_coordinate-2:y_coordinate+2,:,:] = np.ones( ( 4, width, 3 ) ) *255
-
-        bytesPerLine = 3 * width
-        qImg = QImage(img.data, width, height, bytesPerLine, QImage.Format_RGB888)
-
-        self.viewer.setPhoto(QPixmap(qImg))
-
-    def set_curr_section(self, section_index=-1):
-        """
-        Sets the current section to the section passed in.
-        Will automatically update curr_section, prev_section, and next_section.
-        Updates the header fields and loads the current section image.
-        """
-        if section_index == -1:
-            section_index = self.curr_section_index
-
-        # Update curr, prev, and next section
-        self.curr_section_index = section_index
-        self.curr_section = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['destination']
-
-        # Update the section and filename at the top
-        label = self.valid_sections[self.valid_section_keys[self.curr_section_index]]['source']
-        self.e_filename.setText(label)
-        self.e_section.setText(str(self.curr_section))
-
-        # Get filepath of "curr_section" and set it as viewer's photo
-        img_fp = os.path.join(self.fileLocationManager.thumbnail_prep, self.curr_section)
-        self.viewer.set_photo(img_fp)
-
-        # Update the internal crop values based on text boxes
-        #self.updateCropVals()
-
-        #self.loadImage()
-
-    def get_valid_section_index(self, section_index):
-        if section_index >= len(self.valid_sections):
-            return 0
-        elif section_index < 0:
-            return len(self.valid_sections) - 1
-        else:
-            return section_index
-
-    def click_button(self, button):
-        if button in [self.b_rostral, self.b_caudal, self.b_dorsal, self.b_ventral]:
-            self.viewer.set_drag_mode(0)
-
-            if button == self.b_rostral:
-                self.active_selection = 'rostral'
-            elif button == self.b_caudal:
-                self.active_selection = 'caudal'
-            elif button == self.b_dorsal:
-                self.active_selection = 'dorsal'
-            elif button == self.b_ventral:
-                self.active_selection = 'ventral'
-
-        # Prep2 section limits
-        elif button in [self.b_first_slice, self.b_last_slice]:
-            if button == self.b_first_slice:
-                self.first_slice = int( self.curr_section )
-                self.e_first_slice.setText(str(self.curr_section))
-            elif button == self.b_last_slice:
-                self.last_slice = int( self.curr_section )
-                self.e_last_slice.setText(str(self.curr_section))
-            
-        elif button == self.b_done:
-            if -1 in [self.rostral, self.caudal, self.dorsal, self.ventral, self.first_slice, self.last_slice]:
-                QMessageBox.about(self, "Popup Message", "Make sure all six fields have values!")
-                return
-            elif self.rostral >= self.caudal:
-                QMessageBox.about(self, "Popup Message", "Rostral Limit must be smaller than caudal limit!")
-                return
-            elif self.dorsal >= self.ventral:
-                QMessageBox.about(self, "Popup Message", "Dorsal Limit must be smaller than Ventral limit!")
-                return
-            elif self.first_slice >= self.last_slice:
-                QMessageBox.about(self, "Popup Message", "Last slice must be after the first slice!")
-                return
-
-            try:
-                QMessageBox.about(self, "Popup Message", "This operation will take roughly 1.5 minutes per image.")
-                self.setCurrSection( self.curr_section )
-                stain = stack_metadata[stack]['stain']
-                os.subprocess.call(['python', 'a_script_preprocess_6.py', stack, stain,
-                                '-l', str(self.rostral), str(self.caudal),
-                                    str(self.dorsal), str(self.ventral),
-                                    str(self.first_slice), str(self.last_slice)])
-                sys.exit( app.exec_() )
-            except Exception as e:
-                sys.stderr.write('\n ********************************\n')
-                sys.stderr.write( str(e) )
-                sys.stderr.write('\n ********************************\n')
-        
     def keyPressEvent(self, event):
         try:
             key = event.key()
@@ -374,6 +363,10 @@ class GUICropBrainStem(QWidget):
             self.set_curr_section(index)
         else:
             print(key)
+
+    def closeEvent(self, event):
+        sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
