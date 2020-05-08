@@ -242,6 +242,7 @@ def create_oriented(stack):
 def create_registration(INPUT, OUTPUT, fixedImage, movingImage, parameterMap, count):
 
     #parameterMap['DefaultPixelValue'] = ['50000']
+    sitk.GetImageFromArray()
     elastixImageFilter = sitk.ElastixImageFilter()
     # Read Input
     elastixImageFilter.SetFixedImage(sitk.ReadImage( os.path.join(INPUT, fixedImage) ))

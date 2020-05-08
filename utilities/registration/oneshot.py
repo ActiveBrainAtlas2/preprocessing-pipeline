@@ -12,7 +12,7 @@ elastixImageFilter.SetParameterMap(sitk.ReadParameterFile(str(sys.argv[3])))
 # Perform registration
 elastixImageFilter.LogToConsoleOn()
 elastixImageFilter.Execute()
+sitk.sitkInt16
 
 # Write result image
 elastixImageFilter.WriteImage(elastixImageFilter.GetResultImage(), str(sys.argv[4]))
-elastixImageFilter.GetParameterMap()

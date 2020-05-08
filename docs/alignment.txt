@@ -52,4 +52,5 @@ fix link on DK37
 run elastix on one image
 run it on a hemisphere
 
-
+DK39 neuroglancer input is at:
+/net/birdstore/Active_Atlas_Data/copied_local_folders/BethTest/CSHL_data_processed/DK39

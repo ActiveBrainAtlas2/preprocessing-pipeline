@@ -80,8 +80,8 @@ class SqlController(object):
 
     def get_valid_sections(self, stack):
         self.raw_sections = self.session.query(RawSection).filter(RawSection.prep_id == stack)\
-            .filter(RawSection.active == 1)\
-            .order_by(RawSection.section_number).order_by(RawSection.source_file).all()
+            .filter(RawSection.active == 1).filter(RawSection.file_status == 'good')\
+            .order_by(RawSection.section_number).order_by(RawSection.channel).all()
 
         for r in self.raw_sections:
             self.valid_sections[r.id] = {'section_number': r.section_number,
@@ -99,7 +99,7 @@ class SqlController(object):
         for key, file in valid_sections.items():
             # print(file['source'])
             files.append(file[source])
-        return sorted(files)
+        return files
 
 
     def move_section(self, stack, section_number, change):

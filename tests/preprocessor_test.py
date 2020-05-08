@@ -9,6 +9,8 @@ pip install pytest
 
 """
 import os, sys
+import argparse
+
 sys.path.append(os.path.join(os.getcwd(), '..'))
 
 from utilities.sqlcontroller import SqlController
@@ -110,8 +112,11 @@ def test_tif(animal):
 
 
 if __name__ == '__main__':
-    animal = 'DK39'
-    test_tif(animal)
-    fix_tifs(animal)
-    fix_prep_thumbnail(animal)
-    test_tif(animal)
+    parser = argparse.ArgumentParser(description='Work on Animal')
+    parser.add_argument('--prep_id', help='Enter the animal prep_id', required=True)
+    args = parser.parse_args()
+    prep_id = args.prep_id
+    test_tif(prep_id)
+    #fix_tifs(animal)
+    #fix_prep_thumbnail(animal)
+    #test_tif(animal)

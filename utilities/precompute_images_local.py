@@ -19,6 +19,7 @@ DIR = os.path.join(HOME, 'programming', 'dk39', 'preps')
 NEUROGLANCER = os.path.join(DIR, 'neuroglancer')
 RESIZED = os.path.join(DIR, 'resized')
 PADDED = os.path.join(DIR, 'padded')
+INPUT = os.path.join(DIR, 'oriented')
 
 def unlink_file(folder):
     for filename in os.listdir(folder):
@@ -68,6 +69,21 @@ def resize_canvas(old_image_path, new_image_path,
     #im = Image.open(infile)
     #im.thumbnail(size)
     #im.save(file + ".thumbnail", "JPEG")
+
+def get_max_size(INPUT):
+    widths = []
+    heights = []
+    files = os.listdir(INPUT)
+    for file in files:
+        img = io.imread(os.path.join(INPUT, file))
+        heights.append(img.shape[0])
+        widths.append(img.shape[1])
+        img = None
+
+    max_width = max(widths)
+    max_height = max(heights)
+
+    return max_width, max_height
 
 def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
 
@@ -121,9 +137,8 @@ def main(argv=sys.argv):
     Image.MAX_IMAGE_PIXELS = None
     #convert_to_precomputed()
 
-    #canvas_width = 500
-    #canvas_height = 500
-
+    #canvas_width = 51932
+    #canvas_height = 24275
     """
     canvas_width, canvas_height = get_avg_size()
     print('w and h:', canvas_width, canvas_height)
@@ -132,7 +147,7 @@ def main(argv=sys.argv):
         new_file = os.path.join(RESIZED, img)
         resize_canvas(original_image, new_file, canvas_width, canvas_height)
     """
-    convert_to_precomputed(PADDED, NEUROGLANCER)
+    convert_to_precomputed(RESIZED, NEUROGLANCER)
 
 if __name__ == "__main__":
     sys.exit(main())
