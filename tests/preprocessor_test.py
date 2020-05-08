@@ -117,6 +117,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     prep_id = args.prep_id
     test_tif(prep_id)
-    #fix_tifs(animal)
+    fix_tifs(prep_id)
     #fix_prep_thumbnail(animal)
-    #test_tif(animal)
+    test_tif(prep_id)
