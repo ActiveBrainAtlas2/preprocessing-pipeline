@@ -57,7 +57,6 @@ def fix_tifs(animal):
         source_keys.append(key)
     files = os.listdir(dir)
     missing_files =  (list(set(source_files) - set(files)))
-    print(len(missing_files))
     for i,missing in enumerate(missing_files):
         #pass
         file_id =  source_keys[source_files.index(missing)]
@@ -105,10 +104,12 @@ def test_tif(animal):
         if not dir_exists:
             print("{} does not exist.".format(dir))
 
-        #missings = find_missing(dir, db_files)
         print("There are {} {} entries in the database and we found {} {}s on the server"\
                 .format(animal, valid_file_length, lfiles, name))
 
+        if name == 'tif':
+            missings = find_missing(dir, db_files)
+            print(missings)
 
 
 if __name__ == '__main__':
