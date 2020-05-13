@@ -33,7 +33,7 @@ for file in tqdm(files):
     movingPath = os.path.join(INPUT, movingFile)
     moving_image = sitk.ReadImage(movingPath, sitk.sitkFloat32)
     fixed_image = simple_resample(fixed_image, moving_image)
-
+    img = sitk.GetArrayFromImage(fixed_image)
     outfile = os.path.join(OUTPUT, file)
     flat = img.flatten()
     fmax = int(flat.max())
