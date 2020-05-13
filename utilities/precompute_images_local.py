@@ -14,8 +14,8 @@ from neuroglancer_scripts.scripts import (generate_scales_info,
 from os.path import expanduser
 HOME = expanduser("~")
 
-#DIR = os.path.join(HOME, 'programming', 'dk39', 'preps')
-DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
+DIR = os.path.join(HOME, 'DK39')
+#DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
 NEUROGLANCER = os.path.join(DIR, 'neuroglancer')
 RESIZED = os.path.join(DIR, 'resized')
 INPUT = os.path.join(DIR, 'resized')
