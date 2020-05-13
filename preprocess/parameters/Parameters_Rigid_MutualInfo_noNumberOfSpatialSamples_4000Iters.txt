@@ -155,7 +155,7 @@
 (WriteResultImage "true")
 
 // The pixel type and format of the resulting deformed moving image
-(ResultImagePixelType "unsigned char")
+(ResultImagePixelType "unsigned short")
 (ResultImageFormat "tif")
 
 

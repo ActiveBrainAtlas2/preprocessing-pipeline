@@ -14,12 +14,11 @@ from neuroglancer_scripts.scripts import (generate_scales_info,
 from os.path import expanduser
 HOME = expanduser("~")
 
-DIR = os.path.join(HOME, 'programming', 'dk39', 'preps')
-#DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
+#DIR = os.path.join(HOME, 'programming', 'dk39', 'preps')
+DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
 NEUROGLANCER = os.path.join(DIR, 'neuroglancer')
 RESIZED = os.path.join(DIR, 'resized')
-PADDED = os.path.join(DIR, 'padded')
-INPUT = os.path.join(DIR, 'oriented')
+INPUT = os.path.join(DIR, 'resized')
 
 def unlink_file(folder):
     for filename in os.listdir(folder):
@@ -147,7 +146,7 @@ def main(argv=sys.argv):
         new_file = os.path.join(RESIZED, img)
         resize_canvas(original_image, new_file, canvas_width, canvas_height)
     """
-    convert_to_precomputed(RESIZED, NEUROGLANCER)
+    convert_to_precomputed(INPUT, NEUROGLANCER)
 
 if __name__ == "__main__":
     sys.exit(main())
