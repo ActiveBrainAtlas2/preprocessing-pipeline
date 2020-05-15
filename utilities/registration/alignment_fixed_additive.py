@@ -14,7 +14,10 @@ INPUT = RESIZED
 OUTPUT = ALIGNED
 
 files = sorted(os.listdir(INPUT))
-files = files[2:-1]
+#files = files[2:-1]
+
+#'fixed_fp': prev_fp,
+#'moving_fp': curr_fp
 
 
 def simple_resample(fixed_image, moving_image):
