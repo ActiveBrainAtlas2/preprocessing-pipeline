@@ -2,7 +2,9 @@ import os, sys
 import subprocess
 import json
 
-DATA_ROOTDIR = os.environ['DATA_ROOTDIR']
+
+DATA_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
+
 
 
 def execute_command(cmd, stdout=None, stderr=None):
@@ -45,20 +47,10 @@ def run_distributed5(command, argument_type='single', kwargs_list=None, jobs_per
         kwargs_list: either dict of lists {kA: [vA1, vA2, ...], kB: [vB1, vB2, ...]} or list of dicts [{kA:vA1, kB:vB1}, {kA:vA2, kB:vB2}, ...].
         argument_type: one of list, list2, single. If command takes one input item as argument, use "single". If command takes a list of input items as argument, use "list2". If command takes an argument called "kwargs_str", use "list".
     """
-
-    if use_aws:
-        execute_command('rm -f /home/ubuntu/stderr_*; rm -f /home/ubuntu/stdout_*')
-    else:
-        execute_command('rm -f %s; rm -f %s' % (os.path.join(DATA_ROOTDIR, 'mousebrainatlas_tmp', 'stderr_*'),
-                                                os.path.join(DATA_ROOTDIR, 'mousebrainatlas_tmp', 'stdout_*')))
-
     if local_only:
         sys.stderr.write("Run locally.\n")
-
         n_hosts = 1
-
     else:
-
         # Use a fixed node list rather than letting SGE automatically determine the node list.
         # This allows for control over which input items go to which node.
         if node_list is None:

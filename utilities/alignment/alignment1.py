@@ -2,17 +2,15 @@
 This was formerly align_v3.py
 """
 import os
-import sys
 import argparse
 
 from old_methods import run_distributed
 
+DATA_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
+
 
 def setup(stack):
-    prep_id = None
-    resol = 'thumbnail'
-    version = 'NtbNormalized'
-    elastix_output_dir = "/mnt/data/CSHL_data_processed/DK43/DK43_elastix_output"
+    elastix_output_dir = os.path.join(DATA_ROOTDIR, stack, 'preps', 'elastix')
     params_fp =  "Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt"
 
     """
@@ -21,7 +19,7 @@ def setup(stack):
     'curr_fp': DataManager.get_image_filepath_v2(stack=stack, fn=image_name_list[i], prep_id=prep_id, resol=resol, version=version)
     """
 
-    filepath = '/mnt/data/CSHL_data_processed/{}/thumbnail'.format(stack)
+    filepath = os.path.join(DATA_ROOTDIR, stack, 'preps', 'resized')
     image_name_list = sorted(os.listdir(filepath))
     run_distributed("python %(script)s \"%(output_dir)s\" \'%%(kwargs_str)s\' -p %(param_fp)s -r" % \
                     {'script': os.path.join(os.getcwd(), 'align_sequential.py'),
