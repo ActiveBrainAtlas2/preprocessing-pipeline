@@ -39,6 +39,11 @@ stack = 'DK39'
 resolution = 'thumbnail'
 DIR = '/mnt/data/CSHL_data_processed/DK39'
 tf_csv = os.path.join(DIR, 'DK39_transforms_to_anchor.csv')
+filepath = os.path.join('/mnt/data/CSHL_data_processed/DK43/DK43_thumbnail_NtbNormalized')
+image_name_list = sorted(os.listdir(filepath))
+
+
+
 def convert_operation_to_arr(op, resol, inverse=False, return_str=False, stack=None):
     """
     If op is warp, return {image_name: (3,3)-array}.
@@ -115,9 +120,6 @@ def parse_operation_sequence(op_name, resol, return_str=False, stack=None):
 
 
 pad_color = 'black'
-image_name_list = ['DK39060.tif', 'DK39061.tif', 'DK39062.tif', 'DK39063.tif',
-                   'DK39064.tif', 'DK39065.tif', 'DK39066.tif', 'DK39067.tif',
-                   'DK39068.tif', 'DK39069.tif', 'DK39070.tif']
 prep_id = None
 version = 'NtbNormalized'
 resol = 'thumbnail'
