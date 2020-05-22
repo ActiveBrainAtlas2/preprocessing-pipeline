@@ -17,35 +17,34 @@ def convert_operation_to_arr(op, resol, inverse=False, return_str=False, stack=N
     If op is crop, return {image_name: (x,y,w,h)}.
     """
 
-
     assert 'type' in op, "Operation spec must provide type."
     if op['type'] == 'warp':
-		DIR = '/mnt/data/CSHL_data_processed/{}'.format(stack)
-		tf_csv = os.path.join(DIR, 'transforms_to_anchor.csv')
-		transforms_to_anchor = csv_to_dict(tf_csv)
+	DIR = '/mnt/data/CSHL_data_processed/{}'.format(stack)
+        tf_csv = os.path.join(DIR, 'transforms_to_anchor.csv')
+	transforms_to_anchor = csv_to_dict(tf_csv)
 
         transforms_resol = op['resolution']
         transforms_scale_factor = convert_resolution_string_to_um(stack=stack, resolution=transforms_resol) / convert_resolution_string_to_um(stack=stack, resolution=resol)
         tf_mat_mult_factor = np.array([[1,1,transforms_scale_factor],[1,1,transforms_scale_factor]])
-		if inverse:
-				transforms_to_anchor = {img_name: convert_2d_transform_forms(np.linalg.inv(np.reshape(tf, (3,3)))[:2] * tf_mat_mult_factor, out_form='str') for img_name, tf in transforms_to_anchor.iteritems()}
-		else:
-			transforms_to_anchor = {img_name: convert_2d_transform_forms(np.reshape(tf, (3,3))[:2] * tf_mat_mult_factor, out_form='str') for img_name, tf in transforms_to_anchor.iteritems()}
+	if inverse:
+            transforms_to_anchor = {img_name: convert_2d_transform_forms(np.linalg.inv(np.reshape(tf, (3,3)))[:2] * tf_mat_mult_factor, out_form='str') for img_name, tf in transforms_to_anchor.iteritems()}
+	else:
+            transforms_to_anchor = {img_name: convert_2d_transform_forms(np.reshape(tf, (3,3))[:2] * tf_mat_mult_factor, out_form='str') for img_name, tf in transforms_to_anchor.iteritems()}
 
-		return transforms_to_anchor
+	return transforms_to_anchor
 
     elif op['type'] == 'crop':
-		cropbox_resol = op['resolution']
+        cropbox_resol = op['resolution']
 
-		if 'cropboxes_csv' in op: # each image has a different cropbox
-			cropboxes_all = csv_to_dict(op['cropboxes_csv'])
+        if 'cropboxes_csv' in op: # each image has a different cropbox
+            cropboxes_all = csv_to_dict(op['cropboxes_csv'])
 
-			cropboxes = {}
-			for img_name in image_name_list:
-			arr_xxyy = convert_cropbox_fmt(data=cropboxes_all[img_name], in_fmt='arr_xywh', out_fmt='arr_xxyy')
-			if inverse:
-						arr_xxyy = np.array([-arr_xxyy[0], arr_xxyy[1], -arr_xxyy[2], arr_xxyy[3]])
-			cropboxes[img_name] = convert_cropbox_fmt(data=arr_xxyy, in_fmt='arr_xxyy', out_fmt='str_xywh' if return_str else 'arr_xywh', in_resol=cropbox_resol, out_resol=resol, stack=stack)
+            cropboxes = {}
+	    for img_name in image_name_list:
+	        arr_xxyy = convert_cropbox_fmt(data=cropboxes_all[img_name], in_fmt='arr_xywh', out_fmt='arr_xxyy')
+		if inverse:
+		    arr_xxyy = np.array([-arr_xxyy[0], arr_xxyy[1], -arr_xxyy[2], arr_xxyy[3]])
+		cropboxes[img_name] = convert_cropbox_fmt(data=arr_xxyy, in_fmt='arr_xxyy', out_fmt='str_xywh' if return_str else 'arr_xywh', in_resol=cropbox_resol, out_resol=resol, stack=stack)
 
 	#	    cropboxes = {img_name: convert_cropbox_fmt(data=cropboxes_all[img_name], in_fmt='arr_xywh', out_fmt='str_xywh' if return_str else 'arr_xywh', in_resol=cropbox_resol, out_resol=resol, stack=stack) for img_name in image_name_list}
 
