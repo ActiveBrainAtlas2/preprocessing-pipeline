@@ -37,10 +37,11 @@ from metadata import orientation_argparse_str_to_imagemagick_str
 
 stack = 'DK39'
 resolution = 'thumbnail'
-DIR = '/mnt/data/CSHL_data_processed/DK39'
-tf_csv = os.path.join(DIR, 'DK39_transforms_to_anchor.csv')
-filepath = os.path.join('/mnt/data/CSHL_data_processed/DK43/DK43_thumbnail_NtbNormalized')
+DIR = '/mnt/data/CSHL_data_processed/{}'.format(stack)
+tf_csv = os.path.join(DIR, 'transforms_to_anchor.csv')
+filepath = '/mnt/data/CSHL_data_processed/{}/thumbnail_NtbNormalized'.format(stack, stack)
 image_name_list = sorted(os.listdir(filepath))
+
 
 
 

@@ -4,13 +4,13 @@
 #uicontrol float brightness slider(min=-1, max=1)
 #uicontrol float contrast slider(min=-3, max=3, step=0.01)
 #uicontrol float gamma slider(min=0.05, max=2.5, default=1, step=0.05)
-#uicontrol float setlog slider(min=0, max=1, default=0, step=1)
+#uicontrol float linlog slider(min=0, max=1, default=0, step=1)
 
   void main() {
     float limit = 40000.0;
     float pix = float(toRaw(getDataValue()));
 
-    if (setlog==1.0) {
+    if (linlog==1.0) {
     	pix = log(pix);
       	limit = 10.0;
     } else {
