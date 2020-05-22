@@ -9,11 +9,13 @@
   void main() {
     float limit = 40000.0;
     float pix = float(toRaw(getDataValue()));
-    pix = pow(pix,gamma);
 
     if (setlog==1.0) {
     	pix = log(pix);
       	limit = 10.0;
+    } else {
+    pix = pow(pix,gamma);
+    limit = 40000.0;
     }
 
 

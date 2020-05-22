@@ -1,11 +1,6 @@
 import os
 import sys
 import json
-from PIL import Image, ImageOps
-import math
-import numpy as np
-from skimage import io
-
 from skimage import io
 from neuroglancer_scripts.scripts import (generate_scales_info,
                                           slices_to_precomputed,
@@ -15,74 +10,10 @@ from os.path import expanduser
 HOME = expanduser("~")
 
 #DIR = os.path.join(HOME, 'DK39')
-DIR = '/data2/edward/DK39'
+DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK43/preps'
 NEUROGLANCER = os.path.join(DIR, 'neuroglancer')
 RESIZED = os.path.join(DIR, 'resized')
 INPUT = os.path.join(DIR, 'resized')
-
-def unlink_file(folder):
-    for filename in os.listdir(folder):
-        file_path = os.path.join(folder, filename)
-        try:
-            if os.path.isfile(file_path):
-                os.unlink(file_path)
-        except Exception as e:
-            print('Failed to delete %s. Reason: %s' % (file_path, e))
-
-
-
-def resize_canvas(old_image_path, new_image_path,
-                  canvas_width=500, canvas_height=500):
-    """
-    Resize the canvas of old_image_path.
-    Store the new image in new_image_path. Center the image on the new canvas.
-    Parameters
-    ----------
-    old_image_path : str
-    new_image_path : str
-    canvas_width : int
-    canvas_height : int
-    """
-    im = Image.open(old_image_path)
-
-    #im = ImageOps.equalize(imag)
-
-
-    old_width, old_height = im.size
-    # Center the image
-    x1 = int(math.floor((canvas_width - old_width) / 2))
-    y1 = int(math.floor((canvas_height - old_height) / 2))
-
-    mode = im.mode
-    if len(mode) == 1:  # L, 1
-        new_background = (255)
-    if len(mode) == 3:  # RGB
-        new_background = (255, 255, 255)
-    if len(mode) == 4:  # RGBA, CMYK
-        new_background = (255, 255, 255, 255)
-    #newImage = Image.new(mode, (canvas_width, canvas_height), new_background)
-    newImage = Image.new(mode, (canvas_width, canvas_height))
-    newImage.paste(im, (x1, y1, x1 + old_width, y1 + old_height))
-    newImage.save(new_image_path)
-
-    #im = Image.open(infile)
-    #im.thumbnail(size)
-    #im.save(file + ".thumbnail", "JPEG")
-
-def get_max_size(INPUT):
-    widths = []
-    heights = []
-    files = os.listdir(INPUT)
-    for file in files:
-        img = io.imread(os.path.join(INPUT, file))
-        heights.append(img.shape[0])
-        widths.append(img.shape[1])
-        img = None
-
-    max_width = max(widths)
-    max_height = max(heights)
-
-    return max_width, max_height
 
 def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
 
@@ -133,19 +64,6 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
 
 
 def main(argv=sys.argv):
-    Image.MAX_IMAGE_PIXELS = None
-    #convert_to_precomputed()
-
-    #canvas_width = 51932
-    #canvas_height = 24275
-    """
-    canvas_width, canvas_height = get_avg_size()
-    print('w and h:', canvas_width, canvas_height)
-    for img in os.listdir(ALIGNED):
-        original_image = os.path.join(ALIGNED, img)
-        new_file = os.path.join(RESIZED, img)
-        resize_canvas(original_image, new_file, canvas_width, canvas_height)
-    """
     convert_to_precomputed(INPUT, NEUROGLANCER)
 
 if __name__ == "__main__":
