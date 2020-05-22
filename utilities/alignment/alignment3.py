@@ -120,7 +120,7 @@ batch_size = 100
 DIR = os.path.join('/mnt/data/CSHL_data_processed/DK43')
 
 infilepath = os.path.join(DIR, 'DK43_thumbnail_NtbNormalized')
-outfilepath = os.path.join(DIR, 'DK43_thumbnail_NtbNormalized_out')
+outfilepath = os.path.join(DIR, 'aligned')
 for batch_id in range(0, len(image_name_list), batch_size):
 	run_distributed('python %(script)s --input_fp \"%%(input_fp)s\" --output_fp \"%%(output_fp)s\" %%(ops_str)s' % \
 	{'script':  os.path.join(os.getcwd(), 'alignment3a.py'),
