@@ -90,9 +90,13 @@ def find_threshold(src):
 max_width = 50100
 max_height = 28000
 
-for i, file in enumerate(tqdm(files)):
+for i, file in enumerate(tqdm(files[21:-1])):
     infile = os.path.join(INPUT, file)
-    img = io.imread(infile)
+    try:
+        img = io.imread(infile)
+    except:
+        print('Could not open', infile)
+        continue
     img = get_last_2d(img)
     min_value, threshold = find_threshold(img)
     ###### Threshold it so it becomes binary
