@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib
+import matplotlib.figure
 from skimage import io
 from os.path import expanduser
 from tqdm import tqdm
