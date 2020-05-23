@@ -11,7 +11,7 @@ import pandas as pd
 
 
 
-DIR = os.path.join(HOME, 'DL39')
+DIR = os.path.join(HOME, 'DK39')
 #DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39'
 CH1 = os.path.join(DIR, 'CH1')
 MASKED = os.path.join(DIR, 'masked')
