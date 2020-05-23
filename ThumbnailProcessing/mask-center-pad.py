@@ -20,6 +20,13 @@ OUTPUT = MASKED
 files = sorted(os.listdir(INPUT))
 
 
+def get_last_2d(data):
+    if data.ndim <= 2:
+        return data
+    m,n = data.shape[-2:]
+    return data.flat[:m*n].reshape(m,n)
+
+
 def place_image(img, max_width, max_height):
     zmidr = max_height // 2
     zmidc = max_width // 2
@@ -86,6 +93,7 @@ max_height = 28000
 for i, file in enumerate(tqdm(files)):
     infile = os.path.join(INPUT, file)
     img = io.imread(infile)
+    img = get_last_2d(img)
     min_value, threshold = find_threshold(img)
     ###### Threshold it so it becomes binary
     # threshold = 272
