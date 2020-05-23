@@ -74,6 +74,7 @@
 //(NumberOfHistogramBins 16 32 64)
 (NumberOfHistogramBins 32)
 
+// Yoav: I think we should use masks
 // If you use a mask, this option is important. 
 // If the mask serves as region of interest, set it to false.
 // If the mask indicates which pixels are valid, then set it to true.
