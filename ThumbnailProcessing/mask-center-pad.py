@@ -11,12 +11,10 @@ import pandas as pd
 
 
 
-DIR = os.path.join(HOME, 'DK39')
-#DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39'
-CH1 = os.path.join(DIR, 'CH1')
-MASKED = os.path.join(DIR, 'masked')
-INPUT = CH1
-OUTPUT = MASKED
+#DIR = os.path.join(HOME, 'DK39')
+DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
+INPUT = os.path.join(DIR, 'oriented')
+OUTPUT = os.path.join(DIR, 'masked')
 files = sorted(os.listdir(INPUT))
 
 
@@ -78,19 +76,20 @@ def find_threshold(src):
     n, bins, patches = ax.hist(src.flatten(), 160);
     del ax, fig
     min_point = np.argmin(n[:5])
-    thresh = (min_point * 64000 / 180)
+    thresh = (min_point * 64000 / 180 + 400)
     # v = np.median(src)
     # thresh = int(max(min_point, (1.0 - sigma) * v))
     # thresh = min_point * 136 + 100
     # thresh = int(max(min_point, (1.0 - sigma) * v))
-    thresh1 = int(min(400, thresh))
+    thresh1 = int(min(1200, thresh))
     return min_point, thresh1
 
 
-max_width = 50100
-max_height = 28000
+max_width = 1740
+max_height = 1050
 
-for i, file in enumerate(tqdm(files[21:-1])):
+
+for i, file in enumerate(tqdm(files)):
     infile = os.path.join(INPUT, file)
     try:
         img = io.imread(infile)

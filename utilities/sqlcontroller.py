@@ -101,6 +101,12 @@ class SqlController(object):
             files.append(file[source])
         return files
 
+    def get_anchor_name(self, stack):
+        image_list = self.get_image_list(stack)
+        midpoint = len(image_list) // 2
+        anchor_name = image_list[midpoint]
+        return anchor_name
+
 
     def move_section(self, stack, section_number, change):
         min_id = session.query(func.min(RawSection.section_number)).filter(RawSection.prep_id == stack)\

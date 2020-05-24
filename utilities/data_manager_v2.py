@@ -860,7 +860,7 @@ class DataManager(object):
             return img
 
     @staticmethod
-    def load_transforms_v2(stack, in_image_resolution, out_image_resolution, use_inverse=True, anchor_fn=None):
+    def forms_v2(stack, in_image_resolution, out_image_resolution, use_inverse=True, anchor_fn=None):
         """
         Args:
             use_inverse (bool): If True, load the 2-d rigid transforms that when multiplied

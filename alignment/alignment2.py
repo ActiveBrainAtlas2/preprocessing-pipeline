@@ -1,26 +1,28 @@
 """
 This was formerly compose_v3.py
+This gets the transformation results from the elastix output.
 """
 import os
 import sys
 import argparse
+import numpy as np
 
+sys.path.append(os.path.join(os.getcwd(), '../'))
+from utilities.alignment_utility import load_consecutive_section_transform, dict_to_csv
+from utilities.file_location import FileLocationManager
 
-sys.path.append(os.environ['REPO_DIR'] + '/utilities/')
-from metadata import *
-from preprocess_utilities import *
-from data_manager import DataManager
 
 def setup(stack):
-    filepath = '/mnt/data/CSHL_data_processed/{}/thumbnail'.format(stack)
+    fileLocationManager = FileLocationManager(stack)
+    filepath = fileLocationManager.masked
     image_name_list = sorted(os.listdir(filepath))
     midpoint = len(image_name_list) // 2
-    toanchor_transforms_fp = '/mnt/data/CSHL_data_processed/{}/transforms_to_anchor.csv'.format(stack)
+    toanchor_transforms_fp = os.path.join(fileLocationManager.brain_info,  'transforms_to_anchor.csv')
     anchor_idx = midpoint
     transformation_to_previous_sec = {}
 
     for i in range(1, len(image_name_list)):
-        transformation_to_previous_sec[i] = DataManager.load_consecutive_section_transform(moving_fn=image_name_list[i],
+        transformation_to_previous_sec[i] = load_consecutive_section_transform(moving_fn=image_name_list[i],
                                                                                            fixed_fn=image_name_list[i - 1],
                                                                                            stack=stack)
     transformation_to_anchor_sec = {}

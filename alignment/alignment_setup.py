@@ -1,29 +1,27 @@
 """
-This was formerly align_v3.py
-
+This was formerly align_v3.py. It has been renamed to more easily track the sequence of operations.
+This file just sets up the DIR path of the input and output files.
+It calls a method called run_distributed which spawns multiple python processes to run the next script:
+align_sequential. This is the program that runs the command line tool: elastix
 """
-import os
+import os, sys
 import argparse
 
-from old_methods import run_distributed
+sys.path.append(os.path.join(os.getcwd(), '../'))
+from utilities.alignment_utility import run_distributed
+from utilities.file_location import FileLocationManager
 
-DATA_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
 
 
 def setup(stack):
-    elastix_output_dir = os.path.join(DATA_ROOTDIR, stack, 'preps', 'elastix')
+    fileLocationManager = FileLocationManager(stack)
+    elastix_output_dir = fileLocationManager.elastix_dir
     params_fp =  "Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt"
 
-    """
-    to get the files below, it was calling:
-    'prev_fp': DataManager.get_image_filepath_v2(stack=stack, fn=image_name_list[i-1], prep_id=prep_id, resol=resol, version=version),
-    'curr_fp': DataManager.get_image_filepath_v2(stack=stack, fn=image_name_list[i], prep_id=prep_id, resol=resol, version=version)
-    """
-
-    filepath = os.path.join(DATA_ROOTDIR, stack, 'preps', 'resized')
+    filepath = fileLocationManager.masked
     image_name_list = sorted(os.listdir(filepath))
-    run_distributed("python %(script)s \"%(output_dir)s\" \'%%(kwargs_str)s\' -p %(param_fp)s -r" % \
-                    {'script': os.path.join(os.getcwd(), 'align_sequential.py'),
+    run_distributed(stack, "python %(script)s \"%(output_dir)s\" \'%%(kwargs_str)s\' -p %(param_fp)s" % \
+                    {'script': os.path.join(os.getcwd(), 'alignment_elastix.py'),
                     'output_dir': elastix_output_dir,
                      'param_fp': params_fp
                     },
