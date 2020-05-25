@@ -236,10 +236,10 @@ class SqlController(object):
 
     #################### Resolution conversions ############
 
-    def convert_resolution_string_to_um(self, resolution, stack):
-        return self.convert_resolution_string_to_voxel_size(resolution, stack=stack)
+    def convert_resolution_string_to_um(self, stack, resolution,):
+        return self.convert_resolution_string_to_voxel_size(stack, resolution)
 
-    def convert_resolution_string_to_voxel_size(self, resolution, stack):
+    def convert_resolution_string_to_voxel_size(self, stack, resolution):
         """
         Args:
             resolution (str):
@@ -250,7 +250,6 @@ class SqlController(object):
         assert stack is not None, 'Stack argument cannot be None.'
         scan_run = self.session.query(ScanRun, func.max(ScanRun.resolution).label('resolution')).filter(ScanRun.prep_id == stack).group_by(ScanRun.prep_id).one()
         planar_resolution = scan_run.resolution
-        print('planar resolution from query', planar_resolution)
 
         if resolution in ['down32', 'thumbnail']:
             assert stack is not None

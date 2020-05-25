@@ -1,6 +1,8 @@
 """
 This was formerly compose_v3.py
-This gets the transformation results from the elastix output.
+This gets the transformation results from the elastix output
+and creates the brains_info/transforms_to_anchor.csv file.
+This file has all the values needed to align the images to the anchor (midpoint) file
 """
 import os
 import sys
@@ -17,7 +19,7 @@ def setup(stack):
     filepath = fileLocationManager.masked
     image_name_list = sorted(os.listdir(filepath))
     midpoint = len(image_name_list) // 2
-    toanchor_transforms_fp = os.path.join(fileLocationManager.brain_info,  'transforms_to_anchor.csv')
+    anchor_transformations_file = os.path.join(fileLocationManager.brain_info,  'transforms_to_anchor.csv')
     anchor_idx = midpoint
     transformation_to_previous_sec = {}
 
@@ -47,7 +49,7 @@ def setup(stack):
 
         print(moving_idx, image_name_list[moving_idx], transformation_to_anchor_sec[image_name_list[moving_idx]])
 
-    dict_to_csv(transformation_to_anchor_sec, toanchor_transforms_fp)
+    dict_to_csv(transformation_to_anchor_sec, anchor_transformations_file)
 
 
 if __name__ == '__main__':

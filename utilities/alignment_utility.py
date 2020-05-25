@@ -6,6 +6,10 @@ from skimage import io
 import subprocess
 import tables
 import configparser
+import bloscpack as bp
+import pickle
+import re
+
 sys.path.append(os.path.join(os.getcwd(), '../'))
 
 from utilities.sqlcontroller import SqlController
@@ -60,12 +64,14 @@ def run_distributed5(stack, command, argument_type='single', kwargs_list=None, j
     assert argument_type in ['single', 'list', 'list2'], 'argument_type must be one of single, list, list2.'
 
     create_if_not_exists(fileLocationManager.mouseatlas_tmp)
-
+    print('command', command)
+    print('command', shell_escape(command))
     for node_i, (fi, li) in enumerate(first_last_tuples_distribute_over(0, len(kwargs_list_as_list) - 1, n_hosts)):
 
         temp_script = os.path.join(fileLocationManager.mouseatlas_tmp, 'runall.sh')
         temp_f = open(temp_script, 'w')
         for j, (fj, lj) in enumerate(first_last_tuples_distribute_over(fi, li, jobs_per_node)):
+            #print('kwargs list', json.dumps(kwargs_list_as_list[fj:lj + 1]))
             if argument_type == 'list':
                 line = command % {'kwargs_str': json.dumps(kwargs_list_as_list[fj:lj + 1])}
             elif argument_type == 'list2':
@@ -76,15 +82,15 @@ def run_distributed5(stack, command, argument_type='single', kwargs_list=None, j
                 # Reference: http://stackoverflow.com/questions/15783701/which-characters-need-to-be-escaped-in-bash-how-do-we-know-it
                 line = "%(generic_launcher_path)s %(command_template)s %(kwargs_list_str)s" % \
                        {'generic_launcher_path': 'sequential_dispatcher.py',
-                        'command_template': shell_escape(command),
-                        'kwargs_list_str': shell_escape(json.dumps(kwargs_list_as_list[fj:lj + 1]))
+                        'command_template': command,
+                        'kwargs_list_str': json.dumps(kwargs_list_as_list[fj:lj + 1])
                         }
 
             temp_f.write(line + ' &\n')
 
         temp_f.write('wait')
         temp_f.close()
-        os.chmod(temp_script, 0o777)
+        os.chmod(temp_script, 0o770)
 
         # Explicitly specify the node to submit jobs.
         # By doing so, we can control which files are available in the local scratch space of which node.
@@ -111,7 +117,7 @@ def run_distributed5(stack, command, argument_type='single', kwargs_list=None, j
                       stdout_log=stdout_template % node_i, stderr_log=stderr_template % node_i),
                  shell=True)
 
-    sys.stderr.write('Jobs submitted. Use wait_qsub_complete() to wait for all execution to finish.\n')
+    sys.stderr.write('Jobs submitted.\n')
 
 
 def first_last_tuples_distribute_over(first_sec, last_sec, n_host):
@@ -150,6 +156,8 @@ def shell_escape(s):
 
     return escaped_str
 
+def create_parent_dir_if_not_exists(fp):
+    create_if_not_exists(os.path.dirname(fp))
 
 
 def create_if_not_exists(path):
@@ -217,7 +225,6 @@ def load_data(filepath, filetype=None):
         sys.stderr.write('File does not exist: %s\n' % filepath)
 
     if filetype == 'bp':
-        import bloscpack as bp
         return bp.unpack_ndarray_file(filepath)
     elif filetype == 'npy':
         return np.load(filepath)
@@ -234,7 +241,6 @@ def load_data(filepath, filetype=None):
         contour_df = pd.read_hdf(filepath, 'contours')
         return contour_df
     elif filetype == 'pickle':
-        import cPickle as pickle
         return pickle.load(open(filepath, 'r'))
     elif filetype == 'file_section_map':
         with open(filepath, 'r') as f:
@@ -267,7 +273,7 @@ def load_data(filepath, filetype=None):
 
         return global_params, centroid_m, centroid_f, xdim_m, ydim_m, zdim_m, xdim_f, ydim_f, zdim_f
     elif filepath.endswith('ini'):
-        return load_ini(fp)
+        return load_ini(filepath)
     else:
         sys.stderr.write('File type %s not recognized.\n' % filetype)
 
@@ -438,6 +444,111 @@ def parameter_elastix_parameter_file_to_dict(filename):
 
 
 def dict_to_csv(d, fp):
-    import pandas as pd
-    df = pd.DataFrame.from_dict({k: np.array(v).flatten() for k, v in d.iteritems()}, orient='index')
+    df = pd.DataFrame.from_dict({k: np.array(v).flatten() for k, v in d.items()}, orient='index')
     df.to_csv(fp, header=False)
+
+
+def csv_to_dict(fp):
+    """
+    First column contains keys.
+    """
+    df = pd.read_csv(fp, index_col=0, header=None)
+    d = df.to_dict(orient='index')
+    d = {k: v.values() for k, v in d.items()}
+    return d
+
+
+def convert_2d_transform_forms(transform, out_form):
+
+    if isinstance(transform, str):
+        if out_form == (2,3):
+            return np.reshape(map(np.float, transform.split(',')), (2,3))
+        elif out_form == (3,3):
+            return np.vstack([np.reshape(map(np.float, transform.split(',')), (2,3)), [0,0,1]])
+    else:
+        transform = np.array(transform)
+        if transform.shape == (2,3):
+            if out_form == (3,3):
+                transform = np.vstack([transform, [0,0,1]])
+            elif out_form == 'str':
+                transform = ','.join(map(str, transform[:2].flatten()))
+        elif transform.shape == (3,3):
+            if out_form == (2,3):
+                transform = transform[:2]
+            elif out_form == 'str':
+                transform = ','.join(map(str, transform[:2].flatten()))
+
+    return transform
+
+
+##### cropbox methods
+
+def convert_cropbox_from_arr_xywh_1um(data, out_fmt, out_resol, stack=None):
+    string_to_um_out_resolution = sqlController.convert_resolution_string_to_um(stack, out_resol)
+
+    data = data / string_to_um_out_resolution
+    if out_fmt == 'str_xywh':
+        return ','.join(map(str, data))
+    elif out_fmt == 'dict':
+        raise Exception("too lazy to implement")
+    elif out_fmt == 'arr_xywh':
+        return data
+    elif out_fmt == 'arr_xxyy':
+        return np.array([data[0], data[0]+data[2]-1, data[1], data[1]+data[3]-1])
+    else:
+        raise
+
+def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack=None):
+    if isinstance(data, dict):
+        data['rostral_limit'] = float(data['rostral_limit'])
+        data['caudal_limit'] = float(data['caudal_limit'])
+        data['dorsal_limit'] = float(data['dorsal_limit'])
+        data['ventral_limit'] = float(data['ventral_limit'])
+        arr_xywh = np.array([data['rostral_limit'], data['dorsal_limit'], data['caudal_limit'] - data['rostral_limit'] + 1, data['ventral_limit'] - data['dorsal_limit'] + 1])
+        # Since this does not check for wrt, the user needs to make sure the cropbox is relative to the input prep (i.e. the wrt attribute is the same as input prep)
+    elif isinstance(data, str):
+        if in_fmt == 'str_xywh':
+            d = re.sub('[!@#$cropwarp\]\[\']', '', data)
+            l = d.split(',')
+            a = [float(v) for v in l]
+            arr_xywh = np.array(a)
+        elif in_fmt == 'str_xxyy':
+            arr_xxyy = np.array(map(np.round, map(eval, data.split(','))))
+            arr_xywh = np.array([arr_xxyy[0], arr_xxyy[2], arr_xxyy[1] - arr_xxyy[0] + 1, arr_xxyy[3] - arr_xxyy[2] + 1])
+        else:
+            raise
+    else:
+        if in_fmt == 'arr_xywh':
+            arr_xywh = np.array(data)
+        elif in_fmt == 'arr_xxyy':
+            arr_xywh = np.array([data[0], data[2], data[1] - data[0] + 1, data[3] - data[2] + 1])
+        else:
+            print(in_fmt, data)
+            raise
+
+    string_to_um_in_resolution = sqlController.convert_resolution_string_to_um(stack, in_resol)
+    arr_xywh_1um = arr_xywh * string_to_um_in_resolution
+    return arr_xywh_1um
+
+
+def convert_cropbox_fmt(out_fmt, data, in_fmt=None, in_resol='1um', out_resol='1um', stack=None):
+    if in_resol == out_resol: # in this case, stack is not required/ Arbitrarily set both to 1um
+        in_resol = '1um'
+        out_resol = '1um'
+    arr_xywh_1um = convert_cropbox_to_arr_xywh_1um(data=data, in_fmt=in_fmt, in_resol=in_resol, stack=stack)
+    data_out = convert_cropbox_from_arr_xywh_1um(data=arr_xywh_1um, out_fmt=out_fmt, out_resol=out_resol, stack=stack)
+    return data_out
+
+
+orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
+     'transverse': '-transverse',
+     'rotate90': '-rotate 90',
+     'rotate180': '-rotate 180',
+     'rotate270': '-rotate 270',
+     'rotate45': '-rotate 45',
+     'rotate135': '-rotate 135',
+     'rotate225': '-rotate 225',
+     'rotate315': '-rotate 315',
+     'flip': '-flip',
+     'flop': '-flop'
+    }
