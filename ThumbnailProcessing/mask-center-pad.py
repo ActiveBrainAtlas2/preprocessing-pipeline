@@ -11,10 +11,11 @@ import pandas as pd
 
 
 
-#DIR = os.path.join(HOME, 'DK39')
-DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
-INPUT = os.path.join(DIR, 'oriented')
-OUTPUT = os.path.join(DIR, 'masked')
+DIR = os.path.join(HOME, 'DK39')
+#DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
+INPUT = os.path.join(DIR, 'CH1')
+CLEANED = os.path.join(DIR, 'cleaned')
+MASKED = os.path.join(DIR, 'masked')
 files = sorted(os.listdir(INPUT))
 
 
@@ -126,10 +127,13 @@ for i, file in enumerate(tqdm(files)):
     del blob
     # scale and mask
     scaled, _max = scale_and_mask(img, closing)
+    outpath = os.path.join(MASKED, file)
+    closing = place_image(closing, max_width, max_height)
+    cv.imwrite(outpath, closing.astype('uint8'))
     del closing
     img = place_image(scaled, max_width, max_height)
     del scaled
     # img_outputs.append(img)
-    outpath = os.path.join(OUTPUT, file)
+    outpath = os.path.join(CLEANED, file)
     cv.imwrite(outpath, img.astype('uint16'))
 
