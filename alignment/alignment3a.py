@@ -24,7 +24,6 @@ This is the low-level usage. Note that the user must ensure the warp parameters 
 )
 
 #parser.add_argument("--stack", type=str)
-parser.add_argument("--pad_color", type=str)
 parser.add_argument("--op", action='append', nargs=2)
 parser.add_argument("--input_fp", type=str, help="input filepath")
 parser.add_argument("--output_fp", type=str, help="output filepath")
@@ -53,29 +52,32 @@ out_prep_id = 'alignedPadded'
 print('args.op ', args.op)
 
 op_str = ''
+operations = []
 for op_type, op_params in args.op: # args.op is a list
 	# revert the leading minus sign hack
 	if op_params.startswith('^'):
 		op_params = '-' + op_params[1:]
 
 	if op_type == 'warp':
+		operations.append('+distort')
+		operations.append('AffineProjection')
 		T = np.linalg.inv(convert_2d_transform_forms(transform=op_params, out_form=(3,3)))
 		op_str += " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
-					'sx':T[0,0],
-	 'sy':T[1,1],
-	 'rx':T[1,0],
-	'ry':T[0,1],
-	 'tx':T[0,2],
-	 'ty':T[1,2],
-	}
+					'sx':T[0,0], 'sy':T[1,1], 'rx':T[1,0], 'ry':T[0,1], 'tx':T[0,2], 'ty':T[1,2]}
+		projections = "{}, {}, {}, {}, {}, {}".format(T[0,0], T[1,1], T[1,0], T[0,1], T[0,2], T[1,2])
+		operations.append(projections)
+
 	elif op_type == 'crop':
+		operations.append('-crop')
 		x, y, w, h = convert_cropbox_fmt(data=op_params, out_fmt='arr_xywh', in_fmt='str_xywh', stack=stack)
-		op_str += ' -crop %(w)sx%(h)s%(x)s%(y)s\! ' % {
-	 'x': '+' + str(x) if int(x) >= 0 else str(x),
-	 'y': '+' + str(y) if int(y) >= 0 else str(y),
-	 'w': str(w),
-	 'h': str(h),
-	 }
+		op_str += ' -crop %(w)sx%(h)s%(x)s%(y)s\! ' % {'x': '+' + str(x) if int(x) >= 0 else str(x),'y': '+' + str(y) if int(y) >= 0 else str(y),
+													   'w': str(w),'h': str(h)}
+		xa = str(x) if int(x) >= 0 else str(x)
+		ya = str(y) if int(y) >= 0 else str(y)
+
+		crops = "{}x{}+{}+{}!".format(xa, ya, w, h)
+		operations.append(crops)
+
 
 	elif op_type == 'rotate':
 		op_str += ' ' + orientation_argparse_str_to_imagemagick_str[op_params]
@@ -87,14 +89,16 @@ for op_type, op_params in args.op: # args.op is a list
 assert args.input_fp is not None and args.output_fp is not None
 input_fp = args.input_fp
 output_fp = args.output_fp
-
+insert_operations = ""
 create_parent_dir_if_not_exists(output_fp)
+cmd = ["convert", input_fp,  "+repage", "-virtual-pixel", "background", "-background", pad_color, operations,
+	   "-flatten", "-compress", "lzw", output_fp]
 
 try:
-	cmd = "convert \"%(input_fp)s\"  +repage -virtual-pixel background -background %(bg_color)s %(op_str)s -flatten -compress lzw \"%(output_fp)s\"" % \
+	cmdXXX = "convert %(input_fp)s  +repage -virtual-pixel background -background %(bg_color)s %(op_str)s -flatten -compress lzw \"%(output_fp)s\"" % \
 			{'op_str': op_str, 'input_fp': input_fp, 'output_fp': output_fp, 'bg_color': pad_color}
-	subprocess.run(cmd)
+	subprocess.call(cmdXXX, shell=True)
 except Exception as e:
-	sys.stderr.write("ImageMagick convert failed for input_fp %s: %s\n" % (input_fp, e))
+	sys.stderr.write("IM Error: {}\n".format(e))
 
 

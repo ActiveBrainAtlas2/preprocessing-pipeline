@@ -146,14 +146,33 @@ def setup(stack):
 	infilepath = fileLocationManager.masked
 	outfilepath = fileLocationManager.aligned
 	for batch_id in range(0, len(image_name_list), batch_size):
+
+		script = os.path.join(os.getcwd(), 'alignment3a.py')
+		ops = ops_str_all_images[img_name]
+		input_fp = os.path.join(infilepath, img_name)
+		output_fp = os.path.join(outfilepath, img_name)
+		#cmd = 'python {} --input_fp {} --output_fp {} {}'.format(script, input_fp, output_fp)
+		#run_distributed(stack, cmd, argument_type='single', jobs_per_node=4, local_only=True, kwargs_list="")
+		"""
 		run_distributed(stack, 'python %(script)s --input_fp \"%%(input_fp)s\" --output_fp \"%%(output_fp)s\" %%(ops_str)s' % \
-		{'script':  os.path.join(os.getcwd(), 'alignment3a.py'),
-		},
+		{'script':  script},
 		kwargs_list=[{'ops_str': ops_str_all_images[img_name],
 				'input_fp': os.path.join(infilepath, img_name),
 				  'output_fp': os.path.join(outfilepath, img_name)}
 				for img_name in image_name_list[batch_id:batch_id+batch_size]],
-		argument_type='list2', jobs_per_node=4, local_only=True)
+		argument_type='single', jobs_per_node=4, local_only=True)
+		"""
+
+		run_distributed(stack, 'python %(script)s --input_fp \"%%(input_fp)s\" --output_fp \"%%(output_fp)s\" %%(ops_str)s' % \
+		{'script':  script},
+		kwargs_list=[{'ops_str': ops_str_all_images[img_name],
+				'input_fp': os.path.join(infilepath, img_name),
+				'output_fp': os.path.join(outfilepath, img_name)}
+				for img_name in image_name_list[batch_id:batch_id+batch_size]],
+		argument_type='single', jobs_per_node=1, local_only=True)
+
+
+
 
 
 if __name__ == '__main__':

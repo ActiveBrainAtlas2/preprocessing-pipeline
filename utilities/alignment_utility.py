@@ -9,6 +9,7 @@ import configparser
 import bloscpack as bp
 import pickle
 import re
+from six.moves import map
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 
@@ -64,14 +65,11 @@ def run_distributed5(stack, command, argument_type='single', kwargs_list=None, j
     assert argument_type in ['single', 'list', 'list2'], 'argument_type must be one of single, list, list2.'
 
     create_if_not_exists(fileLocationManager.mouseatlas_tmp)
-    print('command', command)
-    print('command', shell_escape(command))
     for node_i, (fi, li) in enumerate(first_last_tuples_distribute_over(0, len(kwargs_list_as_list) - 1, n_hosts)):
 
         temp_script = os.path.join(fileLocationManager.mouseatlas_tmp, 'runall.sh')
         temp_f = open(temp_script, 'w')
         for j, (fj, lj) in enumerate(first_last_tuples_distribute_over(fi, li, jobs_per_node)):
-            #print('kwargs list', json.dumps(kwargs_list_as_list[fj:lj + 1]))
             if argument_type == 'list':
                 line = command % {'kwargs_str': json.dumps(kwargs_list_as_list[fj:lj + 1])}
             elif argument_type == 'list2':
@@ -80,15 +78,19 @@ def run_distributed5(stack, command, argument_type='single', kwargs_list=None, j
                 # It is important to wrap command_templates and kwargs_list_str in apostrphes.
                 # That lets bash treat them as single strings.
                 # Reference: http://stackoverflow.com/questions/15783701/which-characters-need-to-be-escaped-in-bash-how-do-we-know-it
-                line = "%(generic_launcher_path)s %(command_template)s %(kwargs_list_str)s" % \
-                       {'generic_launcher_path': 'sequential_dispatcher.py',
+                lineXXX = "%(generic_launcher_path)s %(command_template)s %(kwargs_list_str)s" % \
+                       {'generic_launcher_path': os.path.join(os.getcwd(), 'sequential_dispatcher.py'),
                         'command_template': command,
                         'kwargs_list_str': json.dumps(kwargs_list_as_list[fj:lj + 1])
                         }
+                script = os.path.join(os.getcwd(), 'sequential_dispatcher.py')
+                arguments = json.dumps(kwargs_list_as_list[fj:lj + 1])
+                line = "{} '{}' '{}'\n".format(script, command, arguments)
 
-            temp_f.write(line + ' &\n')
+            #temp_f.write(line + ' &\n')
+            temp_f.write('{} \n'.format(line))
 
-        temp_f.write('wait')
+        #temp_f.write('wait')
         temp_f.close()
         os.chmod(temp_script, 0o770)
 
@@ -291,7 +293,9 @@ def load_hdf_v2(fn, key='data'):
 
 
 def one_liner_to_arr(line, func):
-    return np.array(map(func, line.strip().split()))
+    #####UPGRADE 2 -> 3 return np.array(map(func, line.strip().split()))
+    return np.array(list(map(func, line.strip().split())))
+
 
 def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
     """
@@ -337,7 +341,8 @@ def load_consecutive_section_transform(moving_fn, fixed_fn, elastix_output_dir=N
         # if custom transform is provided
         sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp)
         with open(custom_tf_fp, 'r') as f:
-            t11, t12, t13, t21, t22, t23 = map(float, f.readline().split())
+            #####UPGRADE 2 -> 3 t11, t12, t13, t21, t22, t23 = map(float, f.readline().split())
+            t11, t12, t13, t21, t22, t23 = list(map(float, f.readline().split()))
         transformation_to_previous_sec = np.linalg.inv(np.array([[t11, t12, t13], [t21, t22, t23], [0,0,1]]))
     elif os.path.exists(custom_tf_fp2):
         sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp2)
@@ -462,9 +467,11 @@ def convert_2d_transform_forms(transform, out_form):
 
     if isinstance(transform, str):
         if out_form == (2,3):
-            return np.reshape(map(np.float, transform.split(',')), (2,3))
+            #return np.reshape(map(np.float, transform.split(',')), (2,3))
+            return np.reshape(list(map(np.float, transform.split(','))), (2, 3))
         elif out_form == (3,3):
-            return np.vstack([np.reshape(map(np.float, transform.split(',')), (2,3)), [0,0,1]])
+            #return np.vstack([np.reshape(map(np.float, transform.split(',')), (2,3)), [0,0,1]])
+            return np.vstack([np.reshape(list(map(np.float, transform.split(','))), (2, 3)), [0, 0, 1]])
     else:
         transform = np.array(transform)
         if transform.shape == (2,3):
