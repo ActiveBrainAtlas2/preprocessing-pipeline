@@ -2,7 +2,7 @@
 This was formerly compose_v3.py
 This gets the transformation results from the elastix output
 and creates the brains_info/transforms_to_anchor.csv file.
-This file has all the values needed to align the images to the anchor (midpoint) file
+This file creates all the values needed to align the images to the anchor (midpoint) file
 """
 import os
 import sys
@@ -16,11 +16,12 @@ from utilities.file_location import FileLocationManager
 
 def setup(stack):
     fileLocationManager = FileLocationManager(stack)
-    filepath = fileLocationManager.masked
+    filepath = fileLocationManager.cleaned
     image_name_list = sorted(os.listdir(filepath))
     midpoint = len(image_name_list) // 2
     anchor_transformations_file = os.path.join(fileLocationManager.brain_info,  'transforms_to_anchor.csv')
     anchor_idx = midpoint
+    #anchor_idx = len(image_name_list) - 1
     transformation_to_previous_sec = {}
 
     for i in range(1, len(image_name_list)):

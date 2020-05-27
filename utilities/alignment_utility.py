@@ -506,6 +506,7 @@ def convert_cropbox_from_arr_xywh_1um(data, out_fmt, out_resol, stack=None):
         raise
 
 def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack=None):
+    print('data', data, 'in_fmt', in_fmt)
     if isinstance(data, dict):
         data['rostral_limit'] = float(data['rostral_limit'])
         data['caudal_limit'] = float(data['caudal_limit'])
@@ -520,7 +521,8 @@ def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack=None):
             a = [float(v) for v in l]
             arr_xywh = np.array(a)
         elif in_fmt == 'str_xxyy':
-            arr_xxyy = np.array(map(np.round, map(eval, data.split(','))))
+            #####UPGRADE from 2 to 3arr_xxyy = np.array(map(np.round, map(eval, data.split(','))))
+            arr_xxyy = np.array(list(map(np.round, list(map(eval, data.split(','))))))
             arr_xywh = np.array([arr_xxyy[0], arr_xxyy[2], arr_xxyy[1] - arr_xxyy[0] + 1, arr_xxyy[3] - arr_xxyy[2] + 1])
         else:
             raise
@@ -535,6 +537,7 @@ def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack=None):
 
     string_to_um_in_resolution = sqlController.convert_resolution_string_to_um(stack, in_resol)
     arr_xywh_1um = arr_xywh * string_to_um_in_resolution
+    print('arr_xywh_1um', arr_xywh_1um)
     return arr_xywh_1um
 
 
@@ -544,6 +547,7 @@ def convert_cropbox_fmt(out_fmt, data, in_fmt=None, in_resol='1um', out_resol='1
         out_resol = '1um'
     arr_xywh_1um = convert_cropbox_to_arr_xywh_1um(data=data, in_fmt=in_fmt, in_resol=in_resol, stack=stack)
     data_out = convert_cropbox_from_arr_xywh_1um(data=arr_xywh_1um, out_fmt=out_fmt, out_resol=out_resol, stack=stack)
+    print('data out', data_out)
     return data_out
 
 

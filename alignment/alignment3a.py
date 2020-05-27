@@ -57,6 +57,7 @@ for op_type, op_params in args.op: # args.op is a list
 	if op_params.startswith('^'):
 		op_params = '-' + op_params[1:]
 
+	sys.stdout.write("optype in alignemnt3a: {}\n".format(op_type))
 	if op_type == 'warp':
 		T = np.linalg.inv(convert_2d_transform_forms(transform=op_params, out_form=(3,3)))
 		op_str += " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
@@ -72,13 +73,11 @@ for op_type, op_params in args.op: # args.op is a list
 
 		crops = "{}x{}+{}+{}!".format(xa, ya, w, h)
 
-
 	elif op_type == 'rotate':
 		op_str += ' ' + orientation_argparse_str_to_imagemagick_str[op_params]
 
 	else:
 		raise Exception("Op_id must be either warp or crop.")
-
 
 assert args.input_fp is not None and args.output_fp is not None
 input_fp = args.input_fp
@@ -88,6 +87,7 @@ try:
 	cmd = "convert %(input_fp)s  +repage -virtual-pixel background -background %(bg_color)s %(op_str)s -flatten -compress lzw \"%(output_fp)s\"" % \
 			{'op_str': op_str, 'input_fp': input_fp, 'output_fp': output_fp, 'bg_color': pad_color}
 	subprocess.call(cmd, shell=True)
+	sys.stdout.write("IM: {}\n".format(cmd))
 except Exception as e:
 	sys.stderr.write("IM Error: {}\n".format(e))
 

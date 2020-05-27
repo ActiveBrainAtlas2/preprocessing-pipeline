@@ -123,7 +123,7 @@ def setup(stack):
 	Returns:
 	"""
 	fileLocationManager = FileLocationManager(stack)
-	image_name_list = sorted(os.listdir(fileLocationManager.masked))
+	image_name_list = sorted(os.listdir(fileLocationManager.cleaned))
 	resol = 'thumbnail'
 	ops_in_prep_id = None
 	out_prep_id = 'alignedPadded'
@@ -143,7 +143,7 @@ def setup(stack):
 	# sequantial_dispatcher argument cannot be too long, so we must limit the number of images processed each time
 	batch_size = 100
 
-	infilepath = fileLocationManager.masked
+	infilepath = fileLocationManager.cleaned
 	outfilepath = fileLocationManager.aligned
 	for batch_id in range(0, len(image_name_list), batch_size):
 

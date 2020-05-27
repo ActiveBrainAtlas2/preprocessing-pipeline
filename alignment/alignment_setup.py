@@ -18,7 +18,7 @@ def setup(stack):
     elastix_output_dir = fileLocationManager.elastix_dir
     params_fp =  "Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt"
 
-    filepath = fileLocationManager.masked
+    filepath = fileLocationManager.cleaned
     image_name_list = sorted(os.listdir(filepath))
     run_distributed(stack, "python %(script)s \"%(output_dir)s\" \'%%(kwargs_str)s\' -p %(param_fp)s" % \
                     {'script': os.path.join(os.getcwd(), 'alignment_elastix.py'),
