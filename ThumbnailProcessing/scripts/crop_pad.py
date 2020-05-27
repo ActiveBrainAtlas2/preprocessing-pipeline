@@ -19,6 +19,7 @@ def get_last_2d(data):
     return data.flat[:m*n].reshape(m,n)
 
 def crop_rows(img,cropy):
+    img = get_last_2d(img)
     y,x = img.shape
     starty = y + cropy
     return img[0:starty,:]
