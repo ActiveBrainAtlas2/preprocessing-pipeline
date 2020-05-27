@@ -1,27 +1,22 @@
 """
-This was formerly align_v3.py. It has been renamed to more easily track the sequence of operations.
-This file just sets up the DIR path of the input and output files.
-It calls a method called run_distributed which spawns multiple python processes to run the next script:
-align_sequential. This is the program that runs the command line tool: elastix
+This was formerly align_v3.py. This is the first script in a series that is meant
+to be run in python2.
 """
-import os, sys
+import os
 import argparse
 
-sys.path.append(os.path.join(os.getcwd(), '../'))
-from utilities.alignment_utility import run_distributed
-from utilities.file_location import FileLocationManager
 
-
+from old_methods import run_distributed
 
 def setup(stack):
-    fileLocationManager = FileLocationManager(stack)
-    elastix_output_dir = fileLocationManager.elastix_dir
-    params_fp =  "Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt"
+    elastix_output_dir = '/mnt/data/CSHL_data_processed/{}/{}_elastix_output'.format(stack, stack)
+    params_fp =  'Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt'
 
-    filepath = fileLocationManager.cleaned
+
+    filepath = '/mnt/data/CSHL_data_processed/{}/cleaned'.format(stack, stack)
     image_name_list = sorted(os.listdir(filepath))
-    run_distributed(stack, "python %(script)s \"%(output_dir)s\" \'%%(kwargs_str)s\' -p %(param_fp)s" % \
-                    {'script': os.path.join(os.getcwd(), 'alignment_sequential.py'),
+    run_distributed("python %(script)s \"%(output_dir)s\" \'%%(kwargs_str)s\' -p %(param_fp)s -r" % \
+                    {'script': os.path.join(os.getcwd(), 'p2_alignment_sequential.py'),
                     'output_dir': elastix_output_dir,
                      'param_fp': params_fp
                     },

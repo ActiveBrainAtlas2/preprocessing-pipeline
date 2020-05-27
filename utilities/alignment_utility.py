@@ -18,6 +18,12 @@ from utilities.file_location import FileLocationManager
 sqlController = SqlController()
 
 
+
+def execute_command(cmd, stdout=None, stderr=None):
+    retcode = subprocess.call(cmd, shell=True, stdout=stdout, stderr=stderr)
+    sys.stderr.write('return code: %d\n' % retcode)
+
+
 def run_distributed(stack, command, argument_type='single', kwargs_list=None, jobs_per_node=1, node_list=None, local_only=False, use_aws=False):
     run_distributed5(**locals())
 
@@ -108,7 +114,7 @@ def run_distributed5(stack, command, argument_type='single', kwargs_list=None, j
         if local_only:
             stdout_f = open(stdout_template % node_i, "w")
             stderr_f = open(stderr_template % node_i, "w")
-            subprocess.run(temp_script, shell=True, stdout=stdout_f, stderr=stderr_f)
+            subprocess.call(temp_script, shell=True, stdout=stdout_f, stderr=stderr_f)
         else:
             print('qsub -V -q all.q@%(node)s -o %(stdout_log)s -e %(stderr_log)s %(script)s' % \
             dict(node=node_list[node_i], script=temp_script, stdout_log=stdout_template % node_i,

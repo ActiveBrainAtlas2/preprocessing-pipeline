@@ -6,7 +6,7 @@ import json
 import argparse
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
-from utilities.alignment_utility import create_if_not_exists
+from utilities.alignment_utility import create_if_not_exists, execute_command
 
 
 parser = argparse.ArgumentParser(
@@ -47,12 +47,26 @@ for kwarg in kwargs_str:
     subprocess.run(command)
     create_if_not_exists(output_subdir)
     param_fp = os.path.join(os.getcwd(), param_fp)
+    """
     command = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_fp, '-out', output_subdir]
     print(" ".join(command))
     ret = subprocess.Popen(command)
     #sys.exit()
     ret.wait()
+
     if ret.returncode > 0:
+        failed_pairs.append((prev_img_name, curr_img_name))
+    """
+    ret = execute_command(
+        '%(elastix_bin)s -f \"%(fixed_fp)s\" -m \"%(moving_fp)s\" -out \"%(output_subdir)s\" -p \"%(param_fp)s\"' % \
+        {'elastix_bin': ELASTIX_BIN,
+         'param_fp': param_fp,
+         'output_subdir': output_subdir,
+         'fixed_fp': prev_fp,
+         'moving_fp': curr_fp
+         })
+
+    if ret == 1:
         failed_pairs.append((prev_img_name, curr_img_name))
     else:
         with open(os.path.join(output_subdir, 'elastix.log'), 'r') as f:

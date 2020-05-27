@@ -101,6 +101,7 @@ def run_distributed5(command, argument_type='single', kwargs_list=None, jobs_per
                         }
 
             temp_f.write(line + ' &\n')
+            print(line)
 
         temp_f.write('wait')
         temp_f.close()
