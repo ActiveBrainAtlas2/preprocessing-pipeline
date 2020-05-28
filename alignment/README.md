@@ -1,8 +1,8 @@
 ### Pipeline Process
 
 1. CZI file parsing and metadata extraction
-1. Initial QA with metadata and comparisons to scans
-1. Tif metatdata extraction into multiple channels
+1. Initial QA of metadata and comparisons to scans
+1. Tif extraction into multiple channels
 1. Creation of thumbnails
 1. Rotation of thumbnails
 1. Masking, cropping and padding of thumbnails

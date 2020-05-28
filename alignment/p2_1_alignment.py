@@ -16,7 +16,7 @@ def setup(stack):
     filepath = '/mnt/data/CSHL_data_processed/{}/cleaned'.format(stack, stack)
     image_name_list = sorted(os.listdir(filepath))
     run_distributed("python %(script)s \"%(output_dir)s\" \'%%(kwargs_str)s\' -p %(param_fp)s -r" % \
-                    {'script': os.path.join(os.getcwd(), 'p2_alignment_sequential.py'),
+                    {'script': os.path.join(os.getcwd(), 'align_sequential.py'),
                     'output_dir': elastix_output_dir,
                      'param_fp': params_fp
                     },
