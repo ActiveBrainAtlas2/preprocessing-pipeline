@@ -157,7 +157,7 @@ def run_offsets(stack, transforms, limit):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
-    parser.add_argument('--njobs', help='How many processes to spawn', default=4)
+    parser.add_argument('--njobs', help='How many processes to spawn', default=12)
     args = parser.parse_args()
     animal = args.animal
     njobs = args.njobs
