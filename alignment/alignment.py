@@ -13,7 +13,8 @@ import numpy as np
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
-from utilities.alignment_utility import create_if_not_exists, load_consecutive_section_transform, convert_cropbox_fmt
+from utilities.alignment_utility import create_if_not_exists, load_consecutive_section_transform, convert_cropbox_fmt, \
+    convert_resolution_string_to_um, convert_2d_transform_forms
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -107,6 +108,17 @@ def parse_elastix(stack):
 
     return transformation_to_anchor_sec
 
+def create_warp_transforms(stack, transforms, transforms_resol, resol):
+    #transforms_resol = op['resolution']
+    transforms_scale_factor = convert_resolution_string_to_um(stack, resolution=transforms_resol) / convert_resolution_string_to_um(stack, resolution=resol)
+    tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
+    transforms_to_anchor = {
+        img_name: convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor, out_form='str') for
+        img_name, tf in transforms.items()}
+
+    return transforms_to_anchor
+
+
 def run_offsets(stack, transforms, limit):
     """
     This gets the dictionary from the above method, and uses the coordinates
@@ -121,7 +133,8 @@ def run_offsets(stack, transforms, limit):
     inpath = fileLocationManager.cleaned
     outpath = fileLocationManager.aligned
     commands = []
-    for file, arr in transforms.items():
+    warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'thumbnail')
+    for file, arr in warp_transforms.items():
         T = np.linalg.inv(arr)
         op_str = " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
             'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
