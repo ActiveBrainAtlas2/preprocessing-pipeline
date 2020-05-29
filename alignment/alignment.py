@@ -25,9 +25,7 @@ def workershell(cmd):
         cmd:  a command line program with arguments in a string
     Returns: nothing
     """
-    outputlog = os.path.join(os.getcwd(), 'output.log')
-    errorlog = os.path.join(os.getcwd(), 'error.log')
-    p = subprocess.Popen(cmd, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    p = subprocess.Popen(cmd, shell=True, stderr=None, stdout=None)
     p.wait()
 
 
