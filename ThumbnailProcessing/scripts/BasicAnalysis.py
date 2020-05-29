@@ -1,4 +1,4 @@
-import sys
+import os, sys
 import pandas as pd
 import pickle as pk
 import cv2
@@ -51,13 +51,17 @@ def scale_and_mask(src,mask,epsilon=0.01):
     scaled=scaled*(mask>10)
     return scaled,_max
 
-thumbnail=sys.argv[1:]
+#thumbnail=sys.argv[1:]
+DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39'
+INPUT = os.path.join(DIR, 'preps', 'normalized')
+thumbnail = sorted(os.listdir(INPUT))
 results=[]
 for i in range(len(thumbnail)):
-    
+
     print('\r %d/%d'%(i,len(thumbnail)),end='')
     ###### read image
-    src = cv2.imread(thumbnail[i],-1)
+    filepath = os.path.join(INPUT, thumbnail[i])
+    src = cv2.imread(filepath,-1)
     threshold = find_threshold(src)
 
     ###### Threshold it so it becomes binary
@@ -66,7 +70,7 @@ for i in range(len(thumbnail)):
 
     ###### Find connected elements
     # You need to choose 4 or 8 for connectivity type
-    connectivity = 4  
+    connectivity = 4
     output = cv2.connectedComponentsWithStats(threshed, connectivity, cv2.CV_32S)
 
     # Get the results
@@ -78,20 +82,20 @@ for i in range(len(thumbnail)):
     stats = output[2]
     # The fourth cell is the centroid matrix
     centroids = output[3]
-    
+
     # Find the blob that corresponds to the section.
     row=find_main_blob(stats,src)
     blob_label=row[1]['blob_label']
-    
+
     #extract the blob
     blob=np.uint8(labels==blob_label)*255
-    
+
     #Perform morphological closing
     kernel10 = np.ones((10,10),np.uint8)
     closing = cv2.morphologyEx(blob, cv2.MORPH_CLOSE, kernel10, iterations=5)
     # scale and mask
     scaled,_max=scale_and_mask(src,closing)
-    
+
     # Create Viewable image:
     combined=np.copy(scaled)
     combined[closing<10]=20000

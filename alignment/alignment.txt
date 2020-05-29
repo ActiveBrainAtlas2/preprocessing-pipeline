@@ -1,0 +1,3 @@
+
+# this runs the offsets
+python p2_3_alignment.py --input_spec input_spec.ini --op_id from_none_to_padded
