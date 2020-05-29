@@ -185,7 +185,6 @@ def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=
         downsample_factor (float): the downsample factor of images that the output transform will be applied to.
         resolution (str): resolution of the image that the output transform will be applied to.
     """
-
     # set the animal info
     sqlController.get_animal_info(stack)
     planar_resolution = sqlController.scan_run.resolution
@@ -569,3 +568,59 @@ orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
      'flip': '-flip',
      'flop': '-flop'
     }
+
+
+def convert_resolution_string_to_um(stack, resolution):
+    return convert_resolution_string_to_voxel_size(resolution, stack=stack)
+
+def convert_resolution_string_to_voxel_size(stack, resolution):
+    """
+    Args:
+        resolution (str):
+    Returns:
+        voxel/pixel size in microns.
+    """
+    sqlController.get_animal_info(stack)
+    planar_resolution = sqlController.scan_run.resolution
+
+    assert resolution is not None, 'Resolution argument cannot be None.'
+
+    if resolution in ['down32', 'thumbnail']:
+        assert stack is not None
+        return planar_resolution * 32.
+    elif resolution == 'lossless' or resolution == 'down1' or resolution == 'raw':
+        assert stack is not None
+        return planar_resolution
+    elif resolution.startswith('down'):
+        assert stack is not None
+        return planar_resolution * int(resolution[4:])
+    elif resolution == 'um':
+        return 1.
+    elif resolution.endswith('um'):
+        return float(resolution[:-2])
+    else:
+        print(resolution)
+        raise Exception("Unknown resolution string %s" % resolution)
+
+
+def convert_2d_transform_forms(transform, out_form):
+
+    if isinstance(transform, str):
+        if out_form == (2,3):
+            return np.reshape(map(np.float, transform.split(',')), (2,3))
+        elif out_form == (3,3):
+            return np.vstack([np.reshape(map(np.float, transform.split(',')), (2,3)), [0,0,1]])
+    else:
+        transform = np.array(transform)
+        if transform.shape == (2,3):
+            if out_form == (3,3):
+                transform = np.vstack([transform, [0,0,1]])
+            elif out_form == 'str':
+                transform = ','.join(map(str, transform[:2].flatten()))
+        elif transform.shape == (3,3):
+            if out_form == (2,3):
+                transform = transform[:2]
+            elif out_form == 'str':
+                transform = ','.join(map(str, transform[:2].flatten()))
+
+    return transform
