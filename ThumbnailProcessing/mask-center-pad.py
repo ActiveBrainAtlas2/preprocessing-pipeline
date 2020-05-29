@@ -74,16 +74,12 @@ def scale_and_mask(src, mask, epsilon=0.01):
 def find_threshold(src):
     fig = matplotlib.figure.Figure()
     ax = matplotlib.axes.Axes(fig, (0, 0, 0, 0))
-    n, bins, patches = ax.hist(src.flatten(), 160);
+    n, bins, patches = ax.hist(src.flatten(), 360);
     del ax, fig
     min_point = np.argmin(n[:5])
-    thresh = (min_point * 64000 / 180 + 400)
-    # v = np.median(src)
-    # thresh = int(max(min_point, (1.0 - sigma) * v))
-    # thresh = min_point * 136 + 100
-    # thresh = int(max(min_point, (1.0 - sigma) * v))
-    thresh1 = int(min(1200, thresh))
-    return min_point, thresh1
+    min_point = int(max(2, min_point))
+    thresh = (min_point * 64000 / 360)
+    return min_point, thresh
 
 
 max_width = 1740

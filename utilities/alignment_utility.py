@@ -325,7 +325,7 @@ def load_ini(fp, split_newline=True, convert_none_str=True, section='DEFAULT'):
     assert len(input_spec) > 0, "Failed to read data from ini file."
     return input_spec
 
-def load_consecutive_section_transform(moving_fn, fixed_fn, elastix_output_dir=None, custom_output_dir=None, stack=None):
+def load_consecutive_section_transform(stack, moving_fn, fixed_fn):
     """
     Load pairwise transform.
 
@@ -342,21 +342,20 @@ def load_consecutive_section_transform(moving_fn, fixed_fn, elastix_output_dir=N
 
     custom_tf_fp2 = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
 
-    print(custom_tf_fp)
     if os.path.exists(custom_tf_fp):
         # if custom transform is provided
-        sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp)
+        #sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp)
         with open(custom_tf_fp, 'r') as f:
             #####UPGRADE 2 -> 3 t11, t12, t13, t21, t22, t23 = map(float, f.readline().split())
             t11, t12, t13, t21, t22, t23 = list(map(float, f.readline().split()))
         transformation_to_previous_sec = np.linalg.inv(np.array([[t11, t12, t13], [t21, t22, t23], [0,0,1]]))
     elif os.path.exists(custom_tf_fp2):
-        sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp2)
+        #sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp2)
         transformation_to_previous_sec = parse_elastix_parameter_file(custom_tf_fp2)
     else:
         # otherwise, load elastix output
         param_fp = os.path.join(elastix_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
-        sys.stderr.write('Load elastix-computed transform: %s\n' % param_fp)
+        #sys.stderr.write('Load elastix-computed transform: %s\n' % param_fp)
         if not os.path.exists(param_fp):
             raise Exception('Transform file does not exist: %s to %s, %s' % (moving_fn, fixed_fn, param_fp))
         transformation_to_previous_sec = parse_elastix_parameter_file(param_fp)
@@ -512,7 +511,7 @@ def convert_cropbox_from_arr_xywh_1um(data, out_fmt, out_resol, stack=None):
         raise
 
 def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack=None):
-    print('data', data, 'in_fmt', in_fmt)
+    #print('data', data, 'in_fmt', in_fmt)
     if isinstance(data, dict):
         data['rostral_limit'] = float(data['rostral_limit'])
         data['caudal_limit'] = float(data['caudal_limit'])
@@ -534,7 +533,8 @@ def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack=None):
             raise
     else:
         if in_fmt == 'arr_xywh':
-            arr_xywh = np.array(data)
+            arr_xywh = data
+            #arr_xywh = np.array(data)
         elif in_fmt == 'arr_xxyy':
             arr_xywh = np.array([data[0], data[2], data[1] - data[0] + 1, data[3] - data[2] + 1])
         else:
