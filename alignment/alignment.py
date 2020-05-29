@@ -18,24 +18,16 @@ from utilities.alignment_utility import create_if_not_exists, load_consecutive_s
 ELASTIX_BIN = '/usr/bin/elastix'
 
 
-def worker(cmd):
-    """
-    Sets up the subprocess command for accepting the cmd as a list
-    Args:
-        cmd: command line program with arguments in a list
-    Returns: nothing
-    """
-    p = subprocess.Popen(cmd, stderr=None, stdout=None)
-    p.wait()
-
 def workershell(cmd):
     """
-    Same as above except accepts a string. That is what the shell true is for.
+    Set up an shell command. That is what the shell true is for.
     Args:
         cmd:  a command line program with arguments in a string
     Returns: nothing
     """
-    p = subprocess.Popen(cmd, shell=True, stderr=None, stdout=None)
+    outputlog = os.path.join(os.getcwd(), 'output.log')
+    errorlog = os.path.join(os.getcwd(), 'error.log')
+    p = subprocess.Popen(cmd, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     p.wait()
 
 
@@ -63,18 +55,19 @@ def run_elastix(stack, limit):
         output_subdir = os.path.join(elastix_output_dir, new_dir)
 
         if os.path.exists(output_subdir) and 'TransformParameters.0.txt' in os.listdir(output_subdir):
-            print('{} to {} already exists and so skipping.'.format(curr_img_name, prev_img_name))
+            # print('{} to {} already exists and so skipping.'.format(curr_img_name, prev_img_name))
             continue
 
         command = ['rm', '-rf', output_subdir]
         subprocess.run(command)
         create_if_not_exists(output_subdir)
         param_fp = os.path.join(os.getcwd(), param_file)
-        command = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_fp, '-out', output_subdir]
+        #command = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_fp, '-out', output_subdir]
+        command = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_fp, output_subdir)
         commands.append(command)
 
     with Pool(limit) as p:
-        p.map(worker, commands)
+        p.map(workershell, commands)
 
 
 def parse_elastix(stack):
@@ -142,7 +135,8 @@ def run_offsets(stack, transforms, limit):
                                                        'y': '+' + str(y) if int(y) >= 0 else str(y),
                                                        'w': str(w), 'h': str(h)}
 
-        op_str += ' -crop 2001.0x1001.0+0.0+0.0\!'
+        #op_str += ' -crop 2001.0x1001.0+0.0+0.0\!'
+        op_str += ' -crop 1740.0x1040.0+0.0+0.0\!'
 
         input_fp = os.path.join(inpath, file)
         output_fp = os.path.join(outpath, file)
@@ -160,7 +154,7 @@ if __name__ == '__main__':
     parser.add_argument('--njobs', help='How many processes to spawn', default=12)
     args = parser.parse_args()
     animal = args.animal
-    njobs = args.njobs
+    njobs = int(args.njobs)
     run_elastix(animal, njobs)
     transforms = parse_elastix(animal)
     run_offsets(animal, transforms, njobs)
