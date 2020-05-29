@@ -6,7 +6,7 @@ from skimage import io
 import subprocess
 import tables
 import configparser
-import bloscpack as bp
+#import bloscpack as bp
 import pickle
 import re
 from six.moves import map
