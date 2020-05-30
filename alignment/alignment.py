@@ -14,7 +14,7 @@ import numpy as np
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
 from utilities.alignment_utility import create_if_not_exists, load_consecutive_section_transform, convert_cropbox_fmt, \
-    convert_resolution_string_to_um, convert_2d_transform_forms
+    convert_resolution_string_to_um
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -26,7 +26,11 @@ def workershell(cmd):
         cmd:  a command line program with arguments in a string
     Returns: nothing
     """
-    p = subprocess.Popen(cmd, shell=True, stderr=None, stdout=None)
+    stderr_template = os.path.join(os.getcwd(), 'alignment.err.log')
+    stdout_template = os.path.join(os.getcwd(), 'alignment.log')
+    stdout_f = open(stdout_template, "w")
+    stderr_f = open(stderr_template, "w")
+    p = subprocess.Popen(cmd, shell=True, stderr=stderr_f, stdout=stdout_f)
     p.wait()
 
 
@@ -56,6 +60,7 @@ def run_elastix(stack, limit):
         if os.path.exists(output_subdir) and 'TransformParameters.0.txt' in os.listdir(output_subdir):
             # print('{} to {} already exists and so skipping.'.format(curr_img_name, prev_img_name))
             continue
+
 
         command = ['rm', '-rf', output_subdir]
         subprocess.run(command)
@@ -108,12 +113,16 @@ def parse_elastix(stack):
 
     return transformation_to_anchor_sec
 
+def convert_2d_transform_forms(arr):
+    return np.vstack([arr, [0,0,1]])
+
 def create_warp_transforms(stack, transforms, transforms_resol, resol):
     #transforms_resol = op['resolution']
     transforms_scale_factor = convert_resolution_string_to_um(stack, resolution=transforms_resol) / convert_resolution_string_to_um(stack, resolution=resol)
     tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
     transforms_to_anchor = {
-        img_name: convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor, out_form='str') for
+        img_name:
+            convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor) for
         img_name, tf in transforms.items()}
 
     return transforms_to_anchor

@@ -571,7 +571,7 @@ orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
 
 
 def convert_resolution_string_to_um(stack, resolution):
-    return convert_resolution_string_to_voxel_size(resolution, stack=stack)
+    return convert_resolution_string_to_voxel_size(stack, resolution)
 
 def convert_resolution_string_to_voxel_size(stack, resolution):
     """
@@ -604,14 +604,14 @@ def convert_resolution_string_to_voxel_size(stack, resolution):
 
 
 def convert_2d_transform_forms(transform, out_form):
-
+    print('convert_2d_transform_forms', type(transform), transform.shape, out_form)
     if isinstance(transform, str):
         if out_form == (2,3):
             return np.reshape(map(np.float, transform.split(',')), (2,3))
         elif out_form == (3,3):
             return np.vstack([np.reshape(map(np.float, transform.split(',')), (2,3)), [0,0,1]])
     else:
-        transform = np.array(transform)
+        #transform = np.array(transform)
         if transform.shape == (2,3):
             if out_form == (3,3):
                 transform = np.vstack([transform, [0,0,1]])
