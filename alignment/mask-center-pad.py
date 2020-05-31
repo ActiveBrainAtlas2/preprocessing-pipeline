@@ -10,6 +10,7 @@ import cv2 as cv
 import pandas as pd
 
 DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
+DIR = '/data2/edward/DK39'
 INPUT = os.path.join(DIR, 'CH1')
 CLEANED = os.path.join(DIR, 'cleaned')
 MASKED = os.path.join(DIR, 'masked')
