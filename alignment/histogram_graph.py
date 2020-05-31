@@ -9,10 +9,10 @@ from tqdm import tqdm
 from collections import Counter
 stack = 'DK39'
 channel = 1
-DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}'.format(stack)
-ALIGNED = os.path.join(DIR, 'preps', 'aligned')
-INPUT = ALIGNED
-files = sorted(os.listdir(INPUT))
+#DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}'.format(stack)
+DIR = '/data2/edward/{}'.format(stack)
+INPUT = os.path.join(DIR, 'CH1')
+files = os.listdir(INPUT)
 lfiles = len(files)
 print(lfiles)
 
