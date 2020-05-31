@@ -80,8 +80,8 @@ def find_threshold(src):
     return min_point, thresh
 
 
-max_width = 1740
-max_height = 1050
+max_width = 55700
+max_height = 33600
 
 
 for i, file in enumerate(tqdm(files)):
