@@ -125,7 +125,12 @@ for i, file in enumerate(tqdm(files)):
     closing = place_image(closing, max_width, max_height)
     cv.imwrite(outpath, closing.astype('uint8'))
     del closing
-    img = place_image(scaled, max_width, max_height)
+    try:
+        img = place_image(scaled, max_width, max_height)
+    except:
+        print('Could not place image', infile, img.shape)
+        continue
+
     del scaled
     # img_outputs.append(img)
     outpath = os.path.join(CLEANED, file)
