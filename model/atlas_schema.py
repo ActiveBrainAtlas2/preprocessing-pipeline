@@ -1,7 +1,7 @@
 import numpy as np
 from datetime import datetime
 #from controller.preprocessor import make_thumbnail, make_histogram, make_tif
-from controller.preprocessor import SlideProcessor, make_tif
+from controller.preprocessor import SlideProcessor, make_tif, make_mask
 from utilities.sqlcontroller import SqlController
 from sql_setup import session, dj, database
 import sys
@@ -102,6 +102,7 @@ class FileOperation(dj.Computed):
     thumbnail: tinyint
     czi_to_tif: tinyint
     histogram: tinyint
+    cleaned: tinyint
     processing_duration: float
     created: datetime
     """
@@ -113,18 +114,28 @@ class FileOperation(dj.Computed):
         file_name = (RawSection & key).fetch1('destination_file')
         file_id = np.asscalar(file_id)
         tif_id = (RawSection & key).fetch1('tif_id')
-        czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), file_id, testing)
-        histogram = slide_processor.make_histogram(file_id, file_name, testing)
-        thumbnail = slide_processor.make_thumbnail(file_id, file_name, testing)
-        slide_processor.make_web_thumbnail(file_id, file_name, testing)
+        #czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), file_id, testing)
+        #histogram = slide_processor.make_histogram(file_id, file_name, testing)
+        #thumbnail = slide_processor.make_thumbnail(file_id, file_name, testing)
+        #slide_processor.make_web_thumbnail(file_id, file_name, testing)
+
+        max_width = 55700
+        max_height = 33600
+
+        cleaned = make_mask(session, prep_id, file_id, max_width, max_height)
+        thumbnail = 1
+        czi_to_tif = 1
+        histogram = 1
+        #session, prep_id, file_id, max_width, max_height
         end = time.time()
 
         self.insert1(dict(key, file_name=file_name,
                           created=datetime.now(),
                           thumbnail=thumbnail,
                           czi_to_tif = czi_to_tif,
+                          cleaned = cleaned,
                           processing_duration=end - start,
-                          histogram = histogram), skip_duplicates=True)
+                          histogram = histogram), skip_duplicates=False)
 
 # End of table definitions
 
@@ -135,6 +146,6 @@ def manipulate_images(id, limit, testing_param=False):
     prep_id = id
     testing = testing_param
     restriction = 'prep_id = "{}"'.format(prep_id)
-    FileOperation.populate([RawSection & 'active=1' & restriction ], display_progress=True, reserve_jobs=True, limit=limit)
+    FileOperation.populate([RawSection & 'active=1 and channel=1' & restriction ], display_progress=True, reserve_jobs=True, limit=limit)
 
 
