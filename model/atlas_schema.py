@@ -121,6 +121,8 @@ class FileOperation(dj.Computed):
 
         max_width = 55700
         max_height = 33600
+        max_width = 1740
+        max_height = 1050
 
         cleaned = make_mask(session, prep_id, file_id, max_width, max_height)
         thumbnail = 1
