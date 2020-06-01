@@ -44,16 +44,25 @@ def run_elastix(stack, limit):
     Returns: nothing, just creates a lot of subdirs
     """
     fileLocationManager = FileLocationManager(stack)
-    filepath = fileLocationManager.cleaned
-    image_name_list = sorted(os.listdir(filepath))
+    #filepath = fileLocationManager.cleaned
+    DIR = '/data2/edward/DK39'
+
+    DIR = '/data2/edward/DK39'
+    INPUT = os.path.join(DIR, 'normalized')
+
+
+
+
+    image_name_list = sorted(os.listdir(INPUT))
     elastix_output_dir = fileLocationManager.elastix_dir
     param_file = "Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt"
     commands = []
     for i in range(1, len(image_name_list)):
         prev_img_name = os.path.splitext(image_name_list[i - 1])[0]
         curr_img_name = os.path.splitext(image_name_list[i])[0]
-        prev_fp = os.path.join(filepath, image_name_list[i - 1])
-        curr_fp = os.path.join(filepath, image_name_list[i])
+        prev_fp = os.path.join(INPUT, image_name_list[i - 1])
+        curr_fp = os.path.join(INPUT, image_name_list[i])
+
         new_dir = '{}_to_{}'.format(curr_img_name, prev_img_name)
         output_subdir = os.path.join(elastix_output_dir, new_dir)
 
@@ -66,8 +75,8 @@ def run_elastix(stack, limit):
         subprocess.run(command)
         create_if_not_exists(output_subdir)
         param_fp = os.path.join(os.getcwd(), param_file)
-        #command = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_fp, '-out', output_subdir]
-        command = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_fp, output_subdir)
+        command = '{} -f {} -m {} -p {} -out {}'\
+            .format(ELASTIX_BIN, prev_fp, curr_fp, param_fp, output_subdir)
         commands.append(command)
 
     with Pool(limit) as p:
@@ -82,8 +91,12 @@ def parse_elastix(stack):
     Returns: a dictionary of key=filename, value = coordinates
     """
     fileLocationManager = FileLocationManager(stack)
-    filepath = fileLocationManager.cleaned
-    image_name_list = sorted(os.listdir(filepath))
+    #filepath = fileLocationManager.cleaned
+
+    DIR = '/data2/edward/DK39'
+    INPUT = os.path.join(DIR, 'normalized')
+
+    image_name_list = sorted(os.listdir(INPUT))
     midpoint = len(image_name_list) // 2
     anchor_idx = midpoint
     # anchor_idx = len(image_name_list) - 1
@@ -139,7 +152,10 @@ def run_offsets(stack, transforms, limit):
     Returns: nothing
     """
     fileLocationManager = FileLocationManager(stack)
-    inpath = fileLocationManager.cleaned
+    DIR = '/data2/edward/DK39'
+    INPUT = os.path.join(DIR, 'normalized')
+    #inpath = fileLocationManager.normalized
+    inpath = INPUT
     outpath = fileLocationManager.aligned
     commands = []
     warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'thumbnail')

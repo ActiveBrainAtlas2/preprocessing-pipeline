@@ -491,9 +491,9 @@ def make_mask(session, prep_id, file_id, max_width, max_height):
     del blob
     # scale and mask
     scaled, _max = scale_and_mask(img, closing)
-    #outpath = os.path.join(MASKED, file)
-    #closing = place_image(closing, max_width, max_height)
-    #cv2.imwrite(outpath, closing.astype('uint8'))
+    maskpath = os.path.join(MASKED, outfile)
+    closing = place_image(closing, max_width, max_height)
+    cv2.imwrite(maskpath, closing.astype('uint8'))
     del closing
     try:
         img = place_image(scaled, max_width, max_height)
@@ -503,11 +503,10 @@ def make_mask(session, prep_id, file_id, max_width, max_height):
 
     del scaled
 
-    """
+
     tilesize = 16
     clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(tilesize, tilesize))
     img = clahe.apply(img)
-    """
 
     outpath = os.path.join(OUTPUT, outpath)
     cv2.imwrite(outpath, img.astype('uint16'))

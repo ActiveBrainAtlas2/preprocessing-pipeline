@@ -16,8 +16,14 @@ from utilities.file_location import FileLocationManager
 
 def adapt(stack):
     fileLocationManager = FileLocationManager(stack)
-    INPUT = fileLocationManager.aligned
+    INPUT = fileLocationManager.cleaned
     OUTPUT = fileLocationManager.normalized
+
+    DIR = '/data2/edward/DK39'
+    INPUT = os.path.join(DIR, 'cleaned')
+    OUTPUT = os.path.join(DIR, 'normalized')
+
+
     image_name_list = sorted(os.listdir(INPUT))
 
     tilesize = 16
