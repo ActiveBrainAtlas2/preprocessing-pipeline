@@ -9,9 +9,9 @@ from tqdm import tqdm
 from collections import Counter
 stack = 'DK39'
 channel = 1
-#DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}'.format(stack)
-DIR = '/data2/edward/{}'.format(stack)
-INPUT = os.path.join(DIR, 'CH1')
+DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}'.format(stack)
+#DIR = '/data2/edward/{}'.format(stack)
+INPUT = os.path.join(DIR, 'preps', 'aligned')
 files = os.listdir(INPUT)
 lfiles = len(files)
 print(lfiles)
@@ -63,12 +63,12 @@ hist_values = [i/lfiles for i in hist_dict.values()]
 colors = {1:'b', 2:'r', 3:'g'}
 fig = plt.figure()
 plt.rcParams['figure.figsize'] = [10, 6]
-plt.bar(list(hist_dict.keys()), hist_values, colors = {1:'b', 2:'r', 3:'g'})
+plt.bar(list(hist_dict.keys()), hist_values, color = colors[channel])
 plt.yscale('log')
 plt.grid(axis='y', alpha=0.75)
 plt.xlabel('Value')
 plt.ylabel('Frequency')
-plt.title('{} {} @16bit with {} tif files'.format(stack, channel, lfiles))
+plt.title('{} channel {} @16bit with {} tif files'.format(stack, channel, lfiles))
 outfile = '{}_C{}.histogram.png'.format(stack, channel)
 fig.savefig(outfile, bbox_inches='tight')
 
