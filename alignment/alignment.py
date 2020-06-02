@@ -142,7 +142,7 @@ def run_offsets(stack, transforms, limit):
     Returns: nothing
     """
     fileLocationManager = FileLocationManager(stack)
-    INPUT = '/data2/edward/DK39/cleaned'
+    INPUT = '/data2/edward/DK39/normalized'
     #INPUT = fileLocationManager.cleaned
     #inpath = fileLocationManager.normalized
     #inpath = INPUT
@@ -162,7 +162,7 @@ def run_offsets(stack, transforms, limit):
                                                        'w': str(w), 'h': str(h)}
 
         #op_str += ' -crop 2001.0x1001.0+0.0+0.0\!'
-        op_str += ' -crop 1740.0x1040.0+0.0+0.0\!'
+        op_str += ' -crop 55700.0x33600.0+0.0+0.0\!'
 
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
