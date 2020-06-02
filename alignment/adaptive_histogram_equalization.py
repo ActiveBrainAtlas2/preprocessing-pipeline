@@ -11,7 +11,13 @@ import cv2
 from tqdm import tqdm
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
+from skimage import io
 
+def get_last_2d(data):
+    if data.ndim <= 2:
+        return data
+    m,n = data.shape[-2:]
+    return data.flat[:m*n].reshape(m,n)
 
 
 def adapt(stack):
@@ -29,7 +35,14 @@ def adapt(stack):
     tilesize = 16
     for i, file in enumerate(tqdm(image_name_list)):
         infile = os.path.join(INPUT, file)
-        img = cv2.imread(infile, -1)
+
+        try:
+            img = io.imread(infile)
+        except:
+            print('Could not open', infile)
+            return 0
+
+        img = get_last_2d(img)
         clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(tilesize, tilesize))
         img = clahe.apply(img)
         outpath = os.path.join(OUTPUT, file)
