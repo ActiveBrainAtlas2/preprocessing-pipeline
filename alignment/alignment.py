@@ -44,14 +44,7 @@ def run_elastix(stack, limit):
     Returns: nothing, just creates a lot of subdirs
     """
     fileLocationManager = FileLocationManager(stack)
-    #filepath = fileLocationManager.cleaned
-    DIR = '/data2/edward/DK39'
-
-    DIR = '/data2/edward/DK39'
-    INPUT = os.path.join(DIR, 'normalized')
-
-
-
+    INPUT = fileLocationManager.cleaned
 
     image_name_list = sorted(os.listdir(INPUT))
     elastix_output_dir = fileLocationManager.elastix_dir
@@ -91,10 +84,7 @@ def parse_elastix(stack):
     Returns: a dictionary of key=filename, value = coordinates
     """
     fileLocationManager = FileLocationManager(stack)
-    #filepath = fileLocationManager.cleaned
-
-    DIR = '/data2/edward/DK39'
-    INPUT = os.path.join(DIR, 'normalized')
+    INPUT = fileLocationManager.cleaned
 
     image_name_list = sorted(os.listdir(INPUT))
     midpoint = len(image_name_list) // 2
@@ -152,11 +142,11 @@ def run_offsets(stack, transforms, limit):
     Returns: nothing
     """
     fileLocationManager = FileLocationManager(stack)
-    DIR = '/data2/edward/DK39'
-    INPUT = os.path.join(DIR, 'normalized')
+    #DIR = '/data2/edward/DK39'
+    INPUT = fileLocationManager.cleaned
     #inpath = fileLocationManager.normalized
-    inpath = INPUT
-    outpath = fileLocationManager.aligned
+    #inpath = INPUT
+    OUTPUT = fileLocationManager.aligned
     commands = []
     warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'thumbnail')
     for file, arr in warp_transforms.items():
@@ -174,8 +164,8 @@ def run_offsets(stack, transforms, limit):
         #op_str += ' -crop 2001.0x1001.0+0.0+0.0\!'
         op_str += ' -crop 1740.0x1040.0+0.0+0.0\!'
 
-        input_fp = os.path.join(inpath, file)
-        output_fp = os.path.join(outpath, file)
+        input_fp = os.path.join(INPUT, file)
+        output_fp = os.path.join(OUTPUT, file)
         cmd = "convert %(input_fp)s  +repage -virtual-pixel background -background %(bg_color)s %(op_str)s -flatten -compress lzw \"%(output_fp)s\"" % \
                 {'op_str': op_str, 'input_fp': input_fp, 'output_fp': output_fp, 'bg_color': 'black'}
         commands.append(cmd)
