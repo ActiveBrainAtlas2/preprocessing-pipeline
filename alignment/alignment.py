@@ -142,13 +142,13 @@ def run_offsets(stack, transforms, limit):
     Returns: nothing
     """
     fileLocationManager = FileLocationManager(stack)
-    #DIR = '/data2/edward/DK39'
-    INPUT = fileLocationManager.cleaned
+    INPUT = '/data2/edward/DK39/cleaned'
+    #INPUT = fileLocationManager.cleaned
     #inpath = fileLocationManager.normalized
     #inpath = INPUT
     OUTPUT = fileLocationManager.aligned
     commands = []
-    warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'thumbnail')
+    warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'raw')
     for file, arr in warp_transforms.items():
         T = np.linalg.inv(arr)
         op_str = " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
