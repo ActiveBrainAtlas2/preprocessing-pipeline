@@ -10,6 +10,7 @@ import argparse
 import subprocess
 from multiprocessing.pool import Pool
 import numpy as np
+from collections import OrderedDict
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
@@ -149,7 +150,8 @@ def run_offsets(stack, transforms, limit):
     OUTPUT = fileLocationManager.aligned
     commands = []
     warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'raw')
-    for file, arr in warp_transforms.items():
+    ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
+    for file, arr in ordered_transforms.items():
         T = np.linalg.inv(arr)
         op_str = " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
             'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
