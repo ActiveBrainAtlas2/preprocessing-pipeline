@@ -38,3 +38,4 @@ class FileLocationManager(object):
         self.mouseatlas_tmp = os.path.join(self.brain_info, 'mouseatlas_tmp')
         self.masked = os.path.join(ROOT_DIR, stack, PREPS, 'masked')
         self.cleaned = os.path.join(ROOT_DIR, stack, PREPS, 'cleaned')
+        self.normalized = os.path.join(ROOT_DIR, stack, PREPS, 'normalized')

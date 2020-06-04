@@ -6,13 +6,11 @@ from os.path import expanduser
 from tqdm import tqdm
 HOME = expanduser("~")
 import os
-import cv2 as cv
+import cv2
 import pandas as pd
 
-
-
-#DIR = os.path.join(HOME, 'DK39')
 DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
+DIR = '/data2/edward/DK39'
 INPUT = os.path.join(DIR, 'CH1')
 CLEANED = os.path.join(DIR, 'cleaned')
 MASKED = os.path.join(DIR, 'masked')
@@ -82,9 +80,11 @@ def find_threshold(src):
     return min_point, thresh
 
 
+#max_width = 55700
+#max_height = 33600
 max_width = 1740
 max_height = 1050
-
+tilesize = 16
 
 for i, file in enumerate(tqdm(files)):
     infile = os.path.join(INPUT, file)
@@ -97,12 +97,12 @@ for i, file in enumerate(tqdm(files)):
     min_value, threshold = find_threshold(img)
     ###### Threshold it so it becomes binary
     # threshold = 272
-    ret, threshed = cv.threshold(img, threshold, 255, cv.THRESH_BINARY)
+    ret, threshed = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY)
     threshed = np.uint8(threshed)
     ###### Find connected elements
     # You need to choose 4 or 8 for connectivity type
     connectivity = 4
-    output = cv.connectedComponentsWithStats(threshed, connectivity, cv.CV_32S)
+    output = cv2.connectedComponentsWithStats(threshed, connectivity, cv2.CV_32S)
     # Get the results
     # The first cell is the number of labels
     num_labels = output[0]
@@ -119,17 +119,26 @@ for i, file in enumerate(tqdm(files)):
     blob = np.uint8(labels == blob_label) * 255
     # Perform morphological closing
     kernel10 = np.ones((10, 10), np.uint8)
-    closing = cv.morphologyEx(blob, cv.MORPH_CLOSE, kernel10, iterations=5)
+    closing = cv2.morphologyEx(blob, cv2.MORPH_CLOSE, kernel10, iterations=5)
     del blob
     # scale and mask
     scaled, _max = scale_and_mask(img, closing)
     outpath = os.path.join(MASKED, file)
     closing = place_image(closing, max_width, max_height)
-    cv.imwrite(outpath, closing.astype('uint8'))
+    cv2.imwrite(outpath, closing.astype('uint8'))
     del closing
-    img = place_image(scaled, max_width, max_height)
+    try:
+        img = place_image(scaled, max_width, max_height)
+    except:
+        print('Could not place image', infile, img.shape)
+        continue
+
     del scaled
     # img_outputs.append(img)
+    # adaptive histogram equalization
+    clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(tilesize, tilesize))
+    img = clahe.apply(img)
+
     outpath = os.path.join(CLEANED, file)
-    cv.imwrite(outpath, img.astype('uint16'))
+    cv2.imwrite(outpath, img.astype('uint16'))
 
