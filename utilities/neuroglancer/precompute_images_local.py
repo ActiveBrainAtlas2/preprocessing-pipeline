@@ -12,7 +12,7 @@ HOME = expanduser("~")
 #DIR = os.path.join(HOME, 'DK39')
 DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
 #NEUROGLANCER = os.path.join(DIR, 'neuroglancer')
-NEUROGLANCER = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/neuroglancer_data/CH1A'
+NEUROGLANCER = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/neuroglancer_data/CH1N'
 INPUT = os.path.join(DIR, 'aligned')
 
 def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):

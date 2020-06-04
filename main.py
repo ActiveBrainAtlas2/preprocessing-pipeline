@@ -34,17 +34,17 @@ if __name__ == '__main__':
     czi = False
     testing = False
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--prep_id', help='Enter the animal prep_id', required=True)
+    parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--czi', help='Enter True to process CZI dir', required=False)
     parser.add_argument('--image', help='Enter True to manipulate images', required=False)
     parser.add_argument('--limit', help='Enter the number of TIF files to process', required=False)
     parser.add_argument('--test', help='Enter True to test file creation', required=False)
     args = parser.parse_args()
-    prep_id = args.prep_id
+    animal = args.animal
     czi = args.czi
     image = args.image
     testing = args.test
     limit = args.limit or 10000
     limit = int(limit)
-    fetch_and_run(prep_id, limit, image, czi, testing)
+    fetch_and_run(animal, limit, image, czi, testing)
     #download(prep_id, session, engine)
