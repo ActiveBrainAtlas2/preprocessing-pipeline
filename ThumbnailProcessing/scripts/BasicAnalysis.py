@@ -14,6 +14,21 @@ def disp(image):
     im_type(image)
     imshow(image.T,'gray');
 
+strip_max=50; strip_min=10   # the range of width for the stripe
+def remove_strip(src):
+    projection=np.sum(src,axis=0)/10000.
+    diff=projection[1:]-projection[:-1]
+    loc,=np.nonzero(diff[-strip_max:-strip_min]>500)
+    mval=np.max(diff[-strip_max:-strip_min])
+    print('  ',mval,i,end=' ')
+    no_strip=np.copy(src)
+    if loc.shape[0]>0:
+        loc=np.min(loc)
+        from_end=strip_max-loc           
+        print(from_end,diff[-from_end-2:-from_end+2])
+        no_strip[:,-from_end-2:]=0 # mask the strip
+    return no_strip
+
 def find_threshold(src):
     fig = matplotlib.figure.Figure()
     ax = matplotlib.axes.Axes(fig, (0,0,0,0))
@@ -51,10 +66,12 @@ def scale_and_mask(src,mask,epsilon=0.01):
     scaled=scaled*(mask>10)
     return scaled,_max
 
-#thumbnail=sys.argv[1:]
 DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39'
 INPUT = os.path.join(DIR, 'preps', 'normalized')
+#INPUT = '../../../dk39_thumb/'
+
 thumbnail = sorted(os.listdir(INPUT))
+
 results=[]
 for i in range(len(thumbnail)):
 
@@ -62,10 +79,11 @@ for i in range(len(thumbnail)):
     ###### read image
     filepath = os.path.join(INPUT, thumbnail[i])
     src = cv2.imread(filepath,-1)
-    threshold = find_threshold(src)
+    no_strip = remove_strip(src)
 
     ###### Threshold it so it becomes binary
-    ret, threshed = cv2.threshold(src,threshold,255,cv2.THRESH_BINARY)
+    threshold = find_threshold(no_strip)
+    ret, threshed = cv2.threshold(no_strip,threshold,255,cv2.THRESH_BINARY)
     threshed=np.uint8(threshed)
 
     ###### Find connected elements
@@ -102,6 +120,7 @@ for i in range(len(thumbnail)):
     result={'index':i,
            'file':thumbnail[i],
            'src':src,
+           'no_strip':no_strip,
            'threshold':threshold,
            'blob':blob,
            'mask':closing,
