@@ -448,8 +448,8 @@ def make_mask(session, prep_id, file_id, max_width, max_height):
 
     OUTPUT = CLEANED
     rsection = session.query(RawSection).filter(RawSection.id==file_id).one()
-    #infile = os.path.join(INPUT, rsection.destination_file)
-    infile = '{}.tif'.format(str(rsection.section_number).zfill(3))
+    infile = rsection.destination_file
+    #infile = '{}.tif'.format(str(rsection.section_number).zfill(3))
     inpath = os.path.join(INPUT, infile)
     outfile = '{}.tif'.format(str(rsection.section_number).zfill(3))
     outpath = os.path.join(OUTPUT, outfile)
