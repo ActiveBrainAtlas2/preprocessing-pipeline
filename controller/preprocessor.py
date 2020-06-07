@@ -440,7 +440,9 @@ def make_mask(session, prep_id, file_id, max_width, max_height):
     slide_processor = SlideProcessor(prep_id, session)
 
     DIR = '/data2/edward/DK39'
-    INPUT = os.path.join(DIR, 'CH1')
+    ##### TESTING #####
+    DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
+    INPUT = '/data2/edward/DK39/CH1'
     CLEANED = os.path.join(DIR, 'cleaned')
     MASKED = os.path.join(DIR, 'masked')
 
@@ -451,10 +453,10 @@ def make_mask(session, prep_id, file_id, max_width, max_height):
     inpath = os.path.join(INPUT, infile)
     outfile = '{}.tif'.format(str(rsection.section_number).zfill(3))
     outpath = os.path.join(OUTPUT, outfile)
+    maskpath = os.path.join(MASKED, outfile)
 
-    if os.path.exists(outpath):
+    if os.path.exists(outpath) and os.path.exists(maskpath):
         return 1
-
 
     try:
         img = io.imread(inpath)
@@ -491,10 +493,12 @@ def make_mask(session, prep_id, file_id, max_width, max_height):
     del blob
     # scale and mask
     scaled, _max = scale_and_mask(img, closing)
-    maskpath = os.path.join(MASKED, outfile)
-    closing = place_image(closing, max_width, max_height)
+    #####closing = place_image(closing, max_width, max_height)
     cv2.imwrite(maskpath, closing.astype('uint8'))
     del closing
+    ##### TESTING #####
+    return 1
+
     try:
         img = place_image(scaled, max_width, max_height)
     except:
