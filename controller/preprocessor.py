@@ -519,3 +519,11 @@ def make_mask(session, prep_id, file_id, max_width, max_height):
 
     return 1
 
+
+def clean_with_mask(session, prep_id, file_id, max_width, max_height):
+    slide_processor = SlideProcessor(prep_id, session)
+
+    DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
+    #####INPUT = slide_processor.fileLocationManager.tif
+    MASKED = os.path.join(DIR, 'masked')
+    return 1
