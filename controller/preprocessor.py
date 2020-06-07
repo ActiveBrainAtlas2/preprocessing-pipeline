@@ -442,14 +442,15 @@ def make_mask(session, prep_id, file_id, max_width, max_height):
     DIR = '/data2/edward/DK39'
     ##### TESTING #####
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
-    INPUT = slide_processor.fileLocationManager.tif
+    #####INPUT = slide_processor.fileLocationManager.tif
+    INPUT = '/data2/edward/DK39/CH1'
     CLEANED = os.path.join(DIR, 'cleaned')
     MASKED = os.path.join(DIR, 'masked')
 
     OUTPUT = CLEANED
     rsection = session.query(RawSection).filter(RawSection.id==file_id).one()
-    infile = rsection.destination_file
-    #infile = '{}.tif'.format(str(rsection.section_number).zfill(3))
+    #infile = rsection.destination_file
+    infile = '{}.tif'.format(str(rsection.section_number).zfill(3))
     inpath = os.path.join(INPUT, infile)
     outfile = '{}.tif'.format(str(rsection.section_number).zfill(3))
     outpath = os.path.join(OUTPUT, outfile)
