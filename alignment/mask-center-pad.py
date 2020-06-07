@@ -10,8 +10,7 @@ import cv2
 import pandas as pd
 
 DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
-DIR = '/data2/edward/DK39'
-INPUT = os.path.join(DIR, 'CH1')
+INPUT = os.path.join(DIR, 'CH2')
 CLEANED = os.path.join(DIR, 'cleaned')
 MASKED = os.path.join(DIR, 'masked')
 files = sorted(os.listdir(INPUT))
@@ -82,8 +81,8 @@ def find_threshold(src):
 
 #max_width = 55700
 #max_height = 33600
-max_width = 1740
-max_height = 1050
+max_width = 1050
+max_height = 1740
 tilesize = 16
 
 for i, file in enumerate(tqdm(files)):
@@ -134,10 +133,11 @@ for i, file in enumerate(tqdm(files)):
         continue
 
     del scaled
+
     # img_outputs.append(img)
     # adaptive histogram equalization
-    clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(tilesize, tilesize))
-    img = clahe.apply(img)
+    #####clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(tilesize, tilesize))
+    #####img = clahe.apply(img)
 
     outpath = os.path.join(CLEANED, file)
     cv2.imwrite(outpath, img.astype('uint16'))

@@ -11,13 +11,10 @@ stack = 'DK39'
 channel = 1
 DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}'.format(stack)
 #DIR = '/data2/edward/{}'.format(stack)
-INPUT = os.path.join(DIR, 'preps', 'aligned')
+INPUT = os.path.join(DIR, 'preps', 'cleaned')
 files = os.listdir(INPUT)
 lfiles = len(files)
-print(lfiles)
-
-
-
+print('Working on {} files'.format(lfiles))
 
 hist_dict = Counter({})
 for file in tqdm(files):
@@ -71,5 +68,5 @@ plt.ylabel('Frequency')
 plt.title('{} channel {} @16bit with {} tif files'.format(stack, channel, lfiles))
 outfile = '{}_C{}.histogram.png'.format(stack, channel)
 fig.savefig(outfile, bbox_inches='tight')
-
+print('Finished')
 

@@ -37,3 +37,9 @@
   	}
 
 }
+
+
+// add a histogram control for the current view
+// get translation what is the number represent? everything should be in terms of microns and degrees.
+// get names associated with shaped colors
+// find midbrain, and move x microns from there to a landmark.
