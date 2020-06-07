@@ -442,7 +442,7 @@ def make_mask(session, prep_id, file_id, max_width, max_height):
     DIR = '/data2/edward/DK39'
     ##### TESTING #####
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
-    INPUT = '/data2/edward/DK39/CH1'
+    INPUT = slide_processor.fileLocationManager.tif
     CLEANED = os.path.join(DIR, 'cleaned')
     MASKED = os.path.join(DIR, 'masked')
 
