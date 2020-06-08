@@ -4,7 +4,7 @@ import pandas as pd
 import json
 from skimage import io
 import subprocess
-import tables
+#import tables
 import configparser
 #import bloscpack as bp
 import pickle
@@ -289,9 +289,11 @@ def load_hdf(fn, key='data'):
     """
     Used by loading features.
     """
+    """
     with tables.open_file(fn, mode="r") as f:
         data = f.get_node('/'+key).read()
     return data
+    """
 
 def load_hdf_v2(fn, key='data'):
     return pd.read_hdf(fn, key)
