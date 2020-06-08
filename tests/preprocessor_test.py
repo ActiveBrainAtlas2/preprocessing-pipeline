@@ -88,8 +88,6 @@ def fix_prep_thumbnail(animal):
 
 def test_tif(animal):
     sqlController = SqlController()
-    stack_metadata = sqlController.generate_stack_metadata()
-    animals = list(stack_metadata.keys())
     checks = ['tif', 'histogram', 'prep_thumbnail', 'web thumbnail']
     fileLocationManager = FileLocationManager(animal)
     # tifs
@@ -114,10 +112,10 @@ def test_tif(animal):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--prep_id', help='Enter the animal prep_id', required=True)
+    parser.add_argument('--animal', help='Enter the animal ID', required=True)
     args = parser.parse_args()
-    prep_id = args.prep_id
-    test_tif(prep_id)
-    #fix_tifs(prep_id)
-    #fix_prep_thumbnail(prep_id)
-    #test_tif(prep_id)
+    animal = args.animal
+    test_tif(animal)
+    #fix_tifs(animal)
+    #fix_prep_thumbnail(animal)
+    #test_tif(animal)

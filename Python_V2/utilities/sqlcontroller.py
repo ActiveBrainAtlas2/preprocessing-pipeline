@@ -1,5 +1,6 @@
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
+import os
 from _collections import OrderedDict
 from model.animal import Animal
 from model.histology import Histology
@@ -9,7 +10,7 @@ from model.slide import Slide
 from model.slide_czi_to_tif import SlideCziTif
 from model.task import Task, ProgressLookup
 from sql_setup import dj, database, session
-#from utilities.metadata import ROOT_DIR
+from utilities.metadata import ROOT_DIR
 
 TIF = 'tif'
 HIS = 'histogram'
@@ -40,15 +41,15 @@ class SqlController(object):
         self.valid_sections = OrderedDict()
         # fill up the metadata_cache variable
 
-    def generate_stack_metadataXXX(self):
+    def generate_stack_metadata(self):
         """
-        This should be deprecated
         There must be an entry in both the animal and histology and task tables
         The task table is necessary as that is filled when the CZI dir is scanned.
         If there are no czi and tif files, there is no point in running the pipeline on that stack
         Returns:
             a dictionary of stack information
 
+        """
         for a, h in session.query(Animal, Histology).filter(Animal.prep_id == Histology.prep_id).all():
             resolution = session.query(func.max(ScanRun.resolution)).filter(ScanRun.prep_id == a.prep_id).scalar()
 
@@ -60,7 +61,6 @@ class SqlController(object):
                                                   'resolution': resolution,
                                                   'section_thickness': h.section_thickness}
         return self.stack_metadata
-        """
 
     def get_animal_info(self, stack):
         self.animal = self.session.query(Animal).filter(Animal.prep_id == stack).one()
