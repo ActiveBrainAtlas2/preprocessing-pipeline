@@ -1,7 +1,7 @@
 1. Create:
- a. CH2/aligned
- b. CH2/input
- c. CH2/cleaned
+    a. CH2/aligned
+    a. CH2/input
+    a. CH2/cleaned
 1. Same for CH3
 1. Rotate from tif dir to CH2/input  for CH2 and CH3
 1. create masks from CH1 to preps/masked

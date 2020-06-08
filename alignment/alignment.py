@@ -145,7 +145,7 @@ def run_offsets(stack, transforms, channel):
     """
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
-    INPUT = os.path.join(DIR,  channel_dir, 'input')
+    INPUT = os.path.join(DIR,  channel_dir, 'cleaned')
     OUTPUT = os.path.join(DIR, channel_dir, 'aligned')
 
     warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'raw')
