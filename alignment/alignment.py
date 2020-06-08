@@ -11,6 +11,7 @@ import subprocess
 from multiprocessing.pool import Pool
 import numpy as np
 from collections import OrderedDict
+from tqdm import tqdm
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
@@ -132,7 +133,7 @@ def create_warp_transforms(stack, transforms, transforms_resol, resol):
     return transforms_to_anchor
 
 
-def run_offsets(stack, transforms, limit):
+def run_offsets(stack, transforms, channel):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -142,16 +143,14 @@ def run_offsets(stack, transforms, limit):
         limit: number of jobs
     Returns: nothing
     """
-    fileLocationManager = FileLocationManager(stack)
-    INPUT = '/data2/edward/DK39/normalized'
-    #INPUT = fileLocationManager.cleaned
-    #inpath = fileLocationManager.normalized
-    #inpath = INPUT
-    OUTPUT = fileLocationManager.aligned
-    commands = []
+    channel_dir = 'CH{}'.format(channel)
+    DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
+    INPUT = os.path.join(DIR,  channel_dir, 'input')
+    OUTPUT = os.path.join(DIR, channel_dir, 'aligned')
+
     warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'raw')
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
-    for file, arr in ordered_transforms.items():
+    for file, arr in tqdm(ordered_transforms.items()):
         T = np.linalg.inv(arr)
         op_str = " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
             'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
@@ -170,19 +169,24 @@ def run_offsets(stack, transforms, limit):
         output_fp = os.path.join(OUTPUT, file)
         cmd = "convert %(input_fp)s  +repage -virtual-pixel background -background %(bg_color)s %(op_str)s -flatten -compress lzw \"%(output_fp)s\"" % \
                 {'op_str': op_str, 'input_fp': input_fp, 'output_fp': output_fp, 'bg_color': 'black'}
-        commands.append(cmd)
 
-    with Pool(limit) as p:
-        p.map(workershell, commands)
+        stderr_template = os.path.join(os.getcwd(), 'alignment.err.log')
+        stdout_template = os.path.join(os.getcwd(), 'alignment.log')
+        stdout_f = open(stdout_template, "w")
+        stderr_f = open(stderr_template, "w")
+        p = subprocess.Popen(cmd, shell=True, stderr=stderr_f, stdout=stdout_f)
+        p.wait()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
-    parser.add_argument('--njobs', help='How many processes to spawn', default=12)
+    parser.add_argument('--njobs', help='How many processes to spawn', default=12, required=False)
+    parser.add_argument('--channel', help='Enter channel', required=True)
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
+    channel = args.channel
     run_elastix(animal, njobs)
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, njobs)
+    run_offsets(animal, transforms, channel)
