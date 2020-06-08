@@ -57,7 +57,6 @@ def masker(animal, channel):
             print('Could not open', infile)
             continue
         img = get_last_2d(img)
-        infile = os.path.join(INPUT, file)
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
         mask16 = np.copy(mask).astype('uint16')
