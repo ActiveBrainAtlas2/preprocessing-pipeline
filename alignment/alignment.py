@@ -46,7 +46,8 @@ def run_elastix(stack, limit):
     Returns: nothing, just creates a lot of subdirs
     """
     fileLocationManager = FileLocationManager(stack)
-    INPUT = fileLocationManager.cleaned
+    DIR = fileLocationManager.prep
+    INPUT = os.path.join(DIR, 'CH1', 'cleaned')
 
     image_name_list = sorted(os.listdir(INPUT))
     elastix_output_dir = fileLocationManager.elastix_dir
@@ -86,7 +87,8 @@ def parse_elastix(stack):
     Returns: a dictionary of key=filename, value = coordinates
     """
     fileLocationManager = FileLocationManager(stack)
-    INPUT = fileLocationManager.cleaned
+    DIR = fileLocationManager.prep
+    INPUT = os.path.join(DIR, 'CH1', 'cleaned')
 
     image_name_list = sorted(os.listdir(INPUT))
     midpoint = len(image_name_list) // 2
@@ -181,7 +183,7 @@ def run_offsets(stack, transforms, channel):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
-    parser.add_argument('--njobs', help='How many processes to spawn', default=12, required=False)
+    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     parser.add_argument('--channel', help='Enter channel', required=True)
     args = parser.parse_args()
     animal = args.animal

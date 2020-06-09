@@ -39,3 +39,4 @@ class FileLocationManager(object):
         self.masked = os.path.join(ROOT_DIR, stack, PREPS, 'masked')
         self.cleaned = os.path.join(ROOT_DIR, stack, PREPS, 'cleaned')
         self.normalized = os.path.join(ROOT_DIR, stack, PREPS, 'normalized')
+        self.prep = os.path.join(ROOT_DIR, stack, PREPS)
