@@ -150,7 +150,7 @@ def run_offsets(stack, transforms, channel):
     INPUT = os.path.join(DIR,  channel_dir, 'cleaned')
     OUTPUT = os.path.join(DIR, channel_dir, 'aligned')
 
-    warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'raw')
+    warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'thumbnail')
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
     for file, arr in tqdm(ordered_transforms.items()):
         T = np.linalg.inv(arr)
@@ -165,7 +165,9 @@ def run_offsets(stack, transforms, channel):
                                                        'w': str(w), 'h': str(h)}
 
         #op_str += ' -crop 2001.0x1001.0+0.0+0.0\!'
-        op_str += ' -crop 55700.0x33600.0+0.0+0.0\!'
+        width = 710
+        height = 610
+        op_str += ' -crop {}x{}+0.0+0.0\!'.format(width, height)
 
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
