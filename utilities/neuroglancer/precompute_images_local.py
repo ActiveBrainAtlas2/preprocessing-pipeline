@@ -65,7 +65,7 @@ def run_neuroglancer(animal, channel):
     NEUROGLANCER = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/neuroglancer_data/CH{}N'.format(animal, channel)
     print(INPUT)
     print(NEUROGLANCER)
-    #convert_to_precomputed(INPUT, NEUROGLANCER)
+    convert_to_precomputed(INPUT, NEUROGLANCER)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Work on Animal')
