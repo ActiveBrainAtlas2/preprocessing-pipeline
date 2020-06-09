@@ -1,9 +1,7 @@
 """
 This file does the following operations:
     1. fetches the files needed to process.
-    2. runs the files in sequence through elastix
-    3. parses the results from the elastix output file
-    4. Sends those results to the Imagemagick convert program with the correct offsets and crop
+    2. runs the files from the cleaned/masked dir through opencv adaptive histogram equalization method
 """
 import os, sys
 import argparse
@@ -14,6 +12,14 @@ from utilities.file_location import FileLocationManager
 from skimage import io
 
 def get_last_2d(data):
+    """
+    Some of the tifs are in a shape of (1,1,R,C). This method just works on the rows
+    and columns and gets those last two dimensions.
+    Args:
+        data: incoming tif file
+
+    Returns: a numpy array with 2 dimensions
+    """
     if data.ndim <= 2:
         return data
     m,n = data.shape[-2:]
@@ -21,15 +27,16 @@ def get_last_2d(data):
 
 
 def adapt(stack):
+    """
+    This method takes a tif file and runs it through opencv's adaptive equalization method.
+    Currently just working on the counter stain channel.
+    Args:
+        stack: the animal ID
+    Returns: nothing, but writes the new image to disk. To the normalized directory
+    """
     fileLocationManager = FileLocationManager(stack)
     INPUT = fileLocationManager.cleaned
     OUTPUT = fileLocationManager.normalized
-
-    DIR = '/data2/edward/DK39'
-    INPUT = os.path.join(DIR, 'cleaned')
-    OUTPUT = os.path.join(DIR, 'normalized')
-
-
     image_name_list = sorted(os.listdir(INPUT))
 
     tilesize = 16
