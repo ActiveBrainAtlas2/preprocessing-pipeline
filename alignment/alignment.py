@@ -165,9 +165,9 @@ def run_offsets(stack, transforms, channel):
                                                        'w': str(w), 'h': str(h)}
 
         #op_str += ' -crop 2001.0x1001.0+0.0+0.0\!'
-        width = 710
-        height = 610
-        op_str += ' -crop {}x{}+0.0+0.0\!'.format(width, height)
+        max_width = 1740
+        max_height = 1050
+        op_str += ' -crop {}x{}+0.0+0.0\!'.format(max_width, max_height)
 
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)

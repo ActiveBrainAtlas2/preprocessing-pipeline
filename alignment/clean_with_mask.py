@@ -1,3 +1,7 @@
+"""
+This is for cleaning/masking channel 2 and channel 3 from the mask created
+on channel 1
+"""
 import argparse
 
 import numpy as np

@@ -5,15 +5,24 @@ from skimage import io
 from os.path import expanduser
 from tqdm import tqdm
 HOME = expanduser("~")
-import os
+import os, sys
 import cv2
 import pandas as pd
 
-DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
-INPUT = os.path.join(DIR, 'CH2')
-CLEANED = os.path.join(DIR, 'cleaned')
-MASKED = os.path.join(DIR, 'masked')
+DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK43/preps'
+INPUT = os.path.join(DIR, 'CH1', 'thumbnail')
+OUTPUT = os.path.join(DIR, 'CH1', 'cleaned')
+MASKED = os.path.join(DIR, 'CH1', 'masked')
 files = sorted(os.listdir(INPUT))
+lfiles = len(files)
+print(len(files))
+if lfiles < 1:
+    sys.exit()
+
+print('Input dir', INPUT)
+print('output dir', OUTPUT)
+print('mask dir', MASKED)
+
 
 
 def get_last_2d(data):
@@ -78,6 +87,11 @@ def find_threshold(src):
     thresh = (min_point * 64000 / 360)
     return min_point, thresh
 
+def crop_bar(img):
+    r,c = img.shape
+    fill = c - ( c // 14)
+    img[:, fill:c] = 0
+    return img
 
 #max_width = 55700
 #max_height = 33600
@@ -93,6 +107,8 @@ for i, file in enumerate(tqdm(files)):
         print('Could not open', infile)
         continue
     img = get_last_2d(img)
+    img = crop_bar(img)
+
     min_value, threshold = find_threshold(img)
     ###### Threshold it so it becomes binary
     # threshold = 272
@@ -139,6 +155,6 @@ for i, file in enumerate(tqdm(files)):
     #####clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(tilesize, tilesize))
     #####img = clahe.apply(img)
 
-    outpath = os.path.join(CLEANED, file)
+    outpath = os.path.join(OUTPUT, file)
     cv2.imwrite(outpath, img.astype('uint16'))
 
