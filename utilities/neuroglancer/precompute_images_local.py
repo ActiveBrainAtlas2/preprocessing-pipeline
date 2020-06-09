@@ -1,5 +1,5 @@
+import argparse
 import os
-import sys
 import json
 from skimage import io
 from neuroglancer_scripts.scripts import (generate_scales_info,
@@ -9,11 +9,6 @@ from neuroglancer_scripts.scripts import (generate_scales_info,
 from os.path import expanduser
 HOME = expanduser("~")
 
-#DIR = os.path.join(HOME, 'DK39')
-DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
-#NEUROGLANCER = os.path.join(DIR, 'neuroglancer')
-NEUROGLANCER = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/neuroglancer_data/CH1N'
-INPUT = os.path.join(DIR, 'aligned')
 
 def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
 
@@ -63,8 +58,21 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
 
 
 
-def main(argv=sys.argv):
-    convert_to_precomputed(INPUT, NEUROGLANCER)
+def run_neuroglancer(animal, channel):
+    channel_dir = 'CH{}'.format(channel)
+    DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
+    INPUT = os.path.join(DIR, channel_dir, 'aligned')
+    NEUROGLANCER = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/neuroglancer_data/CH{}N'.format(animal, channel)
+    print(INPUT)
+    print(NEUROGLANCER)
+    #convert_to_precomputed(INPUT, NEUROGLANCER)
 
 if __name__ == "__main__":
-    sys.exit(main())
+    parser = argparse.ArgumentParser(description='Work on Animal')
+    parser.add_argument('--animal', help='Enter the animal animal', required=True)
+    parser.add_argument('--channel', help='Enter channel', required=True)
+    args = parser.parse_args()
+    animal = args.animal
+    channel = args.channel
+    run_neuroglancer(animal, channel)
+
