@@ -582,9 +582,8 @@ def convert_resolution_string_to_voxel_size(stack, resolution):
     Returns:
         voxel/pixel size in microns.
     """
-    #####sqlController.get_animal_info(stack)
-    #####planar_resolution = sqlController.scan_run.resolution
-    planar_resolution = 0.325
+    sqlController.get_animal_info(stack)
+    planar_resolution = sqlController.scan_run.resolution
     assert resolution is not None, 'Resolution argument cannot be None.'
 
     if resolution in ['down32', 'thumbnail']:
