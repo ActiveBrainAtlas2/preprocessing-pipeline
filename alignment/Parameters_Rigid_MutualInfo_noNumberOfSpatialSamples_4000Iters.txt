@@ -147,7 +147,7 @@
 (FinalBSplineInterpolationOrder 3)
 
 //Default pixel value for pixels that come from outside the picture:
-(DefaultPixelValue 0)
+(DefaultPixelValue 93)
 
 // Choose whether to generate the deformed moving image.
 // You can save some time by setting this to false, if you are
