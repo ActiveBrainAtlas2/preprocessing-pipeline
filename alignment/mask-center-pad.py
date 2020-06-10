@@ -9,6 +9,9 @@ import os, sys
 import cv2
 import pandas as pd
 
+sys.path.append(os.path.join(os.getcwd(), '../'))
+from utilities.alignment_utility import get_last_2d, place_image
+
 DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK43/preps'
 INPUT = os.path.join(DIR, 'CH1', 'thumbnail')
 OUTPUT = os.path.join(DIR, 'CH1', 'cleaned')
@@ -22,30 +25,6 @@ if lfiles < 1:
 print('Input dir', INPUT)
 print('output dir', OUTPUT)
 print('mask dir', MASKED)
-
-
-
-def get_last_2d(data):
-    if data.ndim <= 2:
-        return data
-    m,n = data.shape[-2:]
-    return data.flat[:m*n].reshape(m,n)
-
-
-def place_image(img, max_width, max_height):
-    zmidr = max_height // 2
-    zmidc = max_width // 2
-    startr = zmidr - (img.shape[0] // 2)
-    endr = startr + img.shape[0]
-    startc = zmidc - (img.shape[1] // 2)
-    endc = startc + img.shape[1]
-    new_img = np.zeros([max_height, max_width])
-    try:
-        new_img[startr:endr, startc:endc] = img
-    except:
-        print('could not create new img', file)
-
-    return new_img.astype('uint16')
 
 
 def find_main_blob(stats, image):
@@ -139,11 +118,10 @@ for i, file in enumerate(tqdm(files)):
     # scale and mask
     scaled, _max = scale_and_mask(img, closing)
     outpath = os.path.join(MASKED, file)
-    closing = place_image(closing, max_width, max_height)
     cv2.imwrite(outpath, closing.astype('uint8'))
     del closing
     try:
-        img = place_image(scaled, max_width, max_height)
+        img = place_image(scaled, file, max_width, max_height)
     except:
         print('Could not place image', infile, img.shape)
         continue

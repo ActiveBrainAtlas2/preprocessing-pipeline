@@ -625,3 +625,34 @@ def convert_2d_transform_forms(transform, out_form):
                 transform = ','.join(map(str, transform[:2].flatten()))
 
     return transform
+
+
+def get_last_2d(data):
+    if data.ndim <= 2:
+        return data
+    m,n = data.shape[-2:]
+    return data.flat[:m*n].reshape(m,n)
+
+
+def place_image(img, file, max_width, max_height):
+    zmidr = max_height // 2
+    zmidc = max_width // 2
+    startr = zmidr - (img.shape[0] // 2)
+    endr = startr + img.shape[0]
+    startc = zmidc - (img.shape[1] // 2)
+    endc = startc + img.shape[1]
+    new_img = np.zeros([max_height, max_width])
+    try:
+        new_img[startr:endr, startc:endc] = img
+    except:
+        print('could not create new img', file)
+
+    return new_img.astype('uint16')
+
+
+def rotate_image(img, file, rotation):
+    try:
+        img = np.rot90(img, rotation)
+    except:
+        print('Could not rotate', file)
+    return img
