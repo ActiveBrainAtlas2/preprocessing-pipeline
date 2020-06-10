@@ -1,10 +1,10 @@
 ### New Brain
 ## Post TIF Creation Process
-1. Create thumbnails on all channels
-1. Create cleaned images and masks on CH1
-1. Run masks against CH2 and CH3
-1. Rotate all channels
-1. Run alignment on thumbnail CH1
+1. Create thumbnails on all channels- Litao's new script
+1. Create cleaned images and masks on CH1 - mask-center-pad.py
+1. Run masks against CH2 and CH3 - clean_with_mask.py
+1. Rotate all channels - clean_with_mask.py
+1. Run alignment on thumbnail CH1 - alignment.py
 1. Use alignment results from CH1 to align thumbnail CH2 and CH3
 1. Run neuroglancer on all aligned thumbnail dirs
 1. Test viewing with neuroglancer
