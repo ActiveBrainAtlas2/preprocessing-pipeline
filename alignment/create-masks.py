@@ -22,11 +22,6 @@ print(len(files))
 if lfiles < 1:
     sys.exit()
 
-print('Input dir', INPUT)
-print('output dir', OUTPUT)
-print('mask dir', MASKED)
-
-
 def find_main_blob(stats, image):
     height, width = image.shape
     df = pd.DataFrame(stats)
@@ -71,28 +66,15 @@ def remove_strip(src):
     diff=projection[1:]-projection[:-1]
     loc,=np.nonzero(diff[-strip_max:-strip_min]>50)
     mval=np.max(diff[-strip_max:-strip_min])
-    #print('  ',mval,i,end=' ')
     no_strip=np.copy(src)
     fe = 0
     if loc.shape[0]>0:
         loc=np.min(loc)
         from_end=strip_max-loc
-        #print(from_end,diff[-from_end-2:-from_end+2])
-        fe = -from_end-2
-        no_strip[:,-from_end-2:]=0 # mask the strip
+        fe = -from_end - 2
+        no_strip[:,fe:]=0 # mask the strip
     return no_strip, fe
 
-def crop_bar(img):
-    r,c = img.shape
-    fill = c - ( c // 14)
-    img[:, fill:c] = 0
-    return img
-
-#max_width = 55700
-#max_height = 33600
-max_width = 1050
-max_height = 1740
-tilesize = 16
 
 for i, file in enumerate(tqdm(files)):
     infile = os.path.join(INPUT, file)
@@ -134,29 +116,12 @@ for i, file in enumerate(tqdm(files)):
     if fe != 0:
         img[:,fe:]=0 # mask the strip
     # scale and mask
-    try:
-        scaled, _max = scale_and_mask(img, closing)
-    except:
-        print(min_value, threshold, file)
-
+    scaled, _max = scale_and_mask(img, closing)
+    # save the mask
     outpath = os.path.join(MASKED, file)
     cv2.imwrite(outpath, closing.astype('uint8'))
-    continue
 
-    del closing
-    try:
-        img = place_image(scaled, file, max_width, max_height)
-    except:
-        print('Could not place image', infile, img.shape)
-        continue
-
-    del scaled
-
-    # img_outputs.append(img)
-    # adaptive histogram equalization
-    #####clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(tilesize, tilesize))
-    #####img = clahe.apply(img)
-
+    # save the good scaled as CH1
     outpath = os.path.join(OUTPUT, file)
-    cv2.imwrite(outpath, img.astype('uint16'))
+    cv2.imwrite(outpath, scaled.astype('uint16'))
 

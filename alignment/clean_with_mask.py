@@ -1,6 +1,7 @@
 """
 This is for cleaning/masking channel 2 and channel 3 from the mask created
-on channel 1
+on channel 1. It works on channel one also, but since that is already cleaned and
+normalized, it will just to the rotation and flip
 """
 import argparse
 
@@ -20,10 +21,15 @@ def masker(animal, channel, flip=False, rotation=0):
 
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
-    INPUT = os.path.join(DIR,  channel_dir, 'thumbnail')
     CLEANED = os.path.join(DIR, channel_dir, 'cleaned')
+    # channel one is already cleaned from the mask process
+    if channel > 1:
+        INPUT = os.path.join(DIR,  channel_dir, 'thumbnail')
+    else:
+        INPUT = CLEANED
 
-    MASKS = os.path.join(DIR, 'CH1', 'masked')
+
+    MASKS = os.path.join(DIR, 'masked')
     files = sorted(os.listdir(INPUT))
 
     #max_width = 55700
@@ -39,11 +45,15 @@ def masker(animal, channel, flip=False, rotation=0):
             print('Could not open', infile)
             continue
         img = get_last_2d(img)
-        maskfile = os.path.join(MASKS, file)
-        mask = io.imread(maskfile)
-        mask16 = np.copy(mask).astype('uint16')
-        mask16[mask16 > 0] = 2**16-1
-        fixed = cv2.bitwise_and(img, mask16)
+        if channel > 1:
+            maskfile = os.path.join(MASKS, file)
+            mask = io.imread(maskfile)
+            mask16 = np.copy(mask).astype('uint16')
+            mask16[mask16 > 0] = 2**16-1
+            fixed = cv2.bitwise_and(img, mask16)
+        else:
+            fixed = np.copy(img)
+            del img
 
         if rotation > 0:
             fixed = rotate_image(fixed, file, rotation)
@@ -71,7 +81,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     animal = args.animal
-    channel = args.channel
+    channel = int(args.channel)
     flip = args.flip
     rotation = int(args.rotation)
     masker(animal, channel, flip, rotation)
