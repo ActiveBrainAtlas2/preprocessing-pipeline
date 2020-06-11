@@ -12,12 +12,15 @@
 1. Run neuroglancer on all 3 big aligned directories
 1. View finished product in neuroglancer
 
-first group of yellows get taken out.
-rm 385 and replace with 384
-stopped at 268
+### Actual scripts run on DK43 for 3 channels for Neuroglancer
 
-do both
-# 0.33 microns per pixel
-a brain is one cm
-0.33 by 0.33 by 20microns
-20 microns * 450 sections is about a CM
+1. python create-masks.py 
+1. python clean_with_mask.py --animal DK43 --channel 1 --rotation 1 --flip flop
+1. python clean_with_mask.py --animal DK43 --channel 2 --rotation 1 --flip flop
+1. python clean_with_mask.py --animal DK43 --channel 3 --rotation 1 --flip flop
+1. python alignment.py --animal DK43 --njobs 10 --channel 1
+1. python alignment.py --animal DK43 --njobs 10 --channel 2
+1. python alignment.py --animal DK43 --njobs 10 --channel 3
+1. python precompute_images_local.py --animal DK43 --channel 1 --resolution thumb
+1. python precompute_images_local.py --animal DK43 --channel 2 --resolution thumb
+1. python precompute_images_local.py --animal DK43 --channel 3 --resolution thumb
