@@ -15,6 +15,9 @@
 ### Actual scripts run on DK43 for 3 channels for Neuroglancer
 
 1. python create-masks.py 
+1. Visually inspect files in the: /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/cleaned
+to determine which way to rotate and/or flip. Also get the maximum width and height with:
+for i in *.tif; do identify $i; done | awk '{print $4}' | sort -n
 1. python clean_with_mask.py --animal DK43 --channel 1 --rotation 1 --flip flop
 1. python clean_with_mask.py --animal DK43 --channel 2 --rotation 1 --flip flop
 1. python clean_with_mask.py --animal DK43 --channel 3 --rotation 1 --flip flop

@@ -12,7 +12,7 @@ import pandas as pd
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.alignment_utility import get_last_2d, place_image
 
-DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK43/preps'
+DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
 INPUT = os.path.join(DIR, 'CH1', 'thumbnail')
 OUTPUT = os.path.join(DIR, 'CH1', 'cleaned')
 MASKED = os.path.join(DIR, 'masked')
@@ -57,7 +57,7 @@ def find_threshold(src):
     del ax, fig
     min_point = np.argmin(n[:5])
     min_point = int(min(2, min_point))
-    thresh = (min_point * 64000 / 360) + 300
+    thresh = (min_point * 64000 / 360) + 100
     return min_point, thresh
 
 strip_max=70; strip_min=5   # the range of width for the stripe
