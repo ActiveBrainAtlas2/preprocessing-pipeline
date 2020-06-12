@@ -135,7 +135,7 @@ def create_warp_transforms(stack, transforms, transforms_resol, resol):
     return transforms_to_anchor
 
 
-def run_offsets(stack, transforms, channel):
+def run_offsets(stack, transforms, channel, bgcolor):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -165,14 +165,14 @@ def run_offsets(stack, transforms, channel):
                                                        'w': str(w), 'h': str(h)}
 
         #op_str += ' -crop 2001.0x1001.0+0.0+0.0\!'
-        max_width = 1740
-        max_height = 1050
+        max_width = 1400
+        max_height = 900
         op_str += ' -crop {}x{}+0.0+0.0\!'.format(max_width, max_height)
 
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
         cmd = "convert %(input_fp)s  +repage -virtual-pixel background -background %(bg_color)s %(op_str)s -flatten -compress lzw \"%(output_fp)s\"" % \
-                {'op_str': op_str, 'input_fp': input_fp, 'output_fp': output_fp, 'bg_color': 'black'}
+                {'op_str': op_str, 'input_fp': input_fp, 'output_fp': output_fp, 'bg_color': bgcolor}
 
         stderr_template = os.path.join(os.getcwd(), 'alignment.err.log')
         stdout_template = os.path.join(os.getcwd(), 'alignment.log')
@@ -187,10 +187,12 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     parser.add_argument('--channel', help='Enter channel', required=True)
+    parser.add_argument('--color', help='Enter background color', required=True)
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
     channel = args.channel
+    bgcolor = args.color
     run_elastix(animal, njobs)
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel)
+    run_offsets(animal, transforms, channel, bgcolor)
