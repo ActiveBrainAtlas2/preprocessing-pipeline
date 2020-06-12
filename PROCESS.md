@@ -1,6 +1,6 @@
 ### New Brain
 ## Post TIF Creation Process
-1. To install the software prerequisites, [look here](README.md)
+1. To install the software prerequisites, [look here.](README.md)
 1. Create thumbnails on all channels- Litao's new script
 1. Create cleaned images and masks on CH1 
 1. Run masks against CH2 and CH3 

@@ -42,6 +42,7 @@ def adapt(stack):
     tilesize = 16
     for i, file in enumerate(tqdm(image_name_list)):
         infile = os.path.join(INPUT, file)
+        cv2.imread(infile, cv2.)
 
         try:
             img = io.imread(infile)
