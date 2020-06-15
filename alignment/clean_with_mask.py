@@ -44,7 +44,6 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
     #max_height = 33600
     max_width = 1400
     max_height = 900
-    #bgcolor = get_average_color(INPUT, files[10:20])
 
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
@@ -54,6 +53,7 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
             print('Could not open', infile)
             continue
         img = get_last_2d(img)
+        dt = img.dtype
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
         start_bottom = img.shape[0] - 5
@@ -61,18 +61,17 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
         avg = np.mean(bottom_rows)
         bgcolor = int(round(avg))
 
-        if img.dtype == np.dtype('uint16'):
+        if dt == np.dtype('uint16'):
             limit = 2**16-1
-            dtype = 'uint16'
-            mask16 = np.copy(mask).astype(dtype)
+            mask16 = np.copy(mask).astype(dt)
             mask16[mask16 > 0] = limit
             mask = mask16
         else:
-            dtype = 'uint8'
             limit = 2**8-1
             limit = bgcolor
             mask[mask > 0] = limit
             mask = limit - mask
+            mask = place_image(mask, max_width, max_height, bgcolor)
 
         if stain == 'NTB':
             fixed = cv2.bitwise_and(img, mask)
@@ -89,9 +88,9 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
         if flip == 'flop':
             fixed = np.flip(fixed, axis=1)
         #TODO dtype needs to come from the sql
-        fixed = place_image(fixed, file, max_width, max_height)
+        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         outpath = os.path.join(CLEANED, file)
-        cv2.imwrite(outpath, fixed.astype('uint8'))
+        cv2.imwrite(outpath, fixed.astype(dt))
     print('Finished')
 
 
