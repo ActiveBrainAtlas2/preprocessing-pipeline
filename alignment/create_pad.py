@@ -16,12 +16,12 @@ sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.alignment_utility import place_image, get_last_2d
 
 
-def padder(animal, bgcolor):
+def padder(animal, channel, bgcolor):
 
+    channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
-    INPUT = os.path.join(DIR, 'masked')
+    INPUT = os.path.join(DIR,  channel_dir, 'thumbnail')
     OUTPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/prealigned'.format(animal)
-
     files = sorted(os.listdir(INPUT))
 
     max_width = 1400
@@ -46,8 +46,10 @@ if __name__ == '__main__':
     # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--bgcolor', help='pixel value of background', required=True, default=0)
     args = parser.parse_args()
     animal = args.animal
+    channel = int(args.channel)
     bgcolor = int(args.bgcolor)
-    padder(animal, bgcolor)
+    padder(animal, channel, bgcolor)

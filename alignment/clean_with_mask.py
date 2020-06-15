@@ -16,8 +16,19 @@ import cv2
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.alignment_utility import get_last_2d, rotate_image, place_image
 
+def get_average_color(INPUT,files):
+    averages = []
+    for file in files:
+        infile = os.path.join(INPUT, file)
+        img = io.imread(infile)
+        start_bottom = img.shape[0] - 5
+        bottom_rows = img[start_bottom:img.shape[0], :]
+        avg = np.mean(bottom_rows)
+        averages.append(avg)
+    return int(round(np.mean(averages)))
 
-def masker(animal, channel, flip=False, rotation=0, bgcolor=0):
+
+def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
 
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
@@ -33,6 +44,7 @@ def masker(animal, channel, flip=False, rotation=0, bgcolor=0):
     #max_height = 33600
     max_width = 1400
     max_height = 900
+    #bgcolor = get_average_color(INPUT, files[10:20])
 
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
@@ -44,6 +56,11 @@ def masker(animal, channel, flip=False, rotation=0, bgcolor=0):
         img = get_last_2d(img)
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
+        start_bottom = img.shape[0] - 5
+        bottom_rows = img[start_bottom:img.shape[0], :]
+        avg = np.mean(bottom_rows)
+        bgcolor = int(round(avg))
+
         if img.dtype == np.dtype('uint16'):
             limit = 2**16-1
             dtype = 'uint16'
@@ -53,13 +70,13 @@ def masker(animal, channel, flip=False, rotation=0, bgcolor=0):
         else:
             dtype = 'uint8'
             limit = 2**8-1
+            limit = bgcolor
             mask[mask > 0] = limit
-            mask = 255 - mask
+            mask = limit - mask
 
-        if bgcolor == 0:
+        if stain == 'NTB':
             fixed = cv2.bitwise_and(img, mask)
         else:
-            bgcolor = 255
             fixed = cv2.bitwise_or(img, mask)
 
 
@@ -72,7 +89,7 @@ def masker(animal, channel, flip=False, rotation=0, bgcolor=0):
         if flip == 'flop':
             fixed = np.flip(fixed, axis=1)
         #TODO dtype needs to come from the sql
-        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
+        fixed = place_image(fixed, file, max_width, max_height)
         outpath = os.path.join(CLEANED, file)
         cv2.imwrite(outpath, fixed.astype('uint8'))
     print('Finished')
@@ -85,7 +102,7 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--rotation', help='Enter rotation', required=False, default=0)
-    parser.add_argument('--bgcolor', help='Enter background pixel value', required=False, default=0)
+    parser.add_argument('--stain', help='Enter stain', required=False, default='NTB')
     parser.add_argument('--flip', help='flip or flop', required=False)
 
     args = parser.parse_args()
@@ -93,5 +110,5 @@ if __name__ == '__main__':
     channel = int(args.channel)
     flip = args.flip
     rotation = int(args.rotation)
-    bgcolor = int(args.bgcolor)
-    masker(animal, channel, flip, rotation, bgcolor)
+    stain = args.stain
+    masker(animal, channel, flip, rotation, stain)

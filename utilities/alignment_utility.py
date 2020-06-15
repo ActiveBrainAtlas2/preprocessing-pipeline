@@ -635,20 +635,25 @@ def get_last_2d(data):
     return data.flat[:m*n].reshape(m,n)
 
 
-def place_image(img, file, max_width, max_height, bgcolor=0):
+def place_image(img, file, max_width, max_height):
     zmidr = max_height // 2
     zmidc = max_width // 2
     startr = zmidr - (img.shape[0] // 2)
     endr = startr + img.shape[0]
     startc = zmidc - (img.shape[1] // 2)
     endc = startc + img.shape[1]
+
+    start_bottom = img.shape[0] - 5
+    bottom_rows = img[start_bottom:img.shape[0], :]
+    avg = np.mean(bottom_rows)
+    bgcolor = int(round(avg))
     new_img = np.zeros([max_height, max_width]) + bgcolor
     try:
         new_img[startr:endr, startc:endc] = img
     except:
         print('could not create new img', file)
 
-    return new_img.astype('uint16')
+    return new_img.astype('uint8')
 
 
 def rotate_image(img, file, rotation):
