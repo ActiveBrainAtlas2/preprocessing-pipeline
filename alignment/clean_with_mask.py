@@ -17,7 +17,7 @@ sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.alignment_utility import get_last_2d, rotate_image, place_image
 
 
-def masker(animal, channel, flip=False, rotation=0):
+def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
 
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
@@ -34,8 +34,8 @@ def masker(animal, channel, flip=False, rotation=0):
 
     #max_width = 55700
     #max_height = 33600
-    max_width = 1740
-    max_height = 1050
+    max_width = 1400
+    max_height = 900
 
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
@@ -48,9 +48,25 @@ def masker(animal, channel, flip=False, rotation=0):
         if channel > 1:
             maskfile = os.path.join(MASKS, file)
             mask = io.imread(maskfile)
-            mask16 = np.copy(mask).astype('uint16')
-            mask16[mask16 > 0] = 2**16-1
-            fixed = cv2.bitwise_and(img, mask16)
+            if img.dtype == np.dtype('uint16'):
+                limit = 2**16-1
+                dtype = 'uint16'
+                mask16 = np.copy(mask).astype(dtype)
+                mask16[mask16 > 0] = limit
+                mask = mask16
+            else:
+                dtype = 'uint8'
+                limit = 2**8-1
+                mask[mask > 0] = limit
+                mask = 255 - mask
+
+            if stain == 'NTB':
+                bgcolor = 0
+                fixed = cv2.bitwise_and(img, mask)
+            else:
+                bgcolor = 255
+                fixed = cv2.bitwise_or(img, mask)
+
         else:
             fixed = np.copy(img)
             del img
@@ -64,9 +80,9 @@ def masker(animal, channel, flip=False, rotation=0):
         if flip == 'flop':
             fixed = np.flip(fixed, axis=1)
 
-        fixed = place_image(fixed, file, max_width, max_height)
+        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         outpath = os.path.join(CLEANED, file)
-        cv2.imwrite(outpath, fixed.astype('uint16'))
+        cv2.imwrite(outpath, fixed.astype(dtype))
     print('Finished')
 
 
@@ -76,7 +92,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--rotation', help='Enter rotation', required=False)
+    parser.add_argument('--rotation', help='Enter rotation', required=False, default=0)
+    parser.add_argument('--stain', help='Enter stain', required=False, default='NTB')
     parser.add_argument('--flip', help='flip or flop', required=False)
 
     args = parser.parse_args()
@@ -84,4 +101,5 @@ if __name__ == '__main__':
     channel = int(args.channel)
     flip = args.flip
     rotation = int(args.rotation)
-    masker(animal, channel, flip, rotation)
+    stain = args.stain
+    masker(animal, channel, flip, rotation, stain)
