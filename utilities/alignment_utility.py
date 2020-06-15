@@ -635,14 +635,14 @@ def get_last_2d(data):
     return data.flat[:m*n].reshape(m,n)
 
 
-def place_image(img, file, max_width, max_height):
+def place_image(img, file, max_width, max_height, bgcolor=0):
     zmidr = max_height // 2
     zmidc = max_width // 2
     startr = zmidr - (img.shape[0] // 2)
     endr = startr + img.shape[0]
     startc = zmidc - (img.shape[1] // 2)
     endc = startc + img.shape[1]
-    new_img = np.zeros([max_height, max_width])
+    new_img = np.zeros([max_height, max_width]) + bgcolor
     try:
         new_img[startr:endr, startc:endc] = img
     except:
