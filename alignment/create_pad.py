@@ -20,13 +20,15 @@ def padder(animal, channel, bgcolor):
 
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
-    INPUT = os.path.join(DIR,  channel_dir, 'thumbnail')
+    #INPUT = os.path.join(DIR,  channel_dir, 'thumbnail')
+    INPUT = os.path.join(DIR,  'masked')
     OUTPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/prealigned'.format(animal)
     files = sorted(os.listdir(INPUT))
 
     max_width = 1400
     max_height = 900
 
+    files = ['0125.tif']
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
         try:
