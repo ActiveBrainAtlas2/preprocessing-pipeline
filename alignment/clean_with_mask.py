@@ -17,16 +17,13 @@ sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.alignment_utility import get_last_2d, rotate_image, place_image
 
 
-def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
+def masker(animal, channel, flip=False, rotation=0, bgcolor=0):
 
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
     CLEANED = os.path.join(DIR, channel_dir, 'cleaned')
     # channel one is already cleaned from the mask process
-    if channel > 1:
-        INPUT = os.path.join(DIR,  channel_dir, 'thumbnail')
-    else:
-        INPUT = CLEANED
+    INPUT = os.path.join(DIR,  channel_dir, 'thumbnail')
 
 
     MASKS = os.path.join(DIR, 'masked')
@@ -45,31 +42,26 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
             print('Could not open', infile)
             continue
         img = get_last_2d(img)
-        if channel > 1:
-            maskfile = os.path.join(MASKS, file)
-            mask = io.imread(maskfile)
-            if img.dtype == np.dtype('uint16'):
-                limit = 2**16-1
-                dtype = 'uint16'
-                mask16 = np.copy(mask).astype(dtype)
-                mask16[mask16 > 0] = limit
-                mask = mask16
-            else:
-                dtype = 'uint8'
-                limit = 2**8-1
-                mask[mask > 0] = limit
-                mask = 255 - mask
-
-            if stain == 'NTB':
-                bgcolor = 0
-                fixed = cv2.bitwise_and(img, mask)
-            else:
-                bgcolor = 255
-                fixed = cv2.bitwise_or(img, mask)
-
+        maskfile = os.path.join(MASKS, file)
+        mask = io.imread(maskfile)
+        if img.dtype == np.dtype('uint16'):
+            limit = 2**16-1
+            dtype = 'uint16'
+            mask16 = np.copy(mask).astype(dtype)
+            mask16[mask16 > 0] = limit
+            mask = mask16
         else:
-            fixed = np.copy(img)
-            del img
+            dtype = 'uint8'
+            limit = 2**8-1
+            mask[mask > 0] = limit
+            mask = 255 - mask
+
+        if bgcolor == 0:
+            fixed = cv2.bitwise_and(img, mask)
+        else:
+            bgcolor = 255
+            fixed = cv2.bitwise_or(img, mask)
+
 
         if rotation > 0:
             fixed = rotate_image(fixed, file, rotation)
@@ -79,10 +71,10 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
 
         if flip == 'flop':
             fixed = np.flip(fixed, axis=1)
-
+        #TODO dtype needs to come from the sql
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         outpath = os.path.join(CLEANED, file)
-        cv2.imwrite(outpath, fixed.astype(dtype))
+        cv2.imwrite(outpath, fixed.astype('uint8'))
     print('Finished')
 
 
@@ -93,7 +85,7 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--rotation', help='Enter rotation', required=False, default=0)
-    parser.add_argument('--stain', help='Enter stain', required=False, default='NTB')
+    parser.add_argument('--bgcolor', help='Enter background pixel value', required=False, default=0)
     parser.add_argument('--flip', help='flip or flop', required=False)
 
     args = parser.parse_args()
@@ -101,5 +93,5 @@ if __name__ == '__main__':
     channel = int(args.channel)
     flip = args.flip
     rotation = int(args.rotation)
-    stain = args.stain
-    masker(animal, channel, flip, rotation, stain)
+    bgcolor = int(args.bgcolor)
+    masker(animal, channel, flip, rotation, bgcolor)
