@@ -27,7 +27,6 @@ if __name__ == '__main__':
     CH3 = os.path.join(DIR, 'CH3', 'full')
 
     image_name_list = sorted(os.listdir(INPUT))
-    image_name_list = ['0125.tif']
     for file in tqdm(image_name_list):
         infile = os.path.join(INPUT, file)
         img = io.imread(infile)
