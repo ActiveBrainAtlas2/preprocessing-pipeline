@@ -35,10 +35,10 @@ if __name__ == '__main__':
         ch3 = img[:, :, 2]
 
         outpath = os.path.join(DIR, 'preps', CH1, file)
-        cv2.imwrite(outpath, ch1.astype('uint8'))
+        cv2.imwrite(outpath, ch1.astype('uint16'))
 
         outpath = os.path.join(DIR, 'preps', CH2, file)
-        cv2.imwrite(outpath, ch2.astype('uint8'))
+        cv2.imwrite(outpath, ch2.astype('uint16'))
 
         outpath = os.path.join(DIR, 'preps', CH3, file)
-        cv2.imwrite(outpath, ch3.astype('uint8'))
+        cv2.imwrite(outpath, ch3.astype('uint16'))
