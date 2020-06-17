@@ -15,5 +15,7 @@
 1. The base directory is located on birdstore at: /net/birdstore/Active_Atlas_Data/data_root/pipeline_data
 2. All brains are located in the base directory.
 3. To view the post tif pipeline process go here: [Neuroglancer process](PROCESS.md)
+4. The directory structure of a 3 channel brain will look like this:
+![MD589](./docs/images/MD589.tree.png)
 ### Annotations
 1. Annotation keys are viewable: [here](https://activebrainatlas.ucsd.edu/annotation-keys.html)
