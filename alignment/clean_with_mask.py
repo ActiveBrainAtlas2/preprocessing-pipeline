@@ -53,31 +53,28 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
             print('Could not open', infile)
             continue
         img = get_last_2d(img)
-        dt = img.dtype
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
+
+        limit = 2**16-1
+        mask16 = np.copy(mask.astype('uint16'))
+        mask16[mask16 > 0] = limit
+        mask_inv = cv2.bitwise_not(mask16)
+
+        img = np.int16(img)
+        mask = np.int8(mask16)
+        fixed = cv2.bitwise_and(img, img, mask=mask)
+        del mask
+
         start_bottom = img.shape[0] - 5
         bottom_rows = img[start_bottom:img.shape[0], :]
         avg = np.mean(bottom_rows)
         bgcolor = int(round(avg))
-
-        if dt == np.dtype('uint16'):
-            limit = 2**16-1
-            mask16 = np.copy(mask).astype(dt)
-            mask16[mask16 > 0] = limit
-            mask = mask16
-        else:
-            limit = 2**8-1
-            limit = bgcolor
-            mask[mask > 0] = limit
-            mask = limit - mask
-            mask = place_image(mask, max_width, max_height, bgcolor)
-
-        if stain == 'NTB':
-            fixed = cv2.bitwise_and(img, mask)
-        else:
-            fixed = cv2.bitwise_or(img, mask)
-
+        if 'thi' in stain.lower():
+            lower = bgcolor - 10
+            upper = bgcolor + 10
+            bgmask = (fixed <= upper)
+            fixed[fixed == 0] = bgcolor
 
         if rotation > 0:
             fixed = rotate_image(fixed, file, rotation)
@@ -90,7 +87,7 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
         #TODO dtype needs to come from the sql
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         outpath = os.path.join(CLEANED, file)
-        cv2.imwrite(outpath, fixed.astype(dt))
+        cv2.imwrite(outpath, fixed.astype('uint16'))
     print('Finished')
 
 

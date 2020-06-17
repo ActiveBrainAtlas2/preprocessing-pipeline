@@ -157,3 +157,12 @@ void main() {
 // get translation what is the number represent? everything should be in terms of microns and degrees.
 // get names associated with shaped colors
 // find midbrain, and move x microns from there to a landmark.
+/*
+MD589 settings
+5um, 5um, 10um,
+100nm 0.1 0 0
+100nm 0 0.1 0
+100nm 0 0 0.1 no translation
+
+
+*/
