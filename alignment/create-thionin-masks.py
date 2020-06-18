@@ -75,34 +75,26 @@ def mask_thionin(animal, resolution='thumbnail'):
         except:
             print('Could not open', infile)
             continue
-        img = get_last_2d(img)
-    # start_bottom = src.shape[0] - 5
-    # bottom_rows = src[start_bottom:src.shape[0], :]
-    # avg = np.mean(bottom_rows)
-    # bgcolor = int(round(avg))
-    # lower = bgcolor - 10
-    # upper = bgcolor + 10
-    # bgmask = (src >= lower) & (src <= upper)
-    # src[bgmask] = 0
-    clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(16, 16))
-    h_src = clahe.apply(src)
-    min_value, threshold = find_threshold(h_src)
-    ret, threshed = cv2.threshold(h_src, threshold, 255, cv2.THRESH_BINARY)
-    threshed = np.uint8(threshed)
-    connectivity = 4
-    output = cv2.connectedComponentsWithStats(threshed, connectivity, cv2.CV_32S)
-    num_labels = output[0]
-    labels = output[1]
-    stats = output[2]
-    centroids = output[3]
-    row = find_main_blob(stats, h_src)
-    blob_label = row[1]['blob_label']
-    blob = np.uint8(labels == blob_label) * 255
-    kernel10 = np.ones((10, 10), np.uint8)
-    closing = cv2.morphologyEx(blob, cv2.MORPH_CLOSE, kernel10, iterations=5)
+        src = get_last_2d(src)
+        clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(16, 16))
+        h_src = clahe.apply(src)
+        min_value, threshold = find_threshold(h_src)
+        ret, threshed = cv2.threshold(h_src, threshold, 255, cv2.THRESH_BINARY)
+        threshed = np.uint8(threshed)
+        connectivity = 4
+        output = cv2.connectedComponentsWithStats(threshed, connectivity, cv2.CV_32S)
+        num_labels = output[0]
+        labels = output[1]
+        stats = output[2]
+        centroids = output[3]
+        row = find_main_blob(stats, h_src)
+        blob_label = row[1]['blob_label']
+        blob = np.uint8(labels == blob_label) * 255
+        kernel10 = np.ones((10, 10), np.uint8)
+        closing = cv2.morphologyEx(blob, cv2.MORPH_CLOSE, kernel10, iterations=5)
 
-    outpath = os.path.join(MASKED, file)
-    cv2.imwrite(outpath, closing.astype('uint8'))
+        outpath = os.path.join(MASKED, file)
+        cv2.imwrite(outpath, closing.astype('uint8'))
 
 
 print('Finished')
