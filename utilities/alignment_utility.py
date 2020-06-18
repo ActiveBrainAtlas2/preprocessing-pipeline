@@ -590,7 +590,7 @@ def convert_resolution_string_to_voxel_size(stack, resolution):
     if resolution in ['down32', 'thumbnail']:
         assert stack is not None
         return planar_resolution * 32.
-    elif resolution == 'lossless' or resolution == 'down1' or resolution == 'raw':
+    elif resolution == 'lossless' or resolution == 'down1' or resolution == 'raw' or resolution == 'full':
         assert stack is not None
         return planar_resolution
     elif resolution.startswith('down'):

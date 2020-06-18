@@ -15,8 +15,7 @@ from tqdm import tqdm
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
-from utilities.alignment_utility import create_if_not_exists, load_consecutive_section_transform, convert_cropbox_fmt, \
-    convert_resolution_string_to_um
+from utilities.alignment_utility import create_if_not_exists, load_consecutive_section_transform, convert_resolution_string_to_um
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -88,7 +87,7 @@ def parse_elastix(stack):
     """
     fileLocationManager = FileLocationManager(stack)
     DIR = fileLocationManager.prep
-    INPUT = os.path.join(DIR, 'CH1', 'cleaned')
+    INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
 
     image_name_list = sorted(os.listdir(INPUT))
     midpoint = len(image_name_list) // 2
@@ -123,9 +122,9 @@ def parse_elastix(stack):
 def convert_2d_transform_forms(arr):
     return np.vstack([arr, [0,0,1]])
 
-def create_warp_transforms(stack, transforms, transforms_resol, resol):
+def create_warp_transforms(stack, transforms, transforms_resol, resolution):
     #transforms_resol = op['resolution']
-    transforms_scale_factor = convert_resolution_string_to_um(stack, resolution=transforms_resol) / convert_resolution_string_to_um(stack, resolution=resol)
+    transforms_scale_factor = convert_resolution_string_to_um(stack, resolution=transforms_resol) / convert_resolution_string_to_um(stack, resolution=resolution)
     tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
     transforms_to_anchor = {
         img_name:
@@ -135,7 +134,7 @@ def create_warp_transforms(stack, transforms, transforms_resol, resol):
     return transforms_to_anchor
 
 
-def run_offsets(stack, transforms, channel, bgcolor):
+def run_offsets(stack, transforms, channel, bgcolor, resolution):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -147,18 +146,24 @@ def run_offsets(stack, transforms, channel, bgcolor):
     """
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
-    INPUT = os.path.join(DIR,  channel_dir, 'cleaned')
-    OUTPUT = os.path.join(DIR, channel_dir, 'aligned')
+    INPUT = os.path.join(DIR,  channel_dir, 'thumbnail_cleaned')
+    OUTPUT = os.path.join(DIR, channel_dir, 'thumbnail_aligned')
+    max_width = 1400
+    max_height = 900
 
-    warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', 'thumbnail')
+    if 'full' in resolution.lower():
+        INPUT = os.path.join(DIR, channel_dir, 'full_cleaned')
+        OUTPUT = os.path.join(DIR, channel_dir, 'full_aligned')
+        max_width = 44000
+        max_height = 28000
+
+    warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', resolution)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
     for file, arr in tqdm(ordered_transforms.items()):
         T = np.linalg.inv(arr)
         op_str = " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
             'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
 
-        max_width = 1400
-        max_height = 900
         op_str += ' -crop {}x{}+0.0+0.0\!'.format(max_width, max_height)
 
         input_fp = os.path.join(INPUT, file)
@@ -183,11 +188,13 @@ if __name__ == '__main__':
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--color', help='Enter background color', required=True)
+    parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
     channel = args.channel
     bgcolor = args.color
+    resolution = args.resolution
     run_elastix(animal, njobs)
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel, bgcolor)
+    run_offsets(animal, transforms, channel, bgcolor, resolution)
