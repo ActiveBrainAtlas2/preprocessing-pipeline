@@ -163,8 +163,11 @@ def run_offsets(stack, transforms, channel, bgcolor):
 
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
-        cmd = "convert %(input_fp)s  +repage -virtual-pixel background -background '%(bg_color)s' %(op_str)s -flatten -compress lzw \"%(output_fp)s\"" % \
-                {'op_str': op_str, 'input_fp': input_fp, 'output_fp': output_fp, 'bg_color': bgcolor}
+        #cmd = "convert %(input_fp)s  +repage -virtual-pixel background -background \"%(bg_color)s\" %(op_str)s -flatten -compress lzw \"%(output_fp)s\"" % \
+        #        {'op_str': op_str, 'input_fp': input_fp, 'output_fp': output_fp, 'bg_color': bgcolor}
+
+        cmd = "convert {}  +repage -virtual-pixel background -background '{}' {} -flatten -compress lzw {}"\
+            .format(input_fp, bgcolor, op_str, output_fp)
 
         stderr_template = os.path.join(os.getcwd(), 'alignment.err.log')
         stdout_template = os.path.join(os.getcwd(), 'alignment.log')
