@@ -46,7 +46,7 @@ def run_elastix(stack, limit):
     """
     fileLocationManager = FileLocationManager(stack)
     DIR = fileLocationManager.prep
-    INPUT = os.path.join(DIR, 'CH1', 'cleaned')
+    INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
 
     image_name_list = sorted(os.listdir(INPUT))
     elastix_output_dir = fileLocationManager.elastix_dir
