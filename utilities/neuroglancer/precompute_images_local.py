@@ -60,11 +60,15 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
 
 def run_neuroglancer(animal, channel, resolution):
     channel_dir = 'CH{}'.format(channel)
-    channel_outdir = 'C{}'.format(channel)
-    if 'thumb' in resolution.lower():
-        channel_outdir = 'C{}T'.format(channel)
+    channel_outdir = 'C{}T'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}'.format(animal)
-    INPUT = os.path.join(DIR, 'preps', channel_dir, 'aligned')
+    INPUT = os.path.join(DIR, 'preps', channel_dir, 'thumbnail_aligned')
+
+    if 'full' in resolution.lower():
+        INPUT = os.path.join(DIR, 'preps', channel_dir, 'full_aligned')
+        channel_outdir = 'C{}'.format(channel)
+
+
     NEUROGLANCER =  os.path.join(DIR, 'neuroglancer_data', '{}'.format(channel_outdir))
     print(INPUT)
     print(NEUROGLANCER)
