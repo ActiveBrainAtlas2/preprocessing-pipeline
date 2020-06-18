@@ -54,12 +54,17 @@ def find_main_blob(stats, image):
             return row
 
 
-def mask_thionin(animal):
+def mask_thionin(animal, resolution='thumbnail'):
 
 
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}'.format(animal)
     INPUT = os.path.join(DIR, 'preps', 'CH1', 'thumbnail')
-    MASKED = os.path.join(DIR, 'preps', 'masked')
+    MASKED = os.path.join(DIR, 'preps', 'thumbnail_masked')
+
+    if 'full' in resolution.lower():
+        INPUT = os.path.join(DIR, 'preps', 'CH1', 'full')
+        MASKED = os.path.join(DIR, 'preps', 'full_masked')
+
     files = sorted(os.listdir(INPUT))
 
 
@@ -71,13 +76,13 @@ def mask_thionin(animal):
             print('Could not open', infile)
             continue
         img = get_last_2d(img)
-    start_bottom = src.shape[0] - 5
-    bottom_rows = src[start_bottom:src.shape[0], :]
-    avg = np.mean(bottom_rows)
-    bgcolor = int(round(avg))
-    lower = bgcolor - 10
-    upper = bgcolor + 10
-    bgmask = (src >= lower) & (src <= upper)
+    # start_bottom = src.shape[0] - 5
+    # bottom_rows = src[start_bottom:src.shape[0], :]
+    # avg = np.mean(bottom_rows)
+    # bgcolor = int(round(avg))
+    # lower = bgcolor - 10
+    # upper = bgcolor + 10
+    # bgmask = (src >= lower) & (src <= upper)
     # src[bgmask] = 0
     clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(16, 16))
     h_src = clahe.apply(src)
@@ -108,6 +113,8 @@ if __name__ == '__main__':
     # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
     args = parser.parse_args()
     animal = args.animal
-    mask_thionin(animal)
+    resolution = args.resolution
+    mask_thionin(animal, resolution)
