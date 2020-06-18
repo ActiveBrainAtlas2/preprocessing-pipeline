@@ -59,7 +59,7 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
         limit = 2**16-1
         mask16 = np.copy(mask.astype('uint16'))
         mask16[mask16 > 0] = limit
-        mask_inv = cv2.bitwise_not(mask16)
+        # mask_inv = cv2.bitwise_not(mask16)
 
         img = np.int16(img)
         mask = np.int8(mask16)
@@ -71,10 +71,7 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
         avg = np.mean(bottom_rows)
         bgcolor = int(round(avg))
         if 'thi' in stain.lower():
-            lower = bgcolor - 10
-            upper = bgcolor + 10
-            bgmask = (fixed <= upper)
-            fixed[fixed == 0] = bgcolor
+            bgcolor = 228
 
         if rotation > 0:
             fixed = rotate_image(fixed, file, rotation)
@@ -86,6 +83,7 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
             fixed = np.flip(fixed, axis=1)
         #TODO dtype needs to come from the sql
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
+        fixed[fixed == 0] = bgcolor
         outpath = os.path.join(CLEANED, file)
         cv2.imwrite(outpath, fixed.astype('uint16'))
     print('Finished')
