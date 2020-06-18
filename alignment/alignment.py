@@ -156,15 +156,7 @@ def run_offsets(stack, transforms, channel, bgcolor):
         T = np.linalg.inv(arr)
         op_str = " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
             'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
-        #print(file, op_str)
 
-        #x, y, w, h = convert_cropbox_fmt(data=arr, out_fmt='arr_xywh', in_fmt='arr_xywh', stack=stack)
-        x, y, w, h = 1,1,1,1
-        op_strXXX = ' -crop %(w)sx%(h)s%(x)s%(y)s\! ' % {'x': '+' + str(x) if int(x) >= 0 else str(x),
-                                                       'y': '+' + str(y) if int(y) >= 0 else str(y),
-                                                       'w': str(w), 'h': str(h)}
-
-        #op_str += ' -crop 2001.0x1001.0+0.0+0.0\!'
         max_width = 1400
         max_height = 900
         op_str += ' -crop {}x{}+0.0+0.0\!'.format(max_width, max_height)
