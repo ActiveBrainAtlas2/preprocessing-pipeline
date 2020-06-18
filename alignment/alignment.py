@@ -159,6 +159,7 @@ def run_offsets(stack, transforms, channel, bgcolor, resolution):
 
     warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', resolution)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
+    commands = []
     for file, arr in tqdm(ordered_transforms.items()):
         T = np.linalg.inv(arr)
         op_str = " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
@@ -174,11 +175,10 @@ def run_offsets(stack, transforms, channel, bgcolor, resolution):
         cmd = "convert {}  +repage -virtual-pixel background -background '{}' {} -flatten -compress lzw {}"\
             .format(input_fp, bgcolor, op_str, output_fp)
 
-        stderr_template = os.path.join(os.getcwd(), 'alignment.err.log')
-        stdout_template = os.path.join(os.getcwd(), 'alignment.log')
-        stdout_f = open(stdout_template, "w")
-        stderr_f = open(stderr_template, "w")
-        p = subprocess.Popen(cmd, shell=True, stderr=stderr_f, stdout=stdout_f)
+        commands.append(cmd)
+        
+    with Pool(5) as p:
+        p.map(workershell, commands)
         p.wait()
 
 
