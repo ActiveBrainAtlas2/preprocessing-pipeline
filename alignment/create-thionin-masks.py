@@ -73,11 +73,13 @@ def mask_thionin(animal, resolution='thumbnail'):
 
     if 'full' in resolution.lower():
         INPUT = os.path.join(DIR, 'preps', 'CH1', 'full')
+        THUMBNAIL = os.path.join(DIR, 'preps', 'thumbnail_masked')
         MASKED = os.path.join(DIR, 'preps', 'full_masked')
         files = sorted(os.listdir(INPUT))
         commands = []
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
+            thumbfile = os.path.join(THUMBNAIL, file)
             outfile = os.path.join(MASKED, file)
             try:
                 src = io.imread(infile)
@@ -85,7 +87,8 @@ def mask_thionin(animal, resolution='thumbnail'):
                 print('Could not open', infile)
                 continue
             height, width = src.shape
-            cmd = "convert {} -resize {}x{}! -compress lzw {}".format(infile, width, height, outfile)
+            del src
+            cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
             commands.append(cmd)
 
         with Pool(10) as p:
