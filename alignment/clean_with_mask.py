@@ -28,22 +28,25 @@ def get_average_color(INPUT,files):
     return int(round(np.mean(averages)))
 
 
-def masker(animal, channel, flip=False, rotation=0, stain='NTB'):
+def masker(animal, channel, flip=False, rotation=0, stain='NTB', resolution='thumbnail'):
 
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
-    CLEANED = os.path.join(DIR, channel_dir, 'cleaned')
-    # channel one is already cleaned from the mask process
+    CLEANED = os.path.join(DIR, channel_dir, 'thumbnail_cleaned')
     INPUT = os.path.join(DIR,  channel_dir, 'thumbnail')
-
-
-    MASKS = os.path.join(DIR, 'masked')
-    files = sorted(os.listdir(INPUT))
-
-    #max_width = 55700
-    #max_height = 33600
+    MASKS = os.path.join(DIR, 'thumbnail_masked')
     max_width = 1400
     max_height = 900
+
+    if 'full' in resolution.lower():
+        CLEANED = os.path.join(DIR, channel_dir, 'full_cleaned')
+        INPUT = os.path.join(DIR, channel_dir, 'full')
+        MASKS = os.path.join(DIR, 'full_masked')
+        max_width = 44000
+        max_height = 28000
+
+    files = sorted(os.listdir(INPUT))
+
 
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
@@ -98,6 +101,7 @@ if __name__ == '__main__':
     parser.add_argument('--rotation', help='Enter rotation', required=False, default=0)
     parser.add_argument('--stain', help='Enter stain', required=False, default='NTB')
     parser.add_argument('--flip', help='flip or flop', required=False)
+    parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
 
     args = parser.parse_args()
     animal = args.animal
@@ -105,4 +109,5 @@ if __name__ == '__main__':
     flip = args.flip
     rotation = int(args.rotation)
     stain = args.stain
-    masker(animal, channel, flip, rotation, stain)
+    resolution = args.resolution
+    masker(animal, channel, flip, rotation, stain, resolution)
