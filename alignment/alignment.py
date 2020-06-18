@@ -176,7 +176,7 @@ def run_offsets(stack, transforms, channel, bgcolor, resolution):
             .format(input_fp, bgcolor, op_str, output_fp)
 
         commands.append(cmd)
-        
+
     with Pool(5) as p:
         p.map(workershell, commands)
         p.wait()
