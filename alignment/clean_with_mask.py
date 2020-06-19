@@ -74,7 +74,7 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB', resolution='thu
         avg = np.mean(bottom_rows)
         bgcolor = int(round(avg))
         if 'thi' in stain.lower():
-            bgcolor = 228
+            bgcolor = 52383
 
         if rotation > 0:
             fixed = rotate_image(fixed, file, rotation)

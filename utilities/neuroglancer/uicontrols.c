@@ -166,3 +166,6 @@ MD589 settings
 
 
 */
+look under MD585_filled
+main info file specifies the names/info dir
+names/info file key, value json file

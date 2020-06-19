@@ -114,7 +114,7 @@ class FileOperation(dj.Computed):
         file_name = (RawSection & key).fetch1('destination_file')
         file_id = np.asscalar(file_id)
         tif_id = (RawSection & key).fetch1('tif_id')
-        #czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), file_id, testing)
+        czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), file_id, testing)
         #histogram = slide_processor.make_histogram(file_id, file_name, testing)
         #thumbnail = slide_processor.make_thumbnail(file_id, file_name, testing)
         #slide_processor.make_web_thumbnail(file_id, file_name, testing)
