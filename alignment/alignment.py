@@ -31,11 +31,11 @@ def workershell(cmd):
     stdout_template = os.path.join(os.getcwd(), 'alignment.log')
     stdout_f = open(stdout_template, "w")
     stderr_f = open(stderr_template, "w")
-    p = subprocess.Popen(cmd, shell=True, stderr=stderr_f, stdout=stdout_f)
-    p.wait()
+    proc = subprocess.Popen(cmd, shell=True, stderr=stderr_f, stdout=stdout_f)
+    proc.wait()
 
 
-def run_elastix(stack, limit):
+def run_elastix(stack, njobs):
     """
     Sets up the arguments for running elastix in a sequence. Each file pair
     creates a sub directory with the results. Uses a pool to spawn multiple processes
@@ -74,7 +74,7 @@ def run_elastix(stack, limit):
             .format(ELASTIX_BIN, prev_fp, curr_fp, param_fp, output_subdir)
         commands.append(command)
 
-    with Pool(limit) as p:
+    with Pool(njobs) as p:
         p.map(workershell, commands)
 
 
@@ -134,7 +134,7 @@ def create_warp_transforms(stack, transforms, transforms_resol, resolution):
     return transforms_to_anchor
 
 
-def run_offsets(stack, transforms, channel, bgcolor, resolution):
+def run_offsets(stack, transforms, channel, bgcolor, resolution, njobs):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -177,9 +177,8 @@ def run_offsets(stack, transforms, channel, bgcolor, resolution):
 
         commands.append(cmd)
 
-    with Pool(5) as p:
+    with Pool(njobs) as p:
         p.map(workershell, commands)
-        p.wait()
 
 
 if __name__ == '__main__':
@@ -197,4 +196,4 @@ if __name__ == '__main__':
     resolution = args.resolution
     run_elastix(animal, njobs)
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel, bgcolor, resolution)
+    run_offsets(animal, transforms, channel, bgcolor, resolution, njobs)
