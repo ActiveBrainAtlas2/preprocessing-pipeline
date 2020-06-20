@@ -1,4 +1,19 @@
 ### New Brain
+## Post CZI Creation Process
+1. Run: main.py --animal DK43 --czi True
+    1. This will scan each czi file
+    2. extract the tif files
+    3. enter the file name in the database
+1. Have someone confirm the status of each slide in: https://activebrainatlas.ucsd.edu/activebrainatlas/admin
+1. Run: main.py --animal DK43 --image True --limit 10. 
+    1. this will read the slide table in the database
+    1. create 10 tif files
+    1. create 10 histogram files
+    1. Repeat this process with no limit after you are sure everything works
+    1. Open up another terminal on ratto and basalis and muralis and run the same script
+    1. If you cancel a job or need to start over, delete everything from the __file_operation table
+    1. You might also have to delete everything from the ~jobs table
+
 ## Post TIF Creation Process
 1. To install the software prerequisites, [look here.](README.md)
 1. Create thumbnails on all channels- Litao's new script
