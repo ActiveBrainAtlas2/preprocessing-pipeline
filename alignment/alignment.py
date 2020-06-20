@@ -134,7 +134,7 @@ def create_warp_transforms(stack, transforms, transforms_resol, resolution):
     return transforms_to_anchor
 
 
-def run_offsets(stack, transforms, channel, bgcolor, resolution, njobs):
+def run_offsets(stack, transforms, channel, stain, resolution, njobs):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -150,6 +150,10 @@ def run_offsets(stack, transforms, channel, bgcolor, resolution, njobs):
     OUTPUT = os.path.join(DIR, channel_dir, 'thumbnail_aligned')
     max_width = 1400
     max_height = 900
+    bgcolor = '#000000'
+
+    if 'thion' in stain.lower():
+        bgcolor = '#EFEFEF'
 
     if 'full' in resolution.lower():
         INPUT = os.path.join(DIR, channel_dir, 'full_cleaned')
@@ -169,8 +173,6 @@ def run_offsets(stack, transforms, channel, bgcolor, resolution, njobs):
 
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
-        #cmd = "convert %(input_fp)s  +repage -virtual-pixel background -background \"%(bg_color)s\" %(op_str)s -flatten -compress lzw \"%(output_fp)s\"" % \
-        #        {'op_str': op_str, 'input_fp': input_fp, 'output_fp': output_fp, 'bg_color': bgcolor}
 
         cmd = "convert {}  +repage -virtual-pixel background -background '{}' {} -flatten -compress lzw {}"\
             .format(input_fp, bgcolor, op_str, output_fp)
@@ -186,14 +188,14 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--color', help='Enter background color', required=True)
+    parser.add_argument('--stain', help='Enter stain', required=False, default='NTB')
     parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
     channel = args.channel
-    bgcolor = args.color
+    stain = args.stain
     resolution = args.resolution
     run_elastix(animal, njobs)
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel, bgcolor, resolution, njobs)
+    run_offsets(animal, transforms, channel, stain, resolution, njobs)
