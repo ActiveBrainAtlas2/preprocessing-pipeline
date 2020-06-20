@@ -45,3 +45,19 @@ for i in *.tif; do identify $i; done | awk '{print $4}' | sort -n
 1. python precompute_images_local.py --animal DK43 --channel 2 --resolution thumb
 1. python precompute_images_local.py --animal DK43 --channel 3 --resolution thumb
 
+
+### Actual scripts run on MD589 for 3 channels for thionin Neuroglancer
+
+1. python create-thionin-masks.py
+1. Visually inspect files in the: /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/cleaned
+to determine which way to rotate and/or flip. Also get the maximum width and height with:
+for i in *.tif; do identify $i; done | awk '{print $4}' | sort -n
+1. python clean_with_mask.py --animal MD589 --channel 1  --stain thionin --resolution thumbnail
+1. python clean_with_mask.py --animal MD589 --channel 2  --stain thionin --resolution thumbnail
+1. python clean_with_mask.py --animal MD589 --channel 3  --stain thionin --resolution thumbnail
+1. python alignment.py --animal MD589 --njobs 10 --channel 1 --stain thionin --resolution thumbnail
+1. python alignment.py --animal MD589 --njobs 10 --channel 2 --stain thionin --resolution thumbnail
+1. python alignment.py --animal MD589 --njobs 10 --channel 3 --stain thionin --resolution thumbnail
+1. python precompute_images_local.py --animal MD589 --channel 1 --resolution thumbnail
+1. python precompute_images_local.py --animal MD589 --channel 2 --resolution thumbnail
+1. python precompute_images_local.py --animal MD589 --channel 3 --resolution thumbnail
