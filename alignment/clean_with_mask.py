@@ -37,6 +37,9 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB', resolution='thu
     MASKS = os.path.join(DIR, 'thumbnail_masked')
     max_width = 1400
     max_height = 900
+    bgcolor = 0
+    dt = 'uint16'
+    limit = 2 ** 16 - 1
 
     if 'full' in resolution.lower():
         CLEANED = os.path.join(DIR, channel_dir, 'full_cleaned')
@@ -44,6 +47,12 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB', resolution='thu
         MASKS = os.path.join(DIR, 'full_masked')
         max_width = 44000
         max_height = 28000
+
+    if 'thio' in stain.lower():
+        bgcolor = 239
+        dt = 'uint8'
+        limit = 2 ** 8 - 1
+
 
     files = sorted(os.listdir(INPUT))
 
@@ -59,22 +68,13 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB', resolution='thu
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
 
-        limit = 2**16-1
-        mask16 = np.copy(mask.astype('uint16'))
+        mask16 = np.copy(mask.astype(dt))
         mask16[mask16 > 0] = limit
-        # mask_inv = cv2.bitwise_not(mask16)
 
         img = np.int16(img)
         mask = np.int8(mask16)
         fixed = cv2.bitwise_and(img, img, mask=mask)
         del mask
-
-        start_bottom = img.shape[0] - 5
-        bottom_rows = img[start_bottom:img.shape[0], :]
-        avg = np.mean(bottom_rows)
-        bgcolor = int(round(avg))
-        if 'thi' in stain.lower():
-            bgcolor = 52383
 
         if rotation > 0:
             fixed = rotate_image(fixed, file, rotation)
@@ -88,7 +88,7 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB', resolution='thu
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         fixed[fixed == 0] = bgcolor
         outpath = os.path.join(CLEANED, file)
-        cv2.imwrite(outpath, fixed.astype('uint16'))
+        cv2.imwrite(outpath, fixed.astype(dt))
     print('Finished')
 
 
