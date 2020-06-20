@@ -174,6 +174,9 @@ def run_offsets(stack, transforms, channel, stain, resolution, njobs):
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
 
+        if os.path.exists(output_fp):
+            continue
+
         cmd = "convert {}  +repage -virtual-pixel background -background '{}' {} -flatten -compress lzw {}"\
             .format(input_fp, bgcolor, op_str, output_fp)
 
