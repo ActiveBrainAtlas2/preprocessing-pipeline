@@ -19,3 +19,8 @@
 ![MD589](./docs/images/MD589.tree.png)
 ### Annotations
 1. Annotation keys are viewable: [here](https://activebrainatlas.ucsd.edu/annotation-keys.html)
+### Database backups
+1. The development and production databases are backed up multiple times each day on basalis
+1. If you need a backup, look on basalis at: /home/eodonnell/sql/backups
+1. The development database is named active_atlas_development
+1. The production database is named active_atlas_production
