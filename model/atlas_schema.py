@@ -115,17 +115,18 @@ class FileOperation(dj.Computed):
         file_id = np.asscalar(file_id)
         tif_id = (RawSection & key).fetch1('tif_id')
         czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), file_id, testing)
-        #histogram = slide_processor.make_histogram(file_id, file_name, testing)
+        histogram = slide_processor.make_histogram(file_id, file_name, testing)
         #thumbnail = slide_processor.make_thumbnail(file_id, file_name, testing)
         #slide_processor.make_web_thumbnail(file_id, file_name, testing)
 
         max_width = 55700
         max_height = 33600
 
-        cleaned = make_mask(session, prep_id, file_id, max_width, max_height)
-        thumbnail = 1
-        czi_to_tif = 1
-        histogram = 1
+        #cleaned = make_mask(session, prep_id, file_id, max_width, max_height)
+        thumbnail = 0
+        cleaned = 0
+        #czi_to_tif = 1
+        #histogram = 1
         #session, prep_id, file_id, max_width, max_height
         end = time.time()
 
