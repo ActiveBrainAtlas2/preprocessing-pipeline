@@ -5,6 +5,7 @@
     2. extract the tif files
     3. enter the file name in the database
 1. Have someone confirm the status of each slide in: https://activebrainatlas.ucsd.edu/activebrainatlas/admin
+1. Create the raw sections via the web interface
 1. Run: main.py --animal DK43 --image True --limit 10. 
     1. this will read the slide table in the database
     1. create 10 tif files
