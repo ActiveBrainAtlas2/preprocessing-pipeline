@@ -14,6 +14,7 @@ import os, sys
 import cv2
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
+from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import get_last_2d, rotate_image, place_image
 
 def get_average_color(INPUT,files):
@@ -28,7 +29,7 @@ def get_average_color(INPUT,files):
     return int(round(np.mean(averages)))
 
 
-def masker(animal, channel, flip=False, rotation=0, stain='NTB', resolution='thumbnail'):
+def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
 
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
@@ -40,6 +41,9 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB', resolution='thu
     bgcolor = 0
     dt = 'uint16'
     limit = 2 ** 16 - 1
+    sqlController = SqlController()
+    sqlController.get_animal_info(animal)
+    stain = sqlController.histology.counterstain
 
     if 'full' in resolution.lower():
         CLEANED = os.path.join(DIR, channel_dir, 'full_cleaned')
@@ -48,7 +52,8 @@ def masker(animal, channel, flip=False, rotation=0, stain='NTB', resolution='thu
         max_width = 44000
         max_height = 28000
 
-    if 'thio' in stain.lower():
+
+    if 'thion' in stain.lower():
         bgcolor = 239
         dt = 'uint8'
         limit = 2 ** 8 - 1
@@ -99,7 +104,6 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--rotation', help='Enter rotation', required=False, default=0)
-    parser.add_argument('--stain', help='Enter stain', required=False, default='NTB')
     parser.add_argument('--flip', help='flip or flop', required=False)
     parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
 
@@ -108,6 +112,5 @@ if __name__ == '__main__':
     channel = int(args.channel)
     flip = args.flip
     rotation = int(args.rotation)
-    stain = args.stain
     resolution = args.resolution
-    masker(animal, channel, flip, rotation, stain, resolution)
+    masker(animal, channel, flip, rotation, resolution)
