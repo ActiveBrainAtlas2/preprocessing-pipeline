@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
+from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import create_if_not_exists, load_consecutive_section_transform, convert_resolution_string_to_um
 
 ELASTIX_BIN = '/usr/bin/elastix'
@@ -134,7 +135,7 @@ def create_warp_transforms(stack, transforms, transforms_resol, resolution):
     return transforms_to_anchor
 
 
-def run_offsets(stack, transforms, channel, stain, resolution, njobs):
+def run_offsets(animal, transforms, channel, resolution, njobs):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -144,6 +145,8 @@ def run_offsets(stack, transforms, channel, stain, resolution, njobs):
         limit: number of jobs
     Returns: nothing
     """
+    sqlController = SqlController
+    sqlController.get_animal_info(animal)
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
     INPUT = os.path.join(DIR,  channel_dir, 'thumbnail_cleaned')
@@ -151,6 +154,7 @@ def run_offsets(stack, transforms, channel, stain, resolution, njobs):
     max_width = 1400
     max_height = 900
     bgcolor = '#000000'
+    stain = sqlController.histology.counterstain
 
     if 'thion' in stain.lower():
         bgcolor = '#EFEFEF'
@@ -161,7 +165,7 @@ def run_offsets(stack, transforms, channel, stain, resolution, njobs):
         max_width = 44000
         max_height = 28000
 
-    warp_transforms = create_warp_transforms(stack, transforms, 'thumbnail', resolution)
+    warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', resolution)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
     commands = []
     for file, arr in tqdm(ordered_transforms.items()):
@@ -191,14 +195,12 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--stain', help='Enter stain', required=False, default='NTB')
     parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
     channel = args.channel
-    stain = args.stain
     resolution = args.resolution
     run_elastix(animal, njobs)
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel, stain, resolution, njobs)
+    run_offsets(animal, transforms, channel, resolution, njobs)
