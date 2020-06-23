@@ -16,7 +16,8 @@ from tqdm import tqdm
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from utilities.alignment_utility import create_if_not_exists, load_consecutive_section_transform, convert_resolution_string_to_um
+from utilities.alignment_utility import (create_if_not_exists, load_consecutive_section_transform,
+                                         convert_resolution_string_to_um, SCALING_FACTOR)
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -151,10 +152,12 @@ def run_offsets(animal, transforms, channel, resolution, njobs):
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
     INPUT = os.path.join(DIR,  channel_dir, 'thumbnail_cleaned')
     OUTPUT = os.path.join(DIR, channel_dir, 'thumbnail_aligned')
-    max_width = 1400
-    max_height = 900
     bgcolor = '#000000'
     stain = sqlController.histology.counterstain
+    width = sqlController.scan_run.width
+    height = sqlController.scan_run.height
+    max_width = int(width * SCALING_FACTOR)
+    max_height = int(width * SCALING_FACTOR)
 
     if 'thion' in stain.lower():
         bgcolor = '#EFEFEF'
@@ -162,8 +165,8 @@ def run_offsets(animal, transforms, channel, resolution, njobs):
     if 'full' in resolution.lower():
         INPUT = os.path.join(DIR, channel_dir, 'full_cleaned')
         OUTPUT = os.path.join(DIR, channel_dir, 'full_aligned')
-        max_width = 44000
-        max_height = 28000
+        max_width = width
+        max_height = height
 
     warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', resolution)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
