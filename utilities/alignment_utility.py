@@ -18,6 +18,7 @@ from utilities.file_location import FileLocationManager
 sqlController = SqlController()
 
 
+SCALING_FACTOR = 0.03125
 
 def execute_command(cmd, stdout=None, stderr=None):
     retcode = subprocess.call(cmd, shell=True, stdout=stdout, stderr=stderr)

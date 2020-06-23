@@ -15,7 +15,7 @@ import cv2
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.sqlcontroller import SqlController
-from utilities.alignment_utility import get_last_2d, rotate_image, place_image
+from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR
 
 def get_average_color(INPUT,files):
     averages = []
@@ -31,26 +31,28 @@ def get_average_color(INPUT,files):
 
 def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
 
+    sqlController = SqlController()
+    sqlController.get_animal_info(animal)
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
     CLEANED = os.path.join(DIR, channel_dir, 'thumbnail_cleaned')
     INPUT = os.path.join(DIR,  channel_dir, 'thumbnail')
     MASKS = os.path.join(DIR, 'thumbnail_masked')
-    max_width = 1400
-    max_height = 900
+    width = sqlController.scan_run.width
+    height = sqlController.scan_run.height
+    max_width = int(width * SCALING_FACTOR)
+    max_height = int(width * SCALING_FACTOR)
     bgcolor = 0
     dt = 'uint16'
     limit = 2 ** 16 - 1
-    sqlController = SqlController()
-    sqlController.get_animal_info(animal)
     stain = sqlController.histology.counterstain
 
     if 'full' in resolution.lower():
         CLEANED = os.path.join(DIR, channel_dir, 'full_cleaned')
         INPUT = os.path.join(DIR, channel_dir, 'full')
         MASKS = os.path.join(DIR, 'full_masked')
-        max_width = 44000
-        max_height = 28000
+        max_width = width
+        max_height = height
 
 
     if 'thion' in stain.lower():

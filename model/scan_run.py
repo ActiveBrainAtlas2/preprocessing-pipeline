@@ -6,8 +6,8 @@ from .slide import Slide
 
 class ScanRun(Base, AtlasModel):
     __tablename__ = 'scan_run'
-    
-    id =  Column(Integer, primary_key=True, nullable=False)    
+
+    id =  Column(Integer, primary_key=True, nullable=False)
     prep_id = Column(String, ForeignKey('animal.prep_id'), nullable=False)
     performance_center = Column(Enum("CSHL", "Salk", "UCSD", "HHMI"))
     machine = Column(Enum("Zeiss", "Axioscan", "Nanozoomer","Olympus VA"))
@@ -26,11 +26,13 @@ class ScanRun(Base, AtlasModel):
     ch_2_filter_set = Column(Enum("68", "47", "38", "46", "63", "64", "50"))
     ch_3_filter_set = Column(Enum("68", "47", "38", "46", "63", "64", "50"))
     ch_4_filter_set = Column(Enum("68", "47", "38", "46", "63", "64", "50"))
+    width = Column(Integer, default=0, nullable=False)
+    height = Column(Integer, default=0, nullable=False)
     comments = Column(String)
 
     slides = relationship('Slide', lazy=True)
-    
-    
+
+
     def __repr__(self):
         return "ScanRun(prep_id='%s', scan_id='%s'" % (self.prep_id, self.scan_id)
 

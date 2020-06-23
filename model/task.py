@@ -31,7 +31,6 @@ class ProgressLookup(Base, AtlasModel):
 
     ordinal = Column(Integer, nullable=False)
     description = Column(String, nullable=False)
-    original_step = Column(String, nullable=True)
     category = Column(String, nullable=False)
     script = Column(String, nullable=True)
 
