@@ -88,13 +88,11 @@ def fix_prep_thumbnail(animal):
 
 def test_tif(animal):
     sqlController = SqlController()
-    checks = ['tif', 'histogram', 'prep_thumbnail', 'web thumbnail']
+    checks = ['tif', 'histogram']
     fileLocationManager = FileLocationManager(animal)
     # tifs
     for name, dir in zip(checks, [fileLocationManager.tif,
-                                  fileLocationManager.histogram,
-                                  fileLocationManager.thumbnail_prep,
-                                  fileLocationManager.thumbnail_web]):
+                                  fileLocationManager.histogram]):
         db_files = sqlController.get_valid_sections(animal)
         valid_file_length = len(db_files)
         dir_exists, lfiles, badsize = directory_filled(dir)
