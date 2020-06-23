@@ -23,7 +23,7 @@ def copy_thumbnails_to_dir(animal):
     for channel in channels:
         valid_sections = sql_controller.get_raw_sections(animal, channel)
         for section in tqdm(valid_sections):
-            src_file = os.path.join(file_location_manager.thumbnail_prep, section.destination)
+            src_file = os.path.join(file_location_manager.thumbnail_prep, section.destination_file)
             channel_dir = 'CH{}'.format(channel)
             dst_file = os.path.join(file_location_manager.prep, channel_dir,
                                     'thumbnail', str(section.section_number).zfill(3) + '.tif')
