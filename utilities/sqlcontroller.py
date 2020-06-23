@@ -194,9 +194,10 @@ class SqlController(object):
             print('Bad lookup code for {} error: {}'.format(lookup_id, nrf))
             return step
 
-        return lookup.original_step
+        return lookup.description
 
-    def set_step_completed_in_progress_ini(self, stack, step):
+    def set_step_completed_in_progress_ini(self, stack, lookup_id):
+        #####TODO this needs to be updated
         """
         Look up the lookup up from the step. Check if the stack already exists,
         if not, insert, otherwise, update
@@ -209,16 +210,15 @@ class SqlController(object):
         """
         try:
             lookup = self.session.query(ProgressLookup)\
-                .filter(ProgressLookup.original_step == step)\
-                .order_by(ProgressLookup.original_step.desc())\
+                .filter(ProgressLookup.id == lookup_id)\
                 .limit(1).one()
         except NoResultFound:
-            print('No lookup for {} so we will enter one.'.format(step))
+            print('No lookup for {} so we will enter one.'.format(lookup_id))
         try:
             task = self.session.query(Task).filter(Task.lookup_id == lookup.id)\
                 .filter(Task.prep_id == stack).one()
         except NoResultFound:
-            print('No step for {}'.format(step))
+            print('No step for {}'.format(lookup_id))
             task = Task(stack, lookup.id, True)
 
         try:
