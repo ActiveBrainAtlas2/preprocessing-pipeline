@@ -1,4 +1,6 @@
 from sqlalchemy import Column, String, Integer, Float, ForeignKey
+from sqlalchemy.orm import relationship
+
 from .atlas_model import Base, AtlasModel
 
 
@@ -18,3 +20,6 @@ class SlideCziTif(Base, AtlasModel):
     channel_index = Column(Integer)
     scene_index = Column(Integer)
     processing_duration = Column(Float, nullable=False)
+
+    slide = relationship("Slide", back_populates="slide_czi_tifs")
+    raw_section = relationship("RawSection", uselist=False, back_populates="slide_czi_tif")
