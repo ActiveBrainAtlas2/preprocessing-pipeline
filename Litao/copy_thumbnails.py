@@ -11,19 +11,23 @@ from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 
 
-def copy_thumbnails_to_dir(stack):
+def copy_thumbnails_to_dir(animal):
     sql_controller = SqlController()
-    valid_sections = sql_controller.get_valid_sections(stack)
 
-    file_location_manager = FileLocationManager(stack)
+    file_location_manager = FileLocationManager(animal)
 
-    for section in valid_sections.values():
-        src_file = os.path.join(file_location_manager.thumbnail_prep, section['destination'])
-        dst_file = os.path.join(file_location_manager.prep, 'CH' + str(section['channel']),
-                                'thumbnail', str(section['section_number']).zfill(3) + '.tif')
+    channels = [1,2,3]
 
-        os.makedirs(os.path.dirname(dst_file), exist_ok=True)
-        copyfile(src_file, dst_file)
+    for channel in channels:
+        valid_sections = sql_controller.get_raw_sections(animal, channel)
+        for section in valid_sections:
+            src_file = os.path.join(file_location_manager.thumbnail_prep, section.destination)
+            channel_dir = 'CH{}'.format(channel)
+            dst_file = os.path.join(file_location_manager.prep, channel_dir,
+                                    'thumbnail', str(section.section_number).zfill(3) + '.tif')
+
+            os.makedirs(os.path.dirname(dst_file), exist_ok=True)
+            copyfile(src_file, dst_file)
 
 
 if __name__ == '__main__':
