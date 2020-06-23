@@ -6,7 +6,8 @@ from utilities.sqlcontroller import SqlController
 from controller.preprocessor import SlideProcessor
 from controller.spreadsheet_utilities import upload_spreadsheet, download_spreadsheet
 from model.atlas_schema import manipulate_images
-from sql_setup import session
+from sql_setup import session, CZI_FILES_ARE_CONVERTED_INTO_TIFS_AND_HISTOGRAMS
+
 
 def fetch_and_run(prep_id, limit, image=False, czi=False, testing=False):
 
@@ -16,8 +17,7 @@ def fetch_and_run(prep_id, limit, image=False, czi=False, testing=False):
         slide_processor.process_czi_dir()
     if image:
         manipulate_images(prep_id, limit, testing)
-        sqlController.set_step_completed_in_progress_ini(prep_id, '1-3_setup_thumbnails')
-        sqlController.set_step_completed_in_progress_ini(prep_id, '1-4_setup_sorted_filenames')
+        sqlController.set_step_completed_in_progress_ini(prep_id, CZI_FILES_ARE_CONVERTED_INTO_TIFS_AND_HISTOGRAMS)
     #slide_processor.update_tif_data()
     #slide_processor.test_tables()
     print('Finished manipulating images')
