@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 import matplotlib
 import matplotlib.figure
@@ -11,16 +13,8 @@ import pandas as pd
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.alignment_utility import get_last_2d, place_image
+from utilities.file_location import FileLocationManager
 
-DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
-INPUT = os.path.join(DIR, 'CH1', 'thumbnail')
-OUTPUT = os.path.join(DIR, 'CH1', 'cleaned')
-MASKED = os.path.join(DIR, 'masked')
-files = sorted(os.listdir(INPUT))
-lfiles = len(files)
-print(len(files))
-if lfiles < 1:
-    sys.exit()
 
 def find_main_blob(stats, image):
     height, width = image.shape
@@ -75,53 +69,70 @@ def remove_strip(src):
         no_strip[:,fe:]=0 # mask the strip
     return no_strip, fe
 
+def create_mask(animal):
 
-for i, file in enumerate(tqdm(files)):
-    infile = os.path.join(INPUT, file)
-    try:
-        img = io.imread(infile)
-    except:
-        print('Could not open', infile)
-        continue
-    img = get_last_2d(img)
-    no_strip, fe = remove_strip(img)
+    file_location_manager = FileLocationManager(animal)
 
-    min_value, threshold = find_threshold(img)
-    ###### Threshold it so it becomes binary
-    # threshold = 272
-    ret, threshed = cv2.threshold(no_strip, threshold, 255, cv2.THRESH_BINARY)
-    threshed = np.uint8(threshed)
-    ###### Find connected elements
-    # You need to choose 4 or 8 for connectivity type
-    connectivity = 4
-    output = cv2.connectedComponentsWithStats(threshed, connectivity, cv2.CV_32S)
-    # Get the results
-    # The first cell is the number of labels
-    num_labels = output[0]
-    # The second cell is the label matrix
-    labels = output[1]
-    # The third cell is the stat matrix
-    stats = output[2]
-    # The fourth cell is the centroid matrix
-    centroids = output[3]
-    # Find the blob that corresponds to the section.
-    row = find_main_blob(stats, img)
-    blob_label = row[1]['blob_label']
-    # extract the blob
-    blob = np.uint8(labels == blob_label) * 255
-    # Perform morphological closing
-    kernel10 = np.ones((10, 10), np.uint8)
-    closing = cv2.morphologyEx(blob, cv2.MORPH_CLOSE, kernel10, iterations=5)
-    del blob
-    if fe != 0:
-        img[:,fe:]=0 # mask the strip
-    # scale and mask
-    scaled, _max = scale_and_mask(img, closing)
-    # save the mask
-    outpath = os.path.join(MASKED, file)
-    cv2.imwrite(outpath, closing.astype('uint8'))
+    INPUT = os.path.join(file_location_manager.prep, 'CH1', 'thumbnail')
+    OUTPUT = os.path.join(file_location_manager.prep, 'CH1', 'thumbnail_cleaned')
+    MASKED = os.path.join(file_location_manager.prep, 'thumbnail_masked')
+    files = sorted(os.listdir(INPUT))
 
-    # save the good scaled as CH1
-    outpath = os.path.join(OUTPUT, file)
-    cv2.imwrite(outpath, scaled.astype('uint16'))
+    for i, file in enumerate(tqdm(files)):
+        infile = os.path.join(INPUT, file)
+        try:
+            img = io.imread(infile)
+        except:
+            print('Could not open', infile)
+            continue
+        img = get_last_2d(img)
+        no_strip, fe = remove_strip(img)
+
+        min_value, threshold = find_threshold(img)
+        ###### Threshold it so it becomes binary
+        # threshold = 272
+        ret, threshed = cv2.threshold(no_strip, threshold, 255, cv2.THRESH_BINARY)
+        threshed = np.uint8(threshed)
+        ###### Find connected elements
+        # You need to choose 4 or 8 for connectivity type
+        connectivity = 4
+        output = cv2.connectedComponentsWithStats(threshed, connectivity, cv2.CV_32S)
+        # Get the results
+        # The first cell is the number of labels
+        num_labels = output[0]
+        # The second cell is the label matrix
+        labels = output[1]
+        # The third cell is the stat matrix
+        stats = output[2]
+        # The fourth cell is the centroid matrix
+        centroids = output[3]
+        # Find the blob that corresponds to the section.
+        row = find_main_blob(stats, img)
+        blob_label = row[1]['blob_label']
+        # extract the blob
+        blob = np.uint8(labels == blob_label) * 255
+        # Perform morphological closing
+        kernel10 = np.ones((10, 10), np.uint8)
+        closing = cv2.morphologyEx(blob, cv2.MORPH_CLOSE, kernel10, iterations=5)
+        del blob
+        if fe != 0:
+            img[:,fe:]=0 # mask the strip
+        # scale and mask
+        scaled, _max = scale_and_mask(img, closing)
+        # save the mask
+        outpath = os.path.join(MASKED, file)
+        cv2.imwrite(outpath, closing.astype('uint8'))
+
+        # save the good scaled as CH1
+        outpath = os.path.join(OUTPUT, file)
+        cv2.imwrite(outpath, scaled.astype('uint16'))
+
+if __name__ == '__main__':
+    # Parsing argument
+    parser = argparse.ArgumentParser(description='Work on Animal')
+    parser.add_argument('--animal', help='Enter the animal', required=True)
+    args = parser.parse_args()
+    animal = args.animal
+    create_mask(animal)
+
 
