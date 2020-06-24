@@ -146,8 +146,8 @@ def run_offsets(animal, transforms, channel, resolution, njobs):
         limit: number of jobs
     Returns: nothing
     """
-    sqlController = SqlController
-    sqlController.get_animal_info(stack=animal)
+    sqlController = SqlController()
+    sqlController.get_animal_info(animal)
     channel_dir = 'CH{}'.format(channel)
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
     INPUT = os.path.join(DIR,  channel_dir, 'thumbnail_cleaned')
