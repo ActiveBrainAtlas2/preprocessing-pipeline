@@ -105,6 +105,7 @@ class SlideProcessor(object):
                 metadata_dict = get_czi_metadata(czi_file_path)
                 #print(metadata_dict)
                 series = get_fullres_series_indices(metadata_dict)
+                #print('series', series)
                 slide.scenes = len(series)
                 self.session.add(slide)
                 self.session.flush()
@@ -114,6 +115,7 @@ class SlideProcessor(object):
                 for j, series_index in enumerate(series):
                     scene_number = j + 1
                     channels = range(metadata_dict[series_index]['channels'])
+                    #print('channels range and dict', channels,metadata_dict[series_index]['channels'])
                     channel_counter = 0
                     width = metadata_dict[series_index]['width']
                     height = metadata_dict[series_index]['height']

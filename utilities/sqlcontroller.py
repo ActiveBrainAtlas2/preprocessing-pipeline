@@ -233,7 +233,7 @@ class SqlController(object):
             task = self.session.query(Task).filter(Task.lookup_id == lookup.id)\
                 .filter(Task.prep_id == stack).one()
         except NoResultFound:
-            print('No step for {}'.format(lookup_id))
+            print('No step for {}, so creating new task.'.format(lookup_id))
             task = Task(stack, lookup.id, True)
 
         try:
