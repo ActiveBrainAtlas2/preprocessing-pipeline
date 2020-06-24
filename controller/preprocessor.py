@@ -109,7 +109,8 @@ class SlideProcessor(object):
                 self.session.add(slide)
                 self.session.flush()
 
-
+                #####TODO, scene_index and channel_index just default to 0
+                ##### Fix this!!!!!!!!!!!!!!
                 for j, series_index in enumerate(series):
                     scene_number = j + 1
                     channels = range(metadata_dict[series_index]['channels'])
