@@ -8,7 +8,7 @@ from utilities.sqlcontroller import SqlController
 def make_pages(animal):
     sqlController = SqlController()
     sqlController.get_animal_info(animal)
-    valid_sections = sqlController.get_raw_sections(animal)
+    valid_sections = sqlController.get_raw_sections(animal, 1)
     templateLoader = jinja2.FileSystemLoader(searchpath="./templates")
     templateEnv = jinja2.Environment(loader=templateLoader)
     container = "container.html"
