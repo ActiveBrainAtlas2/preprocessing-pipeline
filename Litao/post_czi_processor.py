@@ -27,23 +27,23 @@ from skimage import io
 from sqlalchemy.orm.exc import NoResultFound
 
 from Litao.database_schema import AlcSlide, AlcSlideCziTif, AlcRawSection, AlcHistology, AlcScanRun, AlcAnimal
+from Litao.file_location import FileLocationManager
 from Litao.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
-from utilities.file_location import FileLocationManager
 from Litao.database_setup import schema, session, RawSection
 
 
 class PostCZIProcessor(object):
-    """ Create a class for processing the pipeline.
-    We assume that the CZI files are already generated and uploaded to the correct folder on birdstore.
+    """ Create a class for processing the pipeline after the CZI files are generated.
+    The CZI files for the specified prep_id are assumed to be generated and uploaded to the correct folder on birdstore.
     """
 
     def __init__(self, prep_id):
-        """ setup the attributes for the SlidesProcessor class
+        """ setup the attributes for the PostCZIProcessor class
 
         Args:
-            animal: object of animal to process
-            session: sql session to run queries
+            prep_id: the prep_id of animal to process
         """
+
         try:
             animal = session.query(AlcAnimal).filter(AlcAnimal.prep_id == prep_id).one()
         except (NoResultFound):
@@ -51,7 +51,7 @@ class PostCZIProcessor(object):
             sys.exit()
 
         self.animal = animal
-        self.file_location_manager = FileLocationManager(animal.prep_id)
+        self.file_location_manager = FileLocationManager(self.animal.prep_id)
         self.scan_ids = [scan.id for scan in self.animal.scan_runs]
 
     def process_czi_dir(self):
@@ -167,18 +167,25 @@ class PostCZIProcessor(object):
             return True
 
         if os.path.exists(czi_file):
+            os.makedirs(os.path.dirname(tif_file), exist_ok=True)
+
             command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate',
                        '-series', str(scene_index), '-channel', str(channel_index),
                        '-nooverwrite', czi_file, tif_file]
-            subprocess.run(command)
+            completed_process = subprocess.run(command, capture_output=True)
         else:
             print('No source file', tif_file)
+            return False
+
+        if completed_process.returncode != 0:
+            print(completed_process.stderr.decode('ascii'))
+            return False
 
         return True
 
     @staticmethod
     def make_histogram_file(tif_file, histogram_file, channel):
-        """Make histogram image from each tif file.
+        """Make histogram image from each full resolution tif file.
 
         Args:
             tif_file: the path to the full resolution TIF file
@@ -217,16 +224,19 @@ class PostCZIProcessor(object):
             plt.xlabel('Value')
             plt.ylabel('Frequency')
             plt.title(f'{os.path.basename(tif_file)} @16bit')
-            fig.savefig(histogram_file, bbox_inches='tight')
             plt.close()
+
+            os.makedirs(os.path.dirname(histogram_file), exist_ok=True)
+            fig.savefig(histogram_file, bbox_inches='tight')
         else:
             print('No source file', tif_file)
+            return False
 
         return True
 
     @staticmethod
     def make_thumbnail_file(tif_file, thumbnail_file):
-        """Create the thumbnail image from each full resolution TIF file
+        """Create the thumbnail file from each full resolution TIF file
 
         Args:
             tif_file: the path to the full resolution TIF file
@@ -240,21 +250,28 @@ class PostCZIProcessor(object):
             return True
 
         if os.path.exists(tif_file):
+            os.makedirs(os.path.dirname(thumbnail_file), exist_ok=True)
+
             command = ['convert', tif_file, '-resize', '3.125%', '-auto-level',
                        '-normalize', '-compress', 'lzw', thumbnail_file]
-            subprocess.run(command)
+            completed_process = subprocess.run(command, capture_output=True)
         else:
             print('No source file', tif_file)
+            return False
+
+        if completed_process.returncode != 0:
+            print(completed_process.stderr.decode('ascii'))
+            return False
 
         return True
 
     @staticmethod
-    def make_web_thumbnail_file(thumbnail_file, png_file):
-        """Convert thumbnail to png format for website
+    def make_thumbnail_web_file(thumbnail_file, png_file):
+        """Create the png thumbnail file from each TIF thumbnail file
 
         Args:
-            thumbnail_file: the path to the thumbnail TIF file
-            png_file: the path to the png file that will be generated
+            thumbnail_file: the path to the thumbnail file
+            png_file: the path to the web thumbnail file that will be genearted
 
         Returns:
             bool: Indicator True for success, False otherwise.
@@ -264,37 +281,80 @@ class PostCZIProcessor(object):
             return True
 
         if os.path.exists(thumbnail_file):
+            os.makedirs(os.path.dirname(png_file), exist_ok=True)
+
             command = ['convert', thumbnail_file, png_file]
-            subprocess.run(command)
+            completed_process = subprocess.run(command, capture_output=True)
         else:
             print('No source file', thumbnail_file)
+            return False
+
+        if completed_process.returncode != 0:
+            print(completed_process.stderr.decode('ascii'))
+            return False
 
         return True
 
-    def make_tif_datajoint(self):
+    def make_tif_datajoint(self, debug=False):
+        """ The wrapper function to invoke datajoint's autopopulate method for "make_tif" operation.
+        To speed up, you can run this method on different machines at the same time.
+
+        Args:
+            debug: whether to print the debug message
+        """
+
         global dj_make_tif_params
 
-        restrictions = [RawSection & f'prep_id="{self.animal}" and active=1']
-        MakeTIFOperation.populate(restrictions=restrictions, display_progress=True)
+        restrictions = [RawSection & f'prep_id="{self.animal.prep_id}" and active=1']
+        MakeTifOperation.populate(restrictions, display_progress=debug)
 
-    def make_histogram_datajoint(self):
+    def make_histogram_datajoint(self, debug=False):
+        """ The wrapper function to invoke datajoint's autopopulate method for "make_histogram" operation.
+        To speed up, you can run this method on different machines at the same time.
+
+        Args:
+            debug: whether to print the debug message
+        """
+
         global dj_make_histogram_params
 
-        restrictions = [RawSection & f'prep_id="{self.animal}" and active=1']
-        MakeHistogramOperation.populate(restrictions=restrictions, display_progress=True)
+        restrictions = [RawSection & f'prep_id="{self.animal.prep_id}" and active=1']
+        MakeHistogramOperation.populate(restrictions, display_progress=debug)
 
-    def make_thumbnail_datajoint(self):
+    def make_thumbnail_datajoint(self, debug=False):
+        """ The wrapper function to invoke datajoint's autopopulate method for "make_thumbnail" operation.
+        To speed up, you can run this method on different machines at the same time.
+
+        Args:
+            debug: whether to print the debug message
+        """
+
         global dj_make_thumbnail_params
 
-        restrictions = [RawSection & f'prep_id="{self.animal}" and active=1']
-        MakeThumbnailOperation.populate(restrictions=restrictions, display_progress=True)
+        restrictions = [RawSection & f'prep_id="{self.animal.prep_id}" and active=1']
+        MakeThumbnailOperation.populate(restrictions, display_progress=debug)
 
-    def make_web_thumbnail_datajoint(self):
-        global dj_make_web_thumbnail_params
+    def make_thumbnail_web_datajoint(self, debug=False):
+        """ The wrapper function to invoke datajoint's autopopulate method for "make_mask_web" operation.
+        To speed up, you can run this method on different machines at the same time.
 
-        restrictions = [RawSection & f'prep_id="{self.animal}" and active=1']
-        MakeWebThumbnailOperation.populate(restrictions=restrictions, display_progress=True)
+        Args:
+            debug: whether to print the debug message
+        """
 
+        global dj_make_thumbnail_web_params
+
+        restrictions = [RawSection & f'prep_id="{self.animal.prep_id}" and active=1']
+        MakeThumbnailWebOperation.populate(restrictions, display_progress=debug)
+
+
+"""
+Below are the definitions of datajoint tables required for the operations in the PostCziProcessor.
+
+Because of the stupidity of datajoint's not allowing pass parameters to the make function, the parameters have to be 
+global variables. Thus, the parameters for each operation are in a dictionary that will be fulfilled in the datajoint 
+wrapper functions. 
+"""
 
 dj_make_tif_params = {
 }
@@ -302,11 +362,12 @@ dj_make_histogram_params = {
 }
 dj_make_thumbnail_params = {
 }
-dj_make_web_thumbnail_params = {
+dj_make_thumbnail_web_params = {
 }
 
+
 @schema
-class MakeTIFOperation(dj.Computed):
+class MakeTifOperation(dj.Computed):
     definition = """
     -> RawSection
     ---
@@ -320,7 +381,7 @@ class MakeTIFOperation(dj.Computed):
 
         file_location_manager = FileLocationManager(raw_section_row.prep_id)
         czi_file = os.path.join(file_location_manager.czi, slide_row.file_name)
-        tif_file = os.path.join(file_location_manager.tif, raw_section_row['destination_file'])
+        tif_file = os.path.join(file_location_manager.tif, raw_section_row.destination_file)
         scene_index = slide_czi_tif_row.scene_index
         channel_index = slide_czi_tif_row.channel_index
 
@@ -345,7 +406,7 @@ class MakeHistogramOperation(dj.Computed):
 
         file_location_manager = FileLocationManager(raw_section_row.prep_id)
         tif_file = os.path.join(file_location_manager.tif, raw_section_row.destination_file)
-        histogram_file = os.path.join(self.file_location_manager.histogram,
+        histogram_file = os.path.join(file_location_manager.histogram,
                                       os.path.splitext(raw_section_row.destination_file)[0] + '.png')
 
         start = time.time()
@@ -369,7 +430,8 @@ class MakeThumbnailOperation(dj.Computed):
 
         file_location_manager = FileLocationManager(raw_section_row.prep_id)
         tif_file = os.path.join(file_location_manager.tif, raw_section_row.destination_file)
-        thumbnail_file = os.path.join(file_location_manager.thumbnail_prep, raw_section_row.destination_file)
+        thumbnail_file = os.path.join(file_location_manager.thumbnail,
+                                      os.path.splitext(raw_section_row.destination_file)[0] + '.tif')
 
         start = time.time()
         success = PostCZIProcessor.make_thumbnail_file(tif_file, thumbnail_file)
@@ -380,7 +442,7 @@ class MakeThumbnailOperation(dj.Computed):
 
 
 @schema
-class MakeWebThumbnailOperation(dj.Computed):
+class MakeThumbnailWebOperation(dj.Computed):
     definition = """
     -> RawSection
     ---
@@ -391,12 +453,12 @@ class MakeWebThumbnailOperation(dj.Computed):
         raw_section_row = session.query(AlcRawSection).filter(AlcRawSection.id == key['id']).one()
 
         file_location_manager = FileLocationManager(raw_section_row.prep_id)
-        thumbnail_file = os.path.join(file_location_manager.thumbnail_prep, raw_section_row.destination_file)
+        thumbnail_file = os.path.join(file_location_manager.tif, raw_section_row.destination_file)
         png_file = os.path.join(file_location_manager.thumbnail_web,
                                 os.path.splitext(raw_section_row.destination_file)[0] + '.png')
 
         start = time.time()
-        success = PostCZIProcessor.make_web_thumbnail_file(thumbnail_file, png_file)
+        success = PostCZIProcessor.make_thumbnail_web_file(thumbnail_file, png_file)
         end = time.time()
 
         if success:

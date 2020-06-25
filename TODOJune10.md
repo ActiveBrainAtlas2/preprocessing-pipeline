@@ -1,3 +1,11 @@
+# Todo June 24
+1. Get three brains. Use the three reference brains. MD589, MD585, MD594.
+1. How do we prepare the contours to add to CVAT?
+1. The existing contours are specific to a brain.
+1. Need an average atlas of the structures. 
+1. Need an alignment of these structures
+1. Put in dates for workflow graph
+
 # Todo June 10
 1. Ed - align thumbnail masks from Channel 1 from 3 brains
 1. Ed - document file structure, with tree
@@ -13,4 +21,4 @@ segmentation into neuroglancer.
  1. Needs to be biology centered for the end user.
  1. Start with a zoomed out version. Get the center.
  1. Then zoom in and look for the midsection.
-
+ 1. Find the averaged volumns, 11am.
