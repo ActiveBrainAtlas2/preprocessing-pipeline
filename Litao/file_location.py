@@ -32,7 +32,8 @@ class FileLocationManager(object):
 
         self.prep = os.path.join(ROOT_DIR, stack, 'preps')
         self.elastix_dir = os.path.join(self.prep, 'elastix')
-        self.masked = os.path.join(self.prep, 'masked')
+        self.full_masked = os.path.join(self.prep, 'full_masked')
+        self.thumbnail_masked = os.path.join(self.prep, 'thumbnail_masked')
 
         '''
         self.thumbnail_prep = os.path.join(self.prep, 'thumbnail')

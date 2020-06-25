@@ -58,26 +58,6 @@ class PostTIFProcessor(object):
             os.makedirs(os.path.dirname(dst_file), exist_ok=True)
             copyfile(src_file, dst_file)
 
-    def make_mask_dir(self):
-        input_dir = self.file_location_manager.get_prep_channel_dir(1, self.full)
-        for file_name in tqdm(sorted(os.listdir(input_dir))):
-            input_path = os.path.join(input_dir, file_name)
-            masked_path = os.path.join(self.file_location_manager.masked, file_name)
-            cleaned_path = os.path.join(self.file_location_manager.get_prep_channel_dir(1, self.full, 'cleaned'),
-                                        file_name)
-
-            PostTIFProcessor.make_mask_file(input_path, masked_path, cleaned_path)
-
-    def apply_mask_dir(self, channel, stain, flip, rotation):
-        input_dir = self.file_location_manager.get_prep_channel_dir(channel, self.full)
-        for file_name in tqdm(sorted(os.listdir(input_dir))):
-            input_path = os.path.join(input_dir, file_name)
-            masked_path = os.path.join(self.file_location_manager.masked, file_name)
-            cleaned_path = os.path.join(self.file_location_manager.get_prep_channel_dir(channel, self.full,
-                                                                                        'cleaned'), file_name)
-
-            PostTIFProcessor.apply_mask_file(input_path, masked_path, cleaned_path, stain, rotation, flip)
-
     @staticmethod
     def make_mask_file(input_path, masked_path, cleaned_path):
         """ Make masks from the channel 1 TIF files and also clean them.
@@ -226,7 +206,11 @@ class MakeMaskOperation(dj.Computed):
         file_location_manager = FileLocationManager(raw_section_row.prep_id)
         input_dir = file_location_manager.get_prep_channel_dir(1, dj_make_mask_params['full'])
         input_path = os.path.join(input_dir, file_name)
-        masked_path = os.path.join(file_location_manager.masked, file_name)
+        if dj_make_mask_params['full']:
+            mask_dir = file_location_manager.full_masked
+        else:
+            mask_dir = file_location_manager.thumbnail_masked
+        masked_path = os.path.join(mask_dir, file_name)
         cleaned_path = os.path.join(file_location_manager.get_prep_channel_dir(1, dj_make_mask_params['full'],
                                                                                'cleaned'), file_name)
 
@@ -253,7 +237,11 @@ class ApplyMaskOperation(dj.Computed):
         file_location_manager = FileLocationManager(raw_section_row.prep_id)
         input_dir = file_location_manager.get_prep_channel_dir(raw_section_row.channel, dj_make_mask_params['full'])
         input_path = os.path.join(input_dir, file_name)
-        masked_path = os.path.join(file_location_manager.masked, file_name)
+        if dj_make_mask_params['full']:
+            mask_dir = file_location_manager.full_masked
+        else:
+            mask_dir = file_location_manager.thumbnail_masked
+        masked_path = os.path.join(mask_dir, file_name)
         cleaned_path = os.path.join(file_location_manager.get_prep_channel_dir(raw_section_row.channel,
                                                                                dj_make_mask_params['full'],
                                                                                'cleaned'), file_name)
