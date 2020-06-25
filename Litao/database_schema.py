@@ -47,7 +47,7 @@ class AlcAnimal(Base, AtlasModel):
     aliases_5 = Column(String(255))
     comments = Column(String(255))
 
-    scan_runs = relationship('ScanRun', backref="animal")
+    scan_runs = relationship('AlcScanRun', backref="animal")
     # histology = relationship(Histology, uselist=False, backref="animal")
 
 
@@ -125,7 +125,7 @@ class AlcInjection(Base, AtlasModel):
     transport_days = Column(Integer, default=0)
     virus_count = Column(Integer, default=0)
 
-    viruses = relationship("Virus", secondary=injection_virus)
+    viruses = relationship("AlcVirus", secondary=injection_virus)
 
 
 class AlcHistology(Base, AtlasModel):
@@ -179,7 +179,7 @@ class AlcScanRun(Base, AtlasModel):
     ch_4_filter_set = Column(Enum("68", "47", "38", "46", "63", "64", "50"))
     comments = Column(String(255))
 
-    slides = relationship('Slide', lazy=True)
+    slides = relationship('AlcSlide', lazy=True)
 
 
 class AlcSlide(Base, AtlasModel):
@@ -208,7 +208,7 @@ class AlcSlide(Base, AtlasModel):
     file_name = Column(String(255), nullable=False)
     comments = Column(String(255))
 
-    slide_czi_tifs = relationship('SlideCziTif', lazy=True)
+    slide_czi_tifs = relationship('AlcSlideCziTif', lazy=True)
 
 
 class AlcSlideCziTif(Base, AtlasModel):
@@ -272,22 +272,3 @@ class Task(Base, AtlasModel):
         self.start_date = now
         self.end_date = now
         self.created = now
-
-
-def connect_sqlalchemy(credentials_path):
-    with open(credentials_path) as file:
-        parameters = yaml.load(file, Loader=yaml.FullLoader)
-        user = parameters['user']
-        password = parameters['password']
-        host = parameters['host']
-        database = parameters['schema']
-
-    connection_string = f'mysql+pymysql://{user}:{password}@{host}/{database}'
-    engine = create_engine(connection_string, echo=False)
-    Session = sessionmaker(bind=engine)
-    Session.configure(bind=engine)
-    session = Session()
-
-    return engine, session
-
-

@@ -19,7 +19,8 @@ class FileLocationManager(object):
         self.czi = os.path.join(ROOT_DIR, stack, 'czi')
         self.tif = os.path.join(ROOT_DIR, stack, 'tif')
         self.histogram = os.path.join(ROOT_DIR, stack, 'histogram')
-        self.thumbnail_web = os.path.join(ROOT_DIR, stack, 'thumbnail')
+        self.thumbnail = os.path.join(ROOT_DIR, stack, 'thumbnail')
+        self.thumbnail_web = os.path.join(ROOT_DIR, stack, 'www')
 
         self.brain_info = os.path.join(ROOT_DIR, stack, 'brains_info')
         self.operation_configs = os.path.join(self.brain_info, 'operation_configs')
@@ -32,9 +33,9 @@ class FileLocationManager(object):
         self.prep = os.path.join(ROOT_DIR, stack, 'preps')
         self.elastix_dir = os.path.join(self.prep, 'elastix')
         self.masked = os.path.join(self.prep, 'masked')
-        self.thumbnail_prep = os.path.join(self.prep, 'thumbnail')
 
         '''
+        self.thumbnail_prep = os.path.join(self.prep, 'thumbnail')
         self.oriented = os.path.join(ROOT_DIR, stack, PREPS, 'oriented')
         self.aligned = os.path.join(ROOT_DIR, stack, PREPS, 'aligned')
         self.prealigned = os.path.join(ROOT_DIR, stack, PREPS, 'prealigned')
