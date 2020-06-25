@@ -30,7 +30,7 @@ def make_thumbnails(animal, channel, njobs):
         limit: number of jobs
     Returns: nothing
     """
-    channel_find = '{}.tif'
+    channel_find = '{}.tif'.format(channel)
     fileLocationManager = FileLocationManager(animal)
     INPUT = fileLocationManager.tif
     OUTPUT = fileLocationManager.thumbnail_prep
