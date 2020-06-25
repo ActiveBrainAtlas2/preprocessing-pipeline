@@ -41,13 +41,7 @@ def make_thumbnails(animal, channel, njobs):
         outputfile = os.path.join(OUTPUT, file)
 
         if os.path.exists(outputfile):
-            print('outfile exists', file)
             continue
-        else:
-            print('outfile does not exist', file)
-
-        continue
-
 
         cmd = "convert {} -resize 3.125% -compress lzw {}".format(inputfile, outputfile)
 
