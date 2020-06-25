@@ -1,5 +1,6 @@
 ### New Brain
 ## Post CZI Creation Process
+1. To install the software prerequisites, [look here.](README.md)
 1. Run: main.py --animal DK43 --czi True
     1. This will scan each czi file
     2. extract the tif files
@@ -9,19 +10,17 @@
 1. Run: main.py --animal DK43 --image True --limit 10. 
     1. this will read the slide table in the database
     1. create 10 tif files
-    1. create 10 histogram files
     1. Repeat this process with no limit after you are sure everything works
     1. Open up another terminal on ratto and basalis and muralis and run the same script
     1. If you cancel a job or need to start over, delete everything from the __file_operation table
     1. You might also have to delete everything from the ~jobs table
 
 ## Post TIF Creation Process
-1. To install the software prerequisites, [look here.](README.md)
-1. Create thumbnails on all channels- Litao's new script
-1. Create cleaned images and masks on CH1 
-1. Run masks against CH2 and CH3 
-1. Look at images and determine what kind of rotation is necessary.
-1. Rotate all channels
+1. Create thumbnails on all channels into the preps/thumbnail dir. Use imagemagick convert
+1. Copy from preps/thumbnail to preps/CHX/thumbnail to created ordered thumbnails with copy_thumbnails.py
+1. View a couple thumbnails to determine how much rotation/flips to perform and create web thumbnails with imagemagick convert
+1. Create cleaned images and masks on CH1 with appropriate rotation/flip 
+1. Run masks against CH2 and CH3  with appropriate rotation/flip
 1. Run alignment on thumbnail CH1 
 1. Use alignment results from CH1 to align thumbnail CH2 and CH3
 1. Run neuroglancer on all aligned thumbnail dirs
