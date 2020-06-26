@@ -2,6 +2,7 @@ import os
 
 
 ROOT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
+VOLUME_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
 PREPS = 'preps'
 THUMBNAIL = 'thumbnail'
 BRAIN_INFO = 'brains_info'

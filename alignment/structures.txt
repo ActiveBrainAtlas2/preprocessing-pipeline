@@ -1,0 +1,1 @@
+/net/birdstore/Active_Atlas_Data/copied_from_S3/mousebrainatlas-data/CSHL_registration_visualization/atlasV5/atlasV5_down32_scoreVolume_warp20_MD594_prep2_detector15_down32_scoreVolume/down8
