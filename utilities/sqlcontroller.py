@@ -250,11 +250,11 @@ class SqlController(object):
         #save_dict_as_ini(progress_ini_to_save, fp)
 
     #################### Resolution conversions ############
-
-    def convert_resolution_string_to_um(self, stack, resolution,):
+    #####TODO these methods are already in alignment_utility
+    def convert_resolution_string_to_umXXX(self, stack, resolution,):
         return self.convert_resolution_string_to_voxel_size(stack, resolution)
 
-    def convert_resolution_string_to_voxel_size(self, stack, resolution):
+    def convert_resolution_string_to_voxel_sizeXXX(self, stack, resolution):
         """
         Args:
             resolution (str):

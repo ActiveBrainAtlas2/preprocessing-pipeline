@@ -1,0 +1,29 @@
+{
+"MD585": {
+    "prep2_section_min": 83,
+    "prep2_section_max": 352,
+    "local_offset_x": 42,
+    "local_offset_y": -17,
+    "local_offset_slices": -22,
+    "image_width_um": 35617,
+    "image_height_um": 26086
+    },
+"MD589": {
+    "prep2_section_min": 92,
+    "prep2_section_max": 370,
+    "local_offset_x": 0,
+    "local_offset_y": 0,
+    "local_offset_slices": 0,
+    "image_width_um": 33739,
+    "image_height_um": 25947
+    },
+"MD594": {
+    "prep2_section_min": 92,
+    "prep2_section_max": 364,
+    "local_offset_x": 0,
+    "local_offset_y": 0,
+    "local_offset_slices": 0,
+    "image_width_um": 37426,
+    "image_height_um": 24139
+    }
+}
