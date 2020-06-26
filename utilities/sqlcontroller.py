@@ -40,28 +40,6 @@ class SqlController(object):
         self.valid_sections = OrderedDict()
         # fill up the metadata_cache variable
 
-    def generate_stack_metadataXXX(self):
-        """
-        This should be deprecated
-        There must be an entry in both the animal and histology and task tables
-        The task table is necessary as that is filled when the CZI dir is scanned.
-        If there are no czi and tif files, there is no point in running the pipeline on that stack
-        Returns:
-            a dictionary of stack information
-
-        for a, h in session.query(Animal, Histology).filter(Animal.prep_id == Histology.prep_id).all():
-            resolution = session.query(func.max(ScanRun.resolution)).filter(ScanRun.prep_id == a.prep_id).scalar()
-
-            tif_dir = os.path.join(ROOT_DIR, a.prep_id, 'tif')
-            if (os.path.exists(tif_dir) and len(os.listdir(tif_dir)) > 0):
-                self.all_stacks.append(a.prep_id)
-                self.stack_metadata[a.prep_id] = {'stain': h.counterstain,
-                                                  'cutting_plane': h.orientation,
-                                                  'resolution': resolution,
-                                                  'section_thickness': h.section_thickness}
-        return self.stack_metadata
-        """
-
     def get_animal_info(self, stack):
         self.animal = self.session.query(Animal).filter(Animal.prep_id == stack).one()
         self.histology = self.session.query(Histology).filter(Histology.prep_id == stack).one()
@@ -249,34 +227,3 @@ class SqlController(object):
         #fp = os.path.join(ROOT_DIR, stack, 'brains_info', 'progress.ini')
         #save_dict_as_ini(progress_ini_to_save, fp)
 
-    #################### Resolution conversions ############
-    #####TODO these methods are already in alignment_utility
-    def convert_resolution_string_to_umXXX(self, stack, resolution,):
-        return self.convert_resolution_string_to_voxel_size(stack, resolution)
-
-    def convert_resolution_string_to_voxel_sizeXXX(self, stack, resolution):
-        """
-        Args:
-            resolution (str):
-        Returns:
-            voxel/pixel size in microns.
-        """
-
-        assert stack is not None, 'Stack argument cannot be None.'
-        scan_run = self.session.query(ScanRun, func.max(ScanRun.resolution).label('resolution')).filter(ScanRun.prep_id == stack).group_by(ScanRun.prep_id).one()
-        planar_resolution = scan_run.resolution
-
-        if resolution in ['down32', 'thumbnail']:
-            assert stack is not None
-            return planar_resolution * 32.
-        elif resolution == 'lossless' or resolution == 'down1' or resolution == 'raw':
-            return planar_resolution
-        elif resolution.startswith('down'):
-            return planar_resolution * int(resolution[4:])
-        elif resolution == 'um':
-            return 1.
-        elif resolution.endswith('um'):
-            return float(resolution[:-2])
-        else:
-            print(resolution)
-            raise Exception("Unknown resolution string %s" % resolution)
