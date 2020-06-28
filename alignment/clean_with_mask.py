@@ -42,6 +42,8 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
     height = sqlController.scan_run.height
     max_width = int(width * SCALING_FACTOR)
     max_height = int(width * SCALING_FACTOR)
+    max_width = 2000
+    max_height = 1050
     bgcolor = 0
     dt = 'uint16'
     limit = 2 ** 16 - 1
@@ -91,6 +93,11 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
 
         if flip == 'flop':
             fixed = np.flip(fixed, axis=1)
+
+        if channel == 1:
+            clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(16, 16))
+            fixed = clahe.apply(fixed.astype(dt))
+
         #TODO dtype needs to come from the sql
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         fixed[fixed == 0] = bgcolor
