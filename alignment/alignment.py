@@ -157,7 +157,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs):
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     max_width = int(width * SCALING_FACTOR)
-    max_height = int(width * SCALING_FACTOR)
+    max_height = int(height * SCALING_FACTOR)
     if 'thion' in stain.lower():
         bgcolor = '#EFEFEF'
 

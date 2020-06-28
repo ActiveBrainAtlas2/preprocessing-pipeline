@@ -41,7 +41,7 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     max_width = int(width * SCALING_FACTOR)
-    max_height = int(width * SCALING_FACTOR)
+    max_height = int(height * SCALING_FACTOR)
     bgcolor = 0
     dt = 'uint16'
     limit = 2 ** 16 - 1
