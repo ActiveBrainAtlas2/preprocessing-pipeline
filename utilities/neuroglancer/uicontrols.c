@@ -169,3 +169,5 @@ MD589 settings
 look under MD585_filled
 main info file specifies the names/info dir
 names/info file key, value json file
+
+https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594

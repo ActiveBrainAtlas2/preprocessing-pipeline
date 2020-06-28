@@ -45,6 +45,7 @@ for i in *.tif; do identify $i; done | awk '{print $4}' | sort -n
 1. python precompute_images_local.py --animal DK43 --channel 2 --resolution thumb
 1. python precompute_images_local.py --animal DK43 --channel 3 --resolution thumb
 
+##### fix section 108
 
 ### Actual scripts run on MD589 for 3 channels for thionin Neuroglancer
 

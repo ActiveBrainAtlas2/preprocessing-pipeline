@@ -114,7 +114,7 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
     converter.register_new_resolution('structure_volume', resol_um=convert_resolution_string_to_um(stack, resolution))
     converter.register_new_resolution('image', resol_um=convert_resolution_string_to_um(stack, 'raw'))
 
-    for name_s, (structure_volume_volResol, origin_wrt_wholebrain_volResol) in volumes.iteritems():
+    for name_s, (structure_volume_volResol, origin_wrt_wholebrain_volResol) in volumes.items():
 
         converter.derive_three_view_frames(name_s,
         origin_wrt_wholebrain_um=convert_resolution_string_to_um(stack, resolution) * origin_wrt_wholebrain_volResol,
@@ -403,14 +403,14 @@ def get_transformed_volume_filepath_v2(alignment_spec, resolution=None, trial_id
                                                               trial_idx=trial_idx)
     vol_basename = warp_basename + '_' + resolution
     vol_basename_with_structure_suffix = vol_basename + ('_' + structure) if structure is not None else ''
-    print('1',VOLUME_ROOTDIR)
-    print('2',alignment_spec['stack_m']['name'])
-    print('3',vol_basename)
-    print('4 score_volumes')
-    print('5',vol_basename_with_structure_suffix)
+    #print('1',VOLUME_ROOTDIR)
+    #print('2',alignment_spec['stack_m']['name'])
+    #print('3',vol_basename)
+    #print('4 score_volumes')
+    #print('5',vol_basename_with_structure_suffix)
     filename = os.path.join(VOLUME_ROOTDIR, alignment_spec['stack_m']['name'],
                         vol_basename, 'score_volumes', vol_basename_with_structure_suffix + '.npy')
-    print('get transformed_volume_filepath ', filename)
+    #print('get transformed_volume_filepath ', filename)
     filename = os.path.join('/home/eddyod/MouseBrainSlicer_data/score_volumes', 'atlasV7_10.0um_scoreVolume_12N.npy')
     return filename
 
@@ -587,27 +587,19 @@ def load_transformed_volume(alignment_spec, structure):
     kwargs = locals()
 
 
-
-    vol = load_data(get_transformed_volume_filepath_v2(alignment_spec=alignment_spec,
+    volume_filename = get_transformed_volume_filepath_v2(alignment_spec=alignment_spec,
                                                         resolution=None,
-                                                        structure=structure))
-    # download_from_s3(fp)
-    # vol = DataManager.load_data(fp, filetype='npy')
-
-    # bbox_fp = DataManager.get_transformed_volume_bbox_filepath_v2(wrt='fixedWholebrain',
-    #                                                              alignment_spec=alignment_spec,
-    #                                                     resolution=resolution,
-    #                                                     structure=structure)
-    # download_from_s3(bbox_fp)
-    # bbox = np.loadtxt(bbox_fp)
-    # origin = bbox[[0,2,4]]
-
-    #####TODO check resolution in arg list below
-    origin = load_data(get_transformed_volume_origin_filepath(wrt='fixedWholebrain',
+                                                        structure=structure)
+    origin_filename = get_transformed_volume_origin_filepath(wrt='fixedWholebrain',
                                                                  alignment_spec=alignment_spec,
                                                         resolution=None,
-                                                        structure=structure))
-    return (vol, origin)
+                                                        structure=structure)
+    print('load_transformed_volume: volume_filename', volume_filename)
+    print('load_transformed_volume: origin_filename', origin_filename)
+    origin_filename = '/home/eddyod/MouseBrainSlicer_data/score_volumes/atlasV7_10.0um_scoreVolume_12N_origin_wrt_canonicalAtlasSpace.txt'
+    volume = load_data(volume_filename)
+    origin = load_data(origin_filename)
+    return (volume, origin)
 
 def get_transformed_volume_origin_filepath(alignment_spec, structure=None, wrt='wholebrain', resolution=None):
     """
@@ -681,16 +673,19 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
         (3d-array, (6,)-tuple): (volume, bounding box wrt wholebrain)
     """
 
-    vol_fp = get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure, resolution=resolution)
+    volume_filename = get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure, resolution=resolution)
     # download_from_s3(vol_fp, is_dir=False)
-    volume = load_data(vol_fp, filetype='npy')
+    print('volume_filename', volume_filename)
+    volume = load_data(volume_filename, filetype='npy')
 
     # bbox_fp = DataManager.get_original_volume_bbox_filepath_v2(stack_spec=stack_spec, structure=structure,
     #                                                            resolution=resolution, wrt=bbox_wrt)
     # download_from_s3(bbox_fp)
     # volume_bbox = DataManager.load_data(bbox_fp, filetype='bbox')
 
-    origin = load_data(get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution))
+    origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
+    print('origin_file_name', origin_filename)
+    origin = load_data(origin_filename)
 
     if crop_to_minimal:
         volume, origin = crop_volume_to_minimal(vol=volume, origin=origin, return_origin_instead_of_bbox=True)

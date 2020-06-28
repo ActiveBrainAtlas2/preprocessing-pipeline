@@ -38,9 +38,11 @@ def image_contour_generator( stack, detector_id, structure, use_local_alignment 
 #         str_alignment_spec = load_json(fn_vis_structures)[structure]
     with open(fn_vis_structures,'r') as json_file:
         str_alignment_spec = json.load(json_file)[structure]
-    vol = load_transformed_volume(str_alignment_spec, structure)
-
-
+    #vol = load_transformed_volume(str_alignment_spec, structure)
+    t1 = np.load('/home/eddyod/MouseBrainSlicer_data/score_volumes/atlasV7_10.0um_scoreVolume_12N.npy')
+    t2 = (1.424821380109989946e+02 ,3.171751433368390849e+01,-4.400000000000000000e+01)
+    # vol is a tuple of np array and 3 numbers
+    vol = (t1, t2)
     # Load collection of bounding boxes for every structure
     fileLocationManager = FileLocationManager(stack)
     registered_atlas_structures_wrt_wholebrainXYcropped_xysecTwoCorners = \

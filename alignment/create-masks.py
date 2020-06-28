@@ -124,8 +124,8 @@ def create_mask(animal):
         cv2.imwrite(outpath, closing.astype('uint8'))
 
         # save the good scaled as CH1
-        outpath = os.path.join(OUTPUT, file)
-        cv2.imwrite(outpath, scaled.astype('uint16'))
+        #outpath = os.path.join(OUTPUT, file)
+        #cv2.imwrite(outpath, scaled.astype('uint16'))
 
 if __name__ == '__main__':
     # Parsing argument
