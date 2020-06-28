@@ -25,16 +25,14 @@ lfiles = len(files)
 if lfiles < 1:
     sys.exit()
 
-
 def find_threshold(src):
     fig = matplotlib.figure.Figure()
     ax = matplotlib.axes.Axes(fig, (0,0,0,0))
-    n,bins,patches=ax.hist(src.flatten(),160);
+    n,bins,patches=ax.hist(src.flatten(),360);
     del ax, fig
     min_point=np.argmin(n[:5])
-    #print(n[:5])
-    min_point = int(min(1, min_point))
-    thresh=min_point*64000/660 + 1400
+    min_point = int(max(2, min_point))
+    thresh=min_point * 20
     return min_point, thresh
 
 
@@ -44,7 +42,6 @@ def find_main_blob(stats, image):
     df.columns = ['Left', 'Top', 'Width', 'Height', 'Area']
     df['blob_label'] = df.index
     df = df.sort_values(by='Area', ascending=False)
-
     for row in df.iterrows():
         Left = row[1]['Left']
         Top = row[1]['Top']
@@ -104,6 +101,16 @@ def mask_thionin(animal, resolution='thumbnail'):
                 print('Could not open', infile)
                 continue
             src = get_last_2d(src)
+
+            start_bottom = src.shape[0] - 5
+            bottom_rows = src[start_bottom:src.shape[0], :]
+            avg = np.mean(bottom_rows)
+            bgcolor = int(round(avg))
+            lower = bgcolor - 8
+            upper = bgcolor + 4
+            bgmask = (src >= lower) & (src <= upper)
+            src[bgmask] = bgcolor
+
             clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(16, 16))
             h_src = clahe.apply(src)
             min_value, threshold = find_threshold(h_src)
