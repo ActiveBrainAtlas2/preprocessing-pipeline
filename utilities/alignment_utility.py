@@ -653,7 +653,7 @@ def place_image(img, file, max_width, max_height, bgcolor=None):
     try:
         new_img[startr:endr, startc:endc] = img
     except:
-        print('could not create new img', file)
+        print('{} with shape {} could not be placed in {}x{}'.format(file, str(img.shape), max_width, max_height))
 
     return new_img.astype(dt)
 

@@ -56,7 +56,7 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
 
 
     if 'thion' in stain.lower():
-        bgcolor = 239
+        bgcolor = 230
         dt = 'uint8'
         limit = 2 ** 8 - 1
 
@@ -78,7 +78,7 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
         mask16 = np.copy(mask.astype(dt))
         mask16[mask16 > 0] = limit
 
-        img = np.int16(img)
+        ##img = np.int16(img)
         mask = np.int8(mask16)
         fixed = cv2.bitwise_and(img, img, mask=mask)
         del mask
@@ -92,7 +92,7 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
         if flip == 'flop':
             fixed = np.flip(fixed, axis=1)
 
-        if channel == 1:
+        if channel == 1 and 'ntb' in stain.lower():
             clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(16, 16))
             fixed = clahe.apply(fixed.astype(dt))
 
