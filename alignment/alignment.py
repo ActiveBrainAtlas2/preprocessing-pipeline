@@ -170,6 +170,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     if masks:
         INPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/prealigned'.format(animal)
         OUTPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/aligned'.format(animal)
+        bgcolor = '#000000'
 
     warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', resolution)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
