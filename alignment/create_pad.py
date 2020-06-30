@@ -4,18 +4,15 @@ Its used for creating the global masks
 """
 import argparse
 
-import numpy as np
 from skimage import io
 from os.path import expanduser
 from tqdm import tqdm
-
-
 HOME = expanduser("~")
 import os, sys
 import cv2
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
-from utilities.alignment_utility import place_image, get_last_2d, SCALING_FACTOR
+from utilities.alignment_utility import place_image, SCALING_FACTOR
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 
