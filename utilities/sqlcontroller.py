@@ -71,6 +71,18 @@ class SqlController(object):
         #print(self.valid_sections)
         return self.valid_sections
 
+    def get_sections_numbers(self, stack):
+        raw_sections = self.session.query(RawSection).filter(RawSection.prep_id == stack)\
+            .filter(RawSection.active == 1).filter(RawSection.channel == 1).filter(RawSection.file_status == 'good')\
+            .order_by(RawSection.section_number).all()
+
+        section_numbers = []
+        for r in raw_sections:
+            section_numbers.append(r.section_number)
+
+        return section_numbers
+
+
     def get_raw_sections(self, stack, channel):
         """
         This is used for creating the thumbnail curation pages created by jinja
@@ -93,6 +105,7 @@ class SqlController(object):
             # print(file['source'])
             files.append(file[source])
         return files
+
 
     def get_anchor_name(self, stack):
         image_list = self.get_image_list(stack)

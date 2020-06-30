@@ -53,6 +53,7 @@ class CoordinatesConverter(object):
         # Define frame:wholebrainWithMargin
         intensity_volume_spec = dict(name=stack, resolution='10.0um', prep_id='wholebrainWithMargin', vol_type='intensity')
         thumbnail_volume, thumbnail_volume_origin_wrt_wholebrain_10um = load_original_volume_v2(intensity_volume_spec, return_origin_instead_of_bbox=True)
+        print('thumbnail_volume_origin_wrt_wholebrain_10um', thumbnail_volume_origin_wrt_wholebrain_10um)
         thumbnail_volume_origin_wrt_wholebrain_um = thumbnail_volume_origin_wrt_wholebrain_10um * 10.
 
         # thumbnail_volume, (thumbnail_volume_origin_wrt_wholebrain_dataResol_x, thumbnail_volume_origin_wrt_wholebrain_dataResol_y, _) = \

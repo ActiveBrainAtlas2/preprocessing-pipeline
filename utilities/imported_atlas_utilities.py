@@ -15,6 +15,7 @@ from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import load_hdf, one_liner_to_arr, load_ini, convert_resolution_string_to_um
 from utilities.file_location import VOLUME_DIR as VOLUME_ROOTDIR, FileLocationManager
 from utilities.coordinates_converter import CoordinatesConverter
+
 # Load all structures
 paired_structures = ['5N', '6N', '7N', '7n', 'Amb', 'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC', \
                      'SNC', 'SNR', '3N', '4N', 'Sp5I', 'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
@@ -22,72 +23,73 @@ paired_structures = ['5N', '6N', '7N', '7n', 'Amb', 'LC', 'LRt', 'Pn', 'Tz', 'VL
 singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
 
 # Make a list of all structures INCLUDING left and right variants
-all_structures_total = list( singular_structures )
+all_structures_total = list(singular_structures)
 rh_structures = []
 lh_structures = []
 for structure in paired_structures:
-    all_structures_total.append( structure+'_R' )
-    all_structures_total.append( structure+'_L' )
-    rh_structures.append( structure+'_R' )
-    lh_structures.append( structure+'_L' )
-#print all_structures_total
+    all_structures_total.append(structure + '_R')
+    all_structures_total.append(structure + '_L')
+    rh_structures.append(structure + '_R')
+    lh_structures.append(structure + '_L')
 
 
-def create_alignment_specs( stack, detector_id ):
-    fn_global = stack+'_visualization_global_alignment_spec.json'
+# print all_structures_total
+
+
+def create_alignment_specs(stack, detector_id):
+    fn_global = stack + '_visualization_global_alignment_spec.json'
     data = {}
 
-    data["stack_m"] ={
-            "name":"atlasV7",
-            "vol_type": "score",
-            "resolution":"10.0um"
-            }
-    data["stack_f"] ={
-        "name":stack,
+    data["stack_m"] = {
+        "name": "atlasV7",
         "vol_type": "score",
-        "resolution":"10.0um",
-        "detector_id":detector_id
-        }
+        "resolution": "10.0um"
+    }
+    data["stack_f"] = {
+        "name": stack,
+        "vol_type": "score",
+        "resolution": "10.0um",
+        "detector_id": detector_id
+    }
     data["warp_setting"] = 0
 
     with open(fn_global, 'w') as outfile:
         json.dump(data, outfile)
 
-
     data = {}
     json_structure_list = []
     for structure in all_structures_total:
-
-        data[structure] ={
+        data[structure] = {
             "stack_m":
                 {
-                "name":"atlasV7",
-                "vol_type": "score",
-                "structure": [structure],
-                "resolution":"10.0um"
+                    "name": "atlasV7",
+                    "vol_type": "score",
+                    "structure": [structure],
+                    "resolution": "10.0um"
                 },
             "stack_f":
                 {
-                        "name":stack,
-                        "vol_type": "score",
-                        "structure":[structure],
-                        "resolution":"10.0um",
-                        "detector_id":detector_id
-                        },
+                    "name": stack,
+                    "vol_type": "score",
+                    "structure": [structure],
+                    "resolution": "10.0um",
+                    "detector_id": detector_id
+                },
             "warp_setting": 7
-            }
+        }
 
-    fn_structure = stack+'_visualization_per_structure_alignment_spec.json'
+    fn_structure = stack + '_visualization_per_structure_alignment_spec.json'
 
     with open(fn_structure, 'w') as outfile:
         json.dump(data, outfile)
 
     return fn_global, fn_structure
 
+
 # Load volumes, convert to proper coordinates, export as contours
 def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
                                                      resolution, level, sample_every=1,
-                                                    use_unsided_name_as_key=False):
+                                                     use_unsided_name_as_key=False):
     """
     Re-section atlas volumes and obtain structure contours on each section.
     Resolution of output contours are in volume resolution.
@@ -107,33 +109,40 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
     sqlController.get_animal_info(stack)
 
     structure_contours_wrt_alignedBrainstemCrop_rawResol = defaultdict(lambda: defaultdict(dict))
-    valid_sections = sqlController.get_valid_sections(stack)
-    converter = CoordinatesConverter(stack=stack, section_list = valid_sections.keys() )
-    #converter = CoordinatesConverter(stack=stack, section_list=metadata_cache['sections_to_filenames'][stack].keys())
+    section_numbers = sqlController.get_sections_numbers(stack)
+    converter = CoordinatesConverter(stack=stack, section_list=section_numbers)
+    # converter = CoordinatesConverter(stack=stack, section_list=metadata_cache['sections_to_filenames'][stack].keys())
 
     converter.register_new_resolution('structure_volume', resol_um=convert_resolution_string_to_um(stack, resolution))
     converter.register_new_resolution('image', resol_um=convert_resolution_string_to_um(stack, 'raw'))
 
     for name_s, (structure_volume_volResol, origin_wrt_wholebrain_volResol) in volumes.items():
-
         converter.derive_three_view_frames(name_s,
-        origin_wrt_wholebrain_um=convert_resolution_string_to_um(stack, resolution) * origin_wrt_wholebrain_volResol,
-        zdim_um=convert_resolution_string_to_um(stack, resolution) * structure_volume_volResol.shape[2])
+                                           origin_wrt_wholebrain_um=convert_resolution_string_to_um(stack,
+                                                                                                    resolution) * origin_wrt_wholebrain_volResol,
+                                           zdim_um=convert_resolution_string_to_um(stack, resolution) *
+                                                   structure_volume_volResol.shape[2])
 
         positions_of_all_sections_wrt_structureVolume = converter.convert_frame_and_resolution(
-        p=np.array(sections)[:,None],
-        in_wrt=('wholebrain', 'sagittal'), in_resolution='section',
-        out_wrt=(name_s, 'sagittal'), out_resolution='structure_volume')[..., 2].flatten()
+            p=np.array(sections)[:, None],
+            in_wrt=('wholebrain', 'sagittal'), in_resolution='section',
+            out_wrt=(name_s, 'sagittal'), out_resolution='structure_volume', stack=stack)[..., 2].flatten()
 
         structure_ddim = structure_volume_volResol.shape[2]
-
-        valid_mask = (positions_of_all_sections_wrt_structureVolume >= 0) & (positions_of_all_sections_wrt_structureVolume < structure_ddim)
+        #print('structure_ddim', structure_ddim)
+        #print('positions_of_all_sections_wrt_structureVolume', positions_of_all_sections_wrt_structureVolume)
+        ###TODO fix, positions_of_all_sections_wrt_structureVolume < structure_ddim
+        valid_mask = (positions_of_all_sections_wrt_structureVolume >= 0) & (
+                    positions_of_all_sections_wrt_structureVolume < structure_ddim)
+        valid_mask = (positions_of_all_sections_wrt_structureVolume >= 400) & (
+                    positions_of_all_sections_wrt_structureVolume < 500)
         if np.count_nonzero(valid_mask) == 0:
-#             sys.stderr.write("%s, valid_mask is empty.\n" % name_s)
+            print('valid_mask is empty')
             continue
 
         positions_of_all_sections_wrt_structureVolume = positions_of_all_sections_wrt_structureVolume[valid_mask]
-        positions_of_all_sections_wrt_structureVolume = np.round(positions_of_all_sections_wrt_structureVolume).astype(np.int)
+        positions_of_all_sections_wrt_structureVolume = np.round(positions_of_all_sections_wrt_structureVolume).astype(
+            np.int)
 
         if isinstance(level, dict):
             level_this_structure = level[name_s]
@@ -146,34 +155,36 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
         for one_level in level_this_structure:
 
             contour_2d_wrt_structureVolume_sectionPositions_volResol = \
-            find_contour_points_3d(structure_volume_volResol >= one_level,
-                                    along_direction='sagittal',
-                                    sample_every=sample_every,
-                                    positions=positions_of_all_sections_wrt_structureVolume)
+                find_contour_points_3d(structure_volume_volResol >= one_level,
+                                       along_direction='sagittal',
+                                       sample_every=sample_every,
+                                       positions=positions_of_all_sections_wrt_structureVolume)
 
-            for d_wrt_structureVolume, cnt_uv_wrt_structureVolume in contour_2d_wrt_structureVolume_sectionPositions_volResol.iteritems():
+            for d_wrt_structureVolume, cnt_uv_wrt_structureVolume in contour_2d_wrt_structureVolume_sectionPositions_volResol.items():
 
-                contour_3d_wrt_structureVolume_volResol = np.column_stack([cnt_uv_wrt_structureVolume, np.ones((len(cnt_uv_wrt_structureVolume),)) * d_wrt_structureVolume])
+                contour_3d_wrt_structureVolume_volResol = np.column_stack(
+                    [cnt_uv_wrt_structureVolume, np.ones((len(cnt_uv_wrt_structureVolume),)) * d_wrt_structureVolume])
 
-    #             contour_3d_wrt_wholebrain_uv_rawResol_section = converter.convert_frame_and_resolution(
-    #                 p=contour_3d_wrt_structureVolume_volResol,
-    #                 in_wrt=(name_s, 'sagittal'), in_resolution='structure_volume',
-    #                 out_wrt=('wholebrain', 'sagittal'), out_resolution='image_image_section')
+                #             contour_3d_wrt_wholebrain_uv_rawResol_section = converter.convert_frame_and_resolution(
+                #                 p=contour_3d_wrt_structureVolume_volResol,
+                #                 in_wrt=(name_s, 'sagittal'), in_resolution='structure_volume',
+                #                 out_wrt=('wholebrain', 'sagittal'), out_resolution='image_image_section')
 
                 contour_3d_wrt_alignedBrainstemCrop_uv_rawResol_section = converter.convert_frame_and_resolution(
-                        p=contour_3d_wrt_structureVolume_volResol,
-                        in_wrt=(name_s, 'sagittal'), in_resolution='structure_volume',
-                        out_wrt=('wholebrainXYcropped', 'sagittal'), out_resolution='image_image_section')
+                    p=contour_3d_wrt_structureVolume_volResol,
+                    in_wrt=(name_s, 'sagittal'), in_resolution='structure_volume',
+                    out_wrt=('wholebrainXYcropped', 'sagittal'), out_resolution='image_image_section', stack=stack)
 
-                assert len(np.unique(contour_3d_wrt_alignedBrainstemCrop_uv_rawResol_section[:,2])) == 1
-                sec = int(contour_3d_wrt_alignedBrainstemCrop_uv_rawResol_section[0,2])
+                assert len(np.unique(contour_3d_wrt_alignedBrainstemCrop_uv_rawResol_section[:, 2])) == 1
+                sec = int(contour_3d_wrt_alignedBrainstemCrop_uv_rawResol_section[0, 2])
 
                 if use_unsided_name_as_key:
                     name = convert_to_unsided_label(name_s)
                 else:
                     name = name_s
 
-                structure_contours_wrt_alignedBrainstemCrop_rawResol[sec][name][one_level] = contour_3d_wrt_alignedBrainstemCrop_uv_rawResol_section[..., :2]
+                structure_contours_wrt_alignedBrainstemCrop_rawResol[sec][name][
+                    one_level] = contour_3d_wrt_alignedBrainstemCrop_uv_rawResol_section[..., :2]
 
     return structure_contours_wrt_alignedBrainstemCrop_rawResol
 
@@ -238,7 +249,9 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
             return
         else:
             if len(cnts[1]) > 1:
-                sys.stderr.write('%s contours of reconstructed volume is found at position %d (%s). Use the longest one.\n' % (len(cnts[1]), p, map(len, cnts[1])))
+                sys.stderr.write(
+                    '%s contours of reconstructed volume is found at position %d (%s). Use the longest one.\n' % (
+                    len(cnts[1]), p, map(len, cnts[1])))
                 cnt = np.array(cnts[1][np.argmax(map(len, cnts[1]))])
             else:
                 cnt = np.array(cnts[1][0])
@@ -248,13 +261,20 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
             else:
                 return cnt
 
+    #####TODO fix this, hard coding values just to get a response
     pool = Pool(nproc)
-    contours = dict(zip(positions, pool.map(find_contour_points_slice, positions)))
-    pool.close()
-    pool.join()
+    positions = [60,70,75,77,78,80,86,200]
+    contours = dict()
+    #pm = pool.map(find_contour_points_slice, positions)
+    for p in positions:
+        r = find_contour_points_slice(p)
+        contours[p] = r
+    #print(pm)
+    #contours = dict(zip(positions, pool.map(find_contour_points_slice, positions)))
+    #pool.close()
+    #pool.join()
 
-    contours = {p: cnt for p, cnt in contours.iteritems() if cnt is not None}
-
+    contours = {p: cnt for p, cnt in contours.items() if cnt is not None}
     return contours
 
 
@@ -285,22 +305,22 @@ def find_contour_points(labelmap, sample_every=10, min_length=0):
 
         (min_row, min_col, max_row, max_col) = r.bbox
 
-        padded = np.pad(r.filled_image, ((padding,padding),(padding,padding)),
+        padded = np.pad(r.filled_image, ((padding, padding), (padding, padding)),
                         mode='constant', constant_values=0)
 
         contours = find_contours(padded, level=.5, fully_connected='high')
         contours = [cnt.astype(np.int) for cnt in contours if len(cnt) > min_length]
         if len(contours) > 0:
-#             if len(contours) > 1:
-#                 sys.stderr.write('%d: region has more than one part\n' % r.label)
+            #             if len(contours) > 1:
+            #                 sys.stderr.write('%d: region has more than one part\n' % r.label)
 
             contours = sorted(contours, key=lambda c: len(c), reverse=True)
-            contours_list = [c-(padding, padding) for c in contours]
+            contours_list = [c - (padding, padding) for c in contours]
             contour_points[r.label] = sorted([c[np.arange(0, c.shape[0], sample_every)][:, ::-1] + (min_col, min_row)
-                                for c in contours_list], key=lambda c: len(c), reverse=True)
+                                              for c in contours_list], key=lambda c: len(c), reverse=True)
 
         elif len(contours) == 0:
-#             sys.stderr.write('no contour is found\n')
+            #             sys.stderr.write('no contour is found\n')
             continue
 
     #         viz = np.zeros_like(r.filled_image)
@@ -359,14 +379,16 @@ def load_hdf_v2(fn, key='data'):
     import pandas
     return pandas.read_hdf(fn, key)
 
+
 def load_sorted_filenames(stack):
-    sorted_filenames_path = os.path.join( os.environ['ATLAS_DATA_ROOT_DIR'], 'CSHL_data_processed', stack, stack+'_sorted_filenames.txt' )
+    sorted_filenames_path = os.path.join(os.environ['ATLAS_DATA_ROOT_DIR'], 'CSHL_data_processed', stack,
+                                         stack + '_sorted_filenames.txt')
 
     with open(sorted_filenames_path, 'r') as sf:
         sorted_filenames_string = sf.read()
-    sorted_filenames_list = sorted_filenames_string.split('\n')[0:len(sorted_filenames_string.split('\n'))-1]
+    sorted_filenames_list = sorted_filenames_string.split('\n')[0:len(sorted_filenames_string.split('\n')) - 1]
 
-    sorted_filenames = [{},{}] # filename_to_section, section_to_filename
+    sorted_filenames = [{}, {}]  # filename_to_section, section_to_filename
 
     for sorted_fn_line in sorted_filenames_list:
         filename, slice_num = sorted_fn_line.split(' ')
@@ -379,18 +401,20 @@ def load_sorted_filenames(stack):
 
     return sorted_filenames
 
-def get_image_filepath_v2(stack, prep_id, resol, version, fn):
-    image_filepath_root = os.path.join( os.environ['ATLAS_DATA_ROOT_DIR'], 'CSHL_data_processed', stack, \
-                                       stack+'_prep'+str(prep_id)+'_'+resol+'_'+version )
 
-    return os.path.join( image_filepath_root, fn+'_prep'+str(prep_id)+'_'+resol+'_'+version+'.tif'  )
+def get_image_filepath_v2(stack, prep_id, resol, version, fn):
+    image_filepath_root = os.path.join(os.environ['ATLAS_DATA_ROOT_DIR'], 'CSHL_data_processed', stack, \
+                                       stack + '_prep' + str(prep_id) + '_' + resol + '_' + version)
+
+    return os.path.join(image_filepath_root, fn + '_prep' + str(prep_id) + '_' + resol + '_' + version + '.tif')
+
 
 def load_json(fp):
     with open(fp, 'r') as json_file:
         return json.load(json_file)
 
-def get_transformed_volume_filepath_v2(alignment_spec, resolution=None, trial_idx=None, structure=None):
 
+def get_transformed_volume_filepath_v2(alignment_spec, resolution=None, trial_idx=None, structure=None):
     if resolution is None:
         if 'resolution' in alignment_spec['stack_m']:
             resolution = alignment_spec['stack_m']['resolution']
@@ -400,19 +424,20 @@ def get_transformed_volume_filepath_v2(alignment_spec, resolution=None, trial_id
             structure = alignment_spec['stack_m']['structure']
 
     warp_basename = get_warped_volume_basename_v2(alignment_spec=alignment_spec,
-                                                              trial_idx=trial_idx)
+                                                  trial_idx=trial_idx)
     vol_basename = warp_basename + '_' + resolution
     vol_basename_with_structure_suffix = vol_basename + ('_' + structure) if structure is not None else ''
-    #print('1',VOLUME_ROOTDIR)
-    #print('2',alignment_spec['stack_m']['name'])
-    #print('3',vol_basename)
-    #print('4 score_volumes')
-    #print('5',vol_basename_with_structure_suffix)
+    # print('1',VOLUME_ROOTDIR)
+    # print('2',alignment_spec['stack_m']['name'])
+    # print('3',vol_basename)
+    # print('4 score_volumes')
+    # print('5',vol_basename_with_structure_suffix)
     filename = os.path.join(VOLUME_ROOTDIR, alignment_spec['stack_m']['name'],
-                        vol_basename, 'score_volumes', vol_basename_with_structure_suffix + '.npy')
-    #print('get transformed_volume_filepath ', filename)
+                            vol_basename, 'score_volumes', vol_basename_with_structure_suffix + '.npy')
+    # print('get transformed_volume_filepath ', filename)
     filename = os.path.join('/home/eddyod/MouseBrainSlicer_data/score_volumes', 'atlasV7_10.0um_scoreVolume_12N.npy')
     return filename
+
 
 def get_warped_volume_basename_v2(alignment_spec, trial_idx=None):
     """
@@ -423,12 +448,13 @@ def get_warped_volume_basename_v2(alignment_spec, trial_idx=None):
     warp_setting = alignment_spec['warp_setting']
     basename_m = get_original_volume_basename_v2(alignment_spec['stack_m'])
     basename_f = get_original_volume_basename_v2(alignment_spec['stack_f'])
-    vol_name = basename_m + '_warp%(warp)d_' % {'warp':warp_setting} + basename_f
+    vol_name = basename_m + '_warp%(warp)d_' % {'warp': warp_setting} + basename_f
 
     if trial_idx is not None:
         vol_name += '_trial_%d' % trial_idx
 
     return vol_name
+
 
 def get_original_volume_basename_v2(stack_spec):
     """
@@ -475,22 +501,23 @@ def get_original_volume_basename_v2(stack_spec):
         if isinstance(prep_id, str):
             components.append(prep_id)
         elif isinstance(prep_id, int):
-            components.append('prep%(prep)d' % {'prep':prep_id})
+            components.append('prep%(prep)d' % {'prep': prep_id})
     if detector_id is not None:
-        components.append('detector%(detector_id)d' % {'detector_id':int(detector_id)})
+        components.append('detector%(detector_id)d' % {'detector_id': int(detector_id)})
     if resolution is not None:
         components.append(resolution)
 
     tmp_str = '_'.join(components)
     basename = '%(stack)s_%(tmp_str)s%(volstr)s' % \
-        {'stack':stack, 'tmp_str': (tmp_str+'_') if tmp_str != '' else '', 'volstr':volume_type_to_str(volume_type)}
+               {'stack': stack, 'tmp_str': (tmp_str + '_') if tmp_str != '' else '',
+                'volstr': volume_type_to_str(volume_type)}
     if structure is not None:
         if isinstance(structure, str):
             basename += '_' + structure
         elif isinstance(structure, list):
             basename += '_' + '_'.join(sorted(structure))
         else:
-            raise ValueError('The following structure is not valid: ',structure)
+            raise ValueError('The following structure is not valid: ', structure)
 
     return basename
 
@@ -515,13 +542,12 @@ def volume_type_to_str(t):
 
 
 def load_data(filepath, filetype=None):
-
     if not os.path.exists(filepath):
         sys.stderr.write('load_data: File does not exist: %s\n' % filepath)
 
     if filetype == 'bp':
         import bloscpack as bp
-        return bp.unpack_ndarray_file(filepath)
+        return bp.unpack_ndarray_from_file(filepath)
     elif filetype == 'npy':
         return np.load(filepath)
     elif filetype == 'image':
@@ -564,9 +590,9 @@ def load_data(filepath, filetype=None):
 
             global_params = one_liner_to_arr(lines[0], float)
             centroid_m = one_liner_to_arr(lines[1], float)
-            xdim_m, ydim_m, zdim_m  = one_liner_to_arr(lines[2], int)
+            xdim_m, ydim_m, zdim_m = one_liner_to_arr(lines[2], int)
             centroid_f = one_liner_to_arr(lines[3], float)
-            xdim_f, ydim_f, zdim_f  = one_liner_to_arr(lines[4], int)
+            xdim_f, ydim_f, zdim_f = one_liner_to_arr(lines[4], int)
 
         return global_params, centroid_m, centroid_f, xdim_m, ydim_m, zdim_m, xdim_f, ydim_f, zdim_f
     else:
@@ -586,20 +612,20 @@ def load_transformed_volume(alignment_spec, structure):
     """
     kwargs = locals()
 
-
     volume_filename = get_transformed_volume_filepath_v2(alignment_spec=alignment_spec,
-                                                        resolution=None,
-                                                        structure=structure)
+                                                         resolution=None,
+                                                         structure=structure)
     origin_filename = get_transformed_volume_origin_filepath(wrt='fixedWholebrain',
-                                                                 alignment_spec=alignment_spec,
-                                                        resolution=None,
-                                                        structure=structure)
+                                                             alignment_spec=alignment_spec,
+                                                             resolution=None,
+                                                             structure=structure)
     print('load_transformed_volume: volume_filename', volume_filename)
     print('load_transformed_volume: origin_filename', origin_filename)
     origin_filename = '/home/eddyod/MouseBrainSlicer_data/score_volumes/atlasV7_10.0um_scoreVolume_12N_origin_wrt_canonicalAtlasSpace.txt'
     volume = load_data(volume_filename)
     origin = load_data(origin_filename)
     return (volume, origin)
+
 
 def get_transformed_volume_origin_filepath(alignment_spec, structure=None, wrt='wholebrain', resolution=None):
     """
@@ -623,7 +649,8 @@ def get_transformed_volume_origin_filepath(alignment_spec, structure=None, wrt='
     vol_basename_with_structure_suffix = vol_basename + ('_' + structure if structure is not None else '')
 
     return os.path.join(VOLUME_ROOTDIR, alignment_spec['stack_m']['name'],
-                        vol_basename, 'score_volumes', vol_basename_with_structure_suffix + '_origin_wrt_' + wrt + '.txt')
+                        vol_basename, 'score_volumes',
+                        vol_basename_with_structure_suffix + '_origin_wrt_' + wrt + '.txt')
 
 
 def get_cropbox_filename_v2(stack, anchor_fn=None, prep_id=2):
@@ -637,16 +664,17 @@ def get_cropbox_filename_v2(stack, anchor_fn=None, prep_id=2):
     fp = os.path.join(get_images_root_folder(stack), stack + '_cropbox.ini')
     return fp
 
+
 def get_images_root_folder(stack):
     fileLocationManager = FileLocationManager(stack)
-    #return os.path.join( os.environ['ROOT_DIR'], stack, 'preprocessing_data' )
+    # return os.path.join( os.environ['ROOT_DIR'], stack, 'preprocessing_data' )
     return fileLocationManager.tif
 
 
 ## stack=stack, prep_id='alignedBrainstemCrop', only_2d=True
 def load_cropbox_v2(stack, anchor_fn=None, convert_section_to_z=False, prep_id=2,
                     return_origin_instead_of_bbox=False,
-                   return_dict=False, only_2d=True):
+                    return_dict=False, only_2d=True):
     """
     Loads the cropping box for the given crop at thumbnail (downsample 32 times from raw) resolution.
 
@@ -663,6 +691,7 @@ def load_cropbox_v2(stack, anchor_fn=None, convert_section_to_z=False, prep_id=2
     cropbox = np.array((xmin, xmax, ymin, ymax))
     return cropbox.astype(np.int)
 
+
 def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wrt='wholebrain',
                             return_origin_instead_of_bbox=True,
                             crop_to_minimal=False):
@@ -673,19 +702,22 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
         (3d-array, (6,)-tuple): (volume, bounding box wrt wholebrain)
     """
 
-    volume_filename = get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure, resolution=resolution)
+    # volume_filename = get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure, resolution=resolution)
     # download_from_s3(vol_fp, is_dir=False)
-    print('volume_filename', volume_filename)
-    volume = load_data(volume_filename, filetype='npy')
+    volume_filename = '/net/birdstore/Active_Atlas_Data/copied_from_S3/mousebrainatlas-data/CSHL_volumes/MD589/MD589_wholebrainWithMargin_10.0um_intensityVolume/MD589_wholebrainWithMargin_10.0um_intensityVolume.bp'
+    # print('volume_filename', volume_filename)
+    volume = load_data(volume_filename, filetype='bp')
 
     # bbox_fp = DataManager.get_original_volume_bbox_filepath_v2(stack_spec=stack_spec, structure=structure,
     #                                                            resolution=resolution, wrt=bbox_wrt)
     # download_from_s3(bbox_fp)
     # volume_bbox = DataManager.load_data(bbox_fp, filetype='bbox')
 
-    origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
-    print('origin_file_name', origin_filename)
-    origin = load_data(origin_filename)
+    # origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
+    # print('origin_file_name', origin_filename)
+    origin_filename = '/net/birdstore/Active_Atlas_Data/copied_from_S3/mousebrainatlas-data/CSHL_volumes/MD589/MD589_wholebrainWithMargin_10.0um_intensityVolume/MD589_wholebrainWithMargin_10.0um_intensityVolume_origin_wrt_wholebrain.txt'
+    # origin = load_data(origin_filename)
+    origin = np.array([1.470000000000000000e+02, 9.800000000000000000e+01, 1.820000000000000000e+02])
 
     if crop_to_minimal:
         volume, origin = crop_volume_to_minimal(vol=volume, origin=origin, return_origin_instead_of_bbox=True)
@@ -697,7 +729,7 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
     #     return volume, volume_bbox
 
 
-def crop_volume_to_minimal(vol, origin=(0,0,0), margin=0, return_origin_instead_of_bbox=True):
+def crop_volume_to_minimal(vol, origin=(0, 0, 0), margin=0, return_origin_instead_of_bbox=True):
     """
     Returns:
         (nonzero part of volume, origin of cropped volume)
@@ -706,19 +738,18 @@ def crop_volume_to_minimal(vol, origin=(0,0,0), margin=0, return_origin_instead_
     xmin = max(0, xmin - margin)
     ymin = max(0, ymin - margin)
     zmin = max(0, zmin - margin)
-    xmax = min(vol.shape[1]-1, xmax + margin)
-    ymax = min(vol.shape[0]-1, ymax + margin)
-    zmax = min(vol.shape[2]-1, zmax + margin)
+    xmax = min(vol.shape[1] - 1, xmax + margin)
+    ymax = min(vol.shape[0] - 1, ymax + margin)
+    zmax = min(vol.shape[2] - 1, zmax + margin)
 
     if return_origin_instead_of_bbox:
-        return vol[ymin:ymax+1, xmin:xmax+1, zmin:zmax+1], np.array(origin) + (xmin,ymin,zmin)
+        return vol[ymin:ymax + 1, xmin:xmax + 1, zmin:zmax + 1], np.array(origin) + (xmin, ymin, zmin)
     else:
-        return vol[ymin:ymax+1, xmin:xmax+1, zmin:zmax+1], np.array(origin)[[0,0,1,1,2,2]] + (xmin,xmax,ymin,ymax,zmin,zmax)
-
+        return vol[ymin:ymax + 1, xmin:xmax + 1, zmin:zmax + 1], np.array(origin)[[0, 0, 1, 1, 2, 2]] + (
+        xmin, xmax, ymin, ymax, zmin, zmax)
 
 
 def bbox_3d(img):
-
     r = np.any(img, axis=(1, 2))
     c = np.any(img, axis=(0, 2))
     z = np.any(img, axis=(0, 1))
@@ -734,7 +765,6 @@ def bbox_3d(img):
 
 
 def get_original_volume_origin_filepath_v3(stack_spec, structure, wrt='wholebrain', resolution=None):
-
     fileLocationManager = FileLocationManager(stack_spec['name'])
     volume_type = stack_spec['vol_type']
 
@@ -751,18 +781,19 @@ def get_original_volume_origin_filepath_v3(stack_spec, structure, wrt='wholebrai
 
     if volume_type == 'score' or volume_type == 'annotationAsScore':
         origin_fp = os.path.join(VOLUME_ROOTDIR, '%(stack)s',
-                      '%(basename)s',
-                      'score_volumes',
-                     '%(basename)s_%(struct)s_origin' + ('_wrt_'+wrt if wrt is not None else '') + '.txt') % \
-        {'stack':stack_spec['name'], 'basename':vol_basename, 'struct':structure}
+                                 '%(basename)s',
+                                 'score_volumes',
+                                 '%(basename)s_%(struct)s_origin' + (
+                                     '_wrt_' + wrt if wrt is not None else '') + '.txt') % \
+                    {'stack': stack_spec['name'], 'basename': vol_basename, 'struct': structure}
 
     elif volume_type == 'intensity':
-        origin_fp = os.path.join(fileLocationManager.atlas_volume, vol_basename, vol_basename + '_origin' + ('_wrt_'+wrt if wrt is not None else '') + '.txt')
+        origin_fp = os.path.join(fileLocationManager.atlas_volume, vol_basename,
+                                 vol_basename + '_origin' + ('_wrt_' + wrt if wrt is not None else '') + '.txt')
     else:
         raise Exception("vol_type of %s is not recognized." % stack_spec['vol_type'])
 
     return origin_fp
-
 
 
 def get_original_volume_filepath_v2(stack_spec, structure=None, resolution=None):
@@ -799,4 +830,3 @@ def get_original_volume_filepath_v2(stack_spec, structure=None, resolution=None)
         return os.path.join(fileLocationManager.atlas_volume, vol_basename, vol_basename + '.npy')
     else:
         raise Exception("vol_type of %s is not recognized." % stack_spec['vol_type'])
-
