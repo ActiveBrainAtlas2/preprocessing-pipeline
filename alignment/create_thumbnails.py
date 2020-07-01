@@ -30,11 +30,12 @@ def make_thumbnails(animal, channel, njobs):
         limit: number of jobs
     Returns: nothing
     """
-    channel_find = '{}.tif'.format(channel)
     fileLocationManager = FileLocationManager(animal)
-    INPUT = fileLocationManager.tif
-    OUTPUT = fileLocationManager.thumbnail_prep
-    files = [file for file in os.listdir(INPUT) if file.endswith(channel_find)]
+    channel_dir = 'CH{}'.format(channel)
+    INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'full')
+    OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
+    files = os.listdir(INPUT)
+
     commands = []
     for file in tqdm(files):
         inputfile = os.path.join(INPUT, file)
