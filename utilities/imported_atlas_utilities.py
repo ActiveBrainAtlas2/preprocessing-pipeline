@@ -122,7 +122,6 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
                                                                                                     resolution) * origin_wrt_wholebrain_volResol,
                                            zdim_um=convert_resolution_string_to_um(stack, resolution) *
                                                    structure_volume_volResol.shape[2])
-
         positions_of_all_sections_wrt_structureVolume = converter.convert_frame_and_resolution(
             p=np.array(sections)[:, None],
             in_wrt=('wholebrain', 'sagittal'), in_resolution='section',
@@ -130,12 +129,16 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
 
         structure_ddim = structure_volume_volResol.shape[2]
         #print('structure_ddim', structure_ddim)
-        #print('positions_of_all_sections_wrt_structureVolume', positions_of_all_sections_wrt_structureVolume)
+        #print('sections', sections)
+        #print('type sections', type(sections))
+        positions_of_all_sections_wrt_structureVolume = np.arange(49, 176)
+        print('positions_of_all_sections_wrt_structureVolume', positions_of_all_sections_wrt_structureVolume)
+        print('type positions_of_all_sections_wrt_structureVolume', type(positions_of_all_sections_wrt_structureVolume))
         ###TODO fix, positions_of_all_sections_wrt_structureVolume < structure_ddim
         valid_mask = (positions_of_all_sections_wrt_structureVolume >= 0) & (
                     positions_of_all_sections_wrt_structureVolume < structure_ddim)
-        valid_mask = (positions_of_all_sections_wrt_structureVolume >= 400) & (
-                    positions_of_all_sections_wrt_structureVolume < 500)
+        #valid_mask = (positions_of_all_sections_wrt_structureVolume >= 400) & (
+        #            positions_of_all_sections_wrt_structureVolume < 500)
         if np.count_nonzero(valid_mask) == 0:
             print('valid_mask is empty')
             continue
@@ -220,6 +223,7 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
         Args:
             p (int): position
         """
+        print('p', p, 'labeled_volume.shape', labeled_volume.shape)
         if along_direction == 'x':
             if p < 0 or p >= labeled_volume.shape[1]:
                 return
@@ -242,7 +246,7 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
             vol_slice = labeled_volume[:, :, p]
         else:
             raise
-
+        print('vol_slice', vol_slice)
         cnts = find_contour_points(vol_slice.astype(np.uint8), sample_every=sample_every)
         if len(cnts) == 0 or 1 not in cnts:
             # sys.stderr.write('No contour of reconstructed volume is found at position %d.\n' % p)
@@ -262,8 +266,9 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
                 return cnt
 
     #####TODO fix this, hard coding values just to get a response
-    pool = Pool(nproc)
-    positions = [60,70,75,77,78,80,86,200]
+    #pool = Pool(nproc)
+    print('positions', positions)
+    #positions = [60,70,75,77,78,80,86,200]
     contours = dict()
     #pm = pool.map(find_contour_points_slice, positions)
     for p in positions:
@@ -275,6 +280,7 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
     #pool.join()
 
     contours = {p: cnt for p, cnt in contours.items() if cnt is not None}
+    print('contours', contours)
     return contours
 
 

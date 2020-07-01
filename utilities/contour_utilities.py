@@ -44,7 +44,12 @@ def image_contour_generator(stack, detector_id, structure, use_local_alignment=T
         str_alignment_spec = json.load(json_file)[structure]
     # print('str_alignment_spec', str_alignment_spec)
     # vol = load_transformed_volume(str_alignment_spec, structure)
-    t1 = np.load('/home/eddyod/MouseBrainSlicer_data/score_volumes/atlasV7_10.0um_scoreVolume_12N.npy')
+    numpyfile = 'atlasV7_10.0um_scoreVolume_{}_surround_200um.npy'.format(structure)
+    txtfile = '{}.txt'.format(structure)
+    try:
+        t1 = np.load(os.path.join('/home/eddyod/MouseBrainSlicer_data/score_volumes', numpyfile))
+    except:
+        print('Could not load:', numpyfile)
     t2 = np.array([1.424821380109989946e+02, 3.171751433368390849e+01, -4.400000000000000000e+01])
     # vol is a tuple of np array and 3 numbers
     vol = (t1, t2)
@@ -64,7 +69,7 @@ def image_contour_generator(stack, detector_id, structure, use_local_alignment=T
     atlas_structures_wrt_wholebrainWithMargin_sections = \
         range(max(secmin - section_margin, valid_secmin), min(secmax + 1 + section_margin, valid_secmax))
 
-    # print('atlas_structures_wrt_wholebrainWithMargin_sections', atlas_structures_wrt_wholebrainWithMargin_sections)
+    print('atlas_structures_wrt_wholebrainWithMargin_sections', atlas_structures_wrt_wholebrainWithMargin_sections)
     # Choose thresholds for probability volumes
     levels = [threshold]
     # print('levels', levels)
@@ -73,11 +78,12 @@ def image_contour_generator(stack, detector_id, structure, use_local_alignment=T
     str_contour = get_structure_contours_from_structure_volumes_v3(volumes={structure: vol}, stack=stack,
                                                                    sections=atlas_structures_wrt_wholebrainWithMargin_sections,
                                                                    resolution='10.0um', level=levels, sample_every=5)
-    # print('str_contour', str_contour)
+    print('str_contour', str_contour)
     # Check number sections that the contours are present on
     str_keys = str_contour.keys()
     valid_sections = []
     for key in str_keys:
+        print('key', key)
         if isinstance(key, int) and key > 1:
             valid_sections.append(key)
             # Need to check individual "levels" are on this section as well.
@@ -172,7 +178,7 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
     print('ng_section_min', ng_section_min)
     max_z = (last_sec - ng_section_min)
     #####TODO hardcoding another one
-    max_z = 300
+    #max_z = 300
     min_z = (first_sec - ng_section_min)
     if max_z > ng_section_max:
         max_z = ng_section_min
