@@ -1,7 +1,7 @@
 import os, sys
 import json
 
-sys.path.append(os.path.join(os.getcwd(), '../'))
+sys.path.append(os.path.join(os.getcwd(), './'))
 from utilities.imported_atlas_utilities import create_alignment_specs, load_transformed_volume, load_json, \
     get_structure_contours_from_structure_volumes_v3
 from utilities.filepath_manager import get_json_cache_fp, get_volume_fp
@@ -44,13 +44,19 @@ def image_contour_generator(stack, detector_id, structure, use_local_alignment=T
         str_alignment_spec = json.load(json_file)[structure]
     # print('str_alignment_spec', str_alignment_spec)
     # vol = load_transformed_volume(str_alignment_spec, structure)
-    numpyfile = 'atlasV7_10.0um_scoreVolume_{}_surround_200um.npy'.format(structure)
-    txtfile = '{}.txt'.format(structure)
+    numpyfile = 'atlasV7_10.0um_scoreVolume_{}.npy'.format(structure)
+    #numpyfile = '{}_volume.npy'.format(structure)
+    #atlasV7_10.0um_scoreVolume_VLL_R_origin_wrt_canonicalAtlasSpace.txt
+    txtfile = 'atlasV7_10.0um_scoreVolume_{}_origin_wrt_canonicalAtlasSpace.txt'.format(structure)
+    datapath = '/home/eddyod/MouseBrainSlicer_data/score_volumes'
     try:
-        t1 = np.load(os.path.join('/home/eddyod/MouseBrainSlicer_data/score_volumes', numpyfile))
+        t1 = np.load(os.path.join(datapath, numpyfile))
     except:
         print('Could not load:', numpyfile)
-    t2 = np.array([1.424821380109989946e+02, 3.171751433368390849e+01, -4.400000000000000000e+01])
+    try:
+        t2 = np.loadtxt(os.path.join(datapath, txtfile))
+    except:
+        print('Could not load:', txtfile)
     # vol is a tuple of np array and 3 numbers
     vol = (t1, t2)
     # Load collection of bounding boxes for every structure
@@ -80,7 +86,7 @@ def image_contour_generator(stack, detector_id, structure, use_local_alignment=T
                                                                    resolution='10.0um', level=levels, sample_every=5)
     print('str_contour', str_contour)
     # Check number sections that the contours are present on
-    str_keys = str_contour.keys()
+    str_keys = list(str_contour.keys())
     valid_sections = []
     for key in str_keys:
         print('key', key)
@@ -88,6 +94,8 @@ def image_contour_generator(stack, detector_id, structure, use_local_alignment=T
             valid_sections.append(key)
             # Need to check individual "levels" are on this section as well.
             #    (0.1 threshold spans more slices than 0.9)
+    if len(valid_sections) == 0:
+        return None, None, None
     valid_sections.sort()
     num_valid_sections = len(valid_sections)
     first_sec = valid_sections[0]
@@ -158,13 +166,19 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
     xy_ng_resolution_um = xy_ng_resolution_um  # X and Y voxel length in microns
     color_radius = color_radius * (10.0 / xy_ng_resolution_um) ** 0.5
 
-    stack_parameters_ng = get_ng_params(stack)
-    print('stack_parameters_ng', stack_parameters_ng)
-    ng_section_min = stack_parameters_ng['prep2_section_min']
-    ng_section_max = stack_parameters_ng['prep2_section_max']
-    s3_offset_from_local_x = stack_parameters_ng['local_offset_x']
-    s3_offset_from_local_y = stack_parameters_ng['local_offset_y']
-    s3_offset_from_local_slices = stack_parameters_ng['local_offset_slices']
+    #stack_parameters_ng = get_ng_params(stack)
+    #print('stack_parameters_ng', stack_parameters_ng)
+    #ng_section_min = stack_parameters_ng['prep2_section_min']
+    #ng_section_max = stack_parameters_ng['prep2_section_max']
+    #s3_offset_from_local_x = stack_parameters_ng['local_offset_x']
+    #s3_offset_from_local_y = stack_parameters_ng['local_offset_y']
+    #s3_offset_from_local_slices = stack_parameters_ng['local_offset_slices']
+
+    ng_section_min = 92
+    ng_section_max = 370
+    s3_offset_from_local_x = 0
+    s3_offset_from_local_y = 0
+    s3_offset_from_local_slices = 0
 
     # Max and Min X/Y Values given random initial values that will be replaced
     # X and Y resolution will be specified by the user in microns (xy_ng_resolution_umx by y_ng_resolution_um)
@@ -176,10 +190,11 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
     # Z resolution is 20um for simple 1-1 correspondance with section thickness
     print('last_sec', last_sec)
     print('ng_section_min', ng_section_min)
-    max_z = (last_sec - ng_section_min)
+    #max_z = (last_sec - ng_section_min)
     #####TODO hardcoding another one
-    #max_z = 300
-    min_z = (first_sec - ng_section_min)
+    max_z = 364
+    #min_z = (first_sec - ng_section_min)
+    min_z = 92
     if max_z > ng_section_max:
         max_z = ng_section_min
     if min_z < 0:
@@ -190,18 +205,24 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
     # X,Y are 10um voxels. Z is 20um voxels.
     # str_contour_ng_resolution is the previous contour data rescaled to neuroglancer resolution
     str_contour_ng_resolution = {}
-
+    print('str_contour',threshold)
     for section in str_contour:
         # Load (X,Y) coordinates on this contour
+        print('type of str_contour', type(str_contour))
         section_contours = str_contour[section][structure][threshold]
         # (X,Y) coordinates will be rescaled to the new resolution and placed here
         # str_contour_ng_resolution starts at z=0 for simplicity, must provide section offset later on
         str_contour_ng_resolution[section - first_sec] = []
         # Number of (X,Y) coordinates
         num_contours = len(section_contours)
+        print('num contours', num_contours)
+        print('type section contours', type(section_contours))
         # Cycle through each coordinate pair
         for coordinate_pair in range(num_contours):
             curr_coors = section_contours[coordinate_pair]
+            #print('section_contours', section_contours)
+            print('coordinate_pair', coordinate_pair)
+            print('type of scale_xy curr_coors', type(scale_xy), type(curr_coors[0]), curr_coors[0])
             # Rescale coordinate pair and add to new contour dictionary
             str_contour_ng_resolution[section - first_sec].append([scale_xy * curr_coors[0], scale_xy * curr_coors[1]])
             # Replace Min/Max X/Y values with new extremes
@@ -390,3 +411,62 @@ def fill_in_structure(voxel_sheet, color):
             if has_lr == True and has_ur == True and has_ll == True and has_ul == True:
                 voxel_sheet[y, x] = color
     return voxel_sheet
+
+
+def get_contours_from_annotations(stack, target_str, hand_annotations, densify=0):
+    MD585_ng_section_min = 83
+    num_annotations = len(hand_annotations)
+    str_contours_annotation = {}
+
+    for i in range(num_annotations):
+        structure = hand_annotations['name'][i]
+        side = hand_annotations['side'][i]
+        section = hand_annotations['section'][i]
+
+        if side == 'R' or side == 'L':
+            structure = structure + '_' + side
+
+        if structure == target_str:
+            vertices = hand_annotations['vertices'][i]
+
+            for i in range(densify):
+                vertices = get_dense_coordinates(vertices)
+
+            # Skip sections before the 22nd prep2 section for MD585 as there are clear errors
+            if stack == 'MD585' and section < MD585_ng_section_min + 22:
+                # vertices = vertices - np.array(MD585_abberation_correction)
+                continue
+
+            str_contours_annotation[section] = {}
+            str_contours_annotation[section][structure] = {}
+            str_contours_annotation[section][structure][1] = vertices
+
+    first_sec = np.min(list(str_contours_annotation.keys()))
+    last_sec = np.max(list(str_contours_annotation.keys()))
+
+    return str_contours_annotation, first_sec, last_sec
+
+
+def get_dense_coordinates(coor_list):
+    dense_coor_list = []
+    # Shortest distance, x, y
+
+    # for x, y in coor_list:
+    for i in range(len(coor_list) - 1):
+        x, y = coor_list[i]
+        x_next, y_next = coor_list[i + 1]
+
+        x_mid = (x + x_next) / 2
+        y_mid = (y + y_next) / 2
+
+        dense_coor_list.append([x, y])
+        dense_coor_list.append([x_mid, y_mid])
+
+        if i == len(coor_list) - 2:
+            dense_coor_list.append([x_next, y_next])
+            x, y = coor_list[0]
+            x_mid = (x + x_next) / 2
+            y_mid = (y + y_next) / 2
+            dense_coor_list.append([x_mid, y_mid])
+
+    return dense_coor_list

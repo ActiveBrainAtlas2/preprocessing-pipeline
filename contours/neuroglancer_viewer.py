@@ -1,9 +1,10 @@
-import os
+import os, sys
 import socket
 import neuroglancer
 import subprocess
 import numpy as np
 from neuroglancer.server import global_server_args
+sys.path.append(os.path.join(os.getcwd(), '../'))
 
 NEUROGLANCER_ROOT = '/home/eddyod/MouseBrainSlicer_data'
 

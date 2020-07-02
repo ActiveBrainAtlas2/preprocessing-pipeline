@@ -117,6 +117,7 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
     converter.register_new_resolution('image', resol_um=convert_resolution_string_to_um(stack, 'raw'))
 
     for name_s, (structure_volume_volResol, origin_wrt_wholebrain_volResol) in volumes.items():
+        print(name_s, (structure_volume_volResol, origin_wrt_wholebrain_volResol))
         converter.derive_three_view_frames(name_s,
                                            origin_wrt_wholebrain_um=convert_resolution_string_to_um(stack,
                                                                                                     resolution) * origin_wrt_wholebrain_volResol,
@@ -128,10 +129,10 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
             out_wrt=(name_s, 'sagittal'), out_resolution='structure_volume', stack=stack)[..., 2].flatten()
 
         structure_ddim = structure_volume_volResol.shape[2]
-        #print('structure_ddim', structure_ddim)
-        #print('sections', sections)
+        print('structure_ddim', structure_ddim)
+        print('sections', sections)
         #print('type sections', type(sections))
-        positions_of_all_sections_wrt_structureVolume = np.arange(49, 176)
+        #positions_of_all_sections_wrt_structureVolume = np.arange(49, 176)
         print('positions_of_all_sections_wrt_structureVolume', positions_of_all_sections_wrt_structureVolume)
         print('type positions_of_all_sections_wrt_structureVolume', type(positions_of_all_sections_wrt_structureVolume))
         ###TODO fix, positions_of_all_sections_wrt_structureVolume < structure_ddim
