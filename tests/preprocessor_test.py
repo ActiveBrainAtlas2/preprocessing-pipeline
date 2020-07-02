@@ -56,7 +56,9 @@ def fix_tifs(animal):
         source_files.append(file['destination'])
         source_keys.append(key)
     files = os.listdir(dir)
-    missing_files =  (list(set(source_files) - set(files)))
+    missing_files =  list(set(source_files) - set(files))
+    print(len(source_files), len(files))
+    print(missing_files)
     for i,missing in enumerate(missing_files):
         #pass
         file_id =  source_keys[source_files.index(missing)]
@@ -88,11 +90,10 @@ def fix_prep_thumbnail(animal):
 
 def test_tif(animal):
     sqlController = SqlController()
-    checks = ['tif', 'histogram']
+    checks = ['tif']
     fileLocationManager = FileLocationManager(animal)
     # tifs
-    for name, dir in zip(checks, [fileLocationManager.tif,
-                                  fileLocationManager.histogram]):
+    for name, dir in zip(checks, [fileLocationManager.tif]):
         db_files = sqlController.get_valid_sections(animal)
         valid_file_length = len(db_files)
         dir_exists, lfiles, badsize = directory_filled(dir)
@@ -116,4 +117,4 @@ if __name__ == '__main__':
     test_tif(animal)
     fix_tifs(animal)
     #fix_prep_thumbnail(animal)
-    test_tif(animal)
+    #test_tif(animal)
