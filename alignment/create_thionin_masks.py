@@ -15,15 +15,8 @@ import pandas as pd
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.alignment_utility import get_last_2d, place_image
+from utilities.file_location import FileLocationManager
 
-DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps'
-INPUT = os.path.join(DIR, 'CH1', 'thumbnail')
-OUTPUT = os.path.join(DIR, 'CH1', 'cleaned')
-MASKED = os.path.join(DIR, 'masked')
-files = sorted(os.listdir(INPUT))
-lfiles = len(files)
-if lfiles < 1:
-    sys.exit()
 
 def find_threshold(src):
     fig = matplotlib.figure.Figure()
@@ -51,6 +44,12 @@ def find_main_blob(stats, image):
         if corners <= 2:
             return row
 
+def get_index(array, list_of_arrays):
+    for j, a in enumerate(list_of_arrays):
+        if np.array_equal(array, a):
+            return j
+    return None
+
 def workershell(cmd):
     """
     Set up an shell command. That is what the shell true is for.
@@ -63,15 +62,16 @@ def workershell(cmd):
 
 def mask_thionin(animal, resolution='thumbnail'):
 
+    fileLocationManager = FileLocationManager(animal)
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
+    OUTPUT = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+    files = os.listdir(INPUT)
 
-    DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}'.format(animal)
-    INPUT = os.path.join(DIR, 'preps', 'CH1', 'thumbnail')
-    MASKED = os.path.join(DIR, 'preps', 'thumbnail_masked')
 
     if 'full' in resolution.lower():
-        INPUT = os.path.join(DIR, 'preps', 'CH1', 'full')
-        THUMBNAIL = os.path.join(DIR, 'preps', 'thumbnail_masked')
-        MASKED = os.path.join(DIR, 'preps', 'full_masked')
+        INPUT = os.path.join(fileLocationManager.prep, 'preps', 'CH1', 'full')
+        THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+        MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
         files = sorted(os.listdir(INPUT))
         commands = []
         for i, file in enumerate(tqdm(files)):
@@ -92,7 +92,6 @@ def mask_thionin(animal, resolution='thumbnail'):
             p.map(workershell, commands)
 
     else:
-        files = sorted(os.listdir(INPUT))
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
             try:
@@ -109,30 +108,40 @@ def mask_thionin(animal, resolution='thumbnail'):
             lower = bgcolor - 8
             upper = bgcolor + 4
             bgmask = (src >= lower) & (src <= upper)
-            src[bgmask] = bgcolor
 
+            src[bgmask] = bgcolor
             clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(16, 16))
             h_src = clahe.apply(src)
-            min_value, threshold = find_threshold(h_src)
-            ret, threshed = cv2.threshold(h_src, threshold, 255, cv2.THRESH_BINARY)
-            threshed = np.uint8(threshed)
-            connectivity = 4
-            output = cv2.connectedComponentsWithStats(threshed, connectivity, cv2.CV_32S)
-            num_labels = output[0]
-            labels = output[1]
-            stats = output[2]
-            centroids = output[3]
-            row = find_main_blob(stats, h_src)
-            blob_label = row[1]['blob_label']
-            blob = np.uint8(labels == blob_label) * 255
-            kernel10 = np.ones((10, 10), np.uint8)
-            closing = cv2.morphologyEx(blob, cv2.MORPH_CLOSE, kernel10, iterations=5)
 
-            outpath = os.path.join(MASKED, file)
-            cv2.imwrite(outpath, closing.astype('uint8'))
+            start_bottom = h_src.shape[0] - 5
+            bottom_rows = h_src[start_bottom:h_src.shape[0], :]
+            avg = np.mean(bottom_rows)
+            bgcolor = int(round(avg)) - 50
+            h, im_th = cv2.threshold(h_src, bgcolor, 255, cv2.THRESH_BINARY_INV)
+            # Copy the thresholded image.
+            im_floodfill = im_th.copy()
+            # Mask used to flood filling.
+            h, w = im_th.shape[:2]
+            mask = np.zeros((h + 2, w + 2), np.uint8)
+            # Floodfill from point (0, 0)
+            cv2.floodFill(im_floodfill, mask, (0, 0), 255)
+            # Invert floodfilled image
+            im_floodfill_inv = cv2.bitwise_not(im_floodfill)
+            # Combine the two images to get the foreground.
+            im_out = im_th | im_floodfill_inv
+            stencil = np.zeros(src.shape).astype('uint8')
+            contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
-
-
+            c1 = max(contours, key=cv2.contourArea)
+            idx = get_index(c1, contours)  # 1
+            contours.pop(idx)
+            if len(contours) > 0:
+                c2 = max(contours, key=cv2.contourArea)
+                cv2.fillPoly(stencil, [c1, c2], 255)
+            else:
+                cv2.fillPoly(stencil, [c1], 255)
+            outpath = os.path.join(OUTPUT, file)
+            cv2.imwrite(outpath, stencil.astype('uint8'))
 
 
 if __name__ == '__main__':

@@ -664,3 +664,13 @@ def rotate_image(img, file, rotation):
     except:
         print('Could not rotate', file)
     return img
+
+def linnorm(img, limit, dt):
+    flat = img.flatten()
+    hist, bins = np.histogram(flat, limit + 1)
+    cdf = hist.cumsum()  # cumulative distribution function
+    cdf = limit * cdf / cdf[-1]  # normalize
+    # use linear interpolation of cdf to find new pixel values
+    img_norm = np.interp(flat, bins[:-1], cdf)
+    img_norm = np.reshape(img_norm, img.shape)
+    return img_norm.astype(dt)
