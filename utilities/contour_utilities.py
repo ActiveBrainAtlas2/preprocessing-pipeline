@@ -208,21 +208,16 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
     print('str_contour',threshold)
     for section in str_contour:
         # Load (X,Y) coordinates on this contour
-        print('type of str_contour', type(str_contour))
         section_contours = str_contour[section][structure][threshold]
         # (X,Y) coordinates will be rescaled to the new resolution and placed here
         # str_contour_ng_resolution starts at z=0 for simplicity, must provide section offset later on
         str_contour_ng_resolution[section - first_sec] = []
         # Number of (X,Y) coordinates
         num_contours = len(section_contours)
-        print('num contours', num_contours)
-        print('type section contours', type(section_contours))
         # Cycle through each coordinate pair
         for coordinate_pair in range(num_contours):
             curr_coors = section_contours[coordinate_pair]
             #print('section_contours', section_contours)
-            print('coordinate_pair', coordinate_pair)
-            print('type of scale_xy curr_coors', type(scale_xy), type(curr_coors[0]), curr_coors[0])
             # Rescale coordinate pair and add to new contour dictionary
             str_contour_ng_resolution[section - first_sec].append([scale_xy * curr_coors[0], scale_xy * curr_coors[1]])
             # Replace Min/Max X/Y values with new extremes
@@ -420,11 +415,11 @@ def get_contours_from_annotations(stack, target_str, hand_annotations, densify=0
 
     for i in range(num_annotations):
         structure = hand_annotations['name'][i]
-        side = hand_annotations['side'][i]
+        #side = hand_annotations['side'][i]
         section = hand_annotations['section'][i]
 
-        if side == 'R' or side == 'L':
-            structure = structure + '_' + side
+        #if side == 'R' or side == 'L':
+        #    structure = structure + '_' + side
 
         if structure == target_str:
             vertices = hand_annotations['vertices'][i]
@@ -436,11 +431,9 @@ def get_contours_from_annotations(stack, target_str, hand_annotations, densify=0
             if stack == 'MD585' and section < MD585_ng_section_min + 22:
                 # vertices = vertices - np.array(MD585_abberation_correction)
                 continue
-
             str_contours_annotation[section] = {}
             str_contours_annotation[section][structure] = {}
             str_contours_annotation[section][structure][1] = vertices
-
     first_sec = np.min(list(str_contours_annotation.keys()))
     last_sec = np.max(list(str_contours_annotation.keys()))
 

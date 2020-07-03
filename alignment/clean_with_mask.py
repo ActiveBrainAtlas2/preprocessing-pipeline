@@ -15,7 +15,7 @@ import cv2
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.sqlcontroller import SqlController
-from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR
+from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR, linnorm
 
 def get_average_color(INPUT,files):
     averages = []
@@ -93,10 +93,10 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
             fixed = np.flip(fixed, axis=1)
 
         if channel == 1 and 'ntb' in stain.lower():
-            clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(16, 16))
+            clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
             fixed = clahe.apply(fixed.astype(dt))
+            #fixed = linnorm(fixed, limit , dt)
 
-        #TODO dtype needs to come from the sql
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         fixed[fixed == 0] = bgcolor
         outpath = os.path.join(CLEANED, file)
