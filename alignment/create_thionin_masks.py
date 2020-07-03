@@ -118,6 +118,7 @@ def mask_thionin(animal, resolution='thumbnail'):
             avg = np.mean(bottom_rows)
             bgcolor = int(round(avg)) - 50
             h, im_th = cv2.threshold(h_src, bgcolor, 255, cv2.THRESH_BINARY_INV)
+            ## for dark background h, im_th = cv2.threshold(h_src, bgcolor, 255, cv2.THRESH_BINARY)
             # Copy the thresholded image.
             im_floodfill = im_th.copy()
             # Mask used to flood filling.
@@ -132,16 +133,25 @@ def mask_thionin(animal, resolution='thumbnail'):
             stencil = np.zeros(src.shape).astype('uint8')
             contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
+            lc = []
             c1 = max(contours, key=cv2.contourArea)
+            lc.append(c1)
+            area2 = 0
             idx = get_index(c1, contours)  # 1
             contours.pop(idx)
             if len(contours) > 0:
                 c2 = max(contours, key=cv2.contourArea)
-                cv2.fillPoly(stencil, [c1, c2], 255)
-            else:
-                cv2.fillPoly(stencil, [c1], 255)
+                area2 = cv2.contourArea(c2)
+                if area2 > 610:
+                    lc.append(c2)
+            cv2.fillPoly(stencil, lc, 255)
+
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+            #(thresh, binRed) = cv2.threshold(stencil, 128, 255, cv2.THRESH_BINARY)
+            finished = cv2.morphologyEx(stencil, cv2.MORPH_OPEN, kernel, iterations=3)
+
             outpath = os.path.join(OUTPUT, file)
-            cv2.imwrite(outpath, stencil.astype('uint8'))
+            cv2.imwrite(outpath, finished.astype('uint8'))
 
 
 if __name__ == '__main__':
