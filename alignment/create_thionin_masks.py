@@ -69,7 +69,7 @@ def mask_thionin(animal, resolution='thumbnail'):
 
 
     if 'full' in resolution.lower():
-        INPUT = os.path.join(fileLocationManager.prep, 'preps', 'CH1', 'full')
+        INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
         files = sorted(os.listdir(INPUT))
