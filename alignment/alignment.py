@@ -64,7 +64,6 @@ def run_elastix(stack, njobs):
         output_subdir = os.path.join(elastix_output_dir, new_dir)
 
         if os.path.exists(output_subdir) and 'TransformParameters.0.txt' in os.listdir(output_subdir):
-            # print('{} to {} already exists and so skipping.'.format(curr_img_name, prev_img_name))
             continue
 
 

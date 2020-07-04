@@ -28,17 +28,18 @@ if __name__ == '__main__':
 
     image_name_list = sorted(os.listdir(INPUT))
     for file in tqdm(image_name_list):
+        ch1path = os.path.join(DIR, 'preps', CH1, file)
+        ch2path = os.path.join(DIR, 'preps', CH2, file)
+        ch3path = os.path.join(DIR, 'preps', CH3, file)
+        if os.path.exists(ch1path):
+            continue
+
         infile = os.path.join(INPUT, file)
         img = io.imread(infile)
         ch1 = img[:, :, 0]
         ch2 = img[:, :, 1]
         ch3 = img[:, :, 2]
 
-        outpath = os.path.join(DIR, 'preps', CH1, file)
-        cv2.imwrite(outpath, ch1.astype('uint8'))
-
-        outpath = os.path.join(DIR, 'preps', CH2, file)
-        cv2.imwrite(outpath, ch2.astype('uint8'))
-
-        outpath = os.path.join(DIR, 'preps', CH3, file)
-        cv2.imwrite(outpath, ch3.astype('uint8'))
+        cv2.imwrite(ch1path, ch1.astype('uint8'))
+        cv2.imwrite(ch2path, ch2.astype('uint8'))
+        cv2.imwrite(ch3path, ch3.astype('uint8'))
