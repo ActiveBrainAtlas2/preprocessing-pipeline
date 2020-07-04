@@ -136,6 +136,7 @@ def mask_thionin(animal, resolution='thumbnail'):
             lc = []
             c1 = max(contours, key=cv2.contourArea)
             lc.append(c1)
+            area1 = cv2.contourArea(c1)
             area2 = 0
             idx = get_index(c1, contours)  # 1
             contours.pop(idx)
@@ -146,9 +147,13 @@ def mask_thionin(animal, resolution='thumbnail'):
                     lc.append(c2)
             cv2.fillPoly(stencil, lc, 255)
 
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
-            #(thresh, binRed) = cv2.threshold(stencil, 128, 255, cv2.THRESH_BINARY)
-            finished = cv2.morphologyEx(stencil, cv2.MORPH_OPEN, kernel, iterations=3)
+            if area1 > 2000:
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+                # (thresh, binRed) = cv2.threshold(stencil, 128, 255, cv2.THRESH_BINARY)
+                finished = cv2.morphologyEx(stencil, cv2.MORPH_OPEN, kernel, iterations=3)
+            else:
+                finished = stencil
+
 
             outpath = os.path.join(OUTPUT, file)
             cv2.imwrite(outpath, finished.astype('uint8'))
