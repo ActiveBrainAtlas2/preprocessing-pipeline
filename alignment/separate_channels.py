@@ -28,9 +28,9 @@ if __name__ == '__main__':
 
     image_name_list = sorted(os.listdir(INPUT))
     for file in tqdm(image_name_list):
-        ch1path = os.path.join(DIR, 'preps', CH1, file)
-        ch2path = os.path.join(DIR, 'preps', CH2, file)
-        ch3path = os.path.join(DIR, 'preps', CH3, file)
+        ch1path = os.path.join(CH1, file)
+        ch2path = os.path.join(CH2, file)
+        ch3path = os.path.join(CH3, file)
         if os.path.exists(ch1path):
             continue
 
