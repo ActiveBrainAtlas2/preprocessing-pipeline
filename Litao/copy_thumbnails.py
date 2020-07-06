@@ -13,7 +13,7 @@ from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 
 
-def copy_thumbnails_to_dir(animal, channel):
+def copy_images_to_dir(animal, channel, resolution):
     sql_controller = SqlController()
 
     file_location_manager = FileLocationManager(animal)
@@ -24,7 +24,7 @@ def copy_thumbnails_to_dir(animal, channel):
         src_file = os.path.join(file_location_manager.thumbnail_prep, section.destination_file)
         channel_dir = 'CH{}'.format(channel)
         dst_file = os.path.join(file_location_manager.prep, channel_dir,
-                                'thumbnail', str(section.section_number).zfill(3) + '.tif')
+                                resolution, str(section.section_number).zfill(3) + '.tif')
 
         os.makedirs(os.path.dirname(dst_file), exist_ok=True)
         copyfile(src_file, dst_file)
@@ -34,8 +34,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
+    parser.add_argument('--resolution', help='Enter full or thumbnail', required=True, default='thumbnail')
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
-    copy_thumbnails_to_dir(animal, channel)
+    resolution = args.resolution
+    if resolution == 'full' or resolution == 'thumbnail':
+        copy_images_to_dir(animal, channel, resolution)
 
