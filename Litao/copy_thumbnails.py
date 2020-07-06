@@ -17,11 +17,13 @@ def copy_images_to_dir(animal, channel, resolution):
     sql_controller = SqlController()
 
     file_location_manager = FileLocationManager(animal)
-
+    INPUT = file_location_manager.thumbnail_prep
+    if 'full' in resolution:
+        INPUT = file_location_manager.tif
 
     valid_sections = sql_controller.get_raw_sections(animal, channel)
     for section in tqdm(valid_sections):
-        src_file = os.path.join(file_location_manager.thumbnail_prep, section.destination_file)
+        src_file = os.path.join(INPUT, section.destination_file)
         channel_dir = 'CH{}'.format(channel)
         dst_file = os.path.join(file_location_manager.prep, channel_dir,
                                 resolution, str(section.section_number).zfill(3) + '.tif')
