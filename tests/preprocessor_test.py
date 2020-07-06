@@ -112,9 +112,12 @@ def test_tif(animal):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal ID', required=True)
+    parser.add_argument('--fix', help='Enter True to fix', required=False, default=False)
     args = parser.parse_args()
     animal = args.animal
+    fix = args.fix
     test_tif(animal)
-    fix_tifs(animal)
-    #fix_prep_thumbnail(animal)
-    #test_tif(animal)
+    if fix:
+        fix_tifs(animal)
+        #fix_prep_thumbnail(animal)
+        test_tif(animal)
