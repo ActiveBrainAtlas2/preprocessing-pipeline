@@ -26,10 +26,10 @@ from matplotlib import pyplot as plt
 from skimage import io
 from sqlalchemy.orm.exc import NoResultFound
 
-from Litao.database_schema import AlcSlide, AlcSlideCziTif, AlcRawSection, AlcHistology, AlcScanRun, AlcAnimal
+from Litao.database_schema import AlcSlide, AlcSlideCziTif, AlcRawSection, AlcAnimal, AlcRawSection as RawSection
 from Litao.file_location import FileLocationManager
 from Litao.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
-from Litao.database_setup import schema, session, RawSection
+from Litao.database_setup import schema, session
 
 
 class PostCZIProcessor(object):
@@ -117,20 +117,20 @@ class PostCZIProcessor(object):
                     height = metadata_dict[series_index]['height']
                     for channel in channels:
                         channel_counter += 1
-                        new_tif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
-                        new_tif = new_tif.replace('.czi', '')
-                        print(new_tif)
+                        #new_tif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
+                        #new_tif = new_tif.replace('.czi', '')
+                        #print(new_tif)
 
                         tif = AlcSlideCziTif()
                         tif.slide_id = slide.id
                         tif.section_number = section_number
                         tif.scene_number = scene_number
                         tif.channel = channel_counter
-                        tif.file_name = new_tif
-                        tif.file_size = 0
+                        #tif.file_name = new_tif
+                        #tif.file_size = 0
                         tif.active = 1
-                        tif.width = width
-                        tif.height = height
+                        #tif.width = width
+                        #tif.height = height
                         tif.channel_index = channel
                         tif.scene_index = series_index
                         tif.processing_duration = 0
