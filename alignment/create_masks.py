@@ -37,12 +37,13 @@ def get_index(array, list_of_arrays):
     return None
 
 
-def fix_with_fill(img):
+def fix_with_fill(img, limit, dt):
     limit = 250
     dt = np.uint8
     no_strip, fe = remove_strip(img)
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
+
     img = (img / 256).astype(dt)
     h_src = linnorm(img, limit, dt)
     med = np.median(h_src)
@@ -61,21 +62,30 @@ def fix_with_fill(img):
     c1 = max(contours, key=cv2.contourArea)
     lc.append(c1)
     area1 = cv2.contourArea(c1)
-
-    area2 = 0
     idx = get_index(c1, contours)  # 2
     contours.pop(idx)
     if len(contours) > 0:
-        c2 = max(contours, key=cv2.contourArea)
-        area2 = cv2.contourArea(c2)
-        area3 = area2 * 0.035
-        if area2 > area3:
-            lc.append(c2)
+        cX = max(contours, key=cv2.contourArea)
+        area2 = cv2.contourArea(cX)
+        if area2 > (area1 * 0.125):
+            lc.append(cX)
+        idx = get_index(cX, contours)  # 2
+        contours.pop(idx)
+    if len(contours) > 0:
+        cX = max(contours, key=cv2.contourArea)
+        area3 = cv2.contourArea(cX)
+        if area3 > (area1 * 0.125):
+            lc.append(cX)
+        idx = get_index(cX, contours)  # 2
+        contours.pop(idx)
     cv2.fillPoly(stencil, lc, 255)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
-    mask = cv2.dilate(stencil, kernel, iterations=2)
-    return mask, area1 + area2
+    if len(contours) > 0:
+        cv2.fillPoly(stencil, contours, 0)
+
+    #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
+    #dilation = cv2.dilate(stencil, kernel, iterations=2)
+    return stencil
 
 
 def fix_with_blob(img):
@@ -196,7 +206,6 @@ def create_mask(animal, resolution):
     else:
 
         files = sorted(os.listdir(INPUT))
-        areas = []
 
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
@@ -206,7 +215,7 @@ def create_mask(animal, resolution):
                 print('Could not open', infile)
                 continue
             img = get_last_2d(img)
-            mask = fix_with_blob(img)
+            mask = fix_with_fill(img)
             """
             area = find_contour_area(mask)
             areas.append(area)
