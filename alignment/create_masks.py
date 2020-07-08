@@ -37,7 +37,7 @@ def get_index(array, list_of_arrays):
     return None
 
 
-def fix_with_fill(img, limit, dt):
+def fix_with_fill(img):
     limit = 250
     dt = np.uint8
     no_strip, fe = remove_strip(img)
