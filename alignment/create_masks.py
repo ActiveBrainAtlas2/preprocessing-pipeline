@@ -207,12 +207,13 @@ def create_mask(animal, resolution):
                 continue
             img = get_last_2d(img)
             mask = fix_with_blob(img)
+            """
             area = find_contour_area(mask)
             areas.append(area)
             if i > 0 and area < (areas[i - 1] * 0.90):
                 mask, area = fix_with_fill(img)
             areas.append(area)
-
+            """
             # save the mask
             outpath = os.path.join(MASKED, file)
             cv2.imwrite(outpath, mask.astype('uint8'))
