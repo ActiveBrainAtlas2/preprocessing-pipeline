@@ -28,6 +28,9 @@ def copy_images_to_dir(animal, channel, resolution):
         dst_file = os.path.join(file_location_manager.prep, channel_dir,
                                 resolution, str(section.section_number).zfill(3) + '.tif')
 
+        if os.path.exists(dst_file):
+            continue
+
         os.makedirs(os.path.dirname(dst_file), exist_ok=True)
         copyfile(src_file, dst_file)
 
