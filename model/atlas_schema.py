@@ -79,24 +79,10 @@ class Slide(dj.Manual): # prior to segregation of animals and scenes on each sli
     """
 
 @schema
-class RawSection(dj.Manual): # Used to populate sections after Bioconverter; this is the replacement for the "text file"
-    definition = """
-    id : int auto_increment
-    ----------------
-    prep_id    : varchar(20)
-    section_number    : int
-    channel         : tinyint
-    scanner_counter : int
-    source_file       : varchar(200)
-    file_status  : varchar(25)
-    active : tinyint
-       """
-
-@schema
 class FileOperation(dj.Computed):
     definition = """
     id : int
-    -> RawSection
+    -> SlideCziTif
     ---
     file_name :  varchar(200) 
     thumbnail: tinyint
@@ -115,19 +101,9 @@ class FileOperation(dj.Computed):
         file_id = np.asscalar(file_id)
         tif_id = (RawSection & key).fetch1('tif_id')
         czi_to_tif = make_tif(session, prep_id, np.asscalar(tif_id), file_id, testing)
-        #histogram = slide_processor.make_histogram(file_id, file_name, testing)
-        #thumbnail = slide_processor.make_thumbnail(file_id, file_name, testing)
-        #slide_processor.make_web_thumbnail(file_id, file_name, testing)
-
-        max_width = 55700
-        max_height = 33600
-
-        #cleaned = make_mask(session, prep_id, file_id, max_width, max_height)
         thumbnail = 0
         cleaned = 0
-        #czi_to_tif = 1
         histogram = 0
-        #session, prep_id, file_id, max_width, max_height
         end = time.time()
 
         self.insert1(dict(key, file_name=file_name,

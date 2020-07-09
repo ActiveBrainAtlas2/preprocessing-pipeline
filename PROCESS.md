@@ -1,64 +1,47 @@
 ### New Brain
 ## Post CZI Creation Process
 1. To install the software prerequisites, [look here.](README.md)
-1. Run: main.py --animal DK43 --czi True
+1. Run: main.py --animal DKXX --czi True
     1. This will scan each czi file
-    2. extract the tif files
-    3. enter the file name in the database
+    2. extract the tif meta information and insert into the slide_czi_to_tif table
 1. Have someone confirm the status of each slide in: https://activebrainatlas.ucsd.edu/activebrainatlas/admin
-1. Create the raw sections via the web interface
-1. Run: main.py --animal DK43 --image True --limit 10. 
-    1. this will read the slide table in the database
-    1. create 10 tif files
-    1. Repeat this process with no limit after you are sure everything works
-    1. Open up another terminal on ratto and basalis and muralis and run the same script
-    1. If you cancel a job or need to start over, delete everything from the __file_operation table
-    1. You might also have to delete everything from the ~jobs table
-
-## Post TIF Creation Process
-1. Create thumbnails on all channels into the preps/thumbnail dir. Use imagemagick convert
-1. Copy from preps/thumbnail to preps/CHX/thumbnail to created ordered thumbnails with copy_thumbnails.py
-1. View a couple thumbnails to determine how much rotation/flips to perform and create web thumbnails with imagemagick convert
-1. Create cleaned images and masks on CH1 with appropriate rotation/flip 
-1. Run masks against CH2 and CH3  with appropriate rotation/flip
-1. Run alignment on thumbnail CH1 
-1. Use alignment results from CH1 to align thumbnail CH2 and CH3
-1. Run neuroglancer on all aligned thumbnail dirs
-1. Test viewing with neuroglancer
-1. Run alignment on all big images on all 3 channels
-1. Run neuroglancer on all 3 big aligned directories
-1. View finished product in neuroglancer
-
-### Actual scripts run on DK43 for 3 channels for Neuroglancer
-
-1. python create-masks.py 
-1. Visually inspect files in the: /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/cleaned
-to determine which way to rotate and/or flip. Also get the maximum width and height with:
-for i in *.tif; do identify $i; done | awk '{print $4}' | sort -n
-1. python clean_with_mask.py --animal DK43 --channel 1 --rotation 1 --flip flop
-1. python clean_with_mask.py --animal DK43 --channel 2 --rotation 1 --flip flop
-1. python clean_with_mask.py --animal DK43 --channel 3 --rotation 1 --flip flop
-1. python alignment.py --animal DK43 --njobs 10 --channel 1
-1. python alignment.py --animal DK43 --njobs 10 --channel 2
-1. python alignment.py --animal DK43 --njobs 10 --channel 3
-1. python precompute_images_local.py --animal DK43 --channel 1 --resolution thumb
-1. python precompute_images_local.py --animal DK43 --channel 2 --resolution thumb
-1. python precompute_images_local.py --animal DK43 --channel 3 --resolution thumb
-
-##### fix section 108
-
-### Actual scripts run on MD589 for 3 channels for thionin Neuroglancer
-
-1. python create-thionin-masks.py
-1. Visually inspect files in the: /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/cleaned
-to determine which way to rotate and/or flip. Also get the maximum width and height with:
-for i in *.tif; do identify $i; done | awk '{print $4}' | sort -n
-1. python clean_with_mask.py --animal MD589 --channel 1  --resolution thumbnail
-1. python clean_with_mask.py --animal MD589 --channel 2  --resolution thumbnail
-1. python clean_with_mask.py --animal MD589 --channel 3  ---resolution thumbnail
-1. python alignment.py --animal MD589 --njobs 10 --channel 1 --resolution thumbnail
-1. python alignment.py --animal MD589 --njobs 10 --channel 2 --resolution thumbnail
-1. python alignment.py --animal MD589 --njobs 10 --channel 3 --resolution thumbnail
-1. python precompute_images_local.py --animal MD589 --channel 1 --resolution thumbnail
-1. python precompute_images_local.py --animal MD589 --channel 2 --resolution thumbnail
-1. python precompute_images_local.py --animal MD589 --channel 3 --resolution thumbnail
+1. Run: python create_tifs.py --animal DKXX --channel 1 
+    1. this will read the sections table in the database
+    1. create tif files for channel 1
+    1. repeat process for the other 2 channels when ready
+1. Run: python create_thumbnails.py --animal DKXX --channel 1 
+    1. this will read the directory of the full resolution files for channel 1
+    1. create thumbnail tif files for channel 1
+    1. repeat process for the other 2 channels when ready
+    1. View a couple thumbnails to determine how much rotation/flips to perform
+1. Run: python create_masks.py --animal DKXX
+    1. This will read the thumbnail directory and create masks in the DKXX/preps/thumbnail_masked dir
+    1. No need to use channel 2 or 3. It works solely on channel 1
+1. Run: python clean_with_mask.py --animal DKXX --channel 1 --rotation 1
+    1. use the necessary rotations and flip/flop parameters
+    1. view a few of the files in DKXX/preps/CH1/thumbnail_cleaned
+1. Run: python alignment.py --animal DKXX --channel 1
+    1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair
+    1. The elastix dir will be used to align the other channels and the full resoltions
+1. Run: python precompute_images_local.py --animal DKXX --channel 1 --resolution thumbnail
+    1. This will create the data for neuroglancer for channel 1
+    1. View results in neuroglancer. Add the layer to the precompute with:
+        https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C1T
+1. When you are satisfied with the results, run these steps with full resolution on channel 1
+    1. python create_masks.py --animal DKXX --resolution full
+    1. python clean_with_mask.py --animal DKXX --channel 1 --rotation 1 --resolution full
+    1. python alignment.py --animal DKXX --channel 1 --resolution full
+    1. python precompute_images_local.py --animal DKXX --channel 1 --resolution full
+    1. View results in neuroglancer. Add the layer to the precompute with:
+        https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C1
+1. When you are satisfied with the full resolution results, finishe the other two channels
+    1. python clean_with_mask.py --animal DKXX --channel 2 --rotation 1 --resolution full
+    1. python alignment.py --animal DKXX --channel 2 --resolution full
+    1. python precompute_images_local.py --animal DKXX --channel 2 --resolution full
+    1. View results in neuroglancer. Add the layer to the precompute with:
+        https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C2
+    1. python clean_with_mask.py --animal DKXX --channel 3 --rotation 1 --resolution full
+    1. python alignment.py --animal DKXX --channel 3 --resolution full
+    1. python precompute_images_local.py --animal DKXX --channel 3 --resolution full
+    1. View results in neuroglancer. Add the layer to the precompute with:
+        https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C3

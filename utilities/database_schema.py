@@ -215,12 +215,8 @@ class AlcSlideCziTif(Base, AtlasModel):
 
     id = Column(Integer, primary_key=True, nullable=False)
     slide_id = Column(Integer, ForeignKey('slide.id'), nullable=False)
-    #scene_number = Column(Integer)
-    #channel = Column(Integer)
     width = Column(Integer)
     height = Column(Integer)
-    #file_name = Column(String(255))
-    #file_size = Column(Float)
     comments = Column(String(255))
     channel_index = Column(Integer)
     scene_index = Column(Integer)

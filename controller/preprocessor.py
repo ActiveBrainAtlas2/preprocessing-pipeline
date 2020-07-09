@@ -28,7 +28,7 @@ import os
 import cv2
 import pandas as pd
 
-from model.section import RawSection
+from model.section import Section
 from .bioformats_utilities import get_czi_metadata, get_fullres_series_indices
 from model.animal import Animal
 from model.histology import Histology as AlcHistology
@@ -68,16 +68,8 @@ class SlideProcessor(object):
         After the CZI files are placed on birdstore, they need to be scanned to get the metadata for
         the tif files. Set the progress status here.
         """
-        lookup_ids = [1,2,3]
         scan_id = max(self.scan_ids)
         self.session.query(AlcSlide).filter(AlcSlide.scan_run_id.in_(self.scan_ids)).delete(synchronize_session=False)
-        self.session.query(Task).filter(Task.lookup_id.in_(lookup_ids))\
-            .filter(Task.prep_id == self.animal.prep_id)\
-            .delete(synchronize_session=False)
-        for i in lookup_ids:
-            task = Task(self.animal.prep_id, i, True)
-            self.session.add(task)
-
         self.session.commit()
 
         try:
@@ -110,8 +102,6 @@ class SlideProcessor(object):
                 self.session.add(slide)
                 self.session.flush()
 
-                #####TODO, scene_index and channel_index just default to 0
-                ##### Fix this!!!!!!!!!!!!!!
                 for j, series_index in enumerate(series):
                     scene_number = j + 1
                     channels = range(metadata_dict[series_index]['channels'])
@@ -122,30 +112,21 @@ class SlideProcessor(object):
                     for channel in channels:
                         channel_counter += 1
                         newtif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
-                        newtif = newtif.replace('.czi','')
+                        newtif = newtif.replace('.czi', '').replace('__','_')
                         tif = AlcSlideCziTif()
                         tif.slide_id = slide.id
-                        tif.section_number = section_number
                         tif.scene_number = scene_number
-                        tif.channel = channel_counter
                         tif.file_name = newtif
                         tif.file_size = 0
                         tif.active = 1
                         tif.width = width
                         tif.height = height
-                        tif.channel_index = channel
                         tif.scene_index = series_index
+                        tif.channel = channel_counter
                         tif.processing_duration = 0
                         tif.created = time.strftime('%Y-%m-%d %H:%M:%S')
-                        print(newtif)
                         self.session.add(tif)
                     section_number += 1
-        # lookup_id=3 is for the scanning CZI
-        task =   self.session.query(Task).filter(Task.lookup_id == 3)\
-        .filter(Task.prep_id == self.animal.prep_id).one()
-        task.end_date = datetime.now()
-        self.session.merge(task)
-
         self.session.commit()
 
 
@@ -217,7 +198,7 @@ class SlideProcessor(object):
         This will create a tif in the preps dir that are used throughout the pipeline
         """
         result = 0
-        rsection = self.session.query(RawSection).filter(RawSection.id == file_id).one()
+        rsection = self.session.query(Section).filter(Section.id == file_id).one()
         source = os.path.join(self.fileLocationManager.tif, file_name)
         prep_destination = os.path.join(self.fileLocationManager.thumbnail_prep, rsection.destination_file)
         # Create thumbnails
@@ -242,7 +223,7 @@ class SlideProcessor(object):
         This will create a png in the web thumbnail dir
         """
         result = 0
-        rsection = self.session.query(RawSection).filter(RawSection.id == file_id).one()
+        rsection = self.session.query(Section).filter(Section.id == file_id).one()
         prep_destination = os.path.join(self.fileLocationManager.thumbnail_prep, rsection.destination_file)
         # Create thumbnails if prep thumbnail exists
         if os.path.exists(prep_destination):
@@ -272,7 +253,7 @@ class SlideProcessor(object):
             subprocess.run(command)
             return 1
 
-        rsection = self.session.query(RawSection).filter(RawSection.id == file_id).one()
+        rsection = self.session.query(Section).filter(Section.id == file_id).one()
         try:
             img = io.imread(source)
         except:
@@ -339,7 +320,7 @@ def make_tif(session, prep_id, tif_id, file_id, testing=False):
     tif = session.query(AlcSlideCziTif).filter(AlcSlideCziTif.id==tif_id).one()
     slide = session.query(AlcSlide).filter(AlcSlide.id==tif.slide_id).one()
     czi_file = os.path.join(CZI_FOLDER, slide.file_name)
-    rsection = session.query(RawSection).filter(RawSection.id==file_id).one()
+    rsection = session.query(Section).filter(Section.id==file_id).one()
     tif_file = os.path.join(TIF_FOLDER, rsection.destination_file)
     if not os.path.exists(czi_file) and not testing:
         return 0
@@ -451,7 +432,7 @@ def make_mask(session, prep_id, file_id, max_width, max_height):
     MASKED = os.path.join(DIR, 'masked')
 
     OUTPUT = CLEANED
-    rsection = session.query(RawSection).filter(RawSection.id==file_id).one()
+    rsection = session.query(Section).filter(Section.id==file_id).one()
     #infile = rsection.destination_file
     infile = '{}.tif'.format(str(rsection.section_number).zfill(3))
     inpath = os.path.join(INPUT, infile)

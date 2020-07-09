@@ -4,29 +4,19 @@ from model.animal import Animal
 import sys
 from utilities.sqlcontroller import SqlController
 from controller.preprocessor import SlideProcessor
-from controller.spreadsheet_utilities import upload_spreadsheet, download_spreadsheet
-from model.atlas_schema import manipulate_images
-from sql_setup import session, CZI_FILES_ARE_CONVERTED_INTO_TIFS_AND_HISTOGRAMS
+from sql_setup import session, CZI_FILES_ARE_SCANNED_TO_GET_METADATA
 
 
 def fetch_and_run(prep_id, limit, image=False, czi=False, testing=False):
 
     slide_processor = SlideProcessor(prep_id, session)
-    sqlController = SqlController()
+    sqlController = SqlController(prep_id)
     if czi:
         slide_processor.process_czi_dir()
-    if image:
-        manipulate_images(prep_id, limit, testing)
-        sqlController.set_step_completed_in_progress_ini(prep_id, CZI_FILES_ARE_CONVERTED_INTO_TIFS_AND_HISTOGRAMS)
+        sqlController.set_task(prep_id, CZI_FILES_ARE_SCANNED_TO_GET_METADATA)
     #slide_processor.update_tif_data()
     #slide_processor.test_tables()
     print('Finished manipulating images')
-
-def download(prep_id, session, engine):
-    download_spreadsheet(prep_id, session, engine)
-
-def upload(xlsx, session, engine):
-    upload_spreadsheet(xlsx, session, engine)
 
 if __name__ == '__main__':
     # Parsing argument

@@ -9,13 +9,16 @@ import numpy as np
 from skimage import io
 from os.path import expanduser
 from tqdm import tqdm
-HOME = expanduser("~")
 import os, sys
 import cv2
 
+from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK, CLEAN_CHANNEL_1_FULL_RES_WITH_MASK, \
+    CLEAN_CHANNEL_2_FULL_RES_WITH_MASK, CLEAN_CHANNEL_3_FULL_RES_WITH_MASK
+
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.sqlcontroller import SqlController
-from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR, linnorm
+from utilities.file_location import FileLocationManager
+from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR
 
 def get_average_color(INPUT,files):
     averages = []
@@ -31,13 +34,12 @@ def get_average_color(INPUT,files):
 
 def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
 
-    sqlController = SqlController()
-    sqlController.get_animal_info(animal)
+    sqlController = SqlController(animal)
+    fileLocationManager = FileLocationManager(animal)
     channel_dir = 'CH{}'.format(channel)
-    DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}/preps'.format(animal)
-    CLEANED = os.path.join(DIR, channel_dir, 'thumbnail_cleaned')
-    INPUT = os.path.join(DIR,  channel_dir, 'thumbnail')
-    MASKS = os.path.join(DIR, 'thumbnail_masked')
+    CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
+    INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'thumbnail')
+    MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     max_width = int(width * SCALING_FACTOR)
@@ -46,13 +48,22 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
     dt = 'uint16'
     limit = 2 ** 16 - 1
     stain = sqlController.histology.counterstain
+    if channel == 1:
+        sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)
+
 
     if 'full' in resolution.lower():
-        CLEANED = os.path.join(DIR, channel_dir, 'full_cleaned')
-        INPUT = os.path.join(DIR, channel_dir, 'full')
-        MASKS = os.path.join(DIR, 'full_masked')
+        CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
+        INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full')
+        MASKS = os.path.join(fileLocationManager.prep, 'full_masked')
         max_width = width
         max_height = height
+        if channel == 1:
+            sqlController.set_task(animal, CLEAN_CHANNEL_1_FULL_RES_WITH_MASK)
+        elif channel == 2:
+            sqlController.set_task(animal, CLEAN_CHANNEL_2_FULL_RES_WITH_MASK)
+        else:
+            sqlController.set_task(animal, CLEAN_CHANNEL_3_FULL_RES_WITH_MASK)
 
 
     if 'thion' in stain.lower():

@@ -28,10 +28,7 @@ class Task(Base, AtlasModel):
 class ProgressLookup(Base, AtlasModel):
     __tablename__ = 'progress_lookup'
     id =  Column(Integer, primary_key=True, nullable=False)
-
-    ordinal = Column(Integer, nullable=False)
     description = Column(String, nullable=False)
-    category = Column(String, nullable=False)
     script = Column(String, nullable=True)
 
 
