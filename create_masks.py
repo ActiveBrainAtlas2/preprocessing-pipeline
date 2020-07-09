@@ -1,5 +1,4 @@
 import argparse
-import subprocess
 from multiprocessing.pool import Pool
 import numpy as np
 import matplotlib
@@ -7,6 +6,9 @@ import matplotlib.figure
 from skimage import io
 from os.path import expanduser
 from tqdm import tqdm
+
+from sql_setup import CREATE_THUMBNAIL_MASKS
+
 HOME = expanduser("~")
 import os, sys
 import cv2
@@ -15,7 +17,8 @@ import pandas as pd
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.alignment_utility import get_last_2d, linnorm
 from utilities.file_location import FileLocationManager
-
+from utilities.sqlcontroller import SqlController
+from utilities.utilities_process import workershell
 
 def find_contour_area(mask):
     area2 = 0
@@ -110,15 +113,6 @@ def fix_with_blob(img):
     return mask
 
 
-def workershell(cmd):
-    """
-    Set up an shell command. That is what the shell true is for.
-    Args:
-        cmd:  a command line program with arguments in a string
-    Returns: nothing
-    """
-    p = subprocess.Popen(cmd, shell=True, stderr=None, stdout=None)
-    p.wait()
 
 
 def find_main_blob(stats, image):
@@ -176,14 +170,16 @@ def remove_strip(src):
 
 def create_mask(animal, resolution):
 
-    file_location_manager = FileLocationManager(animal)
-    INPUT = os.path.join(file_location_manager.prep, 'CH1', 'thumbnail')
-    MASKED = os.path.join(file_location_manager.prep, 'thumbnail_masked')
+    fileLocationManager = FileLocationManager(animal)
+    sqlController = SqlController(animal)
+    sqlController.set_task(animal, CREATE_THUMBNAIL_MASKS)
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
+    MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
 
     if 'full' in resolution.lower():
-        INPUT = os.path.join(file_location_manager.prep, 'CH1', 'full')
-        THUMBNAIL = os.path.join(file_location_manager.prep, 'thumbnail_masked')
-        MASKED = os.path.join(file_location_manager.prep, 'full_masked')
+        INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
+        THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+        MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
         files = sorted(os.listdir(INPUT))
         commands = []
         for i, file in enumerate(tqdm(files)):

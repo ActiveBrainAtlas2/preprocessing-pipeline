@@ -11,17 +11,10 @@ from tqdm import tqdm
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
+from utilities.sqlcontroller import SqlController
+from utilities.utilities_process import workershell
+from sql_setup import CREATE_CHANNEL_1_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS, CREATE_CHANNEL_3_THUMBNAILS
 
-
-def workershell(cmd):
-    """
-    Set up an shell command. That is what the shell true is for.
-    Args:
-        cmd:  a command line program with arguments in a string
-    Returns: nothing
-    """
-    proc = subprocess.Popen(cmd, shell=True, stderr=None, stdout=None)
-    proc.wait()
 
 def make_thumbnails(animal, channel, njobs):
     """
@@ -30,11 +23,20 @@ def make_thumbnails(animal, channel, njobs):
         limit: number of jobs
     Returns: nothing
     """
+
     fileLocationManager = FileLocationManager(animal)
+    sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)
     INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'full')
     OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
     files = os.listdir(INPUT)
+    if channel == 1:
+        sqlController.set_task(animal, CREATE_CHANNEL_1_THUMBNAILS)
+    elif channel == 2:
+        sqlController.set_task(animal, CREATE_CHANNEL_2_THUMBNAILS)
+    else:
+        sqlController.set_task(animal, CREATE_CHANNEL_3_THUMBNAILS)
+
 
     commands = []
     for file in tqdm(files):

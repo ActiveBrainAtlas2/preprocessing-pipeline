@@ -105,8 +105,7 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
     Returns:
         Dict {section: {name_s: contour vertices}}.
     """
-    sqlController = SqlController()
-    sqlController.get_animal_info(stack)
+    sqlController = SqlController(stack)
 
     structure_contours_wrt_alignedBrainstemCrop_rawResol = defaultdict(lambda: defaultdict(dict))
     section_numbers = sqlController.get_sections_numbers(stack)

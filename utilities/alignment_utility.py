@@ -15,7 +15,6 @@ sys.path.append(os.path.join(os.getcwd(), '../'))
 
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-sqlController = SqlController()
 
 
 SCALING_FACTOR = 0.03125
@@ -187,7 +186,8 @@ def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=
         resolution (str): resolution of the image that the output transform will be applied to.
     """
     # set the animal info
-    sqlController.get_animal_info(stack)
+
+    sqlController = SqlController(stack)
     planar_resolution = sqlController.scan_run.resolution
     string_to_voxel_size = sqlController.convert_resolution_string_to_um(stack, resolution)
 
@@ -220,9 +220,6 @@ def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=
 
 
 def get_transforms_filename(stack, anchor_fn=None):
-    if anchor_fn is None:
-        anchor_fn = sqlController.get_anchor_name(stack)
-
     fileLocationManager = FileLocationManager(stack)
     fp = os.path.join(fileLocationManager.brain_info, 'transforms_to_anchor.csv')
     return fp
@@ -497,7 +494,8 @@ def convert_2d_transform_forms(transform, out_form):
 
 ##### cropbox methods
 
-def convert_cropbox_from_arr_xywh_1um(data, out_fmt, out_resol, stack=None):
+def convert_cropbox_from_arr_xywh_1um(data, out_fmt, out_resol, stack):
+    sqlController = SqlController(stack)
     string_to_um_out_resolution = sqlController.convert_resolution_string_to_um(stack, out_resol)
 
     data = data / string_to_um_out_resolution
@@ -512,8 +510,9 @@ def convert_cropbox_from_arr_xywh_1um(data, out_fmt, out_resol, stack=None):
     else:
         raise
 
-def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack=None):
+def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack):
     #print('data', data, 'in_fmt', in_fmt)
+    sqlController = SqlController(stack)
     if isinstance(data, dict):
         data['rostral_limit'] = float(data['rostral_limit'])
         data['caudal_limit'] = float(data['caudal_limit'])
@@ -583,7 +582,7 @@ def convert_resolution_string_to_voxel_size(stack, resolution):
     Returns:
         voxel/pixel size in microns.
     """
-    sqlController.get_animal_info(stack)
+    sqlController = SqlController(stack)
     planar_resolution = sqlController.scan_run.resolution
     #planar_resolution =  0.452
     assert resolution is not None, 'Resolution argument cannot be None.'

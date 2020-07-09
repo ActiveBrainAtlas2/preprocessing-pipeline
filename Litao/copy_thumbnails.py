@@ -14,8 +14,7 @@ from utilities.file_location import FileLocationManager
 
 
 def copy_images_to_dir(animal, channel, resolution):
-    sql_controller = SqlController()
-
+    sql_controller = SqlController(animal)
     file_location_manager = FileLocationManager(animal)
     INPUT = file_location_manager.thumbnail_prep
     if 'full' in resolution:

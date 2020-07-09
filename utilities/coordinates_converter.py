@@ -395,9 +395,8 @@ class CoordinatesConverter(object):
         - image_image_section: (u in image resolution, v in image resolution, i in terms of section index)
         """
 
-        sqlController = SqlController()
-        sqlController.get_animal_info(stack)
-        valid_sections = sqlController.get_valid_sections(stack)
+        sqlController = SqlController(stack)
+        valid_sections = sqlController.get_valid_sections(stack, 1)
 
         if in_wrt == 'original' and out_wrt == 'alignedPadded':
 

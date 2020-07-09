@@ -13,46 +13,39 @@ import numpy as np
 from collections import OrderedDict
 from tqdm import tqdm
 
+from sql_setup import ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX, ALIGN_CHANNEL_1_FULL_RES, ALIGN_CHANNEL_2_FULL_RES, \
+    ALIGN_CHANNEL_3_FULL_RES
+
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import (create_if_not_exists, load_consecutive_section_transform,
                                          convert_resolution_string_to_um, SCALING_FACTOR)
+from utilities.utilities_process import workershell
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
-
-def workershell(cmd):
-    """
-    Set up an shell command. That is what the shell true is for.
-    Args:
-        cmd:  a command line program with arguments in a string
-    Returns: nothing
-    """
-    stderr_template = os.path.join(os.getcwd(), 'alignment.err.log')
-    stdout_template = os.path.join(os.getcwd(), 'alignment.log')
-    stdout_f = open(stdout_template, "w")
-    stderr_f = open(stderr_template, "w")
-    proc = subprocess.Popen(cmd, shell=True, stderr=stderr_f, stdout=stdout_f)
-    proc.wait()
-
-
-def run_elastix(stack, njobs):
+def run_elastix(animal, njobs):
     """
     Sets up the arguments for running elastix in a sequence. Each file pair
     creates a sub directory with the results. Uses a pool to spawn multiple processes
     Args:
-        stack: the animal
+        animal: the animal
         limit:  how many jobs you want to run.
     Returns: nothing, just creates a lot of subdirs
     """
-    fileLocationManager = FileLocationManager(stack)
+    fileLocationManager = FileLocationManager(animal)
+    sqlController = SqlController(animal)
+    sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
 
     image_name_list = sorted(os.listdir(INPUT))
     elastix_output_dir = fileLocationManager.elastix_dir
-    param_file = "Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt"
+
+    os.makedirs(elastix_output_dir, exist_ok=True)
+
+    param_file = os.path.join(os.getcwd(), 'alignment', "Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt")
     commands = []
     for i in range(1, len(image_name_list)):
         prev_img_name = os.path.splitext(image_name_list[i - 1])[0]
@@ -79,14 +72,14 @@ def run_elastix(stack, njobs):
         p.map(workershell, commands)
 
 
-def parse_elastix(stack):
+def parse_elastix(animal):
     """
     After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
     Args:
-        stack: the animal
+        animal: the animal
     Returns: a dictionary of key=filename, value = coordinates
     """
-    fileLocationManager = FileLocationManager(stack)
+    fileLocationManager = FileLocationManager(animal)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
 
@@ -99,7 +92,7 @@ def parse_elastix(stack):
     for i in range(1, len(image_name_list)):
         fixed_fn = os.path.splitext(image_name_list[i - 1])[0]
         moving_fn = os.path.splitext(image_name_list[i])[0]
-        transformation_to_previous_sec[i] = load_consecutive_section_transform(stack, moving_fn, fixed_fn)
+        transformation_to_previous_sec[i] = load_consecutive_section_transform(animal, moving_fn, fixed_fn)
 
     transformation_to_anchor_sec = {}
     # Converts every transformation
@@ -123,9 +116,9 @@ def parse_elastix(stack):
 def convert_2d_transform_forms(arr):
     return np.vstack([arr, [0,0,1]])
 
-def create_warp_transforms(stack, transforms, transforms_resol, resolution):
+def create_warp_transforms(animal, transforms, transforms_resol, resolution):
     #transforms_resol = op['resolution']
-    transforms_scale_factor = convert_resolution_string_to_um(stack, resolution=transforms_resol) / convert_resolution_string_to_um(stack, resolution=resolution)
+    transforms_scale_factor = convert_resolution_string_to_um(animal, resolution=transforms_resol) / convert_resolution_string_to_um(animal, resolution=resolution)
     tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
     transforms_to_anchor = {
         img_name:
@@ -140,14 +133,13 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
     Args:
-        stack: the animal
+        animal: the animal
         transforms: the dictionary of file, coordinates
         limit: number of jobs
     Returns: nothing
     """
     fileLocationManager = FileLocationManager(animal)
-    sqlController = SqlController()
-    sqlController.get_animal_info(animal)
+    sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)
     INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'thumbnail_cleaned')
     OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
@@ -157,6 +149,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     height = sqlController.scan_run.height
     max_width = int(width * SCALING_FACTOR)
     max_height = int(height * SCALING_FACTOR)
+
     if 'thion' in stain.lower():
         bgcolor = '#E6E6E6'
 
@@ -165,6 +158,12 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
         OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
         max_width = width
         max_height = height
+        if channel == 1:
+            sqlController.set_task(animal, ALIGN_CHANNEL_1_FULL_RES)
+        elif channel == 2:
+            sqlController.set_task(animal, ALIGN_CHANNEL_2_FULL_RES)
+        else:
+            sqlController.set_task(animal, ALIGN_CHANNEL_3_FULL_RES)
 
     if masks:
         INPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/prealigned'.format(animal)

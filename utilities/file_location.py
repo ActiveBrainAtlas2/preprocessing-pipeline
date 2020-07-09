@@ -30,6 +30,7 @@ class FileLocationManager(object):
         self.brain_info = os.path.join(ROOT_DIR, stack, BRAIN_INFO)
         self.oriented = os.path.join(ROOT_DIR, stack, PREPS, 'oriented')
         self.histogram = os.path.join(ROOT_DIR, stack, 'histogram')
+        self.neuroglancer_data = os.path.join(ROOT_DIR, stack, 'neuroglancer_data')
         self.custom_transform = os.path.join(self.brain_info, 'custom_transform')
         self.aligned = os.path.join(ROOT_DIR, stack, PREPS, 'aligned')
         self.prealigned = os.path.join(ROOT_DIR, stack, PREPS, 'prealigned')
