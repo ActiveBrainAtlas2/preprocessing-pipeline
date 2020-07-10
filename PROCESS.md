@@ -3,14 +3,14 @@
 1. To install the software prerequisites, [look here.](README.md)
 1. Run: `create_meta.py --animal DKXX`
     1. This will scan each czi file
-    2. extract the tif meta information and insert into the slide_czi_to_tif table
+    2. Extracts the tif meta information and inserts into the slide_czi_to_tif table
 1. Have someone confirm the status of each slide in: https://activebrainatlas.ucsd.edu/activebrainatlas/admin
     1. After logging in, go to the Slides link in the Brain category
     1. Enter the animal name in the search box
     1. Under the PREP ID column, click the link of the slide you want to edit
-    1. If the entire slide is bad, mark it as bad under Slide Status
-    1. If a scene needs to be marked as Bad, Out of focus or the end slide, select the appropriate Scene QC. 
-    If you mark it as Bad or out of focus, the nearest neighbor will be inserted.
+    1. If the entire slide is bad, mark it as Bad under Slide Status
+    1. If a scene needs to be marked as Bad, Out of Focus or the End slide, select the appropriate Scene QC. 
+    If you mark it as Bad or Out of Focus, the nearest neighbor will be inserted.
     1. If you want to replicate a scene, choose the Replicate field and add an amount to replicate.
     1. The list of scenes are listed near the bottom of the page. 
     1. When you are done, click one of the Save buttons at the bottom of the page
