@@ -1,7 +1,7 @@
 ### New Brain
 ## Post CZI Creation Process
 1. To install the software prerequisites, [look here.](README.md)
-1. Run: main.py --animal DKXX --czi True
+1. Run: create_meta.py --animal DKXX
     1. This will scan each czi file
     2. extract the tif meta information and insert into the slide_czi_to_tif table
 1. Have someone confirm the status of each slide in: https://activebrainatlas.ucsd.edu/activebrainatlas/admin
@@ -17,13 +17,13 @@
 1. Run: python create_masks.py --animal DKXX
     1. This will read the thumbnail directory and create masks in the DKXX/preps/thumbnail_masked dir
     1. No need to use channel 2 or 3. It works solely on channel 1
-1. Run: python clean_with_mask.py --animal DKXX --channel 1 --rotation 1
+1. Run: python create_clean.py --animal DKXX --channel 1 --rotation 1
     1. use the necessary rotations and flip/flop parameters
     1. view a few of the files in DKXX/preps/CH1/thumbnail_cleaned
-1. Run: python alignment.py --animal DKXX --channel 1
+1. Run: python create_alignment.py --animal DKXX --channel 1
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair
     1. The elastix dir will be used to align the other channels and the full resoltions
-1. Run: python precompute_images_local.py --animal DKXX --channel 1 --resolution thumbnail
+1. Run: python create_neuroglancer.py --animal DKXX --channel 1 --resolution thumbnail
     1. This will create the data for neuroglancer for channel 1
     1. View results in neuroglancer. Add the layer to the precompute with:
         https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C1T

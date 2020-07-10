@@ -1,8 +1,8 @@
 """
 This file does the following operations:
     1. Queries the sections view to get active tifs to be created.
-    2. Runs the bfconvert bioformats command to yank the tif out of the czi and place
-    it in the correct directory with the correct name
+    2. Finds the tif files from the DKXX/tif dir and copies them to the DKXX/preps/CHX/full dir
+    with the correct name
 """
 import os, sys
 import argparse
@@ -17,7 +17,7 @@ from utilities.utilities_process import workershell
 from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
 
 
-def make_tifs(animal, channel, njobs):
+def make_sections(animal, channel, njobs):
     """
     Args:
         stack: the animal
@@ -29,8 +29,7 @@ def make_tifs(animal, channel, njobs):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)
-    INPUT = os.path.join(fileLocationManager.czi)
-    OUTPUT = os.path.join(fileLocationManager.tif)
+    INPUT = os.path.join(fileLocationManager.tif)
 
     tifs = sqlController.get_sections(animal, channel)
     sqlController.set_task(animal, QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN)
