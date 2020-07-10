@@ -40,13 +40,10 @@ def get_index(array, list_of_arrays):
     return None
 
 
-def fix_with_fill(img):
-    limit = 250
-    dt = np.uint8
+def fix_with_fill(img, limit, dt):
     no_strip, fe = remove_strip(img)
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
-
     img = (img / 256).astype(dt)
     h_src = linnorm(img, limit, dt)
     med = np.median(h_src)
@@ -57,38 +54,56 @@ def fix_with_fill(img):
     cv2.floodFill(im_floodfill, mask, (0, 0), 255)
     im_floodfill_inv = cv2.bitwise_not(im_floodfill)
     im_out = im_th | im_floodfill_inv
-
     stencil = np.zeros(img.shape).astype('uint8')
-    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+    # dilation = cv2.dilate(stencil,kernel,iterations = 2)
+    kernel = np.ones((10, 10), np.uint8)
+    eroded = cv2.erode(im_out, kernel, iterations=1)
+
+    contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    totalarea = im_out.shape[0] * im_out.shape[1]
 
     lc = []
     c1 = max(contours, key=cv2.contourArea)
     lc.append(c1)
     area1 = cv2.contourArea(c1)
+
     idx = get_index(c1, contours)  # 2
     contours.pop(idx)
     if len(contours) > 0:
         cX = max(contours, key=cv2.contourArea)
         area2 = cv2.contourArea(cX)
-        if area2 > (area1 * 0.125):
+        if area2 > (area1 * 0.05):
             lc.append(cX)
+            # cv2.fillPoly(stencil, lc, 255)
+        idx = get_index(cX, contours)  # 2
+        contours.pop(idx)
+
+    if len(contours) > 0:
+        cX = max(contours, key=cv2.contourArea)
+        area3 = cv2.contourArea(cX)
+        if area3 > (area1 * 0.15):
+            lc.append(cX)
+            # cv2.fillPoly(stencil, lc, 100)
         idx = get_index(cX, contours)  # 2
         contours.pop(idx)
     if len(contours) > 0:
         cX = max(contours, key=cv2.contourArea)
-        area3 = cv2.contourArea(cX)
-        if area3 > (area1 * 0.125):
+        area4 = cv2.contourArea(cX)
+        if area4 > (area3 * 0.5):
             lc.append(cX)
+            # cv2.fillPoly(stencil, lc, 100)
         idx = get_index(cX, contours)  # 2
         contours.pop(idx)
+
     cv2.fillPoly(stencil, lc, 255)
 
     if len(contours) > 0:
         cv2.fillPoly(stencil, contours, 0)
 
-    #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
-    #dilation = cv2.dilate(stencil, kernel, iterations=2)
-    return stencil
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
+    mask = cv2.dilate(stencil, kernel, iterations=2)
+    return mask
 
 
 def fix_with_blob(img):
@@ -211,7 +226,7 @@ def create_mask(animal, resolution):
                 print('Could not open', infile)
                 continue
             img = get_last_2d(img)
-            mask = fix_with_fill(img)
+            mask = fix_with_fill(img, 250, np.uint8)
             """
             area = find_contour_area(mask)
             areas.append(area)
