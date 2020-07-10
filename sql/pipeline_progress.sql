@@ -1,11 +1,11 @@
 
 drop view if exists chart_view;
 
-drop table if exists chart_resource;                     
-drop table if exists chart_roles;                    
-drop table if exists chart_task_resources;               
-drop table if exists chart_task;              
-drop table if exists chart_schedule;                     
+drop table if exists chart_resource;
+drop table if exists chart_roles;
+drop table if exists chart_task_resources;
+drop table if exists chart_task;
+drop table if exists chart_schedule;
 DROP TABLE IF EXISTS `task_resources`;
 DROP TABLE IF EXISTS `task`;
 
@@ -25,96 +25,96 @@ CREATE TABLE `progress_lookup` (
 
 
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (10,'Slides are scanned',  '', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (20,'CZI files are placed on birdstore',  '', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (30,'CZI files are scanned to get metadata',  'main.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (40,'QC is done on slides in web admin',  '', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (50,'CZI files are converted into numbered TIFs for channel 1',  'create_tifs.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (60,'Create channel 1 thumbnails',  'create_thumbnails.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (70,'Create channel 1 histograms',  'create_histogram.py', 1, now());
 
 -- create masks
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (80,'Create thumbnail masks',  'create_masks.py', 1, now());
 
 -- clean with masks
-insert into progress_lookup (id, description, script, active, created) 
-values (90,'Clean channel 1 thumbnail with mask',  'clean_with_mask.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (90,'Clean channel 1 thumbnail with mask',  'create_clean.py', 1, now());
 
 
 -- align
-insert into progress_lookup (id, description, script, active, created) 
-values (100,'Align channel 1 thumbnails with elastix',  'alignment.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (100,'Align channel 1 thumbnails with elastix',  'create_alignment.py', 1, now());
 
 -- neuroglancer precompute
-insert into progress_lookup (id, description, script, active, created) 
-values (110,'Create neuroglancer tiles channel 1 thumbnails',  'precompute_images_local.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (110,'Create neuroglancer tiles channel 1 thumbnails',  'create_neuroglancer.py', 1, now());
 
 -- ----------------------
 
 -- full res stuff
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (120,'Create full res masks',  'create_masks.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (130,'Create channel 2 full res',  'create_tifs.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (140,'Create channel 2 thumbnails',  'create_thumbnails.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (150,'Create channel 2 histograms',  'create_histogram.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (160,'Create channel 3 full res',  'create_tifs.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (170,'Create channel 3 thumbnails',  'create_thumbnails.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
+insert into progress_lookup (id, description, script, active, created)
 values (180,'Create channel 3 histograms',  'create_histogram.py', 1, now());
 
 
-insert into progress_lookup (id, description, script, active, created) 
-values (185,'Clean channel 1 full res with mask',  'clean_with_mask.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (185,'Clean channel 1 full res with mask',  'create_clean.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
-values (190,'Clean channel 2 full res with mask',  'clean_with_mask.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (190,'Clean channel 2 full res with mask',  'create_clean.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
-values (200,'Clean channel 3 full res with mask',  'clean_with_mask.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (200,'Clean channel 3 full res with mask',  'create_clean.py', 1, now());
 
 
-insert into progress_lookup (id, description, script, active, created) 
-values (209,'Align channel 1 full res',  'alignment.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (209,'Align channel 1 full res',  'create_alignment.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
-values (210,'Align channel 2 full res',  'alignment.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (210,'Align channel 2 full res',  'create_alignment.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
-values (220,'Align channel 3 full res',  'alignment.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (220,'Align channel 3 full res',  'create_alignment.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
-values (225,'Run precompute neuroglancer channel 1 full res',  'precompute_images_local.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (225,'Run precompute neuroglancer channel 1 full res',  'create_neuroglancer.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
-values (230,'Run precompute neuroglancer channel 2 full res',  'precompute_images_local.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (230,'Run precompute neuroglancer channel 2 full res',  'create_neuroglancer.py', 1, now());
 
-insert into progress_lookup (id, description, script, active, created) 
-values (240,'Run precompute neuroglancer channel 3 full res',  'precompute_images_local.py', 1, now());
+insert into progress_lookup (id, description, script, active, created)
+values (240,'Run precompute neuroglancer channel 3 full res',  'create_neuroglancer.py', 1, now());
 
 
 

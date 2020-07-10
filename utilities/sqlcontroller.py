@@ -88,7 +88,7 @@ class SqlController(object):
     def get_sections(self, animal, channel):
         """
         The sections table is a view and it is already filtered by active and file_status = 'good'
-        It is also already ordered. Mysql lets you add an order clause to a view
+        The ordering is important. This needs to come from the histology table.
         Args:
             animal: the animal to query
             channel: 1 or 2 or 3.
@@ -96,8 +96,19 @@ class SqlController(object):
         Returns: list of sections in order
 
         """
-        sections = self.session.query(Section).filter(Section.prep_id == animal).filter(
-            Section.channel == channel).all()
+        orderby = self.histology.side_sectioned_first
+
+        if orderby == 'DESC':
+            sections = self.session.query(Section).filter(Section.prep_id == animal).filter(
+                Section.channel == channel) \
+                .order_by(Section.slide_physical_id.desc()) \
+                .order_by(Section.scene_number.desc()).all()
+        else:
+            sections = self.session.query(Section).filter(Section.prep_id == animal).filter(
+                Section.channel == channel)\
+                .order_by(Section.slide_physical_id.asc())\
+                .order_by(Section.scene_number.asc()).all()
+
         return sections
 
     def get_sections_numbers(self, animal):

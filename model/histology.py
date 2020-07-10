@@ -5,7 +5,7 @@ from .atlas_model import AtlasModel, Base
 
 class Histology(Base, AtlasModel):
     __tablename__ = 'histology'
-    
+
     id =  Column(Integer, primary_key=True, nullable=False)
     prep_id = Column(String, ForeignKey('animal.prep_id'), nullable=False, unique=True)
     virus_id = Column(Integer, ForeignKey('virus.id'), nullable=True)
@@ -21,6 +21,7 @@ class Histology(Base, AtlasModel):
     whole_brain = Column(Enum("Y", "N"))
     block = Column(String)
     date_sectioned = Column(Date)
+    side_sectioned_first = Column(Enum("ASC", "DESC"))
     sectioning_method = Column(Enum("cryoJane", "cryostat", "vibratome", "optical", "sliding microtiome"))
     section_thickness = Column(Integer, default=20, nullable=False)
     orientation = Column(Enum("coronal", "horizontal", "sagittal", "oblique"))

@@ -9,6 +9,7 @@ class Section(Base, AtlasModel):
     id =  Column(Integer, primary_key=True, nullable=False)
     prep_id = Column(String, ForeignKey('animal.prep_id'), nullable=False)
     czi_file = Column(String, nullable=False)
+    slide_physical_id = Column(Integer, nullable=False)
     file_name = Column(String, nullable=False)
     tif_id = Column(Integer, nullable=False)
     scene_number = Column(Integer, nullable=False)
