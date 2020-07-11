@@ -31,7 +31,6 @@ def make_tifs(animal, channel, njobs):
     channel_dir = 'CH{}'.format(channel)
     INPUT = os.path.join(fileLocationManager.czi)
     OUTPUT = os.path.join(fileLocationManager.tif)
-
     tifs = sqlController.get_sections(animal, channel)
     sqlController.set_task(animal, QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN)
     sqlController.set_task(animal, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1)

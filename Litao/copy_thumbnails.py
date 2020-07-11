@@ -14,18 +14,21 @@ from utilities.file_location import FileLocationManager
 
 
 def copy_images_to_dir(animal, channel, resolution):
-    sql_controller = SqlController(animal)
-    file_location_manager = FileLocationManager(animal)
-    INPUT = file_location_manager.thumbnail_prep
+    sqlController = SqlController(animal)
+    fileLocationManager = FileLocationManager(animal)
+    INPUT = fileLocationManager.thumbnail_prep
     if 'full' in resolution:
-        INPUT = file_location_manager.tif
+        INPUT = fileLocationManager.tif
 
-    valid_sections = sql_controller.get_raw_sections(animal, channel)
-    for section in tqdm(valid_sections):
-        src_file = os.path.join(INPUT, section.destination_file)
+    tifs = sqlController.get_sections(animal, channel)
+
+
+
+    for i, tif in enumerate(tqdm(tifs)):
+        src_file = os.path.join(INPUT, tif.file_name)
         channel_dir = 'CH{}'.format(channel)
-        dst_file = os.path.join(file_location_manager.prep, channel_dir,
-                                resolution, str(section.section_number).zfill(3) + '.tif')
+        dst_file = os.path.join(fileLocationManager.prep, channel_dir,
+                                resolution, str(i).zfill(3) + '.tif')
 
         if os.path.exists(dst_file):
             continue
