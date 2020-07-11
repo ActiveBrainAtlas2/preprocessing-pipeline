@@ -9,12 +9,10 @@ import os
 from tqdm import tqdm
 from collections import Counter
 
-def make_graph(animal, channel, resolution):
+def make_graph(animal, channel):
     DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{}'.format(animal)
     channel_dir = 'CH{}'.format(channel)
-    input_dir = 'thumbnail_cleaned'
-    if 'full' in resolution.lower():
-        input_dir = 'full'
+    input_dir = 'thumbnail'
     INPUT = os.path.join(DIR, 'preps', channel_dir, input_dir)
     files = os.listdir(INPUT)
     lfiles = len(files)
@@ -81,11 +79,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter the channel', required=True)
-    parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
     args = parser.parse_args()
     animal = args.animal
-    resolution = args.resolution
     channel = int(args.channel)
-    make_graph(animal, channel, resolution)
+    make_graph(animal, channel)
 
 

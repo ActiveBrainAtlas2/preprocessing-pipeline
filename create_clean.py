@@ -18,7 +18,8 @@ from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK, CLEAN_CHANNEL_1_FULL_
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR
+from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR, linnorm
+from utilities.utilities_mask import fill_spots
 
 def get_average_color(INPUT,files):
     averages = []
@@ -83,6 +84,11 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
             print('Could not open', infile)
             continue
         img = get_last_2d(img)
+        if channel == 1 and 'ntb' in stain.lower():
+            #pass
+            #clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
+            img = linnorm(img, 45000 , dt)
+            #fixed = clahe.apply(fixed.astype(dt))
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
 
@@ -106,8 +112,9 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
         if channel == 1 and 'ntb' in stain.lower():
             #pass
             clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
-            #fixed = linnorm(fixed, limit , dt)
             fixed = clahe.apply(fixed.astype(dt))
+            fixed = fill_spots(fixed)
+
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         fixed[fixed == 0] = bgcolor
