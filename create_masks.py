@@ -1,8 +1,6 @@
 import argparse
 from multiprocessing.pool import Pool
 import numpy as np
-import matplotlib
-import matplotlib.figure
 from skimage import io
 from os.path import expanduser
 from tqdm import tqdm
@@ -12,28 +10,13 @@ from sql_setup import CREATE_THUMBNAIL_MASKS
 HOME = expanduser("~")
 import os, sys
 import cv2
-import pandas as pd
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.alignment_utility import get_last_2d, linnorm
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_process import workershell
-from utilities.utilities_mask import get_index, pad_with_black
-
-def find_contour_area(mask):
-    area2 = 0
-    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    c1 = max(contours, key=cv2.contourArea)
-    area1 = cv2.contourArea(c1)
-    idx = get_index(c1, contours)  # 2
-    contours.pop(idx)
-    if len(contours) > 0:
-        c2 = max(contours, key=cv2.contourArea)
-        area2 = cv2.contourArea(c2)
-    return area1 + area2
-
-
+from utilities.utilities_mask import get_index, pad_with_black, remove_strip
 
 
 def fix_with_fill(img, limit, dt):
@@ -58,7 +41,6 @@ def fix_with_fill(img, limit, dt):
     eroded = cv2.erode(im_out, kernel, iterations=1)
 
     contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    totalarea = im_out.shape[0] * im_out.shape[1]
 
     lc = []
     c1 = max(contours, key=cv2.contourArea)
@@ -102,83 +84,6 @@ def fix_with_fill(img, limit, dt):
     mask = cv2.dilate(stencil, kernel, iterations=2)
     return mask
 
-
-def fix_with_blob(img):
-    no_strip, fe = remove_strip(img)
-    min_value, threshold = find_threshold(img)
-    ret, threshed = cv2.threshold(no_strip, threshold, 255, cv2.THRESH_BINARY)
-    threshed = np.uint8(threshed)
-    connectivity = 4
-    output = cv2.connectedComponentsWithStats(threshed, connectivity, cv2.CV_32S)
-    labels = output[1]
-    stats = output[2]
-    # Find the blob that corresponds to the section.
-    if fe != 0:
-        img[:, fe:] = 0  # mask the strip
-    row = find_main_blob(stats, img)
-    blob_label = row[1]['blob_label']
-    # extract the blob
-    blob = np.uint8(labels == blob_label) * 255
-    # Perform morphological closing
-    kernel10 = np.ones((10, 10), np.uint8)
-    mask = cv2.morphologyEx(blob, cv2.MORPH_CLOSE, kernel10, iterations=5)
-    return mask
-
-
-
-
-def find_main_blob(stats, image):
-    height, width = image.shape
-    df = pd.DataFrame(stats)
-    df.columns = ['Left', 'Top', 'Width', 'Height', 'Area']
-    df['blob_label'] = df.index
-    df = df.sort_values(by='Area', ascending=False)
-
-    for row in df.iterrows():
-        Left = row[1]['Left']
-        Top = row[1]['Top']
-        Width = row[1]['Width']
-        Height = row[1]['Height']
-        corners = int(Left == 0) + int(Top == 0) + int(Width == width) + int(Height == height)
-        if corners <= 2:
-            return row
-
-
-def scale_and_mask(src, mask, epsilon=0.01):
-    vals = np.array(sorted(src[mask > 10]))
-    ind = int(len(vals) * (1 - epsilon))
-    _max = vals[ind]
-    # print('thr=%d, index=%d'%(vals[ind],index))
-    _range = 2 ** 16 - 1
-    scaled = src * (45000. / _max)
-    scaled[scaled > _range] = _range
-    scaled = scaled * (mask > 10)
-    return scaled, _max
-
-def find_threshold(src):
-    fig = matplotlib.figure.Figure()
-    ax = matplotlib.axes.Axes(fig, (0, 0, 0, 0))
-    n, bins, patches = ax.hist(src.flatten(), 360);
-    del ax, fig
-    min_point = np.argmin(n[:5])
-    min_point = int(min(2, min_point))
-    thresh = (min_point * 64000 / 360) + 100
-    return min_point, thresh
-
-strip_max=170; strip_min=2   # the range of width for the stripe
-def remove_strip(src):
-    projection=np.sum(src,axis=0)/10000.
-    diff=projection[1:]-projection[:-1]
-    loc,=np.nonzero(diff[-strip_max:-strip_min]>50)
-    mval=np.max(diff[-strip_max:-strip_min])
-    no_strip=np.copy(src)
-    fe = 0
-    if loc.shape[0]>0:
-        loc=np.min(loc)
-        from_end=strip_max-loc
-        fe = -from_end - 2
-        no_strip[:,fe:]=0 # mask the strip
-    return no_strip, fe
 
 def create_mask(animal, resolution):
 
@@ -224,20 +129,9 @@ def create_mask(animal, resolution):
                 continue
             img = get_last_2d(img)
             mask = fix_with_fill(img, 250, np.uint8)
-            """
-            area = find_contour_area(mask)
-            areas.append(area)
-            if i > 0 and area < (areas[i - 1] * 0.90):
-                mask, area = fix_with_fill(img)
-            areas.append(area)
-            """
             # save the mask
             outpath = os.path.join(MASKED, file)
             cv2.imwrite(outpath, mask.astype('uint8'))
-
-            # save the good scaled as CH1
-            #outpath = os.path.join(OUTPUT, file)
-            #cv2.imwrite(outpath, scaled.astype('uint16'))
 
 if __name__ == '__main__':
     # Parsing argument
