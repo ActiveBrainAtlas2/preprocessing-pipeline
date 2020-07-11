@@ -44,6 +44,7 @@ def fix_with_fill(img, limit, dt):
     no_strip, fe = remove_strip(img)
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
+    img = pad_with_black(img)
     img = (img / 256).astype(dt)
     h_src = linnorm(img, limit, dt)
     med = np.median(h_src)
@@ -168,7 +169,7 @@ def find_threshold(src):
     thresh = (min_point * 64000 / 360) + 100
     return min_point, thresh
 
-strip_max=70; strip_min=5   # the range of width for the stripe
+strip_max=170; strip_min=2   # the range of width for the stripe
 def remove_strip(src):
     projection=np.sum(src,axis=0)/10000.
     diff=projection[1:]-projection[:-1]
@@ -182,6 +183,15 @@ def remove_strip(src):
         fe = -from_end - 2
         no_strip[:,fe:]=0 # mask the strip
     return no_strip, fe
+
+def pad_with_black(img):
+    r,c = img.shape
+    pad = 50
+    img[0:25,:] = 0
+    img[:,c-pad:c]=0
+    img[r-pad:r,:]=0
+    img[:,0:pad]=0
+    return img
 
 def create_mask(animal, resolution):
 
