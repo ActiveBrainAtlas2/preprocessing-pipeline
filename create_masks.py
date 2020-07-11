@@ -19,6 +19,7 @@ from utilities.alignment_utility import get_last_2d, linnorm
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_process import workershell
+from utilities.utilities_mask import get_index, pad_with_black
 
 def find_contour_area(mask):
     area2 = 0
@@ -33,11 +34,6 @@ def find_contour_area(mask):
     return area1 + area2
 
 
-def get_index(array, list_of_arrays):
-    for j, a in enumerate(list_of_arrays):
-        if np.array_equal(array, a):
-            return j
-    return None
 
 
 def fix_with_fill(img, limit, dt):
@@ -183,15 +179,6 @@ def remove_strip(src):
         fe = -from_end - 2
         no_strip[:,fe:]=0 # mask the strip
     return no_strip, fe
-
-def pad_with_black(img):
-    r,c = img.shape
-    pad = 50
-    img[0:25,:] = 0
-    img[:,c-pad:c]=0
-    img[r-pad:r,:]=0
-    img[:,0:pad]=0
-    return img
 
 def create_mask(animal, resolution):
 

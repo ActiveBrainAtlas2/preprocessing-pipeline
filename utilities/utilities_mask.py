@@ -173,3 +173,60 @@ def apply_mask(img, mask, stain, rotation, flip):
     fixed = place_image(fixed, max_width, max_height, bgcolor)
 
     return fixed
+
+
+def pad_with_black(img):
+    r,c = img.shape
+    pad = 10
+    img[0:pad,:] = 0
+    img[:,c-pad:c]=0
+    img[r-pad:r,:]=0
+    img[:,0:pad]=0
+    return img
+
+
+def get_index(array, list_of_arrays):
+    for j, a in enumerate(list_of_arrays):
+        if np.array_equal(array, a):
+            return j
+    return None
+
+def fill_spots(img):
+    imgcopy = np.copy(img)
+    imgcopy = (imgcopy / 256).astype(np.uint8)
+
+    contours, hierarchy = cv2.findContours(imgcopy, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+    c1 = max(contours, key=cv2.contourArea)
+    area1 = cv2.contourArea(c1)
+    idx = get_index(c1, contours)  # 2
+    contours.pop(idx)
+
+    if len(contours) > 0:
+        cX = max(contours, key=cv2.contourArea)
+        area2 = cv2.contourArea(cX)
+        if area2 > (area1 * 0.95):
+            idx = get_index(cX, contours)  # 2
+            contours.pop(idx)
+
+    """
+    if len(contours) > 0:
+        cX = max(contours, key=cv2.contourArea)
+        area3 = cv2.contourArea(cX)
+        if area3 > (area1 * 0.95):
+            idx = get_index(cX, contours)  # 2
+            contours.pop(idx)
+
+    if len(contours) > 0:
+        cX = max(contours, key=cv2.contourArea)
+        area4 = cv2.contourArea(cX)
+        if area4 > (area3 * 0.95):
+            idx = get_index(cX, contours)  # 2
+            contours.pop(idx)
+    """
+
+    if len(contours) > 0:
+        cv2.fillPoly(img, contours, 0)
+
+    return img
+
