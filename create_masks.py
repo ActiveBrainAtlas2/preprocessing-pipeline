@@ -1,4 +1,5 @@
 import argparse
+import subprocess
 from multiprocessing.pool import Pool
 import numpy as np
 from skimage import io
@@ -99,7 +100,6 @@ def create_mask(animal, resolution, njobs):
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
         files = sorted(os.listdir(INPUT))
-        commands = []
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
             thumbfile = os.path.join(THUMBNAIL, file)
@@ -113,10 +113,7 @@ def create_mask(animal, resolution, njobs):
             height, width = src.shape
             del src
             cmd = "/usr/bin/convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
-            commands.append(cmd)
-
-        with Pool(njobs) as p:
-            p.map(workershell, commands)
+            subprocess.run(cmd)
 
 
     else:
