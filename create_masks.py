@@ -108,6 +108,7 @@ def create_mask(animal, resolution):
             except:
                 print('Could not open', infile)
                 continue
+            src = get_last_2d(src)
             height, width = src.shape
             del src
             cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
