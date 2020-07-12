@@ -113,7 +113,7 @@ def create_mask(animal, resolution, njobs):
             height, width = src.shape
             del src
             cmd = "/usr/bin/convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
-            subprocess.run(cmd)
+            subprocess.call(cmd, shell=True)
 
 
     else:
