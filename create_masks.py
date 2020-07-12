@@ -4,7 +4,6 @@ import numpy as np
 from skimage import io
 from os.path import expanduser
 from tqdm import tqdm
-import subprocess
 
 from sql_setup import CREATE_THUMBNAIL_MASKS
 
@@ -17,22 +16,7 @@ from utilities.alignment_utility import get_last_2d, linnorm
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import get_index, pad_with_black, remove_strip
-
-
-def workershell(cmd):
-    """
-    Set up an shell command. That is what the shell true is for.
-    Args:
-        cmd:  a command line program with arguments in a string
-    Returns: nothing
-    """
-    stderr_template = os.path.join(os.getcwd(), 'workershell.err.log')
-    stdout_template = os.path.join(os.getcwd(), 'workershell.log')
-    stdout_f = open(stdout_template, "w")
-    stderr_f = open(stderr_template, "w")
-    proc = subprocess.Popen(cmd, shell=True, stderr=stderr_f, stdout=stdout_f)
-
-    proc.wait()
+from utilities.utilities_process import workershell
 
 
 
@@ -102,7 +86,7 @@ def fix_with_fill(img, limit, dt):
     return mask
 
 
-def create_mask(animal, resolution):
+def create_mask(animal, resolution, njobs):
 
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
@@ -128,11 +112,12 @@ def create_mask(animal, resolution):
             src = get_last_2d(src)
             height, width = src.shape
             del src
-            cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
+            cmd = "/usr/bin/convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
             commands.append(cmd)
 
-        with Pool(4) as p:
+        with Pool(njobs) as p:
             p.map(workershell, commands)
+
 
     else:
 
@@ -156,9 +141,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     args = parser.parse_args()
     animal = args.animal
     resolution = args.resolution
-    create_mask(animal, resolution)
+    njobs = int(args.njobs)
+    create_mask(animal, resolution, njobs)
 
 
