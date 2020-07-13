@@ -100,7 +100,8 @@ def create_mask(animal, resolution, njobs):
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
         files = sorted(os.listdir(INPUT))
-        for i, file in enumerate(tqdm(files)):
+        commands = []
+        for i, file in enumerate(files[0:9]):
             infile = os.path.join(INPUT, file)
             thumbfile = os.path.join(THUMBNAIL, file)
             outfile = os.path.join(MASKED, file)
@@ -109,11 +110,15 @@ def create_mask(animal, resolution, njobs):
             except:
                 print('Could not open', infile)
                 continue
+            print(src.shape, infile)
             src = get_last_2d(src)
             height, width = src.shape
             del src
-            cmd = "/usr/bin/convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
-            subprocess.call(cmd, shell=True)
+            cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
+            #commands.append(cmd)
+
+        with Pool(njobs) as p:
+            p.map(workershell, commands)
 
 
     else:
