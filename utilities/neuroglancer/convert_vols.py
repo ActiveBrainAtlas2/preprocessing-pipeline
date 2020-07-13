@@ -12,7 +12,7 @@ from neuroglancer_scripts.scripts import (generate_scales_info,
                                           compute_scales, volume_to_precomputed)
 animal = 'MD585'
 VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/vol_fill'
-FULL_UNFILLED = '{}_full.npy'.format(animal)
+#FULL_UNFILLED = '{}_full.npy'.format(animal)
 
 NI_OUT = os.path.join(VOL_DIR, '{}_filled.nii'.format(animal))
 FULL_FILE = os.path.join(VOL_DIR, '{}_full_filled.npy'.format(animal))
