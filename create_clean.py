@@ -6,8 +6,6 @@ normalized, it will just to the rotation and flip
 import argparse
 
 import numpy as np
-from skimage import io
-from os.path import expanduser
 from tqdm import tqdm
 import os, sys
 import cv2
@@ -20,17 +18,6 @@ from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR, linnorm
 from utilities.utilities_mask import fill_spots
-
-def get_average_color(INPUT,files):
-    averages = []
-    for file in files:
-        infile = os.path.join(INPUT, file)
-        img = io.imread(infile)
-        start_bottom = img.shape[0] - 5
-        bottom_rows = img[start_bottom:img.shape[0], :]
-        avg = np.mean(bottom_rows)
-        averages.append(avg)
-    return int(round(np.mean(averages)))
 
 
 def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
@@ -79,7 +66,8 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
         try:
-            img = io.imread(infile)
+            #img = io.imread(infile)
+            img = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
         except:
             print('Could not open', infile)
             continue
@@ -90,7 +78,8 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
             img = linnorm(img, 45000 , dt)
             #fixed = clahe.apply(fixed.astype(dt))
         maskfile = os.path.join(MASKS, file)
-        mask = io.imread(maskfile)
+        #mask = io.imread(maskfile)
+        mask = cv2.imread(maskfile, cv2.IMREAD_UNCHANGED)
 
         mask16 = np.copy(mask.astype(dt))
         mask16[mask16 > 0] = limit

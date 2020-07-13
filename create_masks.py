@@ -96,7 +96,7 @@ def create_mask(animal, resolution, njobs):
     MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
 
     if 'full' in resolution.lower():
-        INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
+        INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'lzw')
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
         files = sorted(os.listdir(INPUT))
@@ -106,7 +106,9 @@ def create_mask(animal, resolution, njobs):
             thumbfile = os.path.join(THUMBNAIL, file)
             outfile = os.path.join(MASKED, file)
             try:
-                src = io.imread(infile)
+                #src = io.imread(infile)
+                src = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
+                #src = cv2.imread(infile, cv2.IMREAD_ANYDEPTH)
             except:
                 print('Could not open', infile)
                 continue
@@ -115,7 +117,7 @@ def create_mask(animal, resolution, njobs):
             height, width = src.shape
             del src
             cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
-            #commands.append(cmd)
+            commands.append(cmd)
 
         with Pool(njobs) as p:
             p.map(workershell, commands)
