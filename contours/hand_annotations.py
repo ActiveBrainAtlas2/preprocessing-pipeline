@@ -15,7 +15,7 @@ print(viewer)
 
 
 
-filepath = os.path.join('/home/eddyod/MouseBrainSlicer_data/MD589', 'Annotation.npy')
+#filepath = os.path.join('/home/eddyod/MouseBrainSlicer_data/MD589', 'Annotation.npy')
 csvfile = os.path.join(os.getcwd(), 'MD589_annotation_contours.csv')
 hand_annotations = pd.read_csv(csvfile)
 #v1 = hand_annotations.iloc[:,16].values
@@ -29,12 +29,12 @@ hand_annotations = pd.read_csv(csvfile)
 #print(type(v1[0]))
 
 
-annotation = np.load(filepath, allow_pickle = True, encoding='latin1')
-contours = pd.DataFrame(annotation)
-hand_annotations = contours.rename(columns={0:"name", 1:"section", 2:"vertices"})
+#annotation = np.load(filepath, allow_pickle = True, encoding='latin1')
+#contours = pd.DataFrame(annotation)
+#hand_annotations = contours.rename(columns={0:"name", 1:"section", 2:"vertices"})
 unique_values = hand_annotations.groupby(['name']).size()
 print(hand_annotations.head(10))
-sys.exit()
+#sys.exit()
 str_contours_annotation, first_sec, last_sec = get_contours_from_annotations(stack, target_str, hand_annotations, densify=0)
 color = 2
 ng_structure_volume = add_structure_to_neuroglancer( viewer, str_contours_annotation, target_str, stack, first_sec, last_sec, \

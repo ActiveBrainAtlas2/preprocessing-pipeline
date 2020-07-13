@@ -6,6 +6,7 @@ normalized, it will just to the rotation and flip
 import argparse
 
 import numpy as np
+from skimage import io
 from tqdm import tqdm
 import os, sys
 import cv2
@@ -66,8 +67,8 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
         try:
-            #img = io.imread(infile)
-            img = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
+            img = io.imread(infile)
+            #img = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
         except:
             print('Could not open', infile)
             continue
