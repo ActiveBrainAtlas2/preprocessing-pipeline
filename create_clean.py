@@ -66,6 +66,9 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
 
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
+        outpath = os.path.join(CLEANED, file)
+        if os.path.exists(outpath):
+            continue
         try:
             img = io.imread(infile)
             #img = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
@@ -79,8 +82,7 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
             img = linnorm(img, 45000 , dt)
             #fixed = clahe.apply(fixed.astype(dt))
         maskfile = os.path.join(MASKS, file)
-        #mask = io.imread(maskfile)
-        mask = cv2.imread(maskfile, cv2.IMREAD_UNCHANGED)
+        mask = io.imread(maskfile)
 
         mask16 = np.copy(mask.astype(dt))
         mask16[mask16 > 0] = limit
@@ -108,7 +110,6 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         fixed[fixed == 0] = bgcolor
-        outpath = os.path.join(CLEANED, file)
         cv2.imwrite(outpath, fixed.astype(dt))
     print('Finished')
 
