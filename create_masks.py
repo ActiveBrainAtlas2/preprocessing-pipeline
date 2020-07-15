@@ -24,7 +24,7 @@ from utilities.utilities_process import workershell
 def fix_with_fill(img, limit, dt):
     no_strip, fe = remove_strip(img)
     if fe != 0:
-        img[:, fe:] = 0  # mask the strip
+        img[:, fe:] = 255  # mask the strip
     img = pad_with_black(img)
     img = (img / 256).astype(dt)
     h_src = linnorm(img, limit, dt)
@@ -112,7 +112,6 @@ def create_mask(animal, resolution, njobs):
             except:
                 print('Could not open', infile)
                 continue
-            print(src.shape, infile)
             src = get_last_2d(src)
             height, width = src.shape
             del src

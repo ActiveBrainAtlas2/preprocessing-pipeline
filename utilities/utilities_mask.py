@@ -73,8 +73,8 @@ def find_threshold(src):
     return min_point, thresh
 
 def remove_strip(src):
-    strip_max = 170;
-    strip_min = 2  # the range of width for the stripe
+    strip_max = 150;
+    strip_min = 5  # the range of width for the stripe
     projection=np.sum(src,axis=0)/10000.
     diff=projection[1:]-projection[:-1]
     loc,=np.nonzero(diff[-strip_max:-strip_min]>50)
@@ -155,11 +155,11 @@ def rotate_image(img, rotation):
 
 def pad_with_black(img):
     r,c = img.shape
-    pad = 10
-    img[0:pad,:] = 0
-    img[:,c-pad:c]=0
-    img[r-pad:r,:]=0
-    img[:,0:pad]=0
+    pad = 12
+    img[0:pad,:] = 0 # top
+    img[:,c-5:c] = 0 # right
+    img[r-pad:r,:] = 0 # bottom
+    img[:,0:5] = 0 # left
     return img
 
 
