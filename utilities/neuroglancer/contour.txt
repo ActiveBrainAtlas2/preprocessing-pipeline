@@ -1,2 +1,0 @@
-1. create a numpy stack equal in sections to the brain.
-1.

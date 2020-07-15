@@ -71,16 +71,12 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
             continue
         try:
             img = io.imread(infile)
-            #img = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
         except:
             print('Could not open', infile)
             continue
         img = get_last_2d(img)
         if channel == 1 and 'ntb' in stain.lower():
-            #pass
-            #clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
             img = linnorm(img, 45000 , dt)
-            #fixed = clahe.apply(fixed.astype(dt))
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
 

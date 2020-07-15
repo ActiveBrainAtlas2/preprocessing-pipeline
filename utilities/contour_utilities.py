@@ -188,13 +188,15 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
     min_y = 9999999
     # 'min_z' is the relative starting section (if the prep2 sections start at slice 100, and the structure starts at slice 110, min_z is 10 )
     # Z resolution is 20um for simple 1-1 correspondance with section thickness
+    max_z = (last_sec - ng_section_min)
+    min_z = (first_sec - ng_section_min)
+
     print('last_sec', last_sec)
     print('ng_section_min', ng_section_min)
     #max_z = (last_sec - ng_section_min)
-    #####TODO hardcoding another one
-    max_z = 364
+    #max_z = 364
     #min_z = (first_sec - ng_section_min)
-    min_z = 92
+    #min_z = 92
     if max_z > ng_section_max:
         max_z = ng_section_min
     if min_z < 0:
@@ -217,7 +219,6 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
         # Cycle through each coordinate pair
         for coordinate_pair in range(num_contours):
             curr_coors = section_contours[coordinate_pair]
-            #print('section_contours', section_contours)
             # Rescale coordinate pair and add to new contour dictionary
             str_contour_ng_resolution[section - first_sec].append([scale_xy * curr_coors[0], scale_xy * curr_coors[1]])
             # Replace Min/Max X/Y values with new extremes
