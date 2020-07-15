@@ -11,13 +11,13 @@ class Section(Base, AtlasModel):
     czi_file = Column(String, nullable=False)
     slide_physical_id = Column(Integer, nullable=False)
     file_name = Column(String, nullable=False)
-    tif_id = Column(Integer, nullable=False)
+    tif_id = Column(Integer, ForeignKey('slide_czi_to_tif.id'), nullable=False)
     scene_number = Column(Integer, nullable=False)
     scene_index = Column(Integer, nullable=False)
     channel = Column(Integer, nullable=False)
     channel_index = Column(Integer, nullable=False)
 
-    #slide_czi_tif = relationship("SlideCziTif", back_populates="sections")
+    slide_czi_tif = relationship("SlideCziTif", back_populates="section")
 
 
 

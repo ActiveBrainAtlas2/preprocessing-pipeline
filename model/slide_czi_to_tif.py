@@ -21,4 +21,4 @@ class SlideCziTif(Base, AtlasModel):
     processing_duration = Column(Float, nullable=False)
 
     slide = relationship("Slide", back_populates="slide_czi_tifs")
-    #section = relationship("Section", uselist=False, back_populates="slide_czi_tif")
+    section = relationship("Section", uselist=False, back_populates="slide_czi_tif")
