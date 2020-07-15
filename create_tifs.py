@@ -4,13 +4,12 @@ This file does the following operations:
     2. Runs the bfconvert bioformats command to yank the tif out of the czi and place
     it in the correct directory with the correct name
 """
-import os, sys
 import argparse
-import subprocess
+import os
 from multiprocessing.pool import Pool
+
 from tqdm import tqdm
 
-sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_process import workershell
@@ -20,35 +19,37 @@ from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED
 def make_tifs(animal, channel, njobs):
     """
     Args:
-        stack: the animal
-        limit: number of jobs
-    Returns: nothing
+        animal: the prep id of the animal
+        channel: the channel of the stack to process
+        njobs: number of jobs for parallel computing
+
+    Returns:
+        nothing
     """
-    assert channel in [1,2,3]
-    assert animal is not None
+
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
-    channel_dir = 'CH{}'.format(channel)
-    INPUT = os.path.join(fileLocationManager.czi)
-    OUTPUT = os.path.join(fileLocationManager.tif)
+    INPUT = fileLocationManager.czi
+    OUTPUT = fileLocationManager.tif
     tifs = sqlController.get_sections(animal, channel)
+
     sqlController.set_task(animal, QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN)
     sqlController.set_task(animal, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1)
 
     commands = []
-    for i, tif in enumerate(tqdm(tifs)):
-        inputfile = os.path.join(INPUT, tif.czi_file)
-        outputfile = tif.file_name
-        outputpath = os.path.join(OUTPUT, outputfile)
+    for tif in tqdm(tifs):
+        input_path = os.path.join(INPUT, tif.czi_file)
+        output_path = os.path.join(OUTPUT, tif.file_name)
 
-        if os.path.exists(outputpath):
+        if not os.path.exists(input_path):
             continue
 
-        os.makedirs(os.path.dirname(outputpath), exist_ok=True)
+        if os.path.exists(output_path):
+            continue
 
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         cmd = '/usr/local/share/bftools/bfconvert -bigtiff -compression LZW -separate -series {} -channel {} -nooverwrite {} {}'.format(
-            tif.scene_index, tif.channel_index, inputfile, outputpath)
-
+            tif.scene_index, tif.channel_index, input_path, output_path)
         commands.append(cmd)
 
     with Pool(njobs) as p:
@@ -58,8 +59,8 @@ def make_tifs(animal, channel, njobs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
-    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     parser.add_argument('--channel', help='Enter channel', required=True)
+    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
