@@ -5,20 +5,21 @@ This file does the following operations:
 """
 import argparse
 import os
+from multiprocessing.pool import Pool
 
-from matplotlib import pyplot as plt
-from skimage import io
 from tqdm import tqdm
 
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
+from utilities.utilities_process import workershell
 
 
-def make_histogram(animal, channel):
+def make_web_thumbnails(animal, channel, njobs):
     """
     Args:
         animal: the prep id of the animal
         channel: the channel of the stack to process
+        njobs: number of jobs for parallel computing
 
     Returns:
         nothing
@@ -27,48 +28,35 @@ def make_histogram(animal, channel):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = os.path.join(fileLocationManager.thumbnail)
-    OUTPUT = os.path.join(fileLocationManager.histogram)
+    OUTPUT = os.path.join(fileLocationManager.thumbnail_web)
     tifs = sqlController.get_sections(animal, channel)
 
+    commands = []
     for tif in tqdm(tifs):
         input_path = os.path.join(INPUT, tif.file_name)
         output_path = os.path.join(OUTPUT, os.path.splitext(tif.file_name)[0] + '.png')
 
-        try:
-            img = io.imread(input_path)
-        except:
+        if not os.path.exists(input_path):
             continue
 
-        if img.shape[0] * img.shape[1] > 1000000000:
-            scale = 1 / float(2)
-            img = img[::int(1. / scale), ::int(1. / scale)]
-
-        try:
-            flat = img.flatten()
-        except:
+        if os.path.exists(output_path):
             continue
-
-        COLORS = {1: 'b', 2: 'r', 3: 'g'}
-        fig = plt.figure()
-        plt.rcParams['figure.figsize'] = [10, 6]
-        plt.hist(flat, flat.max(), [0, flat.max()], color=COLORS[channel])
-        plt.style.use('ggplot')
-        plt.yscale('log')
-        plt.grid(axis='y', alpha=0.75)
-        plt.xlabel('Value')
-        plt.ylabel('Frequency')
-        plt.title(f'{tif.file_name} @16bit')
-        plt.close()
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        fig.savefig(output_path, bbox_inches='tight')
+        cmd = "convert {} {}".format(input_path, output_path)
+        commands.append(cmd)
+
+    with Pool(njobs) as p:
+        p.map(workershell, commands)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
+    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     args = parser.parse_args()
     animal = args.animal
+    njobs = int(args.njobs)
     channel = int(args.channel)
-    make_histogram(animal, channel)
+    make_web_thumbnails(animal, channel, njobs)
