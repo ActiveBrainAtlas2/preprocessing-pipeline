@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
+from sql_setup import CREATE_CHANNEL_1_HISTOGRAMS, CREATE_CHANNEL_2_HISTOGRAMS, CREATE_CHANNEL_3_HISTOGRAMS
 
 
 def make_histogram(animal, channel):
@@ -29,6 +30,13 @@ def make_histogram(animal, channel):
     INPUT = os.path.join(fileLocationManager.thumbnail)
     OUTPUT = os.path.join(fileLocationManager.histogram)
     tifs = sqlController.get_sections(animal, channel)
+
+    if channel == 1:
+        sqlController.set_task(animal, CREATE_CHANNEL_1_HISTOGRAMS)
+    elif channel == 2:
+        sqlController.set_task(animal, CREATE_CHANNEL_2_HISTOGRAMS)
+    else:
+        sqlController.set_task(animal, CREATE_CHANNEL_3_HISTOGRAMS)
 
     for tif in tqdm(tifs):
         input_path = os.path.join(INPUT, tif.file_name)
