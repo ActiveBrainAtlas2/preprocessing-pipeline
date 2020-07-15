@@ -1,3 +1,4 @@
+*.log
 parameters.yaml
 # pycharm stuff
 .idea/

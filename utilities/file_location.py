@@ -15,10 +15,11 @@ class FileLocationManager(object):
         """
         self.root = ROOT_DIR
         self.cshl = CSHL_DIR
+        self.prep = os.path.join(ROOT_DIR, stack, 'preps')
 
         self.czi = os.path.join(ROOT_DIR, stack, 'czi')
         self.tif = os.path.join(ROOT_DIR, stack, 'tif')
-        self.thumbnail = os.path.join(ROOT_DIR, stack, 'thumbnail')
+        self.thumbnail = os.path.join(self.prep, 'thumbnail')
         self.histogram = os.path.join(ROOT_DIR, stack, 'histogram')
         self.thumbnail_web = os.path.join(ROOT_DIR, stack, 'www')
 
@@ -30,7 +31,6 @@ class FileLocationManager(object):
         self.custom_transform = os.path.join(self.brain_info, 'custom_transform')
         self.mouseatlas_tmp = os.path.join(self.brain_info, 'mouseatlas_tmp')
 
-        self.prep = os.path.join(ROOT_DIR, stack, 'preps')
         self.elastix_dir = os.path.join(self.prep, 'elastix')
         self.full_masked = os.path.join(self.prep, 'full_masked')
         self.thumbnail_masked = os.path.join(self.prep, 'thumbnail_masked')
