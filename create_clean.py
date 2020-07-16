@@ -101,7 +101,7 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
             #pass
             clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
             fixed = clahe.apply(fixed.astype(dt))
-            fixed = fill_spots(fixed)
+            #fixed = fill_spots(fixed)
 
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
