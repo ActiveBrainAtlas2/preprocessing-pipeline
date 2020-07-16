@@ -183,7 +183,14 @@ def fill_spots(img):
     if len(contours) > 0:
         cX = max(contours, key=cv2.contourArea)
         area2 = cv2.contourArea(cX)
-        if area2 > (area1 * 0.95):
+        if area2 > (area1 * 0.15):
+            idx = get_index(cX, contours)  # 2
+            contours.pop(idx)
+
+    if len(contours) > 0:
+        cX = max(contours, key=cv2.contourArea)
+        area3 = cv2.contourArea(cX)
+        if area3 > (area2 * 0.15):
             idx = get_index(cX, contours)  # 2
             contours.pop(idx)
 
