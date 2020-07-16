@@ -334,30 +334,11 @@ def load_consecutive_section_transform(stack, moving_fn, fixed_fn):
     assert stack is not None
     fileLocationManager = FileLocationManager(stack)
     elastix_output_dir = fileLocationManager.elastix_dir
-    custom_output_dir = fileLocationManager.custom_output
-
-
-    custom_tf_fp = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, moving_fn + '_to_' + fixed_fn + '_customTransform.txt')
-
-    custom_tf_fp2 = os.path.join(custom_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
-
-    if os.path.exists(custom_tf_fp):
-        # if custom transform is provided
-        #sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp)
-        with open(custom_tf_fp, 'r') as f:
-            #####UPGRADE 2 -> 3 t11, t12, t13, t21, t22, t23 = map(float, f.readline().split())
-            t11, t12, t13, t21, t22, t23 = list(map(float, f.readline().split()))
-        transformation_to_previous_sec = np.linalg.inv(np.array([[t11, t12, t13], [t21, t22, t23], [0,0,1]]))
-    elif os.path.exists(custom_tf_fp2):
-        #sys.stderr.write('Load custom transform: %s\n' % custom_tf_fp2)
-        transformation_to_previous_sec = parse_elastix_parameter_file(custom_tf_fp2)
-    else:
-        # otherwise, load elastix output
-        param_fp = os.path.join(elastix_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
-        #sys.stderr.write('Load elastix-computed transform: %s\n' % param_fp)
-        if not os.path.exists(param_fp):
-            raise Exception('Transform file does not exist: %s to %s, %s' % (moving_fn, fixed_fn, param_fp))
-        transformation_to_previous_sec = parse_elastix_parameter_file(param_fp)
+    param_fp = os.path.join(elastix_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
+    #sys.stderr.write('Load elastix-computed transform: %s\n' % param_fp)
+    if not os.path.exists(param_fp):
+        raise Exception('Transform file does not exist: %s to %s, %s' % (moving_fn, fixed_fn, param_fp))
+    transformation_to_previous_sec = parse_elastix_parameter_file(param_fp)
 
     return transformation_to_previous_sec
 
