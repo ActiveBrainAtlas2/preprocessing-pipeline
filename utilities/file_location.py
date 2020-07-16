@@ -22,6 +22,7 @@ class FileLocationManager(object):
         self.thumbnail = os.path.join(self.prep, 'thumbnail')
         self.histogram = os.path.join(ROOT_DIR, stack, 'histogram')
         self.thumbnail_web = os.path.join(ROOT_DIR, stack, 'www')
+        self.neuroglancer_data = os.path.join(ROOT_DIR, stack, 'neuroglancer_data')
 
         self.brain_info = os.path.join(ROOT_DIR, stack, 'brains_info')
         self.operation_configs = os.path.join(self.brain_info, 'operation_configs')
