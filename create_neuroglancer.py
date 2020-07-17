@@ -65,8 +65,13 @@ def run_size_test(INPUT):
     baseheight = baseimg.shape[0]
     errors = []
     for filename in imgs:
-        img = io.imread(os.path.join(INPUT, filename))
-        if img.shape[1] != basewidth or img.shape[0] != baseheight:
+        try:
+            img = io.imread(os.path.join(INPUT, filename))
+        except:
+            print('Could not read image', filename)
+            sys.exit()
+
+        if len(img.shape) != 2 or img.shape[1] != basewidth or img.shape[0] != baseheight:
             errors.append('Size mismatch with {}'.format(filename))
             print('Error, sizes do not match: {} has width:{}, height{} but baseimg has width:{} and height{}'
                   .format(filename, img.shape[1], img.shape[0], basewidth, baseheight))
