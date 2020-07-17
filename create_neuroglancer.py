@@ -1,5 +1,5 @@
 import argparse
-import os
+import os, sys
 import json
 from skimage import io
 from neuroglancer_scripts.scripts import (generate_scales_info,
@@ -57,6 +57,24 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
     # compute_scales - build the precomputed for other scales
     compute_scales.main(['', folder_to_convert_to, '--flat', '--no-gzip'])
 
+def run_size_test(INPUT):
+    imgs = os.listdir(INPUT)
+    basefilename = imgs[0]
+    baseimg = io.imread(os.path.join(INPUT, basefilename))
+    basewidth = baseimg.shape[1]
+    baseheight = baseimg.shape[0]
+    errors = []
+    for filename in imgs:
+        img = io.imread(os.path.join(INPUT, filename))
+        if img.shape[1] != basewidth or img.shape[0] != baseheight:
+            errors.append('Size mismatch with {}'.format(filename))
+            print('Error, sizes do not match: {} has width:{}, height{} but baseimg has width:{} and height{}'
+                  .format(filename, img.shape[1], img.shape[0], basewidth, baseheight))
+    if len(errors) > 0:
+        print('Cannot continue, there was a problem')
+        sys.exit()
+    else:
+        print('File sizes all match.')
 
 
 def run_neuroglancer(animal, channel, resolution):
@@ -79,8 +97,8 @@ def run_neuroglancer(animal, channel, resolution):
 
 
     NEUROGLANCER =  os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
-    print(INPUT)
-    print(NEUROGLANCER)
+    run_size_test(INPUT)
+
     convert_to_precomputed(INPUT, NEUROGLANCER)
 
 if __name__ == "__main__":
