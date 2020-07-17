@@ -19,7 +19,6 @@ import os, sys, subprocess, time
 from datetime import datetime
 from matplotlib import pyplot as plt
 from skimage import io
-from skimage.util import img_as_uint
 import numpy as np
 import re
 import matplotlib
@@ -27,6 +26,7 @@ import matplotlib.figure
 import os
 import cv2
 import pandas as pd
+from tqdm import tqdm
 
 from model.section import Section
 from .bioformats_utilities import get_czi_metadata, get_fullres_series_indices
@@ -79,7 +79,7 @@ class SlideProcessor(object):
             sys.exit()
 
         section_number = 1
-        for i, czi_file in enumerate(czi_files):
+        for i, czi_file in enumerate(tqdm(czi_files)):
             extension = os.path.splitext(czi_file)[1]
             if extension.endswith('czi'):
                 slide = AlcSlide()

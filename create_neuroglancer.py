@@ -73,7 +73,7 @@ def run_size_test(INPUT):
 
         if len(img.shape) != 2 or img.shape[1] != basewidth or img.shape[0] != baseheight:
             errors.append('Size mismatch with {}'.format(filename))
-            
+
     if len(errors) > 0:
         print('Cannot continue, there was a problem')
         sys.exit()
