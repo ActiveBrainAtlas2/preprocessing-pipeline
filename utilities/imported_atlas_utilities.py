@@ -1,6 +1,7 @@
 import os
 import sys
 from multiprocessing.pool import Pool
+import matplotlib.pyplot as plt
 
 import numpy as np
 from pandas import read_hdf
@@ -16,6 +17,28 @@ from utilities.alignment_utility import load_hdf, one_liner_to_arr, load_ini, co
 from utilities.file_location import CSHL_DIR as VOLUME_ROOTDIR, FileLocationManager
 from utilities.coordinates_converter import CoordinatesConverter
 SECTION_THICKNESS = 20. # in um
+REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_registration_parameters'
+
+
+#high_contrast_colors = boynton_colors.values() + kelly_colors.values()
+
+hc_perm = [ 0,  5, 28, 26, 12, 11,  4,  8, 25, 22,  3,  1, 20, 19, 27, 13, 24,
+       17, 16, 15,  7, 14, 21, 18, 23,  2, 10,  9,  6]
+#high_contrast_colors = [high_contrast_colors[i] for i in hc_perm]
+#name_sided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
+#                     for i, s in enumerate(all_known_structures_sided) }
+#name_sided_to_color_float = {s: np.array(c)/255. for s, c in name_sided_to_color.iteritems()}
+
+#name_unsided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
+#                     for i, s in enumerate(all_known_structures) }
+#name_unsided_to_color_float = {s: np.array(c)/255. for s, c in name_unsided_to_color.iteritems()}
+
+#stack_to_color = {n: high_contrast_colors[i%len(high_contrast_colors)] for i, n in enumerate(all_stacks)}
+#stack_to_color_float = {s: np.array(c)/255. for s, c in stack_to_color.iteritems()}
+
+#name_unsided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
+#                     for i, s in enumerate(all_known_structures) }
+
 # Load all structures
 paired_structures = ['5N', '6N', '7N', '7n', 'Amb', 'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC', \
                      'SNC', 'SNR', '3N', '4N', 'Sp5I', 'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
@@ -967,7 +990,7 @@ def convert_vol_bbox_dict_to_overall_vol(vol_bbox_dict=None, vol_bbox_tuples=Non
     """
 
     if vol_origin_dict is not None:
-        vol_bbox_dict = {k: (v, (o[0], o[0]+v.shape[1]-1, o[1], o[1]+v.shape[0]-1, o[2], o[2]+v.shape[2]-1)) for k,(v,o) in vol_origin_dict.iteritems()}
+        vol_bbox_dict = {k: (v, (o[0], o[0]+v.shape[1]-1, o[1], o[1]+v.shape[0]-1, o[2], o[2]+v.shape[2]-1)) for k,(v,o) in vol_origin_dict.items()}
 
     if vol_bbox_dict is not None:
         volume_bbox = np.round(get_overall_bbox(vol_bbox_tuples=vol_bbox_dict.values())).astype(np.int)
@@ -1353,10 +1376,464 @@ def load_alignment_results_v3(alignment_spec, what, reg_root_dir=REGISTRATION_PA
     Args:
         what (str): any of parameters, scoreHistory, scoreEvolution or trajectory
     """
-    from registration_utilities import convert_transform_forms
-    res = load_data(DataManager.get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what=what, reg_root_dir=reg_root_dir))
+    INPUT_KEY_LOC = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what=what, reg_root_dir=reg_root_dir)
+    with open(INPUT_KEY_LOC, 'r') as f:
+        res = json.load(f)
+
     if what == 'parameters':
         tf_out = convert_transform_forms(transform=res, out_form=out_form)
         return tf_out
     else:
         return res
+
+def get_alignment_result_filepath_v3(alignment_spec, what, reg_root_dir=REGISTRATION_PARAMETERS_ROOTDIR):
+    """
+    Args:
+        what (str): any of parameters, scoreHistory/trajectory, scoreEvolution, parametersWeightedAverage
+    """
+    warp_basename = get_warped_volume_basename_v2(alignment_spec=alignment_spec)
+    if what == 'parameters':
+        ext = 'json'
+    elif what == 'scoreHistory' or what == 'trajectory':
+        ext = 'bp'
+    elif what == 'scoreEvolution':
+        ext = 'png'
+    elif what == 'parametersWeightedAverage':
+        ext = 'pkl'
+    else:
+        raise
+    stack = alignment_spec['stack_m']['name']
+    fp = os.path.join(reg_root_dir, stack, warp_basename, warp_basename + '_' + what + '.' + ext)
+    print('get_alignment_result_filepath_v3', fp)
+    return fp
+
+
+#### registration utilities
+
+def transform_points(pts, transform):
+    '''
+    Transform points.
+
+    Args:
+        pts:
+        transform: any representation
+    '''
+    pts = list(pts)
+    T = convert_transform_forms(transform=transform, out_form=(3,4))
+
+    t = T[:, 3]
+    A = T[:, :3]
+
+    if len(np.atleast_2d(pts)) == 1:
+            pts_prime = np.dot(A, np.array(pts).T) + t
+    else:
+        pts_prime = np.dot(A, np.array(pts).T) + t[:,None]
+
+    return pts_prime.T
+
+
+def convert_transform_forms(out_form, transform=None, aligner=None, select_best='last_value'):
+    """
+    Args:
+        out_form: (3,4) or (4,4) or (12,) or "dict", "tuple"
+    """
+
+    if aligner is not None:
+        centroid_m = aligner.centroid_m
+        centroid_f = aligner.centroid_f
+
+        if select_best == 'last_value':
+            params = aligner.Ts[-1]
+        elif select_best == 'max_value':
+            params = aligner.Ts[np.argmax(aligner.scores)]
+        else:
+            raise Exception("select_best %s is not recognize." % select_best)
+    else:
+        if isinstance(transform, dict):
+            if 'centroid_f_wrt_wholebrain' in transform:
+                centroid_f = np.array(transform['centroid_f_wrt_wholebrain'])
+                centroid_m = np.array(transform['centroid_m_wrt_wholebrain'])
+                params = np.array(transform['parameters'])
+            elif 'centroid_f' in transform:
+                centroid_f = np.array(transform['centroid_f'])
+                centroid_m = np.array(transform['centroid_m'])
+                params = np.array(transform['parameters'])
+            else:
+                raise
+        elif isinstance(transform, np.ndarray):
+            if transform.shape == (12,):
+                params = transform
+                centroid_m = np.zeros((3,))
+                centroid_f = np.zeros((3,))
+            elif transform.shape == (3,4):
+                params = transform.flatten()
+                centroid_m = np.zeros((3,))
+                centroid_f = np.zeros((3,))
+            elif transform.shape == (4,4):
+                params = transform[:3].flatten()
+                centroid_m = np.zeros((3,))
+                centroid_f = np.zeros((3,))
+            else:
+                raise
+        else:
+            raise Exception("Transform type %s is not recognized" % type(transform))
+
+    T = consolidate(params=params, centroid_m=centroid_m, centroid_f=centroid_f)
+
+    if out_form == (3,4):
+        return T[:3]
+    elif out_form == (4,4):
+        return T
+    elif out_form == (12,):
+        return T[:3].flatten()
+    elif out_form == 'dict':
+        return dict(centroid_f_wrt_wholebrain = np.zeros((3,)),
+                    centroid_m_wrt_wholebrain = np.zeros((3,)),
+                    parameters = T[:3].flatten())
+    elif out_form == 'tuple':
+        return T[:3].flatten(), np.zeros((3,)), np.zeros((3,))
+    else:
+        raise Exception("Output form of %s is not recognized." % out_form)
+
+    return T
+
+
+def consolidate(params, centroid_m=(0,0,0), centroid_f=(0,0,0)):
+    """
+    Convert the set (parameter, centroid m, centroid f) to a single matrix.
+    Args:
+        params ((12,)-array):
+        centroid_m ((3,)-array):
+        centroid_f ((3,)-array):
+    Returns:
+        ((4,4)-array)
+    """
+    G = params.reshape((3,4))
+    R = G[:3,:3]
+    t = - np.dot(R, centroid_m) + G[:3,3] + centroid_f
+    return np.vstack([np.c_[R,t], [0,0,0,1]])
+
+
+
+def convert_to_original_name(name):
+    return name.split('_')[0]
+
+
+def convert_to_left_name(name):
+    if name in singular_structures:
+        # sys.stderr.write("Asked for left name for singular structure %s, returning itself.\n" % name)
+        return name
+    else:
+        return convert_to_unsided_label(name) + '_L'
+
+def convert_to_right_name(name):
+    if name in singular_structures:
+        # sys.stderr.write("Asked for right name for singular structure %s, returning itself.\n" % name)
+        return name
+    else:
+        return convert_to_unsided_label(name) + '_R'
+
+
+def fit_plane(X):
+    """
+    Fit a plane to a set of 3d points
+
+    Parameters
+    ----------
+    X : n x 3 array
+        points
+
+    Returns
+    ------
+    normal : (3,) vector
+        the normal vector of the plane
+    c : (3,) vector
+        a point on the plane
+    """
+    X = X[0][0]
+
+    # http://math.stackexchange.com/questions/99299/best-fitting-plane-given-a-set-of-points
+    # http://math.stackexchange.com/a/3871
+    X = list(X)
+    X = np.array(X)
+    c = X.mean(axis=0)
+    Xc = X - c
+    U, _, VT = np.linalg.svd(Xc.T)
+    return U[:,-1], c
+
+
+def R_align_two_vectors(a, b):
+    """
+    Find the rotation matrix that align a onto b.
+    """
+    # http://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d/897677#897677
+
+    v = np.cross(a, b)
+    s = np.linalg.norm(v)
+    c = np.dot(a, b)
+    v_skew = np.array([[0, -v[2], v[1]],
+                      [v[2], 0, -v[0]],
+                      [-v[1], v[0], 0]])
+    R = np.eye(3) + v_skew + np.dot(v_skew, v_skew)*(1-c)/(s + 1e-5)**2
+    return R
+
+
+
+def average_location(centroid_allLandmarks_wrt_fixedBrain=None, mean_centroid_allLandmarks_wrt_fixedBrain=None):
+    """
+    Compute the standardized centroid of every structure.
+
+    This first estimates the mid-sagittal plane.
+    Then find a standardized centroid for every structure, that is both closest to the population mean location and symmetric with respect to the mid-sagittal plane.
+
+    Args:
+        centroid_allLandmarks_wrt_fixedBrain (dict {str: (n,3)-array}): centroid of every structure instance wrt fixed brain
+        mean_centroid_allLandmarks (dict {str: (3,)-array}): mean centroid of every structure instance wrt fixed brain
+
+    Returns:
+        standard_centroids_wrt_canonical: standardized locations of every structure, relative to the midplane anchor. Paired structures are symmetric relative to the mid-plane defined by centroid and normal.
+        instance_centroids_wrt_canonical: the instance centroids in canonical atlas space
+        midplane_anchor_wrt_fixedBrain: a point on the mid-sagittal plane that is used as the origin of canonical atlas space.
+        midplane_normal: normal vector of the mid-sagittal plane estimated from centroids in original coordinates. Note that this is NOT the mid-plane normal using canonical coordinates, which by design should be (0,0,1).
+        transform_matrix_to_atlasCanonicalSpace: (4,4) matrix that maps to canonical atlas space
+        """
+
+    if mean_centroid_allLandmarks_wrt_fixedBrain is None:
+        mean_centroid_allLandmarks_wrt_fixedBrain = {name: np.mean(centroids, axis=0)
+                                                     for name, centroids in
+                                                     centroid_allLandmarks_wrt_fixedBrain.items()}
+
+    names = set([convert_to_original_name(name_s) for name_s in mean_centroid_allLandmarks_wrt_fixedBrain.keys()])
+    print('mean_centroid_allLandmarks_wrt_fixedBrain', mean_centroid_allLandmarks_wrt_fixedBrain)
+    # Fit a midplane from the midpoints of symmetric landmark centroids
+    midpoints_wrt_fixedBrain = {}
+    for name in names:
+        lname = convert_to_left_name(name)
+        rname = convert_to_right_name(name)
+
+        #         names = labelMap_unsidedToSided[name]
+
+        #         # maybe ignoring singular instances is better
+        #         if len(names) == 2:
+        if lname in mean_centroid_allLandmarks_wrt_fixedBrain and rname in mean_centroid_allLandmarks_wrt_fixedBrain:
+            midpoints_wrt_fixedBrain[name] = .5 * mean_centroid_allLandmarks_wrt_fixedBrain[lname] + .5 * \
+                                             mean_centroid_allLandmarks_wrt_fixedBrain[rname]
+        else:
+            midpoints_wrt_fixedBrain[name] = mean_centroid_allLandmarks_wrt_fixedBrain[name]
+
+    midplane_normal, midplane_anchor_wrt_fixedBrain = fit_plane(np.c_[midpoints_wrt_fixedBrain.values()])
+
+    print('Mid-sagittal plane normal vector =', midplane_normal, '@ Mid-sagittal plane anchor wrt fixed wholebrain =',
+          midplane_anchor_wrt_fixedBrain)
+
+    R_fixedWholebrain_to_canonical = R_align_two_vectors(midplane_normal, (0, 0, 1))
+
+    # points_midplane_oriented = {name: np.dot(R_to_canonical, p - midplane_anchor)
+    #                             for name, p in mean_centroid_allLandmarks.iteritems()}
+
+    transform_matrix_fixedWholebrain_to_atlasCanonicalSpace = consolidate(
+        params=np.column_stack([R_fixedWholebrain_to_canonical, np.zeros((3,))]),
+        centroid_m=midplane_anchor_wrt_fixedBrain,
+        centroid_f=(0, 0, 0))
+
+    print('Transform matrix to canonical atlas space =')
+    print(transform_matrix_fixedWholebrain_to_atlasCanonicalSpace)
+
+    print('Angular deviation of the mid sagittal plane normal around y axis (degree) =',
+          np.rad2deg(np.arccos(midplane_normal[2])))
+
+    points_midplane_oriented = {
+        name: transform_points(p, transform=transform_matrix_fixedWholebrain_to_atlasCanonicalSpace)
+        for name, p in mean_centroid_allLandmarks_wrt_fixedBrain.items()}
+
+    if centroid_allLandmarks_wrt_fixedBrain is not None:
+
+        instance_centroid_rel2atlasCanonicalSpace = \
+            {n: transform_points(s, transform=transform_matrix_fixedWholebrain_to_atlasCanonicalSpace)
+             for n, s in centroid_allLandmarks_wrt_fixedBrain.items()}
+    else:
+        instance_centroid_rel2atlasCanonicalSpace = None
+
+    # Enforce symmetry
+
+    canonical_locations = {}
+
+    for name in names:
+
+        lname = convert_to_left_name(name)
+        rname = convert_to_right_name(name)
+
+        if lname in points_midplane_oriented and rname in points_midplane_oriented:
+
+            x, y, mz = .5 * points_midplane_oriented[lname] + .5 * points_midplane_oriented[rname]
+
+            canonical_locations[lname] = np.r_[x, y, points_midplane_oriented[lname][2] - mz]
+            canonical_locations[rname] = np.r_[x, y, points_midplane_oriented[rname][2] - mz]
+        else:
+            x, y, _ = points_midplane_oriented[name]
+            canonical_locations[name] = np.r_[x, y, 0]
+
+    return canonical_locations, instance_centroid_rel2atlasCanonicalSpace, \
+           midplane_anchor_wrt_fixedBrain, midplane_normal, transform_matrix_fixedWholebrain_to_atlasCanonicalSpace
+
+
+### plotting helpers for the atlas
+
+
+def plot_centroid_means_and_covars_3d(instance_centroids,
+                                        nominal_locations,
+                                        canonical_centroid=None,
+                                        canonical_normal=None,
+                                      cov_mat_allStructures=None,
+                                      radii_allStructures=None,
+                                      ellipsoid_matrix_allStructures=None,
+                                     colors=None,
+                                     show_canonical_centroid=True,
+                                     xlim=(0,400),
+                                     ylim=(0,400),
+                                     zlim=(0,400),
+                                     xlabel='x',
+                                     ylabel='y',
+                                     zlabel='z',
+                                     title='Centroid means and covariances'):
+    """
+    Plot the means and covariance matrices in 3D.
+    All coordinates are relative to cropped MD589.
+    Args:
+        instance_centroids (dict {str: list of (3,)-arrays}): centroid coordinate of each instance relative to the canonical centroid
+        nominal_locations (dict {str: (3,)-arrays}): the average centroid for all instance centroid of every structure relative to canonical centroid
+        canonical_centroid ((3,)-arrays): coordinate of the origin of canonical frame, defined relative to atlas
+        canonical_normal ((3,)-arrays): normal vector of the mid-sagittal plane. The mid-sagittal plane is supppose to pass the `canonical_centroid`.
+        cov_mat_allStructures (dict {str: (3,3)-ndarray}): covariance_matrices
+        radii_allStructures (dict {str: (3,)-ndarray}): radius of each axis
+        ellipsoid_matrix_allStructures (dict {str: (3,3)-ndarray}): Of each matrix, each row is a eigenvector of the corresponding covariance matrix
+        colors (dict {str: 3-tuple}): for example: {'7N': (1,0,0)}.
+    """
+
+    # Load ellipsoid: three radius and axes.
+    if radii_allStructures is not None and ellipsoid_matrix_allStructures is not None:
+        pass
+    elif cov_mat_allStructures is not None:
+        radii_allStructures, ellipsoid_matrix_allStructures = compute_ellipsoid_from_covar(cov_mat_allStructures)
+    else:
+        _, radii_allStructures, ellipsoid_matrix_allStructures = compute_covar_from_instance_centroids(instance_centroids)
+
+    # Plot in 3D.
+
+    from mpl_toolkits.mplot3d import Axes3D
+
+    fig = plt.figure(figsize=(20, 20))
+    ax = fig.add_subplot(111, projection='3d')
+
+    if colors is None:
+        colors = {name_s: (0,0,1) for name_s in instance_centroids}
+
+    for name_s, centroids in instance_centroids.items():
+    #     if name_s == '7N_L' or name_s == '7N_R':
+
+        if canonical_centroid is None:
+            centroids2 = np.array(centroids)
+        else:
+            centroids2 = np.array(centroids) + canonical_centroid
+
+        ax.scatter(centroids2[:,0], centroids2[:,1], centroids2[:,2],
+                   marker='o', s=100, alpha=.1, color=colors[name_s])
+
+        if canonical_centroid is None:
+            c = nominal_locations[name_s]
+        else:
+            c = nominal_locations[name_s] + canonical_centroid
+
+        ax.scatter(c[0], c[1], c[2],
+                   color=colors[name_s], marker='*', s=100)
+
+        # Plot uncerntainty ellipsoids
+        u = np.linspace(0.0, 2.0 * np.pi, 100)
+        v = np.linspace(0.0, np.pi, 100)
+        x = radii_allStructures[name_s][0] * np.outer(np.cos(u), np.sin(v))
+        y = radii_allStructures[name_s][1] * np.outer(np.sin(u), np.sin(v))
+        z = radii_allStructures[name_s][2] * np.outer(np.ones_like(u), np.cos(v))
+        for i in range(len(u)):
+            for j in range(len(v)):
+                [x[i,j],y[i,j],z[i,j]] = np.dot([x[i,j],y[i,j],z[i,j]], ellipsoid_matrix_allStructures[name_s]) + c
+
+    #     ax.plot_surface(x, y, z, color='b')
+        ax.plot_wireframe(x, y, z,  rstride=4, cstride=4, color='b', alpha=0.2)
+
+    if canonical_centroid is not None:
+        if show_canonical_centroid:
+            ax.scatter(canonical_centroid[0], canonical_centroid[1], canonical_centroid[2],
+               color=(0,0,0), marker='^', s=200)
+
+        # Plot mid-sagittal plane
+        if canonical_normal is not None:
+            canonical_midplane_xx, canonical_midplane_yy = np.meshgrid(range(xlim[0], xlim[1], 100), range(ylim[0], ylim[1], 100), indexing='xy')
+            canonical_midplane_z = -(canonical_normal[0]*(canonical_midplane_xx-canonical_centroid[0]) + \
+            canonical_normal[1]*(canonical_midplane_yy-canonical_centroid[1]) + \
+            canonical_normal[2]*(-canonical_centroid[2]))/canonical_normal[2]
+            ax.plot_surface(canonical_midplane_xx, canonical_midplane_yy, canonical_midplane_z, alpha=.1)
+    else:
+        sys.stderr.write("canonical_centroid not provided. Skip plotting cenonical centroid and mid-sagittal plane.\n")
+
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+    # ax.set_axis_off()
+    ax.set_xlim3d([xlim[0], xlim[1]]);
+    ax.set_ylim3d([ylim[0], ylim[1]]);
+    ax.set_zlim3d([zlim[0], zlim[1]]);
+    # ax.view_init(azim = 90 + 20,elev = 0 - 20)
+    ax.view_init(azim = 270, elev = 0)
+
+    # Hide y-axis (https://stackoverflow.com/questions/12391271/matplotlib-turn-off-z-axis-only-in-3-d-plot)
+    ax.w_yaxis.line.set_lw(0.)
+    ax.set_yticks([])
+
+    ax.set_aspect(1.0)
+    ax.set_title(title)
+    plt.legend()
+    plt.show()
+
+
+def compute_ellipsoid_from_covar(covar_mat):
+    """
+    Compute the ellipsoid (three radii and three axes) of each structure from covariance matrices.
+    Radii are the square root of the singular values (or 1 sigma).
+    Returns:
+        dict {str: (3,)-ndarray}: radius of each axis
+        dict {str: (3,3)-ndarray}: Of each matrix, each row is a eigenvector of the corresponding covariance matrix
+    """
+
+    radii_allStructures = {}
+    ellipsoid_matrix_allStructures = {}
+    for name_s, cov_mat in sorted(covar_mat.items()):
+        u, s, vt = np.linalg.svd(cov_mat)
+    #     print name_s, u[:,0], u[:,1], u[:,2],
+        radii_allStructures[name_s] = np.sqrt(s)
+        ellipsoid_matrix_allStructures[name_s] = vt
+    return radii_allStructures, ellipsoid_matrix_allStructures
+
+def compute_covar_from_instance_centroids(instance_centroids):
+    """
+    Compute the covariance matrices based on instance centroids.
+    Args:
+        instance_centroids: dict {str: list of (3,)-arrays}
+    Returns:
+        dict {str: (3,3)-ndarray}: covariance_matrices
+        dict {str: (3,)-ndarray}: radius of each axis
+        dict {str: (3,3)-ndarray}: Of each matrix, each row is a eigenvector of the corresponding covariance matrix
+    """
+
+    cov_mat_allStructures = {}
+    radii_allStructures = {}
+    ellipsoid_matrix_allStructures = {}
+    for name_s, centroids in sorted(instance_centroids.items()):
+        centroids2 = np.array(centroids)
+        cov_mat = np.cov(centroids2.T)
+        cov_mat_allStructures[name_s] = cov_mat
+        u, s, vt = np.linalg.svd(cov_mat)
+    #     print name_s, u[:,0], u[:,1], u[:,2],
+        radii_allStructures[name_s] = np.sqrt(s)
+        ellipsoid_matrix_allStructures[name_s] = vt
+
+    return cov_mat_allStructures, radii_allStructures, ellipsoid_matrix_allStructures
