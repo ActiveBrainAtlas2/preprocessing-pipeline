@@ -5,9 +5,11 @@ It also needs for the animal, histology and scan run tables to be
 filled out for each animal to use
 """
 
+from collections import OrderedDict
+
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
-from _collections import OrderedDict
+
 from model.animal import Animal
 from model.histology import Histology
 from model.scan_run import ScanRun
@@ -15,15 +17,7 @@ from model.section import Section
 from model.slide import Slide
 from model.slide_czi_to_tif import SlideCziTif
 from model.task import Task, ProgressLookup
-from sql_setup import dj, database, session
-#from utilities.metadata import ROOT_DIR
-
-TIF = 'tif'
-HIS = 'histogram'
-ROTATED = 'rotated'
-PREPS = 'preps'
-THUMBNAIL = 'thumbnail'
-schema = dj.schema(database)
+from sql_setup import session
 
 
 class SqlController(object):
@@ -47,44 +41,6 @@ class SqlController(object):
         self.valid_sections = OrderedDict()
         # fill up the metadata_cache variable
 
-    def get_animal_info(self, animal):
-        self.animal = self.session.query(Animal).filter(Animal.prep_id == animal).one()
-        self.histology = self.session.query(Histology).filter(Histology.prep_id == animal).one()
-        #scan_run = self.session.query(ScanRun, func.max(ScanRun.id).label('resolution')).filter(ScanRun.prep_id == animal).group_by(ScanRun.prep_id).one()
-        self.scan_run = self.session.query(ScanRun).filter(ScanRun.prep_id == animal).order_by(ScanRun.id.desc()).one()
-
-    def get_section(self, file_id):
-        section = None
-        try:
-            section = self.session.query(Section).filter(Section.id == file_id).one()
-        except NoResultFound as nrf:
-            print('No section for id {} error: {}'.format(id, nrf))
-
-        return section
-
-
-    def get_valid_sections(self, animal, channel):
-        """
-        The sections table is a view and it is already filtered by active and file_status = 'good'
-        It is also already ordered. Mysql lets you add an order clause to a view
-        Args:
-            animal: the animal to query
-            channel: 1 or 2 or 3.
-
-        Returns: dictionary of sections in order
-
-        """
-        sections = self.session.query(Section).filter(Section.prep_id == animal).filter(
-            Section.channel == channel).all()
-
-        for i, r in enumerate(sections):
-            self.valid_sections[i] = {'section_number': i,
-                                                     'channel': r.channel,
-                                                     'file_name': str(i).zfill(3) + '.tif'}
-
-        #print(self.valid_sections)
-        return self.valid_sections
-
     def get_sections(self, animal, channel):
         """
         The sections table is a view and it is already filtered by active and file_status = 'good'
@@ -99,13 +55,13 @@ class SqlController(object):
         orderby = self.histology.side_sectioned_first
 
         if orderby == 'DESC':
-            sections = self.session.query(Section).filter(Section.prep_id == animal).filter(
-                Section.channel == channel) \
-                .order_by(Section.slide_physical_id.desc()) \
+            sections = self.session.query(Section).filter(Section.prep_id == animal)\
+                .filter(Section.channel == channel)\
+                .order_by(Section.slide_physical_id.desc())\
                 .order_by(Section.scene_number.desc()).all()
         else:
-            sections = self.session.query(Section).filter(Section.prep_id == animal).filter(
-                Section.channel == channel)\
+            sections = self.session.query(Section).filter(Section.prep_id == animal)\
+                .filter(Section.channel == channel)\
                 .order_by(Section.slide_physical_id.asc())\
                 .order_by(Section.scene_number.asc()).all()
 
@@ -130,33 +86,27 @@ class SqlController(object):
 
         return sections
 
+    def get_slide_czi_to_tifs(self, channel):
+        slides = self.session.query(Slide).filter(Slide.scan_run_id == self.scan_run.id)\
+            .filter(Slide.slide_status == 'Good').all()
+        slide_czi_to_tifs = self.session.query(SlideCziTif).filter(SlideCziTif.channel == channel)\
+            .filter(SlideCziTif.slide_id.in_([slide.id for slide in slides]))\
+            .filter(SlideCziTif.active == 1).all()
+
+        return slide_czi_to_tifs
+
+    def update_row(self, row):
+        self.session.merge(row)
+        self.session.commit()
+
     def get_sections_numbers(self, animal):
         sections = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).all()
 
         section_numbers = []
-        for i,r in enumerate(sections):
+        for i, r in enumerate(sections):
             section_numbers.append(i)
 
         return section_numbers
-
-
-    def get_image_listXXX(self, animal, source='source'):
-        valid_sections = self.get_valid_sections(animal)
-        files = []
-        for key, file in valid_sections.items():
-            # print(file['source'])
-            files.append(file[source])
-        return files
-
-
-    def get_anchor_nameXXX(self, animal):
-        image_list = self.get_image_list(animal)
-        midpoint = len(image_list) // 2
-        anchor_name = image_list[midpoint]
-        return anchor_name
-
-
-    #################### Get and set progress ############
 
     def get_current_task(self, animal):
         step = None
@@ -186,13 +136,13 @@ class SqlController(object):
             nothing, just merges
         """
         try:
-            lookup = self.session.query(ProgressLookup)\
-                .filter(ProgressLookup.id == lookup_id)\
+            lookup = self.session.query(ProgressLookup) \
+                .filter(ProgressLookup.id == lookup_id) \
                 .limit(1).one()
         except NoResultFound:
             print('No lookup for {} so we will enter one.'.format(lookup_id))
         try:
-            task = self.session.query(Task).filter(Task.lookup_id == lookup.id)\
+            task = self.session.query(Task).filter(Task.lookup_id == lookup.id) \
                 .filter(Task.prep_id == animal).one()
         except NoResultFound:
             print('No step for {}, so creating new task.'.format(lookup_id))
@@ -204,4 +154,3 @@ class SqlController(object):
         except:
             print('Bad lookup code for {}'.format(lookup.id))
             self.session.rollback()
-
