@@ -30,7 +30,7 @@ def make_thumbnails(animal, channel, njobs):
     sqlController = SqlController(animal)
     INPUT = fileLocationManager.tif
     OUTPUT = fileLocationManager.thumbnail
-    tifs = sqlController.get_sections(animal, channel)
+    tifs = sqlController.get_distinct_section_filenames(animal, channel)
 
     if channel == 1:
         sqlController.set_task(animal, CREATE_CHANNEL_1_THUMBNAILS)
