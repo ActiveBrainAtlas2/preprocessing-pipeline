@@ -80,7 +80,7 @@ class SqlController(object):
         Returns: list of sections in order with distinct file namnes
 
         """
-        sections = self.session.query(Section.czi_file, Section.file_name).distinct()\
+        sections = self.session.query(Section.czi_file, Section.file_name, Section.scene_index, Section.channel_index).distinct()\
             .filter(Section.prep_id == animal).filter(
             Section.channel == channel) \
 
