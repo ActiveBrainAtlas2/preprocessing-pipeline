@@ -111,6 +111,25 @@ class SqlController(object):
 
         return sections
 
+    def get_distinct_section_filenames(self, animal, channel):
+        """
+        Very similar to the get_sections query but this will return a list of
+        distinct file names. Since some of the scenes get duplicated in the QA process,
+        we need to get the without duplicates. The duplicates will then get replicated
+        with the get_sections method. The order doesn't matter.
+        Args:
+            animal: the animal to query
+            channel: 1 or 2 or 3.
+
+        Returns: list of sections in order with distinct file namnes
+
+        """
+        sections = self.session.query(Section.czi_file, Section.file_name).distinct()\
+            .filter(Section.prep_id == animal).filter(
+            Section.channel == channel) \
+
+        return sections
+
     def get_sections_numbers(self, animal):
         sections = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).all()
 
