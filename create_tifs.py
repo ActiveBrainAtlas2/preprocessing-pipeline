@@ -4,8 +4,9 @@ This file does the following operations:
     2. Runs the bfconvert bioformats command to yank the tif out of the czi and place
     it in the correct directory with the correct name
 """
-import argparse
 import os
+import sys
+import argparse
 from multiprocessing.pool import Pool
 
 from tqdm import tqdm
@@ -55,6 +56,20 @@ def make_tifs(animal, channel, njobs):
     with Pool(njobs) as p:
         p.map(workershell, commands)
 
+    # Update TIFs' size
+    try:
+        os.listdir(fileLocationManager.tif)
+    except OSError as e:
+        print(e)
+        sys.exit()
+
+    slide_czi_to_tifs = sqlController.get_slide_czi_to_tifs(channel)
+    for slide_czi_to_tif in slide_czi_to_tifs:
+        tif_path = os.path.join(fileLocationManager.tif, slide_czi_to_tif.file_name)
+        if os.path.exists(tif_path):
+            slide_czi_to_tif.file_size = os.path.getsize(tif_path)
+            sqlController.update_row(slide_czi_to_tif)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
@@ -66,4 +81,3 @@ if __name__ == '__main__':
     njobs = int(args.njobs)
     channel = int(args.channel)
     make_tifs(animal, channel, njobs)
-
