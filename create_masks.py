@@ -40,9 +40,7 @@ def create_mask(animal, resolution, njobs):
             thumbfile = os.path.join(THUMBNAIL, file)
             outfile = os.path.join(MASKED, file)
             try:
-                #src = io.imread(infile)
-                src = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
-                #src = cv2.imread(infile, cv2.IMREAD_ANYDEPTH)
+                src = io.imread(infile)
             except:
                 print('Could not open', infile)
                 continue
