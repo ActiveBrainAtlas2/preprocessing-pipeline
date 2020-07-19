@@ -13,78 +13,12 @@ import os, sys
 import cv2
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
-from utilities.alignment_utility import get_last_2d, linnorm
+from utilities.alignment_utility import get_last_2d
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import get_index, pad_with_black, remove_strip
+from utilities.utilities_mask import fix_with_fill, linnorm
 from utilities.utilities_process import workershell
 
-
-
-def fix_with_fill(img, limit, dt):
-    no_strip, fe = remove_strip(img)
-    if fe != 0:
-        img[:, fe:] = 255  # mask the strip
-    img = pad_with_black(img)
-    img = (img / 256).astype(dt)
-    h_src = linnorm(img, limit, dt)
-    med = np.median(h_src)
-    h, im_th = cv2.threshold(h_src, med, limit, cv2.THRESH_BINARY)
-    im_floodfill = im_th.copy()
-    h, w = im_th.shape[:2]
-    mask = np.zeros((h + 2, w + 2), np.uint8)
-    cv2.floodFill(im_floodfill, mask, (0, 0), 255)
-    im_floodfill_inv = cv2.bitwise_not(im_floodfill)
-    im_out = im_th | im_floodfill_inv
-    stencil = np.zeros(img.shape).astype('uint8')
-
-    # dilation = cv2.dilate(stencil,kernel,iterations = 2)
-    kernel = np.ones((10, 10), np.uint8)
-    eroded = cv2.erode(im_out, kernel, iterations=1)
-
-    contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
-    lc = []
-    c1 = max(contours, key=cv2.contourArea)
-    lc.append(c1)
-    area1 = cv2.contourArea(c1)
-
-    idx = get_index(c1, contours)  # 2
-    contours.pop(idx)
-    if len(contours) > 0:
-        cX = max(contours, key=cv2.contourArea)
-        area2 = cv2.contourArea(cX)
-        if area2 > (area1 * 0.05):
-            lc.append(cX)
-            # cv2.fillPoly(stencil, lc, 255)
-        idx = get_index(cX, contours)  # 2
-        contours.pop(idx)
-
-    if len(contours) > 0:
-        cX = max(contours, key=cv2.contourArea)
-        area3 = cv2.contourArea(cX)
-        if area3 > (area1 * 0.15):
-            lc.append(cX)
-            # cv2.fillPoly(stencil, lc, 100)
-        idx = get_index(cX, contours)  # 2
-        contours.pop(idx)
-    if len(contours) > 0:
-        cX = max(contours, key=cv2.contourArea)
-        area4 = cv2.contourArea(cX)
-        if area4 > (area3 * 0.5):
-            lc.append(cX)
-            # cv2.fillPoly(stencil, lc, 100)
-        idx = get_index(cX, contours)  # 2
-        contours.pop(idx)
-
-    cv2.fillPoly(stencil, lc, 255)
-
-    if len(contours) > 0:
-        cv2.fillPoly(stencil, contours, 0)
-
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
-    mask = cv2.dilate(stencil, kernel, iterations=2)
-    return mask
 
 
 def create_mask(animal, resolution, njobs):

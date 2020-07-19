@@ -4,6 +4,11 @@ needs an animal passed to the constructor
 It also needs for the animal, histology and scan run tables to be
 filled out for each animal to use
 """
+import logging
+import traceback
+import transaction
+###from logger import Log
+
 
 from collections import OrderedDict
 
@@ -154,3 +159,20 @@ class SqlController(object):
         except:
             print('Bad lookup code for {}'.format(lookup.id))
             self.session.rollback()
+
+"""
+    class SQLAlchemyHandler(logging.Handler):
+        # A very basic logger that commits a LogRecord to the SQL Db
+        def emit(self, record):
+            trace = None
+            exc = record.__dict__['exc_info']
+            if exc:
+                trace = traceback.format_exc()
+            log = Log(
+                logger=record.__dict__['name'],
+                level=record.__dict__['levelname'],
+                trace=trace,
+                msg=record.__dict__['msg'],)
+            self.session.add(log)
+            transaction.commit()
+"""
