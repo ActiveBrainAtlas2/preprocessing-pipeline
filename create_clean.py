@@ -105,8 +105,8 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
             #fixed = fill_spots(fixed)
 
 
-#        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
-        fixed = place_image(fixed, file, max_height, max_width, bgcolor)
+        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
+        #fixed = place_image(fixed, file, max_height, max_width, bgcolor)
         fixed[fixed == 0] = bgcolor
         cv2.imwrite(outpath, fixed.astype(dt))
     print('Finished')
