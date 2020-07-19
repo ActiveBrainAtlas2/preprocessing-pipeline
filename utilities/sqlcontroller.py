@@ -4,9 +4,9 @@ needs an animal passed to the constructor
 It also needs for the animal, histology and scan run tables to be
 filled out for each animal to use
 """
-import logging
-import traceback
-import transaction
+#import logging
+#import traceback
+#import transaction
 ###from logger import Log
 
 
