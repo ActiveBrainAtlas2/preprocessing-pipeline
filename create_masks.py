@@ -30,7 +30,7 @@ def create_mask(animal, resolution, njobs):
     MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
 
     if 'full' in resolution.lower():
-        INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'lzw')
+        INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
         files = sorted(os.listdir(INPUT))
