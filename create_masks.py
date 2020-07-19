@@ -35,7 +35,7 @@ def create_mask(animal, resolution, njobs):
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
         files = sorted(os.listdir(INPUT))
         commands = []
-        for i, file in enumerate(files[0:9]):
+        for i, file in enumerate(files):
             infile = os.path.join(INPUT, file)
             thumbfile = os.path.join(THUMBNAIL, file)
             outfile = os.path.join(MASKED, file)
