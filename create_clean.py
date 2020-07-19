@@ -17,8 +17,8 @@ from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK, CLEAN_CHANNEL_1_FULL_
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR, linnorm
-from utilities.utilities_mask import fill_spots
+from utilities.alignment_utility import get_last_2d, SCALING_FACTOR
+from utilities.utilities_mask import rotate_image, place_image, linnorm
 
 
 def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
@@ -76,7 +76,8 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
             continue
         img = get_last_2d(img)
         if channel == 1 and 'ntb' in stain.lower():
-            img = linnorm(img, 45000 , dt)
+            #pass
+            img = linnorm(img, 25000 , dt)
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
 
@@ -104,7 +105,8 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
             #fixed = fill_spots(fixed)
 
 
-        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
+#        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
+        fixed = place_image(fixed, file, max_height, max_width, bgcolor)
         fixed[fixed == 0] = bgcolor
         cv2.imwrite(outpath, fixed.astype(dt))
     print('Finished')

@@ -4,13 +4,29 @@ import pandas as pd
 import matplotlib
 import matplotlib.figure
 
+from utilities.alignment_utility import get_last_2d
 
-def get_last_2d(data):
-    if data.ndim <= 2:
-        return data
-    m, n = data.shape[-2:]
-    return data.flat[:m * n].reshape(m, n)
 
+def rotate_image(img, file, rotation):
+    try:
+        img = np.rot90(img, rotation)
+    except:
+        print('Could not rotate', file)
+    return img
+
+def linnorm(img, limit, dt):
+    flat = img.flatten()
+    hist, bins = np.histogram(flat, limit + 1)
+    cdf = hist.cumsum()  # cumulative distribution function
+    cdf = limit * cdf / cdf[-1]  # normalize
+    # use linear interpolation of cdf to find new pixel values
+    img_norm = np.interp(flat, bins[:-1], cdf)
+    img_norm = np.reshape(img_norm, img.shape)
+    return img_norm.astype(dt)
+
+def find_contour_count(img):
+    contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    return len(contours)
 
 def fix_with_blob(img):
     no_strip, fe = remove_strip(img)
@@ -129,7 +145,7 @@ def make_mask(img):
     return closing, scaled
 
 
-def place_image(img, max_width, max_height, bgcolor=None):
+def place_image(img, file, max_width, max_height, bgcolor=None):
     zmidr = max_height // 2
     zmidc = max_width // 2
     startr = zmidr - (img.shape[0] // 2)
@@ -143,14 +159,13 @@ def place_image(img, max_width, max_height, bgcolor=None):
         avg = np.mean(bottom_rows)
         bgcolor = int(round(avg))
     new_img = np.zeros([max_height, max_width]) + bgcolor
-    new_img[startr:endr, startc:endc] = img
+    try:
+        new_img[startr:endr, startc:endc] = img
+    except:
+        print('Could not place {} with width:{}, height:{} in {}x{}'
+              .format(file, img.shape[1], img.shape[0], max_width, max_height))
 
     return new_img.astype(dt)
-
-
-def rotate_image(img, rotation):
-    img = np.rot90(img, rotation)
-    return img
 
 
 def pad_with_black(img):
@@ -171,9 +186,12 @@ def get_index(array, list_of_arrays):
 
 def fill_spots(img):
     imgcopy = np.copy(img)
-    imgcopy = (imgcopy / 256).astype(np.uint8)
+    #imgcopy = (imgcopy / 256).astype(np.uint8)
 
     contours, hierarchy = cv2.findContours(imgcopy, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+    if len(contours) == 0:
+        return img
 
     c1 = max(contours, key=cv2.contourArea)
     area1 = cv2.contourArea(c1)
@@ -183,14 +201,14 @@ def fill_spots(img):
     if len(contours) > 0:
         cX = max(contours, key=cv2.contourArea)
         area2 = cv2.contourArea(cX)
-        if area2 > (area1 * 0.15):
+        if area2 > (area1 * 0.75):
             idx = get_index(cX, contours)  # 2
             contours.pop(idx)
 
     if len(contours) > 0:
         cX = max(contours, key=cv2.contourArea)
         area3 = cv2.contourArea(cX)
-        if area3 > (area2 * 0.15):
+        if area3 > (area2 * 0.75):
             idx = get_index(cX, contours)  # 2
             contours.pop(idx)
 
@@ -214,4 +232,73 @@ def fill_spots(img):
         cv2.fillPoly(img, contours, 0)
 
     return img
+
+
+
+def fix_with_fill(img, limit, dt):
+    no_strip, fe = remove_strip(img)
+    if fe != 0:
+        img[:, fe:] = 255  # mask the strip
+    img = pad_with_black(img)
+    img = (img / 256).astype(dt)
+    h_src = linnorm(img, limit, dt)
+    med = np.median(h_src)
+    h, im_th = cv2.threshold(h_src, med, limit, cv2.THRESH_BINARY)
+    im_floodfill = im_th.copy()
+    h, w = im_th.shape[:2]
+    mask = np.zeros((h + 2, w + 2), np.uint8)
+    cv2.floodFill(im_floodfill, mask, (0, 0), 255)
+    im_floodfill_inv = cv2.bitwise_not(im_floodfill)
+    im_out = im_th | im_floodfill_inv
+    stencil = np.zeros(img.shape).astype('uint8')
+
+    # dilation = cv2.dilate(stencil,kernel,iterations = 2)
+    kernel = np.ones((10, 10), np.uint8)
+    eroded = cv2.erode(im_out, kernel, iterations=1)
+
+    contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+    lc = []
+    c1 = max(contours, key=cv2.contourArea)
+    lc.append(c1)
+    area1 = cv2.contourArea(c1)
+
+    idx = get_index(c1, contours)  # 2
+    contours.pop(idx)
+    if len(contours) > 0:
+        cX = max(contours, key=cv2.contourArea)
+        area2 = cv2.contourArea(cX)
+        if area2 > (area1 * 0.05):
+            lc.append(cX)
+            # cv2.fillPoly(stencil, lc, 255)
+        idx = get_index(cX, contours)  # 2
+        contours.pop(idx)
+
+    if len(contours) > 0:
+        cX = max(contours, key=cv2.contourArea)
+        area3 = cv2.contourArea(cX)
+        if area3 > (area1 * 0.15):
+            lc.append(cX)
+            # cv2.fillPoly(stencil, lc, 100)
+        idx = get_index(cX, contours)  # 2
+        contours.pop(idx)
+    if len(contours) > 0:
+        cX = max(contours, key=cv2.contourArea)
+        area4 = cv2.contourArea(cX)
+        if area4 > (area3 * 0.5):
+            lc.append(cX)
+            # cv2.fillPoly(stencil, lc, 100)
+        idx = get_index(cX, contours)  # 2
+        contours.pop(idx)
+
+    cv2.fillPoly(stencil, lc, 255)
+
+    if len(contours) > 0:
+        cv2.fillPoly(stencil, contours, 0)
+    big_kernel = np.ones((12, 12), np.uint8)
+    dilation1 = cv2.erode(stencil, big_kernel, iterations=1)
+    dilation2 = cv2.dilate(dilation1, big_kernel, iterations=5)
+    mask = fill_spots(dilation2)
+
+    return mask
 
