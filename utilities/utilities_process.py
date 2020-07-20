@@ -14,5 +14,4 @@ def workershell(cmd):
     stdout_f = open(stdout_template, "w")
     stderr_f = open(stderr_template, "w")
     proc = subprocess.Popen(cmd, shell=True, stderr=stderr_f, stdout=stdout_f)
-
     proc.wait()

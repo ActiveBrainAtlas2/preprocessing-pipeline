@@ -17,24 +17,6 @@ from utilities.utilities_process import workershell
 from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
 
 
-def update_tif_data(self):
-    try:
-        os.listdir(self.fileLocationManager.tif)
-    except OSError as e:
-        print(e)
-        sys.exit()
-
-    slides = self.session.query(AlcSlide).filter(AlcSlide.scan_run_id.in_(self.scan_ids)).filter(
-        AlcSlide.slide_status == 'Good').all()
-    slide_ids = [slide.id for slide in slides]
-    tifs = self.session.query(AlcSlideCziTif).filter(AlcSlideCziTif.slide_id.in_(slide_ids)).filter(
-        AlcSlideCziTif.active == 1).all()
-    for tif in tifs:
-        if os.path.exists(os.path.join(self.fileLocationManager.tif, tif.file_name)):
-            tif.file_size = os.path.getsize(os.path.join(self.fileLocationManager.tif, tif.file_name))
-            self.session.merge(tif)
-    self.session.commit()
-
 
 def make_tifs(animal, channel, njobs):
     """
