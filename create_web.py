@@ -5,17 +5,18 @@ This file does the following operations:
 """
 import argparse
 import os
-from multiprocessing.pool import Pool
+import subprocess
 
 from tqdm import tqdm
 
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_process import workershell
 
 
-def make_web_thumbnails(animal, channel, njobs):
+def make_web_thumbnails(animal, channel):
     """
+    This was originally getting the thumbnails from the preps/thumbnail dir but they aren't usuable.
+    The ones in the preps/CHX/thumbnail_cleaned are much better
     Args:
         animal: the prep id of the animal
         channel: the channel of the stack to process
@@ -24,16 +25,16 @@ def make_web_thumbnails(animal, channel, njobs):
     Returns:
         nothing
     """
-
+    channel_dir = 'CH{}'.format(channel)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
-    INPUT = os.path.join(fileLocationManager.thumbnail)
-    OUTPUT = os.path.join(fileLocationManager.thumbnail_web)
+    INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'thumbnail_cleaned')
+    OUTPUT = fileLocationManager.thumbnail_web
     tifs = sqlController.get_sections(animal, channel)
 
     commands = []
-    for tif in tqdm(tifs):
-        input_path = os.path.join(INPUT, tif.file_name)
+    for i, tif in enumerate(tqdm(tifs)):
+        input_path = os.path.join(INPUT, str(i).zfill(3) + '.tif')
         output_path = os.path.join(OUTPUT, os.path.splitext(tif.file_name)[0] + '.png')
 
         if not os.path.exists(input_path):
@@ -44,19 +45,15 @@ def make_web_thumbnails(animal, channel, njobs):
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         cmd = "convert {} {}".format(input_path, output_path)
-        commands.append(cmd)
+        subprocess.run(cmd, shell=True)
 
-    with Pool(njobs) as p:
-        p.map(workershell, commands)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     args = parser.parse_args()
     animal = args.animal
-    njobs = int(args.njobs)
     channel = int(args.channel)
-    make_web_thumbnails(animal, channel, njobs)
+    make_web_thumbnails(animal, channel)
