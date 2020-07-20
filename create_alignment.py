@@ -186,7 +186,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
         if os.path.exists(output_fp):
             continue
 
-        cmd = "convert {}  +repage -virtual-pixel background -background '{}' {} -flatten -compress lzw {}"\
+        cmd = "convert {}  +repage -virtual-pixel background -background \'{}\' {} -flatten -compress lzw {}"\
             .format(input_fp, bgcolor, op_str, output_fp)
 
         commands.append(cmd)
