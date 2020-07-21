@@ -21,7 +21,7 @@ from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import (create_if_not_exists, load_consecutive_section_transform,
                                          convert_resolution_string_to_um, SCALING_FACTOR)
-from utilities.utilities_process import workernoshell
+from utilities.utilities_process import workernoshell, workershell
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -187,14 +187,14 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
 
         cmd = "convert {}  +repage -virtual-pixel background -background \"{}\" {} -flatten -compress lzw {}"\
             .format(input_fp, bgcolor, op_str, output_fp)
-        bgcolor = '\"{}\"'.format(bgcolor)
+        #bgcolor = '\"{}\"'.format(bgcolor)
 
-        cmd = ['convert', input_fp, '+repage', '-virtual-pixel', 'background', '-background',
-               bgcolor, op_str, '-flatten', '-compress', 'lzw', output_fp]
+        #cmd = ['convert', input_fp, '+repage', '-virtual-pixel', 'background', '-background',
+        #       bgcolor, op_str, '-flatten', '-compress', 'lzw', output_fp]
         commands.append(cmd)
 
     with Pool(njobs) as p:
-        p.map(workernoshell, commands)
+        p.map(workershell, commands)
 
 
 if __name__ == '__main__':
