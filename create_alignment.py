@@ -189,9 +189,8 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
             .format(input_fp, bgcolor, op_str, output_fp)
         bgcolor = '\"{}\"'.format(bgcolor)
 
-        cmd = ['convert', input_fp, '+regpage', '-virtual-pixel', 'background', '-background',
+        cmd = ['convert', input_fp, '+repage', '-virtual-pixel', 'background', '-background',
                bgcolor, op_str, '-flatten', '-compress', 'lzw', output_fp]
-        print(" ".join(cmd))
         commands.append(cmd)
 
     with Pool(njobs) as p:
