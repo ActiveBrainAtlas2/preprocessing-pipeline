@@ -5,13 +5,13 @@ This file does the following operations:
 """
 import argparse
 import os
+import subprocess
 from multiprocessing.pool import Pool
 
 from tqdm import tqdm
 
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_process import workershell
 from sql_setup import CREATE_CHANNEL_1_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS, CREATE_CHANNEL_3_THUMBNAILS
 
 
@@ -39,7 +39,6 @@ def make_thumbnails(animal, channel, njobs):
     else:
         sqlController.set_task(animal, CREATE_CHANNEL_3_THUMBNAILS)
 
-    commands = []
     for tif in tqdm(tifs):
         input_path = os.path.join(INPUT, tif.file_name)
         output_path = os.path.join(OUTPUT, tif.file_name)
@@ -51,11 +50,8 @@ def make_thumbnails(animal, channel, njobs):
             continue
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        cmd = "convert {} -resize 3.125% -compress lzw {}".format(input_path, output_path)
-        commands.append(cmd)
-
-    with Pool(njobs) as p:
-        p.map(workershell, commands)
+        cmd = ['convert', input_path, '-resize', '3.125%', '-compress', 'lzw', output_path]
+        subprocess.run(cmd)
 
 
 if __name__ == '__main__':
