@@ -21,7 +21,7 @@ from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import (create_if_not_exists, load_consecutive_section_transform,
                                          convert_resolution_string_to_um, SCALING_FACTOR)
-from utilities.utilities_process import workershell
+from utilities.utilities_process import workernoshell
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -64,12 +64,11 @@ def run_elastix(animal, njobs):
         subprocess.run(command)
         create_if_not_exists(output_subdir)
         param_fp = os.path.join(os.getcwd(), param_file)
-        command = '{} -f {} -m {} -p {} -out {}'\
-            .format(ELASTIX_BIN, prev_fp, curr_fp, param_fp, output_subdir)
-        commands.append(command)
+        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_fp, '-out', elastix_output_dir]
+        commands.append(cmd)
 
     with Pool(njobs) as p:
-        p.map(workershell, commands)
+        p.map(workernoshell, commands)
 
 
 def parse_elastix(animal):
@@ -188,10 +187,15 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
 
         cmd = "convert {}  +repage -virtual-pixel background -background \"{}\" {} -flatten -compress lzw {}"\
             .format(input_fp, bgcolor, op_str, output_fp)
+        bgcolor = '\"{}\"'.format(bgcolor)
+
+        cmd = ['convert', input_fp, '+regpage', '-virtual-pixel', 'background', '-background',
+               bgcolor, op_str, '-flatten', '-compress', 'lzw', output_fp]
+        print(" ".join(cmd))
         commands.append(cmd)
 
     with Pool(njobs) as p:
-        p.map(workershell, commands)
+        p.map(workernoshell, commands)
 
 
 if __name__ == '__main__':
