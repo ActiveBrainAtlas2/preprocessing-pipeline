@@ -63,8 +63,8 @@ def run_elastix(animal, njobs):
         command = ['rm', '-rf', output_subdir]
         subprocess.run(command)
         create_if_not_exists(output_subdir)
-        param_fp = os.path.join(os.getcwd(), param_file)
-        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_fp, '-out', elastix_output_dir]
+        #cmd = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_file, )
+        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_file, '-out', output_subdir]
         commands.append(cmd)
 
     with Pool(njobs) as p:
