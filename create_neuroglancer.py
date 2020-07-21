@@ -101,7 +101,6 @@ def run_neuroglancer(animal, channel, resolution):
 
 
     NEUROGLANCER =  os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
-    run_size_test(INPUT)
 
     convert_to_precomputed(INPUT, NEUROGLANCER)
 

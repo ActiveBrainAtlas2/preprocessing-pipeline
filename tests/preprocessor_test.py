@@ -44,7 +44,7 @@ def find_missing(dir, db_files):
     return (list(set(source_files) - set(files)))
 
 def fix_tifs(animal):
-    sqlController = SqlController()
+    sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
     dir = fileLocationManager.tif
     db_files = sqlController.get_valid_sections(animal)
@@ -89,12 +89,12 @@ def fix_prep_thumbnail(animal):
 
 
 def test_tif(animal):
-    sqlController = SqlController()
+    sqlController = SqlController(animal)
     checks = ['tif']
     fileLocationManager = FileLocationManager(animal)
     # tifs
     for name, dir in zip(checks, [fileLocationManager.tif]):
-        db_files = sqlController.get_valid_sections(animal)
+        db_files = sqlController.get_distinct_section_filenames(animal, 1)
         valid_file_length = len(db_files)
         dir_exists, lfiles, badsize = directory_filled(dir)
 
