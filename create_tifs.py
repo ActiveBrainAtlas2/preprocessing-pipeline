@@ -12,10 +12,10 @@ from multiprocessing.pool import Pool
 from tqdm import tqdm
 
 from utilities.file_location import FileLocationManager
+from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_process import workershell
 from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
-
 
 
 def make_tifs(animal, channel, njobs):
@@ -71,8 +71,6 @@ def make_tifs(animal, channel, njobs):
             sqlController.update_row(slide_czi_to_tif)
 
 
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
@@ -82,4 +80,9 @@ if __name__ == '__main__':
     animal = args.animal
     njobs = int(args.njobs)
     channel = int(args.channel)
+
+    # TEST loggers
+    logger = get_logger(animal)
+    logger.info('TEST: START make_tifs')
+
     make_tifs(animal, channel, njobs)
