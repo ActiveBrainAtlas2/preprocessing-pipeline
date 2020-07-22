@@ -17,7 +17,7 @@ from utilities.file_location import FileLocationManager
 from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR
 
 
-def clean_mask(animal, flip=False, rotation=0):
+def clean_mask(animal, rotation, flip):
     logger = get_logger(animal)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
@@ -30,7 +30,6 @@ def clean_mask(animal, flip=False, rotation=0):
     bgcolor = 0
 
     files = sorted(os.listdir(INPUT))
-
 
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
@@ -47,23 +46,19 @@ def clean_mask(animal, flip=False, rotation=0):
         if rotation > 0:
             fixed = rotate_image(fixed, file, rotation)
 
-        if flip == 'flip':
+        if flip:
             fixed = np.flip(fixed)
-
-        if flip == 'flop':
+        else:
             fixed = np.flip(fixed, axis=1)
 
-        #fixed = fill_spots(fixed)
-
+        # fixed = fill_spots(fixed)
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         cv2.imwrite(outpath, fixed.astype(np.uint8))
     print('Finished')
 
 
-
 if __name__ == '__main__':
-    # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--rotation', help='Enter rotation', required=False, default=0)
@@ -71,6 +66,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     animal = args.animal
-    flip = args.flip
     rotation = int(args.rotation)
-    clean_mask(animal, flip, rotation)
+    flip = bool({'flip': True, 'flop': False}[args.flip])
+
+    clean_mask(animal, rotation, flip)

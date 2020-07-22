@@ -11,11 +11,11 @@ from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOM
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 
-def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
 
+def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
     # ---------------- Conversion to precomputed format ----------------
-    voxel_resolution=[460, 460, 20000]
-    voxel_offset=[0, 0, 0]
+    voxel_resolution = [460, 460, 20000]
+    voxel_offset = [0, 0, 0]
 
     info_fullres_template = {
         "type": "image",
@@ -57,6 +57,7 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
     # compute_scales - build the precomputed for other scales
     compute_scales.main(['', folder_to_convert_to, '--flat', '--no-gzip'])
 
+
 def run_size_test(INPUT):
     imgs = os.listdir(INPUT)
     basefilename = imgs[0]
@@ -81,7 +82,7 @@ def run_size_test(INPUT):
         print('File sizes all match.')
 
 
-def run_neuroglancer(animal, channel, resolution):
+def run_neuroglancer(animal, channel, full):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)
@@ -89,7 +90,7 @@ def run_neuroglancer(animal, channel, resolution):
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
 
-    if 'full' in resolution.lower():
+    if full:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
         channel_outdir = 'C{}'.format(channel)
         if channel == 1:
@@ -99,19 +100,20 @@ def run_neuroglancer(animal, channel, resolution):
         else:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
 
-
-    NEUROGLANCER =  os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
+    NEUROGLANCER = os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
 
     convert_to_precomputed(INPUT, NEUROGLANCER)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
+
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
-    resolution = args.resolution
-    run_neuroglancer(animal, channel, resolution)
+    full = bool({'full': True, 'thumbnail': False}[args.resolution])
 
+    run_neuroglancer(animal, channel, full)

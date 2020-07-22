@@ -144,10 +144,12 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--single', help='Enter single or combined', required=True, default='single')
+
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
     single = bool({'single': True, 'combined': False}[args.single])
+
     if single:
         make_histogram(animal, channel)
     else:

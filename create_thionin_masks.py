@@ -23,16 +23,15 @@ def workershell(cmd):
     p = subprocess.Popen(cmd, shell=False, stderr=None, stdout=None)
     p.wait()
 
-def mask_thionin(animal, resolution='thumbnail'):
 
+def mask_thionin(animal, full):
     logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
     OUTPUT = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     files = os.listdir(INPUT)
 
-
-    if 'full' in resolution.lower():
+    if full:
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
@@ -50,7 +49,7 @@ def mask_thionin(animal, resolution='thumbnail'):
             height, width = src.shape
             del src
             resize = '{}x{}!'.format(width, height)
-            cmd = ['convert', thumbfile, '-resize', resize, '-compress','lzw', '-depth', '8', outfile]
+            cmd = ['convert', thumbfile, '-resize', resize, '-compress', 'lzw', '-depth', '8', outfile]
             commands.append(cmd)
 
         with Pool(4) as p:
@@ -118,15 +117,12 @@ def mask_thionin(animal, resolution='thumbnail'):
 
 
 if __name__ == '__main__':
-    # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
+
     args = parser.parse_args()
     animal = args.animal
-    resolution = args.resolution
-    # TEST loggers
-    logger = get_logger(animal)
-    logger.info('Create {} thionin masks'.format(resolution))
+    full = bool({'full': True, 'thumbnail': False}[args.resolution])
 
-    mask_thionin(animal, resolution)
+    mask_thionin(animal, full)
