@@ -28,7 +28,7 @@ def make_web_thumbnails(animal, channel):
     channel_dir = 'CH{}'.format(channel)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
-    INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'thumbnail_cleaned')
+    INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
     OUTPUT = fileLocationManager.thumbnail_web
     tifs = sqlController.get_sections(animal, channel)
 
@@ -48,12 +48,13 @@ def make_web_thumbnails(animal, channel):
         subprocess.run(cmd, shell=True)
 
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
+
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
+
     make_web_thumbnails(animal, channel)

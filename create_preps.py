@@ -57,9 +57,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--full', help='Enter full or thumbnail', required=True)
+    parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
+
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
-    full = bool({'full': True, 'thumbnail': False}[args.full])
+    full = bool({'full': True, 'thumbnail': False}[args.resolution])
+
     make_preps(animal, channel, full)

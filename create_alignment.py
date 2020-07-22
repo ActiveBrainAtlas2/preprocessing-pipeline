@@ -204,12 +204,14 @@ if __name__ == '__main__':
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
     parser.add_argument('--masks', help='Enter True for running masks', required=False, default=False)
+
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
     channel = args.channel
     resolution = args.resolution
     masks = args.masks
+
     run_elastix(animal, njobs)
     transforms = parse_elastix(animal)
     run_offsets(animal, transforms, channel, resolution, njobs, masks)

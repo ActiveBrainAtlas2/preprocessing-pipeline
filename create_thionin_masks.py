@@ -1,25 +1,17 @@
 import argparse
+import os
 import subprocess
 from multiprocessing.pool import Pool
 
+import cv2
 import numpy as np
-import matplotlib
-import matplotlib.figure
 from skimage import io
-from os.path import expanduser
 from tqdm import tqdm
 
-
-HOME = expanduser("~")
-import os, sys
-import cv2
-import pandas as pd
-
-
-sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
-from utilities.utilities_mask import get_index, fill_spots, get_last_2d
 from utilities.logger import get_logger
+from utilities.utilities_mask import get_index, fill_spots
+
 
 def workershell(cmd):
     """
@@ -31,15 +23,15 @@ def workershell(cmd):
     p = subprocess.Popen(cmd, shell=False, stderr=None, stdout=None)
     p.wait()
 
-def mask_thionin(animal, resolution='thumbnail'):
 
+def mask_thionin(animal, full):
+    logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
     OUTPUT = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     files = os.listdir(INPUT)
 
-
-    if 'full' in resolution.lower():
+    if full:
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
@@ -52,12 +44,12 @@ def mask_thionin(animal, resolution='thumbnail'):
             try:
                 src = io.imread(infile)
             except:
-                print('Could not open', infile)
+                logger.warning(f'Could not open {infile}')
                 continue
             height, width = src.shape
             del src
             resize = '{}x{}!'.format(width, height)
-            cmd = ['convert', thumbfile, '-resize', resize, '-compress','lzw', '-depth', '8', outfile]
+            cmd = ['convert', thumbfile, '-resize', resize, '-compress', 'lzw', '-depth', '8', outfile]
             commands.append(cmd)
 
         with Pool(4) as p:
@@ -125,15 +117,12 @@ def mask_thionin(animal, resolution='thumbnail'):
 
 
 if __name__ == '__main__':
-    # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
+
     args = parser.parse_args()
     animal = args.animal
-    resolution = args.resolution
-    # TEST loggers
-    logger = get_logger(animal)
-    logger.info('Create {} thionin masks'.format(resolution))
+    full = bool({'full': True, 'thumbnail': False}[args.resolution])
 
-    mask_thionin(animal, resolution)
+    mask_thionin(animal, full)
