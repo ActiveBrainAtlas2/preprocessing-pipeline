@@ -76,13 +76,13 @@ class SqlController(object):
         """
         Very similar to the get_sections query but this will return a list of
         distinct file names. Since some of the scenes get duplicated in the QA process,
-        we need to get the without duplicates. The duplicates will then get replicated
-        with the get_sections method. The order doesn't matter.
+        we need to get the tifs without duplicates. The duplicates will then get replicated
+        with the get_sections method. The order doesn't matter here.
         Args:
             animal: the animal to query
             channel: 1 or 2 or 3.
 
-        Returns: list of sections in order with distinct file namnes
+        Returns: list of sections with distinct file names
 
         """
         sections = self.session.query(Section.czi_file, Section.file_name, Section.scene_index, Section.channel_index).distinct()\
