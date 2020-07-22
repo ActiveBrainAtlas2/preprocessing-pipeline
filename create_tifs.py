@@ -77,6 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
+
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)

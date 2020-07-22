@@ -16,7 +16,7 @@ from utilities.utilities_mask import fix_with_fill
 from utilities.utilities_process import workershell
 
 
-def create_mask(animal, resolution, njobs):
+def create_mask(animal, full, njobs):
     logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
@@ -24,7 +24,7 @@ def create_mask(animal, resolution, njobs):
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
     MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
 
-    if 'full' in resolution.lower():
+    if full:
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
@@ -65,13 +65,14 @@ def create_mask(animal, resolution, njobs):
 
 
 if __name__ == '__main__':
-    # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
+
     args = parser.parse_args()
     animal = args.animal
-    resolution = args.resolution
+    full = bool({'full': True, 'thumbnail': False}[args.resolution])
     njobs = int(args.njobs)
-    create_mask(animal, resolution, njobs)
+
+    create_mask(animal, full, njobs)

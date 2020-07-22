@@ -20,7 +20,7 @@ from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, linnorm
 
 
-def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
+def masker(animal, channel, rotation=0, flip=False, full=False):
     logger = get_logger(animal)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
@@ -39,7 +39,7 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
     if channel == 1:
         sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)
 
-    if 'full' in resolution.lower():
+    if full:
         CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full')
         MASKS = os.path.join(fileLocationManager.prep, 'full_masked')
@@ -87,10 +87,9 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
         if rotation > 0:
             fixed = rotate_image(fixed, file, rotation)
 
-        if flip == 'flip':
+        if flip:
             fixed = np.flip(fixed)
-
-        if flip == 'flop':
+        else:
             fixed = np.flip(fixed, axis=1)
 
         if channel == 1 and 'ntb' in stain.lower():
@@ -107,18 +106,18 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
 
 
 if __name__ == '__main__':
-    # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--rotation', help='Enter rotation', required=False, default=0)
-    parser.add_argument('--flip', help='flip or flop', required=False)
-    parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--flip', help='Enter flip or flop', required=False)
+    parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
-    flip = args.flip
     rotation = int(args.rotation)
-    resolution = args.resolution
-    masker(animal, channel, flip, rotation, resolution)
+    flip = bool({'flip': True, 'flop': False}[args.flip])
+    full = bool({'full': True, 'thumbnail': False}[args.resolution])
+
+    masker(animal, channel, rotation, flip, full)
