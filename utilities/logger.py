@@ -6,7 +6,7 @@ from model.log import Log
 
 class DatabaseHandler(logging.Handler):
     def emit(self, record):
-        log = Log(prep_id=record.name, logger=record.name, msg=record.msg)
+        log = Log(prep_id=record.name, level=record.levelname, logger=record.module, msg=record.msg)
         session.add(log)
         session.commit()
 
