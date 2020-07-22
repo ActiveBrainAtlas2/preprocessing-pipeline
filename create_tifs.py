@@ -29,6 +29,7 @@ def make_tifs(animal, channel, njobs):
         nothing
     """
 
+    logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = fileLocationManager.czi
@@ -60,7 +61,7 @@ def make_tifs(animal, channel, njobs):
     try:
         os.listdir(fileLocationManager.tif)
     except OSError as e:
-        print(e)
+        logger.error(f'Could not find {fileLocationManager.tif}')
         sys.exit()
 
     slide_czi_to_tifs = sqlController.get_slide_czi_to_tifs(channel)
@@ -80,9 +81,5 @@ if __name__ == '__main__':
     animal = args.animal
     njobs = int(args.njobs)
     channel = int(args.channel)
-
-    # TEST loggers
-    logger = get_logger(animal)
-    logger.info('TEST: START make_tifs')
 
     make_tifs(animal, channel, njobs)

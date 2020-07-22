@@ -1,28 +1,23 @@
 import argparse
-import subprocess
+import os
 from multiprocessing.pool import Pool
+
+import cv2
 import numpy as np
 from skimage import io
-from os.path import expanduser
 from tqdm import tqdm
 
 from sql_setup import CREATE_THUMBNAIL_MASKS
-
-HOME = expanduser("~")
-import os, sys
-import cv2
-
-sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.alignment_utility import get_last_2d
 from utilities.file_location import FileLocationManager
+from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import fix_with_fill, linnorm
+from utilities.utilities_mask import fix_with_fill
 from utilities.utilities_process import workershell
 
 
-
 def create_mask(animal, resolution, njobs):
-
+    logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     sqlController.set_task(animal, CREATE_THUMBNAIL_MASKS)
@@ -42,7 +37,7 @@ def create_mask(animal, resolution, njobs):
             try:
                 src = io.imread(infile)
             except:
-                print('Could not open', infile)
+                logger.warning(f'Could not open {infile}')
                 continue
             src = get_last_2d(src)
             height, width = src.shape
@@ -52,10 +47,7 @@ def create_mask(animal, resolution, njobs):
 
         with Pool(njobs) as p:
             p.map(workershell, commands)
-
-
     else:
-
         files = sorted(os.listdir(INPUT))
 
         for i, file in enumerate(tqdm(files)):
@@ -63,13 +55,14 @@ def create_mask(animal, resolution, njobs):
             try:
                 img = io.imread(infile)
             except:
-                print('Could not open', infile)
+                logger.warning(f'Could not open {infile}')
                 continue
             img = get_last_2d(img)
             mask = fix_with_fill(img, 250, np.uint8)
             # save the mask
             outpath = os.path.join(MASKED, file)
             cv2.imwrite(outpath, mask.astype('uint8'))
+
 
 if __name__ == '__main__':
     # Parsing argument
@@ -82,5 +75,3 @@ if __name__ == '__main__':
     resolution = args.resolution
     njobs = int(args.njobs)
     create_mask(animal, resolution, njobs)
-
-
