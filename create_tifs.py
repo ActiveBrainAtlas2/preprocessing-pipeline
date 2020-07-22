@@ -29,6 +29,7 @@ def make_tifs(animal, channel, njobs):
         nothing
     """
 
+    logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = fileLocationManager.czi
@@ -60,7 +61,7 @@ def make_tifs(animal, channel, njobs):
     try:
         os.listdir(fileLocationManager.tif)
     except OSError as e:
-        print(e)
+        logger.error(f'Could not find {fileLocationManager.tif}')
         sys.exit()
 
     slide_czi_to_tifs = sqlController.get_slide_czi_to_tifs(channel)
@@ -76,13 +77,12 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
+
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
     channel = int(args.channel)
 
-    # TEST loggers
     logger = get_logger(animal)
     logger.info('Make channel {} tifs'.format(channel))
-
     make_tifs(animal, channel, njobs)
