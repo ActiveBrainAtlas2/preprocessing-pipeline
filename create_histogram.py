@@ -11,6 +11,7 @@ from skimage import io
 from tqdm import tqdm
 import numpy as np
 from utilities.file_location import FileLocationManager
+from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from sql_setup import CREATE_CHANNEL_1_HISTOGRAMS, CREATE_CHANNEL_2_HISTOGRAMS, CREATE_CHANNEL_3_HISTOGRAMS
 
@@ -27,6 +28,7 @@ def make_histogram(animal, channel):
         nothing
     """
 
+    logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = os.path.join(fileLocationManager.thumbnail)
@@ -47,6 +49,7 @@ def make_histogram(animal, channel):
         try:
             img = io.imread(input_path)
         except:
+            logger.warning(f'Could not open {input_path}')
             continue
 
         if img.shape[0] * img.shape[1] > 1000000000:
@@ -56,6 +59,7 @@ def make_histogram(animal, channel):
         try:
             flat = img.flatten()
         except:
+            logger.warning(f'Could not flat {input_path}')
             continue
 
         fig = plt.figure()
@@ -73,18 +77,20 @@ def make_histogram(animal, channel):
 
 
 def make_combined(animal, channel):
+    logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.thumbnail)
     OUTPUT = os.path.join(fileLocationManager.brain_info)
     files = os.listdir(INPUT)
     lfiles = len(files)
     hist_dict = Counter({})
+
     for file in tqdm(files):
         filepath = os.path.join(INPUT,file)
         try:
             img = io.imread(filepath)
         except:
-            print('cannot read file',file)
+            logger.error(f'Could not read {filepath}')
             lfiles -= 1
             break
         try:
@@ -92,26 +98,26 @@ def make_combined(animal, channel):
             #flat = np.random.choice(flat, 1000)
             del img
         except:
-            print('cannot flatten file',file)
+            logger.error(f'Could not flatten file {filepath}')
             lfiles -= 1
             break
         try:
             #hist,bins = np.histogram(flat, bins=nbins)
             img_counts = np.bincount(flat)
         except:
-            print('could not create counts',file)
+            logger.error(f'Could not create counts {filepath}')
             lfiles -= 1
             break
         try:
             img_dict = Counter(dict(zip(np.unique(flat), img_counts[img_counts.nonzero()])))
         except:
-            print('could not create counter',file)
+            logger.error(f'Could not create counter {filepath}')
             lfiles -= 1
             break
         try:
             hist_dict = hist_dict + img_dict
         except:
-            print('could not add files',file)
+            logger.error(f'Could not add files {filepath}')
             lfiles -= 1
             break
 

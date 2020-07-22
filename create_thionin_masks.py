@@ -1,25 +1,17 @@
 import argparse
+import os
 import subprocess
 from multiprocessing.pool import Pool
 
+import cv2
 import numpy as np
-import matplotlib
-import matplotlib.figure
 from skimage import io
-from os.path import expanduser
 from tqdm import tqdm
 
-
-HOME = expanduser("~")
-import os, sys
-import cv2
-import pandas as pd
-
-
-sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
-from utilities.utilities_mask import get_index, fill_spots, get_last_2d
 from utilities.logger import get_logger
+from utilities.utilities_mask import get_index, fill_spots
+
 
 def workershell(cmd):
     """
@@ -33,6 +25,7 @@ def workershell(cmd):
 
 def mask_thionin(animal, resolution='thumbnail'):
 
+    logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
     OUTPUT = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
@@ -52,7 +45,7 @@ def mask_thionin(animal, resolution='thumbnail'):
             try:
                 src = io.imread(infile)
             except:
-                print('Could not open', infile)
+                logger.warning(f'Could not open {infile}')
                 continue
             height, width = src.shape
             del src

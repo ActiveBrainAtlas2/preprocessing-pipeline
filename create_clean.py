@@ -4,30 +4,29 @@ on channel 1. It works on channel one also, but since that is already cleaned an
 normalized, it will just to the rotation and flip
 """
 import argparse
+import os
 
+import cv2
 import numpy as np
 from skimage import io
 from tqdm import tqdm
-import os, sys
-import cv2
 
 from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK, CLEAN_CHANNEL_1_FULL_RES_WITH_MASK, \
     CLEAN_CHANNEL_2_FULL_RES_WITH_MASK, CLEAN_CHANNEL_3_FULL_RES_WITH_MASK
-
-sys.path.append(os.path.join(os.getcwd(), '../'))
-from utilities.sqlcontroller import SqlController
-from utilities.file_location import FileLocationManager
 from utilities.alignment_utility import get_last_2d, SCALING_FACTOR
+from utilities.file_location import FileLocationManager
+from utilities.logger import get_logger
+from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, linnorm
 
 
 def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
-
+    logger = get_logger(animal)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
     channel_dir = 'CH{}'.format(channel)
     CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
-    INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'thumbnail')
+    INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
     MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
@@ -39,7 +38,6 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
     stain = sqlController.histology.counterstain
     if channel == 1:
         sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)
-
 
     if 'full' in resolution.lower():
         CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
@@ -54,15 +52,12 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
         else:
             sqlController.set_task(animal, CLEAN_CHANNEL_3_FULL_RES_WITH_MASK)
 
-
     if 'thion' in stain.lower():
         bgcolor = 230
         dt = 'uint8'
         limit = 2 ** 8 - 1
 
-
     files = sorted(os.listdir(INPUT))
-
 
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
@@ -72,12 +67,12 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
         try:
             img = io.imread(infile)
         except:
-            print('Could not open', infile)
+            logger.warning(f'Could not open {infile}')
             continue
         img = get_last_2d(img)
         if channel == 1 and 'ntb' in stain.lower():
-            #pass
-            img = linnorm(img, 25000 , dt)
+            # pass
+            img = linnorm(img, 25000, dt)
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
 
@@ -99,18 +94,16 @@ def masker(animal, channel, flip=False, rotation=0, resolution='thumbnail'):
             fixed = np.flip(fixed, axis=1)
 
         if channel == 1 and 'ntb' in stain.lower():
-            #pass
+            # pass
             clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
             fixed = clahe.apply(fixed.astype(dt))
-            #fixed = fill_spots(fixed)
-
+            # fixed = fill_spots(fixed)
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
-        #fixed = place_image(fixed, file, max_height, max_width, bgcolor)
+        # fixed = place_image(fixed, file, max_height, max_width, bgcolor)
         fixed[fixed == 0] = bgcolor
         cv2.imwrite(outpath, fixed.astype(dt))
     print('Finished')
-
 
 
 if __name__ == '__main__':
