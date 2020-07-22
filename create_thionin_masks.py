@@ -8,6 +8,8 @@ import matplotlib.figure
 from skimage import io
 from os.path import expanduser
 from tqdm import tqdm
+
+
 HOME = expanduser("~")
 import os, sys
 import cv2
@@ -17,6 +19,7 @@ import pandas as pd
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
 from utilities.utilities_mask import get_index, fill_spots, get_last_2d
+from utilities.logger import get_logger
 
 def workershell(cmd):
     """
@@ -129,4 +132,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     animal = args.animal
     resolution = args.resolution
+    # TEST loggers
+    logger = get_logger(animal)
+    logger.info('Create {} thionin masks'.format(resolution))
+
     mask_thionin(animal, resolution)
