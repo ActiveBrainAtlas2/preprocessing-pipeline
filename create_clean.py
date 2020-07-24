@@ -20,7 +20,7 @@ from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, linnorm
 
 
-def masker(animal, channel, rotation=0, flip=False, full=False):
+def masker(animal, channel, flip, rotation=0, full=False):
     logger = get_logger(animal)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
@@ -70,9 +70,6 @@ def masker(animal, channel, rotation=0, flip=False, full=False):
             logger.warning(f'Could not open {infile}')
             continue
         img = get_last_2d(img)
-        if channel == 1 and 'ntb' in stain.lower():
-            # pass
-            img = linnorm(img, 25000, dt)
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
 
@@ -82,14 +79,13 @@ def masker(animal, channel, rotation=0, flip=False, full=False):
         ##img = np.int16(img)
         mask = np.int8(mask16)
         fixed = cv2.bitwise_and(img, img, mask=mask)
-        del mask
 
         if rotation > 0:
             fixed = rotate_image(fixed, file, rotation)
 
-        if flip:
+        if flip == 'flip':
             fixed = np.flip(fixed)
-        else:
+        if flip == 'flop':
             fixed = np.flip(fixed, axis=1)
 
         if channel == 1 and 'ntb' in stain.lower():
@@ -99,7 +95,8 @@ def masker(animal, channel, rotation=0, flip=False, full=False):
             # fixed = fill_spots(fixed)
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
-        # fixed = place_image(fixed, file, max_height, max_width, bgcolor)
+        #fixed = linnorm(fixed, 25000, dt)
+        #fixed = place_image(fixed, file, max_height, max_width, bgcolor)
         fixed[fixed == 0] = bgcolor
         cv2.imwrite(outpath, fixed.astype(dt))
     print('Finished')
@@ -117,7 +114,8 @@ if __name__ == '__main__':
     animal = args.animal
     channel = int(args.channel)
     rotation = int(args.rotation)
-    flip = bool({'flip': True, 'flop': False}[args.flip])
+    flip = args.flip
     full = bool({'full': True, 'thumbnail': False}[args.resolution])
 
-    masker(animal, channel, rotation, flip, full)
+    masker(animal, channel, flip, rotation, full)
+
