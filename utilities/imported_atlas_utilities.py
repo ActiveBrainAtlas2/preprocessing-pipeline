@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from multiprocessing.pool import Pool
 import matplotlib.pyplot as plt
 
@@ -10,6 +11,7 @@ import json
 from collections import defaultdict
 import re
 from skimage.measure import find_contours, regionprops
+from skimage.filters import gaussian
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.sqlcontroller import SqlController
@@ -18,42 +20,6 @@ from utilities.file_location import CSHL_DIR as VOLUME_ROOTDIR, FileLocationMana
 from utilities.coordinates_converter import CoordinatesConverter
 SECTION_THICKNESS = 20. # in um
 REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_registration_parameters'
-
-
-#high_contrast_colors = boynton_colors.values() + kelly_colors.values()
-
-hc_perm = [ 0,  5, 28, 26, 12, 11,  4,  8, 25, 22,  3,  1, 20, 19, 27, 13, 24,
-       17, 16, 15,  7, 14, 21, 18, 23,  2, 10,  9,  6]
-#high_contrast_colors = [high_contrast_colors[i] for i in hc_perm]
-#name_sided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
-#                     for i, s in enumerate(all_known_structures_sided) }
-#name_sided_to_color_float = {s: np.array(c)/255. for s, c in name_sided_to_color.iteritems()}
-
-#name_unsided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
-#                     for i, s in enumerate(all_known_structures) }
-#name_unsided_to_color_float = {s: np.array(c)/255. for s, c in name_unsided_to_color.iteritems()}
-
-#stack_to_color = {n: high_contrast_colors[i%len(high_contrast_colors)] for i, n in enumerate(all_stacks)}
-#stack_to_color_float = {s: np.array(c)/255. for s, c in stack_to_color.iteritems()}
-
-#name_unsided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
-#                     for i, s in enumerate(all_known_structures) }
-
-# Load all structures
-paired_structures = ['5N', '6N', '7N', '7n', 'Amb', 'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC', \
-                     'SNC', 'SNR', '3N', '4N', 'Sp5I', 'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
-# singular_structures = ['AP', '12N', 'RtTg', 'sp5', 'outerContour', 'SC', 'IC']
-singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
-
-# Make a list of all structures INCLUDING left and right variants
-all_structures_total = list(singular_structures)
-rh_structures = []
-lh_structures = []
-for structure in paired_structures:
-    all_structures_total.append(structure + '_R')
-    all_structures_total.append(structure + '_L')
-    rh_structures.append(structure + '_R')
-    lh_structures.append(structure + '_L')
 
 
 # print all_structures_total
@@ -1837,3 +1803,507 @@ def compute_covar_from_instance_centroids(instance_centroids):
         ellipsoid_matrix_allStructures[name_s] = vt
 
     return cov_mat_allStructures, radii_allStructures, ellipsoid_matrix_allStructures
+
+
+
+############## Colors ##############
+
+boynton_colors = dict(blue=(0,0,255),
+    red=(255,0,0),
+    green=(0,255,0),
+    yellow=(255,255,0),
+    magenta=(255,0,255),
+    pink=(255,128,128),
+    gray=(128,128,128),
+    brown=(128,0,0),
+    orange=(255,128,0))
+
+kelly_colors = dict(vivid_yellow=(255, 179, 0),
+                    strong_purple=(128, 62, 117),
+                    vivid_orange=(255, 104, 0),
+                    very_light_blue=(166, 189, 215),
+                    vivid_red=(193, 0, 32),
+                    grayish_yellow=(206, 162, 98),
+                    medium_gray=(129, 112, 102),
+
+                    # these aren't good for people with defective color vision:
+                    vivid_green=(0, 125, 52),
+                    strong_purplish_pink=(246, 118, 142),
+                    strong_blue=(0, 83, 138),
+                    strong_yellowish_pink=(255, 122, 92),
+                    strong_violet=(83, 55, 122),
+                    vivid_orange_yellow=(255, 142, 0),
+                    strong_purplish_red=(179, 40, 81),
+                    vivid_greenish_yellow=(244, 200, 0),
+                    strong_reddish_brown=(127, 24, 13),
+                    vivid_yellowish_green=(147, 170, 0),
+                    deep_yellowish_brown=(89, 51, 21),
+                    vivid_reddish_orange=(241, 58, 19),
+                    dark_olive_green=(35, 44, 22))
+
+#high_contrast_colors = boynton_colors.values() + kelly_colors.values()
+bc = list(boynton_colors.values())
+kc = list(kelly_colors.values())
+high_contrast_colors  = bc + kc
+hc_perm = [ 0,  5, 28, 26, 12, 11,  4,  8, 25, 22,  3,  1, 20, 19, 27, 13, 24,
+       17, 16, 15,  7, 14, 21, 18, 23,  2, 10,  9,  6]
+high_contrast_colors = [high_contrast_colors[i] for i in hc_perm]
+
+
+paired_structures = ['5N', '6N', '7N', '7n', 'Amb', 'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC', 'SNC', 'SNR', '3N', '4N',
+                    'Sp5I', 'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
+# singular_structures = ['AP', '12N', 'RtTg', 'sp5', 'outerContour', 'SC', 'IC']
+singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
+singular_structures_with_side_suffix = ['AP_S', '12N_S', 'RtTg_S', 'SC_S', 'IC_S']
+all_known_structures = paired_structures + singular_structures
+all_known_structures_sided = sum([[n] if n in singular_structures
+                        else [convert_to_left_name(n), convert_to_right_name(n)]
+                        for n in all_known_structures], [])
+
+
+name_sided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
+                     for i, s in enumerate(all_known_structures_sided) }
+name_sided_to_color_float = {s: np.array(c)/255. for s, c in name_sided_to_color.items()}
+
+name_unsided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
+                     for i, s in enumerate(all_known_structures) }
+name_unsided_to_color_float = {s: np.array(c)/255. for s, c in name_unsided_to_color.items()}
+
+#stack_to_color = {n: high_contrast_colors[i%len(high_contrast_colors)] for i, n in enumerate(all_stacks)}
+#stack_to_color_float = {s: np.array(c)/255. for s, c in stack_to_color.iteritems()}
+
+name_unsided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
+                     for i, s in enumerate(all_known_structures) }
+
+# Load all structures
+paired_structures = ['5N', '6N', '7N', '7n', 'Amb', 'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC', \
+                     'SNC', 'SNR', '3N', '4N', 'Sp5I', 'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
+# singular_structures = ['AP', '12N', 'RtTg', 'sp5', 'outerContour', 'SC', 'IC']
+singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
+
+# Make a list of all structures INCLUDING left and right variants
+all_structures_total = list(singular_structures)
+rh_structures = []
+lh_structures = []
+for structure in paired_structures:
+    all_structures_total.append(structure + '_R')
+    all_structures_total.append(structure + '_L')
+    rh_structures.append(structure + '_R')
+    lh_structures.append(structure + '_L')
+
+def get_structure_mean_positions_filepath(atlas_name, resolution, **kwargs):
+    """
+    Filepath of the structure mean positions.
+    """
+    MESH_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_meshes'
+    return os.path.join(MESH_ROOTDIR, atlas_name, atlas_name + '_' + resolution + '_meanPositions.pkl')
+
+"""
+def save_data(data, fp, upload_s3=True):
+    import bloscpack as bp
+
+    from vis3d_utilities import save_mesh_stl
+
+    os.makedirs(os.path.dirname(fp), exist_ok=True)
+
+    if fp.endswith('.bp'):
+        try:
+            bp.pack_ndarray_file(np.ascontiguousarray(data), fp)
+            # ascontiguousarray is important, without which sometimes the loaded array will be different from saved.
+        except:
+            fp = fp.replace('.bp','.npy')
+            np.save( fp, np.ascontiguousarray(data))
+    elif fp.endswith('.npy'):
+        np.save( fp, np.ascontiguousarray(data))
+    elif fp.endswith('.json'):
+        save_json(data, fp)
+    elif fp.endswith('.pkl'):
+        save_pickle(data, fp)
+    elif fp.endswith('.hdf'):
+        save_hdf_v2(data, fp)
+    elif fp.endswith('.stl'):
+        save_mesh_stl(data, fp)
+    elif fp.endswith('.txt'):
+        if isinstance(data, np.ndarray):
+            np.savetxt(fp, data)
+        else:
+            raise
+    elif fp.endswith('.dump'): # sklearn classifiers
+        import joblib
+        joblib.dump(data, fp)
+    elif fp.endswith('.png') or fp.endswith('.tif') or fp.endswith('.jpg'):
+        io.imsave(fp, data)
+    else:
+        raise
+"""
+
+def parallel_where_binary(binary_volume, num_samples=None):
+    """
+    Returns:
+        (n,3)-ndarray
+    """
+
+    w = np.where(binary_volume)
+
+    if num_samples is not None:
+        n = len(w[0])
+        sample_indices = np.random.choice(range(n), min(num_samples, n), replace=False)
+        return np.c_[w[1][sample_indices].astype(np.int16),
+                     w[0][sample_indices].astype(np.int16),
+                     w[2][sample_indices].astype(np.int16)]
+    else:
+        return np.c_[w[1].astype(np.int16), w[0].astype(np.int16), w[2].astype(np.int16)]
+
+
+def compute_bspline_cp_contribution_to_test_pts(control_points, test_points):
+    """
+    Args:
+        control_points (1d-array): normalized in the unit of spacing interval
+        test_points (1d-array): normalized in the unit of spacing interval
+    """
+
+    test_points_x_normalized = test_points
+    ctrl_point_x_normalized = control_points
+
+    D = np.subtract.outer(test_points_x_normalized, ctrl_point_x_normalized) # (#testpts, #ctrlpts)
+
+    in_1 = ((D >= 0) & (D < 1)).astype(np.int)
+    in_2 = ((D >= 1) & (D < 2)).astype(np.int)
+    in_3 = ((D >= 2) & (D < 3)).astype(np.int)
+    in_4 = ((D >= 3) & (D < 4)).astype(np.int)
+    F = in_1 * D**3/6. + \
+    in_2 * (D**2*(2-D)/6. + D*(3-D)*(D-1)/6. + (4-D)*(D-1)**2/6.) + \
+    in_3 * (D*(3-D)**2/6. + (4-D)*(3-D)*(D-1)/6. + (4-D)**2*(D-2)/6.) + \
+    in_4 * (4-D)**3/6.
+
+    return F.T # (#ctrl, #test)
+
+
+def convert_volume_forms(volume, out_form):
+    """
+    Convert a (volume, origin) tuple into a bounding box.
+    """
+
+    if isinstance(volume, np.ndarray):
+        vol = volume
+        ori = np.zeros((3,))
+    elif isinstance(volume, tuple):
+        assert len(volume) == 2
+        vol = volume[0]
+        if len(volume[1]) == 3:
+            ori = volume[1]
+        elif len(volume[1]) == 6:
+            ori = volume[1][[0,2,4]]
+        else:
+            raise
+
+    bbox = np.array([ori[0], ori[0] + vol.shape[1]-1, ori[1], ori[1] + vol.shape[0]-1, ori[2], ori[2] + vol.shape[2]-1])
+
+    if out_form == ("volume", 'origin'):
+        return (vol, ori)
+    elif out_form == ("volume", 'bbox'):
+        return (vol, bbox)
+    elif out_form == "volume":
+        return vol
+    else:
+        raise Exception("out_form %s is not recognized.")
+
+
+def transform_points_affine(T, pts=None, c=(0,0,0), pts_centered=None, c_prime=(0,0,0)):
+    '''
+    Transform points by a rigid or affine transform.
+
+    Args:
+        T ((nparams,)-ndarray): flattened array of transform parameters.
+        c ((3,)-ndarray): origin of input points
+        c_prime((3,)-ndarray): origin of output points
+        pts ((n,3)-ndararay): coodrinates of input points
+    '''
+
+    if pts_centered is None:
+        assert pts is not None
+        pts_centered = pts - c
+
+    Tm = np.reshape(T, (3,4))
+    t = Tm[:, 3]
+    A = Tm[:, :3]
+    pts_prime = np.dot(A, pts_centered.T) + (t + c_prime)[:,None]
+
+    return pts_prime.T
+
+
+def compute_gradient_v2(volume, smooth_first=False, dtype=np.float16):
+    """
+    Args:
+        volume
+        smooth_first (bool): If true, smooth each volume before computing gradients.
+        This is useful if volume is binary and gradients are only nonzero at structure borders.
+    Note:
+        # 3.3 second - re-computing is much faster than loading
+        # .astype(np.float32) is important;
+        # Otherwise the score volume is type np.float16, np.gradient requires np.float32 and will have to convert which is very slow
+        # 2s (float32) vs. 20s (float16)
+    """
+
+    if isinstance(volume, dict):
+
+        # gradients = {}
+        # for ind, (v, o) in volumes.iteritems():
+        #     print "Computing gradient for", ind
+        #     # t1 = time.time()
+        #     gradients[ind] = (compute_gradient_v2((v, o), smooth_first=smooth_first), o)
+        #     # sys.stderr.write("Overall: %.2f seconds.\n" % (time.time()-t1))
+
+        gradients = {ind: compute_gradient_v2((v, o), smooth_first=smooth_first)
+                     for ind, (v, o) in volume.items()}
+
+        return gradients
+
+    else:
+        v, o = convert_volume_forms(volume, out_form=("volume", "origin"))
+
+        g = np.zeros((3,) + v.shape)
+
+        # t = time.time()
+        cropped_v, (xmin,xmax,ymin,ymax,zmin,zmax) = crop_volume_to_minimal(v, margin=5, return_origin_instead_of_bbox=False)
+        # sys.stderr.write("Crop: %.2f seconds.\n" % (time.time()-t))
+
+        if smooth_first:
+            # t = time.time()
+            cropped_v = gaussian(cropped_v, 3)
+            # sys.stderr.write("Smooth: %.2f seconds.\n" % (time.time()-t))
+
+        # t = time.time()
+        cropped_v_gy_gx_gz = np.gradient(cropped_v.astype(np.float32), 3, 3, 3)
+        # sys.stderr.write("Compute gradient: %.2f seconds.\n" % (time.time()-t))
+
+        g[0][ymin:ymax+1, xmin:xmax+1, zmin:zmax+1] = cropped_v_gy_gx_gz[1]
+        g[1][ymin:ymax+1, xmin:xmax+1, zmin:zmax+1] = cropped_v_gy_gx_gz[0]
+        g[2][ymin:ymax+1, xmin:xmax+1, zmin:zmax+1] = cropped_v_gy_gx_gz[2]
+
+        return g.astype(dtype), o
+
+
+def transform_points_bspline(buvwx, buvwy, buvwz,
+                             volume_shape=None, interval=None,
+                             ctrl_x_intervals=None,
+                             ctrl_y_intervals=None,
+                             ctrl_z_intervals=None,
+                             pts=None, c=(0,0,0), pts_centered=None, c_prime=(0,0,0),
+                            NuNvNw_allTestPts=None):
+    """
+    Transform points by a B-spline transform.
+
+    Args:
+        volume_shape ((3,)-ndarray of int): (xdim, ydim, zdim)
+        interval (int): control point spacing in x,y,z directions.
+        pts ((n,3)-ndarray): input point coordinates.
+        NuNvNw_allTestPts ((n_test, n_ctrlx * n_ctrly * n_ctrlz)-array)
+
+    Returns:
+        transformed_pts ((n,3)-ndarray): transformed point coordinates.
+    """
+
+    if pts_centered is None:
+        assert pts is not None
+        pts_centered = pts - c
+
+    if NuNvNw_allTestPts is None:
+
+        xdim, ydim, zdim = volume_shape
+        if ctrl_x_intervals is None:
+            ctrl_x_intervals = np.arange(0, xdim, interval)
+        if ctrl_y_intervals is None:
+            ctrl_y_intervals = np.arange(0, ydim, interval)
+        if ctrl_z_intervals is None:
+            ctrl_z_intervals = np.arange(0, zdim, interval)
+
+        ctrl_x_intervals_centered = ctrl_x_intervals - c[0]
+        ctrl_y_intervals_centered = ctrl_y_intervals - c[1]
+        ctrl_z_intervals_centered = ctrl_z_intervals - c[2]
+
+        t = time.time()
+
+        NuPx_allTestPts = compute_bspline_cp_contribution_to_test_pts(control_points=ctrl_x_intervals_centered/float(interval),
+                                                                     test_points=pts_centered[:,0]/float(interval))
+        NvPy_allTestPts = compute_bspline_cp_contribution_to_test_pts(control_points=ctrl_y_intervals_centered/float(interval),
+                                                                     test_points=pts_centered[:,1]/float(interval))
+        NwPz_allTestPts = compute_bspline_cp_contribution_to_test_pts(control_points=ctrl_z_intervals_centered/float(interval),
+                                                                     test_points=pts_centered[:,2]/float(interval))
+
+#         NuPx_allTestPts = np.array([[N(ctrl_x/float(interval), x/float(interval)) for testPt_i, (x, y, z) in enumerate(pts_centered)]
+#                                     for ctrlXInterval_i, ctrl_x in enumerate(ctrl_x_intervals_centered)])
+
+#         NvPy_allTestPts = np.array([[N(ctrl_y/float(interval), y/float(interval)) for testPt_i, (x, y, z) in enumerate(pts_centered)]
+#                                     for ctrlYInterval_i, ctrl_y in enumerate(ctrl_y_intervals_centered)])
+
+#         NwPz_allTestPts = np.array([[N(ctrl_z/float(interval), z/float(interval)) for testPt_i, (x, y, z) in enumerate(pts_centered)]
+#                                     for ctrlZInterval_i, ctrl_z in enumerate(ctrl_z_intervals_centered)])
+
+        sys.stderr.write("Compute NuPx/NvPy/NwPz: %.2f seconds.\n" % (time.time() - t))
+
+        # print NuPx_allTestPts.shape, NvPy_allTestPts.shape, NwPz_allTestPts.shape
+        # (9, 157030) (14, 157030) (8, 157030)
+        # (n_ctrlx, n_test)
+
+        t = time.time()
+
+        NuNvNw_allTestPts = np.einsum('it,jt,kt->ijkt', NuPx_allTestPts, NvPy_allTestPts, NwPz_allTestPts).reshape((-1, NuPx_allTestPts.shape[-1])).T
+
+        # NuNvNw_allTestPts = np.array([np.ravel(np.tensordot(np.tensordot(NuPx_allTestPts[:,testPt_i],
+        #                                                                  NvPy_allTestPts[:,testPt_i], 0),
+        #                                                     NwPz_allTestPts[:,testPt_i], 0))
+        #                           for testPt_i in range(len(pts_centered))])
+        sys.stderr.write("Compute NuNvNw: %.2f seconds.\n" % (time.time() - t))
+
+    # the expression inside np.ravel gives array of shape (n_ctrlx, n_ctrly, nctrlz)
+
+    # print NuNvNw_allTestPts.shape
+    # (157030, 1008)
+    # (n_test, n_ctrlx * n_ctrly * n_ctrlz)
+
+    # t = time.time()
+    sum_uvw_NuNvNwbuvwx = np.dot(NuNvNw_allTestPts, buvwx)
+    sum_uvw_NuNvNwbuvwy = np.dot(NuNvNw_allTestPts, buvwy)
+    sum_uvw_NuNvNwbuvwz = np.dot(NuNvNw_allTestPts, buvwz)
+    # sys.stderr.write("Compute sum: %.2f seconds.\n" % (time.time() - t))
+
+    # print sum_uvw_NuNvNwbuvwx.shape
+
+    transformed_pts = pts_centered + np.c_[sum_uvw_NuNvNwbuvwx, sum_uvw_NuNvNwbuvwy, sum_uvw_NuNvNwbuvwz] + c_prime
+    return transformed_pts
+
+
+def rotate_transform_vector(v, theta_xy=0,theta_yz=0,theta_xz=0,c=(0,0,0)):
+    """
+    v is 12-length parameter.
+    """
+    cos_theta_z = np.cos(theta_xy)
+    sin_theta_z = np.sin(theta_xy)
+    Rz = np.array([[cos_theta_z, -sin_theta_z, 0], [sin_theta_z, cos_theta_z, 0], [0, 0, 1]])
+    cos_theta_x = np.cos(theta_yz)
+    sin_theta_x = np.sin(theta_yz)
+    Rx = np.array([[1, 0, 0], [0, cos_theta_x, -sin_theta_x], [0, sin_theta_x, cos_theta_x]])
+    cos_theta_y = np.cos(theta_xz)
+    sin_theta_y = np.sin(theta_xz)
+    Ry = np.array([[cos_theta_y, 0, -sin_theta_y], [0, 1, 0], [sin_theta_y, 0, cos_theta_y]])
+
+    R = np.zeros((3,3))
+    R[0, :3] = v[:3]
+    R[1, :3] = v[4:7]
+    R[2, :3] = v[8:11]
+    t = v[[3,7,11]]
+    R_new = np.dot(Rx, np.dot(Ry, np.dot(Rz, R)))
+    t_new = t + c - np.dot(R_new, c)
+    return np.ravel(np.c_[R_new, t_new])
+
+
+def affine_components_to_vector(tx=0,ty=0,tz=0,theta_xy=0,theta_xz=0,theta_yz=0,c=(0,0,0)):
+    """
+    y = R(x-c)+t+c.
+
+    Args:
+        theta_xy (float): in radian.
+    Returns:
+        (12,)-ndarray:
+    """
+    # assert np.count_nonzero([theta_xy, theta_yz, theta_xz]) <= 1, \
+    # "Current implementation is sound only if only one rotation is given."
+
+    cos_theta_xy = np.cos(theta_xy)
+    sin_theta_xy = np.sin(theta_xy)
+    cos_theta_yz = np.cos(theta_yz)
+    sin_theta_yz = np.sin(theta_yz)
+    cos_theta_xz = np.cos(theta_xz)
+    sin_theta_xz = np.sin(theta_xz)
+    Rz = np.array([[cos_theta_xy, -sin_theta_xy, 0], [sin_theta_xy, cos_theta_xy, 0], [0, 0, 1]])
+    Rx = np.array([[1, 0, 0], [0, cos_theta_yz, -sin_theta_yz], [0, sin_theta_yz, cos_theta_yz]])
+    Ry = np.array([[cos_theta_xz, 0, -sin_theta_xz], [0, 1, 0], [sin_theta_xz, 0, cos_theta_xz]])
+    R = np.dot(Rx, np.dot(Ry, Rz))
+    tt = np.r_[tx,ty,tz] + c - np.dot(R,c)
+    return np.ravel(np.c_[R, tt])
+
+
+def compose_alignment_parameters(list_of_transform_parameters):
+    """
+    Args:
+        list_of_transform_parameters: the transforms are applied in the order from left to right.
+
+    Returns:
+        (4,4)-array: transform matrix that maps wholebrain domain of moving brain to wholebrain domain of fixed brain.
+    """
+
+    T0 = np.eye(4)
+
+    for transform_parameters in list_of_transform_parameters:
+        T = convert_transform_forms(out_form=(4, 4), transform=transform_parameters)
+
+        #         if isinstance(transform_parameters, dict):
+        #             # cf = np.array(transform_parameters['centroid_f'])
+        #             # cm = np.array(transform_parameters['centroid_m'])
+        #             # of = np.array(transform_parameters['domain_f_origin_wrt_wholebrain'])
+        #             # om = np.array(transform_parameters['domain_m_origin_wrt_wholebrain'])
+        #             # params = np.array(transform_parameters['parameters'])
+        #             # T = consolidate(params=params, centroid_m=cm+om, centroid_f=cf+of)
+
+        #             cf = np.array(transform_parameters['centroid_f_wrt_wholebrain'])
+        #             cm = np.array(transform_parameters['centroid_m_wrt_wholebrain'])
+        #             params = np.array(transform_parameters['parameters'])
+        #             T = consolidate(params=params, centroid_m=cm, centroid_f=cf)
+        #         elif transform_parameters.shape == (3,4):
+        #             T = np.vstack([transform_parameters, [0,0,0,1]])
+        #         elif transform_parameters.shape == (12,):
+        #             T = np.vstack([transform_parameters.reshape((3,4)), [0,0,0,1]])
+        #         elif transform_parameters.shape == (4,4):
+        #             T = transform_parameters
+        #         else:
+        #             print transform_parameters.shape
+        #             raise
+
+        T0 = np.dot(T, T0)
+
+    return T0
+
+
+def rotationMatrixToEulerAngles(R) :
+    """
+    Calculates rotation matrix to euler angles
+    The result is the same as MATLAB except the order
+    of the euler angles ( x and z are swapped ).
+    Ref: https://www.learnopencv.com/rotation-matrix-to-euler-angles/
+    """
+    sy = np.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
+    singular = sy < 1e-6
+
+    if  not singular :
+        x = np.arctan2(R[2,1] , R[2,2])
+        y = np.arctan2(-R[2,0], sy)
+        z = np.arctan2(R[1,0], R[0,0])
+    else :
+        x = np.arctan2(-R[1,2], R[1,1])
+        y = np.arctan2(-R[2,0], sy)
+        z = 0
+
+    return np.array([x, y, z])
+
+
+def eulerAnglesToRotationMatrix(theta):
+    """
+    Calculates Rotation Matrix given euler angles.
+    """
+
+    R_x = np.array([[1,         0,                  0                   ],
+                    [0,         np.cos(theta[0]), -np.sin(theta[0]) ],
+                    [0,         np.sin(theta[0]), np.cos(theta[0])  ]
+                    ])
+    R_y = np.array([[np.cos(theta[1]),    0,      np.sin(theta[1])  ],
+                    [0,                     1,      0                   ],
+                    [-np.sin(theta[1]),   0,      np.cos(theta[1])  ]
+                    ])
+    R_z = np.array([[np.cos(theta[2]),    -np.sin(theta[2]),    0],
+                    [np.sin(theta[2]),    np.cos(theta[2]),     0],
+                    [0,                     0,                      1]
+                    ])
+    R = np.dot(R_z, np.dot( R_y, R_x ))
+    return R
+

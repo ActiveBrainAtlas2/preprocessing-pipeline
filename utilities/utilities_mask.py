@@ -85,7 +85,7 @@ def find_threshold(src):
     del ax, fig
     min_point = np.argmin(n[:5])
     min_point = int(min(2, min_point))
-    thresh = (min_point * 64000 / 360) + 100
+    thresh = (min_point * 64000 / 360)
     return min_point, thresh
 
 def remove_strip(src):
@@ -233,6 +233,15 @@ def fill_spots(img):
 
     return img
 
+def check_contour(contours, area, lc):
+    if len(contours) > 0:
+        cX = max(contours, key=cv2.contourArea)
+        areaX = cv2.contourArea(cX)
+        if areaX > (area * 0.05):
+            lc.append(cX)
+            idx = get_index(cX, contours)
+            contours.pop(idx)
+        return contours, lc
 
 
 def fix_with_fill(img, limit, dt):
@@ -242,7 +251,7 @@ def fix_with_fill(img, limit, dt):
     img = pad_with_black(img)
     img = (img / 256).astype(dt)
     h_src = linnorm(img, limit, dt)
-    med = np.median(h_src)
+    med = np.median(h_src) + 10
     h, im_th = cv2.threshold(h_src, med, limit, cv2.THRESH_BINARY)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
@@ -253,52 +262,66 @@ def fix_with_fill(img, limit, dt):
     stencil = np.zeros(img.shape).astype('uint8')
 
     # dilation = cv2.dilate(stencil,kernel,iterations = 2)
-    kernel = np.ones((10, 10), np.uint8)
-    eroded = cv2.erode(im_out, kernel, iterations=1)
-
+    small_kernel = np.ones((6, 6), np.uint8)
+    big_kernel = np.ones((16, 16), np.uint8)
+    eroded = cv2.erode(im_out, small_kernel, iterations=1)
+    #eroded = np.copy(im_out)
     contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
     lc = []
-    c1 = max(contours, key=cv2.contourArea)
-    lc.append(c1)
-    area1 = cv2.contourArea(c1)
-
-    idx = get_index(c1, contours)  # 2
-    contours.pop(idx)
+    midcolumn = img.shape[1] // 2
+    leftbound = midcolumn - (midcolumn * 0.5)
+    rightbound = midcolumn + (midcolumn * 0.5)
+    AREA_THRESHOLD = 0.05
     if len(contours) > 0:
-        cX = max(contours, key=cv2.contourArea)
-        area2 = cv2.contourArea(cX)
-        if area2 > (area1 * 0.05):
-            lc.append(cX)
-            # cv2.fillPoly(stencil, lc, 255)
-        idx = get_index(cX, contours)  # 2
+        c1 = max(contours, key=cv2.contourArea)
+        lc.append(c1)
+        area1 = cv2.contourArea(c1)
+        idx = get_index(c1, contours)
         contours.pop(idx)
 
-    if len(contours) > 0:
-        cX = max(contours, key=cv2.contourArea)
-        area3 = cv2.contourArea(cX)
-        if area3 > (area1 * 0.15):
-            lc.append(cX)
-            # cv2.fillPoly(stencil, lc, 100)
-        idx = get_index(cX, contours)  # 2
-        contours.pop(idx)
-    if len(contours) > 0:
-        cX = max(contours, key=cv2.contourArea)
-        area4 = cv2.contourArea(cX)
-        if area4 > (area3 * 0.5):
-            lc.append(cX)
-            # cv2.fillPoly(stencil, lc, 100)
-        idx = get_index(cX, contours)  # 2
-        contours.pop(idx)
+        if len(contours) > 0:
+            cX = max(contours, key=cv2.contourArea)
+            area2 = cv2.contourArea(cX)
+            mX = cv2.moments(cX)
+            m00 = mX['m00']
+            if m00 > 0:
+                cx = mX['m10'] // m00
+                if (area2 > (area1 * AREA_THRESHOLD) and cx > leftbound and cx < rightbound):
+                    lc.append(cX)
+                    idx = get_index(cX, contours)
+                    contours.pop(idx)
 
-    cv2.fillPoly(stencil, lc, 255)
+        if len(contours) > 0:
+            cX = max(contours, key=cv2.contourArea)
+            area3 = cv2.contourArea(cX)
+            mX = cv2.moments(cX)
+            m00 = mX['m00']
+            if m00 > 0:
+                cx = mX['m10'] // m00
+                if (area3 > (area2 * AREA_THRESHOLD) and cx > leftbound and cx < rightbound):
+                    lc.append(cX)
+                    idx = get_index(cX, contours)
+                    contours.pop(idx)
 
-    if len(contours) > 0:
-        cv2.fillPoly(stencil, contours, 0)
-    big_kernel = np.ones((12, 12), np.uint8)
-    dilation1 = cv2.erode(stencil, big_kernel, iterations=1)
-    dilation2 = cv2.dilate(dilation1, big_kernel, iterations=5)
-    mask = fill_spots(dilation2)
+        if len(contours) > 0:
+            cX = max(contours, key=cv2.contourArea)
+            area4 = cv2.contourArea(cX)
+            mX = cv2.moments(cX)
+            m00 = mX['m00']
+            if m00 > 0:
+                cx = mX['m10'] // m00
+                if (area4 > (area3 * AREA_THRESHOLD) and cx > leftbound and cx < rightbound):
+                    lc.append(cX)
+                    idx = get_index(cX, contours)
+                    contours.pop(idx)
+
+        cv2.fillPoly(stencil, lc, 255)
+
+        if len(contours) > 0:
+            cv2.fillPoly(stencil, contours, 0)
+    #erosion = cv2.erode(stencil, small_kernel, iterations=1)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=5)
+    mask = fill_spots(dilation)
 
     return mask
 
