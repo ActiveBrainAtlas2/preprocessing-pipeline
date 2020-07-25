@@ -13,7 +13,7 @@ from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import fix_with_fill
-from utilities.utilities_process import workershell
+from utilities.utilities_process import workernoshell
 
 
 def create_mask(animal, full, njobs):
@@ -41,12 +41,14 @@ def create_mask(animal, full, njobs):
                 continue
             src = get_last_2d(src)
             height, width = src.shape
+            size = '{}x{}!'.format(width, height)
             del src
-            cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
+            #cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
+            cmd = ['convert', thumbfile, '-resize', size, '-compress', 'lzw', '-depth', '8', outfile]
             commands.append(cmd)
 
         with Pool(njobs) as p:
-            p.map(workershell, commands)
+            p.map(workernoshell, commands)
     else:
         files = sorted(os.listdir(INPUT))
 

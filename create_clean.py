@@ -90,12 +90,11 @@ def masker(animal, channel, flip, rotation=0, full=False):
 
         if channel == 1 and 'ntb' in stain.lower():
             # pass
-            clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
+            #fixed = linnorm(fixed, limit, dt)
+            clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(12, 12))
             fixed = clahe.apply(fixed.astype(dt))
-            # fixed = fill_spots(fixed)
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
-        #fixed = linnorm(fixed, 25000, dt)
         #fixed = place_image(fixed, file, max_height, max_width, bgcolor)
         fixed[fixed == 0] = bgcolor
         cv2.imwrite(outpath, fixed.astype(dt))
