@@ -59,7 +59,8 @@ def mask_thionin(animal, full):
         big_kernel = np.ones((8, 8), np.uint8)
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
-            src = io.imread(infile)
+            #src = io.imread(infile)
+            src = cv2.imread(infile, cv2.IMREAD_GRAYSCALE)
 
             start_bottom = src.shape[0] - 5
             bottom_rows = src[start_bottom:src.shape[0], :]

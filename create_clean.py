@@ -66,6 +66,7 @@ def masker(animal, channel, flip, rotation=0, full=False):
             continue
         try:
             img = io.imread(infile)
+            #img = cv2.imread(infile, cv2.IMREAD_GRAYSCALE)
         except:
             logger.warning(f'Could not open {infile}')
             continue
