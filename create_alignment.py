@@ -21,7 +21,7 @@ from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import (create_if_not_exists, load_consecutive_section_transform,
                                          convert_resolution_string_to_um, SCALING_FACTOR)
-from utilities.utilities_process import workernoshell, workershell
+from utilities.utilities_process import workernoshell
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -171,7 +171,6 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
 
     warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', resolution)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
-    commands = []
     for file, arr in tqdm(ordered_transforms.items()):
         T = np.linalg.inv(arr)
         op_str = " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
@@ -185,21 +184,15 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
         if os.path.exists(output_fp):
             continue
 
+        bgcolor = "{}".format(bgcolor)
         cmd = "convert {}  +repage -virtual-pixel background -background \"{}\" {} -flatten -compress lzw {}"\
             .format(input_fp, bgcolor, op_str, output_fp)
-        #bgcolor = '\"{}\"'.format(bgcolor)
-
-        #cmd = ['convert', input_fp, '+repage', '-virtual-pixel', 'background', '-background',
-        #       bgcolor, op_str, '-flatten', '-compress', 'lzw', output_fp]
-        commands.append(cmd)
-
-    with Pool(njobs) as p:
-        p.map(workershell, commands)
+        subprocess.run(cmd, shell=True)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--animal', help='Enter the animal animal', required=True)
+    parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
