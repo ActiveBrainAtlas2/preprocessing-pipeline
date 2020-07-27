@@ -254,7 +254,6 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
             else:
                 return cnt
 
-    #####TODO fix this, hard coding values just to get a response
     #pool = Pool(nproc)
     print('positions', positions)
     #positions = [60,70,75,77,78,80,86,200]
@@ -959,7 +958,8 @@ def convert_vol_bbox_dict_to_overall_vol(vol_bbox_dict=None, vol_bbox_tuples=Non
         vol_bbox_dict = {k: (v, (o[0], o[0]+v.shape[1]-1, o[1], o[1]+v.shape[0]-1, o[2], o[2]+v.shape[2]-1)) for k,(v,o) in vol_origin_dict.items()}
 
     if vol_bbox_dict is not None:
-        volume_bbox = np.round(get_overall_bbox(vol_bbox_tuples=vol_bbox_dict.values())).astype(np.int)
+        vol_bbox_values = list(vol_bbox_dict.values())
+        volume_bbox = np.round(get_overall_bbox(vol_bbox_tuples = vol_bbox_values )).astype(np.int)
         volumes = crop_and_pad_volumes(out_bbox=volume_bbox, vol_bbox_dict=vol_bbox_dict)
     else:
         volume_bbox = np.round(get_overall_bbox(vol_bbox_tuples=vol_bbox_tuples)).astype(np.int)
@@ -1516,12 +1516,14 @@ def fit_plane(X):
     c : (3,) vector
         a point on the plane
     """
-    X = X[0][0]
+    #print('X', X[0])
+    #print('type X', type(X[0]))
+    #X = X[0]
 
     # http://math.stackexchange.com/questions/99299/best-fitting-plane-given-a-set-of-points
     # http://math.stackexchange.com/a/3871
-    X = list(X)
-    X = np.array(X)
+    #X = list(X)
+    #X = np.array(X)
     c = X.mean(axis=0)
     Xc = X - c
     U, _, VT = np.linalg.svd(Xc.T)
@@ -1570,7 +1572,6 @@ def average_location(centroid_allLandmarks_wrt_fixedBrain=None, mean_centroid_al
                                                      centroid_allLandmarks_wrt_fixedBrain.items()}
 
     names = set([convert_to_original_name(name_s) for name_s in mean_centroid_allLandmarks_wrt_fixedBrain.keys()])
-    print('mean_centroid_allLandmarks_wrt_fixedBrain', mean_centroid_allLandmarks_wrt_fixedBrain)
     # Fit a midplane from the midpoints of symmetric landmark centroids
     midpoints_wrt_fixedBrain = {}
     for name in names:
@@ -1586,8 +1587,8 @@ def average_location(centroid_allLandmarks_wrt_fixedBrain=None, mean_centroid_al
                                              mean_centroid_allLandmarks_wrt_fixedBrain[rname]
         else:
             midpoints_wrt_fixedBrain[name] = mean_centroid_allLandmarks_wrt_fixedBrain[name]
-
-    midplane_normal, midplane_anchor_wrt_fixedBrain = fit_plane(np.c_[midpoints_wrt_fixedBrain.values()])
+    midpoints_wrt_fixedBrain_values = list(midpoints_wrt_fixedBrain.values())
+    midplane_normal, midplane_anchor_wrt_fixedBrain = fit_plane(np.c_[midpoints_wrt_fixedBrain_values])
 
     print('Mid-sagittal plane normal vector =', midplane_normal, '@ Mid-sagittal plane anchor wrt fixed wholebrain =',
           midplane_anchor_wrt_fixedBrain)
@@ -1686,10 +1687,11 @@ def plot_centroid_means_and_covars_3d(instance_centroids,
 
     # Plot in 3D.
 
-    from mpl_toolkits.mplot3d import Axes3D
+    #from mpl_toolkits.mplot3d import Axes3D
 
     fig = plt.figure(figsize=(20, 20))
-    ax = fig.add_subplot(111, projection='3d')
+    #ax = fig.add_subplot(111, projection='3d')
+    ax = fig.gca(projection='3d')
 
     if colors is None:
         colors = {name_s: (0,0,1) for name_s in instance_centroids}
@@ -1755,7 +1757,7 @@ def plot_centroid_means_and_covars_3d(instance_centroids,
     ax.w_yaxis.line.set_lw(0.)
     ax.set_yticks([])
 
-    ax.set_aspect(1.0)
+    #ax.set_aspect(1.0)
     ax.set_title(title)
     plt.legend()
     plt.show()
