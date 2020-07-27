@@ -142,7 +142,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     channel_dir = 'CH{}'.format(channel)
     INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'thumbnail_cleaned')
     OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
-    bgcolor = '#000000'
+    bgcolor = 'black'
     stain = sqlController.histology.counterstain
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
@@ -150,7 +150,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     max_height = int(height * SCALING_FACTOR)
 
     if 'thion' in stain.lower():
-        bgcolor = '#E6E6E6'
+        bgcolor = 'lavender'
 
     if 'full' in resolution.lower():
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
@@ -167,27 +167,43 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     if masks:
         INPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/prealigned'.format(animal)
         OUTPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/aligned'.format(animal)
-        bgcolor = '#000000'
+        bgcolor = 'black'
 
     warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', resolution)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
+    commands = []
     for file, arr in tqdm(ordered_transforms.items()):
         T = np.linalg.inv(arr)
-        op_str = " +distort AffineProjection '%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f' " % {
+        """
+        op_str = " +distort AffineProjection %(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
             'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
 
-        op_str += ' -crop {}x{}+0.0+0.0\!'.format(max_width, max_height)
+        op_str += ' -crop {}x{}+0.0+0.0!'.format(max_width, max_height)
+        """
+        op_str = " +distort AffineProjection %(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
+            'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
 
+        op_str += ' -crop {}x{}+0.0+0.0!'.format(max_width, max_height)
+        projections = "%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
+            'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
+        crop = '{}x{}+0.0+0.0!'.format(max_width, max_height)
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
 
         if os.path.exists(output_fp):
             continue
 
-        bgcolor = "{}".format(bgcolor)
-        cmd = "convert {}  +repage -virtual-pixel background -background \"{}\" {} -flatten -compress lzw {}"\
-            .format(input_fp, bgcolor, op_str, output_fp)
-        subprocess.run(cmd, shell=True)
+        #cmd = "convert {}  +repage -virtual-pixel background -background \"{}\" {} -flatten -compress lzw {}"\
+        #    .format(input_fp, bgcolor, op_str, output_fp)
+        cmd = ['convert', input_fp, '+repage', '-virtual-pixel',
+               'background', '-background', bgcolor,
+               '+distort', 'AffineProjection', projections, '-crop', crop,
+               '-flatten', '-compress', 'lzw', output_fp]
+        commands.append(cmd)
+
+    with Pool(njobs) as p:
+        p.map(workernoshell, commands)
+
 
 
 if __name__ == '__main__':
