@@ -109,8 +109,8 @@ def mask_thionin(animal, full):
             else:
                 opening = stencil
 
-            dilation1 = cv2.erode(opening, big_kernel, iterations=1)
-            dilation2 = cv2.dilate(dilation1, big_kernel, iterations=3)
+            #dilation1 = cv2.erode(opening, big_kernel, iterations=1)
+            dilation2 = cv2.dilate(opening, big_kernel, iterations=3)
             dilation3 = fill_spots(dilation2)
 
             outpath = os.path.join(OUTPUT, file)

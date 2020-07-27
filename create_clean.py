@@ -20,6 +20,7 @@ from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, linnorm
 
 
+
 def masker(animal, channel, flip, rotation=0, full=False):
     logger = get_logger(animal)
     sqlController = SqlController(animal)
@@ -65,8 +66,10 @@ def masker(animal, channel, flip, rotation=0, full=False):
         if os.path.exists(outpath):
             continue
         try:
-            img = io.imread(infile)
-            #img = cv2.imread(infile, cv2.IMREAD_GRAYSCALE)
+            if 'ntb' in stain.lower():
+                img = io.imread(infile)
+            else:
+               img = cv2.imread(infile, cv2.IMREAD_GRAYSCALE)
         except:
             logger.warning(f'Could not open {infile}')
             continue
