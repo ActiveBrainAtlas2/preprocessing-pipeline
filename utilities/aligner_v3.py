@@ -15,11 +15,11 @@ import cv2
 import matplotlib.pyplot as plt
 from multiprocessing.pool import Pool
 
-from imported_atlas_utilities import parallel_where_binary, convert_transform_forms, \
+from utilities.imported_atlas_utilities import parallel_where_binary, convert_transform_forms, \
     compute_bspline_cp_contribution_to_test_pts, convert_volume_forms, transform_points_affine, compute_gradient_v2, \
     transform_points_bspline, rotate_transform_vector, affine_components_to_vector, compose_alignment_parameters, \
     rotationMatrixToEulerAngles, eulerAnglesToRotationMatrix
-from lie import matrix_exp_v
+from utilities.lie import matrix_exp_v
 
 volume_f = None
 volume_m = None
@@ -246,7 +246,7 @@ class Aligner(object):
         #print nzvoxels_m
         #print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'
 
-        if isinstance(centroid_m, np.basestring):
+        if isinstance(centroid_m, str):
             if centroid_m == 'structure_centroid':
                 self.centroid_m = np.concatenate([nzvoxels_m[i] for i in indices_m]).mean(axis=0)
             elif centroid_m == 'volume_centroid':
@@ -265,7 +265,7 @@ class Aligner(object):
 
         self.centroid_m = transform_points_affine(T=self.init_T, pts=np.array([self.centroid_m]))[0] # T0(cp)
 
-        if isinstance(centroid_f, np.basestring):
+        if isinstance(centroid_f, str):
             if centroid_f == 'centroid_m':
                 self.centroid_f = self.centroid_m
             elif centroid_f == 'structure_centroid':
