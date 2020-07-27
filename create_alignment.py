@@ -199,10 +199,11 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
                'background', '-background', bgcolor,
                '+distort', 'AffineProjection', projections, '-crop', crop,
                '-flatten', '-compress', 'lzw', output_fp]
-        commands.append(cmd)
+        #commands.append(cmd)
+        subprocess.run(cmd)
 
-    with Pool(njobs) as p:
-        p.map(workernoshell, commands)
+    #with Pool(njobs) as p:
+    #    p.map(workernoshell, commands)
 
 
 
