@@ -3,8 +3,9 @@ from collections import defaultdict
 import json
 import numpy as np
 import pickle
+HOME = os.path.expanduser("~")
 
-PATH = '/home/eddyod/programming/pipeline_utility'
+PATH = os.path.join(HOME, 'programming/pipeline_utility')
 MESH_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_meshes'
 sys.path.append(PATH)
 from utilities.imported_atlas_utilities import load_original_volume_all_known_structures_v3, get_centroid_3d, \
