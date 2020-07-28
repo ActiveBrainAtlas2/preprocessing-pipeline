@@ -3,7 +3,7 @@ import sys
 import time
 from multiprocessing.pool import Pool
 import matplotlib.pyplot as plt
-
+import bloscpack as bp
 import numpy as np
 from pandas import read_hdf
 from skimage import io
@@ -13,6 +13,12 @@ import re
 from skimage.measure import find_contours, regionprops
 from skimage.filters import gaussian
 
+
+import vtk
+#from vtk.util import numpy_support
+import mcubes # https://github.com/pmneila/PyMCubes
+from vtkmodules.util import numpy_support
+
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import load_hdf, one_liner_to_arr, load_ini, convert_resolution_string_to_um, convert_resolution_string_to_voxel_size
@@ -20,6 +26,7 @@ from utilities.file_location import CSHL_DIR as VOLUME_ROOTDIR, FileLocationMana
 from utilities.coordinates_converter import CoordinatesConverter
 SECTION_THICKNESS = 20. # in um
 REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_registration_parameters'
+MESH_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_meshes'
 
 
 # print all_structures_total
@@ -2309,3 +2316,605 @@ def eulerAnglesToRotationMatrix(theta):
     R = np.dot(R_z, np.dot( R_y, R_x ))
     return R
 
+
+def save_alignment_results_v3(transform_parameters=None, score_traj=None, parameter_traj=None,
+                              alignment_spec=None,
+                              aligner=None, select_best='last_value',
+                              reg_root_dir=REGISTRATION_PARAMETERS_ROOTDIR,
+                             upload_s3=True):
+    """
+    Save the following alignment results:
+    - `parameters`: eventual parameters
+    - `scoreHistory`: score trajectory
+    - `scoreEvolution`: a plot of score trajectory, exported as PNG
+    - `trajectory`: parameter trajectory
+
+    Must provide `alignment_spec`
+
+    Args:
+        transform_parameters:
+        score_traj ((Ti,) array): score trajectory
+        parameter_traj ((Ti, 12) array): parameter trajectory
+        select_best (str): last_value or max_value
+        alignment_spec (dict)
+    """
+
+    if aligner is not None:
+        score_traj = aligner.scores
+        parameter_traj = aligner.Ts
+
+        if select_best == 'last_value':
+            transform_parameters = dict(parameters=parameter_traj[-1],
+            centroid_m_wrt_wholebrain=aligner.centroid_m,
+            centroid_f_wrt_wholebrain=aligner.centroid_f)
+        elif select_best == 'max_value':
+            transform_parameters = dict(parameters=parameter_traj[np.argmax(score_traj)],
+            centroid_m_wrt_wholebrain=aligner.centroid_m,
+            centroid_f_wrt_wholebrain=aligner.centroid_f)
+        else:
+            raise Exception("select_best %s is not recognize." % select_best)
+
+    # Save parameters
+    params_fp = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what='parameters', reg_root_dir=reg_root_dir)
+    os.makedirs(os.path.dirname(params_fp), exist_ok=True)
+    save_json(transform_parameters, params_fp)
+
+    # Save score history
+    history_fp = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what='scoreHistory', reg_root_dir=reg_root_dir)
+    bp.pack_ndarray_file(np.array(score_traj), history_fp)
+
+    # Save score plot
+    score_plot_fp = \
+    history_fp = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what='scoreEvolution', reg_root_dir=reg_root_dir)
+    fig = plt.figure();
+    plt.plot(score_traj);
+    plt.savefig(score_plot_fp, bbox_inches='tight')
+    plt.close(fig)
+
+    # Save trajectory
+    trajectory_fp = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what='trajectory', reg_root_dir=reg_root_dir)
+    bp.pack_ndarray_file(np.array(parameter_traj), trajectory_fp)
+
+
+def save_json(obj, fp):
+    with open(fp, 'w') as f:
+        # numpy array is not JSON serializable; have to convert them to list.
+        if isinstance(obj, dict):
+            obj = {k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in obj.items()}
+        json.dump(obj, f)
+
+
+def transform_volume_v4(volume, transform=None, return_origin_instead_of_bbox=False):
+    """
+    One can specify initial shift and the transform separately.
+    First, `centroid_m` and `centroid_f` are aligned.
+    Then the tranform (R,t) parameterized by `tf_params` is applied.
+    The relationship between coordinates in the fixed and moving volumes is:
+    coord_f - centroid_f = np.dot(R, (coord_m - centroid_m)) + t
+
+    One can also incorporate the initial shift into tf_params. In that case, do not specify `centroid_m` and `centroid_f`.
+    coord_f = np.dot(T, coord_m)
+
+    Args:
+        volume ()
+        transform ()
+
+    Returns:
+    """
+
+    if isinstance(volume, np.ndarray):
+        vol = volume
+        origin = np.zeros((3,))
+    elif isinstance(volume, tuple):
+        if len(volume[1]) == 6: # bbox
+            raise
+        elif len(volume[1]) == 3: # origin
+            vol = volume[0]
+            origin = volume[1]
+    else:
+        raise
+
+
+    tf_dict = convert_transform_forms(transform=transform, out_form='dict')
+    tf_params = tf_dict['parameters']
+    centroid_m = tf_dict['centroid_m_wrt_wholebrain']
+    centroid_f = tf_dict['centroid_f_wrt_wholebrain']
+
+    nzvoxels_m_temp = parallel_where_binary(vol > 0)
+    # "_temp" is appended to avoid name conflict with module level variable defined in registration.py
+
+    assert origin is not None or bbox is not None, 'Must provide origin or bbox.'
+    if origin is None:
+        if bbox is not None:
+            origin = bbox[[0,2,4]]
+
+    nzs_m_aligned_to_f = transform_points_affine(tf_params, pts=nzvoxels_m_temp + origin,
+                            c=centroid_m, c_prime=centroid_f).astype(np.int16)
+
+    nzs_m_xmin_f, nzs_m_ymin_f, nzs_m_zmin_f = np.min(nzs_m_aligned_to_f, axis=0)
+    nzs_m_xmax_f, nzs_m_ymax_f, nzs_m_zmax_f = np.max(nzs_m_aligned_to_f, axis=0)
+
+    xdim_f = nzs_m_xmax_f - nzs_m_xmin_f + 1
+    ydim_f = nzs_m_ymax_f - nzs_m_ymin_f + 1
+    zdim_f = nzs_m_zmax_f - nzs_m_zmin_f + 1
+
+    volume_m_aligned_to_f = np.zeros((ydim_f, xdim_f, zdim_f), vol.dtype)
+    xs_f_wrt_bbox, ys_f_wrt_bbox, zs_f_wrt_inbbox = (nzs_m_aligned_to_f - (nzs_m_xmin_f, nzs_m_ymin_f, nzs_m_zmin_f)).T
+    xs_m, ys_m, zs_m = nzvoxels_m_temp.T
+    volume_m_aligned_to_f[ys_f_wrt_bbox, xs_f_wrt_bbox, zs_f_wrt_inbbox] = vol[ys_m, xs_m, zs_m]
+
+    del nzs_m_aligned_to_f
+
+    t = time.time()
+
+    if np.issubdtype(volume_m_aligned_to_f.dtype, np.float):
+        dense_volume = fill_sparse_score_volume(volume_m_aligned_to_f)
+    elif np.issubdtype(volume_m_aligned_to_f.dtype, np.integer):
+        if not np.issubdtype(volume_m_aligned_to_f.dtype, np.uint8):
+            dense_volume = fill_sparse_volume(volume_m_aligned_to_f)
+        else:
+            dense_volume = volume_m_aligned_to_f
+    elif np.issubdtype(volume_m_aligned_to_f.dtype, bool):
+        dense_volume = fill_sparse_score_volume(volume_m_aligned_to_f.astype(np.int)).astype(vol.dtype)
+    else:
+        raise Exception('transform_volume: Volume must be either float or int.')
+
+    sys.stderr.write('Interpolating/filling sparse volume: %.2f seconds.\n' % (time.time() - t))
+
+    if return_origin_instead_of_bbox:
+        return dense_volume, np.array((nzs_m_xmin_f, nzs_m_ymin_f, nzs_m_zmin_f))
+    else:
+        return dense_volume, np.array((nzs_m_xmin_f, nzs_m_xmax_f, nzs_m_ymin_f, nzs_m_ymax_f, nzs_m_zmin_f, nzs_m_zmax_f))
+
+
+
+def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_vertices=200, return_vertex_face_list=False):
+    """
+    Convert a volume to a mesh, either as vertices/faces tuple or a vtk.Polydata.
+
+    Args:
+        level (float): the level to threshold the input volume
+        min_vertices (int): minimum number of vertices. Simplification will stop if the number of vertices drops below this value.
+        return_vertex_face_list (bool): If True, return only (vertices, faces); otherwise, return polydata.
+    """
+
+    volume, origin = convert_volume_forms(volume=volume, out_form=("volume", "origin"))
+
+    vol = volume > level
+
+    # vol_padded = np.zeros(vol.shape+(10,10,10), np.bool)
+    # vol_padded[5:-5, 5:-5, 5:-5] = vol
+    vol_padded = np.pad(vol, ((5,5),(5,5),(5,5)), 'constant') # need this otherwise the sides of volume will not close and expose the hollow inside of structures
+
+    t = time.time()
+    vs, fs = mcubes.marching_cubes(vol_padded, 0) # more than 5 times faster than skimage.marching_cube + correct_orientation
+    sys.stderr.write('marching cube: %.2f seconds\n' % (time.time() - t))
+
+    # t = time.time()
+    # vs, faces = marching_cubes(vol_padded, 0) # y,x,z
+    # sys.stderr.write('marching cube: %.2f seconds\n' % (time.time() - t))
+
+    # t = time.time()
+    # fs = correct_mesh_orientation(vol_padded, vs, faces)
+    # sys.stderr.write('correct orientation: %.2f seconds\n' % (time.time() - t))
+
+    vs = vs[:, [1,0,2]] + origin - (5,5,5)
+    # vs = vs[:, [1,0,2]] + origin
+
+    # t = time.time()
+    # area = mesh_surface_area(vs, fs)
+    # # print 'area: %.2f' % area
+    # sys.stderr.write('compute surface area: %.2f seconds\n' % (time.time() - t)) #
+
+    t = time.time()
+
+#     if return_mesh:
+#         return vs, fs
+
+    polydata = mesh_to_polydata(vs, fs)
+
+    sys.stderr.write('mesh_to_polydata: %.2f seconds\n' % (time.time() - t)) #
+
+    for simplify_iter in range(num_simplify_iter):
+
+        t = time.time()
+
+        deci = vtk.vtkQuadricDecimation()
+        deci.SetInputData(polydata)
+
+        deci.SetTargetReduction(0.8)
+        # 0.8 means each iteration causes the point number to drop to 20% the original
+
+        deci.Update()
+
+        polydata = deci.GetOutput()
+
+        if smooth:
+
+            smoother = vtk.vtkWindowedSincPolyDataFilter()
+    #         smoother.NormalizeCoordinatesOn()
+            smoother.SetPassBand(.1)
+            smoother.SetNumberOfIterations(20)
+            smoother.SetInputData(polydata)
+            smoother.Update()
+
+            polydata = smoother.GetOutput()
+
+        n_pts = polydata.GetNumberOfPoints()
+        sys.stderr.write('simplify %d @ %d: %.2f seconds\n' % (simplify_iter, n_pts, time.time() - t)) #
+
+        if polydata.GetNumberOfPoints() < min_vertices:
+            break
+
+
+    if return_vertex_face_list:
+        return polydata_to_mesh(polydata)
+    else:
+        return polydata
+
+
+def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
+    """
+    Args:
+        vertices ((num_vertices, 3) arrays)
+        faces ((num_faces, 3) arrays)
+    """
+
+    polydata = vtk.vtkPolyData()
+
+    t = time.time()
+
+    points = vtk.vtkPoints()
+
+    # points_vtkArray = numpy_support.numpy_to_vtk(vertices.flat)
+    # points.SetData(points_vtkArray)
+
+    for pt_ind, (x,y,z) in enumerate(vertices):
+        points.InsertPoint(pt_ind, x, y, z)
+
+    # sys.stderr.write('fill point array: %.2f seconds\n' % (time.time() - t))
+
+    t = time.time()
+
+    if len(faces) > 0:
+
+        cells = vtk.vtkCellArray()
+
+        cell_arr = np.empty((len(faces)*4, ), np.int)
+        cell_arr[::4] = 3
+        cell_arr[1::4] = faces[:,0]
+        cell_arr[2::4] = faces[:,1]
+        cell_arr[3::4] = faces[:,2]
+        cell_vtkArray = numpy_support.numpy_to_vtkIdTypeArray(cell_arr, deep=1)
+        cells.SetCells(len(faces), cell_vtkArray)
+
+    # sys.stderr.write('fill cell array: %.2f seconds\n' % (time.time() - t))
+
+    polydata.SetPoints(points)
+
+    if len(faces) > 0:
+        polydata.SetPolys(cells)
+        # polydata.SetVerts(cells)
+
+    if len(faces) > 0:
+        polydata = simplify_polydata(polydata, num_simplify_iter, smooth)
+    else:
+        sys.stderr.write('mesh_to_polydata: No faces are provided, so skip simplification.\n')
+
+    return polydata
+
+
+def simplify_polydata(polydata, num_simplify_iter=0, smooth=False):
+    for simplify_iter in range(num_simplify_iter):
+
+        t = time.time()
+
+        deci = vtk.vtkQuadricDecimation()
+        deci.SetInputData(polydata)
+
+        deci.SetTargetReduction(0.8)
+        # 0.8 means each iteration causes the point number to drop to 20% the original
+
+        deci.Update()
+
+        polydata = deci.GetOutput()
+
+        if smooth:
+
+            smoother = vtk.vtkWindowedSincPolyDataFilter()
+    #         smoother.NormalizeCoordinatesOn()
+            smoother.SetPassBand(.1)
+            smoother.SetNumberOfIterations(20)
+            smoother.SetInputData(polydata)
+            smoother.Update()
+
+            polydata = smoother.GetOutput()
+
+        n_pts = polydata.GetNumberOfPoints()
+
+        if polydata.GetNumberOfPoints() < 200:
+            break
+
+        sys.stderr.write('simplify %d @ %d: %.2f seconds\n' % (simplify_iter, n_pts, time.time() - t)) #
+
+    return polydata
+
+
+def get_surround_volume(volume, origin, distance=5, wall_level=0, prob=False, return_origin_instead_of_bbox=True, padding=5):
+    """
+    Return the volume with voxels surrounding the ``active" voxels in the input volume set to 1 (prob=False) or 1 - vol (prob=True)
+
+    Args:
+        volume: (vol, origin)
+        wall_level (float): voxels with value above this level are regarded as active.
+        distance (int): surrounding voxels are closer than distance (in unit of voxel) from any active voxels.
+        prob (bool): if True, surround voxels are assigned 1 - voxel value; if False, surround voxels are assigned 1.
+        padding (int): extra zero-padding, in unit of voxels.
+
+    Returns:
+        (surround_volume, surround_volume_origin)
+    """
+    from scipy.ndimage.morphology import distance_transform_edt
+    distance = int(np.round(distance))
+
+    # Identify the bounding box for the surrouding area.
+
+    # if bbox is None:
+    bbox = volume_origin_to_bbox(volume > wall_level, origin)
+
+    xmin, xmax, ymin, ymax, zmin, zmax = bbox
+    roi_xmin = xmin - distance - padding
+    roi_ymin = ymin - distance - padding
+    roi_zmin = zmin - distance - padding
+    roi_xmax = xmax + distance + padding
+    roi_ymax = ymax + distance + padding
+    roi_zmax = zmax + distance + padding
+    roi_bbox = np.array((roi_xmin,roi_xmax,roi_ymin,roi_ymax,roi_zmin,roi_zmax))
+    vol_roi = crop_and_pad_volume(volume, in_bbox=bbox, out_bbox=roi_bbox)
+
+    dist_vol = distance_transform_edt(vol_roi < wall_level)
+    roi_surround_vol = (dist_vol > 0) & (dist_vol < distance) # surround part is True, otherwise False.
+
+    if prob:
+        surround_vol = np.zeros_like(vol_roi)
+        surround_vol[roi_surround_vol] = 1. - vol_roi[roi_surround_vol]
+        if return_origin_instead_of_bbox:
+            return surround_vol, roi_bbox[[0,2,4]]
+        else:
+            return surround_vol, roi_bbox
+    else:
+        if return_origin_instead_of_bbox:
+            return roi_surround_vol, roi_bbox[[0,2,4]]
+        else:
+            return roi_surround_vol, roi_bbox
+
+
+def volume_origin_to_bbox(v, o):
+    """
+    Convert a (volume, origin) tuple into a bounding box.
+    """
+    return np.array([o[0], o[0] + v.shape[1]-1, o[1], o[1] + v.shape[0]-1, o[2], o[2] + v.shape[2]-1])
+
+
+def get_mean_shape_filepath(atlas_name, structure, what, resolution, level=None, **kwargs):
+    """
+    Args:
+        structure (str): unsided structure name
+        what (str): any of volume, origin_wrt_meanShapeCentroid and mesh
+        level (float): required if `what` = "mesh".
+    """
+    if what == 'volume':
+        return os.path.join(MESH_DIR, atlas_name, 'mean_shapes', resolution + '_' + structure + '_volume.npy')
+    elif what == 'origin_wrt_meanShapeCentroid':
+        return os.path.join(MESH_DIR, atlas_name, 'mean_shapes', resolution + '_' + structure + '_origin_wrt_meanShapeCentroid.txt')
+    elif what == 'mesh':
+        return os.path.join(MESH_DIR, atlas_name, 'mean_shapes', resolution + '_' + structure + '_mesh_level%.1f.stl' % level)
+    else:
+        raise
+
+def get_instance_mesh_filepath(atlas_name, structure, index, resolution=None, **kwargs):
+    """
+    Filepath of the instance mesh to derive mean shapes in atlas.
+
+    Args:
+        index (int): the index of the instance. The template instance is at index 0.
+    """
+    if resolution is None:
+        meshpath = '{}_{}.stl'.format(structure, str(index))
+        return os.path.join(MESH_DIR, atlas_name, 'aligned_instance_meshes', meshpath)
+    else:
+        meshpath = '{}_{}_{}.stl'.format(resolution, structure, str(index))
+        return os.path.join(MESH_DIR, atlas_name, 'aligned_instance_meshes', meshpath)
+
+
+def average_shape(polydata_list=None, volume_origin_list=None, volume_list=None, origin_list=None, surface_level=None, num_simplify_iter=0, smooth=False, force_symmetric=False,
+                 sigma=2., return_vertices_faces=False):
+    """
+    Compute the mean shape based on many co-registered volumes.
+
+    Args:
+        polydata_list (list of Polydata): List of meshes whose centroids are at zero.
+        surface_level (float): If None, only return the probabilistic volume and origin. Otherwise, also return the surface mesh thresholded at the given percentage.
+        num_simplify_iter (int): Number of simplification iterations for thresholded mesh generation.
+        smooth (bool): Whether to smooth for thresholded mesh generation.
+        force_symmetric (bool): If True, force the resulting volume and mesh to be symmetric wrt z.
+        sigma (float): sigma of gaussian kernel used to smooth the probability values.
+
+    Returns:
+        average_volume_prob (3D ndarray):
+        common_mins ((3,)-ndarray): coordinate of the volume's origin
+        average_polydata (Polydata): mesh of the 3D boundary thresholded at concensus_percentage
+    """
+
+    if volume_origin_list is not None:
+        volume_list, origin_list = map(list, zip(*volume_origin_list))
+
+    if volume_list is None:
+        volume_list = []
+        origin_list = []
+
+        for p in polydata_list:
+            # t = time.time()
+            v, orig, _ = polydata_to_volume(p)
+            # sys.stderr.write('polydata_to_volume: %.2f seconds.\n' % (time.time() - t))
+            volume_list.append(v)
+            origin_list.append(np.array(orig, np.int))
+
+    bbox_list = [(xm, xm+v.shape[1]-1, ym, ym+v.shape[0]-1, zm, zm+v.shape[2]-1) for v,(xm,ym,zm) in zip(volume_list, origin_list)]
+    common_volume_list, common_volume_bbox = convert_vol_bbox_dict_to_overall_vol(vol_bbox_tuples=zip(volume_list, bbox_list))
+    common_volume_list = map(lambda v: (v > 0).astype(np.int), common_volume_list)
+
+    average_volume = np.sum(common_volume_list, axis=0)
+    average_volume_prob = average_volume / float(average_volume.max())
+
+    if force_symmetric:
+        average_volume_prob = symmetricalize_volume(average_volume_prob)
+
+    if sigma is not None:
+        from skimage.filters import gaussian
+        average_volume_prob = gaussian(average_volume_prob, sigma) # Smooth the probability
+
+    common_origin = np.array(common_volume_bbox)[[0,2,4]]
+
+    if surface_level is not None:
+        average_volume_thresholded = average_volume_prob >= surface_level
+        average_polydata = volume_to_polydata(volume=(average_volume_thresholded, common_origin), num_simplify_iter=num_simplify_iter, smooth=smooth, return_vertex_face_list=return_vertices_faces)
+        return average_volume_prob, common_origin, average_polydata
+    else:
+        return average_volume_prob, common_origin
+
+
+
+def polydata_to_volume(polydata):
+    """
+    Parameters
+    ----------
+    polydata : vtkPolyData
+        input polydata
+
+    Returns
+    -------
+    (numpy arr, 3-tuple, vtkImageData)
+        (volume, origin, imagedata)
+
+    """
+
+    bounds = polydata.GetBounds()
+    spacing = [1., 1., 1.]
+
+    origin = [bounds[0] + spacing[0]/2,
+              bounds[2] + spacing[1]/2,
+              bounds[4] + spacing[2]/2]
+
+    whiteImage = vtk.vtkImageData()
+    whiteImage.SetSpacing(spacing)
+    whiteImage.SetOrigin(origin)
+
+    dim = np.array([np.ceil(bounds[1]-bounds[0])/spacing[0],
+                    np.ceil(bounds[3]-bounds[2])/spacing[1],
+                    np.ceil(bounds[5]-bounds[4])/spacing[2]],
+                    np.int)
+
+    whiteImage.SetDimensions(dim)
+    whiteImage.SetExtent(0, dim[0]-1, 0, dim[1]-1, 0, dim[2]-1)
+
+    # whiteImage.AllocateScalars(vtk.VTK_UNSIGNED_CHAR, 1)
+    n_pts = whiteImage.GetNumberOfPoints()
+
+    # t = time.time()
+#    inval = 255
+#    outval = 0
+#    for i in range(n_pts):
+#        whiteImage.GetPointData().GetScalars().SetTuple1(i, inval)
+    whiteImage.GetPointData().SetScalars(numpy_support.numpy_to_vtk(255*np.ones((n_pts, ), np.uint8), deep=True, array_type=vtk.VTK_UNSIGNED_CHAR)) # deep copy must be true
+    # sys.stderr.write('time 1: %.2f\n' % (time.time() - t) )
+
+
+    # t = time.time()
+
+    pol2stenc = vtk.vtkPolyDataToImageStencil()
+    pol2stenc.SetInputData(polydata)
+    pol2stenc.SetOutputOrigin(origin)
+    pol2stenc.SetOutputSpacing(spacing)
+    pol2stenc.SetOutputWholeExtent(whiteImage.GetExtent())
+    pol2stenc.Update()
+
+    # sys.stderr.write('time 2: %.2f\n' % (time.time() - t) )
+
+    # t = time.time()
+
+    # cut the corresponding white image and set the background:
+    imgstenc = vtk.vtkImageStencil()
+    imgstenc.SetInputData(whiteImage)
+    imgstenc.SetStencilData(pol2stenc.GetOutput())
+    imgstenc.ReverseStencilOff()
+    imgstenc.SetBackgroundValue(0)
+    imgstenc.Update()
+
+    # sys.stderr.write('time 3: %.2f\n' % (time.time() - t) )
+
+    # t = time.time()
+
+    im = imgstenc.GetOutput()
+    x, y, z = im.GetDimensions()
+    sc = im.GetPointData().GetScalars()
+    a = numpy_support.vtk_to_numpy(sc)
+    b = a.reshape(z,y,x)
+    b = np.transpose(b, [1,2,0])
+
+    # sys.stderr.write('time 4: %.2f\n' % (time.time() - t) )
+
+    return b, origin, im
+
+
+def symmetricalize_volume(prob_vol):
+    """
+    Replace the volume with the average of its left half and right half.
+    """
+
+    zc = prob_vol.shape[2]/2
+    prob_vol_symmetric = prob_vol.copy()
+    left_half = prob_vol[..., :zc]
+    right_half = prob_vol[..., -zc:]
+    left_half_averaged = (left_half + right_half[..., ::-1])/2.
+    prob_vol_symmetric[..., :zc] = left_half_averaged
+    prob_vol_symmetric[..., -zc:] = left_half_averaged[..., ::-1]
+    return prob_vol_symmetric
+
+
+def convert_to_surround_name(name, margin=None, suffix=None):
+    """
+    Args:
+        margin (str):
+    """
+
+    elements = name.split('_')
+    if margin is None:
+        if len(elements) > 1 and elements[1] == 'surround':
+            if suffix is not None:
+                return elements[0] + '_surround_' + suffix
+            else:
+                return elements[0] + '_surround'
+        else:
+            if suffix is not None:
+                return name + '_surround_' + suffix
+            else:
+                return name + '_surround'
+    else:
+        if len(elements) > 1 and elements[1] == 'surround':
+            if suffix is not None:
+                return elements[0] + '_surround_' + str(margin) + '_' + suffix
+            else:
+                return elements[0] + '_surround_' + str(margin)
+        else:
+            if suffix is not None:
+                return name + '_surround_' + str(margin) + '_' + suffix
+            else:
+                return name + '_surround_' + str(margin)
+
+
+def save_mesh_stl(polydata, fn):
+    stlWriter = vtk.vtkSTLWriter()
+    stlWriter.SetFileName(fn)
+    stlWriter.SetInputData(polydata)
+    stlWriter.Write()
