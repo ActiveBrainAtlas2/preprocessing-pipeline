@@ -166,8 +166,7 @@ for structure in ['12N']:
         aligned_moving_instance_wrt_templateCentroid_all_instances.append(aligned_moving_instance_wrt_templateCentroid)
 
     # Generate meshes for each instance.
-    instance_mesh_wrt_templateCentroid_all_instances = [
-        volume_to_polydata(v, origin=o, num_simplify_iter=3, smooth=True)
+    instance_mesh_wrt_templateCentroid_all_instances = [volume_to_polydata(v, origin=o, num_simplify_iter=3, smooth=True)
         for v, o in
         [template_instance_wrt_templateCentroid] + aligned_moving_instance_wrt_templateCentroid_all_instances]
 
