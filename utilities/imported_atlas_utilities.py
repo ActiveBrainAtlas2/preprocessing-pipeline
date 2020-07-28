@@ -12,7 +12,9 @@ from collections import defaultdict
 import re
 from skimage.measure import find_contours, regionprops
 from skimage.filters import gaussian
-
+from scipy.ndimage.morphology import distance_transform_edt
+from skimage.morphology import closing
+from scipy.ndimage.morphology import binary_fill_holes, binary_closing
 
 import vtk
 #from vtk.util import numpy_support
@@ -27,7 +29,8 @@ from utilities.coordinates_converter import CoordinatesConverter
 SECTION_THICKNESS = 20. # in um
 REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_registration_parameters'
 MESH_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_meshes'
-
+VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
+ATLAS = 'atlasV7'
 
 # print all_structures_total
 
@@ -699,24 +702,28 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
 
     Returns:
         (3d-array, (6,)-tuple): (volume, bounding box wrt wholebrain)
+        volume is a numpy array
+        origin is a
     """
+    print(stack_spec)
+    stack = stack_spec['name']
+    #volume_filename = get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure, resolution=resolution)
+    volume_filename = '{}.npy'.format(structure)
+    volume_filepath = os.path.join(VOL_DIR, stack,
+                                   '{}_annotationAsScoreVolume'.format(resolution), volume_filename)
+    print(volume_filepath)
 
-    # volume_filename = get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure, resolution=resolution)
-    # download_from_s3(vol_fp, is_dir=False)
-    volume_filename = '/net/birdstore/Active_Atlas_Data/copied_from_S3/mousebrainatlas-data/CSHL_volumes/MD589/MD589_wholebrainWithMargin_10.0um_intensityVolume/MD589_wholebrainWithMargin_10.0um_intensityVolume.bp'
-    # print('volume_filename', volume_filename)
-    volume = load_data(volume_filename, filetype='bp')
+    #volume = load_data(volume_filepath, filetype='npy')
+    volume = np.load(volume_filepath)
 
     # bbox_fp = DataManager.get_original_volume_bbox_filepath_v2(stack_spec=stack_spec, structure=structure,
     #                                                            resolution=resolution, wrt=bbox_wrt)
     # download_from_s3(bbox_fp)
     # volume_bbox = DataManager.load_data(bbox_fp, filetype='bbox')
-
-    # origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
-    # print('origin_file_name', origin_filename)
-    origin_filename = '/net/birdstore/Active_Atlas_Data/copied_from_S3/mousebrainatlas-data/CSHL_volumes/MD589/MD589_wholebrainWithMargin_10.0um_intensityVolume/MD589_wholebrainWithMargin_10.0um_intensityVolume_origin_wrt_wholebrain.txt'
-    # origin = load_data(origin_filename)
-    origin = np.array([1.470000000000000000e+02, 9.800000000000000000e+01, 1.820000000000000000e+02])
+    filename = '{}_origin_wrt_wholebrain.txt'.format(structure)
+    filepath = os.path.join(VOL_DIR, stack, '{}_annotationAsScoreVolume'.format(resolution), filename)
+    #origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
+    origin = np.loadtxt(filepath)
 
     if crop_to_minimal:
         volume, origin = crop_volume_to_minimal(vol=volume, origin=origin, return_origin_instead_of_bbox=True)
@@ -806,7 +813,7 @@ def get_original_volume_filepath_v2(stack_spec, structure=None, resolution=None)
                             - structure (optional)
                             - vol_type
     """
-    fileLocationManager = FileLocationManager(stack_spec['name'])
+    #fileLocationManager = FileLocationManager(stack_spec['name'])
 
     if 'resolution' not in stack_spec or stack_spec['resolution'] is None:
         assert resolution is not None
@@ -820,13 +827,13 @@ def get_original_volume_filepath_v2(stack_spec, structure=None, resolution=None)
         vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
 
     vol_basename_with_structure_suffix = vol_basename + ('_' + structure) if structure is not None else ''
-
+    ROOT_DIR = 'whoknows'
     if stack_spec['vol_type'] == 'score':
-        return os.path.join(fileLocationManager.atlas_volume, vol_basename_with_structure_suffix + '.npy')
+        return os.path.join(ROOT_DIR, vol_basename_with_structure_suffix + '.npy')
     elif stack_spec['vol_type'] == 'annotationAsScore':
-        return os.path.join(fileLocationManager.atlas_volume, vol_basename_with_structure_suffix + '.npy')
+        return os.path.join(ROOT_DIR, vol_basename_with_structure_suffix + '.npy')
     elif stack_spec['vol_type'] == 'intensity':
-        return os.path.join(fileLocationManager.atlas_volume, vol_basename, vol_basename + '.npy')
+        return os.path.join(ROOT_DIR, vol_basename, vol_basename + '.npy')
     else:
         raise Exception("vol_type of %s is not recognized." % stack_spec['vol_type'])
 
@@ -1376,9 +1383,9 @@ def get_alignment_result_filepath_v3(alignment_spec, what, reg_root_dir=REGISTRA
     else:
         raise
     stack = alignment_spec['stack_m']['name']
-    fp = os.path.join(reg_root_dir, stack, warp_basename, warp_basename + '_' + what + '.' + ext)
-    print('get_alignment_result_filepath_v3', fp)
-    return fp
+    filename = '{}.{}'.format(what, ext)
+    filepath = os.path.join(reg_root_dir, stack, warp_basename, filename)
+    return filepath
 
 
 #### registration utilities
@@ -2447,7 +2454,7 @@ def transform_volume_v4(volume, transform=None, return_origin_instead_of_bbox=Fa
 
     t = time.time()
 
-    if np.issubdtype(volume_m_aligned_to_f.dtype, np.float):
+    if np.issubdtype(volume_m_aligned_to_f.dtype, np.float64):
         dense_volume = fill_sparse_score_volume(volume_m_aligned_to_f)
     elif np.issubdtype(volume_m_aligned_to_f.dtype, np.integer):
         if not np.issubdtype(volume_m_aligned_to_f.dtype, np.uint8):
@@ -2466,6 +2473,59 @@ def transform_volume_v4(volume, transform=None, return_origin_instead_of_bbox=Fa
     else:
         return dense_volume, np.array((nzs_m_xmin_f, nzs_m_xmax_f, nzs_m_ymin_f, nzs_m_ymax_f, nzs_m_zmin_f, nzs_m_zmax_f))
 
+def fill_sparse_volume(volume_sparse):
+    """
+    Fill all holes of a integer-labeled volume. Assuming background label is 0.
+
+    Args:
+        volume_sparse (3D ndarray of int): sparse label volume.
+
+    Returns:
+        volume_filled (3D ndarray of int): filled label volume.
+    """
+
+    # Padding is necessary,
+    # because if the input volume touches the border,
+    # as a first step of closing, the dilation will fill the whole volume,
+    # resulting in subsequent erosion not recovering the boundary.
+    padding = 10
+    closing_element_radius = 5
+    # from skimage.morphology import binary_closing, ball
+
+    volume = np.zeros_like(volume_sparse, np.int8)
+    for ind in np.unique(volume_sparse):
+
+        # Assume background label is 0.
+        if ind == 0:
+            continue
+
+        vb = volume_sparse == ind
+        xmin,xmax,ymin,ymax,zmin,zmax = bbox_3d(vb)
+        vs = vb[ymin:ymax+1, xmin:xmax+1, zmin:zmax+1]
+        vs_padded = np.pad(vs, ((padding,padding),(padding,padding),(padding,padding)),
+                            mode='constant', constant_values=0)
+        # t = time.time()
+        # vs_padded_filled = binary_closing(vs_padded, ball(closing_element_radius))
+        vs_padded_filled = binary_closing(vs_padded, structure=np.ones((closing_element_radius,closing_element_radius,closing_element_radius)))
+        # print time.time() -t, 's'
+        vs_filled = vs_padded_filled[padding:-padding, padding:-padding, padding:-padding]
+        volume[ymin:ymax+1, xmin:xmax+1, zmin:zmax+1][vs_filled.astype(np.bool)] = ind
+
+    return volume
+
+
+def fill_sparse_score_volume(vol):
+    """
+    Densify a sparse 3D volume, by densifying every 2D slice.
+    """
+    dense_vol = np.zeros_like(vol)
+    xmin, xmax, ymin, ymax, zmin, zmax = bbox_3d(vol)
+    roi = vol[ymin:ymax+1, xmin:xmax+1, zmin:zmax+1]
+    roi_dense_vol = np.zeros_like(roi)
+    for z in range(roi.shape[2]):
+        roi_dense_vol[..., z] = closing((roi[..., z]*255).astype(np.int)/255., disk(1))
+    dense_vol[ymin:ymax+1, xmin:xmax+1, zmin:zmax+1] = roi_dense_vol.copy()
+    return dense_vol
 
 
 def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_vertices=200, return_vertex_face_list=False):
@@ -2654,7 +2714,6 @@ def get_surround_volume(volume, origin, distance=5, wall_level=0, prob=False, re
     Returns:
         (surround_volume, surround_volume_origin)
     """
-    from scipy.ndimage.morphology import distance_transform_edt
     distance = int(np.round(distance))
 
     # Identify the bounding box for the surrouding area.
