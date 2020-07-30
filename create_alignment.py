@@ -150,7 +150,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     max_height = int(height * SCALING_FACTOR)
 
     if 'thion' in stain.lower():
-        bgcolor = 'lavender'
+        bgcolor = 'white'
 
     if 'full' in resolution.lower():
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
