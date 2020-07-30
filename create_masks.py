@@ -12,7 +12,7 @@ from utilities.alignment_utility import get_last_2d
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import fix_with_fill
+from utilities.utilities_mask import fix_with_fill, fix_thionin
 from utilities.utilities_process import workernoshell
 
 
@@ -20,6 +20,7 @@ def create_mask(animal, full, njobs):
     logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
+    stain = sqlController.histology.counterstain
     sqlController.set_task(animal, CREATE_THUMBNAIL_MASKS)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
     MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
@@ -54,13 +55,22 @@ def create_mask(animal, full, njobs):
 
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
-            try:
-                img = io.imread(infile)
-            except:
-                logger.warning(f'Could not open {infile}')
-                continue
-            img = get_last_2d(img)
-            mask = fix_with_fill(img, 250, np.uint8)
+            if 'thion' in stain.lower():
+                try:
+                    img = cv2.imread(infile, cv2.IMREAD_GRAYSCALE)
+                except:
+                    logger.warning(f'Could not open {infile}')
+                    continue
+                mask = fix_thionin(img)
+            else:
+                try:
+                    img = io.imread(infile)
+                    img = get_last_2d(img)
+                except:
+                    logger.warning(f'Could not open {infile}')
+                    continue
+                mask = fix_with_fill(img, 250, np.uint8)
+
             # save the mask
             outpath = os.path.join(MASKED, file)
             cv2.imwrite(outpath, mask.astype('uint8'))

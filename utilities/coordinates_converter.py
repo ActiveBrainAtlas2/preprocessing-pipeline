@@ -23,7 +23,7 @@ class CoordinatesConverter(object):
         # Some are derivable from data_feeder
         # some from stack name
         # some must be assigned dynamically
-
+        # this import has to be here to avoid circular imports
         from utilities.imported_atlas_utilities import load_original_volume_v2
         self.frames = {'wholebrain': {'origin_wrt_wholebrain_um': (0,0,0),
         'zdim_um': None},
@@ -53,7 +53,6 @@ class CoordinatesConverter(object):
         # Define frame:wholebrainWithMargin
         intensity_volume_spec = dict(name=stack, resolution='10.0um', prep_id='wholebrainWithMargin', vol_type='intensity')
         thumbnail_volume, thumbnail_volume_origin_wrt_wholebrain_10um = load_original_volume_v2(intensity_volume_spec, return_origin_instead_of_bbox=True)
-        print('thumbnail_volume_origin_wrt_wholebrain_10um', thumbnail_volume_origin_wrt_wholebrain_10um)
         thumbnail_volume_origin_wrt_wholebrain_um = thumbnail_volume_origin_wrt_wholebrain_10um * 10.
 
         # thumbnail_volume, (thumbnail_volume_origin_wrt_wholebrain_dataResol_x, thumbnail_volume_origin_wrt_wholebrain_dataResol_y, _) = \
@@ -75,7 +74,7 @@ class CoordinatesConverter(object):
         self.data_feeder = data_feeder
         self.stack = stack
 
-        for frame_name, frame in self.frames.iteritems():
+        for frame_name, frame in self.frames.items():
             if hasattr(self.data_feeder, 'z_dim'):
                 frame['zdim_um'] = self.data_feeder.z_dim * convert_resolution_string_to_um(self.stack, self.data_feeder.resolution)
 
@@ -307,8 +306,6 @@ class CoordinatesConverter(object):
             assert isinstance(wrt, tuple)
             base_frame_name, plane = wrt
             p_wrt_outSagittal_origin_um = p_wrt_wholebrain_um - self.frames[base_frame_name]['origin_wrt_wholebrain_um']
-            # print wrt, 'origin_wrt_wholebrain_um', self.frames[base_frame_name]['origin_wrt_wholebrain_um']
-            # print 'p_wrt_outSagittal_origin_um', np.nanmean(p_wrt_outSagittal_origin_um[None, :], axis=0)
             assert p_wrt_outSagittal_origin_um.ndim == 2
             p_wrt_outdomain_um = self.convert_three_view_frames(p=p_wrt_outSagittal_origin_um, base_frame_name=base_frame_name,
                                                                 in_plane='sagittal',
@@ -341,18 +338,14 @@ class CoordinatesConverter(object):
             assert isinstance(wrt, tuple)
             base_frame_name, plane = wrt
 
-            # print 'p_um', np.nanmean(p_um[None, :], axis=0)
             assert p_um.ndim == 2
             p_wrt_inSagittal_um = self.convert_three_view_frames(p=p_um, base_frame_name=base_frame_name,
                                                                 in_plane=plane,
                                                                 out_plane='sagittal',
                                                                 p_resol='um')
             assert p_wrt_inSagittal_um.ndim == 2
-            # print 'p_wrt_inSagittal_um', np.nanmean(p_wrt_inSagittal_um[None, :], axis=0)
             inSagittal_origin_wrt_wholebrain_um = self.frames[base_frame_name]['origin_wrt_wholebrain_um']
-            # print 'inSagittal_origin_wrt_wholebrain_um', np.nanmean(inSagittal_origin_wrt_wholebrain_um[None, :], axis=0)
             p_wrt_wholebrain_um = p_wrt_inSagittal_um + inSagittal_origin_wrt_wholebrain_um
-            # print 'p_wrt_wholebrain_um', np.nanmean(p_wrt_wholebrain_um[None, :], axis=0)
 
         return p_wrt_wholebrain_um
 
@@ -453,7 +446,7 @@ class CoordinatesConverter(object):
             p_wrt_outdomain_outResol = np.zeros(p.shape)
 
             Ts_anchor_to_individual_section_image_resol = load_transforms(stack=stack, resolution='1um', use_inverse=True)
-            Ts_anchor_to_individual_section_image_resol = {fn: np.linalg.inv(T) for fn, T in Ts_anchor_to_individual_section_image_resol.iteritems()}
+            Ts_anchor_to_individual_section_image_resol = {fn: np.linalg.inv(T) for fn, T in Ts_anchor_to_individual_section_image_resol.items()}
 
             different_sections = np.unique(p[:, 2])
             for sec in different_sections:
@@ -478,11 +471,7 @@ class CoordinatesConverter(object):
         else:
             p = np.array(p)
             assert p.ndim == 2
-            # print 'p', np.nanmean(p[None,:], axis=0)
             p_wrt_wholebrain_um = self.convert_to_wholebrain_um(p, wrt=in_wrt, resolution=in_resolution)
             assert p_wrt_wholebrain_um.ndim == 2
-            # print 'p_wrt_wholebrain_um', np.nanmean(p_wrt_wholebrain_um[None,:], axis=0)
             p_wrt_outdomain_outResol = self.convert_from_wholebrain_um(p_wrt_wholebrain_um=p_wrt_wholebrain_um, wrt=out_wrt, resolution=out_resolution)
-            # print 'p_wrt_outdomain_outResol', np.nanmean(p_wrt_outdomain_outResol[None,:], axis=0)
-            # print
             return p_wrt_outdomain_outResol

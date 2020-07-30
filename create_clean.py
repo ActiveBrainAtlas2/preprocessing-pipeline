@@ -20,6 +20,60 @@ from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, linnorm
 
 
+def fix_ntb(infile, mask, logger, rotation, flip):
+    try:
+        img = io.imread(infile)
+    except:
+        logger.warning(f'Could not open {infile}')
+    img = get_last_2d(img)
+    fixed = cv2.bitwise_and(img, img, mask=mask)
+
+    if rotation > 0:
+        fixed = rotate_image(fixed, infile, rotation)
+
+    if flip == 'flip':
+        fixed = np.flip(fixed)
+    if flip == 'flop':
+        fixed = np.flip(fixed, axis=1)
+
+    if channel == 1:
+        clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(12, 12))
+        fixed = clahe.apply(fixed.astype(np.uint16))
+
+    return fixed
+
+
+def fix_thion(infile, mask, logger, rotation, flip):
+    try:
+        imgfull = cv2.imread(infile)
+    except:
+        logger.warning(f'Could not open {infile}')
+
+    img_ch1 = imgfull[:, :, 0]
+    img_ch2 = imgfull[:, :, 1]
+    img_ch3 = imgfull[:, :, 2]
+    fixed1 = cv2.bitwise_and(img_ch1, img_ch1, mask=mask)
+    fixed2 = cv2.bitwise_and(img_ch2, img_ch2, mask=mask)
+    fixed3 = cv2.bitwise_and(img_ch3, img_ch3, mask=mask)
+
+    if rotation > 0:
+        fixed1 = rotate_image(fixed1, infile, rotation)
+        fixed2 = rotate_image(fixed2, infile, rotation)
+        fixed3 = rotate_image(fixed3, infile, rotation)
+
+    if flip == 'flip':
+        fixed1 = np.flip(fixed1)
+        fixed2 = np.flip(fixed2)
+        fixed3 = np.flip(fixed3)
+    if flip == 'flop':
+        fixed1 = np.flip(fixed1, axis=1)
+        fixed2 = np.flip(fixed2, axis=1)
+        fixed3 = np.flip(fixed3, axis=1)
+
+    fixed = np.dstack((fixed1, fixed2, fixed3))
+    #fixed = fixed3
+    return fixed
+
 
 def masker(animal, channel, flip, rotation=0, full=False):
     logger = get_logger(animal)
@@ -35,7 +89,6 @@ def masker(animal, channel, flip, rotation=0, full=False):
     max_height = int(height * SCALING_FACTOR)
     bgcolor = 0
     dt = 'uint16'
-    limit = 2 ** 16 - 1
     stain = sqlController.histology.counterstain
     if channel == 1:
         sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)
@@ -54,9 +107,8 @@ def masker(animal, channel, flip, rotation=0, full=False):
             sqlController.set_task(animal, CLEAN_CHANNEL_3_FULL_RES_WITH_MASK)
 
     if 'thion' in stain.lower():
-        bgcolor = 230
+        bgcolor = 255
         dt = 'uint8'
-        limit = 2 ** 8 - 1
 
     files = sorted(os.listdir(INPUT))
 
@@ -65,38 +117,18 @@ def masker(animal, channel, flip, rotation=0, full=False):
         outpath = os.path.join(CLEANED, file)
         if os.path.exists(outpath):
             continue
-        try:
-            if 'ntb' in stain.lower():
-                img = io.imread(infile)
-            else:
-               img = cv2.imread(infile, cv2.IMREAD_GRAYSCALE)
-        except:
-            logger.warning(f'Could not open {infile}')
-            continue
-        img = get_last_2d(img)
         maskfile = os.path.join(MASKS, file)
         mask = io.imread(maskfile)
 
-        mask16 = np.copy(mask.astype(dt))
-        mask16[mask16 > 0] = limit
+        if 'thion' in stain.lower():
+            fixed = fix_thion(infile, mask, logger, rotation, flip)
+        else:
+            fixed = fix_ntb(infile, mask, logger, rotation, flip)
 
-        ##img = np.int16(img)
-        mask = np.int8(mask16)
-        fixed = cv2.bitwise_and(img, img, mask=mask)
 
-        if rotation > 0:
-            fixed = rotate_image(fixed, file, rotation)
 
-        if flip == 'flip':
-            fixed = np.flip(fixed)
-        if flip == 'flop':
-            fixed = np.flip(fixed, axis=1)
 
-        if channel == 1 and 'ntb' in stain.lower():
-            # pass
-            #fixed = linnorm(fixed, limit, dt)
-            clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(12, 12))
-            fixed = clahe.apply(fixed.astype(dt))
+
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
         #fixed = place_image(fixed, file, max_height, max_width, bgcolor)

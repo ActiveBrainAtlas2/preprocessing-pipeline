@@ -13,7 +13,7 @@ import re
 from skimage.measure import find_contours, regionprops
 from skimage.filters import gaussian
 from scipy.ndimage.morphology import distance_transform_edt
-from skimage.morphology import closing
+from skimage.morphology import closing, disk
 from scipy.ndimage.morphology import binary_fill_holes, binary_closing
 
 import vtk
@@ -31,8 +31,6 @@ REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CS
 MESH_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_meshes'
 VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
 ATLAS = 'atlasV7'
-
-# print all_structures_total
 
 
 def create_alignment_specs(stack, detector_id):
@@ -114,8 +112,7 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
     converter.register_new_resolution('structure_volume', resol_um=convert_resolution_string_to_um(stack, resolution))
     converter.register_new_resolution('image', resol_um=convert_resolution_string_to_um(stack, 'raw'))
 
-    for name_s, (structure_volume_volResol, origin_wrt_wholebrain_volResol) in volumes.items():
-        print(name_s, (structure_volume_volResol, origin_wrt_wholebrain_volResol))
+    for name_s, (structure_volume_volResol, origin_wrt_wholebrain_volResol) in list(volumes.items()):
         converter.derive_three_view_frames(name_s,
                                            origin_wrt_wholebrain_um=convert_resolution_string_to_um(stack,
                                                                                                     resolution) * origin_wrt_wholebrain_volResol,
@@ -127,13 +124,7 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
             out_wrt=(name_s, 'sagittal'), out_resolution='structure_volume', stack=stack)[..., 2].flatten()
 
         structure_ddim = structure_volume_volResol.shape[2]
-        print('structure_ddim', structure_ddim)
-        print('sections', sections)
-        #print('type sections', type(sections))
         #positions_of_all_sections_wrt_structureVolume = np.arange(49, 176)
-        print('positions_of_all_sections_wrt_structureVolume', positions_of_all_sections_wrt_structureVolume)
-        print('type positions_of_all_sections_wrt_structureVolume', type(positions_of_all_sections_wrt_structureVolume))
-        ###TODO fix, positions_of_all_sections_wrt_structureVolume < structure_ddim
         valid_mask = (positions_of_all_sections_wrt_structureVolume >= 0) & (
                     positions_of_all_sections_wrt_structureVolume < structure_ddim)
         #valid_mask = (positions_of_all_sections_wrt_structureVolume >= 400) & (
@@ -162,7 +153,7 @@ def get_structure_contours_from_structure_volumes_v3(volumes, stack, sections,
                                        sample_every=sample_every,
                                        positions=positions_of_all_sections_wrt_structureVolume)
 
-            for d_wrt_structureVolume, cnt_uv_wrt_structureVolume in contour_2d_wrt_structureVolume_sectionPositions_volResol.items():
+            for d_wrt_structureVolume, cnt_uv_wrt_structureVolume in list(contour_2d_wrt_structureVolume_sectionPositions_volResol.items()):
 
                 contour_3d_wrt_structureVolume_volResol = np.column_stack(
                     [cnt_uv_wrt_structureVolume, np.ones((len(cnt_uv_wrt_structureVolume),)) * d_wrt_structureVolume])
@@ -209,20 +200,19 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
 
     if along_direction == 'z' or along_direction == 'sagittal':
         if positions is None:
-            positions = range(0, labeled_volume.shape[2])
+            positions = list(range(0, labeled_volume.shape[2]))
     elif along_direction == 'x' or along_direction == 'coronal':
         if positions is None:
-            positions = range(0, labeled_volume.shape[1])
+            positions = list(range(0, labeled_volume.shape[1]))
     elif along_direction == 'y' or along_direction == 'horizontal':
         if positions is None:
-            positions = range(0, labeled_volume.shape[0])
+            positions = list(range(0, labeled_volume.shape[0]))
 
     def find_contour_points_slice(p):
         """
         Args:
             p (int): position
         """
-        print('p', p, 'labeled_volume.shape', labeled_volume.shape)
         if along_direction == 'x':
             if p < 0 or p >= labeled_volume.shape[1]:
                 return
@@ -245,7 +235,6 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
             vol_slice = labeled_volume[:, :, p]
         else:
             raise
-        print('vol_slice', vol_slice)
         cnts = find_contour_points(vol_slice.astype(np.uint8), sample_every=sample_every)
         if len(cnts) == 0 or 1 not in cnts:
             # sys.stderr.write('No contour of reconstructed volume is found at position %d.\n' % p)
@@ -254,8 +243,8 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
             if len(cnts[1]) > 1:
                 sys.stderr.write(
                     '%s contours of reconstructed volume is found at position %d (%s). Use the longest one.\n' % (
-                    len(cnts[1]), p, map(len, cnts[1])))
-                cnt = np.array(cnts[1][np.argmax(map(len, cnts[1]))])
+                    len(cnts[1]), p, list(map(len, cnts[1]))))
+                cnt = np.array(cnts[1][np.argmax(list(map(len, cnts[1])))])
             else:
                 cnt = np.array(cnts[1][0])
             if len(cnt) <= 2:
@@ -265,20 +254,17 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
                 return cnt
 
     #pool = Pool(nproc)
-    print('positions', positions)
     #positions = [60,70,75,77,78,80,86,200]
     contours = dict()
     #pm = pool.map(find_contour_points_slice, positions)
     for p in positions:
         r = find_contour_points_slice(p)
         contours[p] = r
-    #print(pm)
     #contours = dict(zip(positions, pool.map(find_contour_points_slice, positions)))
     #pool.close()
     #pool.join()
 
-    contours = {p: cnt for p, cnt in contours.items() if cnt is not None}
-    print('contours', contours)
+    contours = {p: cnt for p, cnt in list(contours.items()) if cnt is not None}
     return contours
 
 
@@ -431,12 +417,6 @@ def get_transformed_volume_filepath_v2(alignment_spec, resolution=None, trial_id
                                                   trial_idx=trial_idx)
     vol_basename = warp_basename + '_' + resolution
     vol_basename_with_structure_suffix = vol_basename + ('_' + structure) if structure is not None else ''
-    # print('1',VOLUME_ROOTDIR)
-    # print('2',alignment_spec['stack_m']['name'])
-    # print('3',vol_basename)
-    # print('4 score_volumes')
-    # print('5',vol_basename_with_structure_suffix)
-    # print('get transformed_volume_filepath ', filename)
     filename = os.path.join('/home/eddyod/MouseBrainSlicer_data/score_volumes', 'atlasV7_10.0um_scoreVolume_12N.npy')
     return filename
 
@@ -565,7 +545,7 @@ def load_data(filepath, filetype=None):
         contour_df = read_hdf(filepath, 'contours')
         return contour_df
     elif filetype == 'pickle':
-        import cPickle as pickle
+        import pickle as pickle
         return pickle.load(open(filepath, 'r'))
     elif filetype == 'file_section_map':
         with open(filepath, 'r') as f:
@@ -621,9 +601,7 @@ def load_transformed_volume(alignment_spec, structure):
                                                              alignment_spec=alignment_spec,
                                                              resolution=None,
                                                              structure=structure)
-    print('load_transformed_volume: volume_filename', volume_filename)
-    print('load_transformed_volume: origin_filename', origin_filename)
-    origin_filename = '/home/eddyod/MouseBrainSlicer_data/score_volumes/atlasV7_10.0um_scoreVolume_12N_origin_wrt_canonicalAtlasSpace.txt'
+    #origin_filename = '/home/eddyod/MouseBrainSlicer_data/score_volumes/atlasV7_10.0um_scoreVolume_12N_origin_wrt_canonicalAtlasSpace.txt'
     volume = load_data(volume_filename)
     origin = load_data(origin_filename)
     return (volume, origin)
@@ -705,13 +683,13 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
         volume is a numpy array
         origin is a
     """
-    print(stack_spec)
+    if resolution is None:
+        resolution = stack_spec['resolution']
     stack = stack_spec['name']
     #volume_filename = get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure, resolution=resolution)
     volume_filename = '{}.npy'.format(structure)
     volume_filepath = os.path.join(VOL_DIR, stack,
                                    '{}_annotationAsScoreVolume'.format(resolution), volume_filename)
-    print(volume_filepath)
 
     #volume = load_data(volume_filepath, filetype='npy')
     volume = np.load(volume_filepath)
@@ -720,7 +698,7 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
     #                                                            resolution=resolution, wrt=bbox_wrt)
     # download_from_s3(bbox_fp)
     # volume_bbox = DataManager.load_data(bbox_fp, filetype='bbox')
-    filename = '{}_origin_wrt_wholebrain.txt'.format(structure)
+    filename = '{}_origin_wrt_{}.txt'.format(structure, bbox_wrt)
     filepath = os.path.join(VOL_DIR, stack, '{}_annotationAsScoreVolume'.format(resolution), filename)
     #origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
     origin = np.loadtxt(filepath)
@@ -788,7 +766,6 @@ def get_original_volume_origin_filepath_v3(stack_spec, structure, wrt='wholebrai
     if volume_type == 'score' or volume_type == 'annotationAsScore':
         origin_fp = os.path.join(VOLUME_ROOTDIR, '%(stack)s',
                                  '%(basename)s',
-                                 'score_volumes',
                                  '%(basename)s_%(struct)s_origin' + (
                                      '_wrt_' + wrt if wrt is not None else '') + '.txt') % \
                     {'stack': stack_spec['name'], 'basename': vol_basename, 'struct': structure}
@@ -827,13 +804,12 @@ def get_original_volume_filepath_v2(stack_spec, structure=None, resolution=None)
         vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
 
     vol_basename_with_structure_suffix = vol_basename + ('_' + structure) if structure is not None else ''
-    ROOT_DIR = 'whoknows'
     if stack_spec['vol_type'] == 'score':
-        return os.path.join(ROOT_DIR, vol_basename_with_structure_suffix + '.npy')
+        return os.path.join(vol_basename_with_structure_suffix + '.npy')
     elif stack_spec['vol_type'] == 'annotationAsScore':
-        return os.path.join(ROOT_DIR, vol_basename_with_structure_suffix + '.npy')
+        return os.path.join(vol_basename_with_structure_suffix + '.npy')
     elif stack_spec['vol_type'] == 'intensity':
-        return os.path.join(ROOT_DIR, vol_basename, vol_basename + '.npy')
+        return os.path.join(vol_basename, vol_basename + '.npy')
     else:
         raise Exception("vol_type of %s is not recognized." % stack_spec['vol_type'])
 
@@ -876,7 +852,6 @@ def crop_and_pad_volume(in_vol, in_bbox=None, in_origin=(0,0,0), out_bbox=None):
     in_xdim = in_xmax - in_xmin + 1
     in_ydim = in_ymax - in_ymin + 1
     in_zdim = in_zmax - in_zmin + 1
-        # print 'in', in_xdim, in_ydim, in_zdim
 
     if out_bbox is None:
         out_xmin = 0
@@ -894,20 +869,16 @@ def crop_and_pad_volume(in_vol, in_bbox=None, in_origin=(0,0,0), out_bbox=None):
     out_ydim = out_ymax - out_ymin + 1
     out_zdim = out_zmax - out_zmin + 1
 
-    # print out_xmin, out_xmax, out_ymin, out_ymax, out_zmin, out_zmax
 
     if out_xmin > in_xmax or out_xmax < in_xmin or out_ymin > in_ymax or out_ymax < in_ymin or out_zmin > in_zmax or out_zmax < in_zmin:
         return np.zeros((out_ydim, out_xdim, out_zdim), np.int)
 
     if out_xmax > in_xmax:
         in_vol = np.pad(in_vol, pad_width=[(0,0),(0, out_xmax-in_xmax),(0,0)], mode='constant', constant_values=0)
-        # print 'pad x'
     if out_ymax > in_ymax:
         in_vol = np.pad(in_vol, pad_width=[(0, out_ymax-in_ymax),(0,0),(0,0)], mode='constant', constant_values=0)
-        # print 'pad y'
     if out_zmax > in_zmax:
         in_vol = np.pad(in_vol, pad_width=[(0,0),(0,0),(0, out_zmax-in_zmax)], mode='constant', constant_values=0)
-        # print 'pad z'
 
     out_vol = np.zeros((out_ydim, out_xdim, out_zdim), in_vol.dtype)
     ymin = max(in_ymin, out_ymin)
@@ -916,9 +887,6 @@ def crop_and_pad_volume(in_vol, in_bbox=None, in_origin=(0,0,0), out_bbox=None):
     ymax = out_ymax
     xmax = out_xmax
     zmax = out_zmax
-    # print 'in_vol', np.array(in_vol.shape)[[1,0,2]]
-    # print xmin, xmax, ymin, ymax, zmin, zmax
-    # print xmin-in_xmin, xmax+1-in_xmin
     # assert ymin >= 0 and xmin >= 0 and zmin >= 0
     out_vol[ymin-out_ymin:ymax+1-out_ymin,
             xmin-out_xmin:xmax+1-out_xmin,
@@ -942,7 +910,7 @@ def crop_and_pad_volumes(out_bbox=None, vol_bbox_dict=None, vol_bbox_tuples=None
 
     if vol_bbox is not None:
         if isinstance(vol_bbox, dict):
-            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in volumes.items()}
+            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in list(volumes.items())}
         elif isinstance(vol_bbox, list):
             vols = [crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for (v, b) in volumes]
         else:
@@ -951,7 +919,7 @@ def crop_and_pad_volumes(out_bbox=None, vol_bbox_dict=None, vol_bbox_tuples=None
         if vol_bbox_tuples is not None:
             vols = [crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for (v, b) in vol_bbox_tuples]
         elif vol_bbox_dict is not None:
-            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in vol_bbox_dict.items()}
+            vols = {l: crop_and_pad_volume(v, in_bbox=b, out_bbox=out_bbox) for l, (v, b) in list(vol_bbox_dict.items())}
         else:
             raise
 
@@ -969,7 +937,7 @@ def convert_vol_bbox_dict_to_overall_vol(vol_bbox_dict=None, vol_bbox_tuples=Non
     """
 
     if vol_origin_dict is not None:
-        vol_bbox_dict = {k: (v, (o[0], o[0]+v.shape[1]-1, o[1], o[1]+v.shape[0]-1, o[2], o[2]+v.shape[2]-1)) for k,(v,o) in vol_origin_dict.items()}
+        vol_bbox_dict = {k: (v, (o[0], o[0]+v.shape[1]-1, o[1], o[1]+v.shape[0]-1, o[2], o[2]+v.shape[2]-1)) for k,(v,o) in list(vol_origin_dict.items())}
 
     if vol_bbox_dict is not None:
         vol_bbox_values = list(vol_bbox_dict.values())
@@ -980,13 +948,16 @@ def convert_vol_bbox_dict_to_overall_vol(vol_bbox_dict=None, vol_bbox_tuples=Non
         volumes = crop_and_pad_volumes(out_bbox=volume_bbox, vol_bbox_tuples=vol_bbox_tuples)
     return volumes, np.array(volume_bbox)
 
-def load_original_volume_all_known_structures_v3(stack_spec, structures):
+def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox_wrt='canonicalAtlasSpace'):
 
-    in_bbox_wrt = 'wholebrain'
+    #in_bbox_wrt = 'wholebrain'
     return_label_mappings = False
     name_or_index_as_key = 'name'
     common_shape = False
     return_origin_instead_of_bbox = True
+    #in_bbox_wrt = 'canonicalAtlasSpace'
+    include_surround = True
+
     """
     Load original (un-transformed) volumes for all structures and optionally pad them into a common shape.
 
@@ -1029,7 +1000,6 @@ def load_original_volume_all_known_structures_v3(stack_spec, structures):
                                                                           resolution=stack_spec['resolution'],
                                                                           loaded_cropbox_resolution=stack_spec['resolution'])
             o = o + in_bbox_origin_wrt_wholebrain
-            #print('structure', structure, 'v',v,'o',o)
             if name_or_index_as_key == 'name':
                 volumes[structure] = (v,o)
             else:
@@ -1057,12 +1027,12 @@ def load_original_volume_all_known_structures_v3(stack_spec, structures):
         if return_label_mappings:
             return {k: crop_volume_to_minimal(vol=v, origin=o,
                         return_origin_instead_of_bbox=return_origin_instead_of_bbox)
-                    for k, (v, o) in volumes.items()}, structure_to_label, label_to_structure
+                    for k, (v, o) in list(volumes.items())}, structure_to_label, label_to_structure
 
         else:
             return {k: crop_volume_to_minimal(vol=v, origin=o,
                         return_origin_instead_of_bbox=return_origin_instead_of_bbox)
-                    for k, (v, o) in volumes.items()}
+                    for k, (v, o) in list(volumes.items())}
 
 
 def get_domain_origin(stack, domain, resolution, loaded_cropbox_resolution='down32'):
@@ -1099,7 +1069,6 @@ def get_domain_origin(stack, domain, resolution, loaded_cropbox_resolution='down
             raise
     else:
 
-        print('loaded_cropbox_resolution', loaded_cropbox_resolution)
         loaded_cropbox_resolution_um = convert_resolution_string_to_voxel_size(resolution=loaded_cropbox_resolution, stack=stack)
 
         if domain == 'wholebrain':
@@ -1263,7 +1232,6 @@ def convert_section_to_z(sec, downsample=None, resolution=None, stack=None, mid=
 
     z1 = (sec-1) * section_thickness_in_voxel
     z2 = sec * section_thickness_in_voxel
-    # print "z1, z2 =", z1, z2
 
     if mid:
         return np.mean([z1-z_begin, z2-1-z_begin])
@@ -1334,7 +1302,7 @@ def get_centroid_3d(v):
 
     if isinstance(v, dict):
         centroids = {}
-        for n, s in v.items():
+        for n, s in list(v.items()):
             if isinstance(s, tuple): # volume, origin_or_bbox
                 vol, origin_or_bbox = s
                 if len(origin_or_bbox) == 3:
@@ -1530,14 +1498,9 @@ def fit_plane(X):
     c : (3,) vector
         a point on the plane
     """
-    #print('X', X[0])
-    #print('type X', type(X[0]))
-    #X = X[0]
 
     # http://math.stackexchange.com/questions/99299/best-fitting-plane-given-a-set-of-points
     # http://math.stackexchange.com/a/3871
-    #X = list(X)
-    #X = np.array(X)
     c = X.mean(axis=0)
     Xc = X - c
     U, _, VT = np.linalg.svd(Xc.T)
@@ -1583,9 +1546,9 @@ def average_location(centroid_allLandmarks_wrt_fixedBrain=None, mean_centroid_al
     if mean_centroid_allLandmarks_wrt_fixedBrain is None:
         mean_centroid_allLandmarks_wrt_fixedBrain = {name: np.mean(centroids, axis=0)
                                                      for name, centroids in
-                                                     centroid_allLandmarks_wrt_fixedBrain.items()}
+                                                     list(centroid_allLandmarks_wrt_fixedBrain.items())}
 
-    names = set([convert_to_original_name(name_s) for name_s in mean_centroid_allLandmarks_wrt_fixedBrain.keys()])
+    names = set([convert_to_original_name(name_s) for name_s in list(mean_centroid_allLandmarks_wrt_fixedBrain.keys())])
     # Fit a midplane from the midpoints of symmetric landmark centroids
     midpoints_wrt_fixedBrain = {}
     for name in names:
@@ -1604,8 +1567,8 @@ def average_location(centroid_allLandmarks_wrt_fixedBrain=None, mean_centroid_al
     midpoints_wrt_fixedBrain_values = list(midpoints_wrt_fixedBrain.values())
     midplane_normal, midplane_anchor_wrt_fixedBrain = fit_plane(np.c_[midpoints_wrt_fixedBrain_values])
 
-    print('Mid-sagittal plane normal vector =', midplane_normal, '@ Mid-sagittal plane anchor wrt fixed wholebrain =',
-          midplane_anchor_wrt_fixedBrain)
+    print(('Mid-sagittal plane normal vector =', midplane_normal, '@ Mid-sagittal plane anchor wrt fixed wholebrain =',
+          midplane_anchor_wrt_fixedBrain))
 
     R_fixedWholebrain_to_canonical = R_align_two_vectors(midplane_normal, (0, 0, 1))
 
@@ -1617,21 +1580,19 @@ def average_location(centroid_allLandmarks_wrt_fixedBrain=None, mean_centroid_al
         centroid_m=midplane_anchor_wrt_fixedBrain,
         centroid_f=(0, 0, 0))
 
-    print('Transform matrix to canonical atlas space =')
-    print(transform_matrix_fixedWholebrain_to_atlasCanonicalSpace)
 
-    print('Angular deviation of the mid sagittal plane normal around y axis (degree) =',
-          np.rad2deg(np.arccos(midplane_normal[2])))
+    print(('Angular deviation of the mid sagittal plane normal around y axis (degree) =',
+          np.rad2deg(np.arccos(midplane_normal[2]))))
 
     points_midplane_oriented = {
         name: transform_points(p, transform=transform_matrix_fixedWholebrain_to_atlasCanonicalSpace)
-        for name, p in mean_centroid_allLandmarks_wrt_fixedBrain.items()}
+        for name, p in list(mean_centroid_allLandmarks_wrt_fixedBrain.items())}
 
     if centroid_allLandmarks_wrt_fixedBrain is not None:
 
         instance_centroid_rel2atlasCanonicalSpace = \
             {n: transform_points(s, transform=transform_matrix_fixedWholebrain_to_atlasCanonicalSpace)
-             for n, s in centroid_allLandmarks_wrt_fixedBrain.items()}
+             for n, s in list(centroid_allLandmarks_wrt_fixedBrain.items())}
     else:
         instance_centroid_rel2atlasCanonicalSpace = None
 
@@ -1710,7 +1671,7 @@ def plot_centroid_means_and_covars_3d(instance_centroids,
     if colors is None:
         colors = {name_s: (0,0,1) for name_s in instance_centroids}
 
-    for name_s, centroids in instance_centroids.items():
+    for name_s, centroids in list(instance_centroids.items()):
     #     if name_s == '7N_L' or name_s == '7N_R':
 
         if canonical_centroid is None:
@@ -1749,7 +1710,7 @@ def plot_centroid_means_and_covars_3d(instance_centroids,
 
         # Plot mid-sagittal plane
         if canonical_normal is not None:
-            canonical_midplane_xx, canonical_midplane_yy = np.meshgrid(range(xlim[0], xlim[1], 100), range(ylim[0], ylim[1], 100), indexing='xy')
+            canonical_midplane_xx, canonical_midplane_yy = np.meshgrid(list(range(xlim[0], xlim[1], 100)), list(range(ylim[0], ylim[1], 100)), indexing='xy')
             canonical_midplane_z = -(canonical_normal[0]*(canonical_midplane_xx-canonical_centroid[0]) + \
             canonical_normal[1]*(canonical_midplane_yy-canonical_centroid[1]) + \
             canonical_normal[2]*(-canonical_centroid[2]))/canonical_normal[2]
@@ -1790,7 +1751,6 @@ def compute_ellipsoid_from_covar(covar_mat):
     ellipsoid_matrix_allStructures = {}
     for name_s, cov_mat in sorted(covar_mat.items()):
         u, s, vt = np.linalg.svd(cov_mat)
-    #     print name_s, u[:,0], u[:,1], u[:,2],
         radii_allStructures[name_s] = np.sqrt(s)
         ellipsoid_matrix_allStructures[name_s] = vt
     return radii_allStructures, ellipsoid_matrix_allStructures
@@ -1814,7 +1774,6 @@ def compute_covar_from_instance_centroids(instance_centroids):
         cov_mat = np.cov(centroids2.T)
         cov_mat_allStructures[name_s] = cov_mat
         u, s, vt = np.linalg.svd(cov_mat)
-    #     print name_s, u[:,0], u[:,1], u[:,2],
         radii_allStructures[name_s] = np.sqrt(s)
         ellipsoid_matrix_allStructures[name_s] = vt
 
@@ -1879,11 +1838,11 @@ all_known_structures_sided = sum([[n] if n in singular_structures
 
 name_sided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
                      for i, s in enumerate(all_known_structures_sided) }
-name_sided_to_color_float = {s: np.array(c)/255. for s, c in name_sided_to_color.items()}
+name_sided_to_color_float = {s: np.array(c)/255. for s, c in list(name_sided_to_color.items())}
 
 name_unsided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
                      for i, s in enumerate(all_known_structures) }
-name_unsided_to_color_float = {s: np.array(c)/255. for s, c in name_unsided_to_color.items()}
+name_unsided_to_color_float = {s: np.array(c)/255. for s, c in list(name_unsided_to_color.items())}
 
 #stack_to_color = {n: high_contrast_colors[i%len(high_contrast_colors)] for i, n in enumerate(all_stacks)}
 #stack_to_color_float = {s: np.array(c)/255. for s, c in stack_to_color.iteritems()}
@@ -1963,7 +1922,7 @@ def parallel_where_binary(binary_volume, num_samples=None):
 
     if num_samples is not None:
         n = len(w[0])
-        sample_indices = np.random.choice(range(n), min(num_samples, n), replace=False)
+        sample_indices = np.random.choice(list(range(n)), min(num_samples, n), replace=False)
         return np.c_[w[1][sample_indices].astype(np.int16),
                      w[0][sample_indices].astype(np.int16),
                      w[2][sample_indices].astype(np.int16)]
@@ -2071,7 +2030,7 @@ def compute_gradient_v2(volume, smooth_first=False, dtype=np.float16):
         #     # sys.stderr.write("Overall: %.2f seconds.\n" % (time.time()-t1))
 
         gradients = {ind: compute_gradient_v2((v, o), smooth_first=smooth_first)
-                     for ind, (v, o) in volume.items()}
+                     for ind, (v, o) in list(volume.items())}
 
         return gradients
 
@@ -2158,7 +2117,6 @@ def transform_points_bspline(buvwx, buvwy, buvwz,
 
         sys.stderr.write("Compute NuPx/NvPy/NwPz: %.2f seconds.\n" % (time.time() - t))
 
-        # print NuPx_allTestPts.shape, NvPy_allTestPts.shape, NwPz_allTestPts.shape
         # (9, 157030) (14, 157030) (8, 157030)
         # (n_ctrlx, n_test)
 
@@ -2174,7 +2132,6 @@ def transform_points_bspline(buvwx, buvwy, buvwz,
 
     # the expression inside np.ravel gives array of shape (n_ctrlx, n_ctrly, nctrlz)
 
-    # print NuNvNw_allTestPts.shape
     # (157030, 1008)
     # (n_test, n_ctrlx * n_ctrly * n_ctrlz)
 
@@ -2184,7 +2141,6 @@ def transform_points_bspline(buvwx, buvwy, buvwz,
     sum_uvw_NuNvNwbuvwz = np.dot(NuNvNw_allTestPts, buvwz)
     # sys.stderr.write("Compute sum: %.2f seconds.\n" % (time.time() - t))
 
-    # print sum_uvw_NuNvNwbuvwx.shape
 
     transformed_pts = pts_centered + np.c_[sum_uvw_NuNvNwbuvwx, sum_uvw_NuNvNwbuvwy, sum_uvw_NuNvNwbuvwz] + c_prime
     return transformed_pts
@@ -2273,7 +2229,6 @@ def compose_alignment_parameters(list_of_transform_parameters):
         #         elif transform_parameters.shape == (4,4):
         #             T = transform_parameters
         #         else:
-        #             print transform_parameters.shape
         #             raise
 
         T0 = np.dot(T, T0)
@@ -2368,11 +2323,10 @@ def save_alignment_results_v3(transform_parameters=None, score_traj=None, parame
 
     # Save score history
     history_fp = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what='scoreHistory', reg_root_dir=reg_root_dir)
-    bp.pack_ndarray_file(np.array(score_traj), history_fp)
+    bp.pack_ndarray_to_file(np.array(score_traj), history_fp)
 
     # Save score plot
-    score_plot_fp = \
-    history_fp = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what='scoreEvolution', reg_root_dir=reg_root_dir)
+    score_plot_fp = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what='scoreEvolution', reg_root_dir=reg_root_dir)
     fig = plt.figure();
     plt.plot(score_traj);
     plt.savefig(score_plot_fp, bbox_inches='tight')
@@ -2380,14 +2334,14 @@ def save_alignment_results_v3(transform_parameters=None, score_traj=None, parame
 
     # Save trajectory
     trajectory_fp = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what='trajectory', reg_root_dir=reg_root_dir)
-    bp.pack_ndarray_file(np.array(parameter_traj), trajectory_fp)
+    bp.pack_ndarray_to_file(np.array(parameter_traj), trajectory_fp)
 
 
 def save_json(obj, fp):
     with open(fp, 'w') as f:
         # numpy array is not JSON serializable; have to convert them to list.
         if isinstance(obj, dict):
-            obj = {k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in obj.items()}
+            obj = {k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in list(obj.items())}
         json.dump(obj, f)
 
 
@@ -2461,7 +2415,7 @@ def transform_volume_v4(volume, transform=None, return_origin_instead_of_bbox=Fa
             dense_volume = fill_sparse_volume(volume_m_aligned_to_f)
         else:
             dense_volume = volume_m_aligned_to_f
-    elif np.issubdtype(volume_m_aligned_to_f.dtype, bool):
+    elif np.issubdtype(volume_m_aligned_to_f.dtype, np.dtype(bool).type):
         dense_volume = fill_sparse_score_volume(volume_m_aligned_to_f.astype(np.int)).astype(vol.dtype)
     else:
         raise Exception('transform_volume: Volume must be either float or int.')
@@ -2507,7 +2461,6 @@ def fill_sparse_volume(volume_sparse):
         # t = time.time()
         # vs_padded_filled = binary_closing(vs_padded, ball(closing_element_radius))
         vs_padded_filled = binary_closing(vs_padded, structure=np.ones((closing_element_radius,closing_element_radius,closing_element_radius)))
-        # print time.time() -t, 's'
         vs_filled = vs_padded_filled[padding:-padding, padding:-padding, padding:-padding]
         volume[ymin:ymax+1, xmin:xmax+1, zmin:zmax+1][vs_filled.astype(np.bool)] = ind
 
@@ -2528,6 +2481,31 @@ def fill_sparse_score_volume(vol):
     return dense_vol
 
 
+
+def polydata_to_mesh(polydata):
+    """
+    Extract vertice and face data from a polydata object.
+
+    Returns:
+        (vertices, faces)
+    """
+
+    vertices = np.array([polydata.GetPoint(i) for i in range(polydata.GetNumberOfPoints())])
+
+    try:
+        face_data_arr = numpy_support.vtk_to_numpy(polydata.GetPolys().GetData())
+
+        faces = np.c_[face_data_arr[1::4],
+                      face_data_arr[2::4],
+                      face_data_arr[3::4]]
+    except:
+        sys.stderr.write('polydata_to_mesh: No faces are loaded.\n')
+        faces = []
+
+    return vertices, faces
+
+
+# v, origin=o, num_simplify_iter=3, smooth=True
 def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_vertices=200, return_vertex_face_list=False):
     """
     Convert a volume to a mesh, either as vertices/faces tuple or a vtk.Polydata.
@@ -2563,7 +2541,6 @@ def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_
 
     # t = time.time()
     # area = mesh_surface_area(vs, fs)
-    # # print 'area: %.2f' % area
     # sys.stderr.write('compute surface area: %.2f seconds\n' % (time.time() - t)) #
 
     t = time.time()
@@ -2700,7 +2677,7 @@ def simplify_polydata(polydata, num_simplify_iter=0, smooth=False):
     return polydata
 
 
-def get_surround_volume(volume, origin, distance=5, wall_level=0, prob=False, return_origin_instead_of_bbox=True, padding=5):
+def get_surround_volume_v3(volume, distance=5, wall_level=0, prob=False, return_origin_instead_of_bbox=True, padding=5):
     """
     Return the volume with voxels surrounding the ``active" voxels in the input volume set to 1 (prob=False) or 1 - vol (prob=True)
 
@@ -2718,8 +2695,10 @@ def get_surround_volume(volume, origin, distance=5, wall_level=0, prob=False, re
 
     # Identify the bounding box for the surrouding area.
 
+    vol, origin = volume
+
     # if bbox is None:
-    bbox = volume_origin_to_bbox(volume > wall_level, origin)
+    bbox = volume_origin_to_bbox(vol > wall_level, origin)
 
     xmin, xmax, ymin, ymax, zmin, zmax = bbox
     roi_xmin = xmin - distance - padding
@@ -2729,7 +2708,7 @@ def get_surround_volume(volume, origin, distance=5, wall_level=0, prob=False, re
     roi_ymax = ymax + distance + padding
     roi_zmax = zmax + distance + padding
     roi_bbox = np.array((roi_xmin,roi_xmax,roi_ymin,roi_ymax,roi_zmin,roi_zmax))
-    vol_roi = crop_and_pad_volume(volume, in_bbox=bbox, out_bbox=roi_bbox)
+    vol_roi = crop_and_pad_volume(vol, in_bbox=bbox, out_bbox=roi_bbox)
 
     dist_vol = distance_transform_edt(vol_roi < wall_level)
     roi_surround_vol = (dist_vol > 0) & (dist_vol < distance) # surround part is True, otherwise False.
@@ -2746,6 +2725,59 @@ def get_surround_volume(volume, origin, distance=5, wall_level=0, prob=False, re
             return roi_surround_vol, roi_bbox[[0,2,4]]
         else:
             return roi_surround_vol, roi_bbox
+
+
+def get_surround_volume_v2(vol, bbox=None, origin=None, distance=5, wall_level=0, prob=False, return_origin_instead_of_bbox=False, padding=5):
+    """
+    Return the (volume, bbox) with voxels surrounding the ``active" voxels in the input volume set to 1 (prob=False) or 1 - vol (prob=True)
+
+    Args:
+     vol (3D ndarray of float): input volume in bbox.
+     bbox ((6,)-array): bbox
+     origin ((3,)-array): origin
+     wall_level (float):
+         voxels with value above this level are regarded as active.
+     distance (int):
+         surrounding voxels are closer than distance (in unit of voxel) from any active voxels.
+     prob (bool):
+         if True, surround voxels are assigned 1 - voxel value; if False, surround voxels are assigned 1.
+     padding (int): extra zero-padding, in unit of voxels.
+
+    Returns:
+     (volume, bbox)
+    """
+    distance = int(np.round(distance))
+
+    # Identify the bounding box for the surrouding area.
+
+    if bbox is None:
+     bbox = volume_origin_to_bbox(vol > wall_level, origin)
+
+    xmin, xmax, ymin, ymax, zmin, zmax = bbox
+    roi_xmin = xmin - distance - padding
+    roi_ymin = ymin - distance - padding
+    roi_zmin = zmin - distance - padding
+    roi_xmax = xmax + distance + padding
+    roi_ymax = ymax + distance + padding
+    roi_zmax = zmax + distance + padding
+    roi_bbox = np.array((roi_xmin,roi_xmax,roi_ymin,roi_ymax,roi_zmin,roi_zmax))
+    vol_roi = crop_and_pad_volume(vol, in_bbox=bbox, out_bbox=roi_bbox)
+
+    dist_vol = distance_transform_edt(vol_roi < wall_level)
+    roi_surround_vol = (dist_vol > 0) & (dist_vol < distance) # surround part is True, otherwise False.
+
+    if prob:
+     surround_vol = np.zeros_like(vol_roi)
+     surround_vol[roi_surround_vol] = 1. - vol_roi[roi_surround_vol]
+     if return_origin_instead_of_bbox:
+         return surround_vol, roi_bbox[[0,2,4]]
+     else:
+         return surround_vol, roi_bbox
+    else:
+     if return_origin_instead_of_bbox:
+         return roi_surround_vol, roi_bbox[[0,2,4]]
+     else:
+         return roi_surround_vol, roi_bbox
 
 
 def volume_origin_to_bbox(v, o):
@@ -2806,7 +2838,7 @@ def average_shape(polydata_list=None, volume_origin_list=None, volume_list=None,
     """
 
     if volume_origin_list is not None:
-        volume_list, origin_list = map(list, zip(*volume_origin_list))
+        volume_list, origin_list = list(map(list, list(zip(*volume_origin_list))))
 
     if volume_list is None:
         volume_list = []
@@ -2818,13 +2850,12 @@ def average_shape(polydata_list=None, volume_origin_list=None, volume_list=None,
             # sys.stderr.write('polydata_to_volume: %.2f seconds.\n' % (time.time() - t))
             volume_list.append(v)
             origin_list.append(np.array(orig, np.int))
-
     bbox_list = [(xm, xm+v.shape[1]-1, ym, ym+v.shape[0]-1, zm, zm+v.shape[2]-1) for v,(xm,ym,zm) in zip(volume_list, origin_list)]
-    common_volume_list, common_volume_bbox = convert_vol_bbox_dict_to_overall_vol(vol_bbox_tuples=zip(volume_list, bbox_list))
-    common_volume_list = map(lambda v: (v > 0).astype(np.int), common_volume_list)
-
+    common_volume_list, common_volume_bbox = convert_vol_bbox_dict_to_overall_vol(
+        vol_bbox_tuples=list(zip(volume_list, bbox_list)))
+    common_volume_list = list([(v > 0).astype(np.int) for v in common_volume_list])
     average_volume = np.sum(common_volume_list, axis=0)
-    average_volume_prob = average_volume / float(average_volume.max())
+    average_volume_prob = average_volume / float(np.max(average_volume))
 
     if force_symmetric:
         average_volume_prob = symmetricalize_volume(average_volume_prob)
@@ -2930,12 +2961,11 @@ def symmetricalize_volume(prob_vol):
     """
     Replace the volume with the average of its left half and right half.
     """
-
-    zc = prob_vol.shape[2]/2
+    zc = prob_vol.shape[2] // 2
     prob_vol_symmetric = prob_vol.copy()
     left_half = prob_vol[..., :zc]
     right_half = prob_vol[..., -zc:]
-    left_half_averaged = (left_half + right_half[..., ::-1])/2.
+    left_half_averaged = (left_half + right_half[..., ::-1]) // 2.
     prob_vol_symmetric[..., :zc] = left_half_averaged
     prob_vol_symmetric[..., -zc:] = left_half_averaged[..., ::-1]
     return prob_vol_symmetric
@@ -2977,3 +3007,424 @@ def save_mesh_stl(polydata, fn):
     stlWriter.SetFileName(fn)
     stlWriter.SetInputData(polydata)
     stlWriter.Write()
+
+
+def transform_volume_v4(volume, transform=None, return_origin_instead_of_bbox=False):
+    """
+    One can specify initial shift and the transform separately.
+    First, `centroid_m` and `centroid_f` are aligned.
+    Then the tranform (R,t) parameterized by `tf_params` is applied.
+    The relationship between coordinates in the fixed and moving volumes is:
+    coord_f - centroid_f = np.dot(R, (coord_m - centroid_m)) + t
+
+    One can also incorporate the initial shift into tf_params. In that case, do not specify `centroid_m` and `centroid_f`.
+    coord_f = np.dot(T, coord_m)
+
+    Args:
+        volume ()
+        transform ()
+
+    Returns:
+    """
+
+    if isinstance(volume, np.ndarray):
+        vol = volume
+        origin = np.zeros((3,))
+    elif isinstance(volume, tuple):
+        if len(volume[1]) == 6: # bbox
+            raise
+        elif len(volume[1]) == 3: # origin
+            vol = volume[0]
+            origin = volume[1]
+    else:
+        raise
+
+
+    tf_dict = convert_transform_forms(transform=transform, out_form='dict')
+    tf_params = tf_dict['parameters']
+    centroid_m = tf_dict['centroid_m_wrt_wholebrain']
+    centroid_f = tf_dict['centroid_f_wrt_wholebrain']
+
+    nzvoxels_m_temp = parallel_where_binary(vol > 0)
+    # "_temp" is appended to avoid name conflict with module level variable defined in registration.py
+
+    assert origin is not None or bbox is not None, 'Must provide origin or bbox.'
+    if origin is None:
+        if bbox is not None:
+            origin = bbox[[0,2,4]]
+
+    nzs_m_aligned_to_f = transform_points_affine(tf_params, pts=nzvoxels_m_temp + origin,
+                            c=centroid_m, c_prime=centroid_f).astype(np.int16)
+
+    nzs_m_xmin_f, nzs_m_ymin_f, nzs_m_zmin_f = np.min(nzs_m_aligned_to_f, axis=0)
+    nzs_m_xmax_f, nzs_m_ymax_f, nzs_m_zmax_f = np.max(nzs_m_aligned_to_f, axis=0)
+
+    xdim_f = nzs_m_xmax_f - nzs_m_xmin_f + 1
+    ydim_f = nzs_m_ymax_f - nzs_m_ymin_f + 1
+    zdim_f = nzs_m_zmax_f - nzs_m_zmin_f + 1
+
+    volume_m_aligned_to_f = np.zeros((ydim_f, xdim_f, zdim_f), vol.dtype)
+    xs_f_wrt_bbox, ys_f_wrt_bbox, zs_f_wrt_inbbox = (nzs_m_aligned_to_f - (nzs_m_xmin_f, nzs_m_ymin_f, nzs_m_zmin_f)).T
+    xs_m, ys_m, zs_m = nzvoxels_m_temp.T
+    volume_m_aligned_to_f[ys_f_wrt_bbox, xs_f_wrt_bbox, zs_f_wrt_inbbox] = vol[ys_m, xs_m, zs_m]
+
+    del nzs_m_aligned_to_f
+
+    t = time.time()
+
+    if np.issubdtype(volume_m_aligned_to_f.dtype, np.float):
+        dense_volume = fill_sparse_score_volume(volume_m_aligned_to_f)
+    elif np.issubdtype(volume_m_aligned_to_f.dtype, np.integer):
+        if not np.issubdtype(volume_m_aligned_to_f.dtype, np.uint8):
+            dense_volume = fill_sparse_volume(volume_m_aligned_to_f)
+        else:
+            dense_volume = volume_m_aligned_to_f
+    elif np.issubdtype(volume_m_aligned_to_f.dtype, bool):
+        dense_volume = fill_sparse_score_volume(volume_m_aligned_to_f.astype(np.int)).astype(vol.dtype)
+    else:
+        raise Exception('transform_volume: Volume must be either float or int.')
+
+    sys.stderr.write('Interpolating/filling sparse volume: %.2f seconds.\n' % (time.time() - t))
+
+    if return_origin_instead_of_bbox:
+        return dense_volume, np.array((nzs_m_xmin_f, nzs_m_ymin_f, nzs_m_zmin_f))
+    else:
+        return dense_volume, np.array((nzs_m_xmin_f, nzs_m_xmax_f, nzs_m_ymin_f, nzs_m_ymax_f, nzs_m_zmin_f, nzs_m_zmax_f))
+
+
+## vtk
+
+def launch_vtk(actors, init_angle='45', window_name=None, window_size=None,
+            interactive=True, snapshot_fn=None, snapshot_magnification=3,
+            axes=True, background_color=(1,1,1), axes_label_color=(1,1,1),
+            animate=False, movie_fp=None, framerate=10,
+              view_up=None, position=None, focal=None, distance=1, depth_peeling=True):
+    """
+    Press q to close render window.
+    s to take snapshot.
+    g to print current viewup/position/focal.
+    """
+
+    renderer = vtk.vtkRenderer()
+    renderer.SetBackground(background_color)
+
+    renWin = vtk.vtkRenderWindow()
+    renWin.SetSize(1200,1080)
+    # renWin.SetFullScreen(1)
+    renWin.AddRenderer(renderer)
+
+    ##########################
+
+    # cullers = ren.GetCullers()
+    # cullers.InitTraversal()
+    # culler = cullers.GetNextItem()
+    # # culler.SetSortingStyleToBackToFront()
+    # culler.SetSortingStyleToFrontToBack()
+
+    ##########################################
+    if depth_peeling:
+        # Enable depth peeling
+        # http://www.vtk.org/Wiki/VTK/Examples/Cxx/Visualization/CorrectlyRenderTranslucentGeometry
+
+        # 1. Use a render window with alpha bits (as initial value is 0 (false)):
+        renWin.SetAlphaBitPlanes(True)
+
+        # 2. Force to not pick a framebuffer with a multisample buffer
+        # (as initial value is 8):
+        renWin.SetMultiSamples(0);
+
+        # 3. Choose to use depth peeling (if supported) (initial value is 0 (false)):
+        renderer.SetUseDepthPeeling(True);
+
+        # 4. Set depth peeling parameters
+        # - Set the maximum number of rendering passes (initial value is 4):
+        maxNoOfPeels = 8
+        renderer.SetMaximumNumberOfPeels(maxNoOfPeels);
+        # - Set the occlusion ratio (initial value is 0.0, exact image):
+        occlusionRatio = 0.0
+        renderer.SetOcclusionRatio(occlusionRatio);
+
+    ##########################################
+
+    camera = vtk.vtkCamera()
+
+    if view_up is not None and position is not None and focal is not None:
+        camera.SetViewUp(view_up[0], view_up[1], view_up[2])
+        camera.SetPosition(position[0], position[1], position[2])
+        camera.SetFocalPoint(focal[0], focal[1], focal[2])
+
+    elif init_angle == '15':
+
+        # 30 degree
+        camera.SetViewUp(0, -1, 0)
+        camera.SetPosition(-20, -20, -20)
+        camera.SetFocalPoint(1, 1, 1)
+
+    elif init_angle == '30':
+
+        # 30 degree
+        camera.SetViewUp(0, -1, 0)
+        camera.SetPosition(-10, -5, -5)
+        camera.SetFocalPoint(1, 1, 1)
+
+    elif init_angle == '45':
+
+        # 45 degree
+        camera.SetViewUp(0, -1, 0)
+        camera.SetPosition(-20, -30, -10)
+        camera.SetFocalPoint(1, 1, 1)
+
+    elif init_angle == 'sagittal': # left to right
+
+        camera.SetViewUp(0, -1, 0)
+        camera.SetPosition(0, 0, -distance)
+        camera.SetFocalPoint(0, 0, 1)
+
+    elif init_angle == 'coronal' or init_angle == 'coronal_posteriorToAnterior' :
+        # posterior to anterior
+
+        # coronal
+        camera.SetViewUp(1.1, 0, 0)
+        camera.SetPosition(-distance, 0, 0)
+        camera.SetFocalPoint(-1, 0, 0)
+
+#     elif init_angle == 'coronal_anteriorToPosterior':
+
+#         # coronal
+#         camera.SetViewUp(0, -1, 0)
+#         camera.SetPosition(-2, 0, 0)
+#         camera.SetFocalPoint(-1, 0, 0)
+
+    elif init_angle == 'horizontal_bottomUp':
+
+        # horizontal
+        camera.SetViewUp(0, 0, -1)
+        camera.SetPosition(0, distance, 0)
+        camera.SetFocalPoint(0, -1, 0)
+
+    elif init_angle == 'horizontal_topDown':
+
+        # horizontal
+        camera.SetViewUp(0, 0, 1)
+        camera.SetPosition(0, -distance, 0)
+        camera.SetFocalPoint(0, 1, 0)
+    else:
+        raise Exception("init_angle %s is not recognized." % init_angle)
+
+    renderer.SetActiveCamera(camera)
+    renderer.ResetCamera()
+
+    # This must be before renWin.render(), otherwise the animation is stuck.
+    iren = vtk.vtkRenderWindowInteractor()
+    iren.SetRenderWindow(renWin)
+
+    my_int_style = MyInteractorStyle(iren=iren, renWin=renWin, snapshot_fn='/tmp/tmp.png', camera=camera)
+    iren.SetInteractorStyle(my_int_style) # Have problem closing window if use this
+
+    for actor in actors:
+        if actor is not None:
+            renderer.AddActor(actor)
+
+    if window_name is not None:
+        renWin.SetWindowName(window_name)
+
+    if window_size is not None:
+        renWin.SetSize(window_size)
+
+    ##################
+
+    if axes:
+        axes = add_axes(iren, text_color=axes_label_color)
+
+    if animate:
+        # http://www.vtk.org/Wiki/VTK/Examples/Python/Animation
+        iren.Initialize()
+
+        # Sign up to receive TimerEvent from interactor
+        cb = vtkRecordVideoTimerCallback(movie_fp=movie_fp, win=renWin, iren=iren, camera=camera, framerate=framerate)
+        cb.actors = actors
+        iren.AddObserver('TimerEvent', cb.execute)
+        timerId = iren.CreateRepeatingTimer(1000); # This cannot be too fast because otherwise image export cannot catch up.
+
+    ##################
+
+    renWin.Render()
+    renWin.Finalize()
+
+    if interactive:
+        # if not animate:
+        #     iren.Initialize()
+        iren.Start()
+    else:
+        iren.Start()
+        take_screenshot(renWin, snapshot_fn, magnification=snapshot_magnification)
+
+    del my_int_style.iren
+    del my_int_style.renWin
+
+    if animate:
+        if hasattr(cb, 'iren'):
+            del cb.iren
+        if hasattr(cb, 'win'):
+            del cb.win
+
+    # In order for window to successfully close, MUST MAKE SURE NO REFERENCE
+    # TO IREN AND WIN still remain.
+
+try: # for environment that does not have vtk.
+    class MyInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
+
+        def __init__(self, iren=None, renWin=None, snapshot_fn=None, camera=None):
+            self.iren = iren
+            self.renWin = renWin
+            self.snapshot_fn = snapshot_fn
+            self.camera = camera
+
+            self.AddObserver("KeyPressEvent",self.keyPressEvent)
+
+        def keyPressEvent(self,obj,event):
+            key = self.iren.GetKeySym()
+            if key == 'g':
+                print('viewup: %f, %f, %f\n' % self.camera.GetViewUp())
+                print('focal point: %f, %f, %f\n' % self.camera.GetFocalPoint())
+                print('position: %f, %f, %f\n' % self.camera.GetPosition())
+            elif key == 'e':
+                print('Quit.')
+                self.renWin.Finalize()
+                self.iren.TerminateApp()
+            # return
+except:
+    pass
+
+class vtkRecordVideoTimerCallback():
+    def __init__(self, win, iren, camera, movie_fp, framerate=10):
+        self.timer_count = 0
+        self.movie_fp = movie_fp
+        self.framerate = framerate
+        self.iren = iren
+        self.win = win
+        self.camera = camera
+
+        self.start_tick = 5 # wait 5 second then start
+
+        self.azimuth_stepsize = 5.
+        self.elevation_stepsize = 5.
+        self.azimuth_rotation_start_tick = self.start_tick
+        self.azimith_rotation_end_tick = self.azimuth_rotation_start_tick + 360./self.azimuth_stepsize
+        self.elevation_rotation_start_tick = self.azimith_rotation_end_tick
+        self.elevation_rotation_end_tick = self.elevation_rotation_start_tick + 360./self.elevation_stepsize
+
+        self.finish_tick = self.elevation_rotation_end_tick
+
+
+    def execute(self,obj,event):
+
+        # print self.timer_count
+        # for actor in self.actors:
+        #     actor.SetPosition(self.timer_count, self.timer_count,0)
+
+        if self.timer_count >= self.start_tick:
+
+            if self.timer_count >= self.azimuth_rotation_start_tick and self.timer_count < self.azimith_rotation_end_tick:
+                self.camera.Azimuth(self.azimuth_stepsize)
+            elif self.timer_count >= self.elevation_rotation_start_tick and self.timer_count < self.elevation_rotation_end_tick:
+                self.camera.Elevation(self.elevation_stepsize)
+                self.camera.OrthogonalizeViewUp() # This is important! http://vtk.1045678.n5.nabble.com/rotating-vtkCamera-td1232623.html
+            # arr = take_screenshot_as_numpy(self.win, magnification=1)
+
+        if self.movie_fp is not None:
+
+            if self.timer_count == self.finish_tick:
+
+
+                self.win.Finalize()
+                self.iren.TerminateApp()
+                del self.iren, self.win
+                return
+
+        self.win.Render()
+        self.timer_count += 1
+
+
+def actor_mesh(polydata, color=(1.,1.,1.), wireframe=False, wireframe_linewidth=None, opacity=1., origin=(0,0,0)):
+    """
+    Args:
+        color (float array): rgb between 0 and 1.
+        origin: the initial shift for the mesh.
+    """
+
+    if polydata.GetNumberOfPoints() == 0:
+        return None
+
+    if origin[0] == 0 and origin[1] == 0 and origin[2] == 0:
+        polydata_shifted = polydata
+    else:
+        polydata_shifted = move_polydata(polydata, origin)
+        # Note that move_polydata() discards scalar data stored in polydata.
+
+    m = vtk.vtkPolyDataMapper()
+    m.SetInputData(polydata_shifted)
+    a = vtk.vtkActor()
+    a.SetMapper(m)
+
+    # IF USE LOOKUP TABLE
+
+    # from vtk.util.colors import *
+    # lut = vtk.vtkLookupTable()
+    # lut.SetNumberOfColors(256)
+    # lut.Build()
+    # for i in range(0, 16):
+    #     lut.SetTableValue(i*16, red[0], red[1], red[2], 1)
+    #     lut.SetTableValue(i*16+1, green[0], green[1], green[2], 1)
+    #     lut.SetTableValue(i*16+2, blue[0], blue[1], blue[2], 1)
+    #     lut.SetTableValue(i*16+3, black[0], black[1], black[2], 1)
+    # m.SetLookupTable(lut)
+
+    # m.ScalarVisibilityOn()
+    # m.ScalarVisibilityOff()
+    # m.SetScalarModeToDefault()
+    # m.SetColorModeToDefault()
+    # m.InterpolateScalarsBeforeMappingOff()
+    # m.UseLookupTableScalarRangeOff()
+    # m.ImmediateModeRenderingOff()
+    # m.SetScalarMaterialModeToDefault()
+    # m.GlobalImmediateModeRenderingOff()
+
+    if wireframe:
+        a.GetProperty().SetRepresentationToWireframe()
+        if wireframe_linewidth is not None:
+            a.GetProperty().SetLineWidth(wireframe_linewidth)
+
+    a.GetProperty().SetColor(color)
+    a.GetProperty().SetOpacity(opacity)
+
+    return a
+
+
+def move_polydata(polydata, d):
+    # !!! IMPORTANT!! Note that this operation discards all scalar data (for example heatmap) in the input polydata.
+    vs, fs = polydata_to_mesh(polydata)
+    return mesh_to_polydata(vs + d, fs)
+
+
+def add_axes(iren, text_color=(1,1,1)):
+
+    axes = vtk.vtkAxesActor()
+
+    # put axes at origin
+    transform = vtk.vtkTransform()
+    transform.Translate(0.0, 0.0, 0.0);
+    axes.SetUserTransform(transform)
+
+    axes.GetXAxisCaptionActor2D().GetCaptionTextProperty().SetColor(text_color[0],text_color[1],text_color[2]);
+    axes.GetYAxisCaptionActor2D().GetCaptionTextProperty().SetColor(text_color[0],text_color[1],text_color[2]);
+    axes.GetZAxisCaptionActor2D().GetCaptionTextProperty().SetColor(text_color[0],text_color[1],text_color[2]);
+
+    widget = vtk.vtkOrientationMarkerWidget()
+    widget.SetOutlineColor( 0.9300, 0.5700, 0.1300 );
+    widget.SetOrientationMarker( axes );
+    widget.SetInteractor( iren );
+    # widget.SetViewport( 0.0, 0.0, 0.2, 0.2 );
+    widget.SetEnabled( 1 );
+    widget.InteractiveOn();
+    return widget

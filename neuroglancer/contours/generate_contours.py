@@ -3,8 +3,9 @@ import sys
 import neuroglancer
 import json
 import numpy as np
-
-sys.path.append(os.path.join(os.getcwd(), '../'))
+HOME = os.path.expanduser("~")
+DIR = os.path.join(HOME, 'programming', 'pipeline_utility')
+sys.path.append(DIR)
 from utilities.contour_utilities import image_contour_generator, add_structure_to_neuroglancer
 
 stack = 'MD589'
@@ -24,8 +25,9 @@ ng_structure_volume_normal = add_structure_to_neuroglancer(viewer, str_contour, 
                                                            return_with_offsets=False, add_to_ng=True,
                                                            human_annotation=False)
 """
-neuroglancer.set_server_bind_address('0.0.0.0')
+neuroglancer.set_server_bind_address(bind_port='33645')
 viewer = neuroglancer.Viewer()
+
 
 # Sets 'Image' layer to be prep2 images from S3 of <stack>
 with viewer.txn() as s:
@@ -37,10 +39,12 @@ print(viewer)
 # CREATE ENTIRE BRAIN VOLUME
 xy_ng_resolution_um = 5
 
-with open('/home/eddyod/programming/pipeline_utility/contours/json_cache/struct_reverse.json', 'r') as json_file:
+structure_filepath = os.path.join(DIR, 'neuroglancer/contours/json_cache', 'struct_reverse.json')
+with open(structure_filepath, 'r') as json_file:
     all_structures_total = json.load(json_file)
 
-with open('/home/eddyod/programming/pipeline_utility/contours/json_cache/struct_reverse_2.json', 'r') as json_file:
+color_filepath = os.path.join(DIR, 'neuroglancer/contours/json_cache', 'struct_reverse_2.json')
+with open(color_filepath, 'r') as json_file:
     structure_to_color = json.load(json_file)
 
 # MD585: x_um = 35617,           y_um = 26086
@@ -60,7 +64,6 @@ for structure in all_structures_total:
     except:
         color = 2
     print(structure, first_sec, last_sec)
-    continue
     str_volume, xyz_offsets = add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_sec, last_sec,
                                                             color_radius=5, xy_ng_resolution_um=xy_ng_resolution_um,
                                                             threshold=0.5, color=color,
