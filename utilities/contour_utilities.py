@@ -1,7 +1,9 @@
 import os, sys
 import json
+HOME = os.path.expanduser("~")
+DIR = os.path.join(HOME, 'programming', 'pipeline_utility')
+sys.path.append(DIR)
 
-sys.path.append(os.path.join(os.getcwd(), './'))
 from utilities.imported_atlas_utilities import create_alignment_specs, load_transformed_volume, load_json, \
     get_structure_contours_from_structure_volumes_v3
 from utilities.filepath_manager import get_json_cache_fp, get_volume_fp
@@ -35,14 +37,11 @@ def image_contour_generator(stack, detector_id, structure, use_local_alignment=T
     Returns the first and last section spanned from the contours, as well as the contour itself which is stored as a dictionary.
     """
     fn_vis_global, fn_vis_structures = create_alignment_specs(stack, detector_id)
-    # print('fn_vis_global', fn_vis_global)
-    # print('fn_vis_structures', fn_vis_structures)
 
     # Load local transformed volumes
     #         str_alignment_spec = load_json(fn_vis_structures)[structure]
     with open(fn_vis_structures, 'r') as json_file:
         str_alignment_spec = json.load(json_file)[structure]
-    # print('str_alignment_spec', str_alignment_spec)
     # vol = load_transformed_volume(str_alignment_spec, structure)
     numpyfile = 'atlasV7_10.0um_scoreVolume_{}.npy'.format(structure)
     #numpyfile = '{}_volume.npy'.format(structure)
@@ -63,28 +62,24 @@ def image_contour_generator(stack, detector_id, structure, use_local_alignment=T
     fileLocationManager = FileLocationManager(stack)
     registered_atlas_structure_file = os.path.join(fileLocationManager.brain_info,
                                                    'registered_atlas_structures_wrt_wholebrainXYcropped_xysecTwoCorners.json')
-    # print('registered_atlas_structure_file', registered_atlas_structure_file)
     registered_atlas_structures_wrt_wholebrainXYcropped_xysecTwoCorners = load_json(registered_atlas_structure_file)
     # Load cropping box for structure. Only need the valid min and max sections though
     (_, _, secmin), (_, _, secmax) = registered_atlas_structures_wrt_wholebrainXYcropped_xysecTwoCorners[structure]
-    # print('secmin', secmin, 'secmax', secmax)
     # Load range of sections for particular structure
     valid_secmin = 1
     valid_secmax = 999
     section_margin = 50  # 1000um margin / 20um per slice
     atlas_structures_wrt_wholebrainWithMargin_sections = \
-        range(max(secmin - section_margin, valid_secmin), min(secmax + 1 + section_margin, valid_secmax))
+        list(range(max(secmin - section_margin, valid_secmin), min(secmax + 1 + section_margin, valid_secmax)))
 
     print('atlas_structures_wrt_wholebrainWithMargin_sections', atlas_structures_wrt_wholebrainWithMargin_sections)
     # Choose thresholds for probability volumes
     levels = [threshold]
-    # print('levels', levels)
 
     # LOAD CONTOURS FROM VOLUME
     str_contour = get_structure_contours_from_structure_volumes_v3(volumes={structure: vol}, stack=stack,
                                                                    sections=atlas_structures_wrt_wholebrainWithMargin_sections,
                                                                    resolution='10.0um', level=levels, sample_every=5)
-    print('str_contour', str_contour)
     # Check number sections that the contours are present on
     str_keys = list(str_contour.keys())
     valid_sections = []
@@ -233,16 +228,6 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
     min_x = int(np.floor(min_x))
     min_y = int(np.floor(min_y))
 
-    print('max_x',max_x)
-    print('min_x',min_x)
-
-    print('max_y',max_y)
-    print('min_y', min_y)
-
-    print('max_z',max_z)
-    print('min_z', min_z)
-    print('max_z - min_z, max_y - min_y, max_x - min_x', max_z - min_z, max_y - min_y, max_x - min_x)
-
     # Create empty 'structure_volume' using min and max values found earlier. Acts as a bounding box for now
     structure_volume = np.zeros((max_z - min_z, max_y - min_y, max_x - min_x), dtype=np.uint8)
     z_voxels, y_voxels, x_voxels = np.shape(structure_volume)
@@ -305,7 +290,7 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
     else:
         true_ng_x_offset = min_x
         true_ng_y_offset = min_y
-    xyz_str_offsets = [true_ng_x_offset, true_ng_y_offset, z_offset]
+    xyz_structure_offsets = [true_ng_x_offset, true_ng_y_offset, z_offset]
 
     # If instead of a small volume and an offset, we want no offset and an extremely large+sparse volume
     if no_offset_big_volume:
@@ -335,17 +320,16 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
         true_ng_x_offset = 0
         true_ng_y_offset = 0
         min_z = 0
-    dims = neuroglancer.CoordinateSpace(
-                names=['x', 'y', 'z'],
-                units=['nm', 'nm', 'nm'],
-                scales=[10, 10, 10])
     if add_to_ng:
+        dims = neuroglancer.CoordinateSpace(
+            names=['x', 'y', 'z'],
+            units=['nm', 'nm', 'nm'],
+            scales=[10, 10, 10])
         with viewer.txn() as s:
             s.layers[display_name] = neuroglancer.SegmentationLayer(
                 source=neuroglancer.LocalVolume(
                     data=structure_volume,  # Z,Y,X
                     dimensions=dims,
-                    ## voxel_size=[xy_ng_resolution_um * 1000, xy_ng_resolution_um * 1000, 20000],  # X Y Z
                     voxel_offset=[true_ng_x_offset, true_ng_y_offset, min_z]  # X Y Z
                 ),
                 segments=[color]
@@ -373,7 +357,7 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
             offset_file.close()
 
     if return_with_offsets:
-        return structure_volume, xyz_str_offsets
+        return structure_volume, xyz_structure_offsets
     return structure_volume
 
 
