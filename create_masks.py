@@ -55,6 +55,9 @@ def create_mask(animal, full, njobs):
 
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
+            outpath = os.path.join(MASKED, file)
+            if os.path.exists(outpath):
+                continue
             if 'thion' in stain.lower():
                 try:
                     img = cv2.imread(infile, cv2.IMREAD_GRAYSCALE)
@@ -72,7 +75,6 @@ def create_mask(animal, full, njobs):
                 mask = fix_with_fill(img, 250, np.uint8)
 
             # save the mask
-            outpath = os.path.join(MASKED, file)
             cv2.imwrite(outpath, mask.astype('uint8'))
 
 
