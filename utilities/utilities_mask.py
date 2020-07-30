@@ -355,7 +355,7 @@ def fix_thionin(img):
     # -10 too much
     # -70 pretty good
     # -90 missing stuff
-    bgcolor = int(round(avg)) - 55
+    bgcolor = int(round(avg)) - 50
 
     h, im_th = cv2.threshold(h_src, bgcolor, 255, cv2.THRESH_BINARY_INV)
     im_floodfill = im_th.copy()
@@ -376,7 +376,7 @@ def fix_thionin(img):
     contours.pop(idx)
 
     midrow = img.shape[0] // 2
-    topbound = midrow - (midrow * 0.5)
+    topbound = midrow - (midrow * 0.75)
     bottombound = midrow + (midrow * 0.5)
     midcolumn = img.shape[1] // 2
     leftbound = midcolumn - (midcolumn * 0.75)
