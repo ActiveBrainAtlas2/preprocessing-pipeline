@@ -337,7 +337,6 @@ def fix_with_fill(img, limit, dt):
 
 
 def fix_thionin(img):
-
     start_bottom = img.shape[0] - 5
     bottom_rows = img[start_bottom:img.shape[0], :]
     avg = np.mean(bottom_rows)
@@ -370,7 +369,7 @@ def fix_thionin(img):
 
     lc = []
     c1 = max(contours, key=cv2.contourArea)
-    area0 = cv2.contourArea(c1)
+    areaPrev = cv2.contourArea(c1)
     lc.append(c1)
     idx = get_index(c1, contours)
     contours.pop(idx)
@@ -379,128 +378,33 @@ def fix_thionin(img):
     topbound = midrow - (midrow * 0.75)
     bottombound = midrow + (midrow * 0.5)
     midcolumn = img.shape[1] // 2
-    leftbound = midcolumn - (midcolumn * 0.75)
+    leftbound = midcolumn - (midcolumn * 0.85)
     rightbound = midcolumn + (midcolumn * 0.95)
     #rightbound = img.shape[1]
     AREA_THRESHOLD = 0.05
-    if len(contours) > 0:
 
+    for x in range(0,7):
         if len(contours) > 0:
             cX = max(contours, key=cv2.contourArea)
-            area1 = cv2.contourArea(cX)
+            area = cv2.contourArea(cX)
             mX = cv2.moments(cX)
             m00 = mX['m00']
             if m00 > 0:
                 cx = mX['m10'] // m00
                 cy = mX['m01'] // m00
-                if (area1 > (area0 * AREA_THRESHOLD)
+                if (area > (areaPrev * AREA_THRESHOLD)
                         and cx > leftbound and cx < rightbound) and cy > topbound and cy < bottombound:
                     lc.append(cX)
                     idx = get_index(cX, contours)
                     contours.pop(idx)
+                    areaPrev = area
+        else:
+            break
 
-        if len(contours) > 0:
-            cX = max(contours, key=cv2.contourArea)
-            area2 = cv2.contourArea(cX)
-            mX = cv2.moments(cX)
-            m00 = mX['m00']
-            if m00 > 0:
-                cx = mX['m10'] // m00
-                cy = mX['m01'] // m00
-                if (area2 > (area1 * AREA_THRESHOLD)
-                        and cx > leftbound and cx < rightbound) and cy > topbound and cy < bottombound:
-                    lc.append(cX)
-                    idx = get_index(cX, contours)
-                    contours.pop(idx)
-
-        if len(contours) > 0:
-            cX = max(contours, key=cv2.contourArea)
-            area3 = cv2.contourArea(cX)
-            mX = cv2.moments(cX)
-            m00 = mX['m00']
-            if m00 > 0:
-                cx = mX['m10'] // m00
-                cy = mX['m01'] // m00
-                if (area3 > (area2 * AREA_THRESHOLD)
-                        and cx > leftbound and cx < rightbound) and cy > topbound and cy < bottombound:
-                    lc.append(cX)
-                    idx = get_index(cX, contours)
-                    contours.pop(idx)
-
-        if len(contours) > 0:
-            cX = max(contours, key=cv2.contourArea)
-            area4 = cv2.contourArea(cX)
-            mX = cv2.moments(cX)
-            m00 = mX['m00']
-            if m00 > 0:
-                cx = mX['m10'] // m00
-                cy = mX['m01'] // m00
-                if (area4 > (area3 * AREA_THRESHOLD)
-                        and cx > leftbound and cx < rightbound) and cy > topbound and cy < bottombound:
-                    lc.append(cX)
-                    idx = get_index(cX, contours)
-                    contours.pop(idx)
-
-        cv2.fillPoly(stencil, lc, 255)
+    cv2.fillPoly(stencil, lc, 255)
 
     # dilation1 = cv2.erode(opening, big_kernel, iterations=1)
-    big_kernel = np.ones((16, 16), np.uint8)
+    big_kernel = np.ones((8, 8), np.uint8)
     dilation = cv2.dilate(stencil, big_kernel, iterations=3)
 
     return dilation
-
-
-def fix_thioninXXX(src):
-    big_kernel = np.ones((8, 8), np.uint8)
-    start_bottom = src.shape[0] - 5
-    bottom_rows = src[start_bottom:src.shape[0], :]
-    avg = np.mean(bottom_rows)
-    bgcolor = int(round(avg))
-    lower = bgcolor - 8
-    upper = bgcolor + 4
-    bgmask = (src >= lower) & (src <= upper)
-    src[bgmask] = bgcolor
-
-    clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(16, 16))
-    h_src = clahe.apply(src)
-    start_bottom = h_src.shape[0] - 5
-    bottom_rows = h_src[start_bottom:h_src.shape[0], :]
-    avg = np.mean(bottom_rows)
-    bgcolor = int(round(avg)) - 50
-
-    h, im_th = cv2.threshold(h_src, bgcolor, 255, cv2.THRESH_BINARY_INV)
-    im_floodfill = im_th.copy()
-    h, w = im_th.shape[:2]
-    mask = np.zeros((h + 2, w + 2), np.uint8)
-    cv2.floodFill(im_floodfill, mask, (0, 0), 255)
-    im_floodfill_inv = cv2.bitwise_not(im_floodfill)
-    im_out = im_th | im_floodfill_inv
-
-    stencil = np.zeros(src.shape).astype('uint8')
-    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
-    lc = []
-    c1 = max(contours, key=cv2.contourArea)
-    lc.append(c1)
-    area1 = cv2.contourArea(c1)
-
-    idx = get_index(c1, contours)  # 2
-    contours.pop(idx)
-    if len(contours) > 0:
-        c2 = max(contours, key=cv2.contourArea)
-        area2 = cv2.contourArea(c2)
-        if area2 > 610:
-            lc.append(c2)
-    cv2.fillPoly(stencil, lc, 255)
-
-    if area1 > 3000:
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
-        opening = cv2.morphologyEx(stencil, cv2.MORPH_OPEN, kernel, iterations=3)
-    else:
-        opening = stencil
-
-    # dilation1 = cv2.erode(opening, big_kernel, iterations=1)
-    dilation2 = cv2.dilate(opening, big_kernel, iterations=3)
-    dilation3 = fill_spots(dilation2)
-
-    return dilation3
