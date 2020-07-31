@@ -380,7 +380,8 @@ def fix_thionin(img):
     bottombound = midrow + (midrow * 0.5)
     midcolumn = img.shape[1] // 2
     leftbound = midcolumn - (midcolumn * 0.75)
-    rightbound = midcolumn + (midcolumn * 0.75)
+    rightbound = midcolumn + (midcolumn * 0.95)
+    #rightbound = img.shape[1]
     AREA_THRESHOLD = 0.05
     if len(contours) > 0:
 
@@ -443,7 +444,7 @@ def fix_thionin(img):
         cv2.fillPoly(stencil, lc, 255)
 
     # dilation1 = cv2.erode(opening, big_kernel, iterations=1)
-    big_kernel = np.ones((18, 18), np.uint8)
+    big_kernel = np.ones((16, 16), np.uint8)
     dilation = cv2.dilate(stencil, big_kernel, iterations=3)
 
     return dilation
