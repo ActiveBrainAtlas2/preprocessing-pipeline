@@ -40,6 +40,8 @@ fixed_brain_structure_centroids_um = {s: c * resolution_um for s, c in fixed_bra
 print('fixed_brain_structure_centroids_um', fixed_brain_structure_centroids_um)
 structure_centroids_all_brains_um_wrt_fixed.append(fixed_brain_structure_centroids_um)
 
+
+
 for brain_m in moving_brain_names:
     moving_brain_spec = {'name': brain_m, 'vol_type': 'annotationAsScore', 'resolution': resolution}
     print('Brain', moving_brain_spec)
@@ -245,13 +247,13 @@ for structure in structures:
     print('Saving numpy text at', filepath)
     np.savetxt(filepath, mean_shape_wrt_templateCentroid[1])
 
-
+    """
     for level in np.arange(0.1, 1.1, .1):
         filename = '{}_{}_mesh_level_{}.stl'.format(resolution, structure, str(level))
         filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
         print('Saving mesh at', filepath)
         save_mesh_stl(mean_shape_isosurface_polydata_all_levels[level], filepath)
-
+    """
     surround_name = convert_to_surround_name(structure, margin=str(int(surround_distance_um)) + 'um')
     filename = '{}_{}_volume.npy'.format(resolution, surround_name)
     filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)

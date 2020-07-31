@@ -6,6 +6,12 @@ using corrected dilation. (Ed)
 1. Combine outside masks with internal structures (Kui).
 1. Beth/Litao/Kui will verify correct placement of internal structures and correct outside boundaries (for the 3 foundation brains)
 ### Generating an average brain
+1. Start with structures for a foundation brain:
+    1. Get pandas dataframe of hand annotations for each foundation brain.
+    1. Dataframes are in hd5 format are located on birdstore under the brain name:
+    /net/birdstore/Active_Atlas_Data/data_root/CSHL_labelings_v3
+    1. Create an atlas for that specific brain with those annotations
+1. Create average brain with atlases from the process above.
 1. For average brain, there is an numpy array for each structure.
 1. Take each of these structures into one numpy array for neuroglancer.
 1. Get individual structures into CVAT
