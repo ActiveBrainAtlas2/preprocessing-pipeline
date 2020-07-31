@@ -14,15 +14,17 @@ from tqdm import tqdm
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from utilities.alignment_utility import get_last_2d, rotate_image, place_image, SCALING_FACTOR
+from utilities.alignment_utility import get_last_2d, SCALING_FACTOR
+from utilities.utilities_mask import rotate_image, place_image
 
 
 def clean_mask(animal, rotation, flip):
     logger = get_logger(animal)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
-    CLEANED = os.path.join(fileLocationManager.prep, 'mask_cleaned')
     INPUT = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+    OUTPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/prealigned'.format(animal)
+
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     max_width = int(width * SCALING_FACTOR)
@@ -33,7 +35,7 @@ def clean_mask(animal, rotation, flip):
 
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
-        outpath = os.path.join(CLEANED, file)
+        outpath = os.path.join(OUTPUT, file)
         if os.path.exists(outpath):
             continue
         try:
@@ -46,9 +48,9 @@ def clean_mask(animal, rotation, flip):
         if rotation > 0:
             fixed = rotate_image(fixed, file, rotation)
 
-        if flip:
+        if flip == 'flip':
             fixed = np.flip(fixed)
-        else:
+        if flip == 'flop':
             fixed = np.flip(fixed, axis=1)
 
         # fixed = fill_spots(fixed)
@@ -67,6 +69,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     animal = args.animal
     rotation = int(args.rotation)
-    flip = bool({'flip': True, 'flop': False}[args.flip])
+    flip = args.flip
+
 
     clean_mask(animal, rotation, flip)
