@@ -6,7 +6,7 @@ import numpy as np
 HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming', 'pipeline_utility')
 sys.path.append(DIR)
-from utilities.contour_utilities import image_contour_generator, add_structure_to_neuroglancer
+from utilities.contour_utilities import image_contour_generator, add_structure_to_neuroglancer, structure_to_color
 
 stack = 'MD589'
 detector_id = 19
@@ -43,9 +43,6 @@ structure_filepath = os.path.join(DIR, 'neuroglancer/contours/json_cache', 'stru
 with open(structure_filepath, 'r') as json_file:
     all_structures_total = json.load(json_file)
 
-color_filepath = os.path.join(DIR, 'neuroglancer/contours/json_cache', 'struct_reverse_2.json')
-with open(color_filepath, 'r') as json_file:
-    structure_to_color = json.load(json_file)
 
 # MD585: x_um = 35617,           y_um = 26086
 # MD585: x_pixels_.46res = x_um*0.46,  y_pixels_.46res = y_um*0.46

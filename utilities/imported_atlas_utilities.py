@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import bloscpack as bp
 import numpy as np
 from pandas import read_hdf
-from skimage import io
+from skimage import io, img_as_ubyte
 import json
 from collections import defaultdict
 import re
@@ -19,6 +19,7 @@ from scipy.ndimage.morphology import binary_fill_holes, binary_closing
 import vtk
 #from vtk.util import numpy_support
 import mcubes # https://github.com/pmneila/PyMCubes
+from skimage.transform import resize
 from vtkmodules.util import numpy_support
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
@@ -1866,6 +1867,14 @@ for structure in paired_structures:
     rh_structures.append(structure + '_R')
     lh_structures.append(structure + '_L')
 
+def get_all_structures():
+    all_structures_total = list(singular_structures)
+    for structure in paired_structures:
+        all_structures_total.append(structure + '_R')
+        all_structures_total.append(structure + '_L')
+    return all_structures_total
+
+
 def get_structure_mean_positions_filepath(atlas_name, resolution, **kwargs):
     """
     Filepath of the structure mean positions.
@@ -3428,3 +3437,75 @@ def add_axes(iren, text_color=(1,1,1)):
     widget.SetEnabled( 1 );
     widget.InteractiveOn();
     return widget
+
+
+def images_to_volume_v2(images, spacing_um, in_resol_um, out_resol_um, crop_to_minimal=True):
+    """
+    Stack images in parallel at specified z positions to form volume.
+
+    Args:
+        images (dict of 2D images): key is section index. First section has index 1.
+        spacing_um (float): spacing between adjacent sections or thickness of each section, in micron.
+        in_resol_um (float): image planar resolution in micron.
+        out_resol_um (float): isotropic output voxel size, in micron.
+
+    Returns:
+        (volume, volume origin relative to the image origin of section 1)
+    """
+
+    if isinstance(images, dict):
+
+        shapes = np.array([im.shape[:2] for im in list(images.values())])
+        assert len(np.unique(shapes[:,0])) == 1, 'Height of all images must be the same.'
+        assert len(np.unique(shapes[:,1])) == 1, 'Width of all images must be the same.'
+
+        ydim, xdim = list(map(int, np.ceil(shapes[0] * float(in_resol_um) / out_resol_um)))
+        sections = sorted(images.keys())
+        # if last_sec is None:
+        #     last_sec = np.max(sections)
+        # if first_sec is None:
+        #     first_sec = np.min(sections)
+    elif callable(images):
+        try:
+            ydim, xdim = images(100).shape[:2]
+        except:
+            ydim, xdim = images(200).shape[:2]
+        # assert last_sec is not None
+        # assert first_sec is not None
+    else:
+        raise Exception('images must be dict or function.')
+
+    voxel_z_size = float(spacing_um) / out_resol_um
+    #zdim = int(np.ceil(np.max(sections) * voxel_z_size)) + 1
+    zdim = int(len(sections) * voxel_z_size) + 1
+    print('zdim', zdim)
+
+    #dtype = images.values()[0].dtype
+    dtype = list(images.values())[0].dtype
+    volume = np.zeros((ydim, xdim, zdim), dtype)
+
+    assert len(sections) > 1, "Must provide more than 1 section to reconstruct a volume."
+
+    for i in range(len(sections)-1):
+        # z1 = int(np.floor((sections[i]-1) * voxel_z_size))
+        # z2 = int(np.ceil(sections[i+1] * voxel_z_size))
+        z1 = int(np.round((sections[i]-1) * voxel_z_size))
+        z2 = int(np.round(sections[i+1] * voxel_z_size))
+        if isinstance(images, dict):
+            im = images[sections[i]]
+        elif callable(images):
+            im = images(sections[i])
+
+        if dtype == np.uint8:
+            volume[:, :, z1:z2+1] = img_as_ubyte(resize(im, (ydim, xdim)))[..., None]
+            # assert in_resol_um == out_resol_um
+            # volume[:, :, z1:z2+1] = im[..., None]
+        else:
+            volume[:, :, z1:z2+1] = resize(im, (ydim, xdim))[..., None]
+        # else:
+        #     raise Exception("dtype must be uint8 ot float32")
+
+    if crop_to_minimal:
+        return crop_volume_to_minimal(volume)
+    else:
+        return volume
