@@ -27,8 +27,15 @@ def get_volume_root_fp( stack, precomputed=True, human_annotated=True ):
         volume_fp_root = os.path.join( volume_fp_root, 'human_annotation' )
     else:
         volume_fp_root = os.path.join( volume_fp_root, 'registration' )
-        
+
     return volume_fp_root
+
+
+#fp_volume_root = get_volume_fp(stack, precomputed=False, human_annotated=human_annotation, \
+#                               volume_type='structure', brain_crop='brainstem', xy_res=xy_ng_resolution_um, \
+#                               z_res=20, offset=volumes_have_offset, color_scheme=1, \
+#                               thickness_scheme=1, structure=structure)
+
 
 def get_volume_fp( stack, precomputed=True, human_annotated=True, volume_type='combined', brain_crop='brainstem', \
                   xy_res=5, z_res=20, offset=False, color_scheme=1, thickness_scheme=1, structure=None ):
@@ -38,15 +45,15 @@ def get_volume_fp( stack, precomputed=True, human_annotated=True, volume_type='c
     assert volume_type=='structure' or volume_type=='combined'
     assert brain_crop=='brainstem' or brain_crop=='wholebrain' or brain_crop==2 or brain_crop==5
     assert offset==True or offset==False
-    
-    
+
+
     volume_fp_root = get_volume_root_fp( stack, precomputed=precomputed, human_annotated=human_annotated )
-    
+
     if brain_crop==2:
         brain_crop=='brainstem'
     elif brain_crop==5:
         brain_crop=='wholebrain'
-    
+
     # volume_type dictates whether we use folder 'combined_volume' (all structures combined) \
     # or 'structure_volumes'
     if volume_type=='combined':
@@ -54,24 +61,24 @@ def get_volume_fp( stack, precomputed=True, human_annotated=True, volume_type='c
     elif volume_type=='structure':
         folder_name_1 = 'structure_volumes'
     volume_fp = os.path.join( volume_fp_root, folder_name_1 )
-    
+
     # The next folder's name is dictated by resolution in xy plane and z plane
     folder_name_2 = brain_crop+'_xy'+str(xy_res)+'um_z'+str(z_res)+'um'
     volume_fp = os.path.join( volume_fp, folder_name_2 )
-    
-    # The folder at the lowest level encodes the color_scheme, thickness_sceme, and whether 
+
+    # The folder at the lowest level encodes the color_scheme, thickness_sceme, and whether
     # the volumes have an offset (True) or if the volumes start at the origin (False)
     folder_name_3 = 'color_'+str(color_scheme)+'_thickness_'+str(thickness_scheme)+\
                     '_offset_'+str(int(offset))
     volume_fp = os.path.join( volume_fp, folder_name_3 )+'/'
-    
+
     # If the volume is for a single structure, then there is one last folder level that \
     # designates the contained structure volume
     if volume_type=='structure':
         assert structure!=None
         folder_name_4 = structure
         volume_fp = os.path.join( volume_fp, folder_name_4)+'/'
-    
+
     return volume_fp
 
 ## Image filepaths
@@ -93,20 +100,20 @@ def get_image_fp( stack, precomputed=True, brain_crop='brainstem', \
     assert brain_crop=='brainstem' or brain_crop=='wholebrain' or brain_crop==2 or brain_crop==5
     assert image_version=='grayJpeg' or image_version=='ntbNormalizedAdaptiveInvertedGammaJpeg'
     assert resolution=='raw' or resolution=='lossless'
-    
+
     image_root_fp = get_image_root_fp( stack, precomputed=precomputed )
-    
+
     if brain_crop=='brainstem':
         brain_crop=2
     elif brain_crop=='wholebrain':
         brain_crop=5
-    
+
     folder_name_1 = stack+'_prep'+str(brain_crop)+'_'+resolution+'_'+image_version
     if precomputed:
         folder_name_1 = folder_name_1+'_precomputed'
-        
+
     image_fp = os.path.join( image_root_fp, folder_name_1)+'/'
-    
+
     return image_fp
 
 

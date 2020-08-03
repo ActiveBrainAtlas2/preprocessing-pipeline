@@ -3,8 +3,8 @@ import pandas as pd
 import neuroglancer
 import numpy as np
 import ast
-PATH = '/home/eddyod/programming/pipeline_utility'
-sys.path.append(PATH)
+DIR = '/home/eddyod/programming/pipeline_utility'
+sys.path.append(DIR)
 from utilities.contour_utilities import get_contours_from_annotations, add_structure_to_neuroglancer
 
 animal = 'MD589'
@@ -29,7 +29,7 @@ hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.
 
 hand_annotations.to_csv('hand_annotations.csv')
 """
-csvfile = os.path.join(PATH, 'contours', 'hand_annotations.csv')
+csvfile = os.path.join(DIR, 'contours', 'hand_annotations.csv')
 hand_annotations = pd.read_csv(csvfile)
 hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
 
