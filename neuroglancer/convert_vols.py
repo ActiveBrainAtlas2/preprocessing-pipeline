@@ -10,11 +10,11 @@ import nibabel as nib
 from neuroglancer_scripts.scripts import (generate_scales_info,
                                           slices_to_precomputed,
                                           compute_scales, volume_to_precomputed)
-animal = 'atlas'
-VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/vol_fill'
+animal = 'MD589'
+VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
 
 NI_OUT = os.path.join(VOL_DIR, animal, 'filled.nii')
-ATLAS_FILE = os.path.join(VOL_DIR, 'compressed_atlas.npy')
+ATLAS_FILE = os.path.join(VOL_DIR, animal, '{}_full_filled.npy'.format(animal))
 OUTPUT = os.path.join(VOL_DIR, animal, 'annotations')
 
 
@@ -25,8 +25,7 @@ vol_m = np.load(ATLAS_FILE)
 volume_file = vol_m.astype(np.uint8)
 del vol_m
 
-#volume_file = np.swapaxes(volume_file,1,0)
-"""
+volume_file = np.swapaxes(volume_file,0,2)
 volume_img = nib.Nifti1Image(volume_file, affine=np.array(\
       [[ 0.005,  0.,  0.,  0.],\
        [ 0.,   0.005,  0.,  0.],\
@@ -38,6 +37,7 @@ volume_img = nib.Nifti1Image(volume_file, affine=np.array(\
        [ 0.,   1,  0.,  0.],\
        [ 0.,  0.,  1,  0.],\
        [ 0.,  0.,  0.,  1.]]))
+"""
 nib.save(volume_img, NI_OUT)
 
 volume_to_precomputed.main(['', NI_OUT, OUTPUT, '--generate-info', '--no-gzip'])

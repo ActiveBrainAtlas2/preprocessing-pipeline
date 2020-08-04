@@ -24,23 +24,17 @@ x_voxels = 1 + int(35617 * 0.46 * (.46 / xy_ng_resolution_um) + 0.5)
 full_brain_volume_annotated = np.zeros((268, y_voxels, x_voxels), dtype=np.uint8)
 #neuroglancer.set_server_bind_address(bind_port='33645')
 #viewer = neuroglancer.Viewer()
-start = timer()
 csvfile = os.path.join(DIR, 'neuroglancer', 'contours', 'hand_annotations.csv')
 hand_annotations = pd.read_csv(csvfile)
 hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
-end = timer()
-print('Opening annotations took', end - start)
-start = timer()
-structures = get_all_structures()
-end = timer()
-print('Getting structures took', end - start)
-start = timer()
-colors = get_structure_colors()
-end = timer()
-print('Getting colors took', end - start)
+#structures = get_all_structures()
+#
+#colors = get_structure_colors()
 
-for structure in structures:
-    color = colors[structure]
+structure_color = {'SC': 18, 'IC': 11, 'SNR': 20}
+
+
+for structure, color in structure_color.items():
     print(structure, color, end="\t")
     start = timer()
     str_contours_annotation, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=4)
