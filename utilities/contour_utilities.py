@@ -13,7 +13,7 @@ import numpy as np
 
 
 def get_structure_colors():
-    color_filepath = os.path.join(DIR, 'neuroglancer/contours/json_cache', 'struct_reverse_2.json')
+    color_filepath = os.path.join(DIR, 'neuroglancer/contours/json_cache', 'struct_to_color.json')
     with open(color_filepath, 'r') as json_file:
         structure_to_color = json.load(json_file)
     return structure_to_color
