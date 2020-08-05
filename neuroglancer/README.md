@@ -12,7 +12,14 @@ using corrected dilation. (MD589 is done, finish the other two for Kui)
     1. Get pandas dataframe of hand annotations for each foundation brain.
     1. Dataframes are in hd5 format are located on birdstore under the brain name:
     /net/birdstore/Active_Atlas_Data/data_root/CSHL_labelings_v3
-    1. Create an atlas for that specific brain with those annotations
+    1. Create an atlas for that specific brain with those annotations with:
+        1. `cd neuroglancer`
+        1. `python build_vollume_colored.py --animal MDXXX`
+        1. This will create numpy array and place it at:/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/MDXXX/full_brain_volume_annotated.npy
+        1. `python convert_vols.py --animal MDXXX`
+        1. This will create an annotations directory at:/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/MD589/annotations
+        1. Copy that directory onto a path available to the web server. That will be the root
+        of your precomputed url
 1. Create average brain with atlases from the process above.
 1. For average brain, there is an numpy array for each structure.
 1. Take each of these structures into one numpy array for neuroglancer.
