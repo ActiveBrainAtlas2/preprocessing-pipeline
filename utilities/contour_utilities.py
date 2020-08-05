@@ -41,12 +41,12 @@ def image_contour_generator(stack, detector_id, structure, use_local_alignment=T
     #         str_alignment_spec = load_json(fn_vis_structures)[structure]
     with open(fn_vis_structures, 'r') as json_file:
         str_alignment_spec = json.load(json_file)[structure]
-    # vol = load_transformed_volume(str_alignment_spec, structure)
+    vol = load_transformed_volume(str_alignment_spec, structure)
+
     numpyfile = 'atlasV7_10.0um_scoreVolume_{}.npy'.format(structure)
     #numpyfile = '{}_volume.npy'.format(structure)
     #atlasV7_10.0um_scoreVolume_VLL_R_origin_wrt_canonicalAtlasSpace.txt
     txtfile = 'atlasV7_10.0um_scoreVolume_{}_origin_wrt_canonicalAtlasSpace.txt'.format(structure)
-    datapath = '/home/eddyod/MouseBrainSlicer_data/score_volumes'
     try:
         t1 = np.load(os.path.join(datapath, numpyfile))
     except:
@@ -360,7 +360,7 @@ def create_full_volume(str_contour, structure, first_sec, last_sec, color_radius
 
     Returns the binary structure volume.
     """
-    xy_ng_resolution_um = xy_ng_resolution_um  # X and Y voxel length in microns
+    #xy_ng_resolution_um = xy_ng_resolution_um  # X and Y voxel length in microns
     color_radius = color_radius * (10.0 / xy_ng_resolution_um) ** 0.5
     ng_section_min = 92
     ng_section_max = 370
@@ -450,7 +450,7 @@ def create_full_volume(str_contour, structure, first_sec, last_sec, color_radius
                         except:
                             pass
 
-        structure_volume[slice, :, :] = fill_in_structure(structure_volume[slice, :, :], color)
+        #TODOstructure_volume[slice, :, :] = fill_in_structure(structure_volume[slice, :, :], color)
 
     # If the amount of slices to shift by is nonzero
     z_offset = min_z
@@ -526,9 +526,11 @@ def get_contours_from_annotations(stack, target_str, hand_annotations, densify=0
         structure = hand_annotations['name'][i]
         side = hand_annotations['side'][i]
         section = hand_annotations['section'][i]
+        first_sec = 0
+        last_sec = 0
 
-        if side == 'R' or side == 'L':
-            structure = structure + '_' + side
+        #if side == 'R' or side == 'L':
+        #    structure = structure + '_' + side
 
         if structure == target_str:
             vertices = hand_annotations['vertices'][i]
@@ -543,8 +545,14 @@ def get_contours_from_annotations(stack, target_str, hand_annotations, densify=0
             str_contours_annotation[section] = {}
             str_contours_annotation[section][structure] = {}
             str_contours_annotation[section][structure][1] = vertices
-    first_sec = np.min(list(str_contours_annotation.keys()))
-    last_sec = np.max(list(str_contours_annotation.keys()))
+
+    try:
+        first_sec = np.min(list(str_contours_annotation.keys()))
+        last_sec = np.max(list(str_contours_annotation.keys()))
+        print('keys:', target_str, len(str_contours_annotation.keys()), end="\t")
+    except:
+        print('keys:', target_str, len(str_contours_annotation.keys()), end="\t")
+
 
     return str_contours_annotation, first_sec, last_sec
 

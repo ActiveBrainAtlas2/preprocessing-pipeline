@@ -52,7 +52,8 @@ class CoordinatesConverter(object):
 
         # Define frame:wholebrainWithMargin
         intensity_volume_spec = dict(name=stack, resolution='10.0um', prep_id='wholebrainWithMargin', vol_type='intensity')
-        thumbnail_volume, thumbnail_volume_origin_wrt_wholebrain_10um = load_original_volume_v2(intensity_volume_spec, return_origin_instead_of_bbox=True)
+        thumbnail_volume, thumbnail_volume_origin_wrt_wholebrain_10um = load_original_volume_v2(intensity_volume_spec,
+                                                                                                return_origin_instead_of_bbox=True)
         thumbnail_volume_origin_wrt_wholebrain_um = thumbnail_volume_origin_wrt_wholebrain_10um * 10.
 
         # thumbnail_volume, (thumbnail_volume_origin_wrt_wholebrain_dataResol_x, thumbnail_volume_origin_wrt_wholebrain_dataResol_y, _) = \
@@ -191,7 +192,8 @@ class CoordinatesConverter(object):
 
         p = np.array(p)
         if p.ndim != 2:
-            print(p, in_resolution, out_resolution)
+            print('P is not equal to 2')
+            #print(p, in_resolution, out_resolution)
         assert p.ndim == 2
 
         import re
@@ -389,7 +391,7 @@ class CoordinatesConverter(object):
         """
 
         sqlController = SqlController(stack)
-        valid_sections = sqlController.get_valid_sections(stack, 1)
+        valid_sections = sqlController.get_sections_numbers(stack)
 
         if in_wrt == 'original' and out_wrt == 'alignedPadded':
 
@@ -410,6 +412,7 @@ class CoordinatesConverter(object):
             Ts_anchor_to_individual_section_image_resol = load_transforms(stack=stack, resolution='1um', use_inverse=True)
 
             different_sections = np.unique(p[:, 2])
+
             for sec in different_sections:
                 curr_section_mask = p[:, 2] == sec
                 #####TODO check this is getting the right section ###fn = metadata_cache['sections_to_filenames'][stack][sec]
