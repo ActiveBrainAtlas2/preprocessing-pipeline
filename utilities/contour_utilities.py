@@ -352,7 +352,7 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
 #    str_volume, xyz_str_offsets = create_full_volume(str_contours_annotation, structure, first_sec, last_sec, \
 #        color_radius, xy_ng_resolution_um, threshold, color, solid_volume=True, no_offset_big_volume=True)
 
-def create_full_volume(str_contour, structure, first_sec, last_sec, color_radius,
+def create_full_volume(contour_annotations, structure, first_sec, last_sec, color_radius,
                                   xy_ng_resolution_um, threshold, color):
     """
     Takes in the contours of a structure as well as the name, sections spanned by the structure, and a list of
@@ -384,17 +384,17 @@ def create_full_volume(str_contour, structure, first_sec, last_sec, color_radius
     # X,Y are 10um voxels. Z is 20um voxels.
     # str_contour_ng_resolution is the previous contour data rescaled to neuroglancer resolution
     str_contour_ng_resolution = {}
-    for section in str_contour:
+    for section in contour_annotations:
         # Load (X,Y) coordinates on this contour
-        section_contours = str_contour[section][structure][threshold]
+        vertices = contour_annotations[section][structure][threshold]
         # (X,Y) coordinates will be rescaled to the new resolution and placed here
         # str_contour_ng_resolution starts at z=0 for simplicity, must provide section offset later on
         str_contour_ng_resolution[section - first_sec] = []
         # Number of (X,Y) coordinates
-        num_contours = len(section_contours)
+        num_contours = len(vertices)
         # Cycle through each coordinate pair
         for coordinate_pair in range(num_contours):
-            curr_coors = section_contours[coordinate_pair]
+            curr_coors = vertices[coordinate_pair]
             # Rescale coordinate pair and add to new contour dictionary
             str_contour_ng_resolution[section - first_sec].append([scale_xy * curr_coors[0], scale_xy * curr_coors[1]])
             # Replace Min/Max X/Y values with new extremes
@@ -517,7 +517,7 @@ def fill_in_structure(voxel_sheet, color):
     return voxel_sheet
 
 
-def get_contours_from_annotations(stack, target_str, hand_annotations, densify=0):
+def get_contours_from_annotations(stack, target_structure, hand_annotations, densify=0):
     MD585_ng_section_min = 83
     num_annotations = len(hand_annotations)
     str_contours_annotation = {}
@@ -532,7 +532,7 @@ def get_contours_from_annotations(stack, target_str, hand_annotations, densify=0
         #if side == 'R' or side == 'L':
         #    structure = structure + '_' + side
 
-        if structure == target_str:
+        if structure == target_structure:
             vertices = hand_annotations['vertices'][i]
 
             for i in range(densify):
@@ -549,9 +549,9 @@ def get_contours_from_annotations(stack, target_str, hand_annotations, densify=0
     try:
         first_sec = np.min(list(str_contours_annotation.keys()))
         last_sec = np.max(list(str_contours_annotation.keys()))
-        print('keys:', target_str, len(str_contours_annotation.keys()), end="\t")
+        print('keys:', target_structure, len(str_contours_annotation.keys()), end="\t")
     except:
-        print('keys:', target_str, len(str_contours_annotation.keys()), end="\t")
+        print('keys:', target_structure, len(str_contours_annotation.keys()), end="\t")
 
 
     return str_contours_annotation, first_sec, last_sec
