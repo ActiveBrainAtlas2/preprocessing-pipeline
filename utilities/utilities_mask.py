@@ -346,15 +346,17 @@ def find_bgcolor(src):
     thresh = (min_point * 20)
     return min_point
 
+
+
 def fix_thionin(img):
-    start_bottom = img.shape[0] - 5
+    start_bottom = img.shape[0] - 5 # get the background color from the bottom couple rows
     bottom_rows = img[start_bottom:img.shape[0], :]
     avg = np.mean(bottom_rows)
     bgcolor = int(round(avg))
     lower = bgcolor - 8
     upper = bgcolor + 4
     bgmask = (img >= lower) & (img <= upper)
-    img[bgmask] = bgcolor
+    img[bgmask] = 255
     # -10 too much
     # -70 pretty good
     # -90 missing stuff
@@ -407,28 +409,34 @@ def fix_thionin(img):
 
     cv2.fillPoly(stencil, lc, 255)
 
-    stencil = cv2.erode(stencil, kernel, iterations=3)
     morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
-    # (thresh, binRed) = cv2.threshold(stencil, 128, 255, cv2.THRESH_BINARY)
-    opening = cv2.morphologyEx(stencil, cv2.MORPH_OPEN, morph_kernel, iterations=3)
-    dilation = cv2.dilate(opening, kernel, iterations=3)
+    #(thresh, binRed) = cv2.threshold(stencil, 128, 255, cv2.THRESH_BINARY)
+    #opening = cv2.morphologyEx(stencil, cv2.MORPH_OPEN, morph_kernel, iterations=3)
+    #dilation = cv2.dilate(stencil, kernel, iterations=5)
+    #dilation = cv2.dilate(stencil, morph_kernel, iterations=4)
 
-    return dilation
+    morphed = cv2.dilate(stencil, morph_kernel, iterations=13)
+    erosion = cv2.erode(morphed, kernel, iterations=13)
 
 
+
+    return erosion
+
+
+
+#Kui, take a look at his method
 def fix_thionin_debug(img):
-    start_bottom = img.shape[0] - 5
+    start_bottom = img.shape[0] - 5 # get mean background color from bottom rows
     bottom_rows = img[start_bottom:img.shape[0], :]
     avg = np.mean(bottom_rows)
-    bgcolor = int(round(avg))
-    lower = bgcolor - 8
-    upper = bgcolor + 4
-    bgmask = (img >= lower) & (img <= upper)
-    img[bgmask] = bgcolor
+    bgcolor = int(round(avg)) - 45
+    #lower = bgcolor - 8
+    #upper = bgcolor + 4
+    #bgmask = (img >= lower) & (img <= upper)
+    #img[bgmask] = 255
     # -10 too much
     # -70 pretty good
     # -90 missing stuff
-    bgcolor = int(round(avg)) - 45
     h, im_th = cv2.threshold(img, bgcolor, 255, cv2.THRESH_BINARY_INV)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
@@ -437,22 +445,21 @@ def fix_thionin_debug(img):
     im_floodfill_inv = cv2.bitwise_not(im_floodfill)
     im_out = im_th | im_floodfill_inv
     kernel = np.ones((8, 8), np.uint8)
-    #im_out = cv2.erode(im_out, kernel, iterations=1)
     im_out = cv2.dilate(im_out, kernel, iterations=3)
 
     stencil = np.zeros(img.shape).astype('uint8')
     contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
-    lc = []
-    c1 = max(contours, key=cv2.contourArea)
-    areaPrev = cv2.contourArea(c1)
-    lc.append(c1)
-    idx = get_index(c1, contours)
+    # get the contours and make the good ones all white, everything else black
+    lc = [] # list of good contours
+    c1 = max(contours, key=cv2.contourArea) # 1st biggest contour
+    areaPrev = cv2.contourArea(c1) # area of biggest contour
+    lc.append(c1) # add to list of good contours to make white
+    idx = get_index(c1, contours) # pop that one out and test the rest of the contours
     contours.pop(idx)
 
     areas = []
     coords = []
-    mX = cv2.moments(c1)
+    mX = cv2.moments(c1) # get center of mass of each contour and make sure it is not on an edge
     m00 = mX['m00']
     cx = mX['m10'] // m00
     cy = mX['m01'] // m00
@@ -475,6 +482,8 @@ def fix_thionin_debug(img):
     color = 2
     thickness = 2
 
+    # loop thru a range to test for good contours. is it near the center and is it close in size to
+    # the preceding contour, if so, add it to the list
     for x in range(1,5):
         if len(contours) > 0:
             cX = max(contours, key=cv2.contourArea)
@@ -499,14 +508,12 @@ def fix_thionin_debug(img):
 
     cv2.fillPoly(stencil, lc, 255)
 
-    stencil = cv2.erode(stencil, kernel, iterations=3)
-    morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
-    # (thresh, binRed) = cv2.threshold(stencil, 128, 255, cv2.THRESH_BINARY)
-    opening = cv2.morphologyEx(stencil, cv2.MORPH_OPEN, morph_kernel, iterations=3)
-    dilation = cv2.dilate(opening, kernel, iterations=3)
+    morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
+    morphed = cv2.dilate(stencil, morph_kernel, iterations=9)
+    erosion = cv2.erode(morphed, kernel, iterations=2)
 
     for a,c in zip(areas, coords):
-        cv2.putText(dilation, a, c, font,
+        cv2.putText(erosion, a, c, font,
                     fontScale, color, thickness, cv2.LINE_AA)
 
-    return dilation
+    return erosion

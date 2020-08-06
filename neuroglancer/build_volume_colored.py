@@ -51,6 +51,7 @@ structures = structures_arr.tolist()
 structures = [s.upper() for s in all_structures]
 colors = get_structure_colors()
 viewer = neuroglancer.Viewer()
+structures = ['SC']
 for structure in structures:
     try:
         color = colors[structure]
@@ -59,7 +60,7 @@ for structure in structures:
         color = colors[sided]
 
     print(structure, color, end="\t")
-    str_contours_annotation, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=4)
+    contour_annotations, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=4)
     if first_sec == 0 or last_sec == 0:
         continue
 
@@ -68,7 +69,7 @@ for structure in structures:
     no_offset_big_volume = True
     start = timer()
 
-    structure_volume, xyz_offsets = create_full_volume(str_contours_annotation, structure, first_sec, last_sec, \
+    structure_volume, xyz_offsets = create_full_volume(contour_annotations, structure, first_sec, last_sec, \
         color_radius, xy_ng_resolution_um, threshold, color)
 
 
