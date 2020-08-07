@@ -545,6 +545,8 @@ def get_contours_from_annotations(stack, target_structure, hand_annotations, den
             str_contours_annotation[section] = {}
             str_contours_annotation[section][structure] = {}
             str_contours_annotation[section][structure][1] = vertices
+            if section == 244:
+                print('vertices at section 244', vertices)
 
     try:
         first_sec = np.min(list(str_contours_annotation.keys()))
