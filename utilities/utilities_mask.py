@@ -409,18 +409,18 @@ def fix_thionin(img):
 
     cv2.fillPoly(stencil, lc, 255)
 
-    morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+    morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
     #(thresh, binRed) = cv2.threshold(stencil, 128, 255, cv2.THRESH_BINARY)
     #opening = cv2.morphologyEx(stencil, cv2.MORPH_OPEN, morph_kernel, iterations=3)
     #dilation = cv2.dilate(stencil, kernel, iterations=5)
     #dilation = cv2.dilate(stencil, morph_kernel, iterations=4)
 
-    morphed = cv2.dilate(stencil, morph_kernel, iterations=13)
-    erosion = cv2.erode(morphed, kernel, iterations=13)
+    dilation = cv2.dilate(stencil, morph_kernel, iterations=3)
+    #erosion = cv2.erode(morphed, kernel, iterations=2)
 
 
 
-    return erosion
+    return dilation
 
 
 
@@ -509,8 +509,8 @@ def fix_thionin_debug(img):
     cv2.fillPoly(stencil, lc, 255)
 
     morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
-    morphed = cv2.dilate(stencil, morph_kernel, iterations=9)
-    erosion = cv2.erode(morphed, kernel, iterations=2)
+    erosion = cv2.dilate(stencil, morph_kernel, iterations=3)
+    #erosion = cv2.erode(morphed, kernel, iterations=1)
 
     for a,c in zip(areas, coords):
         cv2.putText(erosion, a, c, font,
