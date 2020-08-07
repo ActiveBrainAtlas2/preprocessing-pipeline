@@ -40,8 +40,7 @@ def create_mask(animal, full, njobs):
             except:
                 logger.warning(f'Could not open {infile}')
                 continue
-            src = get_last_2d(src)
-            height, width = src.shape
+            height, width = src.shape[0], src.shape[1]
             size = '{}x{}!'.format(width, height)
             del src
             #cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
