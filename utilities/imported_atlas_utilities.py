@@ -804,7 +804,8 @@ def get_original_volume_filepath_v2(stack_spec, structure=None, resolution=None)
         stack_spec_no_structure['structure'] = None
         vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
 
-    vol_basename_with_structure_suffix = vol_basename + ('_' + structure) if structure is not None else ''
+    #vol_basename_with_structure_suffix = vol_basename + ('_' + structure) if structure is not None else ''
+    vol_basename_with_structure_suffix = structure if structure is not None else 'NA'
     if stack_spec['vol_type'] == 'score':
         return os.path.join(vol_basename_with_structure_suffix + '.npy')
     elif stack_spec['vol_type'] == 'annotationAsScore':
