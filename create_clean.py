@@ -45,7 +45,8 @@ def fix_ntb(infile, mask, logger, rotation, flip):
 
 def fix_thion(infile, mask, logger, rotation, flip):
     try:
-        imgfull = cv2.imread(infile)
+        #imgfull = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
+        imgfull = io.imread(infile)
     except:
         logger.warning(f'Could not open {infile}')
 
