@@ -491,8 +491,11 @@ def get_original_volume_basename_v2(stack_spec):
         components.append(resolution)
 
     tmp_str = '_'.join(components)
-    basename = '%(stack)s_%(tmp_str)s%(volstr)s' % \
-               {'stack': stack, 'tmp_str': (tmp_str + '_') if tmp_str != '' else '',
+    #basename = '%(stack)s_%(tmp_str)s%(volstr)s' % \
+    #           {'stack': stack, 'tmp_str': (tmp_str + '_') if tmp_str != '' else '',
+    #            'volstr': volume_type_to_str(volume_type)}
+    basename = '%(tmp_str)s%(volstr)s' % \
+               {'tmp_str': (tmp_str + '_') if tmp_str != '' else '',
                 'volstr': volume_type_to_str(volume_type)}
     if structure is not None:
         if isinstance(structure, str):
@@ -501,7 +504,6 @@ def get_original_volume_basename_v2(stack_spec):
             basename += '_' + '_'.join(sorted(structure))
         else:
             raise ValueError('The following structure is not valid: ', structure)
-
     return basename
 
 
@@ -528,11 +530,15 @@ def load_data(filepath, filetype=None):
     if not os.path.exists(filepath):
         sys.stderr.write('load_data: File does not exist: %s\n' % filepath)
 
-    if filetype == 'bp':
+    if filetype.endswith('bp'):
         import bloscpack as bp
         return bp.unpack_ndarray_from_file(filepath)
-    elif filetype == 'npy':
+    elif filetype.endswith('npy'):
         return np.load(filepath)
+    elif filetype.endswith('json'):
+        with open(filepath, 'r') as json_file:
+            return json.load(json_file)
+
     elif filetype == 'image':
         return io.imread(filepath)
     elif filetype == 'hdf':
@@ -699,10 +705,10 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
     #                                                            resolution=resolution, wrt=bbox_wrt)
     # download_from_s3(bbox_fp)
     # volume_bbox = DataManager.load_data(bbox_fp, filetype='bbox')
-    filename = '{}_origin_wrt_{}.txt'.format(structure, bbox_wrt)
-    filepath = os.path.join(VOL_DIR, stack, '{}_annotationAsScoreVolume'.format(resolution), filename)
-    #origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
-    origin = np.loadtxt(filepath)
+    #filename = '{}_origin_wrt_{}.txt'.format(structure, bbox_wrt)
+    #filepath = os.path.join(VOL_DIR, stack, '{}_annotationAsScoreVolume'.format(resolution), filename)
+    origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
+    origin = np.loadtxt(origin_filename)
 
     if crop_to_minimal:
         volume, origin = crop_volume_to_minimal(vol=volume, origin=origin, return_origin_instead_of_bbox=True)
@@ -765,9 +771,14 @@ def get_original_volume_origin_filepath_v3(stack_spec, structure, wrt='wholebrai
         vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
 
     if volume_type == 'score' or volume_type == 'annotationAsScore':
+        #origin_fp = os.path.join(VOLUME_ROOTDIR, '%(stack)s',
+        #                         '%(basename)s',
+        #                         '%(basename)s_%(struct)s_origin' + (
+        #                             '_wrt_' + wrt if wrt is not None else '') + '.txt') % \
+        #            {'stack': stack_spec['name'], 'basename': vol_basename, 'struct': structure}
         origin_fp = os.path.join(VOLUME_ROOTDIR, '%(stack)s',
                                  '%(basename)s',
-                                 '%(basename)s_%(struct)s_origin' + (
+                                 '%(struct)s_origin' + (
                                      '_wrt_' + wrt if wrt is not None else '') + '.txt') % \
                     {'stack': stack_spec['name'], 'basename': vol_basename, 'struct': structure}
 
@@ -796,21 +807,28 @@ def get_original_volume_filepath_v2(stack_spec, structure=None, resolution=None)
     if 'resolution' not in stack_spec or stack_spec['resolution'] is None:
         assert resolution is not None
         stack_spec['resolution'] = resolution
+        print('1resolution not in stack_spec or stack_specresolution is None')
 
     if 'structure' not in stack_spec or stack_spec['structure'] is None:
-        vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec)
+        #vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec)
+        #print('2 get original_volume_basename_v2', stack_spec)
+        vol_basename = ''
     else:
         stack_spec_no_structure = stack_spec.copy()
         stack_spec_no_structure['structure'] = None
         vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
+        print('3 else get_original_volume_basename_v2')
 
     #vol_basename_with_structure_suffix = vol_basename + ('_' + structure) if structure is not None else ''
     vol_basename_with_structure_suffix = structure if structure is not None else 'NA'
     if stack_spec['vol_type'] == 'score':
+        print('vol_basename1', vol_basename)
         return os.path.join(vol_basename_with_structure_suffix + '.npy')
     elif stack_spec['vol_type'] == 'annotationAsScore':
+        print('vol_basename_with_structure_suffix', vol_basename_with_structure_suffix)
         return os.path.join(vol_basename_with_structure_suffix + '.npy')
     elif stack_spec['vol_type'] == 'intensity':
+        print('vol_basename3', vol_basename)
         return os.path.join(vol_basename, vol_basename + '.npy')
     else:
         raise Exception("vol_type of %s is not recognized." % stack_spec['vol_type'])
@@ -950,6 +968,7 @@ def convert_vol_bbox_dict_to_overall_vol(vol_bbox_dict=None, vol_bbox_tuples=Non
         volumes = crop_and_pad_volumes(out_bbox=volume_bbox, vol_bbox_tuples=vol_bbox_tuples)
     return volumes, np.array(volume_bbox)
 
+# this loads fixed brain
 def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox_wrt='canonicalAtlasSpace'):
 
     #in_bbox_wrt = 'wholebrain'
@@ -1327,8 +1346,9 @@ def load_alignment_results_v3(alignment_spec, what, reg_root_dir=REGISTRATION_PA
         what (str): any of parameters, scoreHistory, scoreEvolution or trajectory
     """
     INPUT_KEY_LOC = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what=what, reg_root_dir=reg_root_dir)
-    with open(INPUT_KEY_LOC, 'r') as f:
-        res = json.load(f)
+    print('INPUT_KEY_LOC',INPUT_KEY_LOC)
+    filename, file_extension = os.path.splitext(INPUT_KEY_LOC)
+    res = load_data(INPUT_KEY_LOC, filetype = file_extension)
 
     if what == 'parameters':
         tf_out = convert_transform_forms(transform=res, out_form=out_form)

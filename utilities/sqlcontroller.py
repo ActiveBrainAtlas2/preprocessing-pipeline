@@ -113,6 +113,15 @@ class SqlController(object):
 
         return section_numbers
 
+    def get_sections_dict(self, animal):
+        sections = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).all()
+
+        sections_dict = {}
+        for i, r in enumerate(sections):
+            sections_dict[i] = str(i).zfill(3) + 'tif'
+
+        return sections_dict
+
     def get_current_task(self, animal):
         step = None
         try:
