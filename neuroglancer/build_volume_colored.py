@@ -51,10 +51,10 @@ structures = structures_arr.tolist()
 structures = [s.upper() for s in all_structures]
 colors = get_structure_colors()
 viewer = neuroglancer.Viewer()
-structures = ['SC']
+structures = ['SC', 'IC', 'Sp5O_L', 'Sp5O_R']
 for structure in structures:
     try:
-        color = colors[structure]
+        color = colors[structure.upper()]
     except:
         sided = '{}_R'.format(structure)
         color = colors[sided]
@@ -67,16 +67,16 @@ for structure in structures:
     threshold = 1
     solid_volume = True
     no_offset_big_volume = True
-    start = timer()
+    #for section in sorted(contour_annotations):
+    #    print(section)
+    #sys.exit()
 
     structure_volume, xyz_offsets = create_full_volume(contour_annotations, structure, first_sec, last_sec, \
         color_radius, xy_ng_resolution_um, threshold, color)
 
 
-    end = timer()
-    print('volume took', round(end - start), end="\t")
-    start = timer()
     z_len, y_len, x_len = np.shape(structure_volume)
+    print('volume shape', structure_volume.shape, end="\t")
     print('z range:', xyz_offsets[2], z_len, end="\t")
     print('y range:', xyz_offsets[1], y_len, end="\t")
     print('x range:', xyz_offsets[0], x_len, end="\t")
@@ -92,8 +92,6 @@ for structure in structures:
                         full_brain_volume_annotated[z, y, x] = structure_val
                     except Exception as e:
                         print(e)
-    end = timer()
-    print('Triple loop:', round(end - start))
 
 OUTPUT = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes', animal)
 outfile = os.path.join(OUTPUT, 'full_brain_volume_annotated.npy')

@@ -15,7 +15,7 @@ from skimage.filters import gaussian
 from scipy.ndimage.morphology import distance_transform_edt
 from skimage.morphology import closing, disk
 from scipy.ndimage.morphology import binary_fill_holes, binary_closing
-
+import pickle
 import vtk
 #from vtk.util import numpy_support
 import mcubes # https://github.com/pmneila/PyMCubes
@@ -32,6 +32,16 @@ REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CS
 MESH_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_meshes'
 VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
 ATLAS = 'atlasV7'
+paired_structures = ['5N', '6N', '7N', '7n', 'Amb', 'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC', 'SNC', 'SNR', '3N', '4N',
+                     'Sp5I', 'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
+# singular_structures = ['AP', '12N', 'RtTg', 'sp5', 'outerContour', 'SC', 'IC']
+singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
+singular_structures_with_side_suffix = ['AP_S', '12N_S', 'RtTg_S', 'SC_S', 'IC_S']
+all_known_structures = paired_structures + singular_structures
+
+def all_known_structures_unsided_including_surround_200um():
+    return all_known_structures + [convert_to_surround_name(u, margin='200um') for u in all_known_structures]
+
 
 
 def create_alignment_specs(stack, detector_id):
@@ -288,7 +298,6 @@ def find_contour_points(labelmap, sample_every=10, min_length=0):
     if np.count_nonzero(labelmap) == 0:
         # sys.stderr.write('No contour can be found because the image is blank.\n')
         return {}
-
     regions = regionprops(labelmap.astype(np.int))
     contour_points = {}
 
@@ -535,6 +544,8 @@ def load_data(filepath, filetype=None):
         return bp.unpack_ndarray_from_file(filepath)
     elif filetype.endswith('npy'):
         return np.load(filepath)
+    elif filetype.endswith('txt'):
+        return np.loadtxt(filepath)
     elif filetype.endswith('json'):
         with open(filepath, 'r') as json_file:
             return json.load(json_file)
@@ -551,9 +562,9 @@ def load_data(filepath, filetype=None):
     elif filetype == 'annotation_hdf':
         contour_df = read_hdf(filepath, 'contours')
         return contour_df
-    elif filetype == 'pickle':
-        import pickle as pickle
-        return pickle.load(open(filepath, 'r'))
+    elif filetype.endswith('pkl'):
+        with open(filepath, 'rb') as f:
+            return pickle.load(f, encoding="latin1")
     elif filetype == 'file_section_map':
         with open(filepath, 'r') as f:
             fn_idx_tuples = [line.strip().split() for line in f.readlines()]
@@ -768,7 +779,7 @@ def get_original_volume_origin_filepath_v3(stack_spec, structure, wrt='wholebrai
     else:
         stack_spec_no_structure = stack_spec.copy()
         stack_spec_no_structure['structure'] = None
-        vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
+        #vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
 
     if volume_type == 'score' or volume_type == 'annotationAsScore':
         #origin_fp = os.path.join(VOLUME_ROOTDIR, '%(stack)s',
@@ -776,6 +787,7 @@ def get_original_volume_origin_filepath_v3(stack_spec, structure, wrt='wholebrai
         #                         '%(basename)s_%(struct)s_origin' + (
         #                             '_wrt_' + wrt if wrt is not None else '') + '.txt') % \
         #            {'stack': stack_spec['name'], 'basename': vol_basename, 'struct': structure}
+        vol_basename = '{}_annotationAsScoreVolume'.format(resolution)
         origin_fp = os.path.join(VOLUME_ROOTDIR, '%(stack)s',
                                  '%(basename)s',
                                  '%(struct)s_origin' + (
@@ -807,7 +819,7 @@ def get_original_volume_filepath_v2(stack_spec, structure=None, resolution=None)
     if 'resolution' not in stack_spec or stack_spec['resolution'] is None:
         assert resolution is not None
         stack_spec['resolution'] = resolution
-        print('1resolution not in stack_spec or stack_specresolution is None')
+        #print('1resolution not in stack_spec or stack_specresolution is None')
 
     if 'structure' not in stack_spec or stack_spec['structure'] is None:
         #vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec)
@@ -817,18 +829,18 @@ def get_original_volume_filepath_v2(stack_spec, structure=None, resolution=None)
         stack_spec_no_structure = stack_spec.copy()
         stack_spec_no_structure['structure'] = None
         vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
-        print('3 else get_original_volume_basename_v2')
+        #print('3 else get_original_volume_basename_v2')
 
     #vol_basename_with_structure_suffix = vol_basename + ('_' + structure) if structure is not None else ''
     vol_basename_with_structure_suffix = structure if structure is not None else 'NA'
     if stack_spec['vol_type'] == 'score':
-        print('vol_basename1', vol_basename)
+        #print('vol_basename1', vol_basename)
         return os.path.join(vol_basename_with_structure_suffix + '.npy')
     elif stack_spec['vol_type'] == 'annotationAsScore':
-        print('vol_basename_with_structure_suffix', vol_basename_with_structure_suffix)
+        #print('vol_basename_with_structure_suffix', vol_basename_with_structure_suffix)
         return os.path.join(vol_basename_with_structure_suffix + '.npy')
     elif stack_spec['vol_type'] == 'intensity':
-        print('vol_basename3', vol_basename)
+        #print('vol_basename3', vol_basename)
         return os.path.join(vol_basename, vol_basename + '.npy')
     else:
         raise Exception("vol_type of %s is not recognized." % stack_spec['vol_type'])
@@ -996,10 +1008,7 @@ def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox
             if return_label_mappings is True, returns (dict of volume_bbox_tuples, structure_to_label, label_to_structure).
             else, returns volume_bbox_tuples.
     """
-
     loaded = False
-    sys.stderr.write('Prior structure/index map not found. Generating a new one.\n')
-
     volumes = {}
 
     if not loaded:
@@ -3531,3 +3540,147 @@ def images_to_volume_v2(images, spacing_um, in_resol_um, out_resol_um, crop_to_m
         return crop_volume_to_minimal(volume)
     else:
         return volume
+
+
+def display_volume_sections(vol, every=5, ncols=5, direction='z', start_level=None, **kwargs):
+    """
+    Show the sections of a volume in a grid display.
+    Args:
+        direction (str): x,y or z
+    """
+    if direction == 'z':
+        zmin, zmax = bbox_3d(vol)[4:]
+        if start_level is None:
+            zs = range(zmin, zmax+1, every)
+        else:
+            zs = range(start_level, zmax+1, every)
+        vizs = [vol[:, :, z] for z in zs]
+        titles = ['z=%d' % z  for z in zs]
+    elif direction == 'x':
+        xmin, xmax = bbox_3d(vol)[:2]
+        if start_level is None:
+            xs = range(xmin, xmax+1, every)
+        else:
+            xs = range(start_level, xmax+1, every)
+        vizs = [vol[:, x, :] for x in xs]
+        titles = ['x=%d' % x for x in xs]
+    elif direction == 'y':
+        ymin, ymax = bbox_3d(vol)[2:4]
+        if start_level is None:
+            ys = range(ymin, ymax+1, every)
+        else:
+            ys = range(start_level, ymax+1, every)
+        vizs = [vol[y, :, :] for y in ys]
+        titles = ['y=%d' % y for y in ys]
+
+    display_images_in_grids(vizs, nc=ncols, titles=titles, **kwargs)
+
+
+def display_images_in_grids(vizs, nc, titles=None, export_fn=None, maintain_shape=True, pad_color='white',
+                            title_fontsize=10, **kwargs):
+    """
+    Display a list of images in a grid.
+    Args:
+        vizs (list of images):
+        nc (int): number of images in each row
+        maintain_shape (bool): pad patches to same size.
+        pad_color (str): black or white
+    """
+    if maintain_shape:
+        if pad_color == 'white':
+            pad_value = 255
+        elif pad_color == 'black':
+            pad_value = 0
+        vizs = pad_patches_to_same_size(vizs, pad_value=pad_value)
+
+    n = len(vizs)
+    nr = int(np.ceil(n/float(nc)))
+    aspect_ratio = vizs[0].shape[1]/float(vizs[0].shape[0]) # width / height
+
+    fig, axes = plt.subplots(nr, nc, figsize=(nc*5*aspect_ratio, nr*5))
+    axes = axes.flatten()
+
+    for i in range(len(axes)):
+        if i >= n:
+            axes[i].axis('off');
+        else:
+            if vizs[i].dtype == np.float16:
+                vizs[i] = vizs[i].astype(np.float32)
+            axes[i].imshow(vizs[i], **kwargs);
+            if titles is not None:
+                axes[i].set_title(titles[i], fontsize=title_fontsize);
+            axes[i].set_xticks([]);
+            axes[i].set_yticks([]);
+
+    fig.tight_layout();
+
+    plt.show();
+
+
+def pad_patches_to_same_size(vizs, pad_value=0, keep_center=False, common_shape=None):
+    """
+    If patch size is larger than common shape, crop to common shape.
+    """
+
+    # If common_shape is not given, use the largest of all data
+    if common_shape is None:
+        common_shape = np.max([p.shape[:2] for p in vizs], axis=0)
+
+    dt = vizs[0].dtype
+    ndim = vizs[0].ndim
+
+    if ndim == 2:
+        common_box = (pad_value*np.ones((common_shape[0], common_shape[1]))).astype(dt)
+    elif ndim == 3:
+        common_box = (pad_value*np.ones((common_shape[0], common_shape[1], p.shape[2]))).astype(dt)
+
+    patches_padded = []
+    for p in vizs:
+        patch_padded = common_box.copy()
+
+        if keep_center:
+
+            top_margin = (common_shape[0] - p.shape[0])/2
+            if top_margin < 0:
+                ymin = 0
+                ymax = common_shape[0]-1
+                ymin2 = -top_margin
+                ymax2 = -top_margin+common_shape[0]-1
+            else:
+                ymin = top_margin
+                ymax = top_margin + p.shape[0] - 1
+                ymin2 = 0
+                ymax2 = p.shape[0]-1
+
+            left_margin = (common_shape[1] - p.shape[1])/2
+            if left_margin < 0:
+                xmin = 0
+                xmax = common_shape[1]-1
+                xmin2 = -left_margin
+                xmax2 = -left_margin+common_shape[1]-1
+            else:
+                xmin = left_margin
+                xmax = left_margin + p.shape[1] - 1
+                xmin2 = 0
+                xmax2 = p.shape[1]-1
+
+            patch_padded[ymin:ymax+1, xmin:xmax+1] = p[ymin2:ymax2+1, xmin2:xmax2+1]
+#             patch_padded[top_margin:top_margin+p.shape[0], left_margin:left_margin+p.shape[1]] = p
+        else:
+            # assert p.shape[0] < common_shape[0] and p.shape[1] < common_shape[1]
+            patch_padded[:p.shape[0], :p.shape[1]] = p
+
+        patches_padded.append(patch_padded)
+
+    return patches_padded
+
+def load_mean_shape(atlas_name, structure, resolution):
+    """
+    Returns:
+        (volume, origin_wrt_meanShapeCentroid)
+    """
+    volume_filepath = get_mean_shape_filepath(atlas_name=atlas_name, structure=structure, what='volume', resolution=resolution)
+    volume = load_data(volume_filepath, filetype='npy')
+    origin_filepath = get_mean_shape_filepath(atlas_name=atlas_name, structure=structure, what='origin_wrt_meanShapeCentroid', resolution=resolution)
+    origin_wrt_meanShapeCentroid = load_data(origin_filepath, filetype='txt')
+    return volume, origin_wrt_meanShapeCentroid

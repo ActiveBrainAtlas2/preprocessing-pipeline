@@ -12,9 +12,10 @@ from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 
 
-def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to):
+def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolution):
     # ---------------- Conversion to precomputed format ----------------
-    voxel_resolution = [460, 460, 20000]
+
+    voxel_resolution = [resolution, resolution, 20000]
     voxel_offset = [0, 0, 0]
 
     info_fullres_template = {
@@ -100,9 +101,17 @@ def run_neuroglancer(animal, channel, full):
         else:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
 
+        if 'thion' in sqlController.histology.counterstain:
+            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
+            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
+
+
     NEUROGLANCER = os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
 
-    convert_to_precomputed(INPUT, NEUROGLANCER)
+    planar_resolution = sqlController.scan_run.resolution
+    resolution = int(planar_resolution * 1000)
+
+    convert_to_precomputed(INPUT, NEUROGLANCER, resolution)
 
 
 if __name__ == "__main__":
