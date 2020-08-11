@@ -412,7 +412,6 @@ def create_full_volume(contour_annotations, structure, first_sec, last_sec, colo
     # Create empty 'structure_volume' using min and max values found earlier. Acts as a bounding box for now
     structure_volume = np.zeros((max_z - min_z, max_y - min_y, max_x - min_x), dtype=np.uint8)
     z_voxels, y_voxels, x_voxels = np.shape(structure_volume)
-    # print(  np.shape(structure_volume) )
 
     # Go through every slice. For every slice color in the voxels corrosponding to the contour's coordinate pair
     for slice in range(z_voxels):
@@ -457,7 +456,8 @@ def create_full_volume(contour_annotations, structure, first_sec, last_sec, colo
 
     true_ng_x_offset = min_x
     true_ng_y_offset = min_y
-    xyz_structure_offsets = [true_ng_x_offset, true_ng_y_offset, z_offset]
+    #xyz_structure_offsets = [true_ng_x_offset, true_ng_y_offset, z_offset]
+    xyz_structure_offsets = [min_x, min_y, z_offset]
 
     # If instead of a small volume and an offset, we want no offset and an extremely large+sparse volume
     largest_z_offset = np.max([min_z, z_offset])
@@ -545,18 +545,44 @@ def get_contours_from_annotations(stack, target_structure, hand_annotations, den
             str_contours_annotation[section] = {}
             str_contours_annotation[section][structure] = {}
             str_contours_annotation[section][structure][1] = vertices
-            if section == 244:
-                print('vertices at section 244', vertices)
 
     try:
         first_sec = np.min(list(str_contours_annotation.keys()))
         last_sec = np.max(list(str_contours_annotation.keys()))
-        print('keys:', target_structure, len(str_contours_annotation.keys()), end="\t")
+    except:
+        print('keys:', target_structure, len(str_contours_annotation.keys()), end="\n")
+
+
+    return str_contours_annotation, first_sec, last_sec
+
+
+def min_max_sections(target_structure, hand_annotations):
+    num_annotations = len(hand_annotations)
+    str_contours_annotation = {}
+
+    for i in range(num_annotations):
+        side = hand_annotations['side'][i]
+        structure = hand_annotations['name'][i]
+        section = hand_annotations['section'][i]
+        first_sec = 0
+        last_sec = 0
+        if side == 'R' or side == 'L':
+            structure = structure + '_' + side
+
+        if structure.upper() == target_structure.upper():
+            vertices = hand_annotations['vertices'][i]
+            str_contours_annotation[section] = {}
+            str_contours_annotation[section][structure] = {}
+            str_contours_annotation[section][structure][1] = vertices
+
+    try:
+        first_sec = np.min(list(str_contours_annotation.keys()))
+        last_sec = np.max(list(str_contours_annotation.keys()))
     except:
         print('keys:', target_structure, len(str_contours_annotation.keys()), end="\t")
 
 
-    return str_contours_annotation, first_sec, last_sec
+    return first_sec, last_sec
 
 
 def get_dense_coordinates(coor_list):

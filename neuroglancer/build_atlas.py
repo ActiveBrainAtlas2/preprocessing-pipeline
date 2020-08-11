@@ -35,9 +35,9 @@ fixed_brain_spec = {'name': fixed_brain_name, 'vol_type': 'annotationAsScore', '
 
 fixed_brain = load_original_volume_all_known_structures_v3(stack_spec=fixed_brain_spec, structures=structures, in_bbox_wrt='wholebrain')
 fixed_brain_structure_centroids = get_centroid_3d(fixed_brain)
-print('fixed_brain_structure_centroids', fixed_brain_structure_centroids)
+#print('fixed_brain_structure_centroids', fixed_brain_structure_centroids)
 fixed_brain_structure_centroids_um = {s: c * resolution_um for s, c in fixed_brain_structure_centroids.items()}
-print('fixed_brain_structure_centroids_um', fixed_brain_structure_centroids_um)
+#print('fixed_brain_structure_centroids_um', fixed_brain_structure_centroids_um)
 structure_centroids_all_brains_um_wrt_fixed.append(fixed_brain_structure_centroids_um)
 
 
@@ -301,12 +301,12 @@ t = aligned_moving_instance_wrt_templateCentroid
 print('aligned_moving_instance_wrt_templateCentroid',type(t))
 print('aligned_moving_instance_wrt_templateCentroid[0]',type(t[0]), t[0].shape, t[0].dtype)
 print('aligned_moving_instance_wrt_templateCentroid[1]',type(t[1]), t[1].shape, t[1].dtype)
-
-np.save('/home/eddyod/programming/pipeline_utility/neuroglancer/aligned_moving_instance.npy', t[0])
+filename = os.path.join(VOL_DIR, atlas_name, 'aligned_moving_instance.npy')
+np.save(filename, t[0])
 # Generate meshes for each instance.
 
-instance_mesh_wrt_templateCentroid_all_instances = [
-volume_to_polydata((v, o), num_simplify_iter=3, smooth=True)
-for v, o in
-[template_instance_wrt_templateCentroid] + [aligned_moving_instance_wrt_templateCentroid]]
+#instance_mesh_wrt_templateCentroid_all_instances = [
+#volume_to_polydata((v, o), num_simplify_iter=3, smooth=True)
+#for v, o in
+#[template_instance_wrt_templateCentroid] + [aligned_moving_instance_wrt_templateCentroid]]
 
