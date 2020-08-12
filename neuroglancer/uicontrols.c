@@ -181,6 +181,17 @@ void main() {
 
 }
 
+# simple for structures
+#uicontrol float brightness slider(min=-100, max=100)
+#uicontrol float contrast slider(min=-30, max=30, step=1)
+void main() {
+  float pix_val = float(toRaw(getDataValue()));
+
+    emitGrayscale((pix_val + brightness) *
+                  exp(contrast));
+
+}
+
 // add a histogram control for the current view
 // get translation what is the number represent? everything should be in terms of microns and degrees.
 // get names associated with shaped colors
