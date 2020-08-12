@@ -14,7 +14,7 @@ sys.path.append(DIR)
 from utilities.contour_utilities import min_max_sections, add_structure_to_neuroglancer, \
     create_full_volume, get_structure_colors, get_contours_from_annotations
 from utilities.imported_atlas_utilities import get_all_structures
-VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/atlasV7/score_volumes'
+VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/atlasV7/10.0um_annotationAsScoreVolume'
 #full_brain_volume_annotated = np.zeros((268,3000,5000), dtype=np.uint8)
 
 xy_ng_resolution_um = 5
@@ -22,11 +22,17 @@ width = 35617 # original value
 height = 26086 # original value
 y_voxels = 1+int( height*0.46*(.46/xy_ng_resolution_um) + 0.5)
 x_voxels = 1+int( width*0.46*(.46/xy_ng_resolution_um) + 0.5)
-width = 5000
-height = 3000
-full_brain_volume_annotated = np.zeros((268,height,width), dtype=np.uint8)
+width = 1429
+height = 1099
+zdim = 288
+#full_brain_volume_annotated = np.zeros((zdim,height,width), dtype=np.uint8)
+full_brain_volume_annotated = np.zeros((zdim, height, width), dtype=np.uint8)
 
 print('full brain volume shape:', full_brain_volume_annotated.shape)
+midx = width // 2
+midy = height // 2
+midz = zdim // 2
+print("origin", midx, midy, midz)
 
 #neuroglancer.set_server_bind_address(bind_port='33645')
 #viewer = neuroglancer.Viewer()
@@ -43,10 +49,10 @@ structures = structures_arr.tolist()
 structures = [s.upper() for s in all_structures]
 colors = get_structure_colors()
 viewer = neuroglancer.Viewer()
-structures = ['SC','IC', 'Sp5O_R']
-#structures = ['SC']
-midx = full_brain_volume_annotated.shape[2] // 2
-midy = full_brain_volume_annotated.shape[1] // 2
+structures = ['SC','IC']
+structures = ['Sp5C_R', 'Sp5O_R', 'Sp5I_R']
+#structures = ['SC','Sp5C_R', 'IC']
+
 for structure in structures:
     try:
         color = colors[structure.upper()]
@@ -55,6 +61,7 @@ for structure in structures:
         color = colors[sided]
     volume_filename = os.path.join(VOL_DIR, '{}.npy'.format(structure))
     volume_input = np.load(volume_filename)
+    #volume_input = np.swapaxes(volume_input, 0, 2)
 
     volume_nonzero_indices = volume_input > 0
     volume_input[volume_nonzero_indices] = color
@@ -82,42 +89,38 @@ for structure in structures:
     IC y 415 1270
     IC x 1507 2602
     """
-    print("origin", midx, midy)
 
     z_start = 30
-    y_start = int(midy + y)
-    x_start = int(midx + x)
+    ext = 150
+    y_start = int(y) + midy
+    x_start = int(x) + midx
 
-    #y_start = 1 + int(h * 0.46 * (.46 / xy_ng_resolution_um) + 0.5)
-    #x_start = 1 + int(w * 0.46 * (.46 / xy_ng_resolution_um) + 0.5)
-    print(structure, color, first_section, last_section, round(x), round(y), round(z), 'shape:', structure_volume.shape)
+    #y_start = 1 + int(y_start * 0.46 * (.46 / xy_ng_resolution_um) + 0.5)
+    #x_start = 1 + int(x_start * 0.46 * (.46 / xy_ng_resolution_um) + 0.5)
+    print(str(structure).ljust(8), color, end=",")
+    print('x', str(round(x)).rjust(7), end=", ")
+    print('y', str(round(y)).rjust(7), end=", ")
+    print('z', str(round(z)).rjust(7), end=", ")
+    print('shape', structure_volume.shape, end=", ")
 
     z_len, y_len, x_len = np.shape(structure_volume)
-    print(structure, 'z', z_start, z_len+z_start)
-    print(structure, 'y', y_start, y_len+y_start)
-    print(structure, 'x', x_start, x_len+x_start)
-
+    x_end = x_start + x_len
+    y_end = y_start + y_len
+    z_end = z_start + z_len
+    print('x range', str(x_start).rjust(4), str(x_end).rjust(4), end=", ")
+    print('y range', str(y_start).rjust(4), str(y_end).rjust(4), end=", ")
+    print('z range', str(z_start).rjust(4), str(z_end).rjust(4))
     y_len += y_start
     x_len += x_start
-    for z in range(z_start, z_len):
-        for y in range(y_start, y_len):
-            for x in range(x_start, x_len):
-                yy = y - y_start
-                xx = x - x_start
-                structure_val = structure_volume[z, yy, xx]
-                if structure_val == 0:
-                    continue
-                else:
-                    try:
-                        full_brain_volume_annotated[z, y, x] = structure_val
-                        #print('location:', x,y,z)
-                    except Exception as e:
-                        print(e)
 
+    full_brain_volume_annotated[x_start:x_start + structure_volume.shape[2],
+    y_start:y_start + structure_volume.shape[1], z_start:z_start + structure_volume.shape[0]] = structure_volume
 
 
 OUTPUT = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes', 'atlasV8')
 outfile = os.path.join(OUTPUT, 'volume_test.npy')
-print('\nfull_brain_volume_annotated at', outfile)
-np.save(outfile, np.ascontiguousarray(full_brain_volume_annotated.astype(np.uint8)))
-
+if np.amax(full_brain_volume_annotated) > 1:
+    print('\nfull_brain_volume_annotated at', outfile)
+    np.save(outfile, full_brain_volume_annotated.astype(np.uint8))
+else:
+    print('\nfinished testing\n')
