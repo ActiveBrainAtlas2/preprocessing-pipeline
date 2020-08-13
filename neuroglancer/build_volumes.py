@@ -1,11 +1,7 @@
 # Add all annotated brains to the viewer
 from timeit import  default_timer as timer
 import os, sys
-
-import neuroglancer
 import numpy as np
-import pandas as pd
-import ast
 
 
 HOME = os.path.expanduser("~")
@@ -16,10 +12,6 @@ VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/atlasV7/10.0u
 MD589_VOLUME_PATH = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/MD589/MD589_full_filled.npy'
 MD589 = np.load(MD589_VOLUME_PATH)
 xy_ng_resolution_um = 5
-#width = 35617 # original value
-#height = 26086 # original value
-#y_voxels = 1+int( height*0.46*(.46/xy_ng_resolution_um) + 0.5)
-#x_voxels = 1+int( width*0.46*(.46/xy_ng_resolution_um) + 0.5)
 
 height, width, zdim = MD589.shape
 
@@ -45,7 +37,7 @@ for n in numpy_files:
 
     volume_filename = os.path.join(VOL_DIR, '{}.npy'.format(structure))
     volume_input = np.load(volume_filename)
-    #volume_input = np.swapaxes(volume_input, 0, 2)
+    volume_input = np.swapaxes(volume_input, 0, 2)
 
     volume_nonzero_indices = volume_input > 0
     volume_input[volume_nonzero_indices] = color
