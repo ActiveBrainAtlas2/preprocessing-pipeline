@@ -39,6 +39,7 @@ def make_preps(animal, channel, full):
         output_path = os.path.join(OUTPUT, str(section_number).zfill(3) + '.tif')
 
         if not os.path.exists(input_path):
+            print('Input tif does not exist', input_path)
             continue
 
         if os.path.exists(output_path):
