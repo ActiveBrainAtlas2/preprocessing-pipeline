@@ -6,6 +6,10 @@ import matplotlib.figure
 
 from utilities.alignment_utility import get_last_2d
 
+font = cv2.FONT_HERSHEY_SIMPLEX
+fontScale = 1
+thickness = 2
+
 
 def rotate_image(img, file, rotation):
     try:
@@ -13,6 +17,15 @@ def rotate_image(img, file, rotation):
     except:
         print('Could not rotate', file)
     return img
+
+
+def lognorm(img, limit):
+    lxf = np.log(img + 0.005)
+    lxf = np.where(lxf < 0, 0, lxf)
+    xmin = min(lxf.flatten())
+    xmax = max(lxf.flatten())
+    return -lxf * limit / (xmax - xmin) + xmax * limit / (xmax - xmin)  # log of data and stretch 0 to 255
+
 
 def linnorm(img, limit, dt):
     flat = img.flatten()
@@ -243,6 +256,17 @@ def fill_spots(img):
 
     return img
 
+def find_bgcolor(src):
+    fig = matplotlib.figure.Figure()
+    ax = matplotlib.axes.Axes(fig, (0, 0, 0, 0))
+    n, bins, patches = ax.hist(src.flatten(), 100);
+    del ax, fig
+    min_point = np.argmin(n[:5])
+    #min_point = int(min(2, min_point))
+    thresh = (min_point * 20)
+    return min_point
+
+
 def check_contour(contours, area, lc):
     if len(contours) > 0:
         cX = max(contours, key=cv2.contourArea)
@@ -255,10 +279,10 @@ def check_contour(contours, area, lc):
 
 
 def fix_with_fill(img, limit, dt):
-    no_strip, fe = remove_strip(img)
-    if fe != 0:
-        img[:, fe:] = 255  # mask the strip
-    img = pad_with_black(img)
+    #no_strip, fe = remove_strip(img)
+    #if fe != 0:
+    #    img[:, fe:] = 255  # mask the strip
+    #img = pad_with_black(img)
     img = (img / 256).astype(dt)
     h_src = linnorm(img, limit, dt)
     med = np.median(h_src) + 10
@@ -277,74 +301,47 @@ def fix_with_fill(img, limit, dt):
     eroded = cv2.erode(im_out, small_kernel, iterations=1)
     #eroded = np.copy(im_out)
     contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
     lc = []
+    c1 = max(contours, key=cv2.contourArea)
+    areaPrev = cv2.contourArea(c1)
+    lc.append(c1)
+    idx = get_index(c1, contours)
+    contours.pop(idx)
+
+    midrow = img.shape[0] // 2
+    topbound = midrow - (midrow * 0.65)
+    bottombound = midrow + (midrow * 0.98)
     midcolumn = img.shape[1] // 2
-    leftbound = midcolumn - (midcolumn * 0.5)
+    leftbound = midcolumn - (midcolumn * 0.65)
     rightbound = midcolumn + (midcolumn * 0.5)
-    AREA_THRESHOLD = 0.05
-    if len(contours) > 0:
-        c1 = max(contours, key=cv2.contourArea)
-        lc.append(c1)
-        area1 = cv2.contourArea(c1)
-        idx = get_index(c1, contours)
-        contours.pop(idx)
+    AREA_THRESHOLD = 0.01
 
+    for x in range(1,5):
         if len(contours) > 0:
             cX = max(contours, key=cv2.contourArea)
-            area2 = cv2.contourArea(cX)
+            area = cv2.contourArea(cX)
             mX = cv2.moments(cX)
             m00 = mX['m00']
             if m00 > 0:
                 cx = mX['m10'] // m00
-                if (area2 > (area1 * AREA_THRESHOLD) and cx > leftbound and cx < rightbound):
+                cy = mX['m01'] // m00
+                if (area > (areaPrev * AREA_THRESHOLD * x * x)
+                        and cx > leftbound and cx < rightbound) and cy > topbound and cy < bottombound:
                     lc.append(cX)
                     idx = get_index(cX, contours)
                     contours.pop(idx)
+                    areaPrev = area
+        else:
+            break
 
-        if len(contours) > 0:
-            cX = max(contours, key=cv2.contourArea)
-            area3 = cv2.contourArea(cX)
-            mX = cv2.moments(cX)
-            m00 = mX['m00']
-            if m00 > 0:
-                cx = mX['m10'] // m00
-                if (area3 > (area2 * AREA_THRESHOLD) and cx > leftbound and cx < rightbound):
-                    lc.append(cX)
-                    idx = get_index(cX, contours)
-                    contours.pop(idx)
 
-        if len(contours) > 0:
-            cX = max(contours, key=cv2.contourArea)
-            area4 = cv2.contourArea(cX)
-            mX = cv2.moments(cX)
-            m00 = mX['m00']
-            if m00 > 0:
-                cx = mX['m10'] // m00
-                if (area4 > (area3 * AREA_THRESHOLD) and cx > leftbound and cx < rightbound):
-                    lc.append(cX)
-                    idx = get_index(cX, contours)
-                    contours.pop(idx)
+    cv2.fillPoly(stencil, lc, 255)
 
-        cv2.fillPoly(stencil, lc, 255)
-
-        if len(contours) > 0:
-            cv2.fillPoly(stencil, contours, 0)
-    #erosion = cv2.erode(stencil, small_kernel, iterations=1)
     dilation = cv2.dilate(stencil, big_kernel, iterations=5)
     mask = fill_spots(dilation)
 
     return mask
-
-
-def find_bgcolor(src):
-    fig = matplotlib.figure.Figure()
-    ax = matplotlib.axes.Axes(fig, (0, 0, 0, 0))
-    n, bins, patches = ax.hist(src.flatten(), 100);
-    del ax, fig
-    min_point = np.argmin(n[:5])
-    #min_point = int(min(2, min_point))
-    thresh = (min_point * 20)
-    return min_point
 
 
 
@@ -361,6 +358,10 @@ def fix_thionin(img):
     # -70 pretty good
     # -90 missing stuff
     bgcolor = int(round(avg)) - 45
+    #img = linnorm(img, 255, np.uint8)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    img = clahe.apply(img)
+
     h, im_th = cv2.threshold(img, bgcolor, 255, cv2.THRESH_BINARY_INV)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
@@ -380,6 +381,7 @@ def fix_thionin(img):
     lc.append(c1)
     idx = get_index(c1, contours)
     contours.pop(idx)
+
 
     midrow = img.shape[0] // 2
     topbound = midrow - (midrow * 0.65)
@@ -408,17 +410,8 @@ def fix_thionin(img):
             break
 
     cv2.fillPoly(stencil, lc, 255)
-
     morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
-    #(thresh, binRed) = cv2.threshold(stencil, 128, 255, cv2.THRESH_BINARY)
-    #opening = cv2.morphologyEx(stencil, cv2.MORPH_OPEN, morph_kernel, iterations=3)
-    #dilation = cv2.dilate(stencil, kernel, iterations=5)
-    #dilation = cv2.dilate(stencil, morph_kernel, iterations=4)
-
     dilation = cv2.dilate(stencil, morph_kernel, iterations=3)
-    #erosion = cv2.erode(morphed, kernel, iterations=2)
-
-
 
     return dilation
 
@@ -477,10 +470,6 @@ def fix_thionin_debug(img):
     rightbound = midcolumn + (midcolumn * 0.85)
     AREA_THRESHOLD = 0.01
 
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    fontScale = 1
-    color = 2
-    thickness = 2
 
     # loop thru a range to test for good contours. is it near the center and is it close in size to
     # the preceding contour, if so, add it to the list
@@ -514,6 +503,92 @@ def fix_thionin_debug(img):
 
     for a,c in zip(areas, coords):
         cv2.putText(erosion, a, c, font,
-                    fontScale, color, thickness, cv2.LINE_AA)
+                    fontScale, 2, thickness, cv2.LINE_AA)
 
     return erosion
+
+
+
+def fix_with_fill_debug(img, limit, dt):
+    #no_strip, fe = remove_strip(img)
+    #if fe != 0:
+    #    img[:, fe:] = 255  # mask the strip
+    #img = pad_with_black(img)
+    img = (img / 256).astype(dt)
+    h_src = linnorm(img, limit, dt)
+    med = np.median(h_src) + 10
+    h, im_th = cv2.threshold(h_src, med, limit, cv2.THRESH_BINARY)
+    im_floodfill = im_th.copy()
+    h, w = im_th.shape[:2]
+    mask = np.zeros((h + 2, w + 2), np.uint8)
+    cv2.floodFill(im_floodfill, mask, (0, 0), 255)
+    im_floodfill_inv = cv2.bitwise_not(im_floodfill)
+    im_out = im_th | im_floodfill_inv
+    stencil = np.zeros(img.shape).astype('uint8')
+
+    # dilation = cv2.dilate(stencil,kernel,iterations = 2)
+    small_kernel = np.ones((6, 6), np.uint8)
+    big_kernel = np.ones((16, 16), np.uint8)
+    eroded = cv2.erode(im_out, small_kernel, iterations=1)
+    #eroded = np.copy(im_out)
+    contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+    lc = []
+    c1 = max(contours, key=cv2.contourArea)
+    areaPrev = cv2.contourArea(c1)
+    lc.append(c1)
+    idx = get_index(c1, contours)
+    contours.pop(idx)
+
+    areas = []
+    coords = []
+    mX = cv2.moments(c1) # get center of mass of each contour and make sure it is not on an edge
+    m00 = mX['m00']
+    cx = mX['m10'] // m00
+    cy = mX['m01'] // m00
+    org = (int(cx), int(cy))
+    coords.append(org)
+    areas.append(str(areaPrev))
+
+
+    midrow = img.shape[0] // 2
+    topbound = midrow - (midrow * 0.65)
+    bottombound = midrow + (midrow * 0.98)
+    midcolumn = img.shape[1] // 2
+    leftbound = midcolumn - (midcolumn * 0.65)
+    rightbound = midcolumn + (midcolumn * 0.5)
+    AREA_THRESHOLD = 0.01
+
+    for x in range(1,5):
+        if len(contours) > 0:
+            cX = max(contours, key=cv2.contourArea)
+            area = cv2.contourArea(cX)
+            mX = cv2.moments(cX)
+            m00 = mX['m00']
+            if m00 > 0:
+                cx = mX['m10'] // m00
+                cy = mX['m01'] // m00
+                if (area > (areaPrev * AREA_THRESHOLD * x * x)
+                        and cx > leftbound and cx < rightbound) and cy > topbound and cy < bottombound:
+                    lc.append(cX)
+                    idx = get_index(cX, contours)
+                    contours.pop(idx)
+                    areaPrev = area
+                    org = (int(cx), int(cy))
+                    coords.append(org)
+                    area_str = '{}, {}'.format(x, str(area))
+                    areas.append(area_str)
+        else:
+            break
+
+
+    cv2.fillPoly(stencil, lc, 255)
+
+    dilation = cv2.dilate(stencil, big_kernel, iterations=5)
+    #mask = fill_spots(dilation)
+
+    for a,c in zip(areas, coords):
+        cv2.putText(dilation, a, c, font,
+                    fontScale, 2, thickness, cv2.LINE_AA)
+
+    return dilation

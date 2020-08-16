@@ -345,13 +345,6 @@ def make_tif(session, prep_id, tif_id, file_id, testing=False):
     return 1
 
 
-def lognorm(img, limit):
-    lxf = np.log(img + 0.005)
-    lxf = np.where(lxf < 0, 0, lxf)
-    xmin = min(lxf.flatten())
-    xmax = max(lxf.flatten())
-    return -lxf * limit / (xmax - xmin) + xmax * limit / (xmax - xmin)  # log of data and stretch 0 to 255
-
 
 def linnorm(img, limit):
     flat = img.flatten()

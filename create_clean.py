@@ -17,7 +17,7 @@ from utilities.alignment_utility import get_last_2d, SCALING_FACTOR
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import rotate_image, place_image, linnorm
+from utilities.utilities_mask import rotate_image, place_image, linnorm, lognorm
 
 
 def fix_ntb(infile, mask, logger, rotation, flip):
@@ -27,7 +27,6 @@ def fix_ntb(infile, mask, logger, rotation, flip):
         logger.warning(f'Could not open {infile}')
     img = get_last_2d(img)
     fixed = cv2.bitwise_and(img, img, mask=mask)
-
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
 
@@ -37,8 +36,11 @@ def fix_ntb(infile, mask, logger, rotation, flip):
         fixed = np.flip(fixed, axis=1)
 
     if channel == 1:
-        clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(12, 12))
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        #fixed = cv2.equalizeHist(fixed)
+
         fixed = clahe.apply(fixed.astype(np.uint16))
+        #fixed = lognorm(fixed, 28000)
 
     return fixed
 

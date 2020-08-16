@@ -10,11 +10,11 @@ import nibabel as nib
 from neuroglancer_scripts.scripts import (generate_scales_info,
                                           slices_to_precomputed,
                                           compute_scales, volume_to_precomputed)
-animal = 'MD589'
+animal = 'atlasV8'
 VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
 
 NI_OUT = os.path.join(VOL_DIR, animal, 'filled.nii')
-ATLAS_FILE = os.path.join(VOL_DIR, animal, 'full_brain_volume_annotated.npy')
+ATLAS_FILE = os.path.join(VOL_DIR, animal, 'volume_test.npy')
 OUTPUT = os.path.join(VOL_DIR, animal, 'annotations')
 NAMES_INFO = os.path.join(VOL_DIR, 'all_brains', 'names', 'info')
 NAMES_OUTPUT = os.path.join(OUTPUT, 'names')
