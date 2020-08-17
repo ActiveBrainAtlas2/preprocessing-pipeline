@@ -1355,7 +1355,6 @@ def load_alignment_results_v3(alignment_spec, what, reg_root_dir=REGISTRATION_PA
         what (str): any of parameters, scoreHistory, scoreEvolution or trajectory
     """
     INPUT_KEY_LOC = get_alignment_result_filepath_v3(alignment_spec=alignment_spec, what=what, reg_root_dir=reg_root_dir)
-    print('INPUT_KEY_LOC',INPUT_KEY_LOC)
     filename, file_extension = os.path.splitext(INPUT_KEY_LOC)
     res = load_data(INPUT_KEY_LOC, filetype = file_extension)
 
@@ -1598,8 +1597,8 @@ def average_location(centroid_allLandmarks_wrt_fixedBrain=None, mean_centroid_al
     midpoints_wrt_fixedBrain_values = list(midpoints_wrt_fixedBrain.values())
     midplane_normal, midplane_anchor_wrt_fixedBrain = fit_plane(np.c_[midpoints_wrt_fixedBrain_values])
 
-    print(('Mid-sagittal plane normal vector =', midplane_normal, '@ Mid-sagittal plane anchor wrt fixed wholebrain =',
-          midplane_anchor_wrt_fixedBrain))
+    print(name,'Mid-sagittal plane normal vector =', midplane_normal)
+    print('Mid-sagittal plane anchor wrt fixed wholebrain =', midplane_anchor_wrt_fixedBrain)
 
     R_fixedWholebrain_to_canonical = R_align_two_vectors(midplane_normal, (0, 0, 1))
 
@@ -1612,8 +1611,8 @@ def average_location(centroid_allLandmarks_wrt_fixedBrain=None, mean_centroid_al
         centroid_f=(0, 0, 0))
 
 
-    print(('Angular deviation of the mid sagittal plane normal around y axis (degree) =',
-          np.rad2deg(np.arccos(midplane_normal[2]))))
+    #print(('Angular deviation of the mid sagittal plane normal around y axis (degree) =',
+    #      np.rad2deg(np.arccos(midplane_normal[2]))))
 
     points_midplane_oriented = {
         name: transform_points(p, transform=transform_matrix_fixedWholebrain_to_atlasCanonicalSpace)
@@ -2566,7 +2565,7 @@ def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_
 
     t = time.time()
     vs, fs = mcubes.marching_cubes(vol_padded, 0) # more than 5 times faster than skimage.marching_cube + correct_orientation
-    sys.stderr.write('marching cube: %.2f seconds\n' % (time.time() - t))
+    #sys.stderr.write('marching cube: %.2f seconds\n' % (time.time() - t))
 
     # t = time.time()
     # vs, faces = marching_cubes(vol_padded, 0) # y,x,z
@@ -2590,7 +2589,7 @@ def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_
 
     polydata = mesh_to_polydata(vs, fs)
 
-    sys.stderr.write('mesh_to_polydata: %.2f seconds\n' % (time.time() - t)) #
+    #sys.stderr.write('mesh_to_polydata: %.2f seconds\n' % (time.time() - t)) #
 
     for simplify_iter in range(num_simplify_iter):
 
@@ -2618,7 +2617,7 @@ def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_
             polydata = smoother.GetOutput()
 
         n_pts = polydata.GetNumberOfPoints()
-        sys.stderr.write('simplify %d @ %d: %.2f seconds\n' % (simplify_iter, n_pts, time.time() - t)) #
+        #sys.stderr.write('simplify %d @ %d: %.2f seconds\n' % (simplify_iter, n_pts, time.time() - t)) #
 
         if polydata.GetNumberOfPoints() < min_vertices:
             break
@@ -2712,7 +2711,7 @@ def simplify_polydata(polydata, num_simplify_iter=0, smooth=False):
         if polydata.GetNumberOfPoints() < 200:
             break
 
-        sys.stderr.write('simplify %d @ %d: %.2f seconds\n' % (simplify_iter, n_pts, time.time() - t)) #
+        #sys.stderr.write('simplify %d @ %d: %.2f seconds\n' % (simplify_iter, n_pts, time.time() - t)) #
 
     return polydata
 
@@ -3112,19 +3111,19 @@ def transform_volume_v4(volume, transform=None, return_origin_instead_of_bbox=Fa
 
     t = time.time()
 
-    if np.issubdtype(volume_m_aligned_to_f.dtype, np.float):
+    if np.issubdtype(volume_m_aligned_to_f.dtype, np.float64):
         dense_volume = fill_sparse_score_volume(volume_m_aligned_to_f)
     elif np.issubdtype(volume_m_aligned_to_f.dtype, np.integer):
         if not np.issubdtype(volume_m_aligned_to_f.dtype, np.uint8):
             dense_volume = fill_sparse_volume(volume_m_aligned_to_f)
         else:
             dense_volume = volume_m_aligned_to_f
-    elif np.issubdtype(volume_m_aligned_to_f.dtype, bool):
+    elif np.issubdtype(volume_m_aligned_to_f.dtype, np.bool_):
         dense_volume = fill_sparse_score_volume(volume_m_aligned_to_f.astype(np.int)).astype(vol.dtype)
     else:
         raise Exception('transform_volume: Volume must be either float or int.')
 
-    sys.stderr.write('Interpolating/filling sparse volume: %.2f seconds.\n' % (time.time() - t))
+    #sys.stderr.write('Interpolating/filling sparse volume: %.2f seconds.\n' % (time.time() - t))
 
     if return_origin_instead_of_bbox:
         return dense_volume, np.array((nzs_m_xmin_f, nzs_m_ymin_f, nzs_m_zmin_f))

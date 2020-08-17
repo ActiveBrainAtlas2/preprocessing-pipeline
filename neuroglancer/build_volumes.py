@@ -9,20 +9,11 @@ DIR = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(DIR)
 from utilities.contour_utilities import get_structure_colors
 VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/atlasV7/10.0um_annotationAsScoreVolume'
-MD589_VOLUME_PATH = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/MD589/MD589_full_filled.npy'
-MD589 = np.load(MD589_VOLUME_PATH)
 xy_ng_resolution_um = 5
 
-height, width, zdim = MD589.shape
 height, width, zdim = (800,1200,288)
 
 full_brain_volume_annotated = np.zeros((zdim,height,width), dtype=np.uint8)
-
-#full_brain_volume_annotated = np.zeros((height, width, zdim), dtype=np.uint8)
-#full_brain_volume_annotated = np.zeros((height, width, zdim), dtype=np.uint8)
-
-
-#full_brain_volume_annotated = np.zeros((height, width, zdim), dtype=np.uint8)
 files = os.listdir(VOL_DIR)
 numpy_files = [f for f in files if f.endswith('.npy') and 'surround' not in f]
 print('full brain volume shape:', full_brain_volume_annotated.shape)
@@ -40,8 +31,8 @@ for n in numpy_files:
         sided = '{}_R'.format(structure.upper())
         color = colors[sided]
 
-    #if structure not in ['SC', 'Sp5C_R']:
-    #    continue
+    if structure not in ['SC', 'Sp5C_R', 'Sp5C_L']:
+        continue
 
     threshold = 0.90
     volume_filename = os.path.join(VOL_DIR, f'{structure}.npy')
@@ -66,7 +57,11 @@ for n in numpy_files:
 
     try:
         full_brain_volume_annotated[z_start:z_end, y_start:y_end,x_start:x_end] = structure_volume
-        #full_brain_volume_annotated[y_start:y_end, x_start:x_end, z_start:z_end] = structure_volume
+        print('Fit', str(structure).ljust(8), str(color).rjust(2), end="\t")
+        print('shape', str(structure_volume.shape).rjust(18), end=", ")
+        print('x range', str(x_start).rjust(4), str(x_end).rjust(4), end=", ")
+        print('y range', str(y_start).rjust(4), str(y_end).rjust(4), end=", ")
+        print('z range', str(z_start).rjust(4), str(z_end).rjust(4))
     except:
         print('Error', str(structure).ljust(8), str(color).rjust(2), end="\t")
         print('shape', str(structure_volume.shape).rjust(18), end=", ")
