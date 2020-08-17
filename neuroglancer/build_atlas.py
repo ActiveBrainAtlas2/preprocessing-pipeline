@@ -25,7 +25,7 @@ structures = list(structures.values())
 #structures = structures[0:4]
 #structures  = ['12N']
 
-atlas_name = 'atlasV8'
+atlas_name = 'atlasV9'
 fixed_brain_name = 'MD589'
 moving_brain_names = ['MD585', 'MD594']
 resolution = '10.0um'
@@ -129,7 +129,7 @@ for structure in structures:
     aligned_moving_instance_wrt_templateCentroid_all_instances = []
 
     for i in range(1, len(instance_volumes)):
-        print('Registering {} instance {} to instance 0'.format(structure, i))
+        #print('Registering {} instance {} to instance 0'.format(structure, i))
         # Compute transform.
         moving_instance_volume = instance_volumes[i]
         aligner = Aligner({0: template_instance_wrt_templateCentroid},
@@ -140,7 +140,6 @@ for structure in structures:
         aligner.compute_gradient(smooth_first=True)
         lr = 1.
         ### max_iter_num was originally 100 and 1000
-        print('Entering aligner optimzer')
         _, _ = aligner.optimize(tf_type='rigid',
                                 history_len=100,
                                 max_iter_num=2 if structure in ['SC', 'IC'] else 3,
@@ -180,11 +179,11 @@ for structure in structures:
         meshpath = os.path.join(VOL_DIR, atlas_name, 'aligned_instance_meshes', meshfile)
         #print('Save stl at {}'.format( meshpath))
         save_mesh_stl(mesh_data, meshpath)
-    """
     filename = '{}_sources.pkl'.format(structure)
     filepath = os.path.join(VOL_DIR, atlas_name, 'instance_sources', filename)
     with open(filepath, 'wb') as f:
         pickle.dump(instance_source, f)
+    """
 
     # Compute average shape.
     if structure == 'IC' or structure == 'SC':
@@ -199,9 +198,9 @@ for structure in structures:
                       sigma=sigma,
                       )
 
-    for surface_level in np.arange(0.1, 1.1, .1):
-        print("level =", surface_level, ', volume =',
-              np.count_nonzero(mean_shape_wrt_templateCentroid[0] > surface_level) * resolution_um ** 3 / 1e9, "mm^3")
+    """
+    #for surface_level in np.arange(0.1, 1.1, .1):
+    #    print("level =", surface_level, ', volume =', np.count_nonzero(mean_shape_wrt_templateCentroid[0] > surface_level) * resolution_um ** 3 / 1e9, "mm^3")
 
     # Generate meshes for mean shape.
     mean_shape_isosurface_polydata_all_levels = {surface_level:
@@ -235,16 +234,16 @@ for structure in structures:
                                 surround_wrt_stdShapeCentroid[1]),
                                 num_simplify_iter=3, smooth=True)
          for surface_level in np.arange(0.1, 1.1, .1)}
-
+    """
     # Save mean shape.
     filename = '{}_{}_volume.npy'.format(resolution, structure)
     filepath =  os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
-    print('Saving numpy array at', filepath)
+    #print('Saving numpy array at', filepath)
     np.save(filepath, np.ascontiguousarray(mean_shape_wrt_templateCentroid[0]))
 
     filename = '{}_{}_origin_wrt_meanShapeCentroid.txt'.format(resolution, structure)
     filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
-    print('Saving numpy text at', filepath)
+    #print('Saving numpy text at', filepath)
     np.savetxt(filepath, mean_shape_wrt_templateCentroid[1])
 
     """
@@ -253,7 +252,6 @@ for structure in structures:
         filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
         print('Saving mesh at', filepath)
         save_mesh_stl(mean_shape_isosurface_polydata_all_levels[level], filepath)
-    """
     surround_name = convert_to_surround_name(structure, margin=str(int(surround_distance_um)) + 'um')
     filename = '{}_{}_volume.npy'.format(resolution, surround_name)
     filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
@@ -265,13 +263,13 @@ for structure in structures:
     filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
     print('Saving numpy text at', filepath)
     np.savetxt(filepath, surround_wrt_stdShapeCentroid[1])
-"""
+    
     for level in np.arange(0.1, 1.1, .1):
         filename = '{}_{}_{}.stl'.format(resolution, surround_name, str(level))
         filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
         print('Saving mesh at', filepath)
         save_mesh_stl(surround_isosurface_polydata_all_levels[level], filepath)
-"""
+    """
 i = 1
 # Compute transform.
 moving_instance_volume = instance_volumes[i]

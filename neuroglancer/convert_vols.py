@@ -17,7 +17,8 @@ NI_OUT = os.path.join(VOL_DIR, animal, 'filled.nii')
 ATLAS_FILE = os.path.join(VOL_DIR, animal, 'volume_test.npy')
 OUTPUT = os.path.join(VOL_DIR, animal, 'annotations')
 NAMES_INFO = os.path.join(VOL_DIR, 'all_brains', 'names', 'info')
-NAMES_OUTPUT = os.path.join(OUTPUT, 'names')
+NAMES_DIR = os.path.join(VOL_DIR, animal, 'annotations', 'names')
+NAMES_OUTPUT = os.path.join(NAMES_DIR, 'info')
 
 if not os.path.isdir(OUTPUT):
     os.mkdir(OUTPUT)
@@ -59,5 +60,5 @@ volume_to_precomputed.main(['', NI_OUT, OUTPUT, '--flat', '--no-gzip'])
 compute_scales.main(['', OUTPUT, '--downscaling-method', "majority", "--flat", "--no-gzip"])
 
 
-os.makedirs(os.path.dirname(NAMES_OUTPUT), exist_ok=True)
+os.makedirs(NAMES_DIR)
 copyfile(NAMES_INFO, NAMES_OUTPUT)

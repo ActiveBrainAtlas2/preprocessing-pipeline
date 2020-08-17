@@ -35,7 +35,7 @@ grad_f_origin = None
 class Aligner(object):
     def __init__(self, volume_f_, volume_m_=None, nzvoxels_m_=None, centroid_f=None, centroid_m=None, \
                 labelIndexMap_m2f=None, label_weights=None, reg_weights=None, zrange=None, nz_thresh=0, init_T=None, init_transform_type='affine',
-                invalid_voxel_penalty=1., verbose=True):
+                invalid_voxel_penalty=1., verbose=False):
         """
         Variant that takes in two probabilistic volumes.
 
@@ -110,14 +110,14 @@ class Aligner(object):
         # Initialize weights of different structures
         if label_weights is None:
             if not hasattr(self, 'label_weights'):
-                sys.stderr.write('Label weights not set, default to 1 for all structures.\n')
+                #sys.stderr.write('Label weights not set, default to 1 for all structures.\n')
                 self.label_weights = {ind_m: 1 for ind_m in self.all_indices_m}
         else:
             self.label_weights = label_weights
 
         # Initialize regularization weights
         if reg_weights is None:
-            sys.stderr.write('Regularization weights not set, default to 0.\n')
+            #sys.stderr.write('Regularization weights not set, default to 0.\n')
             self.reg_weights = np.array([0,0,0])
             self.reg_weight = 0
         else:
@@ -284,7 +284,7 @@ class Aligner(object):
         else:
             self.centroid_f = centroid_f
 
-        sys.stderr.write("centroid_m: %s, centroid_f: %s\n" % (self.centroid_m, self.centroid_f))
+        #sys.stderr.write("centroid_m: %s, centroid_f: %s\n" % (self.centroid_m, self.centroid_f))
 
         # global nzvoxels_centered_m
         # nzvoxels_centered_m = {ind_m: nzvs - self.centroid_m for ind_m, nzvs in nzvoxels_m.items()}
@@ -316,7 +316,7 @@ class Aligner(object):
 
         if indices_f is None:
             indices_f = set([self.labelIndexMap_m2f[ind_m] for ind_m in self.all_indices_m])
-            sys.stderr.write('indices_f: %s\n' % indices_f)
+            #sys.stderr.write('indices_f: %s\n' % indices_f)
 
         global grad_f, grad_f_origin
 
@@ -1261,8 +1261,8 @@ class Aligner(object):
         # grad is (6,)-array
         # Here grad is dObjective/d\epsilon. epsilon is the small adjustment in the linearization of manifold at current estimate.
 
-        print('score:', score)
-        print('grad:', grad)
+        #print('score:', score)
+        #print('grad:', grad)
 
         # # AdaGrad Rule
         grad_historical += grad**2
@@ -1319,19 +1319,19 @@ class Aligner(object):
         t_new = np.dot(exp_w, t) + Vt
         # t_new = t + Vt
         # print 't_new', t_new
-        print('==========================================')
+        #print('==========================================')
         #print R
         #print R_new # BAD
         #print t_new # BAD
         #print exp_w # BAD
         #print Vt # BAD
-        print(v_opt)
-        print(lr)
-        print(grad_adjusted)
+        #print(v_opt)
+        #print(lr)
+        #print(grad_adjusted)
 
         #print t
         #print Tm
-        print('==========================================')
+        #print('==========================================')
         ###########################
 
         euler_angles_R_new = rotationMatrixToEulerAngles(R_new) # (around x, around y, around z)
