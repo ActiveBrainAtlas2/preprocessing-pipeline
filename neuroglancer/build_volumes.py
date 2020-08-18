@@ -11,17 +11,18 @@ from utilities.contour_utilities import get_structure_colors
 VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/atlasV7/10.0um_annotationAsScoreVolume'
 xy_ng_resolution_um = 5
 
-height, width, zdim = (800,1200,288)
+x_length = 2000
+y_length = 2000
+z_length = 500
+full_brain_volume_annotated = np.zeros((z_length, y_length, x_length), dtype=np.uint8)
 
-full_brain_volume_annotated = np.zeros((zdim,height,width), dtype=np.uint8)
+
 files = os.listdir(VOL_DIR)
 numpy_files = [f for f in files if f.endswith('.npy') and 'surround' not in f]
 print('full brain volume shape:', full_brain_volume_annotated.shape)
-midx = width // 2
-midy = height // 2
-midz = zdim // 2
-print("origin", midx, midy, midz)
 colors = get_structure_colors()
+
+coordinate_file = 'exports.csv'
 
 for n in numpy_files:
     structure = os.path.splitext(n)[0]
@@ -31,12 +32,14 @@ for n in numpy_files:
         sided = '{}_R'.format(structure.upper())
         color = colors[sided]
 
-    if structure not in ['SC', 'Sp5C_R', 'Sp5C_L']:
-        continue
+    #if structure not in ['SC', 'Sp5C_R', 'Sp5C_L']:
+    #    continue
 
     threshold = 0.90
     volume_filename = os.path.join(VOL_DIR, f'{structure}.npy')
     volume_input = np.load(volume_filename)
+    volume_input = np.swapaxes(volume_input, 0, 2)
+    volume_input = np.swapaxes(volume_input, 1, 2)
     volume_nonzero_indices = volume_input >= threshold
     volume_nonone_indices = volume_input < threshold
     volume_input[volume_nonzero_indices] = color
@@ -47,10 +50,10 @@ for n in numpy_files:
     origin_wrt = np.loadtxt(origin_filename)
     x, y, z = origin_wrt
 
-    z_start = 89
-    factor = 1
-    y_start = int(y*factor) + midy
-    x_start = int(x*factor) + midx
+    x, y, z = origin_wrt
+    x_start = int(x) + x_length // 2
+    y_start = int(y) + y_length // 2
+    z_start = 0
     x_end = x_start + structure_volume.shape[2]
     y_end = y_start + structure_volume.shape[1]
     z_end = z_start + structure_volume.shape[0]
@@ -69,6 +72,7 @@ for n in numpy_files:
         print('y range', str(y_start).rjust(4), str(y_end).rjust(4), end=", ")
         print('z range', str(z_start).rjust(4), str(z_end).rjust(4))
 
+full_brain_volume_annotated = np.swapaxes(full_brain_volume_annotated, 0, 2)
 OUTPUT = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes', 'atlasV8')
 outfile = os.path.join(OUTPUT, 'volume_test.npy')
 if np.amax(full_brain_volume_annotated) > 1:

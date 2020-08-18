@@ -17,7 +17,7 @@ from utilities.alignment_utility import get_last_2d, SCALING_FACTOR
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import rotate_image, place_image, linnorm, lognorm
+from utilities.utilities_mask import rotate_image, place_image, linnorm, lognorm, scaled
 
 
 def fix_ntb(infile, mask, logger, rotation, flip):
@@ -27,6 +27,11 @@ def fix_ntb(infile, mask, logger, rotation, flip):
         logger.warning(f'Could not open {infile}')
     img = get_last_2d(img)
     fixed = cv2.bitwise_and(img, img, mask=mask)
+    if channel == 1:
+        fixed = scaled(fixed, mask)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        fixed = clahe.apply(fixed.astype(np.uint16))
+
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
 
@@ -35,12 +40,6 @@ def fix_ntb(infile, mask, logger, rotation, flip):
     if flip == 'flop':
         fixed = np.flip(fixed, axis=1)
 
-    if channel == 1:
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        #fixed = cv2.equalizeHist(fixed)
-
-        fixed = clahe.apply(fixed.astype(np.uint16))
-        #fixed = lognorm(fixed, 28000)
 
     return fixed
 
@@ -133,8 +132,8 @@ def masker(animal, channel, flip, rotation=0, full=False):
 
 
 
-        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
-        #fixed = place_image(fixed, file, max_height, max_width, bgcolor)
+        #fixed = place_image(fixed, file, max_width, max_height, bgcolor)
+        fixed = place_image(fixed, file, max_height, max_width, bgcolor)
         fixed[fixed == 0] = bgcolor
         io.imsave(outpath, fixed.astype(dt), check_contrast=False)
         #cv2.imwrite(outpath, fixed.astype(dt))
