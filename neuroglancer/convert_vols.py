@@ -27,7 +27,7 @@ vol_m = np.load(ATLAS_FILE)
 volume_file = vol_m.astype(np.uint8)
 del vol_m
 
-volume_file = np.swapaxes(volume_file,0,2)
+#volume_file = np.swapaxes(volume_file,0,2)
 volume_img = nib.Nifti1Image(volume_file, affine=np.array(\
       [[ 0.005,  0.,  0.,  0.],\
        [ 0.,   0.005,  0.,  0.],\

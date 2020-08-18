@@ -8,12 +8,14 @@ HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(DIR)
 from utilities.contour_utilities import get_structure_colors
-VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/atlasV7/10.0um_annotationAsScoreVolume'
+#VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/atlasV7/10.0um_annotationAsScoreVolume'
+VOL_DIR = '/net/birdstore/Active_Atlas_Data/copied_from_S3/mousebrainatlas-data/CSHL_volumes/atlasV7/atlasV7_10.0um_scoreVolume/score_volumes'
+
 xy_ng_resolution_um = 5
 
 x_length = 2000
 y_length = 2000
-z_length = 500
+z_length = 600
 full_brain_volume_annotated = np.zeros((z_length, y_length, x_length), dtype=np.uint8)
 
 
@@ -22,10 +24,10 @@ numpy_files = [f for f in files if f.endswith('.npy') and 'surround' not in f]
 print('full brain volume shape:', full_brain_volume_annotated.shape)
 colors = get_structure_colors()
 
-coordinate_file = 'exports.csv'
-
 for n in numpy_files:
-    structure = os.path.splitext(n)[0]
+    prefix = os.path.splitext(n)[0]
+    structure = prefix.split('_', 3)[3]
+
     try:
         color = colors[structure.upper()]
     except:
@@ -36,7 +38,7 @@ for n in numpy_files:
     #    continue
 
     threshold = 0.90
-    volume_filename = os.path.join(VOL_DIR, f'{structure}.npy')
+    volume_filename = os.path.join(VOL_DIR, n)
     volume_input = np.load(volume_filename)
     volume_input = np.swapaxes(volume_input, 0, 2)
     volume_input = np.swapaxes(volume_input, 1, 2)
@@ -46,14 +48,15 @@ for n in numpy_files:
     volume_input[volume_nonone_indices] = 0
     structure_volume = volume_input.astype(np.uint8)
 
-    origin_filename = os.path.join(VOL_DIR, f'{structure}_origin_wrt_canonicalAtlasSpace.txt')
+    origin_filename = os.path.join(VOL_DIR, '{}_origin_wrt_canonicalAtlasSpace.txt'.format(prefix))
     origin_wrt = np.loadtxt(origin_filename)
     x, y, z = origin_wrt
 
     x, y, z = origin_wrt
     x_start = int(x) + x_length // 2
     y_start = int(y) + y_length // 2
-    z_start = 0
+    z_start = int(z) + z_length // 2
+
     x_end = x_start + structure_volume.shape[2]
     y_end = y_start + structure_volume.shape[1]
     z_end = z_start + structure_volume.shape[0]
