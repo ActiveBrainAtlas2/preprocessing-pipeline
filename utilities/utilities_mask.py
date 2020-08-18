@@ -278,10 +278,23 @@ def check_contour(contours, area, lc):
         return contours, lc
 
 
+def scaled(img, mask, epsilon=0.01):
+    vals = np.array(sorted(img[mask > 10]))
+    #vals = np.array(sorted(img))
+    ind = int(len(vals) * (1 - epsilon))
+    _max = vals[ind]
+    # print('thr=%d, index=%d'%(vals[ind],index))
+    _range = 2 ** 16 - 1
+    scaled = img * (45000. / _max)
+    scaled[scaled > _range] = _range
+    scaled = scaled * (mask > 10)
+    return scaled
+
+
 def fix_with_fill(img, limit, dt):
-    #no_strip, fe = remove_strip(img)
-    #if fe != 0:
-    #    img[:, fe:] = 255  # mask the strip
+    no_strip, fe = remove_strip(img)
+    if fe != 0:
+        img[:, fe:] = 0  # mask the strip
     #img = pad_with_black(img)
     img = (img / 256).astype(dt)
     h_src = linnorm(img, limit, dt)
@@ -298,7 +311,7 @@ def fix_with_fill(img, limit, dt):
     # dilation = cv2.dilate(stencil,kernel,iterations = 2)
     small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
-    eroded = cv2.erode(im_out, small_kernel, iterations=1)
+    eroded = cv2.erode(im_out, small_kernel, iterations=3)
     #eroded = np.copy(im_out)
     contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
@@ -339,9 +352,9 @@ def fix_with_fill(img, limit, dt):
     cv2.fillPoly(stencil, lc, 255)
 
     dilation = cv2.dilate(stencil, big_kernel, iterations=5)
-    mask = fill_spots(dilation)
+    #mask = fill_spots(dilation)
 
-    return mask
+    return dilation
 
 
 
@@ -510,9 +523,9 @@ def fix_thionin_debug(img):
 
 
 def fix_with_fill_debug(img, limit, dt):
-    #no_strip, fe = remove_strip(img)
-    #if fe != 0:
-    #    img[:, fe:] = 255  # mask the strip
+    no_strip, fe = remove_strip(img)
+    if fe != 0:
+        img[:, fe:] = 0  # mask the strip
     #img = pad_with_black(img)
     img = (img / 256).astype(dt)
     h_src = linnorm(img, limit, dt)

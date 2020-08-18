@@ -192,6 +192,17 @@ void main() {
 
 }
 
+# 4 channel
+
+        shader = """
+            void main() {
+                float v = toNormalized(getDataValue(0)) * 255.0;
+                emitRGBA(vec4(v, 0.0, 0.0, v));
+            }
+        """
+
+
+
 // add a histogram control for the current view
 // get translation what is the number represent? everything should be in terms of microns and degrees.
 // get names associated with shaped colors
