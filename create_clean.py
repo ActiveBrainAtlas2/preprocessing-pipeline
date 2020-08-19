@@ -132,8 +132,8 @@ def masker(animal, channel, flip, rotation=0, full=False):
 
 
 
-        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
-        #fixed = place_image(fixed, file, max_height, max_width, bgcolor)
+        #fixed = place_image(fixed, file, max_width, max_height, bgcolor)
+        fixed = place_image(fixed, file, max_height, max_width, bgcolor)
         fixed[fixed == 0] = bgcolor
         io.imsave(outpath, fixed.astype(dt), check_contrast=False)
         #cv2.imwrite(outpath, fixed.astype(dt))

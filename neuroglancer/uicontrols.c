@@ -194,12 +194,10 @@ void main() {
 
 # 4 channel
 
-        shader = """
-            void main() {
-                float v = toNormalized(getDataValue(0)) * 255.0;
-                emitRGBA(vec4(v, 0.0, 0.0, v));
-            }
-        """
+void main() {
+    float v = toNormalized(getDataValue(0)) * 255.0;
+    emitRGBA(vec4(v, 0.0, 0.0, v));
+}
 
 
 
