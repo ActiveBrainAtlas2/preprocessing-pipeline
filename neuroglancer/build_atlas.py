@@ -12,16 +12,16 @@ from utilities.imported_atlas_utilities import load_original_volume_all_known_st
     convert_to_original_name, name_unsided_to_color, paired_structures, \
     convert_to_left_name, convert_to_right_name, load_original_volume_v2, save_alignment_results_v3, \
     convert_transform_forms, transform_volume_v4, volume_to_polydata, singular_structures, \
-    VOL_DIR, average_shape, convert_to_surround_name, \
-    save_mesh_stl, get_surround_volume_v2
+    average_shape, convert_to_surround_name, \
+    save_mesh_stl, get_surround_volume_v2, MESH_DIR
 from utilities.aligner_v3 import Aligner
 
 
-INPUT_KEY_LOC = os.path.join(PATH, 'neuroglancer', 'structure_key_minimal.json')
-NUM_STRUCTS = 49
-with open(INPUT_KEY_LOC, 'r') as f:
+structure_path = os.path.join(PATH, 'neuroglancer', 'structure_key_minimal.json')
+with open(structure_path, 'r') as f:
     structures = json.load(f)
 structures = list(structures.values())
+structures = ['10N_L', '10N_R', '12N', '3N_L', '3N_R', '5N_L', '5N_R', '6N_L', '6N_R', '7N_L', '7N_R', 'Amb_L', 'Amb_R', 'AP', 'DC_L', 'DC_R', 'IC', 'LC_L', 'LC_R', 'LRt_L', 'LRt_R', 'PBG_L', 'PBG_R', 'Pn_L', 'Pn_R', 'RMC_L', 'RMC_R', 'RtTg', 'SC', 'SNC_L', 'SNC_R', 'SNR_L', 'SNR_R', 'Sp5C_L', 'Sp5C_R', 'Sp5I_L', 'Sp5I_R', 'Sp5O_L', 'Sp5O_R', 'Tz_L', 'Tz_R', 'VCA_L', 'VCA_R', 'VCP_L', 'VCP_R', 'VLL_L', 'VLL_R']
 atlas_name = 'atlasV9'
 fixed_brain_name = 'MD589'
 moving_brain_names = ['MD585', 'MD594']
@@ -80,11 +80,11 @@ colors = {name_s: np.array(name_unsided_to_color[convert_to_original_name(name_s
                                         for name_s in list(instance_centroids_wrt_canonicalAtlasSpace_um.keys())}
 
 
-filepath = os.path.join(VOL_DIR, atlas_name, '1um_meanPositions.pkl')
+filepath = os.path.join(MESH_DIR, atlas_name, '1um_meanPositions.pkl')
 with open(filepath, 'wb') as f:
     pickle.dump(nominal_centroids_wrt_canonicalAtlasSpace_um, f)
 
-filepath = os.path.join(VOL_DIR, atlas_name, 'canonicalCentroid_wrt_fixedWholebrain.txt')
+filepath = os.path.join(MESH_DIR, atlas_name, 'canonicalCentroid_wrt_fixedWholebrain.txt')
 np.savetxt(filepath, canonical_center_wrt_fixed_um)
 
 # Note that all shapes have voxel resolution matching input resolution (10.0 micron).
@@ -139,14 +139,14 @@ for structure in structures:
         ### max_iter_num was originally 100 and 1000
         _, _ = aligner.optimize(tf_type='rigid',
                                 history_len=100,
-                                max_iter_num=2 if structure in ['SC', 'IC'] else 3,
+                                max_iter_num=100 if structure in ['SC', 'IC'] else 1000,
                                 grad_computation_sample_number=None,
                                 full_lr=np.array([lr, lr, lr, 0.1, 0.1, 0.1]),
                                 terminate_thresh_trans=.01)
 
 
 
-        reg_root_dir=os.path.join(VOL_DIR, atlas_name, 'mean_shapes', 'instance_registration')
+        reg_root_dir=os.path.join(MESH_DIR, atlas_name, 'mean_shapes', 'instance_registration')
         save_alignment_results_v3(aligner=aligner,
                               select_best='max_value',
                               alignment_spec=dict(warp_setting=108,
@@ -173,11 +173,11 @@ for structure in structures:
 
     for i, mesh_data in enumerate(instance_mesh_wrt_templateCentroid_all_instances):
         meshfile = '{}_{}_{}.stl'.format(resolution, structure, str(i))
-        meshpath = os.path.join(VOL_DIR, atlas_name, 'aligned_instance_meshes', meshfile)
+        meshpath = os.path.join(MESH_DIR, atlas_name, 'aligned_instance_meshes', meshfile)
         #print('Save stl at {}'.format( meshpath))
         save_mesh_stl(mesh_data, meshpath)
     filename = '{}_sources.pkl'.format(structure)
-    filepath = os.path.join(VOL_DIR, atlas_name, 'instance_sources', filename)
+    filepath = os.path.join(MESH_DIR, atlas_name, 'instance_sources', filename)
     with open(filepath, 'wb') as f:
         pickle.dump(instance_source, f)
 
@@ -234,36 +234,36 @@ for structure in structures:
 
     # Save mean shape.
     filename = '{}_{}_volume.npy'.format(resolution, structure)
-    filepath =  os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
+    filepath =  os.path.join(MESH_DIR, atlas_name, 'mean_shapes', filename)
     #print('Saving numpy array at', filepath)
     np.save(filepath, np.ascontiguousarray(mean_shape_wrt_templateCentroid[0]))
 
     filename = '{}_{}_origin_wrt_meanShapeCentroid.txt'.format(resolution, structure)
-    filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
+    filepath = os.path.join(MESH_DIR, atlas_name, 'mean_shapes', filename)
     #print('Saving numpy text at', filepath)
     np.savetxt(filepath, mean_shape_wrt_templateCentroid[1])
 
 
     for level in np.arange(0.1, 1.1, .1):
         filename = '{}_{}_mesh_level_{}.stl'.format(resolution, structure, str(level))
-        filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
+        filepath = os.path.join(MESH_DIR, atlas_name, 'mean_shapes', filename)
         print('Saving mesh at', filepath)
         save_mesh_stl(mean_shape_isosurface_polydata_all_levels[level], filepath)
     surround_name = convert_to_surround_name(structure, margin=str(int(surround_distance_um)) + 'um')
     filename = '{}_{}_volume.npy'.format(resolution, surround_name)
-    filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
+    filepath = os.path.join(MESH_DIR, atlas_name, 'mean_shapes', filename)
     print('Saving numpy array at', filepath)
     np.save(filepath, np.ascontiguousarray(surround_wrt_stdShapeCentroid[0]))
 
 
     filename = '{}_{}_origin_wrt_meanShapeCentroid.txt'.format(resolution, surround_name)
-    filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
+    filepath = os.path.join(MESH_DIR, atlas_name, 'mean_shapes', filename)
     print('Saving numpy text at', filepath)
     np.savetxt(filepath, surround_wrt_stdShapeCentroid[1])
 
     for level in np.arange(0.1, 1.1, .1):
         filename = '{}_{}_{}.stl'.format(resolution, surround_name, str(level))
-        filepath = os.path.join(VOL_DIR, atlas_name, 'mean_shapes', filename)
+        filepath = os.path.join(MESH_DIR, atlas_name, 'mean_shapes', filename)
         print('Saving mesh at', filepath)
         save_mesh_stl(surround_isosurface_polydata_all_levels[level], filepath)
 
@@ -296,7 +296,7 @@ t = aligned_moving_instance_wrt_templateCentroid
 print('aligned_moving_instance_wrt_templateCentroid',type(t))
 print('aligned_moving_instance_wrt_templateCentroid[0]',type(t[0]), t[0].shape, t[0].dtype)
 print('aligned_moving_instance_wrt_templateCentroid[1]',type(t[1]), t[1].shape, t[1].dtype)
-filename = os.path.join(VOL_DIR, atlas_name, 'aligned_moving_instance.npy')
+filename = os.path.join(MESH_DIR, atlas_name, 'aligned_moving_instance.npy')
 np.save(filename, t[0])
 # Generate meshes for each instance.
 
