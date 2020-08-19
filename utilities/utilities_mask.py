@@ -291,15 +291,20 @@ def scaled(img, mask, epsilon=0.01):
     return scaled
 
 
-def fix_with_fill(img, limit, dt):
+def fix_with_fill(img):
     no_strip, fe = remove_strip(img)
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
     #img = pad_with_black(img)
-    img = (img / 256).astype(dt)
-    h_src = linnorm(img, limit, dt)
-    med = np.median(h_src) + 10
-    h, im_th = cv2.threshold(h_src, med, limit, cv2.THRESH_BINARY)
+    img = (img / 256).astype(np.uint8)
+    #h_src = linnorm(img, limit, dt)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    h_src = clahe.apply(img)
+    # +10 missing stuff
+    # > 10 don't get anything
+
+    med = np.median(h_src) + 0
+    h, im_th = cv2.threshold(h_src, med, 2**16-1, cv2.THRESH_BINARY)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
     mask = np.zeros((h + 2, w + 2), np.uint8)
@@ -308,7 +313,6 @@ def fix_with_fill(img, limit, dt):
     im_out = im_th | im_floodfill_inv
     stencil = np.zeros(img.shape).astype('uint8')
 
-    # dilation = cv2.dilate(stencil,kernel,iterations = 2)
     small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
     eroded = cv2.erode(im_out, small_kernel, iterations=3)

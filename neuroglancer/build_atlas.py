@@ -22,9 +22,6 @@ NUM_STRUCTS = 49
 with open(INPUT_KEY_LOC, 'r') as f:
     structures = json.load(f)
 structures = list(structures.values())
-#structures = structures[0:4]
-#structures  = ['12N']
-
 atlas_name = 'atlasV9'
 fixed_brain_name = 'MD589'
 moving_brain_names = ['MD585', 'MD594']
