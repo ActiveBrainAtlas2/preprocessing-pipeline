@@ -29,6 +29,11 @@ def make_web_thumbnails(animal, channel):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
+    # test if there ane aligned files, if not use the cleaned ones
+    len_files = len(os.listdir(INPUT))
+    if len_files < 10:
+        INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
+
     OUTPUT = fileLocationManager.thumbnail_web
     tifs = sqlController.get_sections(animal, channel)
 
