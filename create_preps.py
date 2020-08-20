@@ -12,9 +12,10 @@ from tqdm import tqdm
 
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
+from utilities.utilities_process import workernoshell
 
 
-def make_preps(animal, channel, full):
+def make_preps(animal, channel, full, njobs):
     """
     Args:
         animal: the prep id of the animal
@@ -27,6 +28,7 @@ def make_preps(animal, channel, full):
 
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
+    commands = []
     if full:
         INPUT = os.path.join(fileLocationManager.tif)
         OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
@@ -49,9 +51,13 @@ def make_preps(animal, channel, full):
 
         if full:
             cmd = ['convert', input_path, '-compress', 'lzw', output_path]
-            subprocess.run(cmd)
+            commands.append(cmd)
+
         else:
             copyfile(input_path, output_path)
+
+    with Pool(njobs) as p:
+        p.map(workernoshell, commands)
 
 
 if __name__ == '__main__':
@@ -59,10 +65,12 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
     full = bool({'full': True, 'thumbnail': False}[args.resolution])
+    njobs = int(args.njobs)
 
-    make_preps(animal, channel, full)
+    make_preps(animal, channel, full, njobs)
