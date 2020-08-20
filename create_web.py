@@ -1,7 +1,6 @@
 """
 This file does the following operations:
-    1. Convert the thumbnails from TIF to PNG format.
-    2. Note: only the channel 1 for each animal is needed for PNG format
+    1. Convert the thumbnails from TIF to PNG format from the preps/CH1 dir
 """
 import argparse
 import os
@@ -13,23 +12,23 @@ from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 
 
-def make_web_thumbnails(animal, channel):
+def make_web_thumbnails(animal):
     """
     This was originally getting the thumbnails from the preps/thumbnail dir but they aren't usuable.
-    The ones in the preps/CHX/thumbnail_cleaned are much better
+    The ones in the preps/CH1/thumbnail_aligned are much better
+    But we need to test if there ane aligned files, if not use the cleaned ones.
+    Thumbnails are always created from CH1
     Args:
         animal: the prep id of the animal
-        channel: the channel of the stack to process
         njobs: number of jobs for parallel computing
 
     Returns:
         nothing
     """
-    channel_dir = 'CH{}'.format(channel)
+    channel_dir = 'CH1'
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
-    # test if there ane aligned files, if not use the cleaned ones
     len_files = len(os.listdir(INPUT))
     if len_files < 10:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
@@ -56,10 +55,7 @@ def make_web_thumbnails(animal, channel):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
-    parser.add_argument('--channel', help='Enter channel', required=True)
-
     args = parser.parse_args()
     animal = args.animal
-    channel = int(args.channel)
 
-    make_web_thumbnails(animal, channel)
+    make_web_thumbnails(animal)
