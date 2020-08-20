@@ -28,7 +28,7 @@ def make_web_thumbnails(animal, channel):
     channel_dir = 'CH{}'.format(channel)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
-    INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
+    INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     OUTPUT = fileLocationManager.thumbnail_web
     tifs = sqlController.get_sections(animal, channel)
 
