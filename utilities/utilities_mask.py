@@ -53,7 +53,10 @@ def find_contour_count(img):
 
 def fix_with_blob(img):
     no_strip, fe = remove_strip(img)
-    min_value, threshold = find_threshold(img)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    h_src = clahe.apply(no_strip)
+
+    min_value, threshold = find_threshold(h_src)
     ret, threshed = cv2.threshold(no_strip, threshold, 255, cv2.THRESH_BINARY)
     threshed = np.uint8(threshed)
     connectivity = 4
