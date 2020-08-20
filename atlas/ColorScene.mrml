@@ -3,11 +3,11 @@
 <Crosshair
   id="vtkMRMLCrosshairNodedefault" name="Crosshair" hideFromEditors="true" selectable="true" selected="false" singletonTag="default" crosshairMode="NoCrosshair" navigation="false" crosshairBehavior="OffsetJumpSlice" crosshairThickness="Fine" crosshairRAS="0 0 0"></Crosshair>
  <Selection
-  id="vtkMRMLSelectionNodeSingleton" name="Selection" hideFromEditors="true" selectable="true" selected="false" singletonTag="Singleton" references="unit/frequency:vtkMRMLUnitNodeApplicationFrequency;unit/intensity:vtkMRMLUnitNodeApplicationIntensity;unit/length:vtkMRMLUnitNodeApplicationLength;unit/time:vtkMRMLUnitNodeApplicationTime;unit/velocity:vtkMRMLUnitNodeApplicationVelocity;" activePlaceNodeClassName="" ></Selection>
+  id="vtkMRMLSelectionNodeSingleton" name="Selection" hideFromEditors="true" selectable="true" selected="false" singletonTag="Singleton" references="ActivePlaceNode:vtkMRMLMarkupsFiducialNode1;unit/frequency:vtkMRMLUnitNodeApplicationFrequency;unit/intensity:vtkMRMLUnitNodeApplicationIntensity;unit/length:vtkMRMLUnitNodeApplicationLength;unit/time:vtkMRMLUnitNodeApplicationTime;unit/velocity:vtkMRMLUnitNodeApplicationVelocity;" activePlaceNodeClassName="vtkMRMLMarkupsFiducialNode" ></Selection>
  <Interaction
-  id="vtkMRMLInteractionNodeSingleton" name="Interaction" hideFromEditors="true" selectable="true" selected="false" singletonTag="Singleton" currentInteractionMode="ViewTransform" placeModePersistence="false" lastInteractionMode="ViewTransform" ></Interaction>
+  id="vtkMRMLInteractionNodeSingleton" name="Interaction" hideFromEditors="true" selectable="true" selected="false" singletonTag="Singleton" currentInteractionMode="Place" placeModePersistence="false" lastInteractionMode="ViewTransform" ></Interaction>
  <View
-  id="vtkMRMLViewNode1" name="View1" hideFromEditors="false" selectable="true" selected="false" singletonTag="1" attributes="MappedInLayout:1" layoutLabel="1" layoutName="1" active="false" visibility="true" backgroundColor="0.756863 0.764706 0.909804" backgroundColor2="0.454902 0.470588 0.745098" layoutColor="0.454902 0.513725 0.913725" orientationMarkerType="none" orientationMarkerSize="medium" rulerType="none" rulerColor="white" AxisLabels="L;R;P;A;I;S" fieldOfView="200" letterSize="0.05" boxVisible="true" fiducialsVisible="true" fiducialLabelsVisible="true" axisLabelsVisible="true" axisLabelsCameraDependent="true" animationMode="Off" viewAxisMode="LookFrom" spinDegrees="2" spinMs="5" spinDirection="YawLeft" rotateDegrees="5" rockLength="200" rockCount="0" stereoType="NoStereo" renderMode="Perspective" useDepthPeeling="0" gpuMemorySize="0" expectedFPS="8" volumeRenderingQuality="Adaptive" raycastTechnique="Composite" volumeRenderingSurfaceSmoothing="0" volumeRenderingOversamplingFactor="2" linkedControl="0" ></View>
+  id="vtkMRMLViewNode1" name="View1" hideFromEditors="false" selectable="true" selected="false" singletonTag="1" attributes="MappedInLayout:1" layoutLabel="1" layoutName="1" active="false" visibility="true" backgroundColor="0.756863 0.764706 0.909804" backgroundColor2="0.454902 0.470588 0.745098" layoutColor="0.454902 0.513725 0.913725" orientationMarkerType="none" orientationMarkerSize="medium" rulerType="thick" rulerColor="black" AxisLabels="L;R;P;A;I;S" fieldOfView="200" letterSize="0.05" boxVisible="true" fiducialsVisible="true" fiducialLabelsVisible="true" axisLabelsVisible="true" axisLabelsCameraDependent="true" animationMode="Off" viewAxisMode="LookFrom" spinDegrees="2" spinMs="5" spinDirection="YawLeft" rotateDegrees="5" rockLength="200" rockCount="0" stereoType="NoStereo" renderMode="Orthographic" useDepthPeeling="0" gpuMemorySize="0" expectedFPS="8" volumeRenderingQuality="Adaptive" raycastTechnique="Composite" volumeRenderingSurfaceSmoothing="0" volumeRenderingOversamplingFactor="2" linkedControl="0" ></View>
  <Slice
   id="vtkMRMLSliceNodeRed" name="Red" hideFromEditors="false" selectable="true" selected="false" singletonTag="Red" layoutLabel="R" layoutName="Red" active="false" visibility="true" backgroundColor="0 0 0" backgroundColor2="0 0 0" layoutColor="0.952941 0.290196 0.2" orientationMarkerType="none" orientationMarkerSize="medium" rulerType="none" rulerColor="white" AxisLabels="L;R;P;A;I;S" fieldOfView="249.999 211.344 1" dimensions="595 503 1" xyzOrigin="0 0 0" sliceResolutionMode="1" uvwExtents="249.999 211.344 1" uvwDimensions="256 256 1" uvwOrigin="0 0 0" activeSlice="0" layoutGridRows="1" layoutGridColumns="1" sliceToRAS="-1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1" orientationMatrixAxial="-1 0 0 0 1 0 0 0 1" orientationMatrixSagittal="0 0 1 -1 0 0 0 1 0" orientationMatrixCoronal="-1 0 0 0 0 1 0 1 0" orientation="Axial" defaultOrientation="" orientationReference="Axial" jumpMode="1" sliceVisibility="false" widgetVisibility="false" widgetOutlineVisibility="true" useLabelOutline="false" sliceSpacingMode="0" prescribedSliceSpacing="1 1 1" ></Slice>
  <Slice
@@ -21,8 +21,65 @@
   id="vtkMRMLSliceCompositeNodeRed" name="SliceComposite" hideFromEditors="true" selectable="true" selected="false" singletonTag="Red" backgroundVolumeID="" foregroundVolumeID="" labelVolumeID="" compositing="0" foregroundOpacity="0" labelOpacity="1" linkedControl="0" fiducialVisibility="1" fiducialLabelVisibility="1" sliceIntersectionVisibility="0" layoutName="Red" annotationSpace="IJKAndRAS" annotationMode="All" doPropagateVolumeSelection="1" ></SliceComposite>
  <SliceComposite
   id="vtkMRMLSliceCompositeNodeGreen" name="SliceComposite_2" hideFromEditors="true" selectable="true" selected="false" singletonTag="Green" backgroundVolumeID="" foregroundVolumeID="" labelVolumeID="" compositing="0" foregroundOpacity="0" labelOpacity="1" linkedControl="0" fiducialVisibility="1" fiducialLabelVisibility="1" sliceIntersectionVisibility="0" layoutName="Green" annotationSpace="IJKAndRAS" annotationMode="All" doPropagateVolumeSelection="1" ></SliceComposite>
+ <SubjectHierarchy
+  id="vtkMRMLSubjectHierarchyNode1" name="SubjectHierarchy" hideFromEditors="false" selectable="true" selected="false" attributes="SubjectHierarchyVersion:2" >
+   <SubjectHierarchyItem id="3" name="Scene" parent="0" type="" expanded="true" attributes="Level^Scene|">
+     <SubjectHierarchyItem id="9" dataNode="vtkMRMLModelNode8" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="10" dataNode="vtkMRMLModelNode9" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="11" dataNode="vtkMRMLModelNode10" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="12" dataNode="vtkMRMLModelNode11" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="13" dataNode="vtkMRMLModelNode12" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="14" dataNode="vtkMRMLModelNode13" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="15" dataNode="vtkMRMLModelNode14" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="16" dataNode="vtkMRMLModelNode15" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="17" dataNode="vtkMRMLModelNode16" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="18" dataNode="vtkMRMLModelNode17" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="19" dataNode="vtkMRMLModelNode18" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="20" dataNode="vtkMRMLModelNode19" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="21" dataNode="vtkMRMLModelNode20" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="22" dataNode="vtkMRMLModelNode21" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="23" dataNode="vtkMRMLModelNode22" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="24" dataNode="vtkMRMLModelNode23" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="25" dataNode="vtkMRMLModelNode24" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="26" dataNode="vtkMRMLModelNode25" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="27" dataNode="vtkMRMLModelNode26" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="28" dataNode="vtkMRMLModelNode27" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="29" dataNode="vtkMRMLModelNode28" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="30" dataNode="vtkMRMLModelNode29" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="31" dataNode="vtkMRMLModelNode30" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="32" dataNode="vtkMRMLModelNode31" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="33" dataNode="vtkMRMLModelNode32" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="34" dataNode="vtkMRMLModelNode33" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="35" dataNode="vtkMRMLModelNode34" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="36" dataNode="vtkMRMLModelNode35" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="37" dataNode="vtkMRMLModelNode36" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="38" dataNode="vtkMRMLModelNode37" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="39" dataNode="vtkMRMLModelNode38" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="40" dataNode="vtkMRMLModelNode39" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="41" dataNode="vtkMRMLModelNode40" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="42" dataNode="vtkMRMLModelNode41" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="43" dataNode="vtkMRMLModelNode42" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="44" dataNode="vtkMRMLModelNode43" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="45" dataNode="vtkMRMLModelNode44" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="46" dataNode="vtkMRMLModelNode45" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="47" dataNode="vtkMRMLModelNode46" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="48" dataNode="vtkMRMLModelNode47" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="49" dataNode="vtkMRMLModelNode48" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="50" dataNode="vtkMRMLModelNode49" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="51" dataNode="vtkMRMLModelNode50" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="52" dataNode="vtkMRMLModelNode51" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="53" dataNode="vtkMRMLModelNode52" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="54" dataNode="vtkMRMLModelNode53" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="55" dataNode="vtkMRMLModelNode54" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="56" dataNode="vtkMRMLModelNode55" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="57" dataNode="vtkMRMLModelNode56" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="58" dataNode="vtkMRMLModelNode57" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="59" dataNode="vtkMRMLModelNode58" parent="3" type="Models" expanded="true"></SubjectHierarchyItem>
+     <SubjectHierarchyItem id="60" dataNode="vtkMRMLMarkupsFiducialNode1" parent="3" type="Markups" expanded="true"></SubjectHierarchyItem></SubjectHierarchyItem></SubjectHierarchy>
  <SliceComposite
   id="vtkMRMLSliceCompositeNodeYellow" name="SliceComposite_1" hideFromEditors="true" selectable="true" selected="false" singletonTag="Yellow" backgroundVolumeID="" foregroundVolumeID="" labelVolumeID="" compositing="0" foregroundOpacity="0" labelOpacity="1" linkedControl="0" fiducialVisibility="1" fiducialLabelVisibility="1" sliceIntersectionVisibility="0" layoutName="Yellow" annotationSpace="IJKAndRAS" annotationMode="All" doPropagateVolumeSelection="1" ></SliceComposite>
+ <Camera
+  id="vtkMRMLCameraNode1" name="Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="-107.779 427.773 -235.36" focalPoint="0 0 0" viewUp="-0.853277 0.0693676 0.516823" parallelProjection="false" parallelScale="1" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
  <ClipModels
   id="vtkMRMLClipModelsNodevtkMRMLClipModelsNode" name="ClipModels" hideFromEditors="true" selectable="true" selected="false" singletonTag="vtkMRMLClipModelsNode" clipType="0" redSliceClipState="0" yellowSliceClipState="0" greenSliceClipState="0" ></ClipModels>
  <ScriptedModule
@@ -52,65 +109,19 @@
  <SliceComposite
   id="vtkMRMLSliceCompositeNodeGreen+" name="SliceComposite_6" hideFromEditors="true" selectable="true" selected="false" singletonTag="Green+" backgroundVolumeID="" foregroundVolumeID="" labelVolumeID="" compositing="0" foregroundOpacity="0" labelOpacity="1" linkedControl="0" fiducialVisibility="1" fiducialLabelVisibility="1" sliceIntersectionVisibility="0" layoutName="Green+" annotationSpace="IJKAndRAS" annotationMode="All" doPropagateVolumeSelection="1" ></SliceComposite>
  <Camera
-  id="vtkMRMLCameraNode1" name="Default Scene Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="-94.6392 -122.14 -1092.99" focalPoint="27.3245 -68.2185 -0.168503" viewUp="0.143986 -0.989038 0.0327315" parallelProjection="false" parallelScale="1" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
+  id="vtkMRMLCameraNode16" name="Default Scene Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="61.8039 -68.5578 -1764.23" focalPoint="27.3245 -68.2185 -0.168503" viewUp="0.0942282 -0.995549 0.00203322" parallelProjection="true" parallelScale="200" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
+ <Camera
+  id="vtkMRMLCameraNode10" name="Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="-107.779 427.773 -235.36" focalPoint="0 0 0" viewUp="-0.853277 0.0693676 0.516823" parallelProjection="false" parallelScale="1" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
+ <Camera
+  id="vtkMRMLCameraNode11" name="Camera_1" hideFromEditors="false" selectable="true" selected="false" userTags="" position="0 500 0" focalPoint="0 0 0" viewUp="0 0 1" parallelProjection="false" parallelScale="1" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
+ <Camera
+  id="vtkMRMLCameraNode13" name="Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="-107.779 427.773 -235.36" focalPoint="0 0 0" viewUp="-0.853277 0.0693676 0.516823" parallelProjection="false" parallelScale="1" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
+ <Camera
+  id="vtkMRMLCameraNode12" name="Default Scene Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="-20.594 -188.344 -1048.63" focalPoint="27.3245 -68.2185 -0.168503" viewUp="0.0931143 -0.989656 0.109132" parallelProjection="false" parallelScale="1" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
  <Camera
   id="vtkMRMLCameraNode7" name="Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="-107.779 427.773 -235.36" focalPoint="0 0 0" viewUp="-0.853277 0.0693676 0.516823" parallelProjection="false" parallelScale="1" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
  <Camera
   id="vtkMRMLCameraNode8" name="Camera_1" hideFromEditors="false" selectable="true" selected="false" userTags="" position="0 500 0" focalPoint="0 0 0" viewUp="0 0 1" parallelProjection="false" parallelScale="1" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
- <SubjectHierarchy
-  id="vtkMRMLSubjectHierarchyNode1" name="SubjectHierarchy" hideFromEditors="false" selectable="true" selected="false" attributes="SubjectHierarchyVersion:2" >
-   <SubjectHierarchyItem id="320" name="Scene" parent="0" type="" expanded="true" attributes="Level^Scene|">
-     <SubjectHierarchyItem id="324" dataNode="vtkMRMLModelNode8" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="325" dataNode="vtkMRMLModelNode9" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="326" dataNode="vtkMRMLModelNode10" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="327" dataNode="vtkMRMLModelNode11" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="328" dataNode="vtkMRMLModelNode12" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="329" dataNode="vtkMRMLModelNode13" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="330" dataNode="vtkMRMLModelNode14" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="331" dataNode="vtkMRMLModelNode15" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="332" dataNode="vtkMRMLModelNode16" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="333" dataNode="vtkMRMLModelNode17" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="334" dataNode="vtkMRMLModelNode18" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="335" dataNode="vtkMRMLModelNode19" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="336" dataNode="vtkMRMLModelNode20" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="337" dataNode="vtkMRMLModelNode21" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="338" dataNode="vtkMRMLModelNode22" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="339" dataNode="vtkMRMLModelNode23" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="340" dataNode="vtkMRMLModelNode24" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="341" dataNode="vtkMRMLModelNode25" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="342" dataNode="vtkMRMLModelNode26" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="343" dataNode="vtkMRMLModelNode27" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="344" dataNode="vtkMRMLModelNode28" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="345" dataNode="vtkMRMLModelNode29" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="346" dataNode="vtkMRMLModelNode30" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="347" dataNode="vtkMRMLModelNode31" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="348" dataNode="vtkMRMLModelNode32" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="349" dataNode="vtkMRMLModelNode33" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="350" dataNode="vtkMRMLModelNode34" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="351" dataNode="vtkMRMLModelNode35" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="352" dataNode="vtkMRMLModelNode36" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="353" dataNode="vtkMRMLModelNode37" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="354" dataNode="vtkMRMLModelNode38" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="355" dataNode="vtkMRMLModelNode39" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="356" dataNode="vtkMRMLModelNode40" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="357" dataNode="vtkMRMLModelNode41" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="358" dataNode="vtkMRMLModelNode42" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="359" dataNode="vtkMRMLModelNode43" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="360" dataNode="vtkMRMLModelNode44" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="361" dataNode="vtkMRMLModelNode45" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="362" dataNode="vtkMRMLModelNode46" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="363" dataNode="vtkMRMLModelNode47" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="364" dataNode="vtkMRMLModelNode48" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="365" dataNode="vtkMRMLModelNode49" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="366" dataNode="vtkMRMLModelNode50" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="367" dataNode="vtkMRMLModelNode51" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="368" dataNode="vtkMRMLModelNode52" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="369" dataNode="vtkMRMLModelNode53" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="370" dataNode="vtkMRMLModelNode54" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="371" dataNode="vtkMRMLModelNode55" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="372" dataNode="vtkMRMLModelNode56" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="373" dataNode="vtkMRMLModelNode57" parent="320" type="Models" expanded="true"></SubjectHierarchyItem>
-     <SubjectHierarchyItem id="374" dataNode="vtkMRMLModelNode58" parent="320" type="Models" expanded="true"></SubjectHierarchyItem></SubjectHierarchyItem></SubjectHierarchy>
  <Camera
   id="vtkMRMLCameraNode9" name="Default Scene Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="206.947 20.0549 -1082.75" focalPoint="27.3245 -68.2185 -0.168503" viewUp="0.157108 -0.986085 -0.0543378" parallelProjection="false" parallelScale="1" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
  <Camera
@@ -122,11 +133,11 @@
  <Camera
   id="vtkMRMLCameraNode5" name="Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="-107.779 427.773 -235.36" focalPoint="0 0 0" viewUp="-0.853277 0.0693676 0.516823" parallelProjection="false" parallelScale="1" viewAngle="30" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
  <Camera
-  id="vtkMRMLCameraNode4" name="Default Scene Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="-20.594 -188.344 -1048.63" focalPoint="27.3245 -68.2185 -0.168503" viewUp="0.0931143 -0.989656 0.109132" parallelProjection="false" parallelScale="1" viewAngle="30" activetag="vtkMRMLViewNode1" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
+  id="vtkMRMLCameraNode4" name="Default Scene Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="61.8039 -68.5578 -1764.23" focalPoint="27.3245 -68.2185 -0.168503" viewUp="0.0942282 -0.995549 0.00203322" parallelProjection="true" parallelScale="200" viewAngle="30" activetag="vtkMRMLViewNode1" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
  <Camera
-  id="vtkMRMLCameraNode10" name="Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="-107.779 427.773 -235.36" focalPoint="0 0 0" viewUp="-0.853277 0.0693676 0.516823" parallelProjection="false" parallelScale="1" viewAngle="30" activetag="vtkMRMLViewNode2" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
+  id="vtkMRMLCameraNode14" name="Camera" hideFromEditors="false" selectable="true" selected="false" userTags="" position="-107.779 427.773 -235.36" focalPoint="0 0 0" viewUp="-0.853277 0.0693676 0.516823" parallelProjection="false" parallelScale="1" viewAngle="30" activetag="vtkMRMLViewNode2" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
  <Camera
-  id="vtkMRMLCameraNode11" name="Camera_1" hideFromEditors="false" selectable="true" selected="false" userTags="" position="0 500 0" focalPoint="0 0 0" viewUp="0 0 1" parallelProjection="false" parallelScale="1" viewAngle="30" activetag="vtkMRMLViewNode1+" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
+  id="vtkMRMLCameraNode15" name="Camera_1" hideFromEditors="false" selectable="true" selected="false" userTags="" position="0 500 0" focalPoint="0 0 0" viewUp="0 0 1" parallelProjection="false" parallelScale="1" viewAngle="30" activetag="vtkMRMLViewNode1+" appliedTransform="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" ></Camera>
  <ModelStorage
   id="vtkMRMLModelStorageNode1" name="ModelStorage" hideFromEditors="true" selectable="true" selected="false" fileName="meshes/10N_L.stl" useCompression="1" defaultWriteFileExtension="vtk" readState="0" writeState="4" coordinateSystem="RAS" ></ModelStorage>
  <ModelDisplay
@@ -435,4 +446,10 @@
   id="vtkMRMLModelNode58" name="VLL_R" hideFromEditors="false" selectable="true" selected="false" references="display:vtkMRMLModelDisplayNode58;storage:vtkMRMLModelStorageNode51;" userTags="" ></Model>
  <CommandLineModule
   id="vtkMRMLCommandLineModuleNode1" name="General Registration (BRAINS)" hideFromEditors="true" selectable="true" selected="false" attributes="CommandLineModule:General Registration (BRAINS);UpdateDisplay:true" title="General%20Registration%20(BRAINS)" version="5.2.0" autorunmode="17" autorun="0" fixedVolume="" movingVolume="" samplingPercentage="0.002" splineGridSize="14,10,12" linearTransform="" bsplineTransform="" outputVolume="" initialTransform="" initializeTransformMode="Off" useRigid="false" useScaleVersor3D="false" useScaleSkewVersor3D="false" useAffine="false" useBSpline="false" useSyN="false" useComposite="false" maskProcessingMode="NOMASK" fixedBinaryVolume="" movingBinaryVolume="" outputFixedVolumeROI="" outputMovingVolumeROI="" useROIBSpline="false" histogramMatch="false" medianFilterSize="0,0,0" removeIntensityOutliers="0" fixedVolume2="" movingVolume2="" outputVolumePixelType="float" backgroundFillValue="0" scaleOutputValues="false" interpolationMode="Linear" numberOfIterations="1500" maximumStepLength="0.05" minimumStepLength="0.001" relaxationFactor="0.5" translationScale="1000" reproportionScale="1" skewScale="1" maxBSplineDisplacement="0" fixedVolumeTimeIndex="0" movingVolumeTimeIndex="0" numberOfHistogramBins="50" numberOfMatchPoints="10" costMetric="MMI" maskInferiorCutOffFromCenter="1000" ROIAutoDilateSize="0" ROIAutoClosingSize="9" numberOfSamples="0" strippedOutputTransform="" transformType="" outputTransform="" initializeRegistrationByCurrentGenericTransform="false" writeOutputTransformInFloat="false" failureExitCode="-1" writeTransformOnFailure="false" numberOfThreads="-1" debugLevel="0" costFunctionConvergenceFactor="2e+13" projectedGradientTolerance="1e-05" maximumNumberOfEvaluations="900" maximumNumberOfCorrections="25" UseDebugImageViewer="false" PromptAfterImageSend="false" metricSamplingStrategy="Random" logFileReport="" printVersionInfo="false" ></CommandLineModule>
+ <MarkupsFiducial
+  id="vtkMRMLMarkupsFiducialNode1" name="MarkupsFiducial" hideFromEditors="false" selectable="true" selected="false" attributes="Markups.MovingInSliceView:1;Markups.MovingMarkupIndex:0" references="display:vtkMRMLMarkupsFiducialDisplayNode1;storage:vtkMRMLMarkupsFiducialStorageNode1;" userTags="" locked="false" markupLabelFormat="%N-%d" interactionHandleToWorldMatrix="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1" maximumNumberOfControlPoints="0" requiredNumberOfControlPoints="0" ></MarkupsFiducial>
+ <MarkupsFiducialDisplay
+  id="vtkMRMLMarkupsFiducialDisplayNode1" name="MarkupsFiducialDisplay" hideFromEditors="true" selectable="true" selected="false" color="0.4 1 1" edgeColor="0 0 0" selectedColor="1 0.500008 0.500008" selectedAmbient="0.4" ambient="0" diffuse="1" selectedSpecular="0.5" specular="0" power="1" opacity="1" sliceIntersectionOpacity="1" pointSize="1" lineWidth="1" representation="2" lighting="true" interpolation="1" shading="true" visibility="true" visibility2D="true" visibility3D="true" edgeVisibility="false" clipping="false" sliceIntersectionThickness="1" frontfaceCulling="false" backfaceCulling="true" scalarVisibility="false" vectorVisibility="false" tensorVisibility="false" interpolateTexture="false" scalarRangeFlag="UseData" scalarRange="0 100" activeAttributeLocation="point" viewNodeRef="" folderDisplayOverrideAllowed="true" propertiesLabelVisibility="false" pointLabelsVisibility="true" textScale="3" glyphScale="1" glyphSize="5" useGlyphScale="true" glyphType="Sphere3D" snapMode="toVisibleSurface" sliceProjection="false" sliceProjectionUseFiducialColor="true" sliceProjectionOutlinedBehindSlicePlane="false" sliceProjectionColor="1 1 1" sliceProjectionOpacity="0.6" curveLineSizeMode="UseLineThickness" lineThickness="0.2" lineDiameter="1" lineColorFadingStart="1" lineColorFadingEnd="10" lineColorFadingSaturation="1" lineColorFadingHueOffset="0" handlesInteractive="false" fillVisibility="true" outlineVisibility="true" fillOpacity="0.5" outlineOpacity="1" ></MarkupsFiducialDisplay>
+ <MarkupsFiducialStorage
+  id="vtkMRMLMarkupsFiducialStorageNode1" name="MarkupsFiducialStorage" hideFromEditors="true" selectable="true" selected="false" fileName="MarkupsFiducial.fcsv" useCompression="1" defaultWriteFileExtension="fcsv" readState="0" writeState="4" coordinateSystem="LPS" ></MarkupsFiducialStorage>
 </MRML>
