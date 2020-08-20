@@ -12,7 +12,7 @@ from utilities.alignment_utility import get_last_2d
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import fix_with_fill, fix_thionin, fix_with_fill_debug
+from utilities.utilities_mask import fix_with_fill, fix_thionin, fix_with_blob
 from utilities.utilities_process import workernoshell
 
 
@@ -71,7 +71,7 @@ def create_mask(animal, full, njobs):
                 except:
                     logger.warning(f'Could not open {infile}')
                     continue
-                mask = fix_with_fill(img)
+                mask = fix_with_blob(img)
 
             # save the mask
             cv2.imwrite(outpath, mask.astype('uint8'))

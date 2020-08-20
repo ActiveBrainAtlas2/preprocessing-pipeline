@@ -19,6 +19,16 @@ def rotate_image(img, file, rotation):
     return img
 
 
+def find_threshold(src):
+    fig = matplotlib.figure.Figure()
+    ax = matplotlib.axes.Axes(fig, (0, 0, 0, 0))
+    n, bins, patches = ax.hist(src.flatten(), 360);
+    del ax, fig
+    min_point = np.argmin(n[:5])
+    min_point = int(min(2, min_point))
+    thresh = (min_point * 64000 / 360)
+    return min_point, thresh
+
 def lognorm(img, limit):
     lxf = np.log(img + 0.005)
     lxf = np.where(lxf < 0, 0, lxf)
@@ -90,16 +100,6 @@ def scale_and_mask(src, mask, epsilon=0.01):
     scaled[scaled > _range] = _range
     scaled = scaled * (mask > 10)
     return scaled, _max
-
-def find_threshold(src):
-    fig = matplotlib.figure.Figure()
-    ax = matplotlib.axes.Axes(fig, (0, 0, 0, 0))
-    n, bins, patches = ax.hist(src.flatten(), 360);
-    del ax, fig
-    min_point = np.argmin(n[:5])
-    min_point = int(min(2, min_point))
-    thresh = (min_point * 64000 / 360)
-    return min_point, thresh
 
 def remove_strip(src):
     strip_max = 150;
@@ -256,16 +256,6 @@ def fill_spots(img):
 
     return img
 
-def find_bgcolor(src):
-    fig = matplotlib.figure.Figure()
-    ax = matplotlib.axes.Axes(fig, (0, 0, 0, 0))
-    n, bins, patches = ax.hist(src.flatten(), 100);
-    del ax, fig
-    min_point = np.argmin(n[:5])
-    #min_point = int(min(2, min_point))
-    thresh = (min_point * 20)
-    return min_point
-
 
 def check_contour(contours, area, lc):
     if len(contours) > 0:
@@ -303,8 +293,8 @@ def fix_with_fill(img):
     # +10 missing stuff
     # > 10 don't get anything
 
-    med = np.median(h_src) + 0
-    h, im_th = cv2.threshold(h_src, med, 2**16-1, cv2.THRESH_BINARY)
+    med = np.median(h_src) + 10
+    h, im_th = cv2.threshold(h_src, med, 255, cv2.THRESH_BINARY)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
     mask = np.zeros((h + 2, w + 2), np.uint8)
@@ -315,7 +305,7 @@ def fix_with_fill(img):
 
     small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
-    eroded = cv2.erode(im_out, small_kernel, iterations=3)
+    eroded = cv2.erode(im_out, small_kernel, iterations=1)
     #eroded = np.copy(im_out)
     contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
@@ -526,15 +516,19 @@ def fix_thionin_debug(img):
 
 
 
-def fix_with_fill_debug(img, limit, dt):
+def fix_with_fill_debug(img):
     no_strip, fe = remove_strip(img)
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
     #img = pad_with_black(img)
-    img = (img / 256).astype(dt)
-    h_src = linnorm(img, limit, dt)
-    med = np.median(h_src) + 10
-    h, im_th = cv2.threshold(h_src, med, limit, cv2.THRESH_BINARY)
+    img = (img / 256).astype(np.uint8)
+    #h_src = linnorm(img, 255, np.uint8)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    h_src = clahe.apply(img)
+    # + 10 getting too much
+    # + 20 way too much
+    thresh = np.median(h_src) + 10
+    h, im_th = cv2.threshold(h_src, thresh, 255, cv2.THRESH_BINARY)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
     mask = np.zeros((h + 2, w + 2), np.uint8)
@@ -608,4 +602,4 @@ def fix_with_fill_debug(img, limit, dt):
         cv2.putText(dilation, a, c, font,
                     fontScale, 2, thickness, cv2.LINE_AA)
 
-    return dilation
+    return dilation, thresh
