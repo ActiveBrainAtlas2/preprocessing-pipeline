@@ -34,9 +34,8 @@ def make_web_thumbnails(animal):
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
 
     OUTPUT = fileLocationManager.thumbnail_web
-    tifs = sqlController.get_sections(animal, channel)
+    tifs = sqlController.get_sections(animal, 1)
 
-    commands = []
     for i, tif in enumerate(tqdm(tifs)):
         input_path = os.path.join(INPUT, str(i).zfill(3) + '.tif')
         output_path = os.path.join(OUTPUT, os.path.splitext(tif.file_name)[0] + '.png')
