@@ -293,14 +293,14 @@ def fix_with_fill(img):
     #img = pad_with_black(img)
     img = (img / 256).astype(np.uint8)
     #h_src = linnorm(img, limit, dt)
-    clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
     h_src = clahe.apply(img)
     # +20 nothing
     # +10 missing stuff
     # > 10 don't get anything
     # 0
 
-    threshold = np.median(h_src) - 0
+    threshold = np.median(h_src) + 5
 
     h, im_th = cv2.threshold(h_src, threshold, 255, cv2.THRESH_BINARY)
     im_floodfill = im_th.copy()
@@ -353,7 +353,7 @@ def fix_with_fill(img):
 
     cv2.fillPoly(stencil, lc, 255)
 
-    dilation = cv2.dilate(stencil, big_kernel, iterations=5)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=3)
     #mask = fill_spots(dilation)
 
     return dilation
