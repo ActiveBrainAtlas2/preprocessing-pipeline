@@ -57,6 +57,8 @@ def fix_with_blob(img):
     h_src = clahe.apply(no_strip)
 
     min_value, threshold = find_threshold(h_src)
+    #threshold = np.median(h_src) - 0
+
     ret, threshed = cv2.threshold(no_strip, threshold, 255, cv2.THRESH_BINARY)
     threshed = np.uint8(threshed)
     connectivity = 4
@@ -291,13 +293,16 @@ def fix_with_fill(img):
     #img = pad_with_black(img)
     img = (img / 256).astype(np.uint8)
     #h_src = linnorm(img, limit, dt)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
     h_src = clahe.apply(img)
+    # +20 nothing
     # +10 missing stuff
     # > 10 don't get anything
+    # 0
 
-    med = np.median(h_src) + 10
-    h, im_th = cv2.threshold(h_src, med, 255, cv2.THRESH_BINARY)
+    threshold = np.median(h_src) - 0
+
+    h, im_th = cv2.threshold(h_src, threshold, 255, cv2.THRESH_BINARY)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
     mask = np.zeros((h + 2, w + 2), np.uint8)
