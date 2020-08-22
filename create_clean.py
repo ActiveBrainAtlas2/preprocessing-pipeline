@@ -27,6 +27,7 @@ def fix_ntb(infile, mask, logger, rotation, flip):
         logger.warning(f'Could not open {infile}')
     img = get_last_2d(img)
     fixed = cv2.bitwise_and(img, img, mask=mask)
+    del img
     if channel == 1:
         fixed = scaled(fixed, mask)
         clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
@@ -57,7 +58,10 @@ def fix_thion(infile, mask, logger, rotation, flip):
     fixed1 = cv2.bitwise_and(img_ch1, img_ch1, mask=mask)
     fixed2 = cv2.bitwise_and(img_ch2, img_ch2, mask=mask)
     fixed3 = cv2.bitwise_and(img_ch3, img_ch3, mask=mask)
-
+    del img_ch1
+    del img_ch2
+    del img_ch3
+    
     if rotation > 0:
         fixed1 = rotate_image(fixed1, infile, rotation)
         fixed2 = rotate_image(fixed2, infile, rotation)
@@ -126,10 +130,6 @@ def masker(animal, channel, flip, rotation=0, full=False):
             fixed = fix_thion(infile, mask, logger, rotation, flip)
         else:
             fixed = fix_ntb(infile, mask, logger, rotation, flip)
-
-
-
-
 
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)

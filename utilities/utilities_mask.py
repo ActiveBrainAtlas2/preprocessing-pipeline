@@ -528,30 +528,41 @@ def fix_with_fill_debug(img):
     no_strip, fe = remove_strip(img)
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
-    #img = pad_with_black(img)
     img = (img / 256).astype(np.uint8)
-    #h_src = linnorm(img, 255, np.uint8)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     h_src = clahe.apply(img)
     # + 10 getting too much
     # + 20 way too much
-    thresh = np.median(h_src) + 10
-    h, im_th = cv2.threshold(h_src, thresh, 255, cv2.THRESH_BINARY)
+    # 5, 12 not enough
+    # 5, 16, starting to get the little bit on top
+    # 0,40 get a lot
+    # 4,20 getting the top, good in beginning also
+    # 3,18 no good
+    # 4 above median is max!
+    # 4,20 009.tif gets lopped off
+    thresh = np.median(h_src)
+    lowVal = thresh + 4
+    highVal = lowVal + 30
+    #print(lowVal, highVal)
+
+    #h, im_th = cv2.threshold(h_src, thresh, 255, cv2.THRESH_BINARY)
+    im_th = cv2.inRange(h_src, lowVal, highVal)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
     mask = np.zeros((h + 2, w + 2), np.uint8)
     cv2.floodFill(im_floodfill, mask, (0, 0), 255)
     im_floodfill_inv = cv2.bitwise_not(im_floodfill)
+    del im_floodfill
     im_out = im_th | im_floodfill_inv
     stencil = np.zeros(img.shape).astype('uint8')
-
+    del im_th
+    del im_floodfill_inv
     # dilation = cv2.dilate(stencil,kernel,iterations = 2)
     small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
     eroded = cv2.erode(im_out, small_kernel, iterations=1)
-    #eroded = np.copy(im_out)
     contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
+    del eroded
     lc = []
     c1 = max(contours, key=cv2.contourArea)
     areaPrev = cv2.contourArea(c1)
@@ -605,9 +616,9 @@ def fix_with_fill_debug(img):
 
     dilation = cv2.dilate(stencil, big_kernel, iterations=5)
     #mask = fill_spots(dilation)
-
+    del stencil
     for a,c in zip(areas, coords):
         cv2.putText(dilation, a, c, font,
                     fontScale, 2, thickness, cv2.LINE_AA)
 
-    return dilation, thresh
+    return dilation
