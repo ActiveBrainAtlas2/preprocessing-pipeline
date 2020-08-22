@@ -14,8 +14,8 @@ VOL_DIR = '/net/birdstore/Active_Atlas_Data/copied_from_S3/mousebrainatlas-data/
 xy_ng_resolution_um = 5
 
 x_length = 2000
-y_length = 2000
-z_length = 600
+y_length = 1500
+z_length = 1500
 full_brain_volume_annotated = np.zeros((z_length, y_length, x_length), dtype=np.uint8)
 
 
