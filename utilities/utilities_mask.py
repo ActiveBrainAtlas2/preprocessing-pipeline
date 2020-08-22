@@ -529,8 +529,10 @@ def fix_with_fill_debug(img):
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
     img = (img / 256).astype(np.uint8)
+    img_shape = img.shape
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     h_src = clahe.apply(img)
+    del img
     # + 10 getting too much
     # + 20 way too much
     # 5, 12 not enough
@@ -541,7 +543,7 @@ def fix_with_fill_debug(img):
     # 4 above median is max!
     # 4,20 009.tif gets lopped off
     thresh = np.median(h_src)
-    lowVal = thresh + 4
+    lowVal = thresh + 3
     highVal = lowVal + 30
     #print(lowVal, highVal)
 
@@ -554,15 +556,18 @@ def fix_with_fill_debug(img):
     im_floodfill_inv = cv2.bitwise_not(im_floodfill)
     del im_floodfill
     im_out = im_th | im_floodfill_inv
-    stencil = np.zeros(img.shape).astype('uint8')
+    stencil = np.zeros(h_src.shape).astype('uint8')
     del im_th
     del im_floodfill_inv
     # dilation = cv2.dilate(stencil,kernel,iterations = 2)
     small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
-    eroded = cv2.erode(im_out, small_kernel, iterations=1)
-    contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    del eroded
+    #eroded = cv2.erode(im_out, small_kernel, iterations=1)
+    #im_out = clahe.apply(im_out)
+    del h_src
+    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    #####del eroded
+    del im_out
     lc = []
     c1 = max(contours, key=cv2.contourArea)
     areaPrev = cv2.contourArea(c1)
@@ -581,10 +586,10 @@ def fix_with_fill_debug(img):
     areas.append(str(areaPrev))
 
 
-    midrow = img.shape[0] // 2
+    midrow = img_shape[0] // 2
     topbound = midrow - (midrow * 0.65)
     bottombound = midrow + (midrow * 0.98)
-    midcolumn = img.shape[1] // 2
+    midcolumn = img_shape[1] // 2
     leftbound = midcolumn - (midcolumn * 0.65)
     rightbound = midcolumn + (midcolumn * 0.5)
     AREA_THRESHOLD = 0.01
