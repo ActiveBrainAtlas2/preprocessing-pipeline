@@ -61,7 +61,7 @@ def fix_thion(infile, mask, logger, rotation, flip):
     del img_ch1
     del img_ch2
     del img_ch3
-    
+
     if rotation > 0:
         fixed1 = rotate_image(fixed1, infile, rotation)
         fixed2 = rotate_image(fixed2, infile, rotation)
@@ -136,8 +136,9 @@ def masker(animal, channel, flip, rotation=0, full=False):
         # below is for testing to mimic the mask
         #fixed = place_image(fixed, file, max_height, max_width, bgcolor)
         fixed[fixed == 0] = bgcolor
-        io.imsave(outpath, fixed.astype(dt), check_contrast=False)
-        #cv2.imwrite(outpath, fixed.astype(dt))
+        #Note, io.imsave creates HUGE files!!!!!
+        #io.imsave(outpath, fixed.astype(dt), check_contrast=False)
+        cv2.imwrite(outpath, fixed.astype(dt))
 
     print('Finished')
 
