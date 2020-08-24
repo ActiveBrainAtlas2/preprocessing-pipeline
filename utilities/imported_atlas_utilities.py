@@ -985,7 +985,7 @@ def convert_vol_bbox_dict_to_overall_vol(vol_bbox_dict=None, vol_bbox_tuples=Non
         volumes = crop_and_pad_volumes(out_bbox=volume_bbox, vol_bbox_tuples=vol_bbox_tuples)
     return volumes, np.array(volume_bbox)
 
-# this loads fixed brain
+
 def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox_wrt='canonicalAtlasSpace'):
 
     #in_bbox_wrt = 'wholebrain'
@@ -1020,6 +1020,86 @@ def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox
         structure_to_label = {}
         label_to_structure = {}
         index = 1
+
+    for structure in structures:
+        try:
+            if loaded:
+                index = structure_to_label[structure]
+
+            v, o = load_original_volume_v2(stack_spec, structure=structure,
+                                                       bbox_wrt=in_bbox_wrt,
+                                                       resolution=stack_spec['resolution'])
+
+            in_bbox_origin_wrt_wholebrain = get_domain_origin(stack=stack_spec['name'],
+                                                                          domain=in_bbox_wrt,
+                                                                          resolution=stack_spec['resolution'],
+                                                                          loaded_cropbox_resolution=stack_spec['resolution'])
+            o = o + in_bbox_origin_wrt_wholebrain
+            if name_or_index_as_key == 'name':
+                volumes[structure] = (v,o)
+            else:
+                volumes[index] = (v,o)
+
+            if not loaded:
+                structure_to_label[structure] = index
+                label_to_structure[index] = structure
+                index += 1
+
+        except Exception as e:
+            raise e
+            sys.stderr.write('%s\n' % e)
+            sys.stderr.write('Score volume for %s does not exist.\n' % structure)
+            continue
+
+    if common_shape:
+        volumes_normalized, common_bbox = convert_vol_bbox_dict_to_overall_vol(vol_bbox_dict=volumes)
+
+        if return_label_mappings:
+            return volumes_normalized, common_bbox, structure_to_label, label_to_structure
+        else:
+            return volumes_normalized, common_bbox
+    else:
+        if return_label_mappings:
+            return {k: crop_volume_to_minimal(vol=v, origin=o,
+                        return_origin_instead_of_bbox=return_origin_instead_of_bbox)
+                    for k, (v, o) in list(volumes.items())}, structure_to_label, label_to_structure
+
+        else:
+            return {k: crop_volume_to_minimal(vol=v, origin=o,
+                        return_origin_instead_of_bbox=return_origin_instead_of_bbox)
+                    for k, (v, o) in list(volumes.items())}
+
+def load_all_structures_and_origins(stack_spec, structures, in_bbox_wrt='canonicalAtlasSpace'):
+
+    #in_bbox_wrt = 'wholebrain'
+    return_label_mappings = False
+    name_or_index_as_key = 'name'
+    common_shape = False
+    return_origin_instead_of_bbox = True
+
+    """
+    Load original (un-transformed) volumes for all structures and optionally pad them into a common shape.
+
+    Args:
+        common_shape (bool): If true, volumes are padded to the same shape.
+        in_bbox_wrt (str): the bbox origin for the bbox files currently stored.
+        loaded_cropbox_resolution (str): resolution in which the loaded cropbox is defined on.
+
+    Returns:
+        If `common_shape` is True:
+            if return_label_mappings is True, returns (volumes, common_bbox, structure_to_label, label_to_structure), volumes is dict.
+            else, returns (volumes, common_bbox).
+        Note that `common_bbox` is relative to the same origin the individual volumes' bounding boxes are (which, ideally, one can infer from the bbox filenames (TODO: systematic renaming)).
+        If `common_shape` is False:
+            if return_label_mappings is True, returns (dict of volume_bbox_tuples, structure_to_label, label_to_structure).
+            else, returns volume_bbox_tuples.
+    """
+    loaded = False
+    volumes = {}
+
+    structure_to_label = {}
+    label_to_structure = {}
+    index = 1
 
     for structure in structures:
         try:
@@ -3046,9 +3126,9 @@ def convert_to_surround_name(name, margin=None, suffix=None):
                 return name + '_surround_' + str(margin)
 
 
-def save_mesh_stl(polydata, fn):
+def save_mesh_stl(polydata, filename):
     stlWriter = vtk.vtkSTLWriter()
-    stlWriter.SetFileName(fn)
+    stlWriter.SetFileName(filename)
     stlWriter.SetInputData(polydata)
     stlWriter.Write()
 

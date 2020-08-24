@@ -280,42 +280,41 @@ def scaled(img, mask, epsilon=0.01):
     _max = vals[ind]
     # print('thr=%d, index=%d'%(vals[ind],index))
     _range = 2 ** 16 - 1
-    scaled = img * (45000. / _max)
+    scaled = img * (55000. / _max)
     scaled[scaled > _range] = _range
     scaled = scaled * (mask > 10)
     return scaled
+
 
 
 def fix_with_fill(img):
     no_strip, fe = remove_strip(img)
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
-    #img = pad_with_black(img)
     img = (img / 256).astype(np.uint8)
-    #h_src = linnorm(img, limit, dt)
-    clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
+    img_shape = img.shape
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     h_src = clahe.apply(img)
-    # +20 nothing
-    # +10 missing stuff
-    # > 10 don't get anything
-    # 0
+    del img
+    thresh = np.median(h_src)
+    lowVal = thresh + 8
+    highVal = lowVal + 30
 
-    threshold = np.median(h_src) + 5
-
-    h, im_th = cv2.threshold(h_src, threshold, 255, cv2.THRESH_BINARY)
+    im_th = cv2.inRange(h_src, lowVal, highVal)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
     mask = np.zeros((h + 2, w + 2), np.uint8)
     cv2.floodFill(im_floodfill, mask, (0, 0), 255)
     im_floodfill_inv = cv2.bitwise_not(im_floodfill)
+    del im_floodfill
     im_out = im_th | im_floodfill_inv
-    stencil = np.zeros(img.shape).astype('uint8')
-
-    small_kernel = np.ones((6, 6), np.uint8)
+    stencil = np.zeros(h_src.shape).astype('uint8')
+    del im_th
+    del im_floodfill_inv
     big_kernel = np.ones((16, 16), np.uint8)
-    eroded = cv2.erode(im_out, small_kernel, iterations=1)
-    #eroded = np.copy(im_out)
-    contours, hierarchy = cv2.findContours(eroded, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    del h_src
+    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    del im_out
 
     lc = []
     c1 = max(contours, key=cv2.contourArea)
@@ -324,10 +323,10 @@ def fix_with_fill(img):
     idx = get_index(c1, contours)
     contours.pop(idx)
 
-    midrow = img.shape[0] // 2
-    topbound = midrow - (midrow * 0.65)
+    midrow = img_shape[0] // 2
+    topbound = midrow - (midrow * 0.85)
     bottombound = midrow + (midrow * 0.98)
-    midcolumn = img.shape[1] // 2
+    midcolumn = img_shape[1] // 2
     leftbound = midcolumn - (midcolumn * 0.65)
     rightbound = midcolumn + (midcolumn * 0.5)
     AREA_THRESHOLD = 0.01
@@ -352,12 +351,9 @@ def fix_with_fill(img):
 
 
     cv2.fillPoly(stencil, lc, 255)
-
-    dilation = cv2.dilate(stencil, big_kernel, iterations=3)
-    #mask = fill_spots(dilation)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=5)
 
     return dilation
-
 
 
 def fix_thionin(img):
@@ -432,7 +428,6 @@ def fix_thionin(img):
 
 
 
-#Kui, take a look at his method
 def fix_thionin_debug(img):
     start_bottom = img.shape[0] - 5 # get mean background color from bottom rows
     bottom_rows = img[start_bottom:img.shape[0], :]
@@ -543,9 +538,8 @@ def fix_with_fill_debug(img):
     # 4 above median is max!
     # 4,20 009.tif gets lopped off
     thresh = np.median(h_src)
-    lowVal = thresh + 3
+    lowVal = thresh + 8
     highVal = lowVal + 30
-    #print(lowVal, highVal)
 
     #h, im_th = cv2.threshold(h_src, thresh, 255, cv2.THRESH_BINARY)
     im_th = cv2.inRange(h_src, lowVal, highVal)
@@ -587,7 +581,7 @@ def fix_with_fill_debug(img):
 
 
     midrow = img_shape[0] // 2
-    topbound = midrow - (midrow * 0.65)
+    topbound = midrow - (midrow * 0.85)
     bottombound = midrow + (midrow * 0.98)
     midcolumn = img_shape[1] // 2
     leftbound = midcolumn - (midcolumn * 0.65)
@@ -626,4 +620,5 @@ def fix_with_fill_debug(img):
         cv2.putText(dilation, a, c, font,
                     fontScale, 2, thickness, cv2.LINE_AA)
 
-    return dilation
+    threshold = '{},{}'.format(int(lowVal), int(highVal))
+    return dilation, threshold
