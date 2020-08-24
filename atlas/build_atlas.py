@@ -21,7 +21,10 @@ structure_path = os.path.join(PATH, 'neuroglancer', 'structure_key_minimal.json'
 with open(structure_path, 'r') as f:
     structures = json.load(f)
 structures = list(structures.values())
-structures = ['10N_L', '10N_R', '12N', '3N_L', '3N_R', '5N_L', '5N_R', '6N_L', '6N_R', '7N_L', '7N_R', 'Amb_L', 'Amb_R', 'AP', 'DC_L', 'DC_R', 'IC', 'LC_L', 'LC_R', 'LRt_L', 'LRt_R', 'PBG_L', 'PBG_R', 'Pn_L', 'Pn_R', 'RMC_L', 'RMC_R', 'RtTg', 'SC', 'SNC_L', 'SNC_R', 'SNR_L', 'SNR_R', 'Sp5C_L', 'Sp5C_R', 'Sp5I_L', 'Sp5I_R', 'Sp5O_L', 'Sp5O_R', 'Tz_L', 'Tz_R', 'VCA_L', 'VCA_R', 'VCP_L', 'VCP_R', 'VLL_L', 'VLL_R']
+structures = ['10N_L', '10N_R', '12N', '3N_L', '3N_R', '5N_L', '5N_R', '6N_L', '6N_R', '7N_L', '7N_R', 'Amb_L', 'Amb_R',
+              'AP', 'DC_L', 'DC_R', 'IC', 'LC_L', 'LC_R', 'LRt_L', 'LRt_R', 'PBG_L', 'PBG_R', 'Pn_L', 'Pn_R', 'RMC_L',
+              'RMC_R', 'RtTg', 'SC', 'SNC_L', 'SNC_R', 'SNR_L', 'SNR_R', 'Sp5C_L', 'Sp5C_R', 'Sp5I_L', 'Sp5I_R',
+              'Sp5O_L', 'Sp5O_R', 'Tz_L', 'Tz_R', 'VCA_L', 'VCA_R', 'VCP_L', 'VCP_R', 'VLL_L', 'VLL_R']
 atlas_name = 'atlasV9'
 fixed_brain_name = 'MD589'
 moving_brain_names = ['MD585', 'MD594']
