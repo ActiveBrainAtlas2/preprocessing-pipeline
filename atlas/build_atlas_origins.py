@@ -13,7 +13,9 @@ surface_level = 0.9
 DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
 ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
 OUTPUT = os.path.join(ATLAS_PATH, 'mesh')
-centroid_filepath = os.path.join(DATA_PATH, 'CSHL_volumes', atlas_name, '1um_meanPositions.pkl')
+
+
+centroid_filepath = os.path.join(ATLAS_PATH, '1um_meanPositions.pkl')
 
 from utilities.imported_atlas_utilities import volume_to_polydata, save_mesh_stl, mirror_volume_v2, average_location
 

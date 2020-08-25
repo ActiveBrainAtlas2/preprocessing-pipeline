@@ -2666,72 +2666,42 @@ def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_
     """
 
     volume, origin = convert_volume_forms(volume=volume, out_form=("volume", "origin"))
-
     vol = volume > level
 
     # vol_padded = np.zeros(vol.shape+(10,10,10), np.bool)
     # vol_padded[5:-5, 5:-5, 5:-5] = vol
     vol_padded = np.pad(vol, ((5,5),(5,5),(5,5)), 'constant') # need this otherwise the sides of volume will not close and expose the hollow inside of structures
-
-    t = time.time()
-    vs, fs = mcubes.marching_cubes(vol_padded, 0) # more than 5 times faster than skimage.marching_cube + correct_orientation
-    #sys.stderr.write('marching cube: %.2f seconds\n' % (time.time() - t))
-
-    # t = time.time()
+    vertices, faces = mcubes.marching_cubes(vol_padded, 0) # more than 5 times faster than skimage.marching_cube + correct_orientation
     # vs, faces = marching_cubes(vol_padded, 0) # y,x,z
     # sys.stderr.write('marching cube: %.2f seconds\n' % (time.time() - t))
 
-    # t = time.time()
     # fs = correct_mesh_orientation(vol_padded, vs, faces)
-    # sys.stderr.write('correct orientation: %.2f seconds\n' % (time.time() - t))
 
-    vs = vs[:, [1,0,2]] + origin - (5,5,5)
+    vertices = vertices[:, [1,0,2]] + origin - (5,5,5)
     # vs = vs[:, [1,0,2]] + origin
-
-    # t = time.time()
     # area = mesh_surface_area(vs, fs)
-    # sys.stderr.write('compute surface area: %.2f seconds\n' % (time.time() - t)) #
 
-    t = time.time()
-
-#     if return_mesh:
-#         return vs, fs
-
-    polydata = mesh_to_polydata(vs, fs)
-
-    #sys.stderr.write('mesh_to_polydata: %.2f seconds\n' % (time.time() - t)) #
+    polydata = mesh_to_polydata(vertices, faces)
 
     for simplify_iter in range(num_simplify_iter):
-
-        t = time.time()
-
         deci = vtk.vtkQuadricDecimation()
         deci.SetInputData(polydata)
-
         deci.SetTargetReduction(0.8)
         # 0.8 means each iteration causes the point number to drop to 20% the original
-
         deci.Update()
-
         polydata = deci.GetOutput()
 
         if smooth:
-
             smoother = vtk.vtkWindowedSincPolyDataFilter()
     #         smoother.NormalizeCoordinatesOn()
             smoother.SetPassBand(.1)
             smoother.SetNumberOfIterations(20)
             smoother.SetInputData(polydata)
             smoother.Update()
-
             polydata = smoother.GetOutput()
-
-        n_pts = polydata.GetNumberOfPoints()
-        #sys.stderr.write('simplify %d @ %d: %.2f seconds\n' % (simplify_iter, n_pts, time.time() - t)) #
 
         if polydata.GetNumberOfPoints() < min_vertices:
             break
-
 
     if return_vertex_face_list:
         return polydata_to_mesh(polydata)
@@ -2745,27 +2715,14 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
         vertices ((num_vertices, 3) arrays)
         faces ((num_faces, 3) arrays)
     """
-
     polydata = vtk.vtkPolyData()
-
-    t = time.time()
-
     points = vtk.vtkPoints()
-
-    # points_vtkArray = numpy_support.numpy_to_vtk(vertices.flat)
-    # points.SetData(points_vtkArray)
 
     for pt_ind, (x,y,z) in enumerate(vertices):
         points.InsertPoint(pt_ind, x, y, z)
 
-    # sys.stderr.write('fill point array: %.2f seconds\n' % (time.time() - t))
-
-    t = time.time()
-
     if len(faces) > 0:
-
         cells = vtk.vtkCellArray()
-
         cell_arr = np.empty((len(faces)*4, ), np.int)
         cell_arr[::4] = 3
         cell_arr[1::4] = faces[:,0]
@@ -2773,8 +2730,6 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
         cell_arr[3::4] = faces[:,2]
         cell_vtkArray = numpy_support.numpy_to_vtkIdTypeArray(cell_arr, deep=1)
         cells.SetCells(len(faces), cell_vtkArray)
-
-    # sys.stderr.write('fill cell array: %.2f seconds\n' % (time.time() - t))
 
     polydata.SetPoints(points)
 
@@ -2792,36 +2747,24 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
 
 def simplify_polydata(polydata, num_simplify_iter=0, smooth=False):
     for simplify_iter in range(num_simplify_iter):
-
-        t = time.time()
-
         deci = vtk.vtkQuadricDecimation()
         deci.SetInputData(polydata)
-
         deci.SetTargetReduction(0.8)
         # 0.8 means each iteration causes the point number to drop to 20% the original
-
         deci.Update()
-
         polydata = deci.GetOutput()
 
         if smooth:
-
             smoother = vtk.vtkWindowedSincPolyDataFilter()
     #         smoother.NormalizeCoordinatesOn()
             smoother.SetPassBand(.1)
             smoother.SetNumberOfIterations(20)
             smoother.SetInputData(polydata)
             smoother.Update()
-
             polydata = smoother.GetOutput()
-
-        n_pts = polydata.GetNumberOfPoints()
 
         if polydata.GetNumberOfPoints() < 200:
             break
-
-        #sys.stderr.write('simplify %d @ %d: %.2f seconds\n' % (simplify_iter, n_pts, time.time() - t)) #
 
     return polydata
 

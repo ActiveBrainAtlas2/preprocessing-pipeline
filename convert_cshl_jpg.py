@@ -35,6 +35,7 @@ def make_web_thumbnails(animal):
 
     for i, tif in enumerate(tqdm(tifs)):
         input_path = os.path.join(INPUT, os.path.splitext(tif.file_name)[0] + '.jpg')
+
         output_path = os.path.join(OUTPUT, str(i).zfill(3) + '.jpg')
 
         if not os.path.exists(input_path):
