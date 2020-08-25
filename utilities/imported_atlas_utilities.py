@@ -3455,6 +3455,8 @@ def load_mean_shape(atlas_name, structure, resolution):
     volume = load_data(volume_filepath, filetype='npy')
     origin_filepath = get_mean_shape_filepath(atlas_name=atlas_name, structure=structure, what='origin_wrt_meanShapeCentroid', resolution=resolution)
     origin_wrt_meanShapeCentroid = load_data(origin_filepath, filetype='txt')
+    print('volume filepath', volume_filepath)
+    print('origin filepath', origin_filepath)
     return volume, origin_wrt_meanShapeCentroid
 
 def save_original_volume(volume, stack_spec, structure=None, wrt='wholebrain', **kwargs):
