@@ -4,7 +4,7 @@ import numpy as np
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
-atlas_name = 'atlasV7'
+atlas_name = 'atlasV8'
 surface_level = 0.9
 ATLAS_PATH = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/atlas_data', atlas_name)
 OUTPUT = os.path.join(ATLAS_PATH, 'mesh')
