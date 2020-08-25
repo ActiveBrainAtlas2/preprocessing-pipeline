@@ -238,12 +238,12 @@ for structure in structures:
     # Save mean shape.
     filename = '{}_{}_volume.npy'.format(resolution, structure)
     filepath =  os.path.join(MESH_DIR, atlas_name, 'mean_shapes', filename)
-    #print('Saving numpy array at', filepath)
+    print('Saving numpy array at', filepath)
     np.save(filepath, np.ascontiguousarray(mean_shape_wrt_templateCentroid[0]))
 
     filename = '{}_{}_origin_wrt_meanShapeCentroid.txt'.format(resolution, structure)
     filepath = os.path.join(MESH_DIR, atlas_name, 'mean_shapes', filename)
-    #print('Saving numpy text at', filepath)
+    print('Saving numpy text at', filepath)
     np.savetxt(filepath, mean_shape_wrt_templateCentroid[1])
 
 
