@@ -27,8 +27,8 @@ atlas_resolution_um = 10.0
 
 
 
-centroids_data = pickle.load(open(centroid_filepath, "rb"))
-centroids = {s: c / atlas_resolution_um for s, c in centroids_data.items()}
+centroids = pickle.load(open(centroid_filepath, "rb"))
+#centroids = {s: c / atlas_resolution_um for s, c in centroids_data.items()}
 
 
 for structure in structures:
@@ -51,7 +51,7 @@ for structure in structures:
 
     volume = (mean_shape[0] >= surface_level, mean_shape[1])
     aligned_structure = volume_to_polydata(volume=volume,
-                           num_simplify_iter=3, smooth=False,
+                           num_simplify_iter=3, smooth=True,
                            return_vertex_face_list=False)
     filepath = os.path.join(OUTPUT, '{}.stl'.format(structure))
     save_mesh_stl(aligned_structure, filepath)
