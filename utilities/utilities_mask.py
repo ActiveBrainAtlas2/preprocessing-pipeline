@@ -368,7 +368,7 @@ def fix_thionin(img):
     # -10 too much
     # -70 pretty good
     # -90 missing stuff
-    bgcolor = int(round(avg)) - 45
+    bgcolor = int(round(avg)) - 35
     #img = linnorm(img, 255, np.uint8)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     img = clahe.apply(img)
