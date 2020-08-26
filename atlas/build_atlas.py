@@ -124,7 +124,7 @@ for structure in tqdm(structures):
         ### max_iter_num was originally 100 and 1000
         _, _ = aligner.optimize(tf_type='rigid',
                                 history_len=100,
-                                max_iter_num=10 if structure in ['SC', 'IC'] else 100,
+                                max_iter_num=10 if structure in ['SC', 'IC'] else 10,
                                 grad_computation_sample_number=None,
                                 full_lr=np.array([lr, lr, lr, 0.1, 0.1, 0.1]),
                                 terminate_thresh_trans=.01)
