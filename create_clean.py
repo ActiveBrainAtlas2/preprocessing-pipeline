@@ -19,8 +19,10 @@ from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, linnorm, lognorm, scaled
 
+#fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip)
 
-def fix_ntb(infile, mask, logger, rotation, flip):
+
+def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip):
     try:
         img = io.imread(infile)
     except:
@@ -35,12 +37,17 @@ def fix_ntb(infile, mask, logger, rotation, flip):
 
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
+        mask = rotate_image(mask, maskfile, rotation)
 
     if flip == 'flip':
         fixed = np.flip(fixed)
+        mask = np.flip(mask)
     if flip == 'flop':
         fixed = np.flip(fixed, axis=1)
-
+        mask = np.flip(mask, axis=1)
+    rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
+    #print(rotated_maskpath, type(mask), mask.dtype, mask.shape)
+    cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
 
     return fixed
 
@@ -81,7 +88,7 @@ def fix_thion(infile, mask, logger, rotation, flip):
     return fixed
 
 
-def masker(animal, channel, flip, rotation=0, full=False):
+def masker(animal, channel, flip, rotation=0, full=False, debug=False):
     logger = get_logger(animal)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
@@ -89,6 +96,8 @@ def masker(animal, channel, flip, rotation=0, full=False):
     CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
     MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+    ROTATED_MASKS = os.path.join(fileLocationManager.prep, 'rotated_masked')
+    os.makedirs(ROTATED_MASKS, exist_ok=True)
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     max_width = int(width * SCALING_FACTOR)
@@ -129,12 +138,14 @@ def masker(animal, channel, flip, rotation=0, full=False):
         if 'thion' in stain.lower():
             fixed = fix_thion(infile, mask, logger, rotation, flip)
         else:
-            fixed = fix_ntb(infile, mask, logger, rotation, flip)
+            fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip)
 
 
-        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
-        # below is for testing to mimic the mask
-        #fixed = place_image(fixed, file, max_height, max_width, bgcolor)
+        if debug and (fixed.shape[0] > fixed.shape[1]):
+            fixed = place_image(fixed, file, max_height, max_width, bgcolor)
+        else:
+            fixed = place_image(fixed, file, max_width, max_height, bgcolor)
+
         fixed[fixed == 0] = bgcolor
         #Note, io.imsave creates HUGE files!!!!!
         #io.imsave(outpath, fixed.astype(dt), check_contrast=False)
@@ -150,13 +161,16 @@ if __name__ == '__main__':
     parser.add_argument('--rotation', help='Enter rotation', required=False, default=0)
     parser.add_argument('--flip', help='Enter flip or flop', required=False)
     parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--debug', help='Enter True or False', required=False, default='False')
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
     rotation = int(args.rotation)
     flip = args.flip
+    debug = args.debug
     full = bool({'full': True, 'thumbnail': False}[args.resolution])
+    debug = bool({'True': True, 'False': False}[args.debug])
 
-    masker(animal, channel, flip, rotation, full)
+    masker(animal, channel, flip, rotation, full, debug)
 
