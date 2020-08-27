@@ -296,9 +296,9 @@ def fix_with_fill(img):
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     h_src = clahe.apply(img)
     del img
-    thresh = np.median(h_src)
-    lowVal = thresh + 8
-    highVal = lowVal + 30
+    threshold = np.median(h_src)
+    lowVal = threshold + 2
+    highVal = threshold + 30
 
     im_th = cv2.inRange(h_src, lowVal, highVal)
     im_floodfill = im_th.copy()
@@ -537,9 +537,9 @@ def fix_with_fill_debug(img):
     # 3,18 no good
     # 4 above median is max!
     # 4,20 009.tif gets lopped off
-    thresh = np.median(h_src)
-    lowVal = thresh + 8
-    highVal = lowVal + 30
+    threshold = np.median(h_src)
+    lowVal = threshold + 2
+    highVal = threshold + 30
 
     #h, im_th = cv2.threshold(h_src, thresh, 255, cv2.THRESH_BINARY)
     im_th = cv2.inRange(h_src, lowVal, highVal)
@@ -621,4 +621,4 @@ def fix_with_fill_debug(img):
                     fontScale, 2, thickness, cv2.LINE_AA)
 
     threshold = '{},{}'.format(int(lowVal), int(highVal))
-    return dilation, threshold
+    return dilation, lowVal, highVal
