@@ -59,7 +59,9 @@
 
 // Automatically guess an initial translation by aligning the
 // geometric centers of the fixed and moving.
-(AutomaticTransformInitialization "true")
+//(AutomaticTransformInitialization "true")
+// changed to updated GeometricalCenter
+(GeometricalCenter "true")
 
 // Whether transforms are combined by composition or by addition.
 // In generally, Compose is the best option in most cases.

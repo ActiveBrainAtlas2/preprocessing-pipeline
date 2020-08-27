@@ -39,9 +39,12 @@ def run_elastix(animal, njobs):
     sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
+    MASKPATH = os.path.join(fileLocationManager.prep, 'rotated_masked')
 
     image_name_list = sorted(os.listdir(INPUT))
+    mask_name_list = sorted(os.listdir(MASKPATH))
     elastix_output_dir = fileLocationManager.elastix_dir
+
 
     os.makedirs(elastix_output_dir, exist_ok=True)
 
@@ -52,6 +55,9 @@ def run_elastix(animal, njobs):
         curr_img_name = os.path.splitext(image_name_list[i])[0]
         prev_fp = os.path.join(INPUT, image_name_list[i - 1])
         curr_fp = os.path.join(INPUT, image_name_list[i])
+
+        prev_mask = os.path.join(MASKPATH, mask_name_list[i - 1])
+        curr_mask = os.path.join(MASKPATH, mask_name_list[i])
 
         new_dir = '{}_to_{}'.format(curr_img_name, prev_img_name)
         output_subdir = os.path.join(elastix_output_dir, new_dir)
@@ -64,7 +70,7 @@ def run_elastix(animal, njobs):
         subprocess.run(command)
         create_if_not_exists(output_subdir)
         #cmd = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_file, )
-        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_file, '-out', output_subdir]
+        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
         commands.append(cmd)
 
     with Pool(njobs) as p:
