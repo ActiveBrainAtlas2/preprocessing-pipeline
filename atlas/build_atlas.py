@@ -17,14 +17,11 @@ ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
 
 from utilities.imported_atlas_utilities import volume_to_polydata, save_mesh_stl, \
     load_original_volume_v2, get_centroid_3d, convert_transform_forms, transform_volume_v4, average_shape, \
-    singular_structures, load_original_volume_all_known_structures_v3, \
+    singular_structures, load_original_volume_all_known_structures_v3, get_structures, \
     load_alignment_results_v3, transform_points, average_location, mirror_volume_v2
 from utilities.aligner_v3 import Aligner
 
-structure_file = os.path.join(PATH, 'neuroglancer', 'structure_key_minimal.json')
-with open(structure_file, 'r') as f:
-    structures = json.load(f)
-structures = list(structures.values())
+structures = get_structures()
 resolution = '10.0um'
 atlas_resolution_um = 10.0
 fixed_brain_name = 'MD589'

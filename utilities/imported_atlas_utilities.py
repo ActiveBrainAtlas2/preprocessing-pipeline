@@ -43,6 +43,19 @@ def all_known_structures_unsided_including_surround_200um():
     return all_known_structures + [convert_to_surround_name(u, margin='200um') for u in all_known_structures]
 
 
+def get_structures():
+    HOME = os.path.expanduser("~")
+    if os.path.exists(os.path.join(HOME, 'Projects/pipeline_utility')):
+        DIR = os.path.join(HOME, 'Projects/pipeline_utility')
+    else:
+        DIR = os.path.join(HOME, 'programming/pipeline_utility')
+
+    structure_file = os.path.join(DIR, 'neuroglancer', 'structure_key_minimal.json')
+    with open(structure_file, 'r') as f:
+        structures = json.load(f)
+
+    return list(structures.values())
+
 
 def create_alignment_specs(stack, detector_id):
     fn_global = stack + '_visualization_global_alignment_spec.json'
