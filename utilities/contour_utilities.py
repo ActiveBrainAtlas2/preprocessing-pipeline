@@ -550,7 +550,8 @@ def get_contours_from_annotations(stack, target_structure, hand_annotations, den
         first_sec = np.min(list(str_contours_annotation.keys()))
         last_sec = np.max(list(str_contours_annotation.keys()))
     except:
-        print('keys:', target_structure, len(str_contours_annotation.keys()), end="\n")
+        pass
+        #print('keys:', target_structure, len(str_contours_annotation.keys()), end="\n")
 
 
     return str_contours_annotation, first_sec, last_sec
