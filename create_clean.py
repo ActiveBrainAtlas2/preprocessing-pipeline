@@ -46,7 +46,6 @@ def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, ma
         fixed = np.flip(fixed, axis=1)
         mask = np.flip(mask, axis=1)
     rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
-    #print(rotated_maskpath, type(mask), mask.dtype, mask.shape)
     if not debug:
         mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
         cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
@@ -54,7 +53,7 @@ def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, ma
     return fixed
 
 
-def fix_thion(infile, mask, logger, rotation, flip):
+def fix_thion(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, max_width, max_height, debug):
     try:
         #imgfull = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
         imgfull = io.imread(infile)
@@ -75,16 +74,23 @@ def fix_thion(infile, mask, logger, rotation, flip):
         fixed1 = rotate_image(fixed1, infile, rotation)
         fixed2 = rotate_image(fixed2, infile, rotation)
         fixed3 = rotate_image(fixed3, infile, rotation)
+        mask = rotate_image(mask, maskfile, rotation)
 
     if flip == 'flip':
         fixed1 = np.flip(fixed1)
         fixed2 = np.flip(fixed2)
         fixed3 = np.flip(fixed3)
+        mask = np.flip(mask)
     if flip == 'flop':
         fixed1 = np.flip(fixed1, axis=1)
         fixed2 = np.flip(fixed2, axis=1)
         fixed3 = np.flip(fixed3, axis=1)
+        mask = np.flip(mask, axis=1)
 
+    rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
+    if not debug:
+        mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
+        cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
     fixed = np.dstack((fixed1, fixed2, fixed3))
     #fixed = fixed3
     return fixed
@@ -138,7 +144,7 @@ def masker(animal, channel, flip, rotation=0, full=False, debug=False):
         mask = io.imread(maskfile)
 
         if 'thion' in stain.lower():
-            fixed = fix_thion(infile, mask, logger, rotation, flip)
+            fixed = fix_thion(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
         else:
             fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
 
