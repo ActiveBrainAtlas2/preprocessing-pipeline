@@ -297,7 +297,7 @@ def fix_with_fill(img):
     h_src = clahe.apply(img)
     del img
     threshold = np.median(h_src)
-    lowVal = threshold + 2
+    lowVal = threshold + 8
     highVal = threshold + 30
 
     im_th = cv2.inRange(h_src, lowVal, highVal)
