@@ -22,7 +22,7 @@ from utilities.utilities_mask import rotate_image, place_image, linnorm, lognorm
 #fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip)
 
 
-def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, max_width, max_height):
+def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, max_width, max_height, debug):
     try:
         img = io.imread(infile)
     except:
@@ -47,8 +47,9 @@ def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, ma
         mask = np.flip(mask, axis=1)
     rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
     #print(rotated_maskpath, type(mask), mask.dtype, mask.shape)
-    mask = place_image(mask, maskfile, max_width, max_height, 0)
-    cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
+    if not debug:
+        mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
+        cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
 
     return fixed
 
@@ -139,10 +140,9 @@ def masker(animal, channel, flip, rotation=0, full=False, debug=False):
         if 'thion' in stain.lower():
             fixed = fix_thion(infile, mask, logger, rotation, flip)
         else:
-            fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height)
+            fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
 
-
-        if debug and (fixed.shape[0] > fixed.shape[1]):
+        if debug and rotation == 0:
             fixed = place_image(fixed, file, max_height, max_width, bgcolor)
         else:
             fixed = place_image(fixed, file, max_width, max_height, bgcolor)
