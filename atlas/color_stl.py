@@ -68,3 +68,8 @@ stlWriter.SetInputConnection(f.GetOutputPort())
 #stlWriter.SetInput(renderer)
 
 stlWriter.Write()
+
+stlWriter = vtk.vtkSTLWriter()
+stlWriter.SetFileName('junk.stl')
+stlWriter.SetInputData(polydata)
+stlWriter.Write()

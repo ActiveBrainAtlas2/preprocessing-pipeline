@@ -2730,10 +2730,11 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
     """
     polydata = vtk.vtkPolyData()
     points = vtk.vtkPoints()
-    Colors = vtk.vtkUnsignedCharArray()
-    Colors.SetNumberOfComponents(3)
-    Colors.SetName("Colors")
-    color_arr = [46, 204, 113]
+
+    vcolors = vtk.vtkUnsignedCharArray()
+    vcolors.SetNumberOfComponents(3)
+    vcolors.SetName("Colors")
+    vcolors.SetNumberOfTuples(len(faces))
 
     for pt_ind, (x,y,z) in enumerate(vertices):
         points.InsertPoint(pt_ind, x, y, z)
@@ -2749,10 +2750,12 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
         cell_vtkArray = numpy_support.numpy_to_vtkIdTypeArray(cell_arr, deep=1)
         cells.SetCells(len(faces), cell_vtkArray)
 
+        #for i in range(len(faces)):
+        #    vcolors.SetTuple3(i, 5,15,25)
+        #polydata.GetPointData().SetScalars(vcolors)
+
     polydata.SetPoints(points)
 
-    #polydata.GetCellData().SetScalars(Colors);
-    #polydata.Modified()
 
     if len(faces) > 0:
         polydata.SetPolys(cells)
