@@ -41,9 +41,14 @@ def run_elastix(animal, njobs):
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
     MASKPATH = os.path.join(fileLocationManager.prep, 'rotated_masked')
 
+    start, finish = (10,15)
     image_name_list = sorted(os.listdir(INPUT))
     mask_name_list = sorted(os.listdir(MASKPATH))
     elastix_output_dir = fileLocationManager.elastix_dir
+
+    image_name_list = image_name_list[start:finish]
+    mask_name_list = mask_name_list[start:finish]
+
 
 
     os.makedirs(elastix_output_dir, exist_ok=True)
@@ -70,7 +75,7 @@ def run_elastix(animal, njobs):
         subprocess.run(command)
         create_if_not_exists(output_subdir)
         #cmd = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_file, )
-        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
+        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-mMask', curr_mask, '-p', param_file, '-out', output_subdir]
         commands.append(cmd)
 
     with Pool(njobs) as p:
