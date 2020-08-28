@@ -34,6 +34,7 @@ def run_elastix(animal, njobs):
         limit:  how many jobs you want to run.
     Returns: nothing, just creates a lot of subdirs
     """
+    DEBUG = False
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
@@ -41,13 +42,15 @@ def run_elastix(animal, njobs):
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
     MASKPATH = os.path.join(fileLocationManager.prep, 'rotated_masked')
 
-    start, finish = (10,15)
+
     image_name_list = sorted(os.listdir(INPUT))
     mask_name_list = sorted(os.listdir(MASKPATH))
     elastix_output_dir = fileLocationManager.elastix_dir
 
-    image_name_list = image_name_list[start:finish]
-    mask_name_list = mask_name_list[start:finish]
+    if DEBUG:
+        start, finish = (10, 15)
+        image_name_list = image_name_list[start:finish]
+        mask_name_list = mask_name_list[start:finish]
 
 
 
