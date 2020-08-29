@@ -296,15 +296,18 @@ def fix_with_fill(img):
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     h_src = clahe.apply(img)
     del img
+
     lower = 98
     upper = 102
     bgmask = (h_src >= lower) & (h_src <= upper)
     h_src[bgmask] = 0
     threshold = np.median(h_src)
-    bgmask = (h_src <= 14)
+    bgmask = (h_src <= 17)
     h_src[bgmask] = 0
     lowVal = threshold + 4
     highVal = threshold + 90
+
+
 
     im_th = cv2.inRange(h_src, lowVal, highVal)
     im_floodfill = im_th.copy()
@@ -552,7 +555,7 @@ def fix_with_fill_debug(img):
     bgmask = (h_src >= lower) & (h_src <= upper)
     h_src[bgmask] = 0
     threshold = np.median(h_src)
-    bgmask = (h_src <= 14)
+    bgmask = (h_src <= 17)
     h_src[bgmask] = 0
     lowVal = threshold + 4
     highVal = threshold + 90
