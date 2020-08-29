@@ -296,9 +296,15 @@ def fix_with_fill(img):
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     h_src = clahe.apply(img)
     del img
+    lower = 98
+    upper = 102
+    bgmask = (h_src >= lower) & (h_src <= upper)
+    h_src[bgmask] = 0
     threshold = np.median(h_src)
-    lowVal = threshold + 8
-    highVal = threshold + 30
+    bgmask = (h_src <= 14)
+    h_src[bgmask] = 0
+    lowVal = threshold + 4
+    highVal = threshold + 90
 
     im_th = cv2.inRange(h_src, lowVal, highVal)
     im_floodfill = im_th.copy()
@@ -311,10 +317,13 @@ def fix_with_fill(img):
     stencil = np.zeros(h_src.shape).astype('uint8')
     del im_th
     del im_floodfill_inv
+    small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
+    dilation = cv2.dilate(im_out, small_kernel, iterations=2)
     del h_src
-    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     del im_out
+    del dilation
 
     lc = []
     c1 = max(contours, key=cv2.contourArea)
@@ -537,9 +546,16 @@ def fix_with_fill_debug(img):
     # 3,18 no good
     # 4 above median is max!
     # 4,20 009.tif gets lopped off
+    # 2,90 is good
+    lower = 98
+    upper = 102
+    bgmask = (h_src >= lower) & (h_src <= upper)
+    h_src[bgmask] = 0
     threshold = np.median(h_src)
-    lowVal = threshold + 2
-    highVal = threshold + 30
+    bgmask = (h_src <= 14)
+    h_src[bgmask] = 0
+    lowVal = threshold + 4
+    highVal = threshold + 90
 
     #h, im_th = cv2.threshold(h_src, thresh, 255, cv2.THRESH_BINARY)
     im_th = cv2.inRange(h_src, lowVal, highVal)
@@ -553,15 +569,14 @@ def fix_with_fill_debug(img):
     stencil = np.zeros(h_src.shape).astype('uint8')
     del im_th
     del im_floodfill_inv
-    # dilation = cv2.dilate(stencil,kernel,iterations = 2)
     small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
-    #eroded = cv2.erode(im_out, small_kernel, iterations=1)
-    #im_out = clahe.apply(im_out)
+    dilation = cv2.dilate(im_out, small_kernel,iterations = 2)
     del h_src
-    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     #####del eroded
     del im_out
+    del dilation
     lc = []
     c1 = max(contours, key=cv2.contourArea)
     areaPrev = cv2.contourArea(c1)
