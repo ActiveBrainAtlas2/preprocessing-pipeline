@@ -89,7 +89,7 @@ def parse_elastix_parameter_file(filepath):
     return T
 
 
-def run_elastix(animal, jobname):
+def run_elastix(animal, jobname, tests):
     fileLocationManager = FileLocationManager(animal)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
@@ -101,7 +101,6 @@ def run_elastix(animal, jobname):
     OUTPUT = os.path.join(HOME, 'elastix_test', jobname)
 
     midstack = len(image_name_list) // 2
-    tests = 20
     start, finish = (midstack - tests, midstack + tests)
     image_name_list = image_name_list[start:finish]
     mask_name_list = mask_name_list[start:finish]
@@ -252,12 +251,15 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--jobname', help='job name', required=True)
     parser.add_argument('--bgcolor', help='Enter color', required=True)
+    parser.add_argument('--count', help='Enter test count',default=20, required=False)
+
 
     args = parser.parse_args()
     animal = args.animal
     jobname = args.jobname
     bgcolor = args.bgcolor
+    count = int(args.count)
 
-    image_name_list, anchor_idx = run_elastix(animal, jobname)
+    image_name_list, anchor_idx = run_elastix(animal, jobname, count)
     transforms = parse_elastix(animal, image_name_list, anchor_idx)
     run_offsets(animal, transforms, jobname, bgcolor)
