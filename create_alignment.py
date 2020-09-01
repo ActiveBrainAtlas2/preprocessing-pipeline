@@ -78,7 +78,8 @@ def run_elastix(animal, njobs):
         subprocess.run(command)
         create_if_not_exists(output_subdir)
         #cmd = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_file, )
-        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
+        #cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
+        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_file, '-out', output_subdir]
         commands.append(cmd)
 
     with Pool(njobs) as p:
@@ -97,8 +98,7 @@ def parse_elastix(animal):
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
 
     image_name_list = sorted(os.listdir(INPUT))
-    midpoint = len(image_name_list) // 2
-    anchor_idx = midpoint
+    anchor_idx = len(image_name_list) // 2
     # anchor_idx = len(image_name_list) - 1
     transformation_to_previous_sec = {}
 
@@ -198,23 +198,23 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
             'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
 
         op_str += ' -crop {}x{}+0.0+0.0!'.format(max_width, max_height)
-        projections = "%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
-            'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
-        crop = '{}x{}+0.0+0.0!'.format(max_width, max_height)
+        #projections = "%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
+        #    'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
+        #crop = '{}x{}+0.0+0.0!'.format(max_width, max_height)
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
 
         if os.path.exists(output_fp):
             continue
 
-        #cmd = "convert {}  +repage -virtual-pixel background -background \"{}\" {} -flatten -compress lzw {}"\
-        #    .format(input_fp, bgcolor, op_str, output_fp)
-        cmd = ['convert', input_fp, '+repage', '-virtual-pixel',
-               'background', '-background', bgcolor,
-               '+distort', 'AffineProjection', projections, '-crop', crop,
-               '-flatten', '-compress', 'lzw', output_fp]
+        cmd = "convert {}  +repage -virtual-pixel background -background {} {} -flatten -compress lzw {}"\
+            .format(input_fp, bgcolor, op_str, output_fp)
+        #cmd = ['convert', input_fp, '+repage', '-virtual-pixel',
+        #       'background', '-background', bgcolor,
+        #       '+distort', 'AffineProjection', projections, '-crop', crop,
+        #       '-flatten', '-compress', 'lzw', output_fp]
         #commands.append(cmd)
-        subprocess.run(cmd)
+        subprocess.run(cmd, shell=True)
 
     #with Pool(njobs) as p:
     #    p.map(workernoshell, commands)
