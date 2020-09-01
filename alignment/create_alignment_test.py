@@ -129,7 +129,8 @@ def run_elastix(animal, jobname, tests):
         subprocess.run(command)
         os.makedirs(output_subdir, exist_ok=True)
         #cmd = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_file, )
-        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
+        cmdX = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
+        cmd = [ELASTIX_BIN, '-f', prev_mask, '-m', curr_mask, '-p', param_file, '-out', output_subdir]
         commands.append(cmd)
 
     with Pool(4) as p:

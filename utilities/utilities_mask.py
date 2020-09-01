@@ -302,12 +302,10 @@ def fix_with_fill(img):
     bgmask = (h_src >= lower) & (h_src <= upper)
     h_src[bgmask] = 0
     threshold = np.median(h_src)
-    bgmask = (h_src <= 17)
+    bgmask = (h_src <= 8)
     h_src[bgmask] = 0
     lowVal = threshold + 4
     highVal = threshold + 90
-
-
 
     im_th = cv2.inRange(h_src, lowVal, highVal)
     im_floodfill = im_th.copy()
@@ -322,11 +320,11 @@ def fix_with_fill(img):
     del im_floodfill_inv
     small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
-    dilation = cv2.dilate(im_out, small_kernel, iterations=2)
+    opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, small_kernel)
     del h_src
-    contours, hierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     del im_out
-    del dilation
+    del opening
 
     lc = []
     c1 = max(contours, key=cv2.contourArea)
@@ -363,8 +361,7 @@ def fix_with_fill(img):
 
 
     cv2.fillPoly(stencil, lc, 255)
-    dilation = cv2.dilate(stencil, big_kernel, iterations=5)
-
+    dilation = cv2.dilate(stencil, big_kernel, iterations=4)
     return dilation
 
 
@@ -555,7 +552,7 @@ def fix_with_fill_debug(img):
     bgmask = (h_src >= lower) & (h_src <= upper)
     h_src[bgmask] = 0
     threshold = np.median(h_src)
-    bgmask = (h_src <= 17)
+    bgmask = (h_src <= 8)
     h_src[bgmask] = 0
     lowVal = threshold + 4
     highVal = threshold + 90
@@ -574,12 +571,13 @@ def fix_with_fill_debug(img):
     del im_floodfill_inv
     small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
-    dilation = cv2.dilate(im_out, small_kernel,iterations = 2)
+    #dilation = cv2.dilate(im_out, small_kernel,iterations = 2)
+    opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, small_kernel)
     del h_src
-    contours, hierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     #####del eroded
     del im_out
-    del dilation
+    del opening
     lc = []
     c1 = max(contours, key=cv2.contourArea)
     areaPrev = cv2.contourArea(c1)
@@ -628,15 +626,12 @@ def fix_with_fill_debug(img):
         else:
             break
 
-
     cv2.fillPoly(stencil, lc, 255)
-
-    dilation = cv2.dilate(stencil, big_kernel, iterations=5)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=4)
     #mask = fill_spots(dilation)
     del stencil
     for a,c in zip(areas, coords):
         cv2.putText(dilation, a, c, font,
                     fontScale, 2, thickness, cv2.LINE_AA)
 
-    threshold = '{},{}'.format(int(lowVal), int(highVal))
     return dilation, lowVal, highVal
