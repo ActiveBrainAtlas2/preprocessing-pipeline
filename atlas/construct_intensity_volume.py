@@ -43,27 +43,27 @@ def create_volume(animal):
     # Specify isotropic resolution of the output volume.
     voxel_size_um = convert_resolution_string_to_um(animal, output_resolution)
     input_image_resolution_um = convert_resolution_string_to_um(animal, tb_resol)
-    volume_outVolResol, volume_origin_wrt_wholebrainWithMargin_outVolResol = images_to_volume_v2(images=images,
+    volume_images, origin_images = images_to_volume_v2(images=images,
                                                 spacing_um=20.,
                                                 in_resol_um=input_image_resolution_um,
                                                 out_resol_um=voxel_size_um)
 
-    prep5_origin_wrt_prep1_tbResol = load_cropbox_v2(stack=animal, only_2d=True, prep_id='alignedWithMargin')
+    prep5_origin = load_cropbox_v2(stack=animal, only_2d=True, prep_id='alignedWithMargin')
     loaded_cropbox_resol = 'thumbnail'
-    prep5_origin_wrt_prep1_outVolResol = prep5_origin_wrt_prep1_tbResol * \
-    convert_resolution_string_to_um(stack=animal, resolution=loaded_cropbox_resol) / voxel_size_um
-    wholebrainWithMargin_origin_wrt_wholebrain_outVolResol = np.r_[np.round(prep5_origin_wrt_prep1_outVolResol).astype(np.int)[[0,2]], 0]
-    volume_origin_wrt_wholebrain_outVolResol = volume_origin_wrt_wholebrainWithMargin_outVolResol + wholebrainWithMargin_origin_wrt_wholebrain_outVolResol
+    prep5_origin_wrt_prep1 = prep5_origin * convert_resolution_string_to_um(stack=animal, resolution=loaded_cropbox_resol) / voxel_size_um
+    wholebrainWithMargin_origin = np.r_[np.round(prep5_origin_wrt_prep1).astype(np.int)[[0,2]], 0]
+    origin_brain = origin_images + wholebrainWithMargin_origin
 
     OUTPUT = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes', animal)
-    outfile = os.path.join(OUTPUT, 'volume_outVolResol.npy')
-    print('Saving data volume_outVolResol at', OUTPUT)
-    np.save(outfile, np.ascontiguousarray(volume_outVolResol))
+    print('Shape of volume images', volume_images.shape)
 
-    outfile = os.path.join(OUTPUT, 'volume_origin_wrt_wholebrain_outVolResol.npy')
-    print('Saving data volume_outVolResol at', outfile)
-    np.save(outfile, volume_origin_wrt_wholebrain_outVolResol)
-    print('volume_origin_wrt_wholebrain_outVolResol', volume_origin_wrt_wholebrain_outVolResol)
+    outfile = os.path.join(OUTPUT, 'volume_images.npy')
+    print('Saving', OUTPUT)
+    np.save(outfile, np.ascontiguousarray(volume_images))
+
+    outfile = os.path.join(OUTPUT, 'origin_brain.npy')
+    print('Saving', outfile)
+    np.save(outfile, origin_brain)
 
 
 
