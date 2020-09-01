@@ -21,7 +21,7 @@ from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import (create_if_not_exists, load_consecutive_section_transform,
                                          convert_resolution_string_to_um, SCALING_FACTOR)
-from utilities.utilities_process import workernoshell
+from utilities.utilities_process import workernoshell, workershell
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -64,8 +64,8 @@ def run_elastix(animal, njobs):
         prev_fp = os.path.join(INPUT, image_name_list[i - 1])
         curr_fp = os.path.join(INPUT, image_name_list[i])
 
-        prev_mask = os.path.join(MASKPATH, mask_name_list[i - 1])
-        curr_mask = os.path.join(MASKPATH, mask_name_list[i])
+        #prev_mask = os.path.join(MASKPATH, mask_name_list[i - 1])
+        #curr_mask = os.path.join(MASKPATH, mask_name_list[i])
 
         new_dir = '{}_to_{}'.format(curr_img_name, prev_img_name)
         output_subdir = os.path.join(elastix_output_dir, new_dir)
@@ -213,11 +213,11 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
         #       'background', '-background', bgcolor,
         #       '+distort', 'AffineProjection', projections, '-crop', crop,
         #       '-flatten', '-compress', 'lzw', output_fp]
-        #commands.append(cmd)
-        subprocess.run(cmd, shell=True)
+        commands.append(cmd)
+        #subprocess.run(cmd, shell=True)
 
-    #with Pool(njobs) as p:
-    #    p.map(workernoshell, commands)
+    with Pool(njobs) as p:
+        p.map(workershell, commands)
 
 
 
