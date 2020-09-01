@@ -281,6 +281,7 @@ def scaled(img, mask, epsilon=0.01):
     # print('thr=%d, index=%d'%(vals[ind],index))
     _range = 2 ** 16 - 1
     scaled = img * (55000. / _max)
+    del img
     scaled[scaled > _range] = _range
     scaled = scaled * (mask > 10)
     return scaled
