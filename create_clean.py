@@ -31,24 +31,23 @@ def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, ma
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
     if channel == 1:
-        fixed = scaled(fixed, mask)
-        clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
+        #fixed = scaled(fixed, mask)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
         fixed = clahe.apply(fixed.astype(np.uint16))
+        clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
+        fixed = clahe.apply(fixed)
 
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
-        mask = rotate_image(mask, maskfile, rotation)
+        #mask = rotate_image(mask, maskfile, rotation)
 
     if flip == 'flip':
         fixed = np.flip(fixed)
-        mask = np.flip(mask)
+        #mask = np.flip(mask)
     if flip == 'flop':
         fixed = np.flip(fixed, axis=1)
-        mask = np.flip(mask, axis=1)
-    rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
-    if not debug:
-        mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
-        cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
+        #mask = np.flip(mask, axis=1)
+    #rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
 
     return fixed
 
@@ -88,9 +87,9 @@ def fix_thion(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, 
         mask = np.flip(mask, axis=1)
 
     rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
-    if not debug:
-        mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
-        cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
+    #if not debug:
+    #    mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
+    #    cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
     fixed = np.dstack((fixed1, fixed2, fixed3))
     #fixed = fixed3
     return fixed
