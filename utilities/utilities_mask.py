@@ -362,7 +362,7 @@ def fix_with_fill(img):
 
 
     cv2.fillPoly(stencil, lc, 255)
-    dilation = cv2.dilate(stencil, big_kernel, iterations=4)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=2)
     return dilation
 
 
@@ -628,7 +628,7 @@ def fix_with_fill_debug(img):
             break
 
     cv2.fillPoly(stencil, lc, 255)
-    dilation = cv2.dilate(stencil, big_kernel, iterations=4)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=2)
     #mask = fill_spots(dilation)
     del stencil
     for a,c in zip(areas, coords):

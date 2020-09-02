@@ -39,15 +39,19 @@ def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, ma
 
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
-        #mask = rotate_image(mask, maskfile, rotation)
+        mask = rotate_image(mask, maskfile, rotation)
 
     if flip == 'flip':
         fixed = np.flip(fixed)
-        #mask = np.flip(mask)
+        mask = np.flip(mask)
     if flip == 'flop':
         fixed = np.flip(fixed, axis=1)
-        #mask = np.flip(mask, axis=1)
-    #rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
+        mask = np.flip(mask, axis=1)
+        gi
+    if not debug:
+        rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
+        mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
+        cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
 
     return fixed
 
