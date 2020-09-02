@@ -47,7 +47,11 @@ def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, ma
     if flip == 'flop':
         fixed = np.flip(fixed, axis=1)
         mask = np.flip(mask, axis=1)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8e8580f4a516815e4be478b4690c07c53196355f
     if not debug:
         rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
         mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
