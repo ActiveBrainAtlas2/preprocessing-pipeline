@@ -20,7 +20,7 @@ sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import (convert_resolution_string_to_um, SCALING_FACTOR)
-from utilities.utilities_process import workernoshell
+from utilities.utilities_process import workernoshell, workershell
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -129,11 +129,11 @@ def run_elastix(animal, jobname, tests):
         subprocess.run(command)
         os.makedirs(output_subdir, exist_ok=True)
         #cmd = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_file, )
-        cmdX = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
-        cmd = [ELASTIX_BIN, '-f', prev_mask, '-m', curr_mask, '-p', param_file, '-out', output_subdir]
+        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_file, '-out', output_subdir]
+        #cmd = [ELASTIX_BIN, '-f', prev_mask, '-m', curr_mask, '-p', param_file, '-out', output_subdir]
         commands.append(cmd)
 
-    with Pool(4) as p:
+    with Pool(10) as p:
         p.map(workernoshell, commands)
 
     return image_name_list, anchor_idx
@@ -213,45 +213,22 @@ def run_offsets(animal, transforms, jobname, bgcolor):
     commands = []
     for file, arr in tqdm(ordered_transforms.items()):
         T = np.linalg.inv(arr)
-        """
         op_str = " +distort AffineProjection %(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
             'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
 
         op_str += ' -crop {}x{}+0.0+0.0!'.format(max_width, max_height)
-        """
-        op_str = " +distort AffineProjection %(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
-            'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
-
-        op_str += ' -crop {}x{}+0.0+0.0!'.format(max_width, max_height)
-        projections = "%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
-            'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
-        #'x': '+' + str(x_tb * scale_factor) if int(x_tb) >= 0 else str(x_tb * scale_factor)
-        #'y': '+' + str(y_tb * scale_factor) if int(y_tb) >= 0 else str(y_tb * scale_factor)
-
-        x = 0
-        crop_x = f"+{x}"
-        if x < 0:
-            crop_x = str(x * SCALING_FACTOR)
-
-        crop = '{}x{}+0.0+0.0!'.format(max_width, max_height)
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
 
         if os.path.exists(output_fp):
             continue
 
-        cmd = "convert {}  +repage -virtual-pixel background -background \"{}\" {} -flatten -compress lzw {}"\
+        cmd = "convert {}  +repage -virtual-pixel background -background {} {} -flatten -compress lzw {}"\
             .format(input_fp, bgcolor, op_str, output_fp)
-        cmd2 = ['convert', input_fp, '+repage', '-virtual-pixel',
-               'background', '-background', bgcolor,
-               '+distort', 'AffineProjection', projections, '-crop', crop,
-               '-flatten', '-compress', 'lzw', output_fp]
-        #commands.append(cmd)
-        print(cmd)
-        subprocess.run(cmd, shell=True)
+        commands.append(cmd)
 
-    #with Pool(njobs) as p:
-    #    p.map(workernoshell, commands)
+    with Pool(10) as p:
+        p.map(workershell, commands)
 
 
 
