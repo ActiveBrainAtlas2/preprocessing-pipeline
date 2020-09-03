@@ -3438,3 +3438,32 @@ def save_original_volume(volume, stack_spec, structure=None, wrt='wholebrain', *
     #save_data(ori, get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=wrt))
     print('volume filepath',get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure))
     print('origin filepath', get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=wrt))
+
+
+def load_transformed_volume_v2(alignment_spec, resolution=None, structure=None, trial_idx=None,
+                               return_origin_instead_of_bbox=False, legacy=False):
+    """
+    Args:
+        alignment_spec (dict): specify stack_m, stack_f, warp_setting.
+        resolution (str): resolution of the output volume.
+        legacy (bool): if legacy, resolution can only be down32.
+
+    Returns:
+        (2-tuple): (volume, bounding box wrt "wholebrain" domain of the fixed stack)
+
+    """
+    volume_filepath = get_transformed_volume_filepath_v2(alignment_spec=alignment_spec,
+                                                        resolution=resolution,
+                                                        structure=structure)
+    vol = load_data(filepath=volume_filepath, filetype='.npy')
+
+    origin_filepath = get_transformed_volume_origin_filepath(wrt='fixedWholebrain',
+                                                                 alignment_spec=alignment_spec,
+                                                        resolution=resolution,
+                                                        structure=structure)
+    origin = load_data(origin_filepath, filetype='.txt')
+    if return_origin_instead_of_bbox:
+        return (vol, origin)
+    else:
+        return convert_volume_forms((vol, origin), out_form=('volume','bbox'))
+
