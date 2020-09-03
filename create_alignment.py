@@ -34,7 +34,6 @@ def run_elastix(animal, njobs):
         limit:  how many jobs you want to run.
     Returns: nothing, just creates a lot of subdirs
     """
-    DEBUG = False
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
@@ -46,12 +45,6 @@ def run_elastix(animal, njobs):
     image_name_list = sorted(os.listdir(INPUT))
     mask_name_list = sorted(os.listdir(MASKPATH))
     elastix_output_dir = fileLocationManager.elastix_dir
-
-    if DEBUG:
-        start, finish = (10, 15)
-        image_name_list = image_name_list[start:finish]
-        mask_name_list = mask_name_list[start:finish]
-
 
 
     os.makedirs(elastix_output_dir, exist_ok=True)
@@ -78,8 +71,8 @@ def run_elastix(animal, njobs):
         subprocess.run(command)
         create_if_not_exists(output_subdir)
         #cmd = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_file, )
-        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
-        #cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_file, '-out', output_subdir]
+        #cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
+        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_file, '-out', output_subdir]
         commands.append(cmd)
 
     with Pool(njobs) as p:
