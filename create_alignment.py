@@ -39,11 +39,11 @@ def run_elastix(animal, njobs):
     sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
-    MASKPATH = os.path.join(fileLocationManager.prep, 'rotated_masked')
+    #MASKPATH = os.path.join(fileLocationManager.prep, 'rotated_masked')
 
 
     image_name_list = sorted(os.listdir(INPUT))
-    mask_name_list = sorted(os.listdir(MASKPATH))
+    #mask_name_list = sorted(os.listdir(MASKPATH))
     elastix_output_dir = fileLocationManager.elastix_dir
 
 
@@ -57,7 +57,7 @@ def run_elastix(animal, njobs):
         prev_fp = os.path.join(INPUT, image_name_list[i - 1])
         curr_fp = os.path.join(INPUT, image_name_list[i])
 
-        prev_mask = os.path.join(MASKPATH, mask_name_list[i - 1])
+        #prev_mask = os.path.join(MASKPATH, mask_name_list[i - 1])
         #curr_mask = os.path.join(MASKPATH, mask_name_list[i])
 
         new_dir = '{}_to_{}'.format(curr_img_name, prev_img_name)
