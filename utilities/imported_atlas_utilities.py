@@ -3,7 +3,6 @@ import sys
 import time
 from multiprocessing.pool import Pool
 import matplotlib.pyplot as plt
-import bloscpack as bp
 import numpy as np
 from pandas import read_hdf
 from skimage import io, img_as_ubyte
@@ -2462,6 +2461,7 @@ def save_alignment_results_v3(transform_parameters=None, score_traj=None, parame
         select_best (str): last_value or max_value
         alignment_spec (dict)
     """
+    import bloscpack as bp
 
     if aligner is not None:
         score_traj = aligner.scores
