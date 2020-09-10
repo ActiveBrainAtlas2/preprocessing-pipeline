@@ -18,6 +18,7 @@ class SlideCziTif(Base, AtlasModel):
     comments = Column(String)
     channel = Column(Integer)
     scene_index = Column(Integer)
+    channel_index = Column(Integer)
     processing_duration = Column(Float, nullable=False)
 
     slide = relationship("Slide", back_populates="slide_czi_tifs")

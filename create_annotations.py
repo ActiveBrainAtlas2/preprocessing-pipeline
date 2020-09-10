@@ -47,7 +47,7 @@ def make_annotations(animal):
 
         for structure in section_structure_vertices[section]:
             pts = section_structure_vertices[section][structure]
-            points = np.array(pts, dtype=np.int32)
+            points = np.array(pts, dtype=np.float64)
             points = points // 32
             cv2.polylines(img, [points], isClosed=True, color=(0, 0, 0), thickness=2)
 

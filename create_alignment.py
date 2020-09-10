@@ -21,7 +21,7 @@ from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import (create_if_not_exists, load_consecutive_section_transform,
                                          convert_resolution_string_to_um, SCALING_FACTOR)
-from utilities.utilities_process import workernoshell, workershell
+from utilities.utilities_process import workernoshell, workershell, test_dir
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -39,6 +39,12 @@ def run_elastix(animal, njobs):
     sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
+    bad_files = test_dir(animal, INPUT)
+    if len(bad_files) > 0:
+        print(f'Files in {INPUT} are not correct')
+        print(bad_files)
+        sys.exit()
+
     #MASKPATH = os.path.join(fileLocationManager.prep, 'rotated_masked')
 
 

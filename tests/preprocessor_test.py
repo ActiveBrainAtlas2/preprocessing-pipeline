@@ -10,7 +10,7 @@ pip install pytest
 """
 import os, sys
 import argparse
-
+from subprocess import run
 sys.path.append(os.path.join(os.getcwd(), '..'))
 
 from utilities.sqlcontroller import SqlController
@@ -38,32 +38,31 @@ def directory_filled(dir):
 
 def find_missing(dir, db_files):
     source_files = []
-    for key, file in db_files.items():
-        source_files.append(file['destination'])
+    for section in db_files:
+        source_files.append(section.file_name)
     files = os.listdir(dir)
     return (list(set(source_files) - set(files)))
 
-def fix_tifs(animal):
+def fix_tifs(animal, channel):
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
     dir = fileLocationManager.tif
-    db_files = sqlController.get_valid_sections(animal)
-    slideProcessor = SlideProcessor(animal, session)
+    db_files = sqlController.get_sections(animal, channel)
 
     source_files = []
     source_keys = []
-    for key, file in db_files.items():
-        source_files.append(file['destination'])
-        source_keys.append(key)
+    for tif in db_files:
+        source_files.append(tif.file_name)
+        source_keys.append(tif.id)
     files = os.listdir(dir)
+    files = [file for file in files if 'C{}.tif'.format(channel) in file]
     missing_files =  list(set(source_files) - set(files))
-    print(len(source_files), len(files))
-    print(missing_files)
+
     for i,missing in enumerate(missing_files):
         #pass
         file_id =  source_keys[source_files.index(missing)]
-        print(i, missing, file_id)
         section = sqlController.get_section(file_id)
+        print(i, missing, file_id, section.id, section.file_name)
         make_tif(session, animal, section.tif_id, file_id, testing=False)
 
 def fix_prep_thumbnail(animal):
@@ -95,7 +94,7 @@ def test_tif(animal):
     # tifs
     for name, dir in zip(checks, [fileLocationManager.tif]):
         db_files = sqlController.get_distinct_section_filenames(animal, 1)
-        valid_file_length = len(db_files)
+        valid_file_length = db_files.count()
         dir_exists, lfiles, badsize = directory_filled(dir)
 
         if not dir_exists:
@@ -105,19 +104,26 @@ def test_tif(animal):
                 .format(animal, valid_file_length, lfiles, name))
 
         missings = find_missing(dir, db_files)
-        print("Missing files:")
-        print(missings)
+        if len(missings) > 0:
+            print("Missing files:")
+            count = 1
+            for missing in missings:
+                print(count, missing)
+                cmd = ['touch', os.path.join(fileLocationManager.tif, missing)]
+                #run(cmd, shell=False)
+                count += 1
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal ID', required=True)
     parser.add_argument('--fix', help='Enter True to fix', required=False, default=False)
+    parser.add_argument('--channel', help='Enter channel (1,2,3)', required=False, default=1)
     args = parser.parse_args()
     animal = args.animal
-    fix = args.fix
+    fix = bool({'true': True, 'false': False}[args.fix.lower()])
+    channel = int(args.channel)
     test_tif(animal)
     if fix:
-        fix_tifs(animal)
-        #fix_prep_thumbnail(animal)
+        fix_tifs(animal, channel)
         test_tif(animal)

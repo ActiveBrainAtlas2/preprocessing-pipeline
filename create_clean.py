@@ -22,7 +22,7 @@ from utilities.utilities_mask import rotate_image, place_image, linnorm, lognorm
 #fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip)
 
 
-def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, max_width, max_height, debug):
+def fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, debug):
     try:
         img = io.imread(infile)
     except:
@@ -48,15 +48,16 @@ def fix_ntb(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, ma
         fixed = np.flip(fixed, axis=1)
         mask = np.flip(mask, axis=1)
 
+    """
     if not debug:
         rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
         mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
         cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
-
+    """
     return fixed
 
 
-def fix_thion(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, max_width, max_height, debug):
+def fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, debug):
     try:
         #imgfull = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
         imgfull = io.imread(infile)
@@ -77,20 +78,20 @@ def fix_thion(infile, mask, maskfile, rotated_maskpath, logger, rotation, flip, 
         fixed1 = rotate_image(fixed1, infile, rotation)
         fixed2 = rotate_image(fixed2, infile, rotation)
         fixed3 = rotate_image(fixed3, infile, rotation)
-        mask = rotate_image(mask, maskfile, rotation)
+        #mask = rotate_image(mask, maskfile, rotation)
 
     if flip == 'flip':
         fixed1 = np.flip(fixed1)
         fixed2 = np.flip(fixed2)
         fixed3 = np.flip(fixed3)
-        mask = np.flip(mask)
+        #mask = np.flip(mask)
     if flip == 'flop':
         fixed1 = np.flip(fixed1, axis=1)
         fixed2 = np.flip(fixed2, axis=1)
         fixed3 = np.flip(fixed3, axis=1)
-        mask = np.flip(mask, axis=1)
+        #mask = np.flip(mask, axis=1)
 
-    rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
+    #rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
     #if not debug:
     #    mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
     #    cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
@@ -107,8 +108,8 @@ def masker(animal, channel, flip, rotation=0, full=False, debug=False):
     CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
     MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
-    ROTATED_MASKS = os.path.join(fileLocationManager.prep, 'rotated_masked')
-    os.makedirs(ROTATED_MASKS, exist_ok=True)
+    #ROTATED_MASKS = os.path.join(fileLocationManager.prep, 'rotated_masked')
+    #os.makedirs(ROTATED_MASKS, exist_ok=True)
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     max_width = int(width * SCALING_FACTOR)
@@ -147,9 +148,11 @@ def masker(animal, channel, flip, rotation=0, full=False, debug=False):
         mask = io.imread(maskfile)
 
         if 'thion' in stain.lower():
-            fixed = fix_thion(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
+            #fixed = fix_thion(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
+            fixed = fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, debug)
         else:
-            fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
+            #fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
+            fixed = fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, debug)
 
         if debug and rotation == 0:
             fixed = place_image(fixed, file, max_height, max_width, bgcolor)

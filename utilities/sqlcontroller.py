@@ -46,6 +46,17 @@ class SqlController(object):
         self.valid_sections = OrderedDict()
         # fill up the metadata_cache variable
 
+    def get_section(self, id):
+        """
+        The sections table is a view and it is already filtered by active and file_status = 'good'
+        This qeury returns a single section by id.
+        Args:
+            id: integer primary key
+
+        Returns: one section
+        """
+        return self.session.query(Section).filter(Section.id == id).one()
+
     def get_sections(self, animal, channel):
         """
         The sections table is a view and it is already filtered by active and file_status = 'good'
@@ -121,6 +132,13 @@ class SqlController(object):
             sections_dict[i] = str(i).zfill(3) + 'tif'
 
         return sections_dict
+
+    def get_section_count(self, animal):
+        try:
+            count = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).count()
+        except:
+            count = 666
+        return count
 
     def get_current_task(self, animal):
         step = None

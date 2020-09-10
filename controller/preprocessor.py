@@ -320,8 +320,8 @@ def make_tif(session, prep_id, tif_id, file_id, testing=False):
     tif = session.query(AlcSlideCziTif).filter(AlcSlideCziTif.id==tif_id).one()
     slide = session.query(AlcSlide).filter(AlcSlide.id==tif.slide_id).one()
     czi_file = os.path.join(CZI_FOLDER, slide.file_name)
-    rsection = session.query(Section).filter(Section.id==file_id).one()
-    tif_file = os.path.join(TIF_FOLDER, rsection.destination_file)
+    section = session.query(Section).filter(Section.id==file_id).one()
+    tif_file = os.path.join(TIF_FOLDER, section.file_name)
     if not os.path.exists(czi_file) and not testing:
         return 0
     if os.path.exists(tif_file):
