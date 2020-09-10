@@ -20,13 +20,15 @@ from sql_setup import session
 
 
 
-def directory_filled(dir):
+def directory_filled(dir, channel):
     MINSIZE = 1000
     FAILED = 'FAILED'
     badsize = False
     file_status = []
     dir_exists = os.path.isdir(dir)
     files = os.listdir(dir)
+    files = [file for file in files if 'C{}.tif'.format(channel) in file]
+
     for file in files:
         size = os.path.getsize(os.path.join(dir, file))
         if size < MINSIZE:
@@ -87,7 +89,7 @@ def fix_prep_thumbnail(animal):
         slideProcessor.make_web_thumbnail(file_id, missing, testing=False)
 
 
-def test_tif(animal):
+def test_tif(animal, channel):
     sqlController = SqlController(animal)
     checks = ['tif']
     fileLocationManager = FileLocationManager(animal)
@@ -95,7 +97,7 @@ def test_tif(animal):
     for name, dir in zip(checks, [fileLocationManager.tif]):
         db_files = sqlController.get_distinct_section_filenames(animal, 1)
         valid_file_length = db_files.count()
-        dir_exists, lfiles, badsize = directory_filled(dir)
+        dir_exists, lfiles, badsize = directory_filled(dir, channel)
 
         if not dir_exists:
             print("{} does not exist.".format(dir))
@@ -123,7 +125,7 @@ if __name__ == '__main__':
     animal = args.animal
     fix = bool({'true': True, 'false': False}[args.fix.lower()])
     channel = int(args.channel)
-    test_tif(animal)
+    test_tif(animal, channel)
     if fix:
         fix_tifs(animal, channel)
-        test_tif(animal)
+        test_tif(animal, channel)
