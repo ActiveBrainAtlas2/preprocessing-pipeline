@@ -22,7 +22,7 @@ from utilities.utilities_mask import rotate_image, place_image, linnorm, lognorm
 #fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip)
 
 
-def fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, debug):
+def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug):
     try:
         img = io.imread(infile)
     except:
@@ -48,12 +48,12 @@ def fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_heigh
         fixed = np.flip(fixed, axis=1)
         mask = np.flip(mask, axis=1)
 
-    """
+
     if not debug:
-        rotated_maskpath = os.path.join(rotated_maskpath, os.path.basename(maskfile))
+        rotated_maskpath = os.path.join(ROTATED_MASKS, os.path.basename(maskfile))
         mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
         cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
-    """
+
     return fixed
 
 
@@ -108,8 +108,8 @@ def masker(animal, channel, flip, rotation=0, full=False, debug=False):
     CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
     MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
-    #ROTATED_MASKS = os.path.join(fileLocationManager.prep, 'rotated_masked')
-    #os.makedirs(ROTATED_MASKS, exist_ok=True)
+    ROTATED_MASKS = os.path.join(fileLocationManager.prep, 'rotated_masked')
+    os.makedirs(ROTATED_MASKS, exist_ok=True)
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     max_width = int(width * SCALING_FACTOR)
@@ -151,8 +151,8 @@ def masker(animal, channel, flip, rotation=0, full=False, debug=False):
             #fixed = fix_thion(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
             fixed = fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, debug)
         else:
-            #fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
-            fixed = fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, debug)
+            fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
+            #fixed = fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, debug)
 
         if debug and rotation == 0:
             fixed = place_image(fixed, file, max_height, max_width, bgcolor)

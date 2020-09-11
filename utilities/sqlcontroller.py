@@ -21,6 +21,7 @@ from model.scan_run import ScanRun
 from model.section import Section
 from model.slide import Slide
 from model.slide_czi_to_tif import SlideCziTif
+from model.structure import Structure
 from model.task import Task, ProgressLookup
 from sql_setup import session
 
@@ -132,6 +133,14 @@ class SqlController(object):
             sections_dict[i] = str(i).zfill(3) + 'tif'
 
         return sections_dict
+
+    def get_structures_dict(self):
+        rows = self.session.query(Structure).all()
+        structures_dict = {}
+        for structure in rows):
+            structures_dict[structure.abbreviation] = [structure.description, structure.color]
+
+        return structures_dict
 
     def get_section_count(self, animal):
         try:

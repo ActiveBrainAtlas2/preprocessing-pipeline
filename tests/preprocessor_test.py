@@ -119,7 +119,7 @@ def test_tif(animal, channel):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal ID', required=True)
-    parser.add_argument('--fix', help='Enter True to fix', required=False, default=False)
+    parser.add_argument('--fix', help='Enter True to fix', required=False, default='False')
     parser.add_argument('--channel', help='Enter channel (1,2,3)', required=False, default=1)
     args = parser.parse_args()
     animal = args.animal
