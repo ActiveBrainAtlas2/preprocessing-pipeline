@@ -135,7 +135,7 @@ class SqlController(object):
         return sections_dict
 
     def get_structures_dict(self):
-        rows = self.session.query(Structure).all()
+        rows = self.session.query(Structure).filter(Structure.active.is_(True)).all()
         structures_dict = {}
         for structure in rows:
             structures_dict[structure.abbreviation] = [structure.description, structure.color]
