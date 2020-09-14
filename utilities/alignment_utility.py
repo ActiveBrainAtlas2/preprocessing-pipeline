@@ -433,6 +433,29 @@ def parameter_elastix_parameter_file_to_dict(filename):
         return d
 
 
+def create_warp_transforms(animal, transforms, transforms_resol, resolution):
+    def convert_2d_transform_forms(arr):
+        return np.vstack([arr, [0, 0, 1]])
+
+    # transforms_resol = op['resolution']
+    transforms_scale_factor = convert_resolution_string_to_um(animal,
+                                                              resolution=transforms_resol) / convert_resolution_string_to_um(
+        animal, resolution=resolution)
+    tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
+    transforms_to_anchor = {
+        img_name:
+            convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor) for
+        img_name, tf in transforms.items()}
+
+    return transforms_to_anchor
+
+def transform_create_alignment(points, transform):
+    a = np.hstack((points, np.ones((points.shape[0], 1))))
+    b = transform.T[:, 0:2]
+    c = np.matmul(a, b)
+    return c
+
+
 def dict_to_csv(d, fp):
     df = pd.DataFrame.from_dict({k: np.array(v).flatten() for k, v in d.items()}, orient='index')
     df.to_csv(fp, header=False)
