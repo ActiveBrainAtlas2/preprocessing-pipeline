@@ -35,6 +35,9 @@ def create_structures(animal):
     THUMBNAILS = sorted(os.listdir(THUMBNAIL_PATH))
     num_section = len(THUMBNAILS)
     structure_dict = sqlController.get_structures_dict()
+    keys = [k for k in structure_dict.keys()]
+    missing_sections = {k:[117] for k in keys}
+
 
     CSV_PATH = '/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_brain_annotations'
     csvfile = os.path.join(CSV_PATH, f'{animal}_annotation.csv')
