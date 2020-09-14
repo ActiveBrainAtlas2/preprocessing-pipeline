@@ -3,22 +3,23 @@ import os
 import sys
 import ast
 import json
+from cloudvolume import CloudVolume
 from collections import defaultdict
 
 import cv2
 import numpy as np
 import pandas as pd
-import neuroglancer
 from tqdm import tqdm
 from skimage import io
-
+from taskqueue import LocalTaskQueue
+import igneous.task_creation as tc
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import SCALING_FACTOR, load_consecutive_section_transform, create_warp_transforms, \
     transform_create_alignment
-from utilities.contour_utilities import get_dense_coordinates, get_contours_from_annotations
+from utilities.contour_utilities import get_contours_from_annotations
 
 
 def create_structures(animal):
@@ -107,6 +108,10 @@ def create_structures(animal):
         section_transform[section_num] = transform
 
     ##### Alignment of annotation coordinates
+    keys = [k for k in structure_dict.keys()]
+    # Litao, this missing_sections will need to be manually built up from Beth's spreadhsheet
+    missing_sections = {k: [117] for k in keys}
+    fill_sections = defaultdict(dict)
     other_structures = set()
     volume = np.zeros((aligned_shape[1], aligned_shape[0], num_section), dtype=np.uint8)
     for section in section_structure_vertices:
@@ -119,8 +124,16 @@ def create_structures(animal):
             points = points.astype(np.int32)
 
             try:
-                #color = colors[structure.upper()]
-                color = structure_dict[structure][1] # structure dict returns a list of [description, color]
+                missing_list = missing_sections[structure]
+            except:
+                missing_list = []
+
+            if section in missing_list:
+                fill_sections[structure][section] = points
+
+            try:
+                # color = colors[structure.upper()]
+                color = structure_dict[structure][1]  # structure dict returns a list of [description, color]
                 # for each key
             except:
                 color = 255
@@ -129,17 +142,83 @@ def create_structures(animal):
             cv2.polylines(template, [points], True, color, 2, lineType=cv2.LINE_AA)
         volume[:, :, section - 1] = template
 
-    print('Other structures')
-    i = 1
-    for s in sorted(list(other_structures)):
-        print(i,s)
-        i += 1
-
+    # fill up missing sections
+    template = np.zeros((aligned_shape[1], aligned_shape[0]), dtype=np.uint8)
+    for structure, v in fill_sections.items():
+        color = structure_dict[structure][1]
+        for section, points in v.items():
+            cv2.polylines(template, [points], True, color, 2, lineType=cv2.LINE_AA)
+            volume[:, :, section] = template
     volume_filepath = os.path.join(CSV_PATH, f'{animal}_annotations.npy')
     with open(volume_filepath, 'wb') as file:
         np.save(file, volume)
 
-# now use 9-1 notebook to convert to a precomputed.
+    print('Finished going through sections and structures')
+
+    # now use 9-1 notebook to convert to a precomputed.
+    # Voxel resolution in nanometer (how much nanometer each element in numpy array represent)
+    resol = (14464, 14464, 20000)
+    # Voxel offset
+    offset = (0, 0, 0)
+    # Layer type
+    layer_type = 'segmentation'
+    # number of channels
+    num_channels = 1
+    # segmentation properties in the format of [(number1, label1), (number2, label2) ...]
+    # where number is an integer that is in the volume and label is a string that describes that segmenetation
+
+    segmentation_properties = [(number, f'{structure}: {label}') for structure, (label, number) in structure_dict.items()]
+    extra_structures = ['Pr5', 'VTg', 'DRD', 'IF', 'MPB', 'Op', 'RPC', 'LSO', 'MVe', 'CnF',
+                        'pc', 'DTgC', 'LPB', 'Pr5DM', 'DTgP', 'RMC', 'VTA', 'IPC', 'DRI', 'LDTg',
+                        'IPA', 'PTg', 'DTg', 'IPL', 'SuVe', 'Sol', 'IPR', '8n', 'Dk', 'IO',
+                        'Cb', 'Pr5VL', 'APT', 'Gr', 'RR', 'InC', 'X', 'EW']
+    segmentation_properties += [(len(structure_dict) + index + 1, structure) for index, structure in enumerate(extra_structures)]
+
+    precompute_path = f'/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_brain_annotations/{animal}'
+    cloudpath = f'file://{precompute_path}'
+    info = CloudVolume.create_new_info(
+        num_channels = num_channels,
+        layer_type = layer_type,
+        data_type = str(volume.dtype), # Channel images might be 'uint8'
+        encoding = 'raw', # raw, jpeg, compressed_segmentation, fpzip, kempressed
+        resolution = resol, # Voxel scaling, units are in nanometers
+        voxel_offset = offset, # x,y,z offset in voxels from the origin
+        chunk_size = [64, 64, 64], # units are voxels
+        volume_size = volume.shape, # e.g. a cubic millimeter dataset
+    )
+    vol = CloudVolume(cloudpath, mip=0, info=info, compress=False)
+    vol.commit_info()
+    vol[:, :, :] = volume[:, :, :]
+
+    vol.info['segment_properties'] = 'names'
+    vol.commit_info()
+
+    segment_properties_path = os.path.join(precompute_path, 'names')
+    os.makedirs(segment_properties_path, exist_ok=True)
+
+    info = {
+        "@type": "neuroglancer_segment_properties",
+        "inline": {
+            "ids": [str(number) for number, label in segmentation_properties],
+            "properties": [{
+                "id": "label",
+                "description": "Name of structures",
+                "type": "label",
+                "values": [str(label) for number, label in segmentation_properties]
+            }]
+        }
+    }
+    print('Creating names in', segment_properties_path)
+    with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
+        json.dump(info, file, indent=2)
+
+
+    tq = LocalTaskQueue(parallel=3)
+    tasks = tc.create_downsampling_tasks(cloudpath, compress=False) # Downsample the volumes
+    tq.insert(tasks)
+    tq.execute()
+    print('Finished')
+    # delete tasks
 
 
 if __name__ == '__main__':
