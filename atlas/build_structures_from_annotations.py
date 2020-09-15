@@ -165,6 +165,8 @@ def create_structures(animal):
             cv2.polylines(template, [points], True, color, 2, lineType=cv2.LINE_AA)
             volume[:, :, section] = template
     volume_filepath = os.path.join(CSV_PATH, f'{animal}_annotations.npy')
+
+    volume = np.swapaxes(volume, 0, 1)
     with open(volume_filepath, 'wb') as file:
         np.save(file, volume)
 
