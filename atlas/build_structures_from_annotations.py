@@ -1,3 +1,9 @@
+"""
+This program takes an animal as an argument, queries the database for width, height and all structures,
+and then reads a pandas dataframe to create the structures. It uses the alignment data from elastix
+to align the structures. It then uses cloud-volume to create a precomputed volume for use in neuroglancer.
+Authors, Edward and Litao
+"""
 import argparse
 import os
 import sys
@@ -23,25 +29,35 @@ from utilities.contour_utilities import get_contours_from_annotations
 
 
 def create_structures(animal):
+    """
+    This is the important method called from main. This does all the work.
+    Args:
+        animal: string to identify the animal/stack
+
+    Returns:
+        Nothing, creates a directory of the precomputed volume. Copy this directory somewhere apache can read it. e.g.,
+        /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/
+    """
 
 
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
+    # Set all relevant directories
+    THUMBNAIL_PATH = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
+    CSV_PATH = '/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_brain_annotations'
+    CLEANED = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
+    PRECOMPUTE_PATH = f'/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_brain_annotations/{animal}'
+
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     width = int(width * SCALING_FACTOR)
     height = int(height * SCALING_FACTOR)
     aligned_shape = np.array((width, height))
-    THUMBNAIL_PATH = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
     THUMBNAILS = sorted(os.listdir(THUMBNAIL_PATH))
     num_section = len(THUMBNAILS)
     structure_dict = sqlController.get_structures_dict()
-    keys = [k for k in structure_dict.keys()]
-    missing_sections = {k:[117] for k in keys}
-
-
-    CSV_PATH = '/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_brain_annotations'
     csvfile = os.path.join(CSV_PATH, f'{animal}_annotation.csv')
+
     hand_annotations = pd.read_csv(csvfile)
     hand_annotations['vertices'] = hand_annotations['vertices'] \
         .apply(lambda x: x.replace(' ', ','))\
@@ -70,7 +86,6 @@ def create_structures(animal):
 
 
     ##### Reproduce create_alignment transform
-    CLEANED = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
 
     image_name_list = sorted(os.listdir(CLEANED))
     anchor_idx = len(image_name_list) // 2
@@ -109,7 +124,7 @@ def create_structures(animal):
 
     ##### Alignment of annotation coordinates
     keys = [k for k in structure_dict.keys()]
-    # Litao, this missing_sections will need to be manually built up from Beth's spreadhsheet
+    # This missing_sections will need to be manually built up from Beth's spreadsheet
     missing_sections = {k: [117] for k in keys}
     fill_sections = defaultdict(dict)
     other_structures = set()
@@ -174,8 +189,7 @@ def create_structures(animal):
                         'Cb', 'Pr5VL', 'APT', 'Gr', 'RR', 'InC', 'X', 'EW']
     segmentation_properties += [(len(structure_dict) + index + 1, structure) for index, structure in enumerate(extra_structures)]
 
-    precompute_path = f'/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_brain_annotations/{animal}'
-    cloudpath = f'file://{precompute_path}'
+    cloudpath = f'file://{PRECOMPUTE_PATH}'
     info = CloudVolume.create_new_info(
         num_channels = num_channels,
         layer_type = layer_type,
@@ -213,7 +227,8 @@ def create_structures(animal):
         json.dump(info, file, indent=2)
 
 
-    tq = LocalTaskQueue(parallel=3)
+    # Setting parallel to a number > 1 hangs the script. It still runs fast with parallel=1
+    tq = LocalTaskQueue(parallel=1)
     tasks = tc.create_downsampling_tasks(cloudpath, compress=False) # Downsample the volumes
     tq.insert(tasks)
     tq.execute()
