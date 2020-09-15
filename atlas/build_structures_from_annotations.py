@@ -207,7 +207,7 @@ def create_structures(animal):
     vol.info['segment_properties'] = 'names'
     vol.commit_info()
 
-    segment_properties_path = os.path.join(precompute_path, 'names')
+    segment_properties_path = os.path.join(PRECOMPUTE_PATH, 'names')
     os.makedirs(segment_properties_path, exist_ok=True)
 
     info = {
