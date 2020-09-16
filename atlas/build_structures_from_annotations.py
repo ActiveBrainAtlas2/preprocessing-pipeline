@@ -127,6 +127,7 @@ def create_structures(animal):
     # This missing_sections will need to be manually built up from Beth's spreadsheet
     missing_sections = {k: [117] for k in keys}
     fill_sections = defaultdict(dict)
+    pr5_sections = []
     other_structures = set()
     volume = np.zeros((aligned_shape[1], aligned_shape[0], num_section), dtype=np.uint8)
     for section in section_structure_vertices:
@@ -146,6 +147,10 @@ def create_structures(animal):
             if section in missing_list:
                 fill_sections[structure][section] = points
 
+
+            if 'pr5' in structure.lower():
+                pr5_sections.append(section)
+
             try:
                 # color = colors[structure.upper()]
                 color = structure_dict[structure][1]  # structure dict returns a list of [description, color]
@@ -157,6 +162,10 @@ def create_structures(animal):
             cv2.polylines(template, [points], True, color, 2, lineType=cv2.LINE_AA)
         volume[:, :, section - 1] = template
 
+    print('Pr5 sections')
+    for s in sorted(pr5_sections):
+        print(s)
+    sys.exit()
     # fill up missing sections
     template = np.zeros((aligned_shape[1], aligned_shape[0]), dtype=np.uint8)
     for structure, v in fill_sections.items():
@@ -167,10 +176,10 @@ def create_structures(animal):
     volume_filepath = os.path.join(CSV_PATH, f'{animal}_annotations.npy')
 
     volume = np.swapaxes(volume, 0, 1)
+    print('Saving:', volume_filepath, 'with shape', volume.shape)
     with open(volume_filepath, 'wb') as file:
         np.save(file, volume)
 
-    print('Finished going through sections and structures')
 
     # now use 9-1 notebook to convert to a precomputed.
     # Voxel resolution in nanometer (how much nanometer each element in numpy array represent)
