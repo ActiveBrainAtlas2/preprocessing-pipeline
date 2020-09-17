@@ -1,4 +1,11 @@
-import json
+"""
+Takes the volume and origin data from here:
+/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/MDXXX/10.0um_annotationAsScoreVolume/
+for each brain and then aligns it into a new averaged set of arrays, origins and messhes (stl files) here:
+/net/birdstore/Active_Atlas_Data/data_root/atlas_data/atlasVXXX/
+
+"""
+
 import os, sys
 from collections import defaultdict
 
@@ -14,26 +21,29 @@ atlas_name = 'atlasV8'
 surface_level = 0.9
 DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
 ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
-
+from utilities.sqlcontroller import SqlController
 from utilities.imported_atlas_utilities import volume_to_polydata, save_mesh_stl, \
     load_original_volume_v2, get_centroid_3d, convert_transform_forms, transform_volume_v4, average_shape, \
-    singular_structures, load_original_volume_all_known_structures_v3, get_structures, \
-    load_alignment_results_v3, transform_points, average_location, mirror_volume_v2
+    load_alignment_results_v3, transform_points, average_location, mirror_volume_v2, load_all_structures_and_origins
 from utilities.aligner_v3 import Aligner
 
-structures = get_structures()
+
+fixed_brain_name = 'MD589'
+sqlController = SqlController(fixed_brain_name)
+structures = sqlController.get_sided_structures()
+singular_structures = [s for s in structures if '_L' not in s and '_R' not in s]
+
 resolution = '10.0um'
 atlas_resolution_um = 10.0
-fixed_brain_name = 'MD589'
 moving_brain_names = ['MD585', 'MD594']
 fixed_brain_spec = {'name': fixed_brain_name, 'vol_type': 'annotationAsScore', 'resolution': resolution}
 structure_centroids_all_brains_um_wrt_fixed = []
 
-for brain_m in moving_brain_names:
+for brain_m in tqdm(moving_brain_names):
     moving_brain_spec = {'name': brain_m, 'vol_type': 'annotationAsScore', 'resolution': resolution}
-    print('Brain', moving_brain_spec)
-    moving_brain = load_original_volume_all_known_structures_v3(stack_spec=moving_brain_spec,
+    moving_brain = load_all_structures_and_origins(stack_spec=moving_brain_spec,
                                                                 structures=structures, in_bbox_wrt='wholebrain')
+
     alignment_spec = dict(stack_m=moving_brain_spec, stack_f=fixed_brain_spec, warp_setting=109)
     moving_brain_structure_centroids_input_resol = get_centroid_3d(moving_brain)
     # Load registration.
@@ -149,40 +159,19 @@ for structure in tqdm(structures):
     else:
         sigma = 2.
 
-    mean_shape_wrt_templateCentroid = \
-        average_shape(volume_origin_list=volume_origin_list, force_symmetric=(structure in singular_structures),
-                      sigma=sigma,
-                      )
+    mean_shape_wrt_templateCentroid = average_shape(volume_origin_list=volume_origin_list,
+                                                    force_symmetric=(structure in singular_structures),
+                                                    sigma=sigma)
 
-
-    # Save mean shape. This is the important one
-    filename = '{}.npy'.format(structure)
-    filepath = os.path.join(ATLAS_PATH, 'structure', filename)
-    np.save(filepath, np.ascontiguousarray(mean_shape_wrt_templateCentroid[0]))
-
-    # save origin, this is also the important one
-    filename = '{}.txt'.format(structure)
-    filepath = os.path.join(ATLAS_PATH, 'origin', filename)
-    np.savetxt(filepath, mean_shape_wrt_templateCentroid[1])
-
-
-for structure in structures:
-
-    structure_filepath = os.path.join(ATLAS_PATH, 'structure', f'{structure}.npy')
-    structure_volume = np.load(structure_filepath)
-    origin_filepath = os.path.join(ATLAS_PATH, 'origin', f'{structure}.txt')
-    structure_origin = np.loadtxt(origin_filepath)
+    structure_volume = mean_shape_wrt_templateCentroid[0]
+    structure_origin = mean_shape_wrt_templateCentroid[1]
 
     if str(structure).endswith('_L'):
-
         mean_shape = mirror_volume_v2(volume=structure_volume,
                                            centroid_wrt_origin=-structure_origin,
                                            new_centroid=centroids[structure])
     else:
         mean_shape = (structure_volume, structure_origin + centroids[structure])
-
-    print(structure,'origin:'.ljust(20), mean_shape[1])
-
 
     volume = (mean_shape[0] >= surface_level, mean_shape[1])
     aligned_structure = volume_to_polydata(volume=volume,
@@ -190,4 +179,12 @@ for structure in structures:
                            return_vertex_face_list=False)
     filepath = os.path.join(ATLAS_PATH, 'mesh', '{}.stl'.format(structure))
     save_mesh_stl(aligned_structure, filepath)
+    # save origin, this is also the important one
+    filename = '{}.txt'.format(structure)
+    filepath = os.path.join(ATLAS_PATH, 'origin', filename)
+    np.savetxt(filepath, structure_origin)
+    # Save volume with stated level. This is the important one
+    filename = '{}.npy'.format(structure)
+    filepath = os.path.join(ATLAS_PATH, 'structure', filename)
+    np.save(filepath, np.ascontiguousarray(volume))
 
