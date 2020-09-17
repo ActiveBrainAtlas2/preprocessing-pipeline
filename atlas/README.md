@@ -2,7 +2,8 @@
 
 There are two methods for building a precomputed volume of all the structures of a foundation brain. 
 One is to use CVAT and export the data and the other involves reading the 
-pandas dataframe and creating a numpy array which is
+pandas dataframe and creating a numpy array from the hand annotations. This is useful
+for the data that has already been done by the anatomists. This data is
 then used with cloud-volume to create the precomputed volume which can be
 used by Neuroglancer. To view instructions for exporting structures from [CVAT to Neuroglancer, look here.](CVAT.md)
 This page will deal with the second method, using a script.
