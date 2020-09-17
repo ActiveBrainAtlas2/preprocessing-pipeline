@@ -134,13 +134,28 @@ class SqlController(object):
 
         return sections_dict
 
+    def get_structures(self):
+        return self.session.query(Structure).filter(Structure.active.is_(True)).all()
+
     def get_structures_dict(self):
         rows = self.session.query(Structure).filter(Structure.active.is_(True)).all()
         structures_dict = {}
         for structure in rows:
-            structures_dict[structure.abbreviation] = [structure.description, structure.color]
+            structures_dict[structure.abbreviation] = [structure.description, structure.color, structure.paired]
 
         return structures_dict
+
+    def get_sided_structures(self):
+        rows = self.session.query(Structure).filter(Structure.active.is_(True)).all()
+        structures = []
+        for structure in rows:
+            if structure.paired:
+                structures.append('{}_L'.format(structure.abbreviation))
+                structures.append('{}_R'.format(structure.abbreviation))
+            else:
+                structures.append(structure.abbreviation)
+
+        return sorted(structures)
 
     def get_section_count(self, animal):
         try:

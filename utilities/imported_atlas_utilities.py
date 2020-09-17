@@ -31,8 +31,10 @@ REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CS
 MESH_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_meshes'
 VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
 ATLAS = 'atlasV7'
-paired_structures = ['5N', '6N', '7N', '7n', 'Amb', 'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC', 'SNC', 'SNR', '3N', '4N',
-                     'Sp5I', 'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
+paired_structures = ['5N', '6N', '7N', '7n', 'Amb',
+                     'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC',
+                     'SNC', 'SNR', '3N', '4N', 'Sp5I',
+                     'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
 # singular_structures = ['AP', '12N', 'RtTg', 'sp5', 'outerContour', 'SC', 'IC']
 singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
 singular_structures_with_side_suffix = ['AP_S', '12N_S', 'RtTg_S', 'SC_S', 'IC_S']
@@ -737,7 +739,6 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
     #filepath = os.path.join(VOL_DIR, stack, '{}_annotationAsScoreVolume'.format(resolution), filename)
     origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
     origin = np.loadtxt(origin_filename)
-
     if crop_to_minimal:
         volume, origin = crop_volume_to_minimal(vol=volume, origin=origin, return_origin_instead_of_bbox=True)
 
@@ -1084,82 +1085,42 @@ def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox
 def load_all_structures_and_origins(stack_spec, structures, in_bbox_wrt='canonicalAtlasSpace'):
 
     #in_bbox_wrt = 'wholebrain'
-    return_label_mappings = False
     name_or_index_as_key = 'name'
-    common_shape = False
     return_origin_instead_of_bbox = True
-
-    """
-    Load original (un-transformed) volumes for all structures and optionally pad them into a common shape.
-
-    Args:
-        common_shape (bool): If true, volumes are padded to the same shape.
-        in_bbox_wrt (str): the bbox origin for the bbox files currently stored.
-        loaded_cropbox_resolution (str): resolution in which the loaded cropbox is defined on.
-
-    Returns:
-        If `common_shape` is True:
-            if return_label_mappings is True, returns (volumes, common_bbox, structure_to_label, label_to_structure), volumes is dict.
-            else, returns (volumes, common_bbox).
-        Note that `common_bbox` is relative to the same origin the individual volumes' bounding boxes are (which, ideally, one can infer from the bbox filenames (TODO: systematic renaming)).
-        If `common_shape` is False:
-            if return_label_mappings is True, returns (dict of volume_bbox_tuples, structure_to_label, label_to_structure).
-            else, returns volume_bbox_tuples.
-    """
-    loaded = False
     volumes = {}
 
     structure_to_label = {}
     label_to_structure = {}
     index = 1
-
+    LOADPATH = os.path.join(VOL_DIR, stack_spec['name'], '10.0um_annotationAsScoreVolume')
     for structure in structures:
         try:
-            if loaded:
-                index = structure_to_label[structure]
-
-            v, o = load_original_volume_v2(stack_spec, structure=structure,
-                                                       bbox_wrt=in_bbox_wrt,
-                                                       resolution=stack_spec['resolution'])
+            volume_filepath = os.path.join(LOADPATH, f'{structure}.npy')
+            volume = np.load(volume_filepath)
+            origin_filepath = os.path.join(LOADPATH, f'{structure}_origin_wrt_{in_bbox_wrt}.txt')
+            origin = np.loadtxt(origin_filepath)
 
             in_bbox_origin_wrt_wholebrain = get_domain_origin(stack=stack_spec['name'],
                                                                           domain=in_bbox_wrt,
                                                                           resolution=stack_spec['resolution'],
                                                                           loaded_cropbox_resolution=stack_spec['resolution'])
-            o = o + in_bbox_origin_wrt_wholebrain
+            origin = origin + in_bbox_origin_wrt_wholebrain
             if name_or_index_as_key == 'name':
-                volumes[structure] = (v,o)
+                volumes[structure] = (volume,origin)
             else:
-                volumes[index] = (v,o)
+                volumes[index] = (volume,origin)
 
-            if not loaded:
-                structure_to_label[structure] = index
-                label_to_structure[index] = structure
-                index += 1
+            structure_to_label[structure] = index
+            label_to_structure[index] = structure
+            index += 1
 
         except Exception as e:
-            raise e
             sys.stderr.write('%s\n' % e)
-            sys.stderr.write('Score volume for %s does not exist.\n' % structure)
-            continue
+            #continue
 
-    if common_shape:
-        volumes_normalized, common_bbox = convert_vol_bbox_dict_to_overall_vol(vol_bbox_dict=volumes)
-
-        if return_label_mappings:
-            return volumes_normalized, common_bbox, structure_to_label, label_to_structure
-        else:
-            return volumes_normalized, common_bbox
-    else:
-        if return_label_mappings:
-            return {k: crop_volume_to_minimal(vol=v, origin=o,
-                        return_origin_instead_of_bbox=return_origin_instead_of_bbox)
-                    for k, (v, o) in list(volumes.items())}, structure_to_label, label_to_structure
-
-        else:
-            return {k: crop_volume_to_minimal(vol=v, origin=o,
-                        return_origin_instead_of_bbox=return_origin_instead_of_bbox)
-                    for k, (v, o) in list(volumes.items())}
+    return {k: crop_volume_to_minimal(vol=volume, origin=origin,
+                return_origin_instead_of_bbox=return_origin_instead_of_bbox)
+            for k, (volume, origin) in list(volumes.items())}
 
 
 def get_domain_origin(stack, domain, resolution, loaded_cropbox_resolution='down32'):
