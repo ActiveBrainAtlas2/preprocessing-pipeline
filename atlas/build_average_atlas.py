@@ -8,11 +8,9 @@ for each brain and then aligns it into a new averaged set of arrays, origins and
 
 import os, sys
 from collections import defaultdict
-
 import numpy as np
 import pickle
 from tqdm import tqdm
-
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -37,42 +35,53 @@ resolution = '10.0um'
 atlas_resolution_um = 10.0
 moving_brain_names = ['MD585', 'MD594']
 fixed_brain_spec = {'name': fixed_brain_name, 'vol_type': 'annotationAsScore', 'resolution': resolution}
-structure_centroids_all_brains_um_wrt_fixed = []
 
-for brain_m in tqdm(moving_brain_names):
-    moving_brain_spec = {'name': brain_m, 'vol_type': 'annotationAsScore', 'resolution': resolution}
-    moving_brain = load_all_structures_and_origins(stack_spec=moving_brain_spec,
+#Litao, this list gets filled in the loop below. It contains the averaged and transformed x,y,z for each structure
+# Note, this list will have lenght = 2,
+# there is also a dictionary below: moving_brain_structure_centroids
+moving_brains_structure_centroids = []
+
+# This loops through the 2 moving brains, loads all the hand annotation structures and origins
+for animal in tqdm(moving_brain_names):
+    animal_spec = {'name': animal, 'vol_type': 'annotationAsScore', 'resolution': resolution}
+    moving_brain = load_all_structures_and_origins(stack_spec=animal_spec,
                                                                 structures=structures, in_bbox_wrt='wholebrain')
 
-    alignment_spec = dict(stack_m=moving_brain_spec, stack_f=fixed_brain_spec, warp_setting=109)
-    moving_brain_structure_centroids_input_resol = get_centroid_3d(moving_brain)
+    alignment_spec = dict(stack_m=animal_spec, stack_f=fixed_brain_spec, warp_setting=109)
+    structure_centroids = get_centroid_3d(moving_brain)
     # Load registration.
     # Alignment results fp: os.path.join(reg_root_dir, alignment_spec['stack_m']['name'], warp_basename, warp_basename + '_' + what + '.' + ext)
-    transform_parameters_moving_brain_to_fixed_brain = load_alignment_results_v3(alignment_spec=alignment_spec, what='parameters')
+    moving_brain_to_fixed_brain_transforms = load_alignment_results_v3(alignment_spec=alignment_spec, what='parameters')
     # Transform moving brains into alignment with the fixed brain.
-    transformed_moving_brain_structure_centroids_input_resol_wrt_fixed = \
-    dict(list(zip(list(moving_brain_structure_centroids_input_resol.keys()),
-                  transform_points(pts=list(moving_brain_structure_centroids_input_resol.values()),
-                                   transform=transform_parameters_moving_brain_to_fixed_brain))))
 
-    transformed_moving_brain_structure_centroids_um_wrt_fixed = \
+    moving_brain_structure_centroids_aligned_wrt_fixed = \
+    dict(list(zip(list(structure_centroids.keys()),
+                  transform_points(pts=list(structure_centroids.values()),
+                                   transform=moving_brain_to_fixed_brain_transforms))))
+
+    moving_brain_structure_centroids_um_wrt_fixed = \
         {s: c * atlas_resolution_um for s, c in
-        list(transformed_moving_brain_structure_centroids_input_resol_wrt_fixed.items())}
+        list(moving_brain_structure_centroids_aligned_wrt_fixed.items())}
 
-    structure_centroids_all_brains_um_wrt_fixed.append(transformed_moving_brain_structure_centroids_um_wrt_fixed)
+    moving_brains_structure_centroids.append(moving_brain_structure_centroids_um_wrt_fixed)
 
+# Litao, Print this to get an idea of what is in it.
+#print(moving_brains_structure_centroids)
+#sys.exit()
 
-structure_centroids_all_brains_um_grouped_by_structure_wrt_fixed = defaultdict(list)
-for sc in structure_centroids_all_brains_um_wrt_fixed:
-    for k, c in sc.items():
-        structure_centroids_all_brains_um_grouped_by_structure_wrt_fixed[k].append(c)
-structure_centroids_all_brains_um_grouped_by_structure_wrt_fixed.default_factory = None
+average_structure_centroids = defaultdict(list)
+for animal in moving_brains_structure_centroids:
+    for structure, centroid in animal.items():
+        average_structure_centroids[structure].append(centroid)
+
+average_structure_centroids.default_factory = None
+
 centroids, \
-instance_centroids_wrt_canonicalAtlasSpace_um, \
-canonical_center_wrt_fixed_um, \
+centroids_wrt_canonicalAtlasSpace, \
+canonical_center_wrt_fixed, \
 canonical_normal, \
-transform_matrix_to_canonicalAtlasSpace_um = \
-average_location(structure_centroids_all_brains_um_grouped_by_structure_wrt_fixed)
+transform_matrix_to_canonicalAtlasSpace_um = average_location(average_structure_centroids)
+
 
 # save centroid origins. divide by atlas resolution first
 centroid_filepath = os.path.join(ATLAS_PATH, '1um_meanPositions.pkl')
@@ -82,8 +91,6 @@ with open(centroid_filepath, 'wb') as f:
 
 # Note that all shapes have voxel resolution matching input resolution (10.0 micron).
 for structure in tqdm(structures):
-    # for structure in all_known_structures:
-    # Load instance volumes.
     instance_volumes = []
     instance_source = []
     left_name = structure
@@ -147,8 +154,8 @@ for structure in tqdm(structures):
 
     # Generate meshes for each instance.
     volume_origin_list = [template_instance_wrt_templateCentroid] + aligned_moving_instance_wrt_templateCentroid_all_instances
-    instance_mesh_wrt_templateCentroid_all_instances = [volume_to_polydata(volume, num_simplify_iter=3, smooth=True)
-                                                        for volume, o in volume_origin_list]
+    #instance_mesh_wrt_templateCentroid_all_instances = [volume_to_polydata(volume, num_simplify_iter=3, smooth=True)
+    #                                                    for volume, o in volume_origin_list]
 
 
     # Compute average shape.

@@ -24,11 +24,12 @@ def create_mask(animal, full, njobs):
     sqlController.set_task(animal, CREATE_THUMBNAIL_MASKS)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
     MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
-
+    os.makedirs(MASKED, exist_ok=True)
     if full:
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
+        os.makedirs(MASKED, exist_ok=True)
         files = sorted(os.listdir(INPUT))
         commands = []
         for i, file in enumerate(tqdm(files)):
