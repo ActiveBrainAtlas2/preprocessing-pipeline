@@ -13,7 +13,7 @@ from tqdm import tqdm
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from sql_setup import CREATE_CHANNEL_1_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS, CREATE_CHANNEL_3_THUMBNAILS
-from utilities_process import workernoshell
+from utilities.utilities_process import workernoshell
 
 
 def make_thumbnails(animal, channel, njobs):
