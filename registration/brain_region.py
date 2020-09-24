@@ -35,12 +35,12 @@ def coordinate_change(pt,siz):
 def getcomponents(imgslice):
     siz = imgslice.shape
 
-    colors = np.union1d(np.array(imgslice).ravel(),np.array([]))
-  
+    colors = np.union1d(np.array(imgslice).ravel(), np.array([]) )
+
     json_data = """{"type":"FeatureCollection","features":["""
     unknown_colors = []
-    
-    for ci in colors[1:]: 
+
+    for ci in colors[1:]:
         count = True
         bwarr = imgslice==ci
         con = measure.find_contours(bwarr,0.5)
@@ -128,5 +128,5 @@ if __name__ =="__main__":
     p=Pool(8)
     p.map(partial(single, imgA=img), range(ns))
     # for si in range(ns):
-        
+
 

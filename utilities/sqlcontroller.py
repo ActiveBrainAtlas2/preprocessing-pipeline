@@ -134,6 +134,12 @@ class SqlController(object):
 
         return sections_dict
 
+    def get_structure_color_rgb(self, abbrv):
+        row = self.session.query(Structure).filter(Structure.abbreviation == abbrv).one()
+        hexa = row.hexadecimal
+        h = hexa.lstrip('#')
+        return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+
     def get_structures(self):
         return self.session.query(Structure).filter(Structure.active.is_(True)).all()
 

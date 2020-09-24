@@ -110,13 +110,9 @@ class SlideProcessor(object):
                     width = metadata_dict[series_index]['width']
                     height = metadata_dict[series_index]['height']
                     for channel in channels:
-
-                        newtif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
-                        newtif = newtif.replace('.czi', '').replace('__','_')
                         tif = AlcSlideCziTif()
                         tif.slide_id = slide.id
                         tif.scene_number = scene_number
-                        tif.file_name = newtif
                         tif.file_size = 0
                         tif.active = 1
                         tif.width = width
@@ -124,6 +120,9 @@ class SlideProcessor(object):
                         tif.scene_index = series_index
                         tif.channel_index = channel_counter
                         channel_counter += 1
+                        newtif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
+                        newtif = newtif.replace('.czi', '').replace('__','_')
+                        tif.file_name = newtif
                         tif.channel = channel_counter
                         tif.processing_duration = 0
                         tif.created = time.strftime('%Y-%m-%d %H:%M:%S')

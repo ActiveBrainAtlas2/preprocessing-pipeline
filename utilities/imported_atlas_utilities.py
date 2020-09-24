@@ -1387,7 +1387,6 @@ def get_centroid_3d(v):
     Args:
         v: volumes as 3d array, or dict of volumes, or dict of (volume, origin))
     """
-
     if isinstance(v, dict):
         centroids = {}
         for n, s in list(v.items()):

@@ -38,3 +38,19 @@ x_array = splx(new_indices)
 sply = UnivariateSpline(indices,vy,k=3,s=1)
 y_array = sply(new_indices)
 print(x_array, y_array)
+
+points = np.array([])
+
+x = np.array([v[0] for v in points])
+y = np.array([v[1] for v in points])
+old_len = points.shape[0]
+new_len = old_len * 2
+indexes = np.arange(0, old_len)
+new_indexes = np.linspace(0,old_len-1, new_len)
+splx = UnivariateSpline(indexes,x,k=3,s=0)
+x_smooth = splx(new_indexes)
+sply = UnivariateSpline(indexes,y,k=3,s=0)
+y_smooth = sply(new_indexes)
+points = np.column_stack((x_smooth, y_smooth)).astype(np.int32)
+print('points, type,shape, dtype', type(points), points.shape, points.dtype)
+print('smooth points, type,shape, dtype', type(points), points.shape, points.dtype)

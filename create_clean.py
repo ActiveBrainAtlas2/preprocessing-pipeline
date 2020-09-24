@@ -109,6 +109,7 @@ def masker(animal, channel, flip, rotation=0, full=False, debug=False):
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
     MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     ROTATED_MASKS = os.path.join(fileLocationManager.prep, 'rotated_masked')
+    os.makedirs(CLEANED, exist_ok=True)
     os.makedirs(ROTATED_MASKS, exist_ok=True)
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height

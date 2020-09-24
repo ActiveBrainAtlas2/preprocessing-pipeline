@@ -14,7 +14,7 @@ from tqdm import tqdm
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_process import workershell
+from utilities.utilities_process import workershell, workernoshell
 from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
 
 
@@ -35,6 +35,7 @@ def make_tifs(animal, channel, njobs):
     INPUT = fileLocationManager.czi
     OUTPUT = fileLocationManager.tif
     tifs = sqlController.get_distinct_section_filenames(animal, channel)
+    print(tifs)
 
     sqlController.set_task(animal, QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN)
     sqlController.set_task(animal, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1)
@@ -50,12 +51,14 @@ def make_tifs(animal, channel, njobs):
             continue
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        cmd = '/usr/local/share/bftools/bfconvert -bigtiff -compression LZW -separate -series {} -channel {} -nooverwrite {} {}'.format(
-            tif.scene_index, tif.channel_index, input_path, output_path)
+        #cmdstr = '/usr/local/share/bftools/bfconvert -bigtiff -compression LZW -separate -series {} -channel {} -nooverwrite {} {}'.format(
+        #    tif.scene_index, tif.channel_index, input_path, output_path)
+        cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate', '-series', str(tif.scene_index),
+               '-channel', str(tif.channel_index),  '-nooverwrite', input_path, output_path]
         commands.append(cmd)
 
     with Pool(njobs) as p:
-        p.map(workershell, commands)
+        p.map(workernoshell, commands)
 
     # Update TIFs' size
     try:
