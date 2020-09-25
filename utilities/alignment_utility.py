@@ -590,7 +590,7 @@ def convert_resolution_string_to_voxel_size(stack, resolution):
         sqlController = SqlController(stack)
         planar_resolution = sqlController.scan_run.resolution
     except:
-        planar_resolution = 0.46
+        planar_resolution = 0.452
     #planar_resolution =  0.452
     assert resolution is not None, 'Resolution argument cannot be None.'
 
