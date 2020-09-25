@@ -118,7 +118,6 @@ class SlideProcessor(object):
                         tif.width = width
                         tif.height = height
                         tif.scene_index = series_index
-                        tif.channel_index = channel_counter
                         channel_counter += 1
                         newtif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
                         newtif = newtif.replace('.czi', '').replace('__','_')
@@ -332,7 +331,7 @@ def make_tif(session, prep_id, tif_id, file_id, testing=False):
         command = ['touch', tif_file]
     else:
         command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate',
-                                  '-series', str(tif.scene_index), '-channel', str(tif.channel_index), '-nooverwrite', czi_file, tif_file]
+                                  '-series', str(tif.scene_index), '-channel', str(tif.channel-1), '-nooverwrite', czi_file, tif_file]
     subprocess.run(command)
 
     end = time.time()

@@ -51,10 +51,8 @@ def make_tifs(animal, channel, njobs):
             continue
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        #cmdstr = '/usr/local/share/bftools/bfconvert -bigtiff -compression LZW -separate -series {} -channel {} -nooverwrite {} {}'.format(
-        #    tif.scene_index, tif.channel_index, input_path, output_path)
         cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate', '-series', str(tif.scene_index),
-               '-channel', str(tif.channel_index),  '-nooverwrite', input_path, output_path]
+               '-channel', str(tif.channel-1),  '-nooverwrite', input_path, output_path]
         commands.append(cmd)
 
     with Pool(njobs) as p:

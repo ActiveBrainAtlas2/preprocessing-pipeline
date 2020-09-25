@@ -31,28 +31,28 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
     if channel == 1:
-        #fixed = scaled(fixed, mask)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
-        fixed = clahe.apply(fixed.astype(np.uint16))
+        fixed = scaled(fixed, mask)
+        #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
+        #fixed = clahe.apply(fixed.astype(np.uint16))
         clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
-        fixed = clahe.apply(fixed)
+        fixed = clahe.apply(fixed.astype(np.uint16))
 
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
-        mask = rotate_image(mask, maskfile, rotation)
+        #mask = rotate_image(mask, maskfile, rotation)
 
     if flip == 'flip':
         fixed = np.flip(fixed)
-        mask = np.flip(mask)
+        #mask = np.flip(mask)
     if flip == 'flop':
         fixed = np.flip(fixed, axis=1)
-        mask = np.flip(mask, axis=1)
+        #mask = np.flip(mask, axis=1)
 
 
-    if not debug:
-        rotated_maskpath = os.path.join(ROTATED_MASKS, os.path.basename(maskfile))
-        mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
-        cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
+    #if not debug:
+    #    rotated_maskpath = os.path.join(ROTATED_MASKS, os.path.basename(maskfile))
+    #    mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
+    #    cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
 
     return fixed
 

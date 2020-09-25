@@ -301,10 +301,12 @@ def fix_with_fill(img):
     upper = 102
     bgmask = (h_src >= lower) & (h_src <= upper)
     h_src[bgmask] = 0
-    threshold = np.median(h_src)
     bgmask = (h_src <= 8)
     h_src[bgmask] = 0
-    lowVal = threshold - 2
+    clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
+    h_src = clahe.apply(h_src)
+    threshold = np.median(h_src)
+    lowVal = threshold + 1
     highVal = threshold + 90
 
     im_th = cv2.inRange(h_src, lowVal, highVal)
@@ -320,7 +322,8 @@ def fix_with_fill(img):
     del im_floodfill_inv
     small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
-    opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, small_kernel)
+    #opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, small_kernel)
+    opening = cv2.dilate(im_out, small_kernel, iterations=2)
     del h_src
     contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     del im_out
@@ -337,7 +340,7 @@ def fix_with_fill(img):
     topbound = midrow - (midrow * 0.85)
     bottombound = midrow + (midrow * 0.98)
     midcolumn = img_shape[1] // 2
-    leftbound = midcolumn - (midcolumn * 0.65)
+    leftbound = midcolumn - (midcolumn * 0.75)
     rightbound = midcolumn + (midcolumn * 0.5)
     AREA_THRESHOLD = 0.01
 
@@ -361,7 +364,7 @@ def fix_with_fill(img):
 
 
     cv2.fillPoly(stencil, lc, 255)
-    dilation = cv2.dilate(stencil, big_kernel, iterations=2)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=3)
     return dilation
 
 
@@ -551,10 +554,12 @@ def fix_with_fill_debug(img):
     upper = 102
     bgmask = (h_src >= lower) & (h_src <= upper)
     h_src[bgmask] = 0
-    threshold = np.median(h_src)
     bgmask = (h_src <= 8)
     h_src[bgmask] = 0
-    lowVal = threshold - 2
+    clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
+    h_src = clahe.apply(h_src)
+    threshold = np.median(h_src)
+    lowVal = threshold + 1
     highVal = threshold + 90
 
     #h, im_th = cv2.threshold(h_src, thresh, 255, cv2.THRESH_BINARY)
@@ -571,8 +576,8 @@ def fix_with_fill_debug(img):
     del im_floodfill_inv
     small_kernel = np.ones((6, 6), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
-    #dilation = cv2.dilate(im_out, small_kernel,iterations = 2)
-    opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, small_kernel)
+    opening = cv2.dilate(im_out, small_kernel,iterations = 2)
+    #opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, big_kernel)
     del h_src
     contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     #####del eroded
@@ -600,7 +605,7 @@ def fix_with_fill_debug(img):
     topbound = midrow - (midrow * 0.85)
     bottombound = midrow + (midrow * 0.98)
     midcolumn = img_shape[1] // 2
-    leftbound = midcolumn - (midcolumn * 0.65)
+    leftbound = midcolumn - (midcolumn * 0.75)
     rightbound = midcolumn + (midcolumn * 0.5)
     AREA_THRESHOLD = 0.01
 
@@ -627,7 +632,7 @@ def fix_with_fill_debug(img):
             break
 
     cv2.fillPoly(stencil, lc, 255)
-    dilation = cv2.dilate(stencil, big_kernel, iterations=2)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=3)
     #mask = fill_spots(dilation)
     del stencil
     for a,c in zip(areas, coords):
