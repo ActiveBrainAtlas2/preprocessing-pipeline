@@ -49,12 +49,8 @@ def make_preps(animal, channel, full, njobs):
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        if full:
-            cmd = ['convert', input_path, '-compress', 'lzw', output_path]
-            commands.append(cmd)
-
-        else:
-            copyfile(input_path, output_path)
+        cmd = ['convert', input_path, '-compress', 'lzw', output_path]
+        commands.append(cmd)
 
     with Pool(njobs) as p:
         p.map(workernoshell, commands)
