@@ -34,16 +34,15 @@ def make_tifs(animal, channel, njobs):
     sqlController = SqlController(animal)
     INPUT = fileLocationManager.czi
     OUTPUT = fileLocationManager.tif
-    tifs = sqlController.get_distinct_section_filenames(animal, channel)
-    print(tifs)
+    sections = sqlController.get_distinct_section_filenames(animal, channel)
 
     sqlController.set_task(animal, QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN)
     sqlController.set_task(animal, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1)
 
     commands = []
-    for tif in tqdm(tifs):
-        input_path = os.path.join(INPUT, tif.czi_file)
-        output_path = os.path.join(OUTPUT, tif.file_name)
+    for section in tqdm(sections):
+        input_path = os.path.join(INPUT, section.czi_file)
+        output_path = os.path.join(OUTPUT, section.file_name)
         if not os.path.exists(input_path):
             continue
 
@@ -51,8 +50,8 @@ def make_tifs(animal, channel, njobs):
             continue
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate', '-series', str(tif.scene_index),
-               '-channel', str(tif.channel-1),  '-nooverwrite', input_path, output_path]
+        cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate', '-series', str(section.scene_index),
+               '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
         commands.append(cmd)
 
     with Pool(njobs) as p:
