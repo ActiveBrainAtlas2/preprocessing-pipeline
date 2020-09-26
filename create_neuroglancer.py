@@ -58,31 +58,6 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolut
     # compute_scales - build the precomputed for other scales
     compute_scales.main(['', folder_to_convert_to, '--flat', '--no-gzip'])
 
-
-def run_size_test(INPUT):
-    imgs = os.listdir(INPUT)
-    basefilename = imgs[0]
-    baseimg = io.imread(os.path.join(INPUT, basefilename))
-    basewidth = baseimg.shape[1]
-    baseheight = baseimg.shape[0]
-    errors = []
-    for filename in imgs:
-        try:
-            img = io.imread(os.path.join(INPUT, filename))
-        except:
-            print('Could not read image', filename)
-            sys.exit()
-
-        if len(img.shape) != 2 or img.shape[1] != basewidth or img.shape[0] != baseheight:
-            errors.append('Size mismatch with {}'.format(filename))
-
-    if len(errors) > 0:
-        print('Cannot continue, there was a problem')
-        sys.exit()
-    else:
-        print('File sizes all match.')
-
-
 def run_neuroglancer(animal, channel, full):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
