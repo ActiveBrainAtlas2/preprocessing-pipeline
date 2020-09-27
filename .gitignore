@@ -1,5 +1,6 @@
 *.log
 parameters.yaml
+cvat.yaml
 # pycharm stuff
 .idea/
 # Byte-compiled / optimized / DLL files
