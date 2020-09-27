@@ -40,7 +40,7 @@ def test_dir(animal, dir, resolution):
     #thumbnail resolution ntb is 10400 and min size of DK52 is 16074
     #thumbnail resolution thion is 14464 and min size for MD585 is 21954
     # so 10000 is a good min size
-    min_size = 10000 * resolution
+    min_size = 10000
     print(resolution)
     #if 'full' in resolution:
     #    min_size = SCALING_FACTOR * 10
