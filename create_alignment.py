@@ -177,6 +177,8 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
         OUTPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/aligned'.format(animal)
         bgcolor = 'black'
 
+    os.makedirs(OUTPUT, exist_ok=True)
+
     warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', resolution)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
     commands = []
@@ -197,7 +199,6 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
         #crop = '{}x{}+0.0+0.0!'.format(max_width, max_height)
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
-
         if os.path.exists(output_fp):
             continue
 
