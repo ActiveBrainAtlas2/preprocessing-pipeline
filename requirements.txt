@@ -153,6 +153,7 @@ pep8-naming==0.11.1
 pexpect==4.8.0
 pickleshare==0.7.5
 Pillow==7.0.0
+pkg-resources==0.0.0
 plotly==4.7.1
 pluggy==0.13.1
 posix-ipc==1.0.4

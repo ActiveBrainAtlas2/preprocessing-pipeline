@@ -35,7 +35,9 @@ def create_mask(animal, full, njobs):
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
             thumbfile = os.path.join(THUMBNAIL, file)
-            outfile = os.path.join(MASKED, file)
+            outpath = os.path.join(MASKED, file)
+            if os.path.exists(outpath):
+                continue
             try:
                 src = io.imread(infile)
             except:
@@ -45,7 +47,7 @@ def create_mask(animal, full, njobs):
             size = '{}x{}!'.format(width, height)
             del src
             #cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
-            cmd = ['convert', thumbfile, '-resize', size, '-compress', 'lzw', '-depth', '8', outfile]
+            cmd = ['convert', thumbfile, '-resize', size, '-compress', 'lzw', '-depth', '8', outpath]
             commands.append(cmd)
 
         with Pool(njobs) as p:

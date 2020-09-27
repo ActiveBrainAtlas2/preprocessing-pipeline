@@ -51,8 +51,8 @@ def make_thumbnails(animal, channel, njobs):
             continue
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        #cmd = ['convert', input_path, '-resize', '3.125%', '-compress', 'lzw', output_path]
-        cmd = ['convert', input_path, '-resize', '3.125%', output_path]
+        cmd = ['convert', input_path, '-resize', '3.125%', '-compress', 'lzw', output_path]
+        #cmd = ['convert', input_path, '-resize', '3.125%', output_path]
         commands.append(cmd)
 
     with Pool(njobs) as p:

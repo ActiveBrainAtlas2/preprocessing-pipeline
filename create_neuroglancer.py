@@ -10,6 +10,7 @@ from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOM
     RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
+from utilities.utilities_process import test_dir
 
 
 def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolution):
@@ -86,8 +87,13 @@ def run_neuroglancer(animal, channel, full):
 
     NEUROGLANCER = os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
 
+    error = test_dir(animal, INPUT, resolution)
 
-    convert_to_precomputed(INPUT, NEUROGLANCER, resolution)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
+    else:
+        convert_to_precomputed(INPUT, NEUROGLANCER, resolution)
 
 
 if __name__ == "__main__":
@@ -100,5 +106,4 @@ if __name__ == "__main__":
     animal = args.animal
     channel = args.channel
     full = bool({'full': True, 'thumbnail': False}[args.resolution])
-
     run_neuroglancer(animal, channel, full)
