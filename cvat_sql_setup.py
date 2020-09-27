@@ -17,7 +17,7 @@ password = parameters['password']
 host = parameters['host']
 database = parameters['schema']
 
-connection_string = f'postgresql+psycopg2://{user}:{password}@{host}/{database}'
+connection_string = f'postgresql+psycopg2://{user}:{password}@{host}:5432/{database}'
 
 engine = create_engine(connection_string, echo=False)
 DBSession = sessionmaker(bind=engine)

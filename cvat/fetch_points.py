@@ -3,6 +3,14 @@ This will query the cvat postgres container for what i believe are the relevant 
 section (called frame in cvat table engine_labeledshape)
 structure (called name in cvat table engine_label)
 points (called points in cvat table engine_labledshape)
+you need access to the psql container and this library
+pip install psycopg2
+You also need to modify the docker container that holds postgres.
+Modify the docker-compose.yml file:
+services:
+　cvat_db:
+　　ports:
+　　　- "5432:5432"
 """
 
 import argparse

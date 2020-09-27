@@ -39,11 +39,6 @@ def run_elastix(animal, njobs):
     sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
-    bad_files = test_dir(animal, INPUT)
-    if len(bad_files) > 0:
-        print(f'Files in {INPUT} are not correct')
-        print(bad_files)
-        sys.exit()
 
     #MASKPATH = os.path.join(fileLocationManager.prep, 'rotated_masked')
 
