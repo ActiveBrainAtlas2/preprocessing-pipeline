@@ -87,7 +87,7 @@ def run_neuroglancer(animal, channel, full):
 
     NEUROGLANCER = os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
 
-    error = test_dir(animal, INPUT, resolution)
+    error = test_dir(animal, INPUT, full)
 
     if len(error) > 0:
         print(error)

@@ -35,14 +35,14 @@ def workernoshell(cmd):
     proc = Popen(cmd, shell=False, stderr=stderr_f, stdout=stdout_f)
     proc.wait()
 
-def test_dir(animal, dir, resolution):
+def test_dir(animal, dir, full):
     error = ""
     #thumbnail resolution ntb is 10400 and min size of DK52 is 16074
     #thumbnail resolution thion is 14464 and min size for MD585 is 21954
     # so 10000 is a good min size
     min_size = 10000
-    if 'full' in resolution:
-        min_size = min_size * SCALING_FACTOR * 10
+    if full:
+        min_size = min_size * SCALING_FACTOR * 10000
     sqlController = SqlController(animal)
     section_count = sqlController.get_section_count(animal)
     files = sorted(os.listdir(dir))
