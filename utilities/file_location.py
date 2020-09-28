@@ -19,6 +19,7 @@ class FileLocationManager(object):
 
         self.czi = os.path.join(ROOT_DIR, stack, 'czi')
         self.tif = os.path.join(ROOT_DIR, stack, 'tif')
+        self.jp2 = os.path.join(ROOT_DIR, stack, 'jp2')
         self.thumbnail = os.path.join(self.prep, 'thumbnail')
         self.histogram = os.path.join(ROOT_DIR, stack, 'histogram')
         self.thumbnail_web = os.path.join(ROOT_DIR, stack, 'www')

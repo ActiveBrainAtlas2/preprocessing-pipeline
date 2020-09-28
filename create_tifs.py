@@ -18,7 +18,7 @@ from utilities.utilities_process import workershell, workernoshell
 from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
 
 
-def make_tifs(animal, channel, njobs):
+def make_tifs(animal, channel, njobs, compression):
     """
     Args:
         animal: the prep id of the animal
@@ -43,6 +43,9 @@ def make_tifs(animal, channel, njobs):
     for section in tqdm(sections):
         input_path = os.path.join(INPUT, section.czi_file)
         output_path = os.path.join(OUTPUT, section.file_name)
+        if 'jp' in compression.lower():
+            section_jp2 = str(section.file_name).replace('tif', 'jp2')
+            output_path = os.path.join(fileLocationManager.jp2, section_jp2)
         if not os.path.exists(input_path):
             continue
 
@@ -50,7 +53,9 @@ def make_tifs(animal, channel, njobs):
             continue
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate', '-series', str(section.scene_index),
+        cmdX = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', compression,'-separate', '-series', str(section.scene_index),
+               '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
+        cmd = ['/usr/local/share/bftools/bfconvert', '-compression', compression,'-separate', '-series', str(section.scene_index),
                '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
         commands.append(cmd)
 
@@ -76,13 +81,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
+    parser.add_argument('--compression', help='Enter compression LZW or JPEG-2000', required=False, default='LZW')
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
 
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
     channel = int(args.channel)
+    compression = args.compression
 
     logger = get_logger(animal)
     logger.info('Make channel {} tifs'.format(channel))
-    make_tifs(animal, channel, njobs)
+    make_tifs(animal, channel, njobs, compression)
