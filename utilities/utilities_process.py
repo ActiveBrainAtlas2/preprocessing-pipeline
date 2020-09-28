@@ -68,12 +68,15 @@ def test_dir(animal, dir, resolution):
         min_height = min(heights)
         max_height = max(heights)
     else:
+        min_width = 0
+        max_width = 0
+        min_height = 0
+        max_height = 0
         error += "Number of files is incorrect.\n"
     if section_count != len(files):
         error += "Number of files is incorrect.\n"
-    if min_width != max_width:
+    if min_width != max_width and min_width > 0:
        error += f"Widths are not of equal size, min is {min_width} and max is {max_width}.\n"
-    if min_height != max_height:
+    if min_height != max_height and min_height > 0:
         error += f"Heights are not of equal size, min is {min_height} and max is {max_height}.\n"
-    print(sorted(size_checks))
     return error
