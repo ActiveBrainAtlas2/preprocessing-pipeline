@@ -41,8 +41,8 @@ def test_dir(animal, dir, resolution):
     #thumbnail resolution thion is 14464 and min size for MD585 is 21954
     # so 10000 is a good min size
     min_size = 10000
-    #if 'full' in resolution:
-    #    min_size = SCALING_FACTOR * 10
+    if 'full' in resolution:
+        min_size = min_size * SCALING_FACTOR * 10
     sqlController = SqlController(animal)
     section_count = sqlController.get_section_count(animal)
     files = sorted(os.listdir(dir))
@@ -61,10 +61,14 @@ def test_dir(animal, dir, resolution):
         size = os.path.getsize(filepath)
         if size < min_size:
             error += f"File is too small {f}"
-    min_width = min(widths)
-    max_width = max(widths)
-    min_height = min(heights)
-    max_height = max(heights)
+    # picked 100 as an arbitrary number. the min file count is usually around 380 or so
+    if len(files) > 100:
+        min_width = min(widths)
+        max_width = max(widths)
+        min_height = min(heights)
+        max_height = max(heights)
+    else:
+        error += "Number of files is incorrect.\n"
     if section_count != len(files):
         error += "Number of files is incorrect.\n"
     if min_width != max_width:

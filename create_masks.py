@@ -74,7 +74,7 @@ def create_mask(animal, full, njobs):
                 except:
                     logger.warning(f'Could not open {infile}')
                     continue
-                mask = fix_with_fill(img)
+                mask = fix_with_blob(img)
 
             # save the mask
             cv2.imwrite(outpath, mask.astype('uint8'))

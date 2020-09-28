@@ -297,12 +297,12 @@ def fix_with_fill(img):
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     h_src = clahe.apply(img)
     del img
-    lower = 98
-    upper = 102
-    bgmask = (h_src >= lower) & (h_src <= upper)
-    h_src[bgmask] = 0
-    bgmask = (h_src <= 8)
-    h_src[bgmask] = 0
+    #lower = 98
+    #upper = 102
+    #bgmask = (h_src >= lower) & (h_src <= upper)
+    #h_src[bgmask] = 0
+    #bgmask = (h_src <= 8)
+    #h_src[bgmask] = 0
     clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
     h_src = clahe.apply(h_src)
     threshold = np.median(h_src)
@@ -559,7 +559,7 @@ def fix_with_fill_debug(img):
     clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
     h_src = clahe.apply(h_src)
     threshold = np.median(h_src)
-    lowVal = threshold + 1
+    lowVal = threshold + 2
     highVal = threshold + 90
 
     #h, im_th = cv2.threshold(h_src, thresh, 255, cv2.THRESH_BINARY)
@@ -574,10 +574,10 @@ def fix_with_fill_debug(img):
     stencil = np.zeros(h_src.shape).astype('uint8')
     del im_th
     del im_floodfill_inv
-    small_kernel = np.ones((6, 6), np.uint8)
+    small_kernel = np.ones((3, 3), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
-    opening = cv2.dilate(im_out, small_kernel,iterations = 2)
-    #opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, big_kernel)
+    opening = cv2.dilate(im_out, big_kernel,iterations = 2)
+    #opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, small_kernel)
     del h_src
     contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     #####del eroded
