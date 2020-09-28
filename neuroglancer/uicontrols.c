@@ -100,7 +100,7 @@ void main() {
   emitGrayscale(toNormalized(getDataValue()));
 }
 
-# for 1st channel with the other ones color
+# for 1st channel with the other ones color all controls
 #uicontrol float min slider(min=0, max=1, default=0)
 #uicontrol float max slider(min=0, max=1, default=1)
 #uicontrol float invert slider(min=0, max=1, default=0, step=1)
@@ -109,8 +109,15 @@ void main() {
 #uicontrol float gamma slider(min=0.05, max=2.5, default=1, step=0.05)
 #uicontrol float linlog slider(min=0, max=1, default=0, step=1)
 void main() {
-  float limit = 45000.0
+  float limit = 45000.0;
   float pix_val = toNormalized(getDataValue());
+  if (linlog==1.0) {
+  	pix_val = log(pix_val);
+   	limit = 10.0;
+  } else {
+    pix_val = pow(pix_val,gamma);
+    limit = 45000.0;
+  }
   if(pix_val < min){
   	pix_val = 0.0;
   }
@@ -184,7 +191,6 @@ void main() {
 #uicontrol float linlog slider(min=0, max=1, default=0, step=1)
 void main() {
   float limit = 45000.0;
-  // float pix_val = toNormalized(getDataValue());
   float pix_val = float(toRaw(getDataValue()));
 
   if (linlog==1.0) {
@@ -206,11 +212,9 @@ void main() {
   }
 
   if(invert==1.0){
-  	  // emitGrayscale((1.0 -(pix_val - brightness)) *  exp(contrast));
     emitRGB(vec3(0,(1.0 -(pix_val - brightness)) * exp(contrast),0));
   }
   else{
-    // emitGrayscale((pix_val + brightness) *  exp(contrast));
      emitRGB(vec3(0, (pix_val + brightness) * exp(contrast),0));
   }
 

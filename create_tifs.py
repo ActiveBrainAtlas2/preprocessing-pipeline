@@ -50,7 +50,7 @@ def make_tifs(animal, channel, njobs):
             continue
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate', '-series', str(section.scene_index),
+        cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate', '-series', str(section.scene_index),
                '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
         commands.append(cmd)
 
