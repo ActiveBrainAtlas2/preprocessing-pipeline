@@ -43,9 +43,13 @@ def make_tifs(animal, channel, njobs, compression):
     for section in tqdm(sections):
         input_path = os.path.join(INPUT, section.czi_file)
         output_path = os.path.join(OUTPUT, section.file_name)
+        cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW','-separate', '-series', str(section.scene_index),
+               '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
         if 'jp' in compression.lower():
             section_jp2 = str(section.file_name).replace('tif', 'jp2')
             output_path = os.path.join(fileLocationManager.jp2, section_jp2)
+            cmd = ['/usr/local/share/bftools/bfconvert', '-compression', 'JPEG-2000', '-separate', '-series', str(section.scene_index),
+                   '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
         if not os.path.exists(input_path):
             continue
 
@@ -53,10 +57,6 @@ def make_tifs(animal, channel, njobs, compression):
             continue
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        cmdX = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', compression,'-separate', '-series', str(section.scene_index),
-               '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
-        cmd = ['/usr/local/share/bftools/bfconvert', '-compression', compression,'-separate', '-series', str(section.scene_index),
-               '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
         commands.append(cmd)
 
     with Pool(njobs) as p:
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--compression', help='Enter compression LZW or JPEG-2000', required=False, default='LZW')
+    parser.add_argument('--compression', help='Enter compression LZW or JPG-2000', required=False, default='LZW')
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
 
     args = parser.parse_args()
