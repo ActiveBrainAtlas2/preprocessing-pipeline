@@ -195,3 +195,4 @@ for structure in tqdm(structures):
     filepath = os.path.join(ATLAS_PATH, 'structure', filename)
     np.save(filepath, np.ascontiguousarray(volume))
 
+

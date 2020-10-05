@@ -79,11 +79,9 @@ void main() {
   }
 
   if(invert==1.0){
-  	  // emitGrayscale((1.0 -(pix_val - brightness)) *  exp(contrast));
     emitRGB(vec3((1.0 -(pix_val - brightness)) * exp(contrast),0,0));
   }
   else{
-    // emitGrayscale((pix_val + brightness) *  exp(contrast));
      emitRGB(vec3((pix_val + brightness) * exp(contrast),0,0));
   }
 
