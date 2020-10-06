@@ -169,3 +169,53 @@ main info file specifies the names/info dir
 names/info file key, value json file
 
 https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
+
+
+// too many color controls for 8bit stack
+#uicontrol float contrast slider(min=-3, max=3, step=0.01)
+
+#uicontrol float min slider(min=0, max=1, default=0)
+#uicontrol float max slider(min=0, max=1, default=1)
+#uicontrol float invert slider(min=0, max=1, default=0, step=1)
+#uicontrol float blueness slider(min=-1, max=1)
+#uicontrol float redness slider(min=-1, max=1)
+#uicontrol float greenness slider(min=-1, max=1)
+#uicontrol float bluetrast slider(min=-3, max=3, step=0.01)
+#uicontrol float redtrast slider(min=-3, max=3, step=0.01)
+#uicontrol float greentrast slider(min=-3, max=3, step=0.01)
+#uicontrol float gamma slider(min=0.05, max=2.5, default=1, step=0.05)
+#uicontrol float linlog slider(min=0, max=1, default=0, step=1)
+
+  void main() {
+    float limit = 255.0;
+    float pix_val = float(toRaw(getDataValue()));
+    //float pix_val = toNormalized(getDataValue());
+
+
+  if (linlog==1.0) {
+  	pix_val = log(pix_val);
+   	limit = 5.5;
+  } else {
+    pix_val = pow(pix_val,gamma);
+  }
+
+   pix_val = pix_val/limit;
+
+
+
+  if(pix_val < min){
+  	pix_val = 0.0;
+  }
+  if(pix_val > max){
+    pix_val = 1.0;
+  }
+
+
+ float blue_show = (pix_val + blueness) * exp(bluetrast);
+ float red_show = (pix_val + redness) * exp(redtrast);
+ float green_show = (pix_val + greenness) * exp(greentrast);
+ emitRGB(vec3(red_show, green_show,blue_show));
+
+    // emitGrayscale((pix_val + brightness) * exp(contrast));
+
+}
