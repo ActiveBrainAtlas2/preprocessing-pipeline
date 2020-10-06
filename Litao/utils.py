@@ -63,7 +63,6 @@ class NumpyToNeuroglancer():
         self.offset = offset
         self.layer_type = layer_type
         
-        self.precomputed_dir = None
         self.precomputed_vol = None
     
     def preview(self, layer_name=None, clear_layer=False):
@@ -93,7 +92,6 @@ class NumpyToNeuroglancer():
         print(self.viewer)
         
     def init_precomputed(self, path):        
-        cloudpath = f'file://{path}'
         info = CloudVolume.create_new_info(
             num_channels = self.volume.shape[3] if len(self.volume.shape) > 3 else 1,
             layer_type = self.layer_type,
@@ -104,19 +102,18 @@ class NumpyToNeuroglancer():
             chunk_size = [64, 64, 64],           # units are voxels
             volume_size = self.volume.shape[:3], # e.g. a cubic millimeter dataset
         )
-        self.precomputed_vol = CloudVolume(cloudpath, mip=0, info=info, compress=False, progress=False)
+        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
         self.precomputed_vol.commit_info()
         self.precomputed_vol[:, :, :] = self.volume[:, :, :]
-        self.precomputed_dir = path
         
     def add_segment_properties(self, segment_properties):
-        if self.precomputed_dir is None or self.precomputed_vol is None:
+        if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
             
         self.precomputed_vol.info['segment_properties'] = 'names'
         self.precomputed_vol.commit_info()
 
-        segment_properties_path = os.path.join(self.precomputed_dir, 'names')
+        segment_properties_path = os.path.join(self.precomputed_vol.layer_cloudpath.replace('file://', ''), 'names')
         os.makedirs(segment_properties_path, exist_ok=True)
         
         info = {
@@ -134,41 +131,38 @@ class NumpyToNeuroglancer():
             json.dump(info, file, indent=2)
             
     def add_downsampled_volumes_v2(self, num_downsampled):
-        if self.precomputed_dir is None or self.precomputed_vol is None:
+        if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         
         factor = (2, 2, 1)
         volumes = tinybrain.downsample_segmentation(self.volume, factor=factor, num_mips=num_downsampled, sparse=False)
         volumes.insert(0, volume)
 
-        cloudpath = f'file://{self.precomputed_dir}'
         for mip, volume in enumerate(volumes):
             vol.add_scale(np.array(factor) ** mip)
             vol.commit_info()
-            vol = CloudVolume(path, mip=mip, compress=False, progress=False)
+            vol = CloudVolume(self.precomputed_vol.layer_cloudpath, mip=mip, compress=False, progress=False)
             vol[:, :, :] = volume[:, :, :]
 
     def add_downsampled_volumes(self):
-        if self.precomputed_dir is None or self.precomputed_vol is None:
+        if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
             
-        cloudpath = f'file://{self.precomputed_dir}'
         tq = LocalTaskQueue(parallel=True)
-        tasks = tc.create_downsampling_tasks(cloudpath, compress=False)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=False)
         tq.insert(tasks)
         tq.execute()
             
     def add_segmentation_mesh(self):
-        if self.precomputed_dir is None or self.precomputed_vol is None:
+        if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
             
-        cloudpath = f'file://{self.precomputed_dir}'
-        tq = LocalTaskQueue(parallel=False)
-        tasks = tc.create_meshing_tasks(cloudpath, mip=0, compress=False) # The first phase of creating mesh
+        tq = LocalTaskQueue(parallel=True)
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=False) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
 
         # It should be able to incoporated to above tasks, but it will give a weird bug. Don't know the reason
-        tasks = tc.create_mesh_manifest_tasks(cloudpath) # The second phase of creating mesh
+        tasks = tc.create_mesh_manifest_tasks(self.precomputed_vol.layer_cloudpath) # The second phase of creating mesh
         tq.insert(tasks)
         tq.execute()
