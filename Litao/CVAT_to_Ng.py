@@ -34,11 +34,11 @@ def read_from_cvat(cvat_data_fp):
         
     return contours
 
-def draw_numpy(section_structure_polygons, section_start, section_end, draw_lines=True):
-    volume = np.zeros((downsampled_aligned_shape[1], downsampled_aligned_shape[0], section_end - section_start), dtype=np.uint8)
+def draw_numpy(section_structure_polygons, size, section_start, section_end, draw_lines=True):
+    volume = np.zeros((size[1], size[0], section_end - section_start), dtype=np.uint8)
     for section in tqdm(range(section_start, section_end)):
         if section in section_structure_polygons:
-            template = np.zeros((downsampled_aligned_shape[1], downsampled_aligned_shape[0]), dtype=np.uint8)
+            template = np.zeros((size[1], size[0]), dtype=np.uint8)
             for structure in section_structure_polygons[section]:
                 polygons = section_structure_polygons[section][structure]
                 for polygon in polygons:
@@ -56,18 +56,25 @@ def draw_numpy(section_structure_polygons, section_start, section_end, draw_line
     return volume
 
 if __name__=='__main__':
+    parser.add_argument("animal", type=str)
+    parser.add_argument("downsample_factor", type=int, "The downsampled factor of the brain images")
     parser.add_argument("cvat_file", type=str, help="Path to cvat exported file")
     parser.add_argument("precomputed_path", type=str, help="Path to Neuroglancer Precomputed dir")
-    parser.add_argument("resolution", type=int, help="How much each pixel represents in nm")
     parser.add_argument("draw_lines", type=bool, help="Whether to draw lines or dots for Neuroglancer", default=True)
     
     args = parser.parse_args()
+    
+    sqlController = SqlController(args.animal)
+    resolution = sqlController.scan_run.resolution
+    aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
+    num_section = len(os.listdir(IMAGE_DIR_PATH))
+    downsampled_aligned_shape = np.round(aligned_shape / args.downsample_factor).astype(int)
+    scales = np.array([resolution * args.downsample_factor, resolution * args.downsample_factor, 20]) * 1000
+    
     cvat_data_fp = configuration(args.cvat_file)
     contours = read_from_cvat(cvat_data_fp)
-    volume = draw_numpy(section_structure_polygons, 0, num_section, draw_lines=args.draw_lines)
-    
-    scales = [args.resolution, args.resolution, 20000]
-    
+    volume = draw_numpy(section_structure_polygons, downsampled_aligned_shape, 0, num_section, draw_lines=args.draw_lines)
+        
     ng = NumpyToNeuroglancer(volume, scales)
     ng.init_precomputed(args.precompute_path)
     ng.add_segment_properties(get_segment_properties())
