@@ -1,9 +1,14 @@
+import sys
+import os
 import json
 import argparse
 
 import numpy as np
 import cv2
+from tqdm import tqdm
 
+sys.path.append(os.path.join(os.getcwd(), '../'))
+from utilities.sqlcontroller import SqlController
 from utils import get_structure_number, get_segment_properties, NumpyToNeuroglancer
 
 
@@ -56,8 +61,9 @@ def draw_numpy(section_structure_polygons, size, section_start, section_end, dra
     return volume
 
 if __name__=='__main__':
+    parser = argparse.ArgumentParser(description='Convert CVAT coco annotation file to Neuroglancer precomputed format')
     parser.add_argument("animal", type=str)
-    parser.add_argument("downsample_factor", type=int, "The downsampled factor of the brain images")
+    parser.add_argument("downsample_factor", type=int, help="The downsampled factor of the brain images")
     parser.add_argument("cvat_file", type=str, help="Path to cvat exported file")
     parser.add_argument("precomputed_path", type=str, help="Path to Neuroglancer Precomputed dir")
     parser.add_argument("draw_lines", type=bool, help="Whether to draw lines or dots for Neuroglancer", default=True)
@@ -67,13 +73,13 @@ if __name__=='__main__':
     sqlController = SqlController(args.animal)
     resolution = sqlController.scan_run.resolution
     aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
-    num_section = len(os.listdir(IMAGE_DIR_PATH))
+#     num_section = len(os.listdir(IMAGE_DIR_PATH))
+    num_section = 452
     downsampled_aligned_shape = np.round(aligned_shape / args.downsample_factor).astype(int)
     scales = np.array([resolution * args.downsample_factor, resolution * args.downsample_factor, 20]) * 1000
     
-    cvat_data_fp = configuration(args.cvat_file)
-    contours = read_from_cvat(cvat_data_fp)
-    volume = draw_numpy(section_structure_polygons, downsampled_aligned_shape, 0, num_section, draw_lines=args.draw_lines)
+    contours = read_from_cvat(args.cvat_file)
+    volume = draw_numpy(contours, downsampled_aligned_shape, 0, num_section, draw_lines=args.draw_lines)
         
     ng = NumpyToNeuroglancer(volume, scales)
     ng.init_precomputed(args.precompute_path)
