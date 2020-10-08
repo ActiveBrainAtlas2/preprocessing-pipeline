@@ -13,7 +13,7 @@ import pickle
 from tqdm import tqdm
 
 HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility')
+PATH = os.path.join(HOME, 'Projects/pipeline_utility')
 sys.path.append(PATH)
 atlas_name = 'atlasV8'
 surface_level = 0.9
