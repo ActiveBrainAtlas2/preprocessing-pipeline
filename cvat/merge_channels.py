@@ -17,8 +17,7 @@ def merge_channels(animal):
 
     #CH1 = os.path.join(fileLocationManager.prep, 'CH1', '16_aligned')
     CH3 = os.path.join(fileLocationManager.prep, 'CH3', '16_aligned')
-    OUTPUT = os.path.join(fileLocationManager.prep, 'CH3', '16_aligned_merged'
-                                                           '')
+    OUTPUT = os.path.join(fileLocationManager.prep, 'CH3', '16_aligned_merged')
     #ch1_files = sorted(os.listdir(CH1))
     ch3_files = sorted(os.listdir(CH3))
 

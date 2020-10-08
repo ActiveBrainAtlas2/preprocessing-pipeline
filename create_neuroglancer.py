@@ -59,7 +59,7 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolut
     # compute_scales - build the precomputed for other scales
     compute_scales.main(['', folder_to_convert_to, '--flat', '--no-gzip'])
 
-def run_neuroglancer(animal, channel, full):
+def run_neuroglancer(animal, channel, full, suffix=None):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)
@@ -86,6 +86,8 @@ def run_neuroglancer(animal, channel, full):
         resolution = int(planar_resolution * 1000)
 
     NEUROGLANCER = os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
+    if suffix is not None:
+        NEUROGLANCER += suffix
 
     error = test_dir(animal, INPUT, full)
 
@@ -101,9 +103,11 @@ if __name__ == "__main__":
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--suffix', help='Enter suffix to add to the output dir', required=False, default=None)
 
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
     full = bool({'full': True, 'thumbnail': False}[args.resolution])
-    run_neuroglancer(animal, channel, full)
+    suffix = args.suffix
+    run_neuroglancer(animal, channel, full, suffix)
