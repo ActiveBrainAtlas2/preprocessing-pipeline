@@ -2,7 +2,7 @@ import os
 import sys
 
 HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility')
+PATH = os.path.join(HOME, 'Projects/pipeline_utility')
 sys.path.append(PATH)
 
 
