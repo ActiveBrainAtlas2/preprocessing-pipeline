@@ -1,7 +1,7 @@
 # Utilities for the Active Atlas Pipeline
 ## Creating a sandbox on your computer
 1. git clone this reposititory `git clone git@github.com:eddyod/pipeline_utility.git`
-1. create a virtual environment in your home dir: python3 -m venv ~/.virtualenvs/pipeline3
+1. create a virtual environment in your home dir: python3 -m venv ~/.virtualenvs/pipeline
 1. cd pipeline_utility
 1. source ~/.virtualenvs/pipeline3/bin/activate
 1. pip install -r requirements.txt
