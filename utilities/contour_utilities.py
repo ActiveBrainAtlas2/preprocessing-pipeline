@@ -529,8 +529,8 @@ def get_contours_from_annotations(stack, target_structure, hand_annotations, den
         first_sec = 0
         last_sec = 0
 
-        #if side == 'R' or side == 'L':
-        #    structure = structure + '_' + side
+        if side == 'R' or side == 'L':
+            structure = structure + '_' + side
 
         if structure == target_structure:
             vertices = hand_annotations['vertices'][i]
