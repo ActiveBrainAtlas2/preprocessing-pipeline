@@ -31,9 +31,9 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
     if channel == 1:
-        fixed = scaled(fixed, mask)
-        #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
-        #fixed = clahe.apply(fixed.astype(np.uint16))
+        #fixed = scaled(fixed, mask)
+        clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(2, 2))
+        fixed = clahe.apply(fixed.astype(np.uint16))
         clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
         fixed = clahe.apply(fixed.astype(np.uint16))
 
