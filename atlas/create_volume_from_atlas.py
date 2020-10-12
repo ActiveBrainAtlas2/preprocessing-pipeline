@@ -55,7 +55,6 @@ def create_atlas(animal):
     #x_length = 1000
     #y_length = 1000
     #z_length = 300
-    animal = 'DK52'
     sqlController = SqlController(animal)
     resolution = sqlController.scan_run.resolution
     aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
@@ -67,7 +66,7 @@ def create_atlas(animal):
     y_length = downsampled_aligned_shape[0]
 
     atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
-
+    """
 
     my_structures = {'SC': [21868, 5119, 220],
                      'DC_L': [24103, 11618, 134],
@@ -116,20 +115,20 @@ def create_atlas(animal):
     translation, transformation = compute_affine_transform(animal_origin_array, atlas_origin_array)
     invt = np.linalg.inv(transformation)
     offset = -np.dot(invt, translation)
-
+    """
     # 2nd loop
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         x, y, z = origin
+        #x, y, z = origin_centroid + np.dot(transformation, origin - fitted_centroid)
+        #x, y, z = np.dot(transformation, origin)
         x_start = int(x) + x_length // 2
         y_start = int(y) + y_length // 2
         z_start = int(z) // 2 + z_length // 2
         # do transformation
-        #xyz = np.array([x_start,y_start,z_start], dtype=np.float32)
-        #new_points[i] = origin_centroid + np.dot(transformation, fitted[i] - fitted_centroid)
         x_start = int(round(x_start))
         y_start = int(round(y_start))
         z_start = int(round(z_start))
-        #print('x', x_start, 'y', y_start, 'z', z_start)
+        #print('starts: x', x_start, 'y', y_start, 'z', z_start)
 
         x_end = x_start + volume.shape[0]
         y_end = y_start + volume.shape[1]
@@ -137,7 +136,6 @@ def create_atlas(animal):
 
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
-
 
         atlasV7_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
 
