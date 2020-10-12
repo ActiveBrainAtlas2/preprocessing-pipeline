@@ -67,15 +67,18 @@ def create_atlas(animal):
     y_length = downsampled_aligned_shape[0]
 
     atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
-    my_structures = {'SC': [24226, 6401, 220],
-     'DC_L': [24482, 11985, 134, 104, 165],
-     'DC_R': [20424, 11736, 330],
-     'LC_L': [25290, 11750, 180, 175, 185],
-     'LC_R': [24894, 12079, 268],
-     '5N_L': [23790, 13025, 160, 150, 170],
-     '5N_R': [20805, 14163, 298],
-     '7n_L': [20988, 18405, 177, 148, 206],
-     '7n_R': [24554, 13911, 284]}
+
+    my_structures = {
+        'DC_L': [28244, 15747, 134],
+        '5N_L': [27551, 16786, 160],
+        '7n_L': [24750, 22167, 177],
+        'LC_L': [29050, 15509, 180],
+        'SC': [27985, 10160, 220],
+        'LC_R': [28655, 15841, 268],
+        '7n_R': [28314, 17668, 284],
+        '5N_R': [24566, 17920, 298],
+        'DC_R': [24180, 15495, 330]}
+
     animal_origin = collections.OrderedDict()
     for structure, origin in sorted(my_structures.items()):
         animal_origin[structure] = [my_structures[structure][1]/32,
