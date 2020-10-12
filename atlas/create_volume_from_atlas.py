@@ -68,16 +68,16 @@ def create_atlas(animal):
 
     atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
 
-    my_structures = {
-        'DC_L': [28244, 15747, 134],
-        '5N_L': [27551, 16786, 160],
-        '7n_L': [24750, 22167, 177],
-        'LC_L': [29050, 15509, 180],
-        'SC': [27985, 10160, 220],
-        'LC_R': [28655, 15841, 268],
-        '7n_R': [28314, 17668, 284],
-        '5N_R': [24566, 17920, 298],
-        'DC_R': [24180, 15495, 330]}
+
+    my_structures = {'SC': [21868, 5119, 220],
+                     'DC_L': [24103, 11618, 134],
+                     'DC_R': [19870, 11287, 330],
+                     'LC_L': [24746, 11178, 180],
+                     'LC_R': [24013, 11621, 268],
+                     '5N_L': [23105, 12133, 160],
+                     '5N_R': [20205, 13373, 298],
+                     '7n_L': [20611, 17991, 177],
+                     '7n_R': [24218, 13615, 284]}
 
     animal_origin = collections.OrderedDict()
     for structure, origin in sorted(my_structures.items()):
@@ -117,20 +117,19 @@ def create_atlas(animal):
     invt = np.linalg.inv(transformation)
     offset = -np.dot(invt, translation)
 
-
+    # 2nd loop
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         x, y, z = origin
         x_start = int(x) + x_length // 2
         y_start = int(y) + y_length // 2
         z_start = int(z) // 2 + z_length // 2
         # do transformation
-        xyz = np.array([x_start,y_start,z_start], dtype=np.float32)
+        #xyz = np.array([x_start,y_start,z_start], dtype=np.float32)
         #new_points[i] = origin_centroid + np.dot(transformation, fitted[i] - fitted_centroid)
-        x_start, y_start, z_start = origin_centroid + np.dot(transformation, xyz - fitted_centroid)
         x_start = int(round(x_start))
         y_start = int(round(y_start))
         z_start = int(round(z_start))
-        print('x', x_start, 'y', y_start, 'z', z_start)
+        #print('x', x_start, 'y', y_start, 'z', z_start)
 
         x_end = x_start + volume.shape[0]
         y_end = y_start + volume.shape[1]
@@ -139,6 +138,8 @@ def create_atlas(animal):
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
         atlasV7_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
+
+    #origin_centroid + np.dot(transformation, atlasV7_volume - fitted_centroid)
 
 
     ng = NumpyToNeuroglancer(atlasV7_volume, [10000, 10000, 20000])
