@@ -5,7 +5,7 @@ import numpy as np
 from timeit import default_timer as timer
 import collections
 from pymicro.view.vol_utils import compute_affine_transform
-
+import cv2
 
 start = timer()
 HOME = os.path.expanduser("~")
@@ -137,6 +137,8 @@ def create_atlas(animal):
 
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
+
+
         atlasV7_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
 
     #origin_centroid + np.dot(transformation, atlasV7_volume - fitted_centroid)
