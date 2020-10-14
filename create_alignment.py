@@ -173,8 +173,8 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
             sqlController.set_task(animal, ALIGN_CHANNEL_3_FULL_RES)
 
     if masks:
-        INPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/prealigned'.format(animal)
-        OUTPUT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/{}/aligned'.format(animal)
+        INPUT = os.path.join(fileLocationManager.prep, 'rotated_masked')
+        OUTPUT = os.path.join(fileLocationManager.prep, 'rotated_aligned_masked')
         bgcolor = 'black'
 
     os.makedirs(OUTPUT, exist_ok=True)

@@ -16,7 +16,7 @@
       	limit = 10.0;
     } else {
     pix = pow(pix,gamma);
-    limit = 40000.0;
+    limit = 45000.0;
     }
 
 
