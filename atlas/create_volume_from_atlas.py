@@ -6,6 +6,7 @@ from timeit import default_timer as timer
 import collections
 from pymicro.view.vol_utils import compute_affine_transform
 import cv2
+from pprint import pprint
 
 start = timer()
 HOME = os.path.expanduser("~")
@@ -113,6 +114,34 @@ def Affine_Fit( from_pts, to_pts ):
             return res
     return Transformation()
 
+def solve_affineXXX(rbar, rfit):
+    x = np.transpose(np.matrix(rbar))
+    y = np.transpose(np.matrix(rfit))
+    # add ones on the bottom of x and y
+    x = np.vstack((x,[1,1,1]))
+    y = np.vstack((y,[1,1,1]))
+    # solve for A2
+    A2 = y * x.I
+    # return function that takes input x and transforms it
+    # don't need to return the 4th row as it is
+    return lambda x: (A2*np.vstack((np.matrix(x).reshape(3,1),1)))[0:3,:]
+
+
+def solve_affine(rbar, rfit):
+    x = np.transpose(np.matrix(rbar))
+    y = np.transpose(np.matrix(rfit))
+    # add ones on the bottom of x and y
+    rows = rbar.shape[0]
+    bottom = [1 for x in range(rows)]
+    x = np.vstack((x,bottom))
+    y = np.vstack((y,bottom))
+    # solve for A2
+    A2 = y * x.I
+    # return function that takes input x and transforms it
+    # don't need to return the 4th row as it is
+    return lambda x: (A2*np.vstack((np.matrix(x).reshape(3,1),1)))[0:rows,:]
+
+
 def create_atlas(animal):
 
     fileLocationManager = FileLocationManager(animal)
@@ -160,8 +189,8 @@ def create_atlas(animal):
 
     downsampled_aligned_shape = np.round(aligned_shape / SCALE).astype(int)
 
-    x_length = downsampled_aligned_shape[1]
-    y_length = downsampled_aligned_shape[0]
+    x_length = downsampled_aligned_shape[1] + 0
+    y_length = downsampled_aligned_shape[0] + 0
 
     atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
 
@@ -185,111 +214,142 @@ def create_atlas(animal):
                        '7n_L': [20988, 18405, 177],
                        '7n_R': [24554, 13911, 284]}
 
-    animal_origin = collections.OrderedDict()
-    for structure, origin in sorted(mean_structures.items()):
+    animal_origin = {}
+    for structure, origin in mean_structures.items():
         animal_origin[structure] = [mean_structures[structure][1]/SCALE,
                                         mean_structures[structure][0]/SCALE,
                                         mean_structures[structure][2]]
 
-    atlas_origin = collections.OrderedDict()
+    atlas_origin = {}
     atlas_all_origins = {}
 
+
+    # 1st loop to fill dictionarys with data
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         x, y, z = origin
-        x_start = int(x) + x_length // 2
-        y_start = int(y) + y_length // 2
-        z_start = int(z) // 2 + z_length // 2
+        x_start = x + x_length / 2
+        y_start = y + y_length / 2
+        z_start = z / 2 + z_length / 2
         x_end = x_start + volume.shape[0]
         y_end = y_start + volume.shape[1]
-        z_end = z_start + (volume.shape[2] + 1) // 2
-        midx = round((x_end + x_start) / 2)
-        midy = round((y_end + y_start) / 2)
-        midz = round((z_end + z_start) / 2)
-        print(structure,'centroid', midx,midy,midz)
+        z_end = z_start + (volume.shape[2] + 1) / 2
+        midx = (x_end + x_start) / 2
+        midy = (y_end + y_start) / 2
+        midz = (z_end + z_start) / 2
+        #print(structure,'centroid', midx,midy,midz)
 
         if structure in animal_origin.keys():
-            print('atlas', structure, midx, midy, midz, 'md589', animal_origin[structure])
-            atlas_origin[structure] = [midx, midy, midz]
+            atlas_origin[structure] = [round(midx,2), round(midy,2), int(round(midz))]
 
         atlas_all_origins[structure] = [midx, midy, midz]
-
-
+    pprint(atlas_origin)
     atlas_origin_array = np.array(list(atlas_origin.values()), dtype=np.float32)
     animal_origin_array = np.array(list(animal_origin.values()), dtype=np.float32)
 
-    print('atlas_origin_array')
-    print(atlas_origin_array)
-    print('animal_origin_array')
-    print(animal_origin_array)
+    #animal_origin = {'SC': [200.03125, 757.0625, 220], 'DC_L': [374.53125, 765.0625, 134], 'DC_R': [366.75, 638.25, 330]}
+    #atlas_origin =  {'SC': [377.0, 454.0, 226], 'DC_L': [580.0, 651.0, 131], 'DC_R': [580.0, 651.0, 318]}
+    Y = np.array(list(atlas_origin.values()), dtype=np.float32)
+    X = np.array(list(animal_origin.values()), dtype=np.float32)
+    transformFn = solve_affine(X, Y)
 
-    trn = Affine_Fit(animal_origin_array, atlas_origin_array)
+
+    animal_centroid = np.mean(X, axis=0)
+    atlas_centroid = np.mean(Y, axis=0)
+    print('volume centriods', animal_centroid, atlas_centroid)
+    print('X', X.shape)
+    print(X)
+    print('Y', Y.shape)
+    print(Y)
+
+
+    trn = Affine_Fit(X, Y)
     print("Transformation is:")
     print(trn.To_Str())
 
     # basic least squares
-    n = animal_origin_array.shape[0]
+    n = X.shape[0]
     pad = lambda x: np.hstack([x, np.ones((x.shape[0], 1))])
     unpad = lambda x: x[:, :-1]
-    X = pad(animal_origin_array)
-    Y = pad(atlas_origin_array)
-
+    Xp = pad(X)
+    Yp = pad(Y)
     # Solve the least squares problem X * A = Y
     # to find our transformation matrix A
-    A, res, rank, s = np.linalg.lstsq(X, Y, rcond=None)
+    A, residuals, rank, s = np.linalg.lstsq(Xp, Yp, rcond=None)
     transform = lambda x: unpad(np.dot(pad(x), A))
     A[np.abs(A) < 1e-10] = 0
     print(A)
 
 
 
-    translation, transformation = compute_affine_transform(animal_origin_array, atlas_origin_array)
-    invt = np.linalg.inv(transformation)
-    offset = -np.dot(invt, translation)
+    translation, transformation = compute_affine_transform(X, Y)
+    #invt = np.linalg.inv(transformation)
+    #offset = -np.dot(invt, translation)
     print(transformation)
 
-    animal_centroid = np.mean(animal_origin_array, axis=0)
-    atlas_centroid = np.mean(atlas_origin_array, axis=0)
-    print('volume centriods', animal_centroid, atlas_centroid)
 
     # 2nd loop
+    atlas_minmax = []
+    trans_minmax = []
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         x, y, z = origin
-        xmid, ymid, zmid = atlas_all_origins[structure]
         x_start = int(x) + x_length // 2
         y_start = int(y) + y_length // 2
         z_start = int(z) // 2 + z_length // 2
-        print(str(structure).ljust(8), 'original starts: x', x_start, 'y', y_start, 'z', z_start, end="\n")
+        print(str(structure).ljust(8), 'original starts: x', x_start, 'y', y_start, 'z', z_start, end="\t")
+        #x_start, y_start, z_start = atlas_all_origins[structure]
         #print('mids', xmid, ymid, zmid, end="\n")
-        original_array = np.array([xmid, ymid, zmid])
+        #original_array = np.array([x,y,z])
         # do transformation
+        #x_start = int(xf2) + x_length // 2
+        #y_start = int(yf2) + y_length // 2
+        #z_start = int(zf2) // 2 + z_length // 2
 
-        x0 = x + x_length
-        x1 = y + y_length
-        x2 = z
-
+        original_array = np.array([x_start, y_start, z_start])
         #xf2, yf2, zf2 = animal_centroid + np.dot(transformation, original_array  - atlas_centroid)
-        #xf2, yf2, zf2 = trn.Transform(original_array)
-        #x_start = int(round(xf2 + x_length/2))
-        #y_start = int(round(yf2 + y_length/2))
-        #z_start = int(round(zf2))
-        #print('2. trans x', x_start, 'y', y_start, 'z', z_start)
+        #original_array = np.vstack((original_array, [1,1,1]))
+        #results  = transform(original_array)[0:1]
+        #xf2 = results[0,0]
+        #yf2 = results[0,1]
+        #zf2 = results[0,2]
+
+        #xf2,yf2,zf2, _ = transformFn(original_array)
+        xf2, yf2, zf2 = trn.Transform(original_array)
+
+        #transformed_array = np.array([xf2, yf2, zf2])
+
+
+        x_start = int(round(xf2))
+        y_start = int(round(yf2))
+        z_start = int(round(zf2))
+        #x_start = int(round(xf2[0,0]))
+        #y_start = int(round(yf2[0,0]))
+        #z_start = int(round(zf2[0,0]))
+        atlas_minmax.append(x_start)
+        trans_minmax.append(xf2)
+        print('2. trans x', x_start, 'y', y_start, 'z', z_start, end="\n")
         x_end = x_start + volume.shape[0]
         y_end = y_start + volume.shape[1]
         z_end = z_start + (volume.shape[2] + 1) // 2
 
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
+        try:
+            atlasV7_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
+        except:
+            print('could not add', structure, x_start,y_start, z_start)
 
-        atlasV7_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
-
+    print('min,max x for atlas', np.min(atlas_minmax),np.max(atlas_minmax))
+    print('min,max x for trans', np.min(trans_minmax),np.max(trans_minmax))
     #origin_centroid + np.dot(transformation, atlasV7_volume - fitted_centroid)
     planar_resolution = sqlController.scan_run.resolution
-    resolution = int(planar_resolution * 1000 * SCALE)
-    print('resolution', resolution)
+    #resolution = int(planar_resolution * 1000 * SCALE)
+    #resolution = 0.46 * 1000 * SCALE
+    resolution = 10000
+    print(resolution)
     if True:
         #def __init__(self, volume, scales, offset=[0, 0, 0], layer_type='segmentation'):
 
-        ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=[500,-200,0])
+        ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=[770,20,0])
         ng.init_precomputed(OUTPUT_DIR)
         ng.add_segment_properties(get_segment_properties())
         ng.add_downsampled_volumes()
