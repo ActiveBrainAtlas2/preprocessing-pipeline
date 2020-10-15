@@ -295,7 +295,8 @@ def create_atlas(animal):
         x_start = int(x) + x_length // 2
         y_start = int(y) + y_length // 2
         z_start = int(z) // 2 + z_length // 2
-        print(str(structure).ljust(8), 'original starts: x', x_start, 'y', y_start, 'z', z_start, end="\t")
+        print(str(structure).ljust(8), 'original starts: x', x_start, 'y', y_start, 'z', z_start, end="\n")
+        """
         #x_start, y_start, z_start = atlas_all_origins[structure]
         #print('mids', xmid, ymid, zmid, end="\n")
         #original_array = np.array([x,y,z])
@@ -312,21 +313,22 @@ def create_atlas(animal):
         #yf2 = results[0,1]
         #zf2 = results[0,2]
 
-        #xf2,yf2,zf2, _ = transformFn(original_array)
-        xf2, yf2, zf2 = trn.Transform(original_array)
+        xf2,yf2,zf2, _ = transformFn(original_array)
+        #xf2, yf2, zf2 = trn.Transform(original_array)
 
         #transformed_array = np.array([xf2, yf2, zf2])
 
 
-        x_start = int(round(xf2))
-        y_start = int(round(yf2))
-        z_start = int(round(zf2))
-        #x_start = int(round(xf2[0,0]))
-        #y_start = int(round(yf2[0,0]))
-        #z_start = int(round(zf2[0,0]))
+        #x_start = int(round(xf2))
+        #y_start = int(round(yf2))
+        #z_start = int(round(zf2))
+        x_start = int(round(xf2[0,0]))
+        y_start = int(round(yf2[0,0]))
+        z_start = int(round(zf2[0,0]))
         atlas_minmax.append(x_start)
         trans_minmax.append(xf2)
         print('2. trans x', x_start, 'y', y_start, 'z', z_start, end="\n")
+        """
         x_end = x_start + volume.shape[0]
         y_end = y_start + volume.shape[1]
         z_end = z_start + (volume.shape[2] + 1) // 2
@@ -338,13 +340,13 @@ def create_atlas(animal):
         except:
             print('could not add', structure, x_start,y_start, z_start)
 
-    print('min,max x for atlas', np.min(atlas_minmax),np.max(atlas_minmax))
-    print('min,max x for trans', np.min(trans_minmax),np.max(trans_minmax))
+    #print('min,max x for atlas', np.min(atlas_minmax),np.max(atlas_minmax))
+    #print('min,max x for trans', np.min(trans_minmax),np.max(trans_minmax))
     #origin_centroid + np.dot(transformation, atlasV7_volume - fitted_centroid)
     planar_resolution = sqlController.scan_run.resolution
-    #resolution = int(planar_resolution * 1000 * SCALE)
+    resolution = int(planar_resolution * 1000 * SCALE)
     #resolution = 0.46 * 1000 * SCALE
-    resolution = 10000
+    #resolution = 10000
     print(resolution)
     if True:
         #def __init__(self, volume, scales, offset=[0, 0, 0], layer_type='segmentation'):

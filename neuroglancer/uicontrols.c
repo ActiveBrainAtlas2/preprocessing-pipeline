@@ -57,7 +57,6 @@ void main() {
 #uicontrol float linlog slider(min=0, max=1, default=0, step=1)
 void main() {
   float limit = 45000.0;
-  // float pix_val = toNormalized(getDataValue());
   float pix_val = float(toRaw(getDataValue()));
 
   if (linlog==1.0) {
