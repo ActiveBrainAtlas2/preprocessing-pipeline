@@ -224,11 +224,19 @@ def create_atlas(animal):
     atlas_centroid = np.mean(ATLAS, axis=0)
     print('volume centriods', md589_centroid, atlas_centroid)
 
-    # 1. affine_fit
+    # start of 1st rotation/translation
+    # using Superpose3d
+    result = Superpose3D(MD589, ATLAS, None, False, False)
+    R = np.matrix(result[1])  # rotation matrix
+    T = np.matrix(result[2]).transpose()  # translation vector (3x1 matrix)
+    c = result[3]  # scalar
+    # 2. using simple solve_affine
+    transformFn = solve_affine(MD589, ATLAS)
+    # 3. affine_fit
     trn = Affine_Fit(MD589, ATLAS)
     print("Transformation is:")
     print(trn.To_Str())
-    # 2. basic least squares
+    # 4. basic least squares
     n = MD589.shape[0]
     pad = lambda x: np.hstack([x, np.ones((x.shape[0], 1))])
     unpad = lambda x: x[:, :-1]
@@ -241,6 +249,11 @@ def create_atlas(animal):
     A[np.abs(A) < 1e-10] = 0
     print(A)
 
+    # 4. compute affine from pymicro
+    translation, transformation = compute_affine_transform(MD589, ATLAS)
+    #invt = np.linalg.inv(transformation)
+    #offset = -np.dot(invt, translation)
+    print('compute_affine', transformation)
 
     # 2nd loop
     atlas_minmax = []
@@ -251,11 +264,11 @@ def create_atlas(animal):
         y_start = int(y) + y_length // 2
         z_start = int(z) // 2 + z_length // 2
         atlas_minmax.append(x_start)
-        print(str(structure).ljust(8), 'original x', x_start, 'y', y_start, 'z', z_start, end="\t")
+        print(str(structure).ljust(8), 'original starts: x', x_start, 'y', y_start, 'z', z_start, end="\t")
 
         original_array = np.array([x_start, y_start, z_start])
         xfTrn, yfTrn, zfTrn = trn.Transform(original_array)
-        print('Affine fit', round(xfTrn), 'y', round(yfTrn), 'z', round(zfTrn), end="\t")
+        print('trn: x', round(xfTrn), 'y', round(yfTrn), 'z', round(zfTrn), end="\t")
         trans_minmax.append(xfTrn)
         original_array = np.vstack((original_array, [1,1,1]))
         results  = transform(original_array)[0:1]
@@ -282,6 +295,7 @@ def create_atlas(animal):
 
     print('min,max x for atlas', np.min(atlas_minmax),np.max(atlas_minmax))
     print('min,max x for trans', np.min(trans_minmax),np.max(trans_minmax))
+    #origin_centroid + np.dot(transformation, atlasV7_volume - fitted_centroid)
     planar_resolution = sqlController.scan_run.resolution
     resolution = int(planar_resolution * 1000 * SCALE)
     #resolution = 0.46 * 1000 * SCALE
