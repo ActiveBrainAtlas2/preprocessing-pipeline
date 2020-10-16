@@ -17,132 +17,6 @@ from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
 
-def Affine_Fit( from_pts, to_pts ):
-    """Fit an affine transformation to given point sets.
-      More precisely: solve (least squares fit) matrix 'A'and 't' from
-      'p ~= A*q+t', given vectors 'p' and 'q'.
-      Works with arbitrary dimensional vectors (2d, 3d, 4d...).
-
-      Written by Jarno Elonen <elonen@iki.fi> in 2007.
-      Placed in Public Domain.
-
-      Based on paper "Fitting affine and orthogonal transformations
-      between two sets of points, by Helmuth Späth (2003)."""
-
-    q = from_pts
-    p = to_pts
-    if len(q) != len(p) or len(q)<1:
-        print("from_pts and to_pts must be of same size.")
-        return False
-
-    dim = len(q[0]) # num of dimensions
-    if len(q) < dim:
-        print("Too few points => under-determined system.")
-        return False
-
-    # Make an empty (dim) x (dim+1) matrix and fill it
-    c = [[0.0 for a in range(dim)] for i in range(dim+1)]
-    for j in range(dim):
-        for k in range(dim+1):
-            for i in range(len(q)):
-                qt = list(q[i]) + [1]
-                c[k][j] += qt[k] * p[i][j]
-
-    # Make an empty (dim+1) x (dim+1) matrix and fill it
-    Q = [[0.0 for a in range(dim)] + [0] for i in range(dim+1)]
-    for qi in q:
-        qt = list(qi) + [1]
-        for i in range(dim+1):
-            for j in range(dim+1):
-                Q[i][j] += qt[i] * qt[j]
-
-    # Ultra simple linear system solver. Replace this if you need speed.
-    def gauss_jordan(m, eps = 1.0/(10**10)):
-      """Puts given matrix (2D array) into the Reduced Row Echelon Form.
-         Returns True if successful, False if 'm' is singular.
-         NOTE: make sure all the matrix items support fractions! Int matrix will NOT work!
-         Written by Jarno Elonen in April 2005, released into Public Domain"""
-      (h, w) = (len(m), len(m[0]))
-      for y in range(0,h):
-        maxrow = y
-        for y2 in range(y+1, h):    # Find max pivot
-          if abs(m[y2][y]) > abs(m[maxrow][y]):
-            maxrow = y2
-        (m[y], m[maxrow]) = (m[maxrow], m[y])
-        if abs(m[y][y]) <= eps:     # Singular?
-          return False
-        for y2 in range(y+1, h):    # Eliminate column y
-          c = m[y2][y] / m[y][y]
-          for x in range(y, w):
-            m[y2][x] -= m[y][x] * c
-      for y in range(h-1, 0-1, -1): # Backsubstitute
-        c  = m[y][y]
-        for y2 in range(0,y):
-          for x in range(w-1, y-1, -1):
-            m[y2][x] -=  m[y][x] * m[y2][y] / c
-        m[y][y] /= c
-        for x in range(h, w):       # Normalize row y
-          m[y][x] /= c
-      return True
-
-    # Augement Q with c and solve Q * a' = c by Gauss-Jordan
-    M = [ Q[i] + c[i] for i in range(dim+1)]
-    if not gauss_jordan(M):
-        print("Error: singular matrix. Points are probably coplanar.")
-        return False
-
-    # Make a result object
-    class Transformation:
-        """Result object that represents the transformation
-           from affine fitter."""
-
-        def To_Str(self):
-            res = ""
-            for j in range(dim):
-                str = "x%df = " % j
-                for i in range(dim):
-                    str +="x%d * %f + " % (i, M[i][j+dim+1])
-                str += "%f" % M[dim][j+dim+1]
-                res += str + "\n"
-            return res
-
-        def Transform(self, pt):
-            res = [0.0 for a in range(dim)]
-            for j in range(dim):
-                for i in range(dim):
-                    res[j] += pt[i] * M[i][j+dim+1]
-                res[j] += M[dim][j+dim+1]
-            return res
-    return Transformation()
-
-def solve_affineXXX(rbar, rfit):
-    x = np.transpose(np.matrix(rbar))
-    y = np.transpose(np.matrix(rfit))
-    # add ones on the bottom of x and y
-    x = np.vstack((x,[1,1,1]))
-    y = np.vstack((y,[1,1,1]))
-    # solve for A2
-    A2 = y * x.I
-    # return function that takes input x and transforms it
-    # don't need to return the 4th row as it is
-    return lambda x: (A2*np.vstack((np.matrix(x).reshape(3,1),1)))[0:3,:]
-
-
-def solve_affine(rbar, rfit):
-    x = np.transpose(np.matrix(rbar))
-    y = np.transpose(np.matrix(rfit))
-    # add ones on the bottom of x and y
-    rows = rbar.shape[0]
-    bottom = [1 for x in range(rows)]
-    x = np.vstack((x,bottom))
-    y = np.vstack((y,bottom))
-    # solve for A2
-    A2 = y * x.I
-    # return function that takes input x and transforms it
-    # don't need to return the 4th row as it is
-    return lambda x: (A2*np.vstack((np.matrix(x).reshape(3,1),1)))[0:rows,:]
-
-
 def create_atlas(animal):
 
     fileLocationManager = FileLocationManager(animal)
@@ -224,10 +98,6 @@ def create_atlas(animal):
     atlas_centroid = np.mean(ATLAS, axis=0)
     print('volume centriods', md589_centroid, atlas_centroid)
 
-    # 1. affine_fit
-    trn = Affine_Fit(MD589, ATLAS)
-    print("Transformation is:")
-    print(trn.To_Str())
     # 2. basic least squares
     n = MD589.shape[0]
     pad = lambda x: np.hstack([x, np.ones((x.shape[0], 1))])
@@ -242,7 +112,6 @@ def create_atlas(animal):
     print(A)
 
 
-    # 2nd loop
     atlas_minmax = []
     trans_minmax = []
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
@@ -254,20 +123,18 @@ def create_atlas(animal):
         print(str(structure).ljust(8), 'original x', x_start, 'y', y_start, 'z', z_start, end="\t")
 
         original_array = np.array([x_start, y_start, z_start])
-        xfTrn, yfTrn, zfTrn = trn.Transform(original_array)
-        print('Affine fit', round(xfTrn), 'y', round(yfTrn), 'z', round(zfTrn), end="\t")
-        trans_minmax.append(xfTrn)
         original_array = np.vstack((original_array, [1,1,1]))
         results  = transform(original_array)[0:1]
         xf2 = results[0,0]
         yf2 = results[0,1]
         zf2 = results[0,2]
         print('least squares:', round(xf2), 'y', round(yf2), 'z', round(zf2), end="\n")
+        trans_minmax.append(xf2)
 
 
-        x_start = int(round(xfTrn))
-        y_start = int(round(yfTrn))
-        z_start = int(round(zfTrn))
+        x_start = int(round(xf2))
+        y_start = int(round(yf2))
+        z_start = int(round(zf2))
 
         x_end = x_start + volume.shape[0]
         y_end = y_start + volume.shape[1]
