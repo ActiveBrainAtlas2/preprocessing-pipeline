@@ -4,11 +4,9 @@ import sys
 import numpy as np
 from timeit import default_timer as timer
 import collections
-from pymicro.view.vol_utils import compute_affine_transform
 import cv2
-from pprint import pprint
-from superpose3d import Superpose3D
 from _collections import OrderedDict
+
 start = timer()
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -31,8 +29,9 @@ def create_atlas(animal):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     origin_files = sorted(os.listdir(ORIGIN_PATH))
     volume_files = sorted(os.listdir(VOLUME_PATH))
-    sqlController = SqlController(animal)
-    resolution = sqlController.scan_run.resolution
+    #sqlController = SqlController(animal)
+    #resolution = sqlController.scan_run.resolution
+    resolution = 0.452
     # the atlas uses a 10um scale
     SCALE = (10 / resolution)
 
@@ -54,9 +53,12 @@ def create_atlas(animal):
         volume = volume.astype(np.uint8)
 
         structure_volume_origin[structure] = (volume, origin)
-
-    aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
-    z_length = len(os.listdir(THUMBNAIL_DIR))
+    w = 43700
+    h = 32400
+    #aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
+    aligned_shape = np.array((43700, 32400))
+    #z_length = len(os.listdir(THUMBNAIL_DIR))
+    z_length = 447
 
     downsampled_aligned_shape = np.round(aligned_shape / SCALE).astype(int)
 
@@ -64,7 +66,6 @@ def create_atlas(animal):
     y_length = downsampled_aligned_shape[0] + 0
 
     atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
-
 
     ##### actual data for both sets of points
     MD589_centers = {'5N_L': [23790, 13025, 160],
@@ -97,7 +98,7 @@ def create_atlas(animal):
 
     md589_centroid = np.mean(MD589, axis=0)
     atlas_centroid = np.mean(ATLAS, axis=0)
-    print('volume centriods', md589_centroid, atlas_centroid)
+    print('volume centroids', md589_centroid, atlas_centroid)
 
     # 2. basic least squares
     n = MD589.shape[0]
@@ -132,7 +133,6 @@ def create_atlas(animal):
         print('least squares:', round(xf2), 'y', round(yf2), 'z', round(zf2), end="\n")
         trans_minmax.append((xf2,yf2))
 
-
         x_start = int(round(xf2))
         y_start = int(round(yf2))
         z_start = int(round(zf2))
@@ -155,19 +155,14 @@ def create_atlas(animal):
     print('min,max x for trans', np.min([x[0] for x in trans_minmax]),np.max([x[0] for x in trans_minmax]))
     print('min,max y for trans', np.min([x[1] for x in trans_minmax]),np.max([x[1] for x in trans_minmax]))
 
+    """
     resolution = int(resolution * 1000 * SCALE)
-    #resolution = 0.46 * 1000 * SCALE
-    #resolution = 10000
-    print('Resolution',resolution)
-    if False:
-        #def __init__(self, volume, scales, offset=[0, 0, 0], layer_type='segmentation'):
-
-        ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=[0,0,0])
-        ng.init_precomputed(OUTPUT_DIR)
-        ng.add_segment_properties(get_segment_properties())
-        ng.add_downsampled_volumes()
-        ng.add_segmentation_mesh()
-
+    ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=[0,0,0])
+    ng.init_precomputed(OUTPUT_DIR)
+    ng.add_segment_properties(get_segment_properties())
+    ng.add_downsampled_volumes()
+    ng.add_segmentation_mesh()
+    """
 
     end = timer()
     print(f'Finito! Program took {end - start} seconds')
