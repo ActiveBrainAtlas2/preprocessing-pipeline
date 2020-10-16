@@ -31,7 +31,10 @@ def create_atlas(animal):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     origin_files = sorted(os.listdir(ORIGIN_PATH))
     volume_files = sorted(os.listdir(VOLUME_PATH))
-    SCALE = (10 / 0.452)
+    sqlController = SqlController(animal)
+    resolution = sqlController.scan_run.resolution
+    # the atlas uses a 10um scale
+    SCALE = (10 / resolution)
 
     structure_volume_origin = {}
     for volume_filename, origin_filename in zip(volume_files, origin_files):
@@ -52,8 +55,6 @@ def create_atlas(animal):
 
         structure_volume_origin[structure] = (volume, origin)
 
-    sqlController = SqlController(animal)
-    resolution = sqlController.scan_run.resolution
     aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
     z_length = len(os.listdir(THUMBNAIL_DIR))
 
@@ -108,8 +109,8 @@ def create_atlas(animal):
     # to find our transformation matrix A
     A, residuals, rank, s = np.linalg.lstsq(Xp, Yp, rcond=None)
     transform = lambda x: unpad(np.dot(pad(x), A))
-    A[np.abs(A) < 1e-10] = 0
-    print(A)
+    #A[np.abs(A) < 1e-10] = 0
+    #print(A)
 
 
     atlas_minmax = []
@@ -119,7 +120,7 @@ def create_atlas(animal):
         x_start = int(x) + x_length // 2
         y_start = int(y) + y_length // 2
         z_start = int(z) // 2 + z_length // 2
-        atlas_minmax.append(x_start)
+        atlas_minmax.append((x_start, y_start))
         print(str(structure).ljust(8), 'original x', x_start, 'y', y_start, 'z', z_start, end="\t")
 
         original_array = np.array([x_start, y_start, z_start])
@@ -129,7 +130,7 @@ def create_atlas(animal):
         yf2 = results[0,1]
         zf2 = results[0,2]
         print('least squares:', round(xf2), 'y', round(yf2), 'z', round(zf2), end="\n")
-        trans_minmax.append(xf2)
+        trans_minmax.append((xf2,yf2))
 
 
         x_start = int(round(xf2))
@@ -147,13 +148,17 @@ def create_atlas(animal):
         except:
             print('could not add', structure, x_start,y_start, z_start)
 
-    print('min,max x for atlas', np.min(atlas_minmax),np.max(atlas_minmax))
-    print('min,max x for trans', np.min(trans_minmax),np.max(trans_minmax))
-    planar_resolution = sqlController.scan_run.resolution
-    resolution = int(planar_resolution * 1000 * SCALE)
+    # check range of x and y
+    print('min,max x for atlas', np.min([x[0] for x in atlas_minmax]),np.max([x[0] for x in atlas_minmax]))
+    print('min,max y for atlas', np.min([x[1] for x in atlas_minmax]),np.max([x[1] for x in atlas_minmax]))
+
+    print('min,max x for trans', np.min([x[0] for x in trans_minmax]),np.max([x[0] for x in trans_minmax]))
+    print('min,max y for trans', np.min([x[1] for x in trans_minmax]),np.max([x[1] for x in trans_minmax]))
+
+    resolution = int(resolution * 1000 * SCALE)
     #resolution = 0.46 * 1000 * SCALE
     #resolution = 10000
-    print(resolution)
+    print('Resolution',resolution)
     if False:
         #def __init__(self, volume, scales, offset=[0, 0, 0], layer_type='segmentation'):
 
