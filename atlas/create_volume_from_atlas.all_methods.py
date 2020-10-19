@@ -9,6 +9,7 @@ import cv2
 from pprint import pprint
 from superpose3d import Superpose3D
 from _collections import OrderedDict
+import pandas as pd
 start = timer()
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -16,6 +17,27 @@ sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
+
+
+def rotation_matrix(A, B):
+    # a and b are in the form of numpy array
+
+    ax = A[0]
+    ay = A[1]
+    az = A[2]
+
+    bx = B[0]
+    by = B[1]
+    bz = B[2]
+
+    au = A / (np.sqrt(ax * ax + ay * ay + az * az))
+    bu = B / (np.sqrt(bx * bx + by * by + bz * bz))
+
+    R = np.array([[bu[0] * au[0], bu[0] * au[1], bu[0] * au[2]], [bu[1] * au[0], bu[1] * au[1], bu[1] * au[2]],
+                  [bu[2] * au[0], bu[2] * au[1], bu[2] * au[2]]])
+    return R
+
+
 
 def Affine_Fit( from_pts, to_pts ):
     """Fit an affine transformation to given point sets.
@@ -157,7 +179,7 @@ def create_atlas(animal):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     origin_files = sorted(os.listdir(ORIGIN_PATH))
     volume_files = sorted(os.listdir(VOLUME_PATH))
-    SCALE = (10 / 0.452)
+    SCALE = 32
 
     structure_volume_origin = {}
     for volume_filename, origin_filename in zip(volume_files, origin_files):
@@ -187,6 +209,34 @@ def create_atlas(animal):
 
     x_length = downsampled_aligned_shape[1] + 0
     y_length = downsampled_aligned_shape[0] + 0
+
+    atlas_centers = {}
+
+    # 1st loop to fill dictionarys with data
+    for structure, (volume, origin) in sorted(structure_volume_origin.items()):
+        x, y, z = origin
+        x_start = x + x_length / 2
+        y_start = y + y_length / 2
+        z_start = z / 2 + z_length / 2
+        x_end = x_start + volume.shape[0]
+        y_end = y_start + volume.shape[1]
+        z_end = z_start + (volume.shape[2] + 1) / 2
+        midx = (x_end + x_start) / 2
+        midy = (y_end + y_start) / 2
+        midz = (z_end + z_start) / 2
+        # print(structure,'centroid', midx,midy,midz)
+
+        #if structure in animal_origin.keys():
+        #    atlas_origin[structure] = [round(midx, 2), round(midy, 2), int(round(midz))]
+
+        atlas_centers[structure] = [midx, midy, midz]
+
+    #df = pd.DataFrame.from_dict(atlas_centers, orient='index', columns=['structure','midx','midy','midz'])
+    df = pd.DataFrame.from_dict(atlas_centers, orient='index',columns=['midx','midy','midz'])
+    print(df.head())
+    atlas_csv = os.path.join(ATLAS_PATH, 'atlas_center_of_mass.csv')
+    df.to_csv(atlas_csv, index=True)
+    sys.exit()
 
     atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
 
@@ -322,7 +372,7 @@ def create_atlas(animal):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--animal', help='Enter the animal', required=False, default='MD589')
     args = parser.parse_args()
     animal = args.animal
     create_atlas(animal)
