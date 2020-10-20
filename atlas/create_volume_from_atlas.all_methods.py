@@ -1,15 +1,20 @@
+"""
+Scale with 32 looks better.
+"""
 import argparse
 import os
 import sys
 import numpy as np
 from timeit import default_timer as timer
 import collections
-from pymicro.view.vol_utils import compute_affine_transform
 import cv2
-from pprint import pprint
-from superpose3d import Superpose3D
-from _collections import OrderedDict
 import pandas as pd
+from _collections import OrderedDict
+from scipy.ndimage import affine_transform
+from superpose3d import Superpose3D
+from scipy import linalg
+from pymicro.view.vol_utils import compute_affine_transform
+from pprint import pprint
 start = timer()
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -19,151 +24,83 @@ from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
 
 
-def rotation_matrix(A, B):
-    # a and b are in the form of numpy array
+def ralign(from_points, to_points):
+    assert len(from_points.shape) == 2, \
+        "from_points must be a m x n array"
+    assert from_points.shape == to_points.shape, \
+        "from_points and to_points must have the same shape"
 
-    ax = A[0]
-    ay = A[1]
-    az = A[2]
+    N, m = from_points.shape
 
-    bx = B[0]
-    by = B[1]
-    bz = B[2]
+    mean_from = from_points.mean(axis=0)
+    mean_to = to_points.mean(axis=0)
 
-    au = A / (np.sqrt(ax * ax + ay * ay + az * az))
-    bu = B / (np.sqrt(bx * bx + by * by + bz * bz))
+    delta_from = from_points - mean_from  # N x m
+    delta_to = to_points - mean_to  # N x m
 
-    R = np.array([[bu[0] * au[0], bu[0] * au[1], bu[0] * au[2]], [bu[1] * au[0], bu[1] * au[1], bu[1] * au[2]],
-                  [bu[2] * au[0], bu[2] * au[1], bu[2] * au[2]]])
-    return R
+    sigma_from = (delta_from * delta_from).sum(axis=1).mean()
+    sigma_to = (delta_to * delta_to).sum(axis=1).mean()
 
+    cov_matrix = delta_to.T.dot(delta_from) / N
 
+    U, d, V_t = np.linalg.svd(cov_matrix, full_matrices=True)
+    cov_rank = np.linalg.matrix_rank(cov_matrix)
+    S = np.eye(m)
 
-def Affine_Fit( from_pts, to_pts ):
-    """Fit an affine transformation to given point sets.
-      More precisely: solve (least squares fit) matrix 'A'and 't' from
-      'p ~= A*q+t', given vectors 'p' and 'q'.
-      Works with arbitrary dimensional vectors (2d, 3d, 4d...).
+    if cov_rank >= m - 1 and np.linalg.det(cov_matrix) < 0:
+        S[m - 1, m - 1] = -1
+    elif cov_rank < m - 1:
+        raise ValueError("colinearility detected in covariance matrix:\n{}".format(cov_matrix))
 
-      Written by Jarno Elonen <elonen@iki.fi> in 2007.
-      Placed in Public Domain.
+    R = U.dot(S).dot(V_t)
+    c = (d * S.diagonal()).sum() / sigma_from
+    t = mean_to - c * R.dot(mean_from)
 
-      Based on paper "Fitting affine and orthogonal transformations
-      between two sets of points, by Helmuth Späth (2003)."""
-
-    q = from_pts
-    p = to_pts
-    if len(q) != len(p) or len(q)<1:
-        print("from_pts and to_pts must be of same size.")
-        return False
-
-    dim = len(q[0]) # num of dimensions
-    if len(q) < dim:
-        print("Too few points => under-determined system.")
-        return False
-
-    # Make an empty (dim) x (dim+1) matrix and fill it
-    c = [[0.0 for a in range(dim)] for i in range(dim+1)]
-    for j in range(dim):
-        for k in range(dim+1):
-            for i in range(len(q)):
-                qt = list(q[i]) + [1]
-                c[k][j] += qt[k] * p[i][j]
-
-    # Make an empty (dim+1) x (dim+1) matrix and fill it
-    Q = [[0.0 for a in range(dim)] + [0] for i in range(dim+1)]
-    for qi in q:
-        qt = list(qi) + [1]
-        for i in range(dim+1):
-            for j in range(dim+1):
-                Q[i][j] += qt[i] * qt[j]
-
-    # Ultra simple linear system solver. Replace this if you need speed.
-    def gauss_jordan(m, eps = 1.0/(10**10)):
-      """Puts given matrix (2D array) into the Reduced Row Echelon Form.
-         Returns True if successful, False if 'm' is singular.
-         NOTE: make sure all the matrix items support fractions! Int matrix will NOT work!
-         Written by Jarno Elonen in April 2005, released into Public Domain"""
-      (h, w) = (len(m), len(m[0]))
-      for y in range(0,h):
-        maxrow = y
-        for y2 in range(y+1, h):    # Find max pivot
-          if abs(m[y2][y]) > abs(m[maxrow][y]):
-            maxrow = y2
-        (m[y], m[maxrow]) = (m[maxrow], m[y])
-        if abs(m[y][y]) <= eps:     # Singular?
-          return False
-        for y2 in range(y+1, h):    # Eliminate column y
-          c = m[y2][y] / m[y][y]
-          for x in range(y, w):
-            m[y2][x] -= m[y][x] * c
-      for y in range(h-1, 0-1, -1): # Backsubstitute
-        c  = m[y][y]
-        for y2 in range(0,y):
-          for x in range(w-1, y-1, -1):
-            m[y2][x] -=  m[y][x] * m[y2][y] / c
-        m[y][y] /= c
-        for x in range(h, w):       # Normalize row y
-          m[y][x] /= c
-      return True
-
-    # Augement Q with c and solve Q * a' = c by Gauss-Jordan
-    M = [ Q[i] + c[i] for i in range(dim+1)]
-    if not gauss_jordan(M):
-        print("Error: singular matrix. Points are probably coplanar.")
-        return False
-
-    # Make a result object
-    class Transformation:
-        """Result object that represents the transformation
-           from affine fitter."""
-
-        def To_Str(self):
-            res = ""
-            for j in range(dim):
-                str = "x%df = " % j
-                for i in range(dim):
-                    str +="x%d * %f + " % (i, M[i][j+dim+1])
-                str += "%f" % M[dim][j+dim+1]
-                res += str + "\n"
-            return res
-
-        def Transform(self, pt):
-            res = [0.0 for a in range(dim)]
-            for j in range(dim):
-                for i in range(dim):
-                    res[j] += pt[i] * M[i][j+dim+1]
-                res[j] += M[dim][j+dim+1]
-            return res
-    return Transformation()
-
-def solve_affineXXX(rbar, rfit):
-    x = np.transpose(np.matrix(rbar))
-    y = np.transpose(np.matrix(rfit))
-    # add ones on the bottom of x and y
-    x = np.vstack((x,[1,1,1]))
-    y = np.vstack((y,[1,1,1]))
-    # solve for A2
-    A2 = y * x.I
-    # return function that takes input x and transforms it
-    # don't need to return the 4th row as it is
-    return lambda x: (A2*np.vstack((np.matrix(x).reshape(3,1),1)))[0:3,:]
+    return c*R, t
 
 
-def solve_affine(rbar, rfit):
-    x = np.transpose(np.matrix(rbar))
-    y = np.transpose(np.matrix(rfit))
-    # add ones on the bottom of x and y
-    rows = rbar.shape[0]
-    bottom = [1 for x in range(rows)]
-    x = np.vstack((x,bottom))
-    y = np.vstack((y,bottom))
-    # solve for A2
-    A2 = y * x.I
-    # return function that takes input x and transforms it
-    # don't need to return the 4th row as it is
-    return lambda x: (A2*np.vstack((np.matrix(x).reshape(3,1),1)))[0:rows,:]
+def rigid_transform_3D(A, B):
+    assert A.shape == B.shape
 
+    num_rows, num_cols = A.shape
+    if num_rows != 3:
+        raise Exception(f"matrix A is not 3xN, it is {num_rows}x{num_cols}")
+
+    num_rows, num_cols = B.shape
+    if num_rows != 3:
+        raise Exception(f"matrix B is not 3xN, it is {num_rows}x{num_cols}")
+
+    # find mean column wise
+    centroid_A = np.mean(A, axis=1)
+    centroid_B = np.mean(B, axis=1)
+
+    # ensure centroids are 3x1
+    centroid_A = centroid_A.reshape(-1, 1)
+    centroid_B = centroid_B.reshape(-1, 1)
+
+    # subtract mean
+    Am = A - centroid_A
+    Bm = B - centroid_B
+
+    H = Am @ np.transpose(Bm)
+
+    # sanity check
+    #if linalg.matrix_rank(H) < 3:
+    #    raise ValueError("rank of H = {}, expecting 3".format(linalg.matrix_rank(H)))
+
+    # find rotation
+    U, S, Vt = np.linalg.svd(H)
+    R = Vt.T @ U.T
+
+    # special reflection case
+    if np.linalg.det(R) < 0:
+        print("det(R) < R, reflection detected!, correcting for it ...")
+        Vt[2,:] *= -1
+        R = Vt.T @ U.T
+
+    t = -R@centroid_A + centroid_B
+
+    return R, t
 
 def create_atlas(animal):
 
@@ -175,10 +112,15 @@ def create_atlas(animal):
     ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
     ORIGIN_PATH = os.path.join(ATLAS_PATH, 'origin')
     VOLUME_PATH = os.path.join(ATLAS_PATH, 'structure')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'atlas')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'atlas_affine')
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     origin_files = sorted(os.listdir(ORIGIN_PATH))
     volume_files = sorted(os.listdir(VOLUME_PATH))
+    sqlController = SqlController(animal)
+    resolution = sqlController.scan_run.resolution
+    resolution = 0.452
+    # the atlas uses a 10um scale
+    #SCALE = (10 / resolution)
     SCALE = 32
 
     structure_volume_origin = {}
@@ -199,49 +141,19 @@ def create_atlas(animal):
         volume = volume.astype(np.uint8)
 
         structure_volume_origin[structure] = (volume, origin)
-
-    sqlController = SqlController(animal)
-    resolution = sqlController.scan_run.resolution
+    #w = 43700
+    #h = 32400
     aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
+    #aligned_shape = np.array((43700, 32400))
     z_length = len(os.listdir(THUMBNAIL_DIR))
-
-    downsampled_aligned_shape = np.round(aligned_shape / SCALE).astype(int)
-
+    #z_length = 447
+    downsampled_aligned_shape = np.round(aligned_shape // SCALE).astype(int)
     x_length = downsampled_aligned_shape[1] + 0
     y_length = downsampled_aligned_shape[0] + 0
 
-    atlas_centers = {}
-
-    # 1st loop to fill dictionarys with data
-    for structure, (volume, origin) in sorted(structure_volume_origin.items()):
-        x, y, z = origin
-        x_start = x + x_length / 2
-        y_start = y + y_length / 2
-        z_start = z / 2 + z_length / 2
-        x_end = x_start + volume.shape[0]
-        y_end = y_start + volume.shape[1]
-        z_end = z_start + (volume.shape[2] + 1) / 2
-        midx = (x_end + x_start) / 2
-        midy = (y_end + y_start) / 2
-        midz = (z_end + z_start) / 2
-        # print(structure,'centroid', midx,midy,midz)
-
-        #if structure in animal_origin.keys():
-        #    atlas_origin[structure] = [round(midx, 2), round(midy, 2), int(round(midz))]
-
-        atlas_centers[structure] = [midx, midy, midz]
-
-    #df = pd.DataFrame.from_dict(atlas_centers, orient='index', columns=['structure','midx','midy','midz'])
-    df = pd.DataFrame.from_dict(atlas_centers, orient='index',columns=['midx','midy','midz'])
-    print(df.head())
-    atlas_csv = os.path.join(ATLAS_PATH, 'atlas_center_of_mass.csv')
-    df.to_csv(atlas_csv, index=True)
-    sys.exit()
-
     atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
 
-
-    ##### actual data for both sets of points
+    ##### actual data for both sets of points, pixel coordinates
     MD589_centers = {'5N_L': [23790, 13025, 160],
                      '5N_R': [20805, 14163, 298],
                      '7n_L': [20988, 18405, 177],
@@ -256,109 +168,108 @@ def create_atlas(animal):
     for value in MD589_centers.values():
         MD589_list.append((value[1] / SCALE, value[0] / SCALE, value[2]))
     MD589 = np.array(MD589_list)
+    atlas_centers = OrderedDict()
+    for structure, (volume, origin) in sorted(structure_volume_origin.items()):
+        x, y, z = origin
+        x_start = x + x_length / 2
+        y_start = y + y_length / 2
+        z_start = z / 2 + z_length / 2
+        x_end = x_start + volume.shape[0]
+        y_end = y_start + volume.shape[1]
+        z_end = z_start + (volume.shape[2] + 1) / 2
+        midx = (x_end + x_start) / 2
+        midy = (y_end + y_start) / 2
+        midz = (z_end + z_start) / 2
+        if structure in MD589_centers.keys():
+            atlas_centers[structure] = [midx, midy, midz]
 
-    atlas_centers = {'5N_L': [460.53, 685.58, 155],
-                     '5N_R': [460.53, 685.58, 293],
-                     '7n_L': [499.04, 729.94, 172],
-                     '7n_R': [499.04, 729.94, 276],
-                     'DC_L': [580.29, 650.66, 130],
-                     'DC_R': [580.29, 650.66, 318],
-                     'LC_L': [505.55, 629.99, 182],
-                     'LC_R': [505.55, 629.99, 266],
-                     'SC': [376.87, 453.2, 226],
-                     }
-    atlas_centers = OrderedDict(atlas_centers)
-    ATLAS = np.array(list(atlas_centers.values()), dtype=np.float32)
+    ATLAS_centers = OrderedDict(atlas_centers)
+    ATLAS = np.array(list(ATLAS_centers.values()))
+    pprint(MD589)
+    pprint(ATLAS)
 
     md589_centroid = np.mean(MD589, axis=0)
     atlas_centroid = np.mean(ATLAS, axis=0)
-    print('volume centriods', md589_centroid, atlas_centroid)
+    print('MD589 centroid', md589_centroid)
+    print('Atlas centroid', atlas_centroid)
+    #R, t = ralign(MD589, ATLAS)
+    t = md589_centroid - atlas_centroid
+    X = np.linalg.inv(MD589.T @ MD589) @ MD589.T @ ATLAS
+    U, S, V = np.linalg.svd(X)
+    RXXX = V @ U.T
+    Sp = np.array([1.21175728, 0.86116328, 1])
+    Ur = np.array([[np.cos(U[0][0]), -np.sin(U[0][1]), 0],
+                   [np.sin(U[1][0]), np.cos(U[1][1]), 0],
+                   [0, 0, 1]])
+    Vr = np.array([[np.cos(V[0][0]), -np.sin(V[0][1]), 0],
+                   [np.sin(V[1][0]), np.cos(V[1][1]), 0],
+                   [0, 0, 1]])
+    #####Steps
+    # add translation
+    # rotate by U
+    # scale with S
+    # rotate by V
+    # done
 
-    # start of 1st rotation/translation
-    # using Superpose3d
-    result = Superpose3D(MD589, ATLAS, None, False, False)
-    R = np.matrix(result[1])  # rotation matrix
-    T = np.matrix(result[2]).transpose()  # translation vector (3x1 matrix)
-    c = result[3]  # scalar
-    # 2. using simple solve_affine
-    transformFn = solve_affine(MD589, ATLAS)
-    # 3. affine_fit
-    trn = Affine_Fit(MD589, ATLAS)
-    print("Transformation is:")
-    print(trn.To_Str())
-    # 4. basic least squares
-    n = MD589.shape[0]
-    pad = lambda x: np.hstack([x, np.ones((x.shape[0], 1))])
-    unpad = lambda x: x[:, :-1]
-    Xp = pad(MD589)
-    Yp = pad(ATLAS)
-    # Solve the least squares problem X * A = Y
-    # to find our transformation matrix A
-    A, residuals, rank, s = np.linalg.lstsq(Xp, Yp, rcond=None)
-    transform = lambda x: unpad(np.dot(pad(x), A))
-    A[np.abs(A) < 1e-10] = 0
-    print(A)
 
-    # 4. compute affine from pymicro
-    translation, transformation = compute_affine_transform(MD589, ATLAS)
-    #invt = np.linalg.inv(transformation)
-    #offset = -np.dot(invt, translation)
-    print('compute_affine', transformation)
-
-    # 2nd loop
     atlas_minmax = []
     trans_minmax = []
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
-        x, y, z = origin
-        x_start = int(x) + x_length // 2
-        y_start = int(y) + y_length // 2
-        z_start = int(z) // 2 + z_length // 2
-        atlas_minmax.append(x_start)
-        print(str(structure).ljust(8), 'original starts: x', x_start, 'y', y_start, 'z', z_start, end="\t")
+        x, y, z = origin # 10 micrometer/micron scale
 
-        original_array = np.array([x_start, y_start, z_start])
-        xfTrn, yfTrn, zfTrn = trn.Transform(original_array)
-        print('trn: x', round(xfTrn), 'y', round(yfTrn), 'z', round(zfTrn), end="\t")
-        trans_minmax.append(xfTrn)
-        original_array = np.vstack((original_array, [1,1,1]))
-        results  = transform(original_array)[0:1]
-        xf2 = results[0,0]
-        yf2 = results[0,1]
-        zf2 = results[0,2]
-        print('least squares:', round(xf2), 'y', round(yf2), 'z', round(zf2), end="\n")
+        x_start = int(round(x + x_length / 2))
+        y_start = int(round(y + y_length / 2))
+        z_start = int(round(z / 2 + z_length / 2))
+        atlas_minmax.append((x_start, y_start))
+        print(str(structure).ljust(8), x_start, 'y', y_start, 'z', z_start, end="\t")
+        arr = np.array([x_start, y_start, z_start])
+        arr = np.reshape(arr, (3,1))
+        results = arr + t
+        results = Ur @ results
+        results = results * Sp
+        results = Vr @ results
+        #results = R @ arr + t
+        #results = arr
+        x_start = int(round(results[0][0]))
+        y_start = int(round(results[1][0]))
+        #z_start = int(round(results[2][0]))
 
-
-        x_start = int(round(xfTrn))
-        y_start = int(round(yfTrn))
-        z_start = int(round(zfTrn))
+        z_start = int(round(z_start + t[2]))
+        print('Translated: x', round(x_start), 'y', round(y_start), 'z', round(z_start), end="\t")
+        trans_minmax.append((x_start, y_start))
 
         x_end = x_start + volume.shape[0]
         y_end = y_start + volume.shape[1]
         z_end = z_start + (volume.shape[2] + 1) // 2
-
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
+
+        print(volume.shape)
+
         try:
             atlasV7_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
         except:
             print('could not add', structure, x_start,y_start, z_start)
 
-    print('min,max x for atlas', np.min(atlas_minmax),np.max(atlas_minmax))
-    print('min,max x for trans', np.min(trans_minmax),np.max(trans_minmax))
-    #origin_centroid + np.dot(transformation, atlasV7_volume - fitted_centroid)
-    planar_resolution = sqlController.scan_run.resolution
-    resolution = int(planar_resolution * 1000 * SCALE)
-    #resolution = 0.46 * 1000 * SCALE
-    #resolution = 10000
-    print(resolution)
-    if False:
-        #def __init__(self, volume, scales, offset=[0, 0, 0], layer_type='segmentation'):
+    #atlasV7_volume = affine_transform(atlasV7_volume, R, t)
 
-        ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=[0,0,0])
-        ng.init_precomputed(OUTPUT_DIR)
-        ng.add_segment_properties(get_segment_properties())
-        ng.add_downsampled_volumes()
-        ng.add_segmentation_mesh()
+    # check range of x and y
+    if len(trans_minmax) > 0:
+        print('min,max x for atlas', np.min([x[0] for x in atlas_minmax]),np.max([x[0] for x in atlas_minmax]))
+        print('min,max y for atlas', np.min([x[1] for x in atlas_minmax]),np.max([x[1] for x in atlas_minmax]))
+
+        print('min,max x for trans', np.min([x[0] for x in trans_minmax]),np.max([x[0] for x in trans_minmax]))
+        print('min,max y for trans', np.min([x[1] for x in trans_minmax]),np.max([x[1] for x in trans_minmax]))
+
+
+    # resolution at 10000 or 14464 is still off, 22123 is very off
+    resolution = int(resolution * 1000 * SCALE)
+    resolution = 10000
+    ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=[1000,130,0])
+    ng.init_precomputed(OUTPUT_DIR)
+    ng.add_segment_properties(get_segment_properties())
+    ng.add_downsampled_volumes()
+    ng.add_segmentation_mesh()
 
 
     end = timer()

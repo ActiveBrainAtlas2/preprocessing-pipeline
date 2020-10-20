@@ -1,3 +1,6 @@
+"""
+Scale with 32 looks better.
+"""
 import argparse
 import os
 import sys
@@ -11,6 +14,7 @@ from scipy.ndimage import affine_transform
 from superpose3d import Superpose3D
 from scipy import linalg
 from pymicro.view.vol_utils import compute_affine_transform
+from pprint import pprint
 start = timer()
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -19,48 +23,6 @@ from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
 
-def rigid_transform_3D(A, B):
-    assert A.shape == B.shape
-
-    num_rows, num_cols = A.shape
-    if num_rows != 3:
-        raise Exception(f"matrix A is not 3xN, it is {num_rows}x{num_cols}")
-
-    num_rows, num_cols = B.shape
-    if num_rows != 3:
-        raise Exception(f"matrix B is not 3xN, it is {num_rows}x{num_cols}")
-
-    # find mean column wise
-    centroid_A = np.mean(A, axis=1)
-    centroid_B = np.mean(B, axis=1)
-
-    # ensure centroids are 3x1
-    centroid_A = centroid_A.reshape(-1, 1)
-    centroid_B = centroid_B.reshape(-1, 1)
-
-    # subtract mean
-    Am = A - centroid_A
-    Bm = B - centroid_B
-
-    H = Am @ np.transpose(Bm)
-
-    # sanity check
-    #if linalg.matrix_rank(H) < 3:
-    #    raise ValueError("rank of H = {}, expecting 3".format(linalg.matrix_rank(H)))
-
-    # find rotation
-    U, S, Vt = np.linalg.svd(H)
-    R = Vt.T @ U.T
-
-    # special reflection case
-    if np.linalg.det(R) < 0:
-        print("det(R) < R, reflection detected!, correcting for it ...")
-        Vt[2,:] *= -1
-        R = Vt.T @ U.T
-
-    t = -R@centroid_A + centroid_B
-
-    return R, t
 
 def create_atlas(animal):
 
@@ -78,7 +40,7 @@ def create_atlas(animal):
     volume_files = sorted(os.listdir(VOLUME_PATH))
     sqlController = SqlController(animal)
     resolution = sqlController.scan_run.resolution
-    resolution = 0.452
+    #resolution = 0.452
     # the atlas uses a 10um scale
     SCALE = (10 / resolution)
     #SCALE = 32
@@ -128,39 +90,46 @@ def create_atlas(animal):
     for value in MD589_centers.values():
         MD589_list.append((value[1] / SCALE, value[0] / SCALE, value[2]))
     MD589 = np.array(MD589_list)
+    atlas_centers = OrderedDict()
+    for structure, (volume, origin) in sorted(structure_volume_origin.items()):
+        x, y, z = origin
+        x_start = x + x_length / 2
+        y_start = y + y_length / 2
+        z_start = z / 2 + z_length / 2
+        x_end = x_start + volume.shape[0]
+        y_end = y_start + volume.shape[1]
+        z_end = z_start + (volume.shape[2] + 1) / 2
+        midx = (x_end + x_start) / 2
+        midy = (y_end + y_start) / 2
+        midz = (z_end + z_start) / 2
+        if structure in MD589_centers.keys():
+            atlas_centers[structure] = [midx, midy, midz]
 
-    # scale is 1 * resolution * 1000
-    atlas_centers = {'5N_L': [460.5314139431078,685.5800980895589,155.37759879000714],
-                     '5N_R': [460.5314139431078,685.5800980895589,292.62240120999286],
-                     '7n_L': [499.04059534897783,729.9384045132937,172.21316874544306],
-                     '7n_R': [499.04059534897783,729.9384045132937,275.78683125455694],
-                     'DC_L': [580.2902956709964,650.6552322784685,130.34657230772547],
-                     'DC_R': [580.2902956709964,650.6552322784685,317.65342769227453],
-                     'LC_L': [505.5482038509575,629.9892179907365,182.33057906959743],
-                     'LC_R': [505.5482038509575,629.9892179907365,265.66942093040257],
-                     'SC': [376.87494712731785,453.2021838243744,225.5],
-                     }
-    atlas_centers = OrderedDict(atlas_centers)
-    ATLAS = np.array(list(atlas_centers.values()), dtype=np.float32)
-    ATLAS = ATLAS
-    atlas_csv = os.path.join(ATLAS_PATH, 'atlas_center_of_mass.csv')
-    atlas_df = pd.read_csv(atlas_csv, index_col=0)
+    ATLAS_centers = OrderedDict(atlas_centers)
+    ATLAS = np.array(list(ATLAS_centers.values()))
+    pprint(MD589)
+    pprint(ATLAS)
 
-    MD589XXX = np.array([[376.87494712731785, 453.2021838243744, 225.5],
-                      [580.2902956709964, 650.6552322784685, 130.34657230772547],
-                      [580.2902956709964, 650.6552322784685, 317.65342769227453]])
-    ATLASXXX = np.array([[200.03125, 757.0625, 220.0],
-                      [366.75, 638.25, 330.],
-                      [367.1875, 790.3125, 180.]])
-
+    #####Steps, Bili, check my math!
+    # add translation
+    # rotate by U
+    # scale with S
+    # rotate by V
+    # done
     md589_centroid = np.mean(MD589, axis=0)
     atlas_centroid = np.mean(ATLAS, axis=0)
     print('MD589 centroid', md589_centroid)
     print('Atlas centroid', atlas_centroid)
-    R, t = rigid_transform_3D(ATLAS.T, MD589.T)
-    print('R,t')
-    print(R)
-    print(t)
+    t = md589_centroid - atlas_centroid
+    X = np.linalg.inv(MD589.T @ MD589) @ MD589.T @ ATLAS
+    U, S, V = np.linalg.svd(X)
+    RXXX = V @ U.T
+    Ur = np.array([[np.cos(U[0][0]), -np.sin(U[0][1]), 0],
+                   [np.sin(U[1][0]), np.cos(U[1][1]), 0],
+                   [0, 0, 1]])
+    Vr = np.array([[np.cos(V[0][0]), -np.sin(V[0][1]), 0],
+                   [np.sin(V[1][0]), np.cos(V[1][1]), 0],
+                   [0, 0, 1]])
 
 
     atlas_minmax = []
@@ -173,19 +142,16 @@ def create_atlas(animal):
         z_start = int(round(z / 2 + z_length / 2))
         atlas_minmax.append((x_start, y_start))
         print(str(structure).ljust(8), x_start, 'y', y_start, 'z', z_start, end="\t")
-        # compare to COM
-        center_of_mass = atlas_df.loc[[structure], ['midx', 'midy', 'midz']].values
-        midx = round(center_of_mass[0][0],2)
-        midy = round(center_of_mass[0][1],2)
-        midz = round(center_of_mass[0][2],2)
         arr = np.array([x_start, y_start, z_start])
         arr = np.reshape(arr, (3,1))
-        results = R @ arr + t
-
+        results = arr + t # shift according to mean of centroid
+        results = Ur @ results # rotate by U matrix from SVD
+        results = results * S # scale by S matrix from SVD
+        results = Vr @ results # rotate by V matrix from SVD
         x_start = int(round(results[0][0]))
         y_start = int(round(results[1][0]))
-        #z_start = int(round(results[2][0]))
-        z_start = int(round(z_start))
+        # Bili, i didn't rotate or scale the z axis, only shifted it.
+        z_start = int(round(z_start + t[2]))
         print('Translated: x', round(x_start), 'y', round(y_start), 'z', round(z_start), end="\t")
         trans_minmax.append((x_start, y_start))
 
@@ -213,7 +179,10 @@ def create_atlas(animal):
         print('min,max y for trans', np.min([x[1] for x in trans_minmax]),np.max([x[1] for x in trans_minmax]))
 
 
+    # resolution at 10000 or 14464 is still off, 22123 is very off
     resolution = int(resolution * 1000 * SCALE)
+    #resolution = 10000
+    print('Resolution at', resolution)
     ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=[0,0,0])
     ng.init_precomputed(OUTPUT_DIR)
     ng.add_segment_properties(get_segment_properties())
@@ -223,10 +192,6 @@ def create_atlas(animal):
 
     end = timer()
     print(f'Finito! Program took {end - start} seconds')
-
-    #outpath = os.path.join(ATLAS_PATH, f'{atlas_name}.npy')
-    #with open(outpath, 'wb') as file:
-    #    np.save(file, atlasV7_volume)
 
 
 
