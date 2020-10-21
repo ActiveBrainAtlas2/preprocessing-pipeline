@@ -1,5 +1,6 @@
 import os
 
+
 ROOT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
 CSHL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
 
