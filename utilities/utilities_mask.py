@@ -369,6 +369,11 @@ def fix_with_fill(img):
 
 
 def fix_thionin(img):
+    """
+    Used for the thionin create masks script
+    :param img: input image
+    :return: a black and white mask image
+    """
     start_bottom = img.shape[0] - 5 # get the background color from the bottom couple rows
     bottom_rows = img[start_bottom:img.shape[0], :]
     avg = np.mean(bottom_rows)
@@ -393,6 +398,7 @@ def fix_thionin(img):
     im_floodfill_inv = cv2.bitwise_not(im_floodfill)
     im_out = im_th | im_floodfill_inv
     kernel = np.ones((8, 8), np.uint8)
+
     im_out = cv2.dilate(im_out, kernel, iterations=3)
 
     stencil = np.zeros(img.shape).astype('uint8')
@@ -405,7 +411,7 @@ def fix_thionin(img):
     idx = get_index(c1, contours)
     contours.pop(idx)
 
-
+    # find contours in the middle
     midrow = img.shape[0] // 2
     topbound = midrow - (midrow * 0.65)
     bottombound = midrow + (midrow * 0.5)
@@ -418,7 +424,7 @@ def fix_thionin(img):
         if len(contours) > 0:
             cX = max(contours, key=cv2.contourArea)
             area = cv2.contourArea(cX)
-            mX = cv2.moments(cX)
+            mX = cv2.moments(cX) # gets center of mass
             m00 = mX['m00']
             if m00 > 0:
                 cx = mX['m10'] // m00
@@ -432,7 +438,7 @@ def fix_thionin(img):
         else:
             break
 
-    cv2.fillPoly(stencil, lc, 255)
+    cv2.fillPoly(stencil, lc, 255) # turn all junk to white
     morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
     dilation = cv2.dilate(stencil, morph_kernel, iterations=3)
 
