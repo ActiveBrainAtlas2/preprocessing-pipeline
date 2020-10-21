@@ -397,8 +397,7 @@ def fix_thionin(img):
     cv2.floodFill(im_floodfill, mask, (0, 0), 255)
     im_floodfill_inv = cv2.bitwise_not(im_floodfill)
     im_out = im_th | im_floodfill_inv
-    kernel = np.ones((8, 8), np.uint8)
-
+    kernel = np.ones((4, 4), np.uint8)
     im_out = cv2.dilate(im_out, kernel, iterations=3)
 
     stencil = np.zeros(img.shape).astype('uint8')
@@ -439,8 +438,8 @@ def fix_thionin(img):
             break
 
     cv2.fillPoly(stencil, lc, 255) # turn all junk to white
-    morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
-    dilation = cv2.dilate(stencil, morph_kernel, iterations=3)
+    morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
+    dilation = cv2.dilate(stencil, morph_kernel, iterations=2)
 
     return dilation
 
@@ -465,8 +464,10 @@ def fix_thionin_debug(img):
     cv2.floodFill(im_floodfill, mask, (0, 0), 255)
     im_floodfill_inv = cv2.bitwise_not(im_floodfill)
     im_out = im_th | im_floodfill_inv
-    kernel = np.ones((8, 8), np.uint8)
+
+    kernel = np.ones((4, 4), np.uint8)
     im_out = cv2.dilate(im_out, kernel, iterations=3)
+    #im_out = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, kernel)
 
     stencil = np.zeros(img.shape).astype('uint8')
     contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
@@ -525,10 +526,10 @@ def fix_thionin_debug(img):
 
     cv2.fillPoly(stencil, lc, 255)
 
-    morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
-    erosion = cv2.dilate(stencil, morph_kernel, iterations=3)
+    morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
+    erosion = cv2.dilate(stencil, morph_kernel, iterations=2)
     #erosion = cv2.erode(morphed, kernel, iterations=1)
-
+    #erosion = stencil
     for a,c in zip(areas, coords):
         cv2.putText(erosion, a, c, font,
                     fontScale, 2, thickness, cv2.LINE_AA)
