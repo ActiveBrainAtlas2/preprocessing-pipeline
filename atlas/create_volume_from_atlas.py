@@ -48,6 +48,13 @@ def create_atlas(animal, create):
     sqlController = SqlController(animal)
     resolution = sqlController.scan_run.resolution
     surface_threshold = 0.8
+    csvfile = os.path.join(DATA_PATH, 'atlas_data', 'DK39.PM.Nucleus.csv')
+    DK39_df = pd.read_csv(csvfile)
+    DK39_df = DK39_df.loc[DK39_df['Layer'] == 'premotor']
+    csvfile = os.path.join(DATA_PATH, 'atlas_data', 'DK52.PM.Nucleus.csv')
+    DK52_df = pd.read_csv(csvfile)
+    DK52_df = DK52_df.loc[DK52_df['Layer'] == 'PM nucleus']
+
     #resolution = 0.452  # thionin - 0.452mm per pixel
     #resolution = 0.325 # NTB - 0.325mm per pixel
     # the atlas uses a 10mm per pixel
