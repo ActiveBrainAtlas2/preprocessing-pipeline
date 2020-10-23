@@ -281,6 +281,7 @@ def create_atlas(animal):
 
 
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=False, default='MD589')

@@ -13,10 +13,11 @@ import cv2
 import pandas as pd
 from _collections import OrderedDict
 import shutil
-from scipy.ndimage import affine_transform
-from superpose3d import Superpose3D
-from scipy import linalg
-from pymicro.view.vol_utils import compute_affine_transform
+from skimage import io
+#from scipy.ndimage import affine_transform
+#from superpose3d import Superpose3D
+#from scipy import linalg
+#from pymicro.view.vol_utils import compute_affine_transform
 from pprint import pprint
 start = timer()
 HOME = os.path.expanduser("~")
@@ -24,42 +25,8 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
+from utilities.imported_atlas_utilities import volume_to_polydata, save_mesh_stl
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
-
-
-def ralign(from_points, to_points):
-    assert len(from_points.shape) == 2, \
-        "from_points must be a m x n array"
-    assert from_points.shape == to_points.shape, \
-        "from_points and to_points must have the same shape"
-
-    N, m = from_points.shape
-
-    mean_from = from_points.mean(axis=0)
-    mean_to = to_points.mean(axis=0)
-
-    delta_from = from_points - mean_from  # N x m
-    delta_to = to_points - mean_to  # N x m
-
-    sigma_from = (delta_from * delta_from).sum(axis=1).mean()
-    sigma_to = (delta_to * delta_to).sum(axis=1).mean()
-
-    cov_matrix = delta_to.T.dot(delta_from) / N
-
-    U, d, V_t = np.linalg.svd(cov_matrix, full_matrices=True)
-    cov_rank = np.linalg.matrix_rank(cov_matrix)
-    S = np.eye(m)
-
-    if cov_rank >= m - 1 and np.linalg.det(cov_matrix) < 0:
-        S[m - 1, m - 1] = -1
-    elif cov_rank < m - 1:
-        raise ValueError("colinearility detected in covariance matrix:\n{}".format(cov_matrix))
-
-    R = U.dot(S).dot(V_t)
-    c = (d * S.diagonal()).sum() / sigma_from
-    t = mean_to - c * R.dot(mean_from)
-
-    return c, R, t
 
 
 def create_atlas(animal, create):
@@ -80,11 +47,14 @@ def create_atlas(animal, create):
     volume_files = sorted(os.listdir(VOLUME_PATH))
     sqlController = SqlController(animal)
     resolution = sqlController.scan_run.resolution
+    surface_threshold = 0.8
     #resolution = 0.452  # thionin - 0.452mm per pixel
     #resolution = 0.325 # NTB - 0.325mm per pixel
     # the atlas uses a 10mm per pixel
     SCALE = (10 / resolution)
     #SCALE = 32
+    x_position = 0
+    y_position = 1
 
     structure_volume_origin = {}
     for volume_filename, origin_filename in zip(volume_files, origin_files):
@@ -100,52 +70,53 @@ def create_atlas(animal, create):
 
         volume = np.rot90(volume, axes=(0, 1))
         volume = np.flip(volume, axis=0)
-        volume[volume > 0.8] = color
+        volume[volume > surface_threshold] = color * 10
         volume = volume.astype(np.uint8)
 
         structure_volume_origin[structure] = (volume, origin)
     #w = 43700
     #h = 32400
-    aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
+    aligned_shape = np.array((sqlController.scan_run.height,sqlController.scan_run.width))
     print('aligned shape', aligned_shape)
     #aligned_shape = np.array((43700, 32400))
     z_length = len(os.listdir(THUMBNAIL_DIR))
     #z_length = 447
     downsampled_aligned_shape = np.round(aligned_shape // SCALE).astype(int)
-    x_length = downsampled_aligned_shape[1] + 0
-    y_length = downsampled_aligned_shape[0] + 0
+    x_length = downsampled_aligned_shape[x_position] + 0
+    y_length = downsampled_aligned_shape[y_position] + 0
+    #x_length = 2000
+    #y_length = 2000
 
-    atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
-    print('Shape of volume', atlasV7_volume.shape)
+    atlasV7_volume = np.zeros((y_length, x_length, z_length), dtype=np.uint8)
+    print('Shape of atlas volume', atlasV7_volume.shape)
     DK52_centers = {'12N': [46488, 18778, 242],
                     '5N_L': [38990, 20019, 172],
                     '5N_R': [39184, 19027, 315],
                     '7N_L': [42425, 23190, 166],
                     '7N_R': [42286, 22901, 291]}
     ##### actual data for both sets of points, pixel coordinates
-    MD589_centers = {'10N_L': [30928.49438599714, 12939.677824158094, 210],
-     '10N_R': [29284.49554866147, 13339.540536054074, 242],
-     '4N_L': [24976.742385259997, 9685.320856475, 210],
-     '4N_R': [24516.55179962143, 9154.861612245713, 236],
-     '5N_L': [23789.984501544375, 13025.174081591875, 160],
-     '5N_R': [20805.414639021943, 14163.355691957777, 298],
-     '7N_L': [23184.71446623, 15964.358564491615, 174],
-     '7N_R': [23525.73793603972, 15117.485091564571, 296],
-     '7n_L': [20987.553460092142, 18404.810023741426, 177],
-     '7n_R': [24554.23633658875, 13910.6602304075, 284],
-     'Amb_L': [25777.11256108571, 15152.709144375, 167],
-     'Amb_R': [25184.94247019933, 14794.196115586003, 296],
-     'DC_L': [24481.971490631582, 11984.58023668316, 134],
-     'DC_R': [20423.754452355664, 11736.014030692337, 330],
-     'LC_L': [25290.18582962385, 11749.672587382307, 180],
-     'LC_R': [24894.30149961837, 12078.56676300372, 268],
-     'Pn_L': [20986.433685970915, 14907.131608333335, 200],
-     'Pn_R': [19142.43337585326, 14778.245969858139, 270],
-     'SC': [24226.115900506382, 6401.250694575117, 220],
-     'Tz_L': [25322.11246646844, 15750.426156366877, 212],
-     'Tz_R': [20560.370568873335, 18257.503270669335, 262]}
-
-    centers = OrderedDict(MD589_centers)
+    MD589_centers = {'10N_L': [31002.069009677187, 17139.273764067697, 210],
+                     '10N_R': [30851.821452912456, 17026.27799914138, 242],
+                     '4N_L': [25238.351916435207, 13605.972626040299, 210],
+                     '4N_R': [25231.77274616, 13572.152382002621, 236],
+                     '5N_L': [25863.93885802854, 16448.49802904827, 160],
+                     '5N_R': [25617.920248719453, 16089.048882550318, 298],
+                     '7N_L': [27315.217906796195, 18976.4921239128, 174],
+                     '7N_R': [27227.134448911638, 18547.6538128018, 296],
+                     '7n_L': [26920.538205417844, 16996.292850204114, 177],
+                     '7n_R': [26803.347723222105, 16688.23325135847, 284],
+                     'Amb_L': [29042.974021303286, 18890.218579368557, 167],
+                     'Amb_R': [28901.503217056554, 18291.072163747285, 296],
+                     'DC_L': [28764.5378815116, 15560.1247992853, 134],
+                     'DC_R': [28519.240424058273, 14960.063579837733, 330],
+                     'LC_L': [26993.749068166835, 15146.987356709138, 180],
+                     'LC_R': [26951.610128773387, 14929.363532303963, 268],
+                     'Pn_L': [23019.18002537938, 17948.490571838032, 200],
+                     'Pn_R': [23067.16403704933, 17945.89008778571, 270],
+                     'SC': [24976.373217129738, 10136.880464106176, 220],
+                     'Tz_L': [25210.29041867189, 18857.20817842522, 212],
+                     'Tz_R': [25142.520897455783, 18757.457820947686, 262]}
+    centers = OrderedDict(DK52_centers)
     centers_list = []
     for value in centers.values():
         centers_list.append((value[1] / SCALE, value[0] / SCALE, value[2]))
@@ -156,8 +127,8 @@ def create_atlas(animal, create):
         x_start = x + x_length / 2
         y_start = y + y_length / 2
         z_start = z / 2 + z_length / 2
-        x_end = x_start + volume.shape[0]
-        y_end = y_start + volume.shape[1]
+        x_end = x_start + volume.shape[x_position]
+        y_end = y_start + volume.shape[y_position]
         z_end = z_start + (volume.shape[2] + 1) / 2
         midx = (x_end + x_start) / 2
         midy = (y_end + y_start) / 2
@@ -169,45 +140,34 @@ def create_atlas(animal, create):
     ATLAS = np.array(list(ATLAS_centers.values()))
     pprint(COM)
     pprint(ATLAS)
-    #####Steps, Bili, check my math!
-    # add translation
-    # rotate by U
-    # scale with S
-    # rotate by V
+    #####Steps
+    # Get SVD from the two sets of centers of mass
+    # get matrix R1 from dot product of U and V
+    # get rotation matrix R from R1
+    # scale rotation by R by S and get RS
+    # get new points by dot product of RS and original points + t
     # done
-    centroid = np.mean(COM, axis=0)
+    animal_centroid = np.mean(COM, axis=0)
     atlas_centroid = np.mean(ATLAS, axis=0)
-    print(f'{animal} centroid', centroid)
-    print('Atlas centroid', atlas_centroid)
-    t = centroid - atlas_centroid
-    print('translation', t)
-    print('translation', t[0], t[1], t[2])
-    print('atlas shape', atlas_centers.keys())
-    print('DK52 shape', centers.keys())
-    #X = np.linalg.inv(MD589.T @ MD589) @ MD589.T @ ATLAS
+    t = animal_centroid - atlas_centroid
     X = np.linalg.inv(COM.T @ COM) @ COM.T @ ATLAS
     U, S, V = np.linalg.svd(X)
-    #RXXX = V @ U.T
-    Ur = np.array([[np.cos(U[0][0]), -np.sin(U[0][1]), 0],
-                   [np.sin(U[1][0]), np.cos(U[1][1]), 0],
-                   [0, 0, 1]])
-    Vr = np.array([[np.cos(V[0][0]), -np.sin(V[0][1]), 0],
-                   [np.sin(V[1][0]), np.cos(V[1][1]), 0],
-                   [0, 0, 1]])
+    R1 = np.dot(U, V)
+    R = np.array([[np.cos(R1[0][0]), -np.sin(R1[0][1]), 0],
+                  [np.sin(R1[1][0]), np.cos(R1[1][1]), 0],
+                  [0, 0, 1]])
     cx = S[0]
     cy = S[1]
-    cy = 1
-
     Sc = np.array([[cx, 0, 0], [0, cy, 0], [0, 0, 1]])
-    print('scaling array from SVD')
-    pprint(S)
+    RS = Sc * R
 
-    Tx = np.array([[1, 0, t[0]], [0, 1, t[1]], [0, 0, t[2]]])
-    mat = Ur@Vr@Sc + Tx
-    R = np.dot(Ur, Vr)
-    cRA, RRA, tRA = ralign(ATLAS, COM)
-    print('scaling array from ralign')
-    pprint(cRA)
+    # this is the transformation matrix Yoav created in Neuroglancer
+    rNeuro = np.array([
+        [0.89, 0.475, -0.024],
+        [-0.3596, 1.173566, -0.0858],
+        [-0.0083, 0.09963,1.12647]
+    ])
+    tNeuro = np.array([18917.2, 6900, 48.674])
 
     atlas_minmax = []
     trans_minmax = []
@@ -220,39 +180,51 @@ def create_atlas(animal, create):
         atlas_minmax.append((x_start, y_start))
         print(str(structure).ljust(8), x_start, 'y', y_start, 'z', z_start, end="\t")
 
-        arr = np.array([x_start, y_start, z_start])
-        arr = np.reshape(arr, (3,1))
-        results = arr + t # shift according to mean of centroid
-        results = np.dot(Ur, results)# rotate by U matrix from SVD
-        #results = np.dot(RRA, arr)
-        results = results * S # scale by S matrix from SVD
-        results = np.dot(Vr, results)# rotate by V matrix from SVD
-        #x_start = int(round(results[0]))
-        #y_start = int(round(results[1]))
+        if x_position < y_position:
+            arr = np.array([x_start, y_start, z_start])
+        else:
+            arr = np.array([y_start, x_start, z_start])
+
+        results = np.dot(rNeuro, arr + 0)
+        x_start = int(round(results[0]))
+        y_start = int(round(results[1]))
+        z_start = int(round(z_start))
         #z_start = int(round(results[2]))
-        x_start = int(round(results[0][0]))
-        y_start = int(round(results[1][0]))
-        z_start = int(round(z_start + t[2]))
-        #z_start = int(round(results[2][0]))
-        # Bili, i didn't rotate or scale the z axis, only shifted it.
-        #x_start = int(round(x_start + t[0]))
-        #y_start = int(round(y_start + t[1]))
-        #z_start = int(round(z_start + t[2]))
         print('Translated: x', round(x_start), 'y', round(y_start), 'z', round(z_start), end="\t")
         trans_minmax.append((x_start, y_start))
 
-        x_end = x_start + volume.shape[0]
-        y_end = y_start + volume.shape[1]
+        x_end = x_start + volume.shape[x_position]
+        y_end = y_start + volume.shape[y_position]
         z_end = z_start + (volume.shape[2] + 1) // 2
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
 
-        print(volume.shape)
-
+        if create and False:
+            midx = (x_end + x_start) / 2
+            midy = (y_end + y_start) / 2
+            midz = (z_end + z_start) / 2
+            #print(str(structure).ljust(8), origin, end="\n")
+            print(structure,",",origin[0],",", origin[1],",", origin[2], end="\n")
+            results = np.dot(RS, origin + 0)
+            #x = results[0] - x_start
+            #y = results[1] - y_start
+            #z = results[2] - z_start
+            #print(str(structure).ljust(8), results)
+            align_volume = (volume, np.array([midx, midy, midz]))
+            aligned_structure = volume_to_polydata(volume=align_volume,
+                                                   num_simplify_iter=3, smooth=True,
+                                                   return_vertex_face_list=False)
+            filepath = os.path.join(ATLAS_PATH, 'mesh', '{}.stl'.format(structure))
+            save_mesh_stl(aligned_structure, filepath)
+        else:
+            print()
 
 
         try:
-            atlasV7_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
+            if x_position < y_position:
+                atlasV7_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
+            else:
+                atlasV7_volume[y_start:y_end, x_start:x_end, z_start:z_end] += volume
         except:
             print('could not add', structure, x_start,y_start, z_start)
 
@@ -268,18 +240,24 @@ def create_atlas(animal, create):
 
 
     # resolution at 10000 or 14464 is still off, 22123 is very off
-    resolution = int(resolution * 1000 * 32)
+    resolution = int(resolution * 1000 * SCALE)
     resolution = 10000
     print('Resolution at', resolution)
 
-    if create:
-        ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=[0,0,0])
+    if create and False:
+        offset = [0,0,0]
+        ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=offset)
         ng.init_precomputed(OUTPUT_DIR)
         ng.add_segment_properties(get_segment_properties())
         ng.add_downsampled_volumes()
         ng.add_segmentation_mesh()
 
+    outpath = os.path.join(ATLAS_PATH, f'{atlas_name}.tif')
+    #with open(outpath, 'wb') as file:
+    #    np.save(file, atlasV7_volume)
 
+    #cv2.imwrite(outpath, atlasV7_volume, )
+    io.imsave(outpath, atlasV7_volume.astype(np.uint8))
     end = timer()
     print(f'Finito! Program took {end - start} seconds')
 

@@ -19,9 +19,11 @@ structures = ['10N_L', '10N_R', '12N', '3N_L', '3N_R', '5N_L', '5N_R', '6N_L', '
 
 for structure in structures:
     structure_filepath = os.path.join(ATLAS_PATH, 'structure', f'{structure}.npy')
-    structure_volume = np.load(structure_filepath)
+    structure_volume = np.load(structure_filepath, allow_pickle=True)
     origin_filepath = os.path.join(ATLAS_PATH, 'origin', f'{structure}.txt')
     structure_origin = np.loadtxt(origin_filepath)
+    print(structure, type(structure_origin))
+    continue
 
     volume = (structure_volume >= surface_level, structure_origin)
     aligned_structure = volume_to_polydata(volume=volume,
