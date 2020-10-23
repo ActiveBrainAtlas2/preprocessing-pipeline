@@ -1,5 +1,7 @@
 import os
 import sys
+from skimage import measure
+import cv2
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'Projects/pipeline_utility')
@@ -170,3 +172,19 @@ class NumpyToNeuroglancer():
         tasks = tc.create_mesh_manifest_tasks(self.precomputed_vol.layer_cloudpath) # The second phase of creating mesh
         tq.insert(tasks)
         tq.execute()
+
+
+def mask_to_shell(mask):
+    sub_contours = measure.find_contours(mask, 1)
+
+    sub_shells = []
+    for sub_contour in sub_contours:
+        sub_contour.T[[0, 1]] = sub_contour.T[[1, 0]]
+        pts = sub_contour.astype(np.int32).reshape((-1, 1, 2))
+
+        sub_shell = np.zeros(mask.shape, dtype='uint8')
+        sub_shell = cv2.polylines(sub_shell, [pts], True, 1, 5, lineType=cv2.LINE_AA)
+        sub_shells.append(sub_shell)
+    shell = np.array(sub_shells).sum(axis=0)
+
+    return shell
