@@ -1,21 +1,20 @@
 import os
 import sys
 import ast
-import json
 from collections import defaultdict
 
-import cv2
 import numpy as np
 import pandas as pd
-import neuroglancer
 from tqdm import tqdm
-from skimage import io
 import imagesize
 
-sys.path.append(os.path.join(os.getcwd(), '../'))
+HOME = os.path.expanduser("~")
+PATH = os.path.join(HOME, 'programming/pipeline_utility')
+sys.path.append(PATH)
+
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from utils import get_structure_number
+#from utilities.utilities_cvat_neuroglancer import get_structure_number
 
 animal = 'MD589'
 downsample_factor = 16
@@ -45,13 +44,9 @@ def get_contours_from_annotations(stack, target_structure, hand_annotations):
 
     for i in range(num_annotations):
         structure = hand_annotations['name'][i]
-        side = hand_annotations['side'][i]
         section = hand_annotations['section'][i]
         first_sec = 0
         last_sec = 0
-
-        #if side == 'R' or side == 'L':
-        #    structure = structure + '_' + side
 
         if structure == target_structure:
             vertices = hand_annotations['vertices'][i]
