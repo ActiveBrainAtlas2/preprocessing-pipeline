@@ -15,7 +15,7 @@ from _collections import OrderedDict
 import shutil
 from skimage import io
 #from scipy.ndimage import affine_transform
-#from superpose3d import Superpose3D
+from superpose3d import Superpose3D
 #from scipy import linalg
 #from pymicro.view.vol_utils import compute_affine_transform
 from pprint import pprint
@@ -27,6 +27,104 @@ from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.imported_atlas_utilities import volume_to_polydata, save_mesh_stl
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
+
+def Affine_Fit( from_pts, to_pts ):
+    """Fit an affine transformation to given point sets.
+      More precisely: solve (least squares fit) matrix 'A'and 't' from
+      'p ~= A*q+t', given vectors 'p' and 'q'.
+      Works with arbitrary dimensional vectors (2d, 3d, 4d...).
+
+      Written by Jarno Elonen <elonen@iki.fi> in 2007.
+      Placed in Public Domain.
+
+      Based on paper "Fitting affine and orthogonal transformations
+      between two sets of points, by Helmuth Späth (2003)."""
+
+    q = from_pts
+    p = to_pts
+    if len(q) != len(p) or len(q)<1:
+        print("from_pts and to_pts must be of same size.")
+        return false
+
+    dim = len(q[0]) # num of dimensions
+    if len(q) < dim:
+        print("Too few points => under-determined system.")
+        return false
+
+    # Make an empty (dim) x (dim+1) matrix and fill it
+    c = [[0.0 for a in range(dim)] for i in range(dim+1)]
+    for j in range(dim):
+        for k in range(dim+1):
+            for i in range(len(q)):
+                qt = list(q[i]) + [1]
+                c[k][j] += qt[k] * p[i][j]
+
+    # Make an empty (dim+1) x (dim+1) matrix and fill it
+    Q = [[0.0 for a in range(dim)] + [0] for i in range(dim+1)]
+    for qi in q:
+        qt = list(qi) + [1]
+        for i in range(dim+1):
+            for j in range(dim+1):
+                Q[i][j] += qt[i] * qt[j]
+
+    # Ultra simple linear system solver. Replace this if you need speed.
+    def gauss_jordan(m, eps = 1.0/(10**10)):
+      """Puts given matrix (2D array) into the Reduced Row Echelon Form.
+         Returns True if successful, False if 'm' is singular.
+         NOTE: make sure all the matrix items support fractions! Int matrix will NOT work!
+         Written by Jarno Elonen in April 2005, released into Public Domain"""
+      (h, w) = (len(m), len(m[0]))
+      for y in range(0,h):
+        maxrow = y
+        for y2 in range(y+1, h):    # Find max pivot
+          if abs(m[y2][y]) > abs(m[maxrow][y]):
+            maxrow = y2
+        (m[y], m[maxrow]) = (m[maxrow], m[y])
+        if abs(m[y][y]) <= eps:     # Singular?
+          return False
+        for y2 in range(y+1, h):    # Eliminate column y
+          c = m[y2][y] / m[y][y]
+          for x in range(y, w):
+            m[y2][x] -= m[y][x] * c
+      for y in range(h-1, 0-1, -1): # Backsubstitute
+        c  = m[y][y]
+        for y2 in range(0,y):
+          for x in range(w-1, y-1, -1):
+            m[y2][x] -=  m[y][x] * m[y2][y] / c
+        m[y][y] /= c
+        for x in range(h, w):       # Normalize row y
+          m[y][x] /= c
+      return True
+
+    # Augement Q with c and solve Q * a' = c by Gauss-Jordan
+    M = [ Q[i] + c[i] for i in range(dim+1)]
+    if not gauss_jordan(M):
+        print("Error: singular matrix. Points are probably coplanar.")
+        return False
+
+    # Make a result object
+    class Transformation:
+        """Result object that represents the transformation
+           from affine fitter."""
+
+        def To_Str(self):
+            res = ""
+            for j in range(dim):
+                str = "x%d' = " % j
+                for i in range(dim):
+                    str +="x%d * %f + " % (i, M[i][j+dim+1])
+                str += "%f" % M[dim][j+dim+1]
+                res += str + "\n"
+            return res
+
+        def Transform(self, pt):
+            res = [0.0 for a in range(dim)]
+            for j in range(dim):
+                for i in range(dim):
+                    res[j] += pt[i] * M[i][j+dim+1]
+                res[j] += M[dim][j+dim+1]
+            return res
+    return Transformation()
 
 
 def create_atlas(animal, create):
@@ -48,20 +146,7 @@ def create_atlas(animal, create):
     sqlController = SqlController(animal)
     resolution = sqlController.scan_run.resolution
     surface_threshold = 0.8
-    csvfile = os.path.join(DATA_PATH, 'atlas_data', 'DK39.PM.Nucleus.csv')
-    DK39_df = pd.read_csv(csvfile)
-    DK39_df = DK39_df.loc[DK39_df['Layer'] == 'premotor']
-    csvfile = os.path.join(DATA_PATH, 'atlas_data', 'DK52.PM.Nucleus.csv')
-    DK52_df = pd.read_csv(csvfile)
-    DK52_df = DK52_df.loc[DK52_df['Layer'] == 'PM nucleus']
-
-    #resolution = 0.452  # thionin - 0.452mm per pixel
-    #resolution = 0.325 # NTB - 0.325mm per pixel
-    # the atlas uses a 10mm per pixel
-    SCALE = (10 / resolution)
-    #SCALE = 32
-    x_position = 0
-    y_position = 1
+    SCALE = (10 / 0.46)
 
     structure_volume_origin = {}
     for volume_filename, origin_filename in zip(volume_files, origin_files):
@@ -77,25 +162,26 @@ def create_atlas(animal, create):
 
         volume = np.rot90(volume, axes=(0, 1))
         volume = np.flip(volume, axis=0)
-        volume[volume > surface_threshold] = color * 10
+        #volume = np.flipud(volume)
+        volume[volume > surface_threshold] = color
         volume = volume.astype(np.uint8)
 
         structure_volume_origin[structure] = (volume, origin)
-    #w = 43700
-    #h = 32400
-    aligned_shape = np.array((sqlController.scan_run.height,sqlController.scan_run.width))
-    print('aligned shape', aligned_shape)
-    #aligned_shape = np.array((43700, 32400))
-    z_length = len(os.listdir(THUMBNAIL_DIR))
-    #z_length = 447
-    downsampled_aligned_shape = np.round(aligned_shape // SCALE).astype(int)
-    x_length = downsampled_aligned_shape[x_position] + 0
-    y_length = downsampled_aligned_shape[y_position] + 0
-    #x_length = 2000
-    #y_length = 2000
 
-    atlasV7_volume = np.zeros((y_length, x_length, z_length), dtype=np.uint8)
-    print('Shape of atlas volume', atlasV7_volume.shape)
+    col_length = sqlController.scan_run.width//SCALE
+    row_length = sqlController.scan_run.height//SCALE
+    z_length = len(os.listdir(THUMBNAIL_DIR))
+    atlasV7_volume = np.zeros(( int(row_length), int(col_length), z_length), dtype=np.uint8)
+    print('atlas volume shape', atlasV7_volume.shape)
+
+    #aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
+    # aligned_shape = np.array((43700, 32400))
+    #z_length = len(os.listdir(THUMBNAIL_DIR))
+    #downsampled_aligned_shape = np.round(aligned_shape // SCALE).astype(int)
+    #x_length = downsampled_aligned_shape[1] + 0
+    #y_length = downsampled_aligned_shape[0] + 0
+    #atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
+
     DK52_centers = {'12N': [46488, 18778, 242],
                     '5N_L': [38990, 20019, 172],
                     '5N_R': [39184, 19027, 315],
@@ -123,135 +209,89 @@ def create_atlas(animal, create):
                      'SC': [24976.373217129738, 10136.880464106176, 220],
                      'Tz_L': [25210.29041867189, 18857.20817842522, 212],
                      'Tz_R': [25142.520897455783, 18757.457820947686, 262]}
-    centers = OrderedDict(DK52_centers)
+    centers = OrderedDict(MD589_centers)
     centers_list = []
     for value in centers.values():
-        centers_list.append((value[1] / SCALE, value[0] / SCALE, value[2]))
+        centers_list.append((value[1]/SCALE, value[0]/SCALE, value[2]))
     COM = np.array(centers_list)
-    atlas_centers = OrderedDict()
+    atlas_com_centers = OrderedDict()
+    atlas_all_centers = {}
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
-        x, y, z = origin
-        x_start = x + x_length / 2
-        y_start = y + y_length / 2
-        z_start = z / 2 + z_length / 2
-        x_end = x_start + volume.shape[x_position]
-        y_end = y_start + volume.shape[y_position]
+        midcol, midrow, midz = origin
+        row_start = midrow + row_length / 2
+        col_start = midcol + col_length / 2
+        z_start = midz / 2 + z_length / 2
+        row_end = row_start + volume.shape[0]
+        col_end = col_start + volume.shape[1]
         z_end = z_start + (volume.shape[2] + 1) / 2
-        midx = (x_end + x_start) / 2
-        midy = (y_end + y_start) / 2
+        midcol = (col_end + col_start) / 2
+        midrow = (row_end + row_start) / 2
         midz = (z_end + z_start) / 2
         if structure in centers.keys():
-            atlas_centers[structure] = [midx, midy, midz]
-
-    ATLAS_centers = OrderedDict(atlas_centers)
+            atlas_com_centers[structure] = [midrow, midcol, midz]
+        atlas_all_centers[structure] = [midrow, midcol, midz]
+    ATLAS_centers = OrderedDict(atlas_com_centers)
     ATLAS = np.array(list(ATLAS_centers.values()))
     pprint(COM)
     pprint(ATLAS)
     #####Steps
-    # Get SVD from the two sets of centers of mass
-    # get matrix R1 from dot product of U and V
-    # get rotation matrix R from R1
-    # scale rotation by R by S and get RS
-    # get new points by dot product of RS and original points + t
-    # done
-    animal_centroid = np.mean(COM, axis=0)
-    atlas_centroid = np.mean(ATLAS, axis=0)
-    t = animal_centroid - atlas_centroid
-    X = np.linalg.inv(COM.T @ COM) @ COM.T @ ATLAS
-    U, S, V = np.linalg.svd(X)
-    R1 = np.dot(U, V)
-    R = np.array([[np.cos(R1[0][0]), -np.sin(R1[0][1]), 0],
-                  [np.sin(R1[1][0]), np.cos(R1[1][1]), 0],
-                  [0, 0, 1]])
-    cx = S[0]
-    cy = S[1]
-    Sc = np.array([[cx, 0, 0], [0, cy, 0], [0, 0, 1]])
-    RS = Sc * R
+    trn = Affine_Fit(ATLAS, COM)
 
-    # this is the transformation matrix Yoav created in Neuroglancer
-    rNeuro = np.array([
-        [0.89, 0.475, -0.024],
-        [-0.3596, 1.173566, -0.0858],
-        [-0.0083, 0.09963,1.12647]
-    ])
-    tNeuro = np.array([18917.2, 6900, 48.674])
-
-    atlas_minmax = []
-    trans_minmax = []
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
-        x, y, z = origin # 10 micrometer/micron scale
+        print(str(structure).ljust(7),end=": ")
+        arr = np.array(atlas_all_centers[structure])
+        results = trn.Transform(arr)
+        midrow = results[0]
+        midcol = results[1]
+        midz = results[2]
+        print('midz', int(round(midz)), str(volume.shape).rjust(16),end=" ")
+        row_start = int(round( (midrow) - volume.shape[0]/2))
+        col_start = int(round( (midcol) - volume.shape[1]/2 ))
+        z_start = int(round(midz - (volume.shape[2]/2)/2))
+        #z_start = int(round(midz / 2 + z_length / 2))
 
-        x_start = x + x_length / 2
-        y_start = y + y_length / 2
-        z_start = z / 2 + z_length / 2
-        atlas_minmax.append((x_start, y_start))
-        print(str(structure).ljust(8), x_start, 'y', y_start, 'z', z_start, end="\t")
+        row_end = row_start + volume.shape[0]
+        col_end = col_start + volume.shape[1]
+        z_end = int(round(z_start + (volume.shape[2] + 1) // 2))
+        print('Transformed: row range',
+              str(round(row_start,1)).rjust(4),
+              str(round(row_end,1)).rjust(4),
+              'col range',
+              str(round(col_start,1)).rjust(4),
+              str(round(col_end,1)).rjust(4),
+              'z range',
+              str(round(z_start,1)).rjust(4),
+              str(round(z_end,1)).rjust(4),
+              end=" ")
 
-        if x_position < y_position:
-            arr = np.array([x_start, y_start, z_start])
-        else:
-            arr = np.array([y_start, x_start, z_start])
+        if structure in centers.keys():
+            xo,yo,zo = MD589_centers[structure]
+            print('Pixels off by:',
+                  round(midrow*SCALE-yo, 2),
+                  round(midcol*SCALE-xo, 2),
+                  round(midz - zo, 2),
+                  end=" ")
 
-        results = np.dot(rNeuro, arr + 0)
-        x_start = int(round(results[0]))
-        y_start = int(round(results[1]))
-        z_start = int(round(z_start))
-        #z_start = int(round(results[2]))
-        print('Translated: x', round(x_start), 'y', round(y_start), 'z', round(z_start), end="\t")
-        trans_minmax.append((x_start, y_start))
-
-        x_end = x_start + volume.shape[x_position]
-        y_end = y_start + volume.shape[y_position]
-        z_end = z_start + (volume.shape[2] + 1) // 2
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
 
-        if create and False:
-            midx = (x_end + x_start) / 2
-            midy = (y_end + y_start) / 2
-            midz = (z_end + z_start) / 2
-            #print(str(structure).ljust(8), origin, end="\n")
-            print(structure,",",origin[0],",", origin[1],",", origin[2], end="\n")
-            results = np.dot(RS, origin + 0)
-            #x = results[0] - x_start
-            #y = results[1] - y_start
-            #z = results[2] - z_start
-            #print(str(structure).ljust(8), results)
-            align_volume = (volume, np.array([midx, midy, midz]))
-            aligned_structure = volume_to_polydata(volume=align_volume,
-                                                   num_simplify_iter=3, smooth=True,
-                                                   return_vertex_face_list=False)
-            filepath = os.path.join(ATLAS_PATH, 'mesh', '{}.stl'.format(structure))
-            save_mesh_stl(aligned_structure, filepath)
-        else:
-            print()
-
-
         try:
-            if x_position < y_position:
-                atlasV7_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
-            else:
-                atlasV7_volume[y_start:y_end, x_start:x_end, z_start:z_end] += volume
+            atlasV7_volume[row_start:row_end, col_start:col_end, z_start:z_end] += volume
         except:
-            print('could not add', structure, x_start,y_start, z_start)
+            print('Bad fit:', end=" ")
 
-    #atlasV7_volume = affine_transform(atlasV7_volume, mat)
+        print()
 
-    # check range of x and y
-    if len(trans_minmax) > 0:
-        print('min,max x for atlas', np.min([x[0] for x in atlas_minmax]),np.max([x[0] for x in atlas_minmax]))
-        print('min,max y for atlas', np.min([x[1] for x in atlas_minmax]),np.max([x[1] for x in atlas_minmax]))
-
-        print('min,max x for trans', np.min([x[0] for x in trans_minmax]),np.max([x[0] for x in trans_minmax]))
-        print('min,max y for trans', np.min([x[1] for x in trans_minmax]),np.max([x[1] for x in trans_minmax]))
-
-
-    # resolution at 10000 or 14464 is still off, 22123 is very off
     resolution = int(resolution * 1000 * SCALE)
-    resolution = 10000
+    print('Shape of downsampled atlas volume', atlasV7_volume.shape)
     print('Resolution at', resolution)
 
-    if create and False:
+    if create:
+        atlasV7_volume = np.rot90(atlasV7_volume, axes=(0, 1))
+        atlasV7_volume = np.fliplr(atlasV7_volume)
+        atlasV7_volume = np.flipud(atlasV7_volume)
+        atlasV7_volume = np.fliplr(atlasV7_volume)
+
         offset = [0,0,0]
         ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=offset)
         ng.init_precomputed(OUTPUT_DIR)
@@ -259,12 +299,8 @@ def create_atlas(animal, create):
         ng.add_downsampled_volumes()
         ng.add_segmentation_mesh()
 
-    outpath = os.path.join(ATLAS_PATH, f'{atlas_name}.tif')
-    #with open(outpath, 'wb') as file:
-    #    np.save(file, atlasV7_volume)
-
-    #cv2.imwrite(outpath, atlasV7_volume, )
-    io.imsave(outpath, atlasV7_volume.astype(np.uint8))
+        #outpath = os.path.join(ATLAS_PATH, f'{atlas_name}.tif')
+        #io.imsave(outpath, atlasV7_volume.astype(np.uint8))
     end = timer()
     print(f'Finito! Program took {end - start} seconds')
 
