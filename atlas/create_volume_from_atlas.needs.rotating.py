@@ -8,16 +8,8 @@ import os
 import sys
 import numpy as np
 from timeit import default_timer as timer
-import collections
-import cv2
-import pandas as pd
 from _collections import OrderedDict
 import shutil
-from skimage import io
-#from scipy.ndimage import affine_transform
-from superpose3d import Superpose3D
-#from scipy import linalg
-#from pymicro.view.vol_utils import compute_affine_transform
 from pprint import pprint
 start = timer()
 HOME = os.path.expanduser("~")
@@ -25,7 +17,6 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from utilities.imported_atlas_utilities import volume_to_polydata, save_mesh_stl
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
 
 def Affine_Fit( from_pts, to_pts ):
@@ -44,12 +35,12 @@ def Affine_Fit( from_pts, to_pts ):
     p = to_pts
     if len(q) != len(p) or len(q)<1:
         print("from_pts and to_pts must be of same size.")
-        return false
+        return False
 
     dim = len(q[0]) # num of dimensions
     if len(q) < dim:
         print("Too few points => under-determined system.")
-        return false
+        return False
 
     # Make an empty (dim) x (dim+1) matrix and fill it
     c = [[0.0 for a in range(dim)] for i in range(dim+1)]
@@ -100,7 +91,7 @@ def Affine_Fit( from_pts, to_pts ):
     M = [ Q[i] + c[i] for i in range(dim+1)]
     if not gauss_jordan(M):
         print("Error: singular matrix. Points are probably coplanar.")
-        return false
+        return False
 
     # Make a result object
     class Transformation:
@@ -125,6 +116,50 @@ def Affine_Fit( from_pts, to_pts ):
                 res[j] += M[dim][j+dim+1]
             return res
     return Transformation()
+
+
+def rigid_transform_3D(A, B):
+    assert A.shape == B.shape
+
+    num_rows, num_cols = A.shape
+    if num_rows != 3:
+        raise Exception(f"matrix A is not 3xN, it is {num_rows}x{num_cols}")
+
+    num_rows, num_cols = B.shape
+    if num_rows != 3:
+        raise Exception(f"matrix B is not 3xN, it is {num_rows}x{num_cols}")
+
+    # find mean column wise
+    centroid_A = np.mean(A, axis=1)
+    centroid_B = np.mean(B, axis=1)
+
+    # ensure centroids are 3x1
+    centroid_A = centroid_A.reshape(-1, 1)
+    centroid_B = centroid_B.reshape(-1, 1)
+
+    # subtract mean
+    Am = A - centroid_A
+    Bm = B - centroid_B
+
+    H = Am @ np.transpose(Bm)
+
+    # sanity check
+    #if linalg.matrix_rank(H) < 3:
+    #    raise ValueError("rank of H = {}, expecting 3".format(linalg.matrix_rank(H)))
+
+    # find rotation
+    U, S, Vt = np.linalg.svd(H)
+    R = Vt.T @ U.T
+
+    # special reflection case
+    if np.linalg.det(R) < 0:
+        print("det(R) < R, reflection detected!, correcting for it ...")
+        Vt[2,:] *= -1
+        R = Vt.T @ U.T
+
+    t = -R@centroid_A + centroid_B
+
+    return R, t
 
 
 def create_atlas(animal, create):
@@ -162,25 +197,16 @@ def create_atlas(animal, create):
 
         volume = np.rot90(volume, axes=(0, 1))
         volume = np.flip(volume, axis=0)
-        #volume = np.fliplr(volume)
         volume[volume > surface_threshold] = color
         volume = volume.astype(np.uint8)
 
         structure_volume_origin[structure] = (volume, origin)
 
-    col_length = sqlController.scan_run.width//SCALE
-    row_length = sqlController.scan_run.height//SCALE
+    col_length = sqlController.scan_run.width/SCALE
+    row_length = sqlController.scan_run.height/SCALE
     z_length = len(os.listdir(THUMBNAIL_DIR))
-    atlasV7_volume = np.zeros(( int(row_length), int(col_length), z_length), dtype=np.uint32)
+    atlasV7_volume = np.zeros(( int(row_length), int(col_length), z_length), dtype=np.uint8)
     print('atlas volume shape', atlasV7_volume.shape)
-
-    #aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
-    # aligned_shape = np.array((43700, 32400))
-    #z_length = len(os.listdir(THUMBNAIL_DIR))
-    #downsampled_aligned_shape = np.round(aligned_shape // SCALE).astype(int)
-    #x_length = downsampled_aligned_shape[1] + 0
-    #y_length = downsampled_aligned_shape[0] + 0
-    #atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
 
     DK52_centers = {'12N': [46488, 18778, 242],
                     '5N_L': [38990, 20019, 172],
@@ -235,38 +261,66 @@ def create_atlas(animal, create):
     pprint(COM)
     pprint(ATLAS)
     #####Steps
-    trn = Affine_Fit(ATLAS, COM)
+    #trn = Affine_Fit(ATLAS, COM)
+    R, t = rigid_transform_3D(ATLAS.T, COM.T)
 
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         print(str(structure).ljust(7),end=": ")
-        arr = np.array(atlas_all_centers[structure])
-        results = trn.Transform(arr)
-        midrow = results[0]
-        midcol = results[1]
-        midz = results[2]
-        print('midz', int(round(midz)), str(volume.shape).rjust(16),end=" ")
-        row_start = int(round( (midrow) - volume.shape[0]/2))
-        col_start = int(round( (midcol) - volume.shape[1]/2 ))
-        z_start = int(round(midz - (volume.shape[2]/2)/2))
-        #z_start = int(round(midz / 2 + z_length / 2))
 
-        row_end = row_start + volume.shape[0]
-        col_end = col_start + volume.shape[1]
-        z_end = int(round(z_start + (volume.shape[2] + 1) // 2))
-        print('Transformed: row range',
+        # transformed atlas
+        arr = np.array(atlas_all_centers[structure])
+        #results = trn.Transform(arr)
+        #results = np.dot(R, arr + t)
+        #midrow = results[0]
+        #midcol = results[1]
+        #midz = results[2]
+        input = arr + t
+        results = np.dot(R, input.T)
+        midrow = results[0][0]
+        midcol = results[1][0]
+        midz = results[2][0]
+
+        row_start = int(round(midrow - volume.shape[1] / 2))
+        col_start = int(round(midcol - volume.shape[0] / 2))
+        sec_start = int(round(midz - (volume.shape[2] / 2) / 2))
+        row_end = row_start + volume.shape[1]
+        col_end = col_start + volume.shape[0]
+        sec_end = int(round(sec_start + (volume.shape[2] + 1) // 2))
+
+        ## generic atlas
+        x, y, z = origin
+        x_start = int( round(x + col_length / 2))
+        y_start = int( round(y + row_length / 2))
+        z_start = int(z) // 2 + z_length // 2
+        x_end = x_start + volume.shape[0]
+        y_end = y_start + volume.shape[1]
+        z_end = z_start + (volume.shape[2] + 1) // 2
+
+        print('Row range',
+              str(y_start).rjust(4),
+              str(y_end).rjust(4),
+              'col range',
+              str(x_start).rjust(4),
+              str(x_end).rjust(4),
+              'z range',
+              str(z_start).rjust(4),
+              str(z_end).rjust(4),
+              end=" ")
+
+        print('Trans range: row',
               str(round(row_start,1)).rjust(4),
               str(round(row_end,1)).rjust(4),
-              'col range',
+              'col',
               str(round(col_start,1)).rjust(4),
               str(round(col_end,1)).rjust(4),
-              'z range',
+              'z',
               str(round(z_start,1)).rjust(4),
               str(round(z_end,1)).rjust(4),
               end=" ")
 
         if structure in centers.keys():
             xo,yo,zo = MD589_centers[structure]
-            print('Pixels off by:',
+            print('COM off by:',
                   round(midrow*SCALE-yo, 2),
                   round(midcol*SCALE-xo, 2),
                   round(midz - zo, 2),
@@ -274,11 +328,13 @@ def create_atlas(animal, create):
 
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
-
+        #volume = np.swapaxes(volume, 0, 1)
+        volume = np.rot90(volume, axes=(0,1))
         try:
-            atlasV7_volume[row_start:row_end, col_start:col_end, z_start:z_end] += volume
-        except:
-            print('Bad fit:', end=" ")
+            atlasV7_volume[row_start:row_end, col_start:col_end, sec_start:sec_end] += volume
+            #atlasV7_volume[y_start:y_end, x_start:x_end, z_start:z_end] += volume
+        except ValueError as ve:
+            print(ve, end=" ")
 
         print()
 
