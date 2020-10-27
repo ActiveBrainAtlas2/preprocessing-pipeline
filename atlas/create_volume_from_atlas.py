@@ -8,16 +8,8 @@ import os
 import sys
 import numpy as np
 from timeit import default_timer as timer
-import collections
-import cv2
-import pandas as pd
 from _collections import OrderedDict
 import shutil
-from skimage import io
-#from scipy.ndimage import affine_transform
-from superpose3d import Superpose3D
-#from scipy import linalg
-#from pymicro.view.vol_utils import compute_affine_transform
 from pprint import pprint
 start = timer()
 HOME = os.path.expanduser("~")
@@ -25,110 +17,10 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from utilities.imported_atlas_utilities import volume_to_polydata, save_mesh_stl
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
-
-def Affine_Fit( from_pts, to_pts ):
-    """Fit an affine transformation to given point sets.
-      More precisely: solve (least squares fit) matrix 'A'and 't' from
-      'p ~= A*q+t', given vectors 'p' and 'q'.
-      Works with arbitrary dimensional vectors (2d, 3d, 4d...).
-
-      Written by Jarno Elonen <elonen@iki.fi> in 2007.
-      Placed in Public Domain.
-
-      Based on paper "Fitting affine and orthogonal transformations
-      between two sets of points, by Helmuth Späth (2003)."""
-
-    q = from_pts
-    p = to_pts
-    if len(q) != len(p) or len(q)<1:
-        print("from_pts and to_pts must be of same size.")
-        return false
-
-    dim = len(q[0]) # num of dimensions
-    if len(q) < dim:
-        print("Too few points => under-determined system.")
-        return false
-
-    # Make an empty (dim) x (dim+1) matrix and fill it
-    c = [[0.0 for a in range(dim)] for i in range(dim+1)]
-    for j in range(dim):
-        for k in range(dim+1):
-            for i in range(len(q)):
-                qt = list(q[i]) + [1]
-                c[k][j] += qt[k] * p[i][j]
-
-    # Make an empty (dim+1) x (dim+1) matrix and fill it
-    Q = [[0.0 for a in range(dim)] + [0] for i in range(dim+1)]
-    for qi in q:
-        qt = list(qi) + [1]
-        for i in range(dim+1):
-            for j in range(dim+1):
-                Q[i][j] += qt[i] * qt[j]
-
-    # Ultra simple linear system solver. Replace this if you need speed.
-    def gauss_jordan(m, eps = 1.0/(10**10)):
-      """Puts given matrix (2D array) into the Reduced Row Echelon Form.
-         Returns True if successful, False if 'm' is singular.
-         NOTE: make sure all the matrix items support fractions! Int matrix will NOT work!
-         Written by Jarno Elonen in April 2005, released into Public Domain"""
-      (h, w) = (len(m), len(m[0]))
-      for y in range(0,h):
-        maxrow = y
-        for y2 in range(y+1, h):    # Find max pivot
-          if abs(m[y2][y]) > abs(m[maxrow][y]):
-            maxrow = y2
-        (m[y], m[maxrow]) = (m[maxrow], m[y])
-        if abs(m[y][y]) <= eps:     # Singular?
-          return False
-        for y2 in range(y+1, h):    # Eliminate column y
-          c = m[y2][y] / m[y][y]
-          for x in range(y, w):
-            m[y2][x] -= m[y][x] * c
-      for y in range(h-1, 0-1, -1): # Backsubstitute
-        c  = m[y][y]
-        for y2 in range(0,y):
-          for x in range(w-1, y-1, -1):
-            m[y2][x] -=  m[y][x] * m[y2][y] / c
-        m[y][y] /= c
-        for x in range(h, w):       # Normalize row y
-          m[y][x] /= c
-      return True
-
-    # Augement Q with c and solve Q * a' = c by Gauss-Jordan
-    M = [ Q[i] + c[i] for i in range(dim+1)]
-    if not gauss_jordan(M):
-        print("Error: singular matrix. Points are probably coplanar.")
-        return False
-
-    # Make a result object
-    class Transformation:
-        """Result object that represents the transformation
-           from affine fitter."""
-
-        def To_Str(self):
-            res = ""
-            for j in range(dim):
-                str = "x%d' = " % j
-                for i in range(dim):
-                    str +="x%d * %f + " % (i, M[i][j+dim+1])
-                str += "%f" % M[dim][j+dim+1]
-                res += str + "\n"
-            return res
-
-        def Transform(self, pt):
-            res = [0.0 for a in range(dim)]
-            for j in range(dim):
-                for i in range(dim):
-                    res[j] += pt[i] * M[i][j+dim+1]
-                res[j] += M[dim][j+dim+1]
-            return res
-    return Transformation()
-
+from utilities.utilities_affine import rigid_transform_3D, ralign, affine_fit
 
 def create_atlas(animal, create):
-
     fileLocationManager = FileLocationManager(animal)
     atlas_name = 'atlasV7'
     DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
@@ -162,25 +54,16 @@ def create_atlas(animal, create):
 
         volume = np.rot90(volume, axes=(0, 1))
         volume = np.flip(volume, axis=0)
-        #volume = np.flipud(volume)
         volume[volume > surface_threshold] = color
         volume = volume.astype(np.uint8)
 
         structure_volume_origin[structure] = (volume, origin)
 
-    col_length = sqlController.scan_run.width//SCALE
-    row_length = sqlController.scan_run.height//SCALE
+    col_length = sqlController.scan_run.width / SCALE
+    row_length = sqlController.scan_run.height / SCALE
     z_length = len(os.listdir(THUMBNAIL_DIR))
-    atlasV7_volume = np.zeros(( int(row_length), int(col_length), z_length), dtype=np.uint8)
+    atlasV7_volume = np.zeros((int(row_length), int(col_length), z_length), dtype=np.uint8)
     print('atlas volume shape', atlasV7_volume.shape)
-
-    #aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
-    # aligned_shape = np.array((43700, 32400))
-    #z_length = len(os.listdir(THUMBNAIL_DIR))
-    #downsampled_aligned_shape = np.round(aligned_shape // SCALE).astype(int)
-    #x_length = downsampled_aligned_shape[1] + 0
-    #y_length = downsampled_aligned_shape[0] + 0
-    #atlasV7_volume = np.zeros((x_length, y_length, z_length), dtype=np.uint32)
 
     DK52_centers = {'12N': [46488, 18778, 242],
                     '5N_L': [38990, 20019, 172],
@@ -212,7 +95,7 @@ def create_atlas(animal, create):
     centers = OrderedDict(MD589_centers)
     centers_list = []
     for value in centers.values():
-        centers_list.append((value[1]/SCALE, value[0]/SCALE, value[2]))
+        centers_list.append((value[1] / SCALE, value[0] / SCALE, value[2]))
     COM = np.array(centers_list)
     atlas_com_centers = OrderedDict()
     atlas_all_centers = {}
@@ -232,66 +115,97 @@ def create_atlas(animal, create):
         atlas_all_centers[structure] = [midrow, midcol, midz]
     ATLAS_centers = OrderedDict(atlas_com_centers)
     ATLAS = np.array(list(ATLAS_centers.values()))
-    pprint(COM)
-    pprint(ATLAS)
     #####Steps
-    trn = Affine_Fit(ATLAS, COM)
+    # trn = Affine_Fit(ATLAS, COM)
+    R, t = rigid_transform_3D(ATLAS.T, COM.T)
+    pprint(R)
+    t = np.reshape(t, (1, 3))
+    pprint(t)
 
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
-        print(str(structure).ljust(7),end=": ")
-        arr = np.array(atlas_all_centers[structure])
-        results = trn.Transform(arr)
-        midrow = results[0]
-        midcol = results[1]
-        midz = results[2]
-        print('midz', int(round(midz)), str(volume.shape).rjust(16),end=" ")
-        row_start = int(round( (midrow) - volume.shape[0]/2))
-        col_start = int(round( (midcol) - volume.shape[1]/2 ))
-        z_start = int(round(midz - (volume.shape[2]/2)/2))
-        #z_start = int(round(midz / 2 + z_length / 2))
+        print(str(structure).ljust(6), end=": ")
 
-        row_end = row_start + volume.shape[0]
-        col_end = col_start + volume.shape[1]
-        z_end = int(round(z_start + (volume.shape[2] + 1) // 2))
-        print('Transformed: row range',
-              str(round(row_start,1)).rjust(4),
-              str(round(row_end,1)).rjust(4),
-              'col range',
-              str(round(col_start,1)).rjust(4),
-              str(round(col_end,1)).rjust(4),
-              'z range',
-              str(round(z_start,1)).rjust(4),
-              str(round(z_end,1)).rjust(4),
+        # transformed atlas
+        arr = np.array(atlas_all_centers[structure])
+        # results = trn.Transform(arr)
+        input = arr + t
+        results = np.dot(R, input.T)
+        midrow = results[0][0]
+        midcol = results[1][0]
+        midz = results[2][0]
+        row_start = int(round(midrow - volume.shape[1] / 2))
+        col_start = int(round(midcol - volume.shape[0] / 2))
+        sec_start = int(round(midz - (volume.shape[2] / 2) / 2))
+        row_end = row_start + volume.shape[1]
+        col_end = col_start + volume.shape[0]
+        sec_end = int(round(sec_start + (volume.shape[2] + 1) // 2))
+
+        ## generic atlas
+        x, y, z = origin
+        arr = np.array([y, x, z])
+        input = arr + t
+        results = np.dot(R, input.T)
+        y = results[0][0]
+        x = results[1][0]
+        z = results[2][0]
+        x_start = int(round(x + col_length / 2))
+        y_start = int(round(y + row_length / 2))
+        z_start = int(z) // 2 + z_length // 2
+        x_end = x_start + volume.shape[0]
+        y_end = y_start + volume.shape[1]
+        z_end = z_start + (volume.shape[2] + 1) // 2
+
+        print('X',
+              str(x_start).rjust(4),
+              str(x_end).rjust(4),
+              'Y',
+              str(y_start).rjust(4),
+              str(y_end).rjust(4),
+              'Z',
+              str(z_start).rjust(4),
+              str(z_end).rjust(4),
+              end=" ")
+
+        print('Trans X',
+              str(round(col_start, 1)).rjust(4),
+              str(round(col_end, 1)).rjust(4),
+              'Y',
+              str(round(row_start, 1)).rjust(4),
+              str(round(row_end, 1)).rjust(4),
+              'Z',
+              str(round(z_start, 1)).rjust(4),
+              str(round(z_end, 1)).rjust(4),
               end=" ")
 
         if structure in centers.keys():
-            xo,yo,zo = MD589_centers[structure]
-            print('Pixels off by:',
-                  round(midrow*SCALE-yo, 2),
-                  round(midcol*SCALE-xo, 2),
+            xo, yo, zo = MD589_centers[structure]
+            print('COM ERR',
+                  round(midrow * SCALE - yo, 2),
+                  round(midcol * SCALE - xo, 2),
                   round(midz - zo, 2),
                   end=" ")
-
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
+        volume = np.swapaxes(volume, 0, 1)
 
         try:
-            atlasV7_volume[row_start:row_end, col_start:col_end, z_start:z_end] += volume
-        except:
-            print('Bad fit:', end=" ")
+            # atlasV7_volume[row_start:row_end,col_start:col_end, sec_start:sec_end] += volume
+            atlasV7_volume[y_start:y_end, x_start:x_end, z_start:z_end] += volume
+        except ValueError as ve:
+            print(ve, end=" ")
 
         print()
+
+    # rotation puts in view with wide x and shallow  y
+    atlasV7_volume = np.rot90(atlasV7_volume, 1)
+    # fliplr and flip axis=1 did not work, axis=0 works
+    atlasV7_volume = np.flip(atlasV7_volume, axis=0)
 
     resolution = int(resolution * 1000 * SCALE)
     print('Shape of downsampled atlas volume', atlasV7_volume.shape)
     print('Resolution at', resolution)
 
     if create:
-        atlasV7_volume = np.rot90(atlasV7_volume, axes=(0, 1))
-        atlasV7_volume = np.fliplr(atlasV7_volume)
-        atlasV7_volume = np.flipud(atlasV7_volume)
-        atlasV7_volume = np.fliplr(atlasV7_volume)
-
         offset = [0,0,0]
         ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=offset)
         ng.init_precomputed(OUTPUT_DIR)
