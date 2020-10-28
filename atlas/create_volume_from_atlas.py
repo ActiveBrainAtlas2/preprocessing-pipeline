@@ -67,6 +67,8 @@ def create_atlas(animal, create):
     #### and 6000 should be equal to the row_length below
     col_length = sqlController.scan_run.width / SCALE
     row_length = sqlController.scan_run.height / SCALE
+    col_length = 1690
+    row_length = 1160
     z_length = len(os.listdir(THUMBNAIL_DIR))
     atlasV7_volume = np.zeros((int(row_length), int(col_length), z_length), dtype=np.uint8)
     print('atlas volume shape', atlasV7_volume.shape)
@@ -110,9 +112,9 @@ def create_atlas(animal, create):
     ## below is Yoav's manual alignment rotation matrix and translation
     #s, R, t = umeyama(ATLAS, COM)
     #R = np.array([
-    #    [0.89, 0.475, -0.024],
-    #    [-0.3596, 1.173566, -0.0858],
-    #    [-0.0083, 0.09963,1.12647]
+    #    [0.8879282700452737, 0.5297064165901834, -0.0656862661295595],
+    #    [-0.35874630775873184, 1.3064870877277086, 0.047808994348642005],
+    #    [0.06696621479436028, -0.024547949485823613, 1.1270756915581706]
     #])
     s = 1
     #t = np.array([18917.2/SCALE, 6900/SCALE, 48.674])
@@ -152,19 +154,20 @@ def create_atlas(animal, create):
 
         print()
 
-    print('Shape of downsampled atlas volume before rotating/flip'.ljust(60), atlasV7_volume.shape)
-    # rotation puts in view with wide x and shallow  y
-    atlasV7_volume = np.rot90(atlasV7_volume, 1)
-    # fliplr and flip axis=1 did not work, axis=0 works
-    atlasV7_volume = np.flip(atlasV7_volume, axis=0)
 
     resolution = int(resolution * 1000 * SCALE)
-    print('Shape of downsampled atlas volume after rotating/flipping'.ljust(60), atlasV7_volume.shape)
+    print('Shape of downsampled atlas volume after swapping'.ljust(60), atlasV7_volume.shape)
     resolution = 10000
     print('Resolution at', resolution)
 
     if create:
-        offset = [0,0,0]
+        atlasV7_volume = np.rot90(atlasV7_volume, axes=(0, 1))
+        atlasV7_volume = np.fliplr(atlasV7_volume)
+        atlasV7_volume = np.flipud(atlasV7_volume)
+        atlasV7_volume = np.fliplr(atlasV7_volume)
+        print('Shape of downsampled atlas volume after rotating/flipping'.ljust(60), atlasV7_volume.shape)
+
+        offset =  [0,0,0]
         ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=offset)
         ng.init_precomputed(OUTPUT_DIR)
         ng.add_segment_properties(get_segment_properties())
