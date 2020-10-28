@@ -18,7 +18,8 @@ sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
-from utilities.utilities_affine import rigid_transform_3D, ralign, affine_fit
+from utilities.utilities_affine import rigid_transform_3D, ralign, affine_fit, superalign, umeyama
+
 
 def create_atlas(animal, create):
     fileLocationManager = FileLocationManager(animal)
@@ -38,7 +39,8 @@ def create_atlas(animal, create):
     sqlController = SqlController(animal)
     resolution = sqlController.scan_run.resolution
     surface_threshold = 0.8
-    SCALE = (10 / 0.46)
+    SCALE = (10 / resolution)
+    print(SCALE)
 
     structure_volume_origin = {}
     for volume_filename, origin_filename in zip(volume_files, origin_files):
@@ -59,6 +61,10 @@ def create_atlas(animal, create):
 
         structure_volume_origin[structure] = (volume, origin)
 
+    #### a mouse's brain measures about 14000um in width
+    #### and about 6000um in height from a sagittal view
+    #### so 14000 should be equal to the col_length below
+    #### and 6000 should be equal to the row_length below
     col_length = sqlController.scan_run.width / SCALE
     row_length = sqlController.scan_run.height / SCALE
     z_length = len(os.listdir(THUMBNAIL_DIR))
@@ -70,35 +76,16 @@ def create_atlas(animal, create):
                     '5N_R': [39184, 19027, 315],
                     '7N_L': [42425, 23190, 166],
                     '7N_R': [42286, 22901, 291]}
-    ##### actual data for both sets of points, pixel coordinates
-    MD589_centers = {'10N_L': [31002.069009677187, 17139.273764067697, 210],
-                     '10N_R': [30851.821452912456, 17026.27799914138, 242],
-                     '4N_L': [25238.351916435207, 13605.972626040299, 210],
-                     '4N_R': [25231.77274616, 13572.152382002621, 236],
-                     '5N_L': [25863.93885802854, 16448.49802904827, 160],
-                     '5N_R': [25617.920248719453, 16089.048882550318, 298],
-                     '7N_L': [27315.217906796195, 18976.4921239128, 174],
-                     '7N_R': [27227.134448911638, 18547.6538128018, 296],
-                     '7n_L': [26920.538205417844, 16996.292850204114, 177],
-                     '7n_R': [26803.347723222105, 16688.23325135847, 284],
-                     'Amb_L': [29042.974021303286, 18890.218579368557, 167],
-                     'Amb_R': [28901.503217056554, 18291.072163747285, 296],
-                     'DC_L': [28764.5378815116, 15560.1247992853, 134],
-                     'DC_R': [28519.240424058273, 14960.063579837733, 330],
-                     'LC_L': [26993.749068166835, 15146.987356709138, 180],
-                     'LC_R': [26951.610128773387, 14929.363532303963, 268],
-                     'Pn_L': [23019.18002537938, 17948.490571838032, 200],
-                     'Pn_R': [23067.16403704933, 17945.89008778571, 270],
-                     'SC': [24976.373217129738, 10136.880464106176, 220],
-                     'Tz_L': [25210.29041867189, 18857.20817842522, 212],
-                     'Tz_R': [25142.520897455783, 18757.457820947686, 262]}
-    centers = OrderedDict(MD589_centers)
+    centers = OrderedDict(DK52_centers)
     centers_list = []
     for value in centers.values():
         centers_list.append((value[1] / SCALE, value[0] / SCALE, value[2]))
     COM = np.array(centers_list)
     atlas_com_centers = OrderedDict()
     atlas_all_centers = {}
+    ##### get all the COMs for the ATLAS
+    ##### the origin starts in the middle of the virtual 3D space
+    ##### so 0,0,0 is the entire volume centroid
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         midcol, midrow, midz = origin
         row_start = midrow + row_length / 2
@@ -110,99 +97,70 @@ def create_atlas(animal, create):
         midcol = (col_end + col_start) / 2
         midrow = (row_end + row_start) / 2
         midz = (z_end + z_start) / 2
+        ##### If the keys from the animal coincide with ATLAS, add them
         if structure in centers.keys():
             atlas_com_centers[structure] = [midrow, midcol, midz]
         atlas_all_centers[structure] = [midrow, midcol, midz]
     ATLAS_centers = OrderedDict(atlas_com_centers)
     ATLAS = np.array(list(ATLAS_centers.values()))
+    pprint(COM)
+    pprint(ATLAS)
     #####Steps
-    # trn = Affine_Fit(ATLAS, COM)
-    R, t = rigid_transform_3D(ATLAS.T, COM.T)
-    pprint(R)
-    t = np.reshape(t, (1, 3))
-    pprint(t)
+    R, t = rigid_transform_3D(ATLAS.T, COM.T) # close visual fit, translation is most accurate
+    ## below is Yoav's manual alignment rotation matrix and translation
+    #s, R, t = umeyama(ATLAS, COM)
+    #R = np.array([
+    #    [0.89, 0.475, -0.024],
+    #    [-0.3596, 1.173566, -0.0858],
+    #    [-0.0083, 0.09963,1.12647]
+    #])
+    s = 1
+    #t = np.array([18917.2/SCALE, 6900/SCALE, 48.674])
+    if t.shape[0] == 3:
+        t = np.reshape(t, (1, 3))
 
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         print(str(structure).ljust(6), end=": ")
-
-        # transformed atlas
-        arr = np.array(atlas_all_centers[structure])
-        # results = trn.Transform(arr)
-        input = arr + t
-        results = np.dot(R, input.T)
-        midrow = results[0][0]
-        midcol = results[1][0]
-        midz = results[2][0]
-        row_start = int(round(midrow - volume.shape[1] / 2))
-        col_start = int(round(midcol - volume.shape[0] / 2))
-        sec_start = int(round(midz - (volume.shape[2] / 2) / 2))
-        row_end = row_start + volume.shape[1]
-        col_end = col_start + volume.shape[0]
-        sec_end = int(round(sec_start + (volume.shape[2] + 1) // 2))
-
-        ## generic atlas
         x, y, z = origin
         arr = np.array([y, x, z])
         input = arr + t
-        results = np.dot(R, input.T)
+        results = np.dot(s*R, input.T).reshape(3,1)
         y = results[0][0]
         x = results[1][0]
         z = results[2][0]
         x_start = int(round(x + col_length / 2))
         y_start = int(round(y + row_length / 2))
-        z_start = int(z) // 2 + z_length // 2
+        z_start = int(round(z / 2 + z_length / 2))
         x_end = x_start + volume.shape[0]
         y_end = y_start + volume.shape[1]
-        z_end = z_start + (volume.shape[2] + 1) // 2
+        z_end = int(z_start + (volume.shape[2] + 1) / 2)
 
-        print('X',
-              str(x_start).rjust(4),
-              str(x_end).rjust(4),
-              'Y',
-              str(y_start).rjust(4),
-              str(y_end).rjust(4),
-              'Z',
-              str(z_start).rjust(4),
-              str(z_end).rjust(4),
+        print('Y', str(y_start).rjust(4),  str(y_end).rjust(4),
+              'X',  str(x_start).rjust(4), str(x_end).rjust(4),
+              'Z',  str(z_start).rjust(4), str(z_end).rjust(4),
               end=" ")
 
-        print('Trans X',
-              str(round(col_start, 1)).rjust(4),
-              str(round(col_end, 1)).rjust(4),
-              'Y',
-              str(round(row_start, 1)).rjust(4),
-              str(round(row_end, 1)).rjust(4),
-              'Z',
-              str(round(z_start, 1)).rjust(4),
-              str(round(z_end, 1)).rjust(4),
-              end=" ")
 
-        if structure in centers.keys():
-            xo, yo, zo = MD589_centers[structure]
-            print('COM ERR',
-                  round(midrow * SCALE - yo, 2),
-                  round(midcol * SCALE - xo, 2),
-                  round(midz - zo, 2),
-                  end=" ")
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
         volume = np.swapaxes(volume, 0, 1)
 
         try:
-            # atlasV7_volume[row_start:row_end,col_start:col_end, sec_start:sec_end] += volume
             atlasV7_volume[y_start:y_end, x_start:x_end, z_start:z_end] += volume
         except ValueError as ve:
             print(ve, end=" ")
 
         print()
 
+    print('Shape of downsampled atlas volume before rotating/flip'.ljust(60), atlasV7_volume.shape)
     # rotation puts in view with wide x and shallow  y
     atlasV7_volume = np.rot90(atlasV7_volume, 1)
     # fliplr and flip axis=1 did not work, axis=0 works
     atlasV7_volume = np.flip(atlasV7_volume, axis=0)
 
     resolution = int(resolution * 1000 * SCALE)
-    print('Shape of downsampled atlas volume', atlasV7_volume.shape)
+    print('Shape of downsampled atlas volume after rotating/flipping'.ljust(60), atlasV7_volume.shape)
+    resolution = 10000
     print('Resolution at', resolution)
 
     if create:

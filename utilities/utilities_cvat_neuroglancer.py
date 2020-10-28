@@ -2,6 +2,14 @@ import os
 import sys
 from skimage import measure
 import cv2
+import json
+
+import numpy as np
+import neuroglancer
+import tinybrain
+from taskqueue import LocalTaskQueue
+import igneous.task_creation as tc
+from cloudvolume import CloudVolume
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'Projects/pipeline_utility')
@@ -51,14 +59,6 @@ def get_segment_properties(all_known=False):
     return segment_properties
 
 
-import json
-
-import numpy as np
-import neuroglancer
-import tinybrain
-from taskqueue import LocalTaskQueue
-import igneous.task_creation as tc
-from cloudvolume import CloudVolume
 
 class NumpyToNeuroglancer():
     viewer = None
@@ -142,7 +142,7 @@ class NumpyToNeuroglancer():
 
         factor = (2, 2, 1)
         volumes = tinybrain.downsample_segmentation(self.volume, factor=factor, num_mips=num_downsampled, sparse=False)
-        volumes.insert(0, volume)
+        volumes.insert(0, self.volume)
 
         for mip, volume in enumerate(volumes):
             vol.add_scale(np.array(factor) ** mip)
