@@ -135,7 +135,18 @@ class SqlController(object):
         return sections_dict
 
     def get_structure_color_rgb(self, abbrv):
-        row = self.session.query(Structure).filter(Structure.abbreviation == abbrv).one()
+        """
+        Returns a color code in RGB format like (1,2,3)
+        This search has to be case sensitive!
+        :param abbrv: the abbreviation of the structure
+        :return: tuple of rgb
+        """
+        if str(abbrv).endswith('_L'):
+            abbrv = str(abbrv).replace('_L','')
+        if str(abbrv).endswith('_R'):
+            abbrv = str(abbrv).replace('_R','')
+
+        row = self.session.query(Structure).filter(Structure.abbreviation == func.binary(abbrv)).one()
         hexa = row.hexadecimal
         h = hexa.lstrip('#')
         return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
