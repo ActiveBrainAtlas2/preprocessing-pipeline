@@ -412,9 +412,12 @@ def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False):
     :param img: input image
     :return: a black and white mask image
     """
-    start_bottom = img.shape[0] - 5 # get mean background color from bottom rows
-    bottom_rows = img[start_bottom:img.shape[0], :]
-    avg = np.mean(bottom_rows)
+    # Junjie: I changed the background sampling area from bottom to top rows,
+    # since for some of the images the bottom rows contain some foreground.
+    # start_bottom = img.shape[0] - 5 # get mean background color from bottom rows
+    # bottom_rows = img[start_bottom:img.shape[0], :]
+    top_rows = img[0:5, :]
+    avg = np.mean(top_rows)
     bgcolor = int(round(avg))
     if bg_mask:
         lower = bgcolor - 8
