@@ -17,7 +17,8 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
-from utilities.utilities_affine import align_point_sets, load_atlas_data, estimate_structure_centers
+from utilities.utilities_affine import align_point_sets, load_atlas_data, estimate_structure_centers, umeyama, \
+    rigid_transform_3D
 
 
 def create_atlas(animal, create):
@@ -41,19 +42,27 @@ def create_atlas(animal, create):
     source_point_set = np.array([source_centers[s] for s in structures]).T
     # Unify to 1 mum scale in all axes
     source_scale = np.diagflat([10, 10, 20])
-    source_point_set = source_scale @ source_point_set
+    #source_point_set = source_scale @ source_point_set
     output_point_set = np.array([output_centers[s] for s in structures]).T
-
+    pprint(output_centers)
+    pprint(source_centers)
     # Unify to 1 mum scale in all axes
-    output_scale = np.diagflat([0.325, 0.325, 20])
-    output_point_set = output_scale @ output_point_set
+    #output_scale = np.diagflat([0.325, 0.325, 0.325])
+    output_scale = np.array([0.325, 0.325, 0.325])
+    #output_point_set = output_scale @ output_point_set
     r_auto, t_auto = align_point_sets(source_point_set, output_point_set)
-    t_auto_out = (np.linalg.inv(output_scale) @ t_auto).T
+    #t_auto_out = (np.linalg.inv(output_scale) @ t_auto).T
+    #r_auto[2][2] = 1
     pprint(r_auto)
-    pprint(t_auto_out)
+    pprint(t_auto)
 
-    for structure, (volume, origin) in sorted(structure_volume_origin.items()):
+    #for structure, (volume, origin) in sorted(structure_volume_origin.items()):
+    for structure, source_point in sorted(source_centers.items()):
         print(str(structure).ljust(6), end=": ")
+        results = (r_auto @ source_point + t_auto.T).reshape(1,3)
+        print(results*0.325,end="\n")
+        continue
+
         x, y, z = origin
         arr = np.array([y, x, z])
         input = arr + t
@@ -87,7 +96,7 @@ def create_atlas(animal, create):
         print()
 
 
-    resolution = int(resolution * 1000 * SCALE)
+    #resolution = int(resolution * 1000 * SCALE)
     print('Shape of downsampled atlas volume after swapping'.ljust(60), atlasV7_volume.shape)
     resolution = 10000
     print('Resolution at', resolution)

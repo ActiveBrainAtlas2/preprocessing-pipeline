@@ -2,6 +2,8 @@ import os, sys
 import numpy as np
 from pathlib import Path
 
+from scipy import ndimage
+
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController
@@ -125,11 +127,11 @@ def estimate_structure_centers(atlas_data, animal):
     atlas_com = {}
     for name, (origin, volume) in atlas_data.items():
         sx, sy, sz = volume.shape
-        grid_com = np.array([sx, sy, (sz + 1) / 2]) / 2  # Why (sz + 1) instead of sz? And why / 2?
+        grid_com = np.array([sx, sy, (sz + 0) / 2]) / 1  # Why (sz + 1) instead of sz? And why / 2?
         # I'm considering an alternative way to compute com like the following:
-        # grid_com = np.array(ndimage.measurements.center_of_mass(volume))
-        # grid_com[2] /= 2
-        atlas_com[name] = box_center + origin + grid_com
+        #grid_com = np.array(ndimage.measurements.center_of_mass(volume))
+        #grid_com[2] /= 2
+        atlas_com[name] = (box_center + origin + grid_com, volume)
     return atlas_com
 
 
