@@ -38,8 +38,8 @@ The origin of this entire virtual space is in the center of the virtual hexahedr
 * To build the atlas, a shape that will house all the structures needs to be built. This container will then be a
 scaled down version of the full resolution image stack. Building an array as the same size as the full resolution
 stack is untenable as it would require about 4TB of RAM.
-* New centers of mass are then calculated from the transformation matrix. These centers of mass then
-need to be again transformed to get a starting and ending point of where to place the individual structure
+* New centers of mass are then calculated from the transformation matrix. These centers of mass are then
+used to calculate a starting and ending point of where to place the individual structure
 in the holding container. These starting and ending points are calculated from the center of mass of
 the actual structure and its actual dimensions.
 * Basically here are the steps:
@@ -49,7 +49,7 @@ the actual structure and its actual dimensions.
     1. Foreach structure, the original center of mass is transformed.
     1. That center of mass needs to be scaled to the appropriate size for it to fit correctly into
     the holding container.
-    1. The transformed center of mass is again transformed to get the starting and ending points according
+    1. The transformed center of mass is used to calculate the starting and ending positions according
     to the structures dimensions.
     1. The structure is placed in the large holding container at the correct position
     1. The entire holding container is then converted into a format neuroglancer can display.
