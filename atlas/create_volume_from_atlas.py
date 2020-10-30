@@ -15,7 +15,7 @@ sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
-from utilities.utilities_affine import align_point_sets, DK52_centers
+from utilities.utilities_affine import align_point_sets, DK52_centers, MD589_centers
 
 
 def create_atlas(animal, create):
@@ -37,7 +37,7 @@ def create_atlas(animal, create):
     sqlController = SqlController(animal)
     resolution = sqlController.scan_run.resolution
     surface_threshold = 0.8
-    SCALE = (10 / resolution)
+    SCALE = (10 / 0.46)
 
     structure_volume_origin = {}
     for volume_filename, origin_filename in zip(volume_files, origin_files):
@@ -65,7 +65,7 @@ def create_atlas(animal, create):
     print('atlas volume shape', atlasV7_volume.shape)
 
     ##### actual data for both sets of points, pixel coordinates
-    centers = OrderedDict(DK52_centers)
+    centers = OrderedDict(MD589_centers)
     centers_list = []
     for value in centers.values():
         centers_list.append((value[1]/SCALE, value[0]/SCALE, value[2]))
@@ -103,15 +103,14 @@ def create_atlas(animal, create):
 
         source_point = np.array(atlas_all_centers[structure]) # get adjusted x,y,z from above loop
         results = (r_auto @ source_point + t_auto.T).reshape(1,3) # transform to fit
-        y = results[0][0] # new y
         x = results[0][1] # new x
+        y = results[0][0] # new y
         z = results[0][2] # z
-        y = y - volume.shape[1]/2
         x = x - volume.shape[0]/2
+        y = y - volume.shape[1]/2
         x_start = int( round(x))
         y_start = int( round(y))
-        #z_start = int( round(z - volume.shape[2] / 2))
-        z_start = int(z - z/2)
+        z_start = int(z - volume.shape[2]/4)
 
         x_end = int( round(x_start + volume.shape[0]))
         y_end = int( round(y_start + volume.shape[1]))
@@ -119,7 +118,7 @@ def create_atlas(animal, create):
 
         if debug:
             print('volume shape', volume.shape, end=" ")
-            print('Midpoints row',
+            print('COM row',
                   str(int(y)).rjust(4),
                   'mid col',
                   str(int(x)).rjust(4),
@@ -138,7 +137,7 @@ def create_atlas(animal, create):
                   end=" ")
 
         if structure in centers.keys():
-            xo,yo,zo = DK52_centers[structure]
+            xo,yo,zo = MD589_centers[structure]
             print('COM off by:',
                   round(x*SCALE - xo, 2),
                   round(y*SCALE - yo, 2),
