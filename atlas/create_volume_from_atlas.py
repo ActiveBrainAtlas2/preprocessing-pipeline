@@ -1,7 +1,4 @@
 """
-Scale with 32 on DK52, x is 1125, y is 2031
-SCALE with 10/resolution  on DK52, x is 1170, y 2112
-scale with 10/resolution on MD589, x is 1464, y 1975
 """
 import argparse
 import os
@@ -18,7 +15,7 @@ sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
-from utilities.utilities_affine import align_point_sets, DK52_centers, rigid_transform_3D, ralign
+from utilities.utilities_affine import align_point_sets, DK52_centers
 
 
 def create_atlas(animal, create):
@@ -91,23 +88,24 @@ def create_atlas(animal, create):
         atlas_all_centers[structure] = [midrow, midcol, midz]
     ATLAS_centers = OrderedDict(atlas_com_centers)
     ATLAS = np.array(list(ATLAS_centers.values()))
+    #### both sets of data are scaled to stack of DK52
     pprint(COM)
     pprint(ATLAS)
-    #####Steps
-    #trn = Affine_Fit(ATLAS, COM)
-    # source is atlas, output is animal
+    #####Transform to auto align
     r_auto, t_auto = align_point_sets(ATLAS.T, COM.T)
-    debug = True
 
+
+    # Litao, look at the start and end for these structures, the x and y look good
+    # but the z (section) is off
+    debug = True
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         print(str(structure).ljust(7),end=": ")
 
-        # transformed atlas
-        source_point = np.array(atlas_all_centers[structure])
-        results = (r_auto @ source_point + t_auto.T).reshape(1,3)
-        y = results[0][0]
-        x = results[0][1]
-        z = results[0][2]
+        source_point = np.array(atlas_all_centers[structure]) # get adjusted x,y,z from above loop
+        results = (r_auto @ source_point + t_auto.T).reshape(1,3) # transform to fit
+        y = results[0][0] # new y
+        x = results[0][1] # new x
+        z = results[0][2] # z
         y = y - volume.shape[1]/2
         x = x - volume.shape[0]/2
         x_start = int( round(x))
