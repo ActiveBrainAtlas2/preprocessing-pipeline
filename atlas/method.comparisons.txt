@@ -1,0 +1,23 @@
+align_point_sets
+12N    : Row range 1717 1795 col range 3624 3748 z range  357  400 COM off by: -205.02 554.77 -12.15
+5N_L   : Row range 1740 1826 col range 3290 3363 z range  313  343 COM off by: 39.44 -191.02 -30.51
+5N_R   : Row range 1729 1815 col range 3293 3366 z range  408  438 COM off by: -98.17 569.42 16.34
+7N_L   : Row range 1871 1947 col range 3448 3549 z range  323  370 COM off by: 38.51 -513.1 -4.68
+7N_R   : Row range 1862 1938 col range 3451 3552 z range  403  450 COM off by: 225.24 -420.06 30.99
+
+rigid_transform_3D
+12N    : Row range 1736 1814 col range 3568 3692 z range  358  401 COM off by: -1431.91 958.38 -10.1
+5N_L   : Row range 1752 1838 col range 3327 3400 z range  327  357 COM off by: 831.27 74.77 -3.87
+5N_R   : Row range 1745 1831 col range 3329 3402 z range  395  425 COM off by: 677.97 899.66 -9.86
+7N_L   : Row range 1847 1923 col range 3441 3542 z range  334  381 COM off by: -125.39 -1040.19 16.44
+7N_R   : Row range 1840 1916 col range 3442 3543 z range  392  439 COM off by: 48.06 -892.61 7.39
+
+ralign
+12N    : Row range 1717 1795 col range 3624 3748 z range  357  400 COM off by: -205.02 554.77 -12.15
+5N_L   : Row range 1740 1826 col range 3290 3363 z range  313  343 COM off by: 39.44 -191.02 -30.51
+5N_R   : Row range 1729 1815 col range 3293 3366 z range  408  438 COM off by: -98.17 569.42 16.34
+7N_L   : Row range 1871 1947 col range 3448 3549 z range  323  370 COM off by: 38.51 -513.1 -4.68
+7N_R   : Row range 1862 1938 col range 3451 3552 z range  403  450 COM off by: 225.24 -420.06 30.99
+
+start/ends for MD589
+SC starts 127, 311
