@@ -288,7 +288,7 @@ def scaled(img, mask, epsilon=0.01):
 
 
 
-def fix_with_fill(img):
+def fix_with_fill(img, debug=False):
     no_strip, fe = remove_strip(img)
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
@@ -297,6 +297,20 @@ def fix_with_fill(img):
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     h_src = clahe.apply(img)
     del img
+
+    # The following comment is from the debug function
+    # + 10 getting too much
+    # + 20 way too much
+    # 5, 12 not enough
+    # 5, 16, starting to get the little bit on top
+    # 0,40 get a lot
+    # 4,20 getting the top, good in beginning also
+    # 3,18 no good
+    # 4 above median is max!
+    # 4,20 009.tif gets lopped off
+    # 2,90 is good
+
+    # In the debug function, the following code is not commented out
     #lower = 98
     #upper = 102
     #bgmask = (h_src >= lower) & (h_src <= upper)
@@ -306,7 +320,7 @@ def fix_with_fill(img):
     clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
     h_src = clahe.apply(h_src)
     threshold = np.median(h_src)
-    lowVal = threshold + 1
+    lowVal = threshold + 1 # threshold + 2 in the debug function
     highVal = threshold + 90
 
     im_th = cv2.inRange(h_src, lowVal, highVal)
@@ -320,7 +334,7 @@ def fix_with_fill(img):
     stencil = np.zeros(h_src.shape).astype('uint8')
     del im_th
     del im_floodfill_inv
-    small_kernel = np.ones((6, 6), np.uint8)
+    small_kernel = np.ones((3, 3), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
     #opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, small_kernel)
     opening = cv2.dilate(im_out, small_kernel, iterations=2)
@@ -335,6 +349,17 @@ def fix_with_fill(img):
     lc.append(c1)
     idx = get_index(c1, contours)
     contours.pop(idx)
+
+    if debug:
+        areas = []
+        coords = []
+        mX = cv2.moments(c1) # get center of mass of each contour and make sure it is not on an edge
+        m00 = mX['m00']
+        cx = mX['m10'] // m00
+        cy = mX['m01'] // m00
+        org = (int(cx), int(cy))
+        coords.append(org)
+        areas.append(str(areaPrev))
 
     midrow = img_shape[0] // 2
     topbound = midrow - (midrow * 0.85)
@@ -359,34 +384,52 @@ def fix_with_fill(img):
                     idx = get_index(cX, contours)
                     contours.pop(idx)
                     areaPrev = area
+                    if debug:
+                        org = (int(cx), int(cy))
+                        coords.append(org)
+                        area_str = '{}, {}'.format(x, str(area))
+                        areas.append(area_str)
+
         else:
             break
 
-
     cv2.fillPoly(stencil, lc, 255)
     dilation = cv2.dilate(stencil, big_kernel, iterations=3)
+
+    if debug:
+        del stencil
+        for a,c in zip(areas, coords):
+            cv2.putText(dilation, a, c, font,
+                        fontScale, 2, thickness, cv2.LINE_AA)
+        return dilation, lowVal, highVal
+
     return dilation
 
 
-def fix_thionin(img):
+def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False):
     """
     Used for the thionin create masks script
     :param img: input image
     :return: a black and white mask image
     """
-    start_bottom = img.shape[0] - 5 # get the background color from the bottom couple rows
-    bottom_rows = img[start_bottom:img.shape[0], :]
-    avg = np.mean(bottom_rows)
+    # Junjie: I changed the background sampling area from bottom to top rows,
+    # since for some of the images the bottom rows contain some foreground.
+    # start_bottom = img.shape[0] - 5 # get mean background color from bottom rows
+    # bottom_rows = img[start_bottom:img.shape[0], :]
+    top_rows = img[0:5, :]
+    avg = np.mean(top_rows)
     bgcolor = int(round(avg))
-    lower = bgcolor - 8
-    upper = bgcolor + 4
-    bgmask = (img >= lower) & (img <= upper)
-    img[bgmask] = 255
+    if bg_mask:
+        lower = bgcolor - 8
+        upper = bgcolor + 4
+        bgmask = (img >= lower) & (img <= upper)
+        img[bgmask] = 255
     # -10 too much
     # -70 pretty good
     # -90 missing stuff
-    bgcolor = int(round(avg)) - 35
+    bgcolor = int(round(avg)) - 35 # -45 in the debug version
     #img = linnorm(img, 255, np.uint8)
+    # The followng two lines does not exist in the debug version
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     img = clahe.apply(img)
 
@@ -398,16 +441,16 @@ def fix_thionin(img):
     im_floodfill_inv = cv2.bitwise_not(im_floodfill)
     im_out = im_th | im_floodfill_inv
     kernel = np.ones((4, 4), np.uint8)
-    im_out = cv2.dilate(im_out, kernel, iterations=3)
+    im_out = cv2.dilate(im_out, kernel, iterations=1)
 
     stencil = np.zeros(img.shape).astype('uint8')
     contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
-    lc = []
-    c1 = max(contours, key=cv2.contourArea)
-    areaPrev = cv2.contourArea(c1)
-    lc.append(c1)
-    idx = get_index(c1, contours)
+    # get the contours and make the good ones all white, everything else black
+    lc = [] # list of good contours
+    c1 = max(contours, key=cv2.contourArea) # 1st biggest contour
+    areaPrev = cv2.contourArea(c1) # area of biggest contour
+    lc.append(c1) # add to list of good contours to make white
+    idx = get_index(c1, contours) # pop that one out and test the rest of the contours
     contours.pop(idx)
 
     # find contours in the middle
@@ -418,6 +461,17 @@ def fix_thionin(img):
     leftbound = midcolumn - (midcolumn * 0.95)
     rightbound = midcolumn + (midcolumn * 0.85)
     AREA_THRESHOLD = 0.01
+
+    if debug:
+        areas = []
+        coords = []
+        mX = cv2.moments(c1) # get center of mass of each contour and make sure it is not on an edge
+        m00 = mX['m00']
+        cx = mX['m10'] // m00
+        cy = mX['m01'] // m00
+        org = (int(cx), int(cy))
+        coords.append(org)
+        areas.append(str(areaPrev))
 
     for x in range(1,5):
         if len(contours) > 0:
@@ -434,216 +488,27 @@ def fix_thionin(img):
                     idx = get_index(cX, contours)
                     contours.pop(idx)
                     areaPrev = area
+                    if debug:
+                        org = (int(cx), int(cy))
+                        coords.append(org)
+                        area_str = '{}, {}'.format(x, str(area))
+                        areas.append( area_str )
         else:
             break
 
     cv2.fillPoly(stencil, lc, 255) # turn all junk to white
     morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
-    dilation = cv2.dilate(stencil, morph_kernel, iterations=2)
+    dilation = cv2.dilate(stencil, morph_kernel, iterations=dilation_itr)
+
+    if debug:
+        for a,c in zip(areas, coords):
+            cv2.putText(dilation, a, c, font,
+                        fontScale, 2, thickness, cv2.LINE_AA)
 
     return dilation
 
-
-
-def fix_thionin_debug(img):
-    start_bottom = img.shape[0] - 5 # get mean background color from bottom rows
-    bottom_rows = img[start_bottom:img.shape[0], :]
-    avg = np.mean(bottom_rows)
-    bgcolor = int(round(avg)) - 45
-    #lower = bgcolor - 8
-    #upper = bgcolor + 4
-    #bgmask = (img >= lower) & (img <= upper)
-    #img[bgmask] = 255
-    # -10 too much
-    # -70 pretty good
-    # -90 missing stuff
-    h, im_th = cv2.threshold(img, bgcolor, 255, cv2.THRESH_BINARY_INV)
-    im_floodfill = im_th.copy()
-    h, w = im_th.shape[:2]
-    mask = np.zeros((h + 2, w + 2), np.uint8)
-    cv2.floodFill(im_floodfill, mask, (0, 0), 255)
-    im_floodfill_inv = cv2.bitwise_not(im_floodfill)
-    im_out = im_th | im_floodfill_inv
-
-    kernel = np.ones((4, 4), np.uint8)
-    im_out = cv2.dilate(im_out, kernel, iterations=3)
-    #im_out = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, kernel)
-
-    stencil = np.zeros(img.shape).astype('uint8')
-    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    # get the contours and make the good ones all white, everything else black
-    lc = [] # list of good contours
-    c1 = max(contours, key=cv2.contourArea) # 1st biggest contour
-    areaPrev = cv2.contourArea(c1) # area of biggest contour
-    lc.append(c1) # add to list of good contours to make white
-    idx = get_index(c1, contours) # pop that one out and test the rest of the contours
-    contours.pop(idx)
-
-    areas = []
-    coords = []
-    mX = cv2.moments(c1) # get center of mass of each contour and make sure it is not on an edge
-    m00 = mX['m00']
-    cx = mX['m10'] // m00
-    cy = mX['m01'] // m00
-    org = (int(cx), int(cy))
-    coords.append(org)
-    areas.append(str(areaPrev))
-
-    midrow = img.shape[0] // 2
-    topbound = midrow - (midrow * 0.65)
-    #topbound = 0
-    bottombound = midrow + (midrow * 0.5)
-    midcolumn = img.shape[1] // 2
-    leftbound = midcolumn - (midcolumn * 0.95)
-    #leftbound = 0
-    rightbound = midcolumn + (midcolumn * 0.85)
-    AREA_THRESHOLD = 0.01
-
-
-    # loop thru a range to test for good contours. is it near the center and is it close in size to
-    # the preceding contour, if so, add it to the list
-    for x in range(1,5):
-        if len(contours) > 0:
-            cX = max(contours, key=cv2.contourArea)
-            area = cv2.contourArea(cX)
-            mX = cv2.moments(cX)
-            m00 = mX['m00']
-            if m00 > 0:
-                cx = mX['m10'] // m00
-                cy = mX['m01'] // m00
-                if (area > (areaPrev * AREA_THRESHOLD * x * x)
-                        and cx > leftbound and cx < rightbound) and cy > topbound and cy < bottombound:
-                    lc.append(cX)
-                    idx = get_index(cX, contours)
-                    contours.pop(idx)
-                    areaPrev = area
-                    org = (int(cx), int(cy))
-                    coords.append(org)
-                    area_str = '{}, {}'.format(x, str(area))
-                    areas.append( area_str )
-        else:
-            break
-
-    cv2.fillPoly(stencil, lc, 255)
-
-    morph_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4))
-    erosion = cv2.dilate(stencil, morph_kernel, iterations=2)
-    #erosion = cv2.erode(morphed, kernel, iterations=1)
-    #erosion = stencil
-    for a,c in zip(areas, coords):
-        cv2.putText(erosion, a, c, font,
-                    fontScale, 2, thickness, cv2.LINE_AA)
-
-    return erosion
-
-
+def fix_thionin_debug(img, dilation_itr=1):
+    return fix_thionin(img, debug=True, dilation_itr=dilation_itr)
 
 def fix_with_fill_debug(img):
-    no_strip, fe = remove_strip(img)
-    if fe != 0:
-        img[:, fe:] = 0  # mask the strip
-    img = (img / 256).astype(np.uint8)
-    img_shape = img.shape
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    h_src = clahe.apply(img)
-    del img
-    # + 10 getting too much
-    # + 20 way too much
-    # 5, 12 not enough
-    # 5, 16, starting to get the little bit on top
-    # 0,40 get a lot
-    # 4,20 getting the top, good in beginning also
-    # 3,18 no good
-    # 4 above median is max!
-    # 4,20 009.tif gets lopped off
-    # 2,90 is good
-    lower = 98
-    upper = 102
-    bgmask = (h_src >= lower) & (h_src <= upper)
-    h_src[bgmask] = 0
-    bgmask = (h_src <= 8)
-    h_src[bgmask] = 0
-    clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
-    h_src = clahe.apply(h_src)
-    threshold = np.median(h_src)
-    lowVal = threshold + 2
-    highVal = threshold + 90
-
-    #h, im_th = cv2.threshold(h_src, thresh, 255, cv2.THRESH_BINARY)
-    im_th = cv2.inRange(h_src, lowVal, highVal)
-    im_floodfill = im_th.copy()
-    h, w = im_th.shape[:2]
-    mask = np.zeros((h + 2, w + 2), np.uint8)
-    cv2.floodFill(im_floodfill, mask, (0, 0), 255)
-    im_floodfill_inv = cv2.bitwise_not(im_floodfill)
-    del im_floodfill
-    im_out = im_th | im_floodfill_inv
-    stencil = np.zeros(h_src.shape).astype('uint8')
-    del im_th
-    del im_floodfill_inv
-    small_kernel = np.ones((3, 3), np.uint8)
-    big_kernel = np.ones((16, 16), np.uint8)
-    opening = cv2.dilate(im_out, big_kernel,iterations = 2)
-    #opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, small_kernel)
-    del h_src
-    contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    #####del eroded
-    del im_out
-    del opening
-    lc = []
-    c1 = max(contours, key=cv2.contourArea)
-    areaPrev = cv2.contourArea(c1)
-    lc.append(c1)
-    idx = get_index(c1, contours)
-    contours.pop(idx)
-
-    areas = []
-    coords = []
-    mX = cv2.moments(c1) # get center of mass of each contour and make sure it is not on an edge
-    m00 = mX['m00']
-    cx = mX['m10'] // m00
-    cy = mX['m01'] // m00
-    org = (int(cx), int(cy))
-    coords.append(org)
-    areas.append(str(areaPrev))
-
-
-    midrow = img_shape[0] // 2
-    topbound = midrow - (midrow * 0.85)
-    bottombound = midrow + (midrow * 0.98)
-    midcolumn = img_shape[1] // 2
-    leftbound = midcolumn - (midcolumn * 0.75)
-    rightbound = midcolumn + (midcolumn * 0.5)
-    AREA_THRESHOLD = 0.01
-
-    for x in range(1,5):
-        if len(contours) > 0:
-            cX = max(contours, key=cv2.contourArea)
-            area = cv2.contourArea(cX)
-            mX = cv2.moments(cX)
-            m00 = mX['m00']
-            if m00 > 0:
-                cx = mX['m10'] // m00
-                cy = mX['m01'] // m00
-                if (area > (areaPrev * AREA_THRESHOLD * x * x)
-                        and cx > leftbound and cx < rightbound) and cy > topbound and cy < bottombound:
-                    lc.append(cX)
-                    idx = get_index(cX, contours)
-                    contours.pop(idx)
-                    areaPrev = area
-                    org = (int(cx), int(cy))
-                    coords.append(org)
-                    area_str = '{}, {}'.format(x, str(area))
-                    areas.append(area_str)
-        else:
-            break
-
-    cv2.fillPoly(stencil, lc, 255)
-    dilation = cv2.dilate(stencil, big_kernel, iterations=3)
-    #mask = fill_spots(dilation)
-    del stencil
-    for a,c in zip(areas, coords):
-        cv2.putText(dilation, a, c, font,
-                    fontScale, 2, thickness, cv2.LINE_AA)
-
-    return dilation, lowVal, highVal
+    return fix_with_fill(img, debug=True)
