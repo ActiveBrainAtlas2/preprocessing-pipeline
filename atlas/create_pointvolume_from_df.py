@@ -1,4 +1,9 @@
 """
+This takes the coordinates and packs them into a binary file,
+see https://github.com/google/neuroglancer/issues/227
+Create a dir on birdstore called points
+put the info file under points/info
+create the binary file and put in points/spatial0/0_0_0
 """
 import argparse
 import json
