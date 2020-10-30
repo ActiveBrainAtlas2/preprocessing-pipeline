@@ -112,7 +112,9 @@ def create_atlas(animal, create):
         x = x - volume.shape[0]/2
         x_start = int( round(x))
         y_start = int( round(y))
-        z_start = int( round(z - volume.shape[2] / 2))
+        #z_start = int( round(z - volume.shape[2] / 2))
+        z_start = int(z - z/2)
+
         x_end = int( round(x_start + volume.shape[0]))
         y_end = int( round(y_start + volume.shape[1]))
         z_end = int( round(z_start + (volume.shape[2] + 1) // 2))
