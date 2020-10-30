@@ -191,6 +191,10 @@ def ralign(from_points, to_points):
 
     return c*R, t
 
+DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
+ROOT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
+
+
 DK52_centers = {'12N': [46488, 18778, 242],
                 '5N_L': [38990, 20019, 172],
                 '5N_R': [39184, 19027, 315],

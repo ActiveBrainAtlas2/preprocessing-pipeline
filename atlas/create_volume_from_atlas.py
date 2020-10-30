@@ -15,15 +15,13 @@ sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
-from utilities.utilities_affine import align_point_sets, DK52_centers, MD589_centers
+from utilities.utilities_affine import align_point_sets, DK52_centers, MD589_centers, ROOT_DIR, DATA_PATH
 
 
 def create_atlas(animal, create):
 
     fileLocationManager = FileLocationManager(animal)
     atlas_name = 'atlasV7'
-    DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
-    ROOT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
     THUMBNAIL_DIR = os.path.join(ROOT_DIR, animal, 'preps', 'CH1', 'thumbnail')
     ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
     ORIGIN_PATH = os.path.join(ATLAS_PATH, 'origin')
@@ -37,7 +35,7 @@ def create_atlas(animal, create):
     sqlController = SqlController(animal)
     resolution = sqlController.scan_run.resolution
     surface_threshold = 0.8
-    SCALE = (10 / 0.46)
+    SCALE = (10 / resolution)
 
     structure_volume_origin = {}
     for volume_filename, origin_filename in zip(volume_files, origin_files):
@@ -93,6 +91,11 @@ def create_atlas(animal, create):
     pprint(ATLAS)
     #####Transform to auto align
     r_auto, t_auto = align_point_sets(ATLAS.T, COM.T)
+
+    rotationpath = os.path.join(ATLAS_PATH, f'atlas2{animal}.rotation.npy')
+    np.save(rotationpath, r_auto)
+    translatepath = os.path.join(ATLAS_PATH, f'atlas2{animal}.translation.npy')
+    np.save(translatepath, t_auto)
 
 
     # Litao, look at the start and end for these structures, the x and y look good
