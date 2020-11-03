@@ -9,68 +9,6 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 
-def rigid_transform_3D(A, B):
-    assert A.shape == B.shape
-
-    num_rows, num_cols = A.shape
-    if num_rows != 3:
-        raise Exception(f"matrix A is not 3xN, it is {num_rows}x{num_cols}")
-
-    num_rows, num_cols = B.shape
-    if num_rows != 3:
-        raise Exception(f"matrix B is not 3xN, it is {num_rows}x{num_cols}")
-
-    # find mean column wise
-    centroid_A = np.mean(A, axis=1)
-    centroid_B = np.mean(B, axis=1)
-
-    # ensure centroids are 3x1
-    centroid_A = centroid_A.reshape(-1, 1)
-    centroid_B = centroid_B.reshape(-1, 1)
-
-    # subtract mean
-    Am = A - centroid_A
-    Bm = B - centroid_B
-
-    H = Am @ np.transpose(Bm)
-
-    # sanity check
-    # if linalg.matrix_rank(H) < 3:
-    #    raise ValueError("rank of H = {}, expecting 3".format(linalg.matrix_rank(H)))
-
-    # find rotation
-    U, S, Vt = np.linalg.svd(H)
-    R = Vt.T @ U.T
-
-    # special reflection case
-    if np.linalg.det(R) < 0:
-        print("det(R) < R, reflection detected!, correcting for it ...")
-        Vt[2, :] *= -1
-        R = Vt.T @ U.T
-
-    t = -R @ centroid_A + centroid_B
-
-    return R, t
-
-def umeyama(P, Q):
-    assert P.shape == Q.shape
-    n, dim = P.shape
-    centeredP = P - P.mean(axis=0)
-    centeredQ = Q - Q.mean(axis=0)
-    C = np.dot(np.transpose(centeredP), centeredQ) / n
-    V, S, W = np.linalg.svd(C)
-    d = (np.linalg.det(V) * np.linalg.det(W)) < 0.0
-
-    if d:
-        S[-1] = -S[-1]
-        V[:, -1] = -V[:, -1]
-
-    R = np.dot(V, W)
-    varP = np.var(P, axis=0).sum()
-    c = 1/varP * np.sum(S) # scale factor
-    t = Q.mean(axis=0) - P.mean(axis=0).dot(c*R)
-
-    return c*R, t
 
 
 # Adapted from https://github.com/libigl/eigen/blob/master/Eigen/src/Geometry/Umeyama.h
@@ -105,43 +43,19 @@ def align_point_sets(src, dst, with_scaling=True):
     return r, t
 
 
-def estimate_structure_centers(atlas_data, animal):
-    sql_controller = SqlController(animal)
-    fileLocationManager = FileLocationManager(animal)
-    thumbnail_dir = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
+def get_atlas_centers(
+        atlas_box_size=(1000, 1000, 300),
+        atlas_box_scales=(10, 10, 20),
+        atlas_raw_scale=10):
+    atlas_box_scales = np.array(atlas_box_scales)
+    atlas_box_size = np.array(atlas_box_size)
+    atlas_box_center = atlas_box_size / 2
 
-    # Compute box center
-    print(f'resolution: {sql_controller.scan_run.resolution}')
-    print(f'width: {sql_controller.scan_run.width}')
-    print(f'height: {sql_controller.scan_run.height}')
-    box_w = sql_controller.scan_run.width * sql_controller.scan_run.resolution / 10  # 10 mum scale
-    box_h = sql_controller.scan_run.height * sql_controller.scan_run.resolution / 10  # 10 mum scale
-    box_z = len(os.listdir(thumbnail_dir))  # 20 mum scale
-    box_center = np.array([box_w, box_h, box_z]) / 2
-    print(f'box center: {box_center}')
-
-    # From the neuroglancer righ panel, I would expect the following:
-    # box_center = np.array([1000, 1000, 300]) / 2
-
-    # Estimate structure volume center of mass
-    atlas_com = {}
-    for name, (origin, volume) in atlas_data.items():
-        sx, sy, sz = volume.shape
-        # we divde by 2 because the sections are 20um, while the x,y is 10um
-        grid_com = np.array([sx, sy, (sz + 0) / 2]) / 1  # Why (sz + 1) instead of sz? And why / 2?
-        # I'm considering an alternative way to compute com like the following:
-        #grid_com = np.array(ndimage.measurements.center_of_mass(volume))
-        #grid_com[2] /= 2
-        atlas_com[name] = (box_center + origin + grid_com, volume)
-    return atlas_com
-
-
-def load_atlas_data():
     atlas_dir = Path('/net/birdstore/Active_Atlas_Data/data_root/atlas_data/atlasV7')
     origin_dir = atlas_dir / 'origin'
     volume_dir = atlas_dir / 'structure'
 
-    atlas_data = {}
+    atlas_centers = {}
 
     for origin_file, volume_file in zip(sorted(origin_dir.iterdir()), sorted(volume_dir.iterdir())):
         assert origin_file.stem == volume_file.stem
@@ -153,9 +67,44 @@ def load_atlas_data():
         volume = np.rot90(volume, axes=(0, 1))
         volume = np.flip(volume, axis=0)
 
-        atlas_data[name] = (origin, volume)
+        # computer volume center of mass in raw array coordinates
+        center = (origin + ndimage.measurements.center_of_mass(volume))
 
-    return atlas_data
+        # transform into the atlas box coordinates that neuroglancer assumes
+        center = atlas_box_center + center * atlas_raw_scale / atlas_box_scales
+
+        atlas_centers[name] = center
+
+    return atlas_centers
+
+def align_atlas(
+        reference_centers,
+        reference_scales=(0.325, 0.325, 20),
+        atlas_box_size=(1000, 1000, 300),
+        atlas_box_scales=(10, 10, 20),
+        atlas_raw_scale=10):
+    atlas_centers = get_atlas_centers(atlas_box_size, atlas_box_scales, atlas_raw_scale)
+
+    structures = sorted(reference_centers.keys())
+
+    src_point_set = np.array([atlas_centers[s] for s in structures]).T
+    src_point_set = np.diag(atlas_box_scales) @ src_point_set
+
+    dst_point_set = np.array([reference_centers[s] for s in structures]).T
+    dst_point_set = np.diag(reference_scales) @ dst_point_set
+
+    r, t = align_point_sets(src_point_set, dst_point_set)
+
+    print('Please type the following numbers into neuroglancer to align the atlas structures.')
+    print()
+    print('Rotation:')
+    print(r)
+    print()
+    print('Translation:')
+    print(t / np.array([reference_scales]).T)
+
+    return r, t
+
 
 def ralign(from_points, to_points):
     assert len(from_points.shape) == 2, \
@@ -189,18 +138,17 @@ def ralign(from_points, to_points):
     c = (d * S.diagonal()).sum() / sigma_from
     t = mean_to - c * R.dot(mean_from)
 
-    return c*R, t
+    return c * R, t
+
 
 DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
 ROOT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
-
 
 DK52_centers = {'12N': [46488, 18778, 242],
                 '5N_L': [38990, 20019, 172],
                 '5N_R': [39184, 19027, 315],
                 '7N_L': [42425, 23190, 166],
                 '7N_R': [42286, 22901, 291]}
-
 
 MD589_centers = {'10N_L': [31002.069009677187, 17139.273764067697, 210],
                  '10N_R': [30851.821452912456, 17026.27799914138, 242],
@@ -223,4 +171,3 @@ MD589_centers = {'10N_L': [31002.069009677187, 17139.273764067697, 210],
                  'SC': [24976.373217129738, 10136.880464106176, 220],
                  'Tz_L': [25210.29041867189, 18857.20817842522, 212],
                  'Tz_R': [25142.520897455783, 18757.457820947686, 262]}
-

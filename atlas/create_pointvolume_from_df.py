@@ -53,13 +53,21 @@ def create_points(animal, create):
     translatepath = os.path.join(ATLAS_PATH, f'atlas2{animal}.translation.npy')
     t_auto = np.load(translatepath)
 
+    R = np.array([[0.99539957,  0.36001948,  0.01398446],
+                  [-0.35951649,  0.99520404, - 0.03076857],
+                 [-0.02361111,0.02418234,1.05805842]])
+    t = np.array([[19186.25529129],
+                  [9825.28539829],
+                  [78.18301303]])
+
+
     coordinates = []
     for index, row in df.iterrows():
         x = row['X']
         y = row['Y']
         z = row['Section']
         source_point = np.array([x,y,z]) # get adjusted x,y,z from above loop
-        results = (r_auto @ source_point + t_auto.T).reshape(1,3) # transform to fit
+        results = (R @ source_point + t.T).reshape(1,3) # transform to fit
         xt = int(round(results[0][0])) # new x
         yt = int(round(results[0][1])) # new y
         zt = int(round(results[0][2])) # z

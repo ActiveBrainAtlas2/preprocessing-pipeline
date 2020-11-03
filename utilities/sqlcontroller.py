@@ -8,8 +8,8 @@ filled out for each animal to use
 #import traceback
 #import transaction
 ###from logger import Log
-
-
+import json
+import pandas as pd
 from collections import OrderedDict
 
 from sqlalchemy import func
@@ -22,8 +22,11 @@ from model.section import Section
 from model.slide import Slide
 from model.slide_czi_to_tif import SlideCziTif
 from model.structure import Structure
+from model.center_of_mass import CenterOfMass
 from model.task import Task, ProgressLookup
+from model.urlModel import UrlModel
 from sql_setup import session
+from datetime import datetime
 
 
 class SqlController(object):
@@ -134,6 +137,20 @@ class SqlController(object):
 
         return sections_dict
 
+    def get_structure(self, abbrv):
+        """
+        Returns a structure
+        This search has to be case sensitive!
+        :param abbrv: the abbreviation of the structure
+        :return: structure object
+        """
+        if str(abbrv).endswith('_L'):
+            abbrv = str(abbrv).replace('_L','')
+        if str(abbrv).endswith('_R'):
+            abbrv = str(abbrv).replace('_R','')
+
+        return self.session.query(Structure).filter(Structure.abbreviation == func.binary(abbrv)).one()
+
     def get_structure_color_rgb(self, abbrv):
         """
         Returns a color code in RGB format like (1,2,3)
@@ -227,6 +244,74 @@ class SqlController(object):
         except:
             print('Bad lookup code for {}'.format(lookup.id))
             self.session.rollback()
+
+
+    def add_center_of_mass(self, abbreviation, animal, x, y, section, side):
+        """
+        Look up the structure id from the structure.
+        Args:
+            structure: abbreviation with the _L or _R ending
+            animal: prep_id
+            x=float of x coordinate
+            y=float of y coordinate
+            section = int of z/section coordinate
+            side = side, might be redundant with structure abbreviation above
+        Returns:
+            nothing, just merges
+        """
+        try:
+            structure = self.session.query(Structure) \
+                .filter(Structure.abbreviation == abbreviation) \
+                .limit(1).one()
+        except NoResultFound:
+            print(f'No structure for {abbreviation}')
+            return
+
+        com = CenterOfMass(prep_id=animal, structure_id=structure.id, x=x, y=y,section=section,side=side, created=datetime.now)
+
+
+        try:
+            self.session.add(com)
+            self.session.commit()
+        except:
+            print(f'No commit for {abbreviation}')
+            self.session.rollback()
+
+
+    def get_point_dataframe(self, id):
+
+        try:
+            urlModel = self.session.query(UrlModel).filter(UrlModel.id == id).one()
+        except NoResultFound as nrf:
+            print('Bad ID for {} error: {}'.format(id, nrf))
+            return
+
+        result = None
+        dfs = []
+        if urlModel.url is not None:
+            json_txt = json.loads(urlModel.url)
+            layers = json_txt['layers']
+            for l in layers:
+                if 'annotations' in l:
+                    name = l['name']
+                    annotation = l['annotations']
+                    d = [row['point'] for row in annotation]
+                    df = pd.DataFrame(d, columns=['X', 'Y', 'Section'])
+                    df['X'] = df['X'].astype(int)
+                    df['Y'] = df['Y'].astype(int)
+                    df['Section'] = df['Section'].astype(int)
+                    df['Layer'] = name
+                    df = df[['Layer', 'X', 'Y', 'Section']]
+                    dfs.append(df)
+            if len(dfs) == 0:
+                result = None
+            elif len(dfs) == 1:
+                result = dfs[0]
+            else:
+                result = pd.concat(dfs)
+
+        return result
+
 
 """
     class SQLAlchemyHandler(logging.Handler):
