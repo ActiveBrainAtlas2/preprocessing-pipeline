@@ -186,5 +186,5 @@ def mask_to_shell(mask):
         sub_shell = cv2.polylines(sub_shell, [pts], True, 1, 5, lineType=cv2.LINE_AA)
         sub_shells.append(sub_shell)
     shell = np.array(sub_shells).sum(axis=0)
-
+    del sub_shells
     return shell

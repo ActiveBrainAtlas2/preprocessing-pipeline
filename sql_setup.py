@@ -12,7 +12,7 @@ user = parameters['user']
 password = parameters['password']
 host = parameters['host']
 database = parameters['schema']
-connection_string = 'mysql+pymysql://{}:{}@{}/{}'.format(user, password, host, database)
+connection_string = f'mysql+pymysql://{user}:{password}@{host}/{database}?charset=utf8'
 engine = create_engine(connection_string, echo=False)
 DBSession = sessionmaker(bind=engine)
 session = DBSession()

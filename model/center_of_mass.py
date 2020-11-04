@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, Float
 from .atlas_model import Base, AtlasModel
@@ -12,9 +14,10 @@ class CenterOfMass(Base, AtlasModel):
     structure_id = Column(String, ForeignKey('structure.id'), nullable=False)
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
-    section = Column(Integer, nullable=False)
+    section = Column(Float, nullable=False)
     side = Column(String, nullable=False)
 
+    structure = relationship("Structure")
 
 
 

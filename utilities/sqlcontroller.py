@@ -14,6 +14,10 @@ from collections import OrderedDict
 
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import AmbiguousForeignKeysError
+from sqlalchemy.exc import ArgumentError
+from sqlalchemy.exc import CircularDependencyError
 
 from model.animal import Animal
 from model.histology import Histology
@@ -258,24 +262,52 @@ class SqlController(object):
             side = side, might be redundant with structure abbreviation above
         Returns:
             nothing, just merges
-        """
         try:
             structure = self.session.query(Structure) \
-                .filter(Structure.abbreviation == abbreviation) \
-                .limit(1).one()
+                .filter(Structure.abbreviation == func.binary(abbreviation)).one()
         except NoResultFound:
             print(f'No structure for {abbreviation}')
-            return
+        """
 
-        com = CenterOfMass(prep_id=animal, structure_id=structure.id, x=x, y=y,section=section,side=side, created=datetime.now)
+        structure = self.get_structure(abbreviation)
+        id = structure.id
+
+        com = CenterOfMass(prep_id=animal, structure_id=id, x=x, y=y, section=section, side=side,
+                           created=datetime.now, active=True)
 
 
         try:
             self.session.add(com)
             self.session.commit()
         except:
-            print(f'No commit for {abbreviation}')
+            print(f'No merge for {abbreviation}')
             self.session.rollback()
+            raise
+        finally:
+            # close the Session.  This will expunge any remaining
+            # objects as well as reset any existing SessionTransaction
+            # state.  Neither of these steps are usually essential.
+            # However, if the commit() or rollback() itself experienced
+            # an unanticipated internal failure (such as due to a mis-behaved
+            # user-defined event handler), .close() will ensure that
+            # invalid state is removed.
+            self.session.close()
+
+
+
+
+    def get_centers_dict(self, prep_id):
+        rows = self.session.query(CenterOfMass).filter(CenterOfMass.active.is_(True)).filter(CenterOfMass.prep_id==prep_id).all()
+        row_dict = {}
+        for row in rows:
+            if row.structure.paired:
+                structure = row.structure.abbreviation + f'_{row.side}'
+            else:
+                structure = row.structure.abbreviation
+            row_dict[structure] = [row.x, row.y, row.section]
+
+        return row_dict
+
 
 
     def get_point_dataframe(self, id):
