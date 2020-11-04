@@ -43,7 +43,7 @@ def align_point_sets(src, dst, with_scaling=True):
     return r, t
 
 
-def get_atlas_centers(
+def get_atlas_centers_hardcodeddata(
         atlas_box_size=(1000, 1000, 300),
         atlas_box_scales=(10, 10, 20),
         atlas_raw_scale=10):
@@ -74,6 +74,23 @@ def get_atlas_centers(
         center = atlas_box_center + center * atlas_raw_scale / atlas_box_scales
 
         atlas_centers[name] = center
+
+    return atlas_centers
+
+def get_atlas_centers(
+        atlas_box_size=(1000, 1000, 300),
+        atlas_box_scales=(10, 10, 20),
+        atlas_raw_scale=10):
+    atlas_box_scales = np.array(atlas_box_scales)
+    atlas_box_size = np.array(atlas_box_size)
+    atlas_box_center = atlas_box_size / 2
+    sqlController = SqlController('Atlas')
+    atlas_centers = sqlController.get_centers_dict('Atlas')
+
+    for structure, origin in atlas_centers.items():
+        # transform into the atlas box coordinates that neuroglancer assumes
+        center = atlas_box_center + np.array(origin) * atlas_raw_scale / atlas_box_scales
+        atlas_centers[structure] = center
 
     return atlas_centers
 

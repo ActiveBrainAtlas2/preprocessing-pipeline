@@ -47,8 +47,14 @@ class SqlController(object):
         self.stack_metadata = {}
         self.all_stacks = []
         self.animal = session.query(Animal).filter(Animal.prep_id == animal).one()
-        self.histology = session.query(Histology).filter(Histology.prep_id == animal).one()
-        self.scan_run = session.query(ScanRun).filter(ScanRun.prep_id == animal).order_by(ScanRun.id.desc()).one()
+        try:
+            self.histology = session.query(Histology).filter(Histology.prep_id == animal).one()
+        except NoResultFound:
+            print(f'No histology for {animal}')
+        try:
+            self.scan_run = session.query(ScanRun).filter(ScanRun.prep_id == animal).order_by(ScanRun.id.desc()).one()
+        except NoResultFound:
+            print(f'No scan run for {animal}')
         self.slides = None
         self.tifs = None
         self.valid_sections = OrderedDict()
