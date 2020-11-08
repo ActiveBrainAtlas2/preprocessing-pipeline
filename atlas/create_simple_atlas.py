@@ -114,8 +114,9 @@ def create_atlas(animal, create):
         ng.add_downsampled_volumes()
         ng.add_segmentation_mesh()
 
-        #outpath = os.path.join(ATLAS_PATH, f'{atlas_name}.tif')
-        #io.imsave(outpath, atlasV7_volume.astype(np.uint8))
+        outpath = os.path.join(ATLAS_PATH, f'{atlas_name}.npz')
+        np.savez(outpath, atlasV7_volume.astype(np.uint8))
+
     end = timer()
     print(f'Finito! Program took {end - start} seconds')
 

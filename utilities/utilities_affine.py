@@ -73,7 +73,7 @@ def get_atlas_centers_hardcodeddata(
         # transform into the atlas box coordinates that neuroglancer assumes
         center = atlas_box_center + center * atlas_raw_scale / atlas_box_scales
 
-        atlas_centers[name] = center
+        atlas_centers[name] = (center, volume)
 
     return atlas_centers
 
@@ -119,7 +119,7 @@ def align_atlas(
     print()
     print('Translation:')
     print(t / np.array([reference_scales]).T)
-
+    t = t / np.array([reference_scales]).T
     return r, t
 
 

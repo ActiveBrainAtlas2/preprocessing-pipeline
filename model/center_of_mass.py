@@ -15,7 +15,6 @@ class CenterOfMass(Base, AtlasModel):
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
     section = Column(Float, nullable=False)
-    side = Column(String, nullable=False)
 
     structure = relationship("Structure")
 

@@ -154,10 +154,6 @@ class SqlController(object):
         :param abbrv: the abbreviation of the structure
         :return: structure object
         """
-        if str(abbrv).endswith('_L'):
-            abbrv = str(abbrv).replace('_L','')
-        if str(abbrv).endswith('_R'):
-            abbrv = str(abbrv).replace('_R','')
 
         return self.session.query(Structure).filter(Structure.abbreviation == func.binary(abbrv)).one()
 
@@ -168,11 +164,6 @@ class SqlController(object):
         :param abbrv: the abbreviation of the structure
         :return: tuple of rgb
         """
-        if str(abbrv).endswith('_L'):
-            abbrv = str(abbrv).replace('_L','')
-        if str(abbrv).endswith('_R'):
-            abbrv = str(abbrv).replace('_R','')
-
         row = self.session.query(Structure).filter(Structure.abbreviation == func.binary(abbrv)).one()
         hexa = row.hexadecimal
         h = hexa.lstrip('#')
@@ -185,18 +176,19 @@ class SqlController(object):
         rows = self.session.query(Structure).filter(Structure.active.is_(True)).all()
         structures_dict = {}
         for structure in rows:
-            structures_dict[structure.abbreviation] = [structure.description, structure.color, structure.paired]
+            structures_dict[structure.abbreviation] = [structure.description, structure.color]
 
         return structures_dict
 
     def get_sided_structures(self):
+        """
+        Not sure when/if this is needed, but will only return sided structures
+        :return: list of structures that are not singules
+        """
         rows = self.session.query(Structure).filter(Structure.active.is_(True)).all()
         structures = []
         for structure in rows:
-            if structure.paired:
-                structures.append('{}_L'.format(structure.abbreviation))
-                structures.append('{}_R'.format(structure.abbreviation))
-            else:
+            if structure.abbreviation.contains('_'):
                 structures.append(structure.abbreviation)
 
         return sorted(structures)
@@ -256,7 +248,7 @@ class SqlController(object):
             self.session.rollback()
 
 
-    def add_center_of_mass(self, abbreviation, animal, x, y, section, side):
+    def add_center_of_mass(self, abbreviation, animal, x, y, section):
         """
         Look up the structure id from the structure.
         Args:
@@ -265,7 +257,6 @@ class SqlController(object):
             x=float of x coordinate
             y=float of y coordinate
             section = int of z/section coordinate
-            side = side, might be redundant with structure abbreviation above
         Returns:
             nothing, just merges
         try:
@@ -278,7 +269,7 @@ class SqlController(object):
         structure = self.get_structure(abbreviation)
         id = structure.id
 
-        com = CenterOfMass(prep_id=animal, structure_id=id, x=x, y=y, section=section, side=side,
+        com = CenterOfMass(prep_id=animal, structure_id=id, x=x, y=y, section=section,
                            created=datetime.now, active=True)
 
 
@@ -306,10 +297,7 @@ class SqlController(object):
         rows = self.session.query(CenterOfMass).filter(CenterOfMass.active.is_(True)).filter(CenterOfMass.prep_id==prep_id).all()
         row_dict = {}
         for row in rows:
-            if row.structure.paired:
-                structure = row.structure.abbreviation + f'_{row.side}'
-            else:
-                structure = row.structure.abbreviation
+            structure = row.structure.abbreviation
             row_dict[structure] = [row.x, row.y, row.section]
 
         return row_dict
@@ -317,6 +305,14 @@ class SqlController(object):
 
 
     def get_point_dataframe(self, id):
+        """
+
+        :param id: primary key from the url. Look at:
+         https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/points/164/change/
+         for example use 164 for the primary key
+         to get the ID
+        :return: a pandas dataframe
+        """
 
         try:
             urlModel = self.session.query(UrlModel).filter(UrlModel.id == id).one()

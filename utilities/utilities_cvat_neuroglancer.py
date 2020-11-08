@@ -52,7 +52,7 @@ def get_segment_properties(all_known=False):
     known_foundation_structure_names = get_known_foundation_structure_names()
     non_db_structure_names = [structure for structure in known_foundation_structure_names if structure not in db_structure_infos.keys()]
 
-    segment_properties = [(number, f'{structure}: {label}') for structure, (label, number, sided) in db_structure_infos.items()]
+    segment_properties = [(number, f'{structure}: {label}') for structure, (label, number) in db_structure_infos.items()]
     if all_known:
         segment_properties += [(len(db_structure_infos) + index + 1, structure) for index, structure in enumerate(non_db_structure_names)]
 

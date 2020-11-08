@@ -120,7 +120,7 @@ def create_atlas(animal, create):
         z_end = int( round(z_start + (volume.shape[2] + 1) // 2))
 
         if debug:
-            print('volume shape', volume.shape, end=" ")
+            #print('volume shape', volume.shape, end=" ")
             print('COM row',
                   str(int(y)).rjust(4),
                   'mid col',

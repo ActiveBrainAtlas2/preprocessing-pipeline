@@ -15,7 +15,7 @@ sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_properties
-from utilities.utilities_affine import align_point_sets, get_atlas_centers, DATA_PATH, DK52_centers
+from utilities.utilities_affine import align_atlas, DATA_PATH, get_atlas_centers_hardcodeddata
 
 
 def create_atlas(animal, create):
@@ -32,33 +32,29 @@ def create_atlas(animal, create):
     resolution = sql_controller.scan_run.resolution
     SCALE = (10 / resolution)
 
-    atlas_centers = get_atlas_centers()
-    reference_centers = DK52_centers
+    reference_centers = sql_controller.get_centers_dict(animal)
     structures = sorted(reference_centers.keys())
-    src_point_set = np.array([atlas_centers[s][0] for s in structures]).T
+    #src_point_set = np.array([atlas_centers[s] for s in structures]).T
     atlas_box_scales = np.array([10, 10, 20])
-    src_point_set = np.diag(atlas_box_scales) @ src_point_set
+    #src_point_set = np.diag(atlas_box_scales) @ src_point_set
     dst_point_set = np.array([reference_centers[s] for s in structures]).T
 
-
     #####Transform to auto align
-    R, t = align_point_sets(src_point_set, dst_point_set)
-    reference_scales = (0.325, 0.325, 20)
-    output_scale = np.diag(reference_scales)
+
 
     #x_out = inv(output_scale) @ x
     #x can be replaced by output_point_set_expected_auto or t_auto.
-    all_atlas_centers = [a[0] for a in atlas_centers.values()]
-    arr = np.array(all_atlas_centers).T
-    x = R @ arr + t
+    #pprint(all_atlas_centers)
+    #sys.exit()
     #x_out = np.linalg.inv(output_scale) @ x
-    R = np.array([[0.99539957,  0.36001948,  0.01398446],
+    Rx = np.array([[0.99539957,  0.36001948,  0.01398446],
                   [-0.35951649,  0.99520404, - 0.03076857],
                  [-0.02361111,0.02418234,1.05805842]])
-    t = np.array([[19186.25529129],
+    tx = np.array([[19186.25529129],
                   [9825.28539829],
                   [78.18301303]])
 
+    R, t = align_atlas(reference_centers)
 
     rotationpath = os.path.join(ATLAS_PATH, f'atlas2{animal}.rotation.npy')
     np.save(rotationpath, R)
@@ -69,34 +65,34 @@ def create_atlas(animal, create):
     print(f'resolution: {sql_controller.scan_run.resolution}')
     print(f'width: {sql_controller.scan_run.width}')
     print(f'height: {sql_controller.scan_run.height}')
-    box_w = sql_controller.scan_run.width * sql_controller.scan_run.resolution / 32  # 10 mum scale
-    box_h = sql_controller.scan_run.height * sql_controller.scan_run.resolution / 32  # 10 mum scale
+    box_w = sql_controller.scan_run.width / SCALE  # 10 mum scale
+    box_h = sql_controller.scan_run.height / SCALE   # 10 mum scale
     box_z = sql_controller.get_section_count(animal)  # 20 mum scale
-
+    output_scale = np.diagflat([0.325, 0.325, 20])
     atlasV7_volume = np.zeros((int(box_h), int(box_w), int(box_z)), dtype=np.uint8)
     print('Shape of atlas volume', atlasV7_volume.shape)
     debug = True
-    for structure, (source_point, volume) in sorted(atlas_centers.items()):
+    atlas_centers_volumes = get_atlas_centers_hardcodeddata()
+    for structure, (source_point, volume) in sorted(atlas_centers_volumes.items()):
         print(str(structure).ljust(7),end=": ")
         results = (R @ source_point.T + t.T) # transform to fit
         #results = np.linalg.inv(output_scale) @ results
-        print(results)
-        continue
-        x = results[0][0] * resolution # new x
-        y = results[0][1] * resolution # new y
+        x = results[0][0]  / SCALE # new x
+        y = results[0][1]  / SCALE  # new y
         z = results[0][2] # z
-        x = x - volume.shape[0]/2
-        y = y - volume.shape[1]/2
+        x = x - volume.shape[1]/2
+        y = y - volume.shape[0]/2
         x_start = int( round(x))
         y_start = int( round(y))
         z_start = int(z - volume.shape[2]/4)
 
-        x_end = int( round(x_start + volume.shape[0]))
-        y_end = int( round(y_start + volume.shape[1]))
+        x_end = int( round(x_start + volume.shape[1]))
+        y_end = int( round(y_start + volume.shape[0]))
         z_end = int( round(z_start + (volume.shape[2] + 1) // 2))
 
         if debug:
             #print('volume shape', volume.shape, end=" ")
+            """
             print('COM row',
                   str(int(y)).rjust(4),
                   'mid col',
@@ -104,6 +100,7 @@ def create_atlas(animal, create):
                   'mid z',
                   str(int(z)).rjust(4),
                   end=" ")
+            """
             print('Row range',
                   str(y_start).rjust(4),
                   str(y_end).rjust(4),
@@ -115,14 +112,6 @@ def create_atlas(animal, create):
                   str(z_end).rjust(4),
                   end=" ")
 
-        if structure in output_centers.keys():
-            origin, _ = source_centers[structure]
-            xo, yo, zo = origin
-            print('COM off by:',
-                  round(x - xo, 2),
-                  round(y - yo, 2),
-                  round(z - zo, 2),
-                  end=" ")
 
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume.astype(np.uint8)
@@ -136,7 +125,7 @@ def create_atlas(animal, create):
         print()
 
     print('Shape of downsampled atlas volume', atlasV7_volume.shape)
-
+    resolution = 10000
     print('Resolution at', resolution)
 
     if create:
