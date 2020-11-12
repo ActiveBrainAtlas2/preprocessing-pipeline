@@ -133,6 +133,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 # images
-.png
-.jpg
-.tif
+*.png
+*.jpg
+*.tif

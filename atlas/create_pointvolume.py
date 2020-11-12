@@ -18,38 +18,41 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from utilities.utilities_affine import get_transformation_matrix, DATA_PATH
+from utilities.utilities_affine import get_transformation_matrix, DATA_PATH, align_point_sets
 
 start = timer()
 
 
-def create_points(animal, layer, create):
+def create_points(src_animal, dst_animal, layer, create):
 
-    fileLocationManager = FileLocationManager(animal)
-    sql_controller = SqlController(animal)
-    sqlController = SqlController(animal)
+    debug = True
+    fileLocationManager = FileLocationManager(dst_animal)
+    sqlController = SqlController(dst_animal)
     resolution = sqlController.scan_run.resolution
     URL_ID = 182 # DK52 this needs to be turned into a variable or looked up somehow
 
-    df = sql_controller.get_point_dataframe(URL_ID)
+    df = sqlController.get_point_dataframe(URL_ID)
+    if debug:
+        print(df['Layer'].unique())
     df = df.loc[df['Layer'] == layer]
-    print(df.head())
+    if debug:
+        print(df.head())
 
-    R = np.eye(3)
-    t = np.zeros(3)
-
-    R = np.array([[1.03699589, -0.04262374, 0.01931515],
-           [0.04338848, 1.03626601, -0.04266775],
-           [-0.01752994, 0.04343171, 1.03699408]]),
-    t = np.array([[-301.07168962],
-           [-254.70219464],
-           [-266.32054886]])
-
-
+    src_centers = sqlController.get_centers_dict(src_animal)
+    dst_centers = sqlController.get_centers_dict(dst_animal)
+    common_keys = src_centers.keys() & dst_centers.keys()
+    src_centers = [src_centers[x] for x in src_centers if x in common_keys]
+    dst_centers = [dst_centers[x] for x in dst_centers if x in common_keys]
+    src_centers = np.array(src_centers)
+    dst_centers = np.array(dst_centers)
+    R, t = align_point_sets(src_centers.T, dst_centers.T)
+    reference_scales = (0.325, 0.325, 20)
+    print(t)
+    #t = t / np.array([reference_scales]).T
+    print(t)
+    #sys.exit()
+    #t = np.zeros(3)
     coordinates = []
-
-    # shuffle the DataFrame rows
-    df = df.sample(frac=1)
 
     for index, row in df.iterrows():
         x = row['X']
@@ -62,13 +65,12 @@ def create_points(animal, layer, create):
         zt = int(round(results[0][2])) # z
         print(x,y,z,"\t", xt, yt, zt)
 
-        coordinates.append((xt, yt, zt))
+        coordinates.append((x, y, z))
 
 
-    width = sql_controller.scan_run.width
-    height = sql_controller.scan_run.height
-    sections = sqlController.get_section_count(animal)
-
+    width = sqlController.scan_run.width
+    height = sqlController.scan_run.height
+    sections = sqlController.get_section_count(dst_animal)
 
 
     if create:
@@ -88,9 +90,9 @@ def create_points(animal, layer, create):
 
         spatial_dir = os.path.join(OUTPUT_DIR, 'spatial0')
         os.makedirs(spatial_dir)
-
+        total_count = len(coordinates)  # coordinates is a list of tuples (x,y,z)
+        """
         with open(os.path.join(spatial_dir, '0_0_0'), 'wb') as outfile:
-            total_count = len(coordinates)  # coordinates is a list of tuples (x,y,z)
             buf = struct.pack('<Q', total_count)
             for (x, y, z) in coordinates:
                 pt_buf = struct.pack('<3f', x, y, z)
@@ -100,6 +102,14 @@ def create_points(animal, layer, create):
             buf += id_buf
             outfile.write(buf)
             outfile.close()
+        """
+        with open(os.path.join(spatial_dir, '0_0_0'), 'wb') as outfile:
+            buf = struct.pack('<Q', total_count)
+            pt_buf = b''.join(struct.pack('<3f', x, y, z) for (x, y, z) in coordinates)
+            buf += pt_buf
+            id_buf = struct.pack('<%sQ' % len(coordinates), *range(len(coordinates)))
+            buf += id_buf
+            outfile.write(buf)
 
 
     end = timer()
@@ -109,12 +119,14 @@ def create_points(animal, layer, create):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--animal', help='Enter the animal', required=True,)
+    parser.add_argument('--src_animal', help='Enter the animal to align from', required=True)
+    parser.add_argument('--dst_animal', help='Enter the animal to align to', required=True)
     parser.add_argument('--create', help='create volume', required=False, default='false')
     parser.add_argument('--layer', help='layer', required=False, default='PM nucleus')
     args = parser.parse_args()
-    animal = args.animal
+    src_animal = args.src_animal
+    dst_animal = args.dst_animal
     layer = args.layer
     create = bool({'true': True, 'false': False}[args.create.lower()])
-    create_points(animal, layer, create)
+    create_points(src_animal, dst_animal, layer, create)
 
