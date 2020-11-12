@@ -28,6 +28,7 @@
     1. This will read the directory of the thumbnail resolution files for channel 1
     1. Create histogram for each files for channel 1
     1. Repeat process for the other 2 channels when ready
+### CSHL will do from here on
 1. Run: `python create_masks.py --animal DKXX`
     1. This will read the thumbnail directory and create masks in the DKXX/preps/thumbnail_masked dir
     1. No need to use channel 2 or 3. It works solely on channel 1
@@ -37,6 +38,7 @@
 1. Run: `python create_alignment.py --animal DKXX --channel 1`
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair
     1. The elastix dir will be used to align the other channels and the full resoltions
+### Finish CSHL
 1. Run: `python create_neuroglancer.py --animal DKXX --channel 1 --resolution thumbnail`
     1. This will create the data for neuroglancer for channel 1
     1. View results in neuroglancer. Add the layer to the precompute with:
