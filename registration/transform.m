@@ -44,7 +44,7 @@ function transform(img_path, vtk_path, output_dir)
 
         % load the transformation
         % [x, y, z, AJphiJAxyX, AJphiJAxyY] = transform_aux(vtkpath);
-        disp('entering read_vtk_image with filename:')
+        disp(strcat('entering read_vtk_image with filename: ', vtkpath))
         [x,y,z,I,title,names] = read_vtk_image(vtkpath);
         [X,Y] = meshgrid(x,y);
 
@@ -66,7 +66,7 @@ function transform(img_path, vtk_path, output_dir)
 
         transformed_Jhigh(isnan(transformed_Jhigh)) = 255;
         transformed_Jhigh=im2uint8(transformed_Jhigh);
-        imwrite(transformed_Jhigh, strcat(output_dir, '/', imglist(i).name(1:end-13),'.tif'))
+        imwrite(transformed_Jhigh, strcat(output_dir, '/', imglist(i).name(1:end),'.tif'))
 
 
     end

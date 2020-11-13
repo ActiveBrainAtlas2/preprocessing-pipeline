@@ -13,7 +13,12 @@ function padtif(img_path, output_dir, output_jp2)
         [m n z] = size(img);
         p = 24000;
         q = 24000;
+        disp('p-m=')
+        disp(p-m)
+        disp('q-n')
+        disp(q-n)
 
+        disp('creating img_pad')
         img_pad = uint8(zeros([p q z]));
         for c = 1 : size(img,3)
             tmp = padarray(img(:,:,c), [floor((p - m)/2) floor((q - n)/2)], 255, 'post');

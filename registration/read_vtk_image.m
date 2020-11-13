@@ -6,19 +6,16 @@ end
 fid = fopen(filename,'rb');
 % read the first line, it should just say
 % # vtk DataFile Version 2.0
-disp("XXX line 10")
 while 1
 header = fgetl(fid);
 if isempty(header) % skip any blank
     continue
 end
-disp("is there a header below this?")
-disp(header)
+disp(strcat('header ', header))
 break;
 end
 
 
-disp("XXX line 21")
 % now read the title
 while 1
 title = fgetl(fid);
@@ -29,7 +26,6 @@ disp(title)
 break;
 end
 
-disp("XXX line 32")
 % now read the type, it must be binary
 while 1
 binary = fgetl(fid);
@@ -43,7 +39,6 @@ if ~strcmp(binary,'BINARY')
     error(['Only support reading BINARY data, but datatype is ' binary])
 end
 
-disp("XXX line 46")
 % now dataset
 while 1
 dataset = fgetl(fid);
@@ -60,7 +55,6 @@ if ~strcmp(dataset,'STRUCTURED_POINTS')
 end
 
 
-disp("XXX line 63")
 % now dimensions
 while 1
 dimensions = fgetl(fid);
@@ -77,7 +71,6 @@ if length(dimensions) ~= 3
     error(['Only support 3D data, but dataset dimensions is ' num2str(dimensions)])
 end
 
-disp("XXX line 80")
 % now origin
 while 1
 origin = fgetl(fid);
@@ -94,7 +87,6 @@ if length(origin) ~= 3
     error(['Only support 3D data, but dataset origin is ' num2str(origin)])
 end
 
-disp("XXX line 99")
 % now spacing
 while 1
 spacing = fgetl(fid);
@@ -111,7 +103,6 @@ if length(spacing) ~= 3
     error(['Only support 3D data, but dataset spacing is ' num2str(spacing)])
 end
 
-disp("XXX line 114")
 % create locations of data
 x = (0:dimensions(1)-1)*spacing(1) + origin(1);
 y = (0:dimensions(2)-1)*spacing(2) + origin(2);
@@ -139,7 +130,6 @@ if prod(dimensions) ~= n_datapoints
     error(['Product of dimensions should equal number of datapoints, but they are ' num2str(prod(dimensions)) ' and ' num2str(n_datapoints)])
 end
 
-disp("XXX line 142")
 % now we will begin looping through datasets
 % I don't know how many datasets there are at the beginning
 % so I'll use cells (better to add to end since don't need to be contiguous)
@@ -215,10 +205,9 @@ while 1
     end
 end
 fclose(fid);
-disp("XXX line 218")
 
 nC = length(I);
 I = reshape(I,[1,1,1,1,nC]);
 I = cell2mat(I);
 
-disp("XXX line finished")
+disp("vtk read finished")
