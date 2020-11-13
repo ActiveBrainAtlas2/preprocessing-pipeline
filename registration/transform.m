@@ -66,7 +66,9 @@ function transform(img_path, vtk_path, output_dir)
 
         transformed_Jhigh(isnan(transformed_Jhigh)) = 255;
         transformed_Jhigh=im2uint8(transformed_Jhigh);
-        imwrite(transformed_Jhigh, strcat(output_dir, '/', imglist(i).name(1:end),'.tif'))
+        fileout = strcat(output_dir, '/', imglist(i).name(1:end),'.tif')
+        disp(strcat('writing ', fileout))
+        imwrite(transformed_Jhigh, fileout)
 
 
     end
