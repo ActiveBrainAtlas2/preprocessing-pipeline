@@ -1,7 +1,7 @@
 function padtif(img_path, output_dir, output_jp2)
     % LASTN = maxNumCompThreads(1)
 
-    parpool('local',2);
+    parpool('local',1);
     pctRunOnAll maxNumCompThreads(1)
     imglist = dir(strcat(img_path, '/', '*.tif'));
     parfor i = 1:length(imglist)
@@ -13,20 +13,16 @@ function padtif(img_path, output_dir, output_jp2)
         [m n z] = size(img);
         p = 24000;
         q = 24000;
-        disp('p-m=')
-        disp(p-m)
-        disp('q-n')
-        disp(q-n)
 
-        disp('creating img_pad')
         img_pad = uint8(zeros([p q z]));
         for c = 1 : size(img,3)
             tmp = padarray(img(:,:,c), [floor((p - m)/2) floor((q - n)/2)], 255, 'post');
             img_pad(:,:,c) = padarray(tmp, [ceil((p - m)/2) ceil((q - n)/2)], 255, 'pre');
         end
         imwrite(img_pad, strcat(output_dir, '/', imglist(i).name),'Compression', 'none')
-        % disp(['sh kducomp_single.sh "' strcat(output_dir, imglist(i).name) '" ' output_jp2])
-        system(['sh kducomp_single.sh "' strcat(output_dir, '/', imglist(i).name) '" ' output_jp2]);
+        outfile = strcat(output_jp2, '/', imglist(i).name(1:end-4),'.jp2')
+        imwrite(tif, outfile)
+
     end
 end
 % clear all;

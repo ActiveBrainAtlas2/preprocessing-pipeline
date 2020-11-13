@@ -9,10 +9,6 @@ function transform(img_path, vtk_path, output_dir)
     vtklist = dir(strcat(vtk_path, '/', '*.vtk'));
 
     [count, a] = size(imglist);
-    disp(img_path)
-    disp(vtk_path)
-    disp(size(imglist))
-    disp(size(vtklist))
     parfor i = 1 : count
         % LASTN = maxNumCompThreads(1)
         maxNumCompThreads()
