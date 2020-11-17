@@ -32,7 +32,7 @@ colors(1,:) = 1; % set background white
 
 %%
 % get geometry of files from input dir
-geometry_file = strcat('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/', animal, '/brains_info/geometry.csv')
+geometry_file = strcat('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/', animal, '/brains_info/geometry.csv');
 % fid = fopen([input_dir geometry_file(1).name],'rt');
 fid = fopen(geometry_file,'rt');
 line = fgetl(fid); % ignore the first line
@@ -77,7 +77,9 @@ for f = 1 : length(files)
     [directory,fname,ext] = fileparts(files{f});
 
     % load the tif image and display
-    J = imread([input_dir files{f}]);
+    tifpath = strcat(input_dir, '/' f)
+    % J = imread([input_dir files{f}]);
+    J = imread(tifpath);
     if strcmp(class(J),'uint8')
         J = double(J)/255.0;
     end
@@ -97,8 +99,8 @@ for f = 1 : length(files)
     % load the transform
     try
         % [xTJ,yTJ,zTJ,DeltaTJ,title_,names] = read_vtk_image([output_dir 'registered_to_input_displacement_' fname '.vtk']);
-        fileinput = strcat('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/', animal, '/preps/vtk/input/', fname, '.vtk')
-        [xTJ,yTJ,zTJ,DeltaTJ,title_,names] = read_vtk_image(fileinput);
+        vtkfile = strcat('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/', animal, '/preps/vtk/input/', fname, '.vtk')
+        [xTJ,yTJ,zTJ,DeltaTJ,title_,names] = read_vtk_image(vtkfile);
     catch
         disp(['Could not read ' fname])
         continue
