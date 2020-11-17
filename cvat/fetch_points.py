@@ -19,7 +19,7 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 
-from cvat_sql_setup import session
+from sql_setup import session
 
 def display_points(task_id):
     """
@@ -39,7 +39,7 @@ def display_points(task_id):
             """
     rows = session.execute(query).fetchall()
     for row in rows:
-        print(f"{row.frame}, {row.structure}, {row.points}")
+        print(f"{row.frame}, {row.structure}, {row.points[0:50]}")
 
     if len(rows) == 0:
         print(f'No data for task id {task_id}')
