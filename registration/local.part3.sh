@@ -31,11 +31,8 @@ FULL_REG_PAD="$PIPELINE_DIR/$ANIMAL/preps/$CHANNEL/full_registered_padded"
 mkdir -p $OUTPUT_DIR/low_seg/
 # 2nd arg is
 # 3rd arg is registered_input vtk files
+echo "working on transform_seg"
+echo "SEG_DIR/annotation_50.vtk $SEG_DIR/annotation_50.vtk"
+echo "FULL_REG_PAD $FULL_REG_PAD"
+echo "ANIMAL $ANIMAL" 
 $MATLABCMD "transform_seg('$SEG_DIR/annotation_50.vtk', '$FULL_REG_PAD', '$ANIMAL', 5); exit"
-
-mkdir -p $OUTPUT_DIR/reg_high_seg/
-$MATLABCMD "cd('$CODE_DIR'); maxNumCompThreads(2); segresize('$OUTPUT_DIR/low_seg/', '$OUTPUT_DIR/reg_high_tif/', '$OUTPUT_DIR/reg_high_seg/'); exit"
-
-
-mkdir -p $OUTPUT_DIR/reg_high_seg_pad/
-$MATLABCMD "cd('$CODE_DIR'); maxNumCompThreads(2); padseg('$OUTPUT_DIR/reg_high_seg/', '$OUTPUT_DIR/reg_high_seg_pad/'); done('$ANIMAL'); exit"

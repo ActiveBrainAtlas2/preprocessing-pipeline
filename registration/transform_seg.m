@@ -77,7 +77,8 @@ for f = 1 : length(files)
     [directory,fname,ext] = fileparts(files{f});
 
     % load the tif image and display
-    tifpath = strcat(input_dir, '/' f)
+    tifpath = strcat(input_dir, '/', fname, '.tif');
+    disp(tifpath);
     % J = imread([input_dir files{f}]);
     J = imread(tifpath);
     if strcmp(class(J),'uint8')
