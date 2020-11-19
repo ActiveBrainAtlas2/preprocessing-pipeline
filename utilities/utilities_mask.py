@@ -406,7 +406,7 @@ def fix_with_fill(img, debug=False):
     return dilation
 
 
-def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False):
+def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False, threshold_range=35, clip_limit=2.0):
     """
     Used for the thionin create masks script
     :param img: input image
@@ -427,10 +427,10 @@ def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False):
     # -10 too much
     # -70 pretty good
     # -90 missing stuff
-    bgcolor = int(round(avg)) - 35 # -45 in the debug version
+    bgcolor = int(round(avg)) - threshold_range # -45 in the debug version
     #img = linnorm(img, 255, np.uint8)
     # The followng two lines does not exist in the debug version
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8))
     img = clahe.apply(img)
 
     h, im_th = cv2.threshold(img, bgcolor, 255, cv2.THRESH_BINARY_INV)
@@ -444,7 +444,8 @@ def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False):
     im_out = cv2.dilate(im_out, kernel, iterations=1)
 
     stencil = np.zeros(img.shape).astype('uint8')
-    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+#     contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     # get the contours and make the good ones all white, everything else black
     lc = [] # list of good contours
     c1 = max(contours, key=cv2.contourArea) # 1st biggest contour
