@@ -34,6 +34,7 @@ def make_web_thumbnails(animal):
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
 
     OUTPUT = fileLocationManager.thumbnail_web
+    os.makedirs(OUTPUT, exist_ok=True)
     tifs = sqlController.get_sections(animal, 1)
 
     for i, tif in enumerate(tqdm(tifs)):
@@ -46,7 +47,6 @@ def make_web_thumbnails(animal):
         if os.path.exists(output_path):
             continue
 
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         cmd = "convert {} {}".format(input_path, output_path)
         subprocess.run(cmd, shell=True)
 

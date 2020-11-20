@@ -100,10 +100,10 @@ for f = 1 : length(files)
     % load the transform
     try
         % [xTJ,yTJ,zTJ,DeltaTJ,title_,names] = read_vtk_image([output_dir 'registered_to_input_displacement_' fname '.vtk']);
-        vtkfile = strcat('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/', animal, '/preps/vtk/input/', fname, '.vtk')
+        vtkfile = strcat('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/', animal, '/preps/vtk/input/', fname, '.vtk');
         [xTJ,yTJ,zTJ,DeltaTJ,title_,names] = read_vtk_image(vtkfile);
     catch
-        disp(['Could not read ' fname])
+        disp(['Could not read ' fname]);
         continue
     end
 
