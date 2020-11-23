@@ -22,4 +22,5 @@ FULL_REG_PAD="$PIPELINE_DIR/$ANIMAL/preps/$CHANNEL/full_registered_padded"
 FULL_REG_PAD_JP2="$PIPELINE_DIR/$ANIMAL/preps/$CHANNEL/full_registered_padded_jp2"
 mkdir -p $FULL_REG_PAD
 mkdir -p $FULL_REG_PAD_JP2
-$MATLABCMD "maxNumCompThreads(2); padtif('$REG_TIF_FULL', '$FULL_REG_PAD', '$FULL_REG_PAD_JP2');exit"
+$MATLABCMD "maxNumCompThreads(2); padtif('$REG_TIF_FULL', '$FULL_REG_PAD');exit"
+

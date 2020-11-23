@@ -86,12 +86,6 @@ for f = 1 : length(files)
     end
     J = double(J);
 
-    % danfigure(1);
-    % imagesc(xJ{f},yJ{f},J);
-    % axis image;
-    % title(['Input data ' strrep(fname,'_','\_')])
-
-    %%
     % transform this image to registered space (2d transforms, identity in z)
     % this involves two steps
     % 1. upsample the transform to resolution res
@@ -121,8 +115,6 @@ for f = 1 : length(files)
     phiTJup(:,:,:,1) = DeltaTJup(:,:,:,1) + XTJup;
     phiTJup(:,:,:,2) = DeltaTJup(:,:,:,2) + YTJup;
 
-
-
     % apply transform to data
     JT = zeros(size(phiTJup,1),size(phiTJup,2),size(J,3));
     for c = 1 : size(J,3)
@@ -130,13 +122,6 @@ for f = 1 : length(files)
         JT(:,:,c) = F(phiTJup(:,:,:,2),phiTJup(:,:,:,1));
     end
 
-    % danfigure(2);
-    % imagesc(xTJ,yTJ,JT)
-    % axis image
-    % title(['Registered data ' strrep(fname,'_','\_')])
-
-
-    %%
     % transform the atlas
     % load the transform
     fileinput = strcat('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/', animal, '/preps/vtk/atlas/', fname, '.vtk')
@@ -160,42 +145,9 @@ for f = 1 : length(files)
     % apply transform to data
     [XTI,YTI,ZTI] = meshgrid(xTI,yTI,zTI);
 
-
     F = griddedInterpolant({yI,xI,zI},I,'nearest','nearest'); % for annotation use nearest
     IT = F(phiTIup(:,:,:,2),phiTIup(:,:,:,1),phiTIup(:,:,:,3));
     outpath = strcat('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/', animal, '/preps/vtk/mat/', fname, '.mat')
     save(outpath, 'IT')
-
-    % for display
-    % ITm = mod(IT,256);
-    % IT_RGB = reshape([colors(ITm+1,1),colors(ITm+1,2),colors(ITm+1,3)], size(ITm,1),size(ITm,2),3);
-    % danfigure(3);
-    % imagesc(xTJ,yTJ,IT_RGB)
-    % axis image
-    % title(['Atlas transformed to ' strrep(fname,'_','\_')])
-
-    %%
-    % overlay them (assume that J is RGB in the range [0,1]
-    % alpha = 0.25; % opacity of labels
-    % Ishow = bsxfun(@plus, IT_RGB*alpha, JT*(1-alpha));
-    % danfigure(4);
-    % imagesc(xTJ,yTJ,Ishow)
-    % axis image
-    % title([fname])
-
-
-%     %%
-%     % show a deformation grid
-%     levels = linspace(-10000,10000,500);
-%     hold on;
-%     contour(xTJup,yTJup,phiTIup(:,:,:,1),'color','r');
-%     contour(xTJup,yTJup,phiTIup(:,:,:,2),'color','g');
-% %     contour(xTJup,yTJup,phiTIup(:,:,:,3),'color','b'); % you may or may not want to look at slices
-%     hold off;
-
-%     %%
-%     % you may want to save some of these figures
-%     drawnow;
-
 
 end
