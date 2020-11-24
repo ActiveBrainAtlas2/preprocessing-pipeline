@@ -65,7 +65,7 @@ def create_points(src_animal, dst_animal, layer, create):
         zt = int(round(results[0][2])) # z
         print(x,y,z,"\t", xt, yt, zt)
 
-        coordinates.append((x, y, z))
+        coordinates.append((xt, yt, zt))
 
 
     width = sqlController.scan_run.width
