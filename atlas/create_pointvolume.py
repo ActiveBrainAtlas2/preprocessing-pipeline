@@ -26,7 +26,7 @@ start = timer()
 def create_points(src_animal, dst_animal, layer, create):
 
     debug = True
-    fileLocationManager = FileLocationManager(dst_animal)
+    fileLocationManager = FileLocationManager(src_animal)
     sqlController = SqlController(dst_animal)
     resolution = sqlController.scan_run.resolution
     URL_ID = 182 # DK52 this needs to be turned into a variable or looked up somehow
