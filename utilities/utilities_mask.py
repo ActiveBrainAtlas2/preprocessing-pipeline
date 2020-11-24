@@ -267,8 +267,8 @@ def scaled(img, mask, epsilon=0.01):
 def equalized(img):
     clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(12, 12))
     fixed = clahe.apply(img)
-    #clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
-    #fixed = clahe.apply(fixed)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
+    fixed = clahe.apply(fixed)
     return fixed
 
 
@@ -301,12 +301,15 @@ def fix_with_fill(img, debug=False):
         if m[0][0] <= threshold:
             h_src[i,:] = 0
 
+    for i in range(img_shape[0]-limit,img_shape[0]):
+        b = h_src[i,:]
+        m = stats.mode(b)
+        if m[0][0] <= threshold:
+            h_src[i,:] = 0
+
     del img
     del no_strip
 
-
-    #clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
-    #h_src = clahe.apply(h_src)
     lowVal = threshold + 2 # threshold + 2 in the debug function
     highVal = threshold + 190
     im_th = cv2.inRange(h_src, lowVal, highVal)
@@ -379,7 +382,7 @@ def fix_with_fill(img, debug=False):
             break
 
     cv2.fillPoly(stencil, lc, 255)
-    dilation = cv2.dilate(stencil, big_kernel, iterations=3)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=2)
 
     if debug:
         del stencil
