@@ -12,6 +12,7 @@ import struct
 import sys
 import numpy as np
 import shutil
+import requests
 from timeit import default_timer as timer
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -22,50 +23,71 @@ from utilities.utilities_affine import get_transformation_matrix, DATA_PATH, ali
 
 start = timer()
 
+def get_transform(animal):
+    res = requests.get(f'https://activebrainatlas.ucsd.edu/activebrainatlas/alignatlas?animal={animal}')
+    r = np.array(res.json()['rotation'])
+    t = np.array(res.json()['translation'])
+    return r, t
 
 def create_points(src_animal, dst_animal, layer, create):
 
     debug = True
     fileLocationManager = FileLocationManager(src_animal)
+    sqlController = SqlController(src_animal)
+    resolution = sqlController.scan_run.resolution
+    src_url_id = 182 # DK52 this needs to be turned into a variable or looked up somehow
+    # Get src points data
+    sqlController = SqlController(src_animal)
+    df_src = sqlController.get_point_dataframe(src_url_id)
+    df_src = df_src[df_src['Layer'] == layer]
+    src_scale = np.array([resolution, resolution, 20])
+    ## now get dst animal resolution
     sqlController = SqlController(dst_animal)
     resolution = sqlController.scan_run.resolution
-    URL_ID = 182 # DK52 this needs to be turned into a variable or looked up somehow
-
-    df = sqlController.get_point_dataframe(URL_ID)
+    dst_scale = np.array([resolution, resolution, 20])
     if debug:
-        print(df['Layer'].unique())
-    df = df.loc[df['Layer'] == layer]
+        print(df_src['Layer'].unique())
+    df_drc = df_src.loc[df_src['Layer'] == layer]
     if debug:
-        print(df.head())
+        print(df_src.head())
 
-    src_centers = sqlController.get_centers_dict(src_animal)
-    dst_centers = sqlController.get_centers_dict(dst_animal)
-    common_keys = src_centers.keys() & dst_centers.keys()
-    src_centers = [src_centers[x] for x in src_centers if x in common_keys]
-    dst_centers = [dst_centers[x] for x in dst_centers if x in common_keys]
-    src_centers = np.array(src_centers)
-    dst_centers = np.array(dst_centers)
-    R, t = align_point_sets(src_centers.T, dst_centers.T)
-    reference_scales = (0.325, 0.325, 20)
-    print(t)
-    #t = t / np.array([reference_scales]).T
-    print(t)
-    #sys.exit()
-    #t = np.zeros(3)
+        # Get transformations from atlas to each animal
+    r_src, t_src = get_transform(src_animal)
+    r_dst, t_dst = get_transform(dst_animal)
+
+    # Get transformation from src to dst
+    r = r_dst @ np.linalg.inv(r_src)
+    t_phys = np.diag(dst_scale) @ t_dst - np.diag(src_scale) @ t_src
+
+
+    # Transform points from src to dst
+    x_src = df_src[['X', 'Y', 'Section']].to_numpy().T
+    x_src_phys = np.diag(src_scale) @ x_src
+    x_dst_phys = r @ x_src_phys + t_phys
+    x_dst = np.diag(1 / dst_scale) @ x_dst_phys
+    print('shape of x_dst', x_dst.shape)
+    print('len df', len(df_src))
+
+    print(x_dst.T[0])
+    results = x_dst.T[0]
+    print(results[0], results[1], results[2])
+
     coordinates = []
 
-    for index, row in df.iterrows():
+    i = 0
+    for index, row in df_src.iterrows():
         x = row['X']
         y = row['Y']
         z = row['Section']
         source_point = np.array([x,y,z]) # get adjusted x,y,z from above loop
-        results = (R @ source_point + t.T).reshape(1,3) # transform to fit
-        xt = int(round(results[0][0])) # new x
-        yt = int(round(results[0][1])) # new y
-        zt = int(round(results[0][2])) # z
+        results = x_dst.T[i]
+        xt = int(round(results[0])) # new x
+        yt = int(round(results[1])) # new y
+        zt = int(round(results[2])) # z
         print(x,y,z,"\t", xt, yt, zt)
 
         coordinates.append((xt, yt, zt))
+        i += 1
 
 
     width = sqlController.scan_run.width
@@ -91,18 +113,7 @@ def create_points(src_animal, dst_animal, layer, create):
         spatial_dir = os.path.join(OUTPUT_DIR, 'spatial0')
         os.makedirs(spatial_dir)
         total_count = len(coordinates)  # coordinates is a list of tuples (x,y,z)
-        """
-        with open(os.path.join(spatial_dir, '0_0_0'), 'wb') as outfile:
-            buf = struct.pack('<Q', total_count)
-            for (x, y, z) in coordinates:
-                pt_buf = struct.pack('<3f', x, y, z)
-                buf += pt_buf
-            # write the ids at the end of the buffer as increasing integers
-            id_buf = struct.pack('<%sQ' % len(coordinates), *range(len(coordinates)))
-            buf += id_buf
-            outfile.write(buf)
-            outfile.close()
-        """
+
         with open(os.path.join(spatial_dir, '0_0_0'), 'wb') as outfile:
             buf = struct.pack('<Q', total_count)
             pt_buf = b''.join(struct.pack('<3f', x, y, z) for (x, y, z) in coordinates)
