@@ -9,6 +9,9 @@ import sys
 import numpy as np
 from timeit import default_timer as timer
 import shutil
+
+from scipy.ndimage import affine_transform
+
 start = timer()
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -61,8 +64,14 @@ def create_atlas(animal, create):
     col_length = sqlController.scan_run.width/SCALE
     row_length = sqlController.scan_run.height/SCALE
     z_length = len(os.listdir(THUMBNAIL_DIR))
+    col_length = 1000
+    row_length = 1000
+    z_length = 300
     atlasV7_volume = np.zeros(( int(row_length), int(col_length), z_length), dtype=np.uint8)
     print('atlas volume shape', atlasV7_volume.shape)
+    R = np.array([[0.9895407188124994, 0.10014568985635698, 0.014267056217591898],
+                  [-0.09702581677168316, 0.9793248239072665, -0.1446804148344484],
+                  [-0.02861291613431578, 0.14253866970080306, 0.9840160420176572]])
 
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         print(str(structure).ljust(7),end=": ")
@@ -89,6 +98,7 @@ def create_atlas(animal, create):
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
         volume = np.swapaxes(volume, 0, 1)
+        volume = affine_transform(volume, R)
 
         try:
             atlasV7_volume[y_start:y_end, x_start:x_end, z_start:z_end] += volume
@@ -102,10 +112,12 @@ def create_atlas(animal, create):
     print('Resolution at', resolution)
 
     if create:
+        #offset =  [21959.308659539533, 6238.690939678455, 66.74432595997823]
         atlasV7_volume = np.rot90(atlasV7_volume, axes=(0, 1))
         atlasV7_volume = np.fliplr(atlasV7_volume)
         atlasV7_volume = np.flipud(atlasV7_volume)
         atlasV7_volume = np.fliplr(atlasV7_volume)
+
 
         offset = [0,0,0]
         ng = NumpyToNeuroglancer(atlasV7_volume, [resolution, resolution, 20000], offset=offset)
@@ -114,8 +126,8 @@ def create_atlas(animal, create):
         ng.add_downsampled_volumes()
         ng.add_segmentation_mesh()
 
-        outpath = os.path.join(ATLAS_PATH, f'{atlas_name}.npz')
-        np.savez(outpath, atlasV7_volume.astype(np.uint8))
+        #outpath = os.path.join(ATLAS_PATH, f'{atlas_name}.npz')
+        #np.savez(outpath, atlasV7_volume.astype(np.uint8))
 
     end = timer()
     print(f'Finito! Program took {end - start} seconds')
@@ -124,7 +136,7 @@ def create_atlas(animal, create):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--animal', help='Enter the animal', required=False, default='MD589')
+    parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--create', help='create volume', required=False, default='false')
     args = parser.parse_args()
     animal = args.animal

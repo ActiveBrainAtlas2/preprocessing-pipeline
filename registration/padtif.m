@@ -1,4 +1,4 @@
-function padtif(img_path, output_dir, output_jp2)
+function padtif(img_path, output_dir)
     % LASTN = maxNumCompThreads(1)
 
     parpool('local',1);
@@ -20,8 +20,6 @@ function padtif(img_path, output_dir, output_jp2)
             img_pad(:,:,c) = padarray(tmp, [ceil((p - m)/2) ceil((q - n)/2)], 255, 'pre');
         end
         imwrite(img_pad, strcat(output_dir, '/', imglist(i).name),'Compression', 'lzw')
-        outfile = strcat(output_jp2, '/', imglist(i).name(1:end-4),'.jp2')
-        imwrite(img_pad, outfile)
 
     end
 end

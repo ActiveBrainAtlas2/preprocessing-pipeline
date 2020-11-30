@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.figure
+from scipy import stats
 
 from utilities.alignment_utility import get_last_2d
 
@@ -18,93 +19,24 @@ def rotate_image(img, file, rotation):
         print('Could not rotate', file)
     return img
 
-
-def find_threshold(src):
-    fig = matplotlib.figure.Figure()
-    ax = matplotlib.axes.Axes(fig, (0, 0, 0, 0))
-    n, bins, patches = ax.hist(src.flatten(), 360);
-    del ax, fig
-    min_point = np.argmin(n[:5])
-    min_point = int(min(2, min_point))
-    thresh = (min_point * 64000 / 360)
-    return min_point, thresh
-
-def lognorm(img, limit):
-    lxf = np.log(img + 0.005)
-    lxf = np.where(lxf < 0, 0, lxf)
-    xmin = min(lxf.flatten())
-    xmax = max(lxf.flatten())
-    return -lxf * limit / (xmax - xmin) + xmax * limit / (xmax - xmin)  # log of data and stretch 0 to 255
-
-
-def linnorm(img, limit, dt):
-    flat = img.flatten()
-    hist, bins = np.histogram(flat, limit + 1)
-    cdf = hist.cumsum()  # cumulative distribution function
-    cdf = limit * cdf / cdf[-1]  # normalize
-    # use linear interpolation of cdf to find new pixel values
-    img_norm = np.interp(flat, bins[:-1], cdf)
-    img_norm = np.reshape(img_norm, img.shape)
-    return img_norm.astype(dt)
-
-def find_contour_count(img):
-    contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    return len(contours)
-
-def fix_with_blob(img):
-    no_strip, fe = remove_strip(img)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    h_src = clahe.apply(no_strip)
-
-    min_value, threshold = find_threshold(h_src)
-    #threshold = np.median(h_src) - 0
-
-    ret, threshed = cv2.threshold(no_strip, threshold, 255, cv2.THRESH_BINARY)
-    threshed = np.uint8(threshed)
-    connectivity = 4
-    output = cv2.connectedComponentsWithStats(threshed, connectivity, cv2.CV_32S)
-    labels = output[1]
-    stats = output[2]
-    # Find the blob that corresponds to the section.
-    if fe != 0:
-        img[:, fe:] = 0  # mask the strip
-    row = find_main_blob(stats, img)
-    blob_label = row[1]['blob_label']
-    # extract the blob
-    blob = np.uint8(labels == blob_label) * 255
-    # Perform morphological closing
-    kernel10 = np.ones((10, 10), np.uint8)
-    mask = cv2.morphologyEx(blob, cv2.MORPH_CLOSE, kernel10, iterations=5)
-    return mask
-
-
-def find_main_blob(stats, image):
-    height, width = image.shape
-    df = pd.DataFrame(stats)
-    df.columns = ['Left', 'Top', 'Width', 'Height', 'Area']
-    df['blob_label'] = df.index
-    df = df.sort_values(by='Area', ascending=False)
-
-    for row in df.iterrows():
-        Left = row[1]['Left']
-        Top = row[1]['Top']
-        Width = row[1]['Width']
-        Height = row[1]['Height']
-        corners = int(Left == 0) + int(Top == 0) + int(Width == width) + int(Height == height)
-        if corners <= 2:
-            return row
-
-
-def scale_and_mask(src, mask, epsilon=0.01):
-    vals = np.array(sorted(src[mask > 10]))
-    ind = int(len(vals) * (1 - epsilon))
-    _max = vals[ind]
-    # print('thr=%d, index=%d'%(vals[ind],index))
-    _range = 2 ** 16 - 1
-    scaled = src * (45000. / _max)
-    scaled[scaled > _range] = _range
-    scaled = scaled * (mask > 10)
-    return scaled, _max
+def remove_stripXXX(src):
+    """
+    from Yoav
+    :param src:
+    :return:
+    """
+    strip_max = 150;
+    strip_min = 5  # the range of width for the stripe
+    projection=np.sum(src,axis=0)/10000.
+    diff=projection[1:]-projection[:-1]
+    loc,=np.nonzero(diff[-strip_max:-strip_min]>50)
+    mval=np.max(diff[-strip_max:-strip_min])
+    no_strip=np.copy(src)
+    if loc.shape[0]>0:
+        loc=np.min(loc)
+        from_end=strip_max-loc
+        no_strip[:,-from_end-2:]=0 # mask the strip
+    return no_strip
 
 def remove_strip(src):
     strip_max = 150;
@@ -121,6 +53,101 @@ def remove_strip(src):
         fe = -from_end - 2
         no_strip[:,fe:]=0 # mask the strip
     return no_strip, fe
+
+def find_threshold(src):
+    """
+    from Yoav
+    :param src:
+    :return:
+    """
+    fig = matplotlib.figure.Figure()
+    ax = matplotlib.axes.Axes(fig, (0,0,0,0))
+    n,bins,patches=ax.hist(src.flatten(),160);
+    del ax, fig
+    min_point=np.argmin(n[:5])
+    thresh=min_point*64000/160+1000
+    return thresh
+
+
+def find_main_blob(stats,image):
+    """
+    from Yoav
+    :param src:
+    :return:
+    """
+    height,width=image.shape
+    df=pd.DataFrame(stats)
+    df.columns=['Left','Top','Width','Height','Area']
+    df['blob_label']=df.index
+    df=df.sort_values(by='Area',ascending=False)
+
+    for row in df.iterrows():
+        Left=row[1]['Left']
+        Top=row[1]['Top']
+        Width=row[1]['Width']
+        Height=row[1]['Height']
+        corners= int(Left==0)+int(Top==0)+int(Width==width)+int(Height==height)
+        if corners<=2:
+            return row
+
+
+def scale_and_mask(src, mask, epsilon=0.01):
+    """
+    from Yoav
+    :param src:
+    :return:
+    """
+    vals = np.array(sorted(src[mask > 10]))
+    ind = int(len(vals) * (1 - epsilon))
+    _max = vals[ind]
+    # print('thr=%d, index=%d'%(vals[ind],index))
+    _range = 2 ** 16 - 1
+    scaled = src * (45000. / _max)
+    scaled[scaled > _range] = _range
+    scaled = scaled * (mask > 10)
+    return scaled, _max
+
+
+def fix_with_blob(img):
+    """
+    Yoav's algorithmn for finding the blob and creating mask. Taken from the loop
+    :param img: 16 bit channel 1 image
+    :return:
+    """
+    no_strip = remove_strip(img)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(12, 12))
+    no_strip = clahe.apply(no_strip)
+
+    ###### Threshold it so it becomes binary
+    threshold = find_threshold(no_strip)
+    ret, threshed = cv2.threshold(no_strip,threshold,255,cv2.THRESH_BINARY)
+    threshed=np.uint8(threshed)
+    ###### Find connected elements
+    # You need to choose 4 or 8 for connectivity type
+    connectivity = 4
+    output = cv2.connectedComponentsWithStats(threshed, connectivity, cv2.CV_32S)
+
+    # Get the results
+    # The first cell is the number of labels
+    num_labels = output[0]
+    # The second cell is the label matrix
+    labels = output[1]
+    # The third cell is the stat matrix
+    stats = output[2]
+    # The fourth cell is the centroid matrix
+    centroids = output[3]
+
+    # Find the blob that corresponds to the section.
+    row=find_main_blob(stats,no_strip)
+    blob_label=row[1]['blob_label']
+
+    #extract the blob
+    blob=np.uint8(labels==blob_label)*255
+
+    #Perform morphological closing
+    kernel10 = np.ones((10,10),np.uint8)
+    mask = cv2.morphologyEx(blob, cv2.MORPH_CLOSE, kernel10, iterations=5)
+    return mask
 
 
 def make_mask(img):
@@ -212,55 +239,6 @@ def get_index(array, list_of_arrays):
             return j
     return None
 
-def fill_spots(img):
-    imgcopy = np.copy(img)
-    #imgcopy = (imgcopy / 256).astype(np.uint8)
-
-    contours, hierarchy = cv2.findContours(imgcopy, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
-    if len(contours) == 0:
-        return img
-
-    c1 = max(contours, key=cv2.contourArea)
-    area1 = cv2.contourArea(c1)
-    idx = get_index(c1, contours)  # 2
-    contours.pop(idx)
-
-    if len(contours) > 0:
-        cX = max(contours, key=cv2.contourArea)
-        area2 = cv2.contourArea(cX)
-        if area2 > (area1 * 0.75):
-            idx = get_index(cX, contours)  # 2
-            contours.pop(idx)
-
-    if len(contours) > 0:
-        cX = max(contours, key=cv2.contourArea)
-        area3 = cv2.contourArea(cX)
-        if area3 > (area2 * 0.75):
-            idx = get_index(cX, contours)  # 2
-            contours.pop(idx)
-
-    """
-    if len(contours) > 0:
-        cX = max(contours, key=cv2.contourArea)
-        area3 = cv2.contourArea(cX)
-        if area3 > (area1 * 0.95):
-            idx = get_index(cX, contours)  # 2
-            contours.pop(idx)
-
-    if len(contours) > 0:
-        cX = max(contours, key=cv2.contourArea)
-        area4 = cv2.contourArea(cX)
-        if area4 > (area3 * 0.95):
-            idx = get_index(cX, contours)  # 2
-            contours.pop(idx)
-    """
-
-    if len(contours) > 0:
-        cv2.fillPoly(img, contours, 0)
-
-    return img
-
 
 def check_contour(contours, area, lc):
     if len(contours) > 0:
@@ -286,43 +264,54 @@ def scaled(img, mask, epsilon=0.01):
     scaled = scaled * (mask > 10)
     return scaled
 
+def equalized(img):
+    clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(12, 12))
+    fixed = clahe.apply(img)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
+    fixed = clahe.apply(fixed)
+    return fixed
 
 
 def fix_with_fill(img, debug=False):
     no_strip, fe = remove_strip(img)
+    img_shape = img.shape
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
     img = (img / 256).astype(np.uint8)
-    img_shape = img.shape
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=30.0, tileGridSize=(120, 120))
     h_src = clahe.apply(img)
-    del img
-
-    # The following comment is from the debug function
-    # + 10 getting too much
-    # + 20 way too much
-    # 5, 12 not enough
-    # 5, 16, starting to get the little bit on top
-    # 0,40 get a lot
-    # 4,20 getting the top, good in beginning also
-    # 3,18 no good
-    # 4 above median is max!
-    # 4,20 009.tif gets lopped off
-    # 2,90 is good
-
-    # In the debug function, the following code is not commented out
-    #lower = 98
-    #upper = 102
-    #bgmask = (h_src >= lower) & (h_src <= upper)
-    #h_src[bgmask] = 0
-    #bgmask = (h_src <= 8)
-    #h_src[bgmask] = 0
-    clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
-    h_src = clahe.apply(h_src)
+    limit = img_shape[1] // 12
     threshold = np.median(h_src)
-    lowVal = threshold + 1 # threshold + 2 in the debug function
-    highVal = threshold + 90
+    for i in range(0,limit):
+        b = h_src[:,i]
+        m = stats.mode(b)
+        if m[0][0] <= threshold:
+            h_src[:,i] = 0
 
+    for i in range(img_shape[1]-limit,img_shape[1]):
+        b = h_src[:,i]
+        m = stats.mode(b)
+        if m[0][0] <= threshold:
+            h_src[:,i] = 0
+
+    limit = limit // 10
+    for i in range(0,limit):
+        b = h_src[i,:]
+        m = stats.mode(b)
+        if m[0][0] <= threshold:
+            h_src[i,:] = 0
+
+    for i in range(img_shape[0]-limit,img_shape[0]):
+        b = h_src[i,:]
+        m = stats.mode(b)
+        if m[0][0] <= threshold:
+            h_src[i,:] = 0
+
+    del img
+    del no_strip
+
+    lowVal = threshold + 2 # threshold + 2 in the debug function
+    highVal = threshold + 190
     im_th = cv2.inRange(h_src, lowVal, highVal)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
@@ -337,11 +326,10 @@ def fix_with_fill(img, debug=False):
     small_kernel = np.ones((3, 3), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
     #opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, small_kernel)
-    opening = cv2.dilate(im_out, small_kernel, iterations=2)
-    del h_src
-    contours, hierarchy = cv2.findContours(opening, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    #opening = cv2.dilate(im_out, small_kernel, iterations=1)
+    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     del im_out
-    del opening
+    #del opening
 
     lc = []
     c1 = max(contours, key=cv2.contourArea)
@@ -394,19 +382,19 @@ def fix_with_fill(img, debug=False):
             break
 
     cv2.fillPoly(stencil, lc, 255)
-    dilation = cv2.dilate(stencil, big_kernel, iterations=3)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=2)
 
     if debug:
         del stencil
         for a,c in zip(areas, coords):
             cv2.putText(dilation, a, c, font,
                         fontScale, 2, thickness, cv2.LINE_AA)
-        return dilation, lowVal, highVal
+        return h_src, dilation, lowVal, highVal
 
     return dilation
 
 
-def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False):
+def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False, threshold_range=35, clip_limit=2.0):
     """
     Used for the thionin create masks script
     :param img: input image
@@ -427,10 +415,10 @@ def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False):
     # -10 too much
     # -70 pretty good
     # -90 missing stuff
-    bgcolor = int(round(avg)) - 35 # -45 in the debug version
+    bgcolor = int(round(avg)) - threshold_range # -45 in the debug version
     #img = linnorm(img, 255, np.uint8)
     # The followng two lines does not exist in the debug version
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8))
     img = clahe.apply(img)
 
     h, im_th = cv2.threshold(img, bgcolor, 255, cv2.THRESH_BINARY_INV)
@@ -444,7 +432,8 @@ def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False):
     im_out = cv2.dilate(im_out, kernel, iterations=1)
 
     stencil = np.zeros(img.shape).astype('uint8')
-    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+#     contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(im_out, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     # get the contours and make the good ones all white, everything else black
     lc = [] # list of good contours
     c1 = max(contours, key=cv2.contourArea) # 1st biggest contour
@@ -512,3 +501,26 @@ def fix_thionin_debug(img, dilation_itr=1):
 
 def fix_with_fill_debug(img):
     return fix_with_fill(img, debug=True)
+
+
+def lognorm(img, limit):
+    lxf = np.log(img + 0.005)
+    lxf = np.where(lxf < 0, 0, lxf)
+    xmin = min(lxf.flatten())
+    xmax = max(lxf.flatten())
+    return -lxf * limit / (xmax - xmin) + xmax * limit / (xmax - xmin)  # log of data and stretch 0 to 255
+
+
+def linnorm(img, limit, dt):
+    flat = img.flatten()
+    hist, bins = np.histogram(flat, limit + 1)
+    cdf = hist.cumsum()  # cumulative distribution function
+    cdf = limit * cdf / cdf[-1]  # normalize
+    # use linear interpolation of cdf to find new pixel values
+    img_norm = np.interp(flat, bins[:-1], cdf)
+    img_norm = np.reshape(img_norm, img.shape)
+    return img_norm.astype(dt)
+
+def find_contour_count(img):
+    contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    return len(contours)
