@@ -29,15 +29,49 @@ def get_transform(animal):
     t = np.array(res.json()['translation'])
     return r, t
 
-def create_points(src_animal, dst_animal, layer, create):
 
+def transform_point_dataframe(
+        src_url_id=182,
+        src_animal='DK52',
+        src_scale=(0.325, 0.325, 20),
+        dst_animal='DK39',
+        dst_scale=(0.325, 0.325, 20),
+        layer='premotor'
+):
+    """Transform coordinates from one animal brain to another.
+
+    The transformation is from src coordinates to dst coordinates.
+    """
+    src_scale = np.array(src_scale)
+    dst_scale = np.array(dst_scale)
+
+    # Get transformations from atlas to each animal
+    r_src, t_src = get_transform(src_animal)
+    r_dst, t_dst = get_transform(dst_animal)
+
+    # Get transformation from src to dst
+    r = r_dst @ np.linalg.inv(r_src)
+    t_phys = np.diag(dst_scale) @ t_dst - np.diag(src_scale) @ t_src
+
+    # Get src points data
+    sqlController = SqlController(src_animal)
+    df_src = sqlController.get_point_dataframe(src_url_id)
+    df_src = df_src[df_src['Layer'] == layer]
+
+    # Transform points from src to dst
+    x_src = df_src[['X', 'Y', 'Section']].to_numpy().T
+    x_src_phys = np.diag(src_scale) @ x_src
+    x_dst_phys = r @ x_src_phys + t_phys
+    x_dst = np.diag(1 / dst_scale) @ x_dst_phys
+    return x_dst
+
+def create_points(src_animal, dst_animal, layer, create):
     debug = True
     fileLocationManager = FileLocationManager(src_animal)
     sqlController = SqlController(src_animal)
     resolution = sqlController.scan_run.resolution
     src_url_id = 182 # DK52 this needs to be turned into a variable or looked up somehow
     # Get src points data
-    sqlController = SqlController(src_animal)
     df_src = sqlController.get_point_dataframe(src_url_id)
     df_src = df_src[df_src['Layer'] == layer]
     src_scale = np.array([resolution, resolution, 20])
@@ -64,14 +98,15 @@ def create_points(src_animal, dst_animal, layer, create):
     x_src = df_src[['X', 'Y', 'Section']].to_numpy().T
     x_src_phys = np.diag(src_scale) @ x_src
     x_dst_phys = r @ x_src_phys + t_phys
-    x_dst = np.diag(1 / dst_scale) @ x_dst_phys
+    #x_dst = np.diag(1 / dst_scale) @ x_dst_phys
+
+    x_dst = transform_point_dataframe()
+
     print('shape of x_dst', x_dst.shape)
-    print('len df', len(df_src))
 
     print(x_dst.T[0])
     results = x_dst.T[0]
     print(results[0], results[1], results[2])
-
     coordinates = []
 
     i = 0
@@ -139,5 +174,6 @@ if __name__ == '__main__':
     dst_animal = args.dst_animal
     layer = args.layer
     create = bool({'true': True, 'false': False}[args.create.lower()])
+    #create_points(src_animal, dst_animal, layer, create)
     create_points(src_animal, dst_animal, layer, create)
 

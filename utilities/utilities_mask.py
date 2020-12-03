@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.figure
-from scipy import stats
+from nipy.labs.mask import compute_mask
 
 from utilities.alignment_utility import get_last_2d
 
@@ -19,7 +19,7 @@ def rotate_image(img, file, rotation):
         print('Could not rotate', file)
     return img
 
-def remove_stripXXX(src):
+def remove_strip_orig(src):
     """
     from Yoav
     :param src:
@@ -114,10 +114,10 @@ def fix_with_blob(img):
     :param img: 16 bit channel 1 image
     :return:
     """
-    no_strip = remove_strip(img)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(12, 12))
-    no_strip = clahe.apply(no_strip)
-
+    #no_strip = remove_strip(img)
+    #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(12, 12))
+    #no_strip = clahe.apply(no_strip)
+    no_strip = img.copy()
     ###### Threshold it so it becomes binary
     threshold = find_threshold(no_strip)
     ret, threshed = cv2.threshold(no_strip,threshold,255,cv2.THRESH_BINARY)
@@ -264,12 +264,56 @@ def scaled(img, mask, epsilon=0.01):
     scaled = scaled * (mask > 10)
     return scaled
 
-def equalized(img):
-    clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(12, 12))
-    fixed = clahe.apply(img)
+def equalized(fixed):
+    clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(12, 12))
+    fixed = clahe.apply(fixed)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
     fixed = clahe.apply(fixed)
     return fixed
+
+
+def trim_edges(img):
+    no_strip, fe  = remove_strip(img)
+    img_shape = img.shape
+    if fe != 0:
+        img[:, fe:] = 0  # mask the strip
+    img = (img / 256).astype(np.uint8)
+    clahe = cv2.createCLAHE(clipLimit=30.0, tileGridSize=(120, 120))
+    img = clahe.apply(img)
+    h_src = img.copy()
+    limit = img_shape[1] // 12
+    threshold = 44
+    # trim left
+    for i in range(0,limit):
+        b = h_src[:,i]
+        m = np.mean(b)
+        if m <= threshold:
+            h_src[:,i] = 0
+    # trim right
+    for i in range(img_shape[1]-limit,img_shape[1]):
+        b = h_src[:,i]
+        m = np.mean(b)
+        if m <= threshold:
+            h_src[:,i] = 0
+
+    # trim top
+    limit = limit // 2
+    for i in range(0,limit):
+        b = h_src[i,:]
+        m = np.mean(b)
+        if m <= threshold:
+            h_src[i,:] = 0
+
+    # trim bottom
+    limit = limit // 2
+    for i in range(img_shape[0]-limit,img_shape[0]):
+        b = h_src[i,:]
+        m = np.mean(b)
+        if m <= threshold:
+            h_src[i,:] = 0
+
+    return h_src
+
 
 
 def fix_with_fill(img, debug=False):
@@ -277,41 +321,15 @@ def fix_with_fill(img, debug=False):
     img_shape = img.shape
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
-    img = (img / 256).astype(np.uint8)
-    clahe = cv2.createCLAHE(clipLimit=30.0, tileGridSize=(120, 120))
-    h_src = clahe.apply(img)
-    limit = img_shape[1] // 12
-    threshold = np.median(h_src)
-    for i in range(0,limit):
-        b = h_src[:,i]
-        m = stats.mode(b)
-        if m[0][0] <= threshold:
-            h_src[:,i] = 0
-
-    for i in range(img_shape[1]-limit,img_shape[1]):
-        b = h_src[:,i]
-        m = stats.mode(b)
-        if m[0][0] <= threshold:
-            h_src[:,i] = 0
-
-    limit = limit // 10
-    for i in range(0,limit):
-        b = h_src[i,:]
-        m = stats.mode(b)
-        if m[0][0] <= threshold:
-            h_src[i,:] = 0
-
-    for i in range(img_shape[0]-limit,img_shape[0]):
-        b = h_src[i,:]
-        m = stats.mode(b)
-        if m[0][0] <= threshold:
-            h_src[i,:] = 0
-
-    del img
+    #img = (img / 256).astype(np.uint8)
+    #clahe = cv2.createCLAHE(clipLimit=30.0, tileGridSize=(120, 120))
+    #img = clahe.apply(img)
+    img = linnorm(img, 200, np.uint8)
+    h_src = img.copy()
     del no_strip
-
-    lowVal = threshold + 2 # threshold + 2 in the debug function
-    highVal = threshold + 190
+    threshold = np.median(h_src)
+    lowVal = threshold + 4 # threshold + 2 in the debug function
+    highVal = 200
     im_th = cv2.inRange(h_src, lowVal, highVal)
     im_floodfill = im_th.copy()
     h, w = im_th.shape[:2]
@@ -389,7 +407,7 @@ def fix_with_fill(img, debug=False):
         for a,c in zip(areas, coords):
             cv2.putText(dilation, a, c, font,
                         fontScale, 2, thickness, cv2.LINE_AA)
-        return h_src, dilation, lowVal, highVal
+        return dilation, lowVal, highVal, threshold
 
     return dilation
 
@@ -508,7 +526,7 @@ def lognorm(img, limit):
     lxf = np.where(lxf < 0, 0, lxf)
     xmin = min(lxf.flatten())
     xmax = max(lxf.flatten())
-    return -lxf * limit / (xmax - xmin) + xmax * limit / (xmax - xmin)  # log of data and stretch 0 to 255
+    return -lxf * limit / (xmax - xmin) + xmax * limit / (xmax - xmin)  # log of data and stretch 0 to limit
 
 
 def linnorm(img, limit, dt):
@@ -524,3 +542,13 @@ def linnorm(img, limit, dt):
 def find_contour_count(img):
     contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     return len(contours)
+
+def create_mask_pass1(img):
+    mask = compute_mask(img, m=0.2, M=0.9, cc=False, opening=2, exclude_zeros=True)
+    mask = mask.astype(int)
+    mask[mask==0] = 0
+    mask[mask==1] = 255
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.dilate(mask.astype(np.uint8), kernel, iterations=2)
+    mask = mask.astype(np.uint8)
+    return mask

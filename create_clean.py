@@ -23,7 +23,7 @@ from utilities.utilities_mask import rotate_image, place_image, linnorm, lognorm
 #fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip)
 
 
-def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug):
+def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height):
     try:
         img = io.imread(infile)
     except:
@@ -50,15 +50,14 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
         mask = np.flip(mask, axis=1)
 
 
-    if not debug:
-        rotated_maskpath = os.path.join(ROTATED_MASKS, os.path.basename(maskfile))
-        mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
-        cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
+    rotated_maskpath = os.path.join(ROTATED_MASKS, os.path.basename(maskfile))
+    mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
+    cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
 
     return fixed
 
 
-def fix_thion(infile, mask, maskfile, ROTATED_MASKS,  logger, rotation, flip, max_width, max_height, debug):
+def fix_thion(infile, mask, maskfile, ROTATED_MASKS,  logger, rotation, flip, max_width, max_height):
     try:
         #imgfull = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
         imgfull = io.imread(infile)
@@ -93,15 +92,15 @@ def fix_thion(infile, mask, maskfile, ROTATED_MASKS,  logger, rotation, flip, ma
         mask = np.flip(mask, axis=1)
 
     rotated_maskpath = os.path.join(ROTATED_MASKS, os.path.basename(maskfile))
-    if not debug:
-        mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
-        cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
+    mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
+
+    cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
     fixed = np.dstack((fixed1, fixed2, fixed3))
     #fixed = fixed3
     return fixed
 
 
-def masker(animal, channel, flip, rotation=0, full=False, debug=False):
+def masker(animal, channel, flip, rotation=0, full=False):
     logger = get_logger(animal)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
@@ -150,16 +149,11 @@ def masker(animal, channel, flip, rotation=0, full=False, debug=False):
         mask = io.imread(maskfile)
 
         if 'thion' in stain.lower():
-            fixed = fix_thion(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
-            #fixed = fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, debug)
+            fixed = fix_thion(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height)
         else:
-            fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, debug)
-            #fixed = fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, debug)
+            fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height)
 
-        if debug and rotation == 0:
-            fixed = place_image(fixed, file, max_height, max_width, bgcolor)
-        else:
-            fixed = place_image(fixed, file, max_width, max_height, bgcolor)
+        fixed = place_image(fixed, file, max_width, max_height, bgcolor)
 
         fixed[fixed == 0] = bgcolor
         #Note, io.imsave creates HUGE files!!!!!
@@ -176,16 +170,13 @@ if __name__ == '__main__':
     parser.add_argument('--rotation', help='Enter rotation', required=False, default=0)
     parser.add_argument('--flip', help='Enter flip or flop', required=False)
     parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
-    parser.add_argument('--debug', help='Enter True or False', required=False, default='False')
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
     rotation = int(args.rotation)
     flip = args.flip
-    debug = args.debug
     full = bool({'full': True, 'thumbnail': False}[args.resolution])
-    debug = bool({'True': True, 'False': False}[args.debug])
 
-    masker(animal, channel, flip, rotation, full, debug)
+    masker(animal, channel, flip, rotation, full)
 

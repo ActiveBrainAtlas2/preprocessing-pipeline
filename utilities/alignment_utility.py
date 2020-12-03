@@ -406,8 +406,6 @@ def parse_elastix_parameter_file(filepath, tf_type=None):
 
         return L, shift, center
 
-
-
 def parameter_elastix_parameter_file_to_dict(filename):
     d = {}
     with open(filename, 'r') as f:
@@ -429,7 +427,6 @@ def parameter_elastix_parameter_file_to_dict(filename):
                     except ValueError:
                         value = v
                 d[key] = value
-
         return d
 
 
