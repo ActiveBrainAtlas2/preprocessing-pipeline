@@ -350,22 +350,8 @@ def parse_elastix_parameter_file(filepath, tf_type=None):
 
     d = parameter_elastix_parameter_file_to_dict(filepath)
 
-    if tf_type is None:
-        # For alignment composition script
-        rot_rad, x_mm, y_mm = d['TransformParameters']
-        center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
-        # center[1] = d['Size'][1] - center[1]
 
-        xshift = x_mm / d['Spacing'][0]
-        yshift = y_mm / d['Spacing'][1]
-
-        R = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
-                      [np.sin(rot_rad), np.cos(rot_rad)]])
-        shift = center + (xshift, yshift) - np.dot(R, center)
-        T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
-        return T
-
-    elif tf_type == 'rigid3d':
+    if tf_type == 'rigid3d':
         p = np.array(d['TransformParameters'])
         center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
         shift = p[3:] / np.array(d['Spacing'])
@@ -396,15 +382,23 @@ def parse_elastix_parameter_file(filepath, tf_type=None):
         # shift = center + shift - np.dot(L, center)
         # T = np.column_stack([L, shift])
         return L, shift, center
+    elif tf_type is None:
+        # For alignment composition script
+        rot_rad, x_mm, y_mm = d['TransformParameters']
+        center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
+        # center[1] = d['Size'][1] - center[1]
 
-    elif tf_type == 'bspline3d':
-        n_params = d['NumberOfParameters']
-        p = np.array(d['TransformParameters'])
-        grid_size = d['GridSize']
-        grid_spacing = d['GridSpacing']
-        grid_origin = d['GridOrigin']
+        xshift = x_mm / d['Spacing'][0]
+        yshift = y_mm / d['Spacing'][1]
 
-        return L, shift, center
+        R = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
+                      [np.sin(rot_rad), np.cos(rot_rad)]])
+        shift = center + (xshift, yshift) - np.dot(R, center)
+        T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
+        return T
+    else:
+        print('Nothing to do')
+
 
 def parameter_elastix_parameter_file_to_dict(filename):
     d = {}
