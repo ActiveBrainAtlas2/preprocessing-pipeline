@@ -21,7 +21,12 @@ from utilities.sqlcontroller import SqlController
 def get_db_structure_infos():
     sqlController = SqlController('MD589')
     db_structures = sqlController.get_structures_dict()
-    return db_structures
+    structures = {}
+    for structure, v in db_structures.items():
+        if '_' in structure:
+            structure = structure[0:-2]
+        structures[structure] = v
+    return structures
 
 def get_known_foundation_structure_names():
     known_foundation_structures = ['MVePC', 'DTgP', 'VTA', 'Li', 'Op', 'Sp5C', 'RPC', 'MVeMC', 'APT', 'IPR',
@@ -136,25 +141,11 @@ class NumpyToNeuroglancer():
         with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
             json.dump(info, file, indent=2)
 
-    def add_downsampled_volumes_v2(self, num_downsampled):
-        if self.precomputed_vol is None:
-            raise NotImplementedError('You have to call init_precomputed before calling this function.')
-
-        factor = (2, 2, 1)
-        volumes = tinybrain.downsample_segmentation(self.volume, factor=factor, num_mips=num_downsampled, sparse=False)
-        volumes.insert(0, self.volume)
-
-        for mip, volume in enumerate(volumes):
-            vol.add_scale(np.array(factor) ** mip)
-            vol.commit_info()
-            vol = CloudVolume(self.precomputed_vol.layer_cloudpath, mip=mip, compress=False, progress=False)
-            vol[:, :, :] = volume[:, :, :]
-
     def add_downsampled_volumes(self):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
-        tq = LocalTaskQueue(parallel=1)
+        tq = LocalTaskQueue(parallel=4)
         tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=False)
         tq.insert(tasks)
         tq.execute()
@@ -163,7 +154,7 @@ class NumpyToNeuroglancer():
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
-        tq = LocalTaskQueue(parallel=1)
+        tq = LocalTaskQueue(parallel=4)
         tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=False) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()

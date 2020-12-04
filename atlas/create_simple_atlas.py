@@ -69,9 +69,6 @@ def create_atlas(animal, create):
     z_length = 300
     atlasV7_volume = np.zeros(( int(row_length), int(col_length), z_length), dtype=np.uint8)
     print('atlas volume shape', atlasV7_volume.shape)
-    R = np.array([[0.9895407188124994, 0.10014568985635698, 0.014267056217591898],
-                  [-0.09702581677168316, 0.9793248239072665, -0.1446804148344484],
-                  [-0.02861291613431578, 0.14253866970080306, 0.9840160420176572]])
 
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         print(str(structure).ljust(7),end=": ")
@@ -97,11 +94,10 @@ def create_atlas(animal, create):
 
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
-        volume = np.swapaxes(volume, 0, 1)
-        volume = affine_transform(volume, R)
+        #volume = np.swapaxes(volume, 0, 1)
 
         try:
-            atlasV7_volume[y_start:y_end, x_start:x_end, z_start:z_end] += volume
+            atlasV7_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
         except ValueError as ve:
             print(ve, end=" ")
 
@@ -113,10 +109,10 @@ def create_atlas(animal, create):
 
     if create:
         #offset =  [21959.308659539533, 6238.690939678455, 66.74432595997823]
-        atlasV7_volume = np.rot90(atlasV7_volume, axes=(0, 1))
-        atlasV7_volume = np.fliplr(atlasV7_volume)
-        atlasV7_volume = np.flipud(atlasV7_volume)
-        atlasV7_volume = np.fliplr(atlasV7_volume)
+        #atlasV7_volume = np.rot90(atlasV7_volume, axes=(0, 1))
+        #atlasV7_volume = np.fliplr(atlasV7_volume)
+        #atlasV7_volume = np.flipud(atlasV7_volume)
+        #atlasV7_volume = np.fliplr(atlasV7_volume)
 
 
         offset = [0,0,0]
