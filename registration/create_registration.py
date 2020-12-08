@@ -5,7 +5,7 @@ HOME = expanduser("~")
 import os, sys
 import numpy as np
 from collections import OrderedDict
-from shutil import move, rmtree
+from shutil import move
 import subprocess
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
@@ -52,11 +52,14 @@ for repeats in range(0, ITERATIONS):
             rotations[files[i]] = R
             translations[files[i]] = t
         else:
+            ##### CHECK, are the two lines below correct? I'm multiplying the rotation matrix and adding the
+            ##### translation vectors
             rotations[files[i]] = rotations[files[i]] @ R
             translations[files[i]] = translations[files[i]] + t
 
 
 
+    ##### This block of code is from Yuncong so I didn't write it.
     anchor_index = len(files) // 2 # middle section of the brain
     transformation_to_anchor_section = {}
     # Converts every transformation
@@ -74,6 +77,7 @@ for repeats in range(0, ITERATIONS):
                 T_composed = np.dot(transformation_to_previous_section[files[i]], T_composed)
             transformation_to_anchor_section[files[moving_index]] = T_composed
 
+    # scale the translations to either the thumbnail or the full resolution sized images
     warp_transforms = create_warp_transforms(animal, transformation_to_anchor_section, 'thumbnail', resolution)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
     for file, arr in tqdm(ordered_transforms.items()):
