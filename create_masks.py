@@ -6,14 +6,13 @@ import cv2
 import numpy as np
 from skimage import io
 from tqdm import tqdm
-from nipy.labs.mask import compute_mask
 
 from sql_setup import CREATE_THUMBNAIL_MASKS
 from utilities.alignment_utility import get_last_2d
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import fix_with_fill, fix_thionin, fix_with_blob, trim_edges, create_mask_pass1
+from utilities.utilities_mask import fix_with_fill, fix_thionin, trim_edges, create_mask_pass1
 from utilities.utilities_process import workernoshell
 
 
@@ -59,7 +58,7 @@ def create_mask(animal, full, njobs):
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
             outpath = os.path.join(MASKED, file)
-            if os.path.exists(outpath) and not repeat:
+            if os.path.exists(outpath):
                 continue
             if 'thion' in stain.lower():
                 try:
