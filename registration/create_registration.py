@@ -1,78 +1,114 @@
-from skimage import io
+import pickle
 from os.path import expanduser
-from timeit import default_timer as timer
-from shutil import copyfile
+from tqdm import tqdm
 HOME = expanduser("~")
 import os, sys
-import SimpleITK as sitk
-from tqdm import tqdm
+import numpy as np
+from collections import OrderedDict
+from shutil import move, rmtree
+import subprocess
 
-start = timer()
+sys.path.append(os.path.join(os.getcwd(), '../'))
 
-
-animal = 'MD589'
-DIR = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{animal}/preps/CH1'
-INPUT = os.path.join(DIR, 'full')
-OUTPUT = os.path.join(DIR, 'thumbnail_aligned')
-
-
-def align_image(fixed_image, moving_image):
-    initial_transform = sitk.CenteredTransformInitializer(
-        fixed_image,
-        moving_image,
-        sitk.Euler2DTransform(),
-        sitk.CenteredTransformInitializerFilter.MOMENTS)
-    registration_method = sitk.ImageRegistrationMethod()
-    # Similarity metric settings.
-    registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=50)
-    registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
-    # changing this from 0.01 to 0.1 increased time from 32 to 81 seconds
-    registration_method.SetMetricSamplingPercentage(0.01)
-    registration_method.SetInterpolator(sitk.sitkLinear)
-    # Optimizer settings.
-    registration_method.SetOptimizerAsGradientDescent(learningRate=1.0,
-                                                      numberOfIterations=100,
-                                                      convergenceMinimumValue=1e-6,
-                                                      convergenceWindowSize=10)
-    registration_method.SetOptimizerScalesFromPhysicalShift()
-    # Setup for the multi-resolution framework.
-    registration_method.SetShrinkFactorsPerLevel(shrinkFactors = [4,2,1])
-    registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas=[2,1,0])
-    registration_method.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
-    # Don't optimize in-place, we would possibly like to run this cell multiple times.
-    registration_method.SetInitialTransform(initial_transform, inPlace=False)
-    final_transform = registration_method.Execute(sitk.Cast(fixed_image, sitk.sitkFloat32),
-                                                   sitk.Cast(moving_image, sitk.sitkFloat32))
-
-    moving_resampled = sitk.Resample(
-        moving_image, fixed_image, final_transform, sitk.sitkLinear, 0.0, moving_image.GetPixelID())
-    return moving_resampled
+from utilities.sqlcontroller import SqlController
+from utilities.utilities_registration import create_warp_transforms, register_correlation
+from utilities.alignment_utility import SCALING_FACTOR
+from utilities.file_location import FileLocationManager
 
 
+animal = 'DK39'
+fileLocationManager = FileLocationManager(animal)
+sqlController = SqlController(animal)
 
-files = sorted(os.listdir(INPUT))
-lfiles = len(files)
-midpoint  = lfiles // 2
-#copyfile(os.path.join(INPUT, files[midpoint]), os.path.join(OUTPUT, files[midpoint]))
-#copyfile(os.path.join(INPUT, files[midpoint+1]), os.path.join(OUTPUT, files[midpoint+1]))
-#copyfile(os.path.join(INPUT, files[midpoint]), os.path.join(OUTPUT, files[midpoint]))
-moving_resampled = None
-for index in range(0, lfiles, 1):
-    moving_file = os.path.join(INPUT, files[index])
-    moving_image = sitk.ReadImage(moving_file, sitk.sitkUInt8)
-    fixed_file = os.path.join(INPUT, files[index+1])
-    fixed_image =  sitk.ReadImage(fixed_file, sitk.sitkUInt8)
+# define variables
+INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
+ALIGNED = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
+resolution = 'thumbnail'
+width = sqlController.scan_run.width
+height = sqlController.scan_run.height
+max_width = int(width * SCALING_FACTOR)
+max_height = int(height * SCALING_FACTOR)
+bgcolor = 'black' # this should be black, but white lets you see the rotation and shift
+ITERATIONS = 4
 
-    moving_resampled = align_image(fixed_image, moving_resampled)
-
-    print(moving_file)
-    print(fixed_file)
-    print()
+rotations = OrderedDict()
+translations = OrderedDict()
 
 
-    sitk.WriteImage(moving_resampled, os.path.join(OUTPUT, files[index]))
-    #sitk.WriteTransform(final_transform, os.path.join(OUTPUT, f"{index}.tfm" ))
+for repeats in range(0, ITERATIONS):
+    transformation_to_previous_section = OrderedDict()
 
-end = timer()
-print(f'Program took {end - start} seconds')
-print(f'Program took {(end - start)//lfiles} seconds per file')
+    files = sorted(os.listdir(INPUT))
+
+    for i in tqdm(range(1, len(files))):
+        fixed_index = str(i - 1).zfill(3)
+        moving_index = str(i).zfill(3)
+
+        R,t = register_correlation(INPUT, fixed_index, moving_index)
+        T = np.vstack([np.column_stack([R, t]), [0, 0, 1]])
+        transformation_to_previous_section[files[i]] = T
+
+        if repeats == 0:
+            rotations[files[i]] = R
+            translations[files[i]] = t
+        else:
+            rotations[files[i]] = rotations[files[i]] @ R
+            translations[files[i]] = translations[files[i]] + t
+
+
+
+    anchor_index = len(files) // 2 # middle section of the brain
+    transformation_to_anchor_section = {}
+    # Converts every transformation
+    for moving_index in range(len(files)):
+        if moving_index == anchor_index:
+            transformation_to_anchor_section[files[moving_index]] = np.eye(3)
+        elif moving_index < anchor_index:
+            T_composed = np.eye(3)
+            for i in range(anchor_index, moving_index, -1):
+                T_composed = np.dot(np.linalg.inv(transformation_to_previous_section[files[i]]), T_composed)
+            transformation_to_anchor_section[files[moving_index]] = T_composed
+        else:
+            T_composed = np.eye(3)
+            for i in range(anchor_index + 1, moving_index + 1):
+                T_composed = np.dot(transformation_to_previous_section[files[i]], T_composed)
+            transformation_to_anchor_section[files[moving_index]] = T_composed
+
+    warp_transforms = create_warp_transforms(animal, transformation_to_anchor_section, 'thumbnail', resolution)
+    ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
+    for file, arr in tqdm(ordered_transforms.items()):
+        T = np.linalg.inv(arr)
+        sx = T[0, 0]
+        sy = T[1, 1]
+        rx = T[1, 0]
+        ry = T[0, 1]
+        tx = T[0, 2]
+        ty = T[1, 2]
+        # sx, rx, ry, sy, tx, ty
+        op_str = f" +distort AffineProjection '{sx},{rx},{ry},{sy},{tx},{ty}'"
+        op_str += f' -crop {max_width}x{max_height}+0.0+0.0!'
+        input_fp = os.path.join(INPUT, file)
+        output_fp = os.path.join(ALIGNED, file)
+        if os.path.exists(output_fp):
+            continue
+
+        cmd = f"convert {input_fp} -depth 16 +repage -virtual-pixel background -background {bgcolor} {op_str} -flatten -compress lzw {output_fp}"
+        subprocess.run(cmd, shell=True)
+
+    ## move aligned images to cleaned and repeat loop
+    if repeats < ITERATIONS - 1:
+        for file in os.listdir(INPUT):
+            filepath = os.path.join(INPUT, file)
+            os.unlink(filepath)
+        for file in files:
+            move(os.path.join(ALIGNED, file), INPUT)
+
+# Store data (serialize)
+rotation_storage = os.path.join(fileLocationManager.elastix_dir, 'rotations.pickle')
+with open(rotation_storage, 'wb') as handle:
+    pickle.dump(rotations, handle)
+
+translation_storage = os.path.join(fileLocationManager.elastix_dir, 'translations.pickle')
+with open(translation_storage, 'wb') as handle:
+    pickle.dump(translations, handle)
+

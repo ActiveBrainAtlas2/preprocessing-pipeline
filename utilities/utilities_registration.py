@@ -82,64 +82,20 @@ def command_iteration(method):
                                            method.GetOptimizerPosition()))
 
 
-def register_from_tutorial(INPUT, fixed_index, moving_index, filter):
-    fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
-    moving_file = os.path.join(INPUT, f'{moving_index}.tif')
-    fixed = sitk.ReadImage(fixed_file, sitk.sitkUInt16);
-    moving = sitk.ReadImage(moving_file, sitk.sitkUInt16)
 
-    initial_transform = sitk.CenteredTransformInitializer(
-        fixed, moving,
-        sitk.Euler2DTransform(),
-        sitk.CenteredTransformInitializerFilter.GEOMETRY)
-
-    R = sitk.ImageRegistrationMethod()
-
-    # Similarity metric settings.
-    R.SetMetricAsMattesMutualInformation(numberOfHistogramBins=50)
-    R.SetMetricSamplingStrategy(R.RANDOM)
-    R.SetMetricSamplingPercentage(0.01)
-
-    R.SetInterpolator(sitk.sitkLinear)
-
-    # Optimizer settings.
-    R.SetOptimizerAsGradientDescent(learningRate=0.1,
-                                                      numberOfIterations=1000,
-                                                      convergenceMinimumValue=1e-8,
-                                                      convergenceWindowSize=10)
-    R.SetOptimizerScalesFromPhysicalShift()
-
-    # Setup for the multi-resolution framework.
-    R.SetShrinkFactorsPerLevel(shrinkFactors = [4,2,1])
-    R.SetSmoothingSigmasPerLevel(smoothingSigmas=[2,1,0])
-    R.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
-
-    # Don't optimize in-place, we would possibly like to run this cell multiple times.
-    R.SetInitialTransform(initial_transform, inPlace=True)
-    # Connect all of the observers so that we can perform plotting during registration.
-    R.AddCommand(sitk.sitkStartEvent, start_plot)
-    R.AddCommand(sitk.sitkEndEvent, end_plot)
-    R.AddCommand(sitk.sitkMultiResolutionIterationEvent, update_multires_iterations)
-    R.AddCommand(sitk.sitkIterationEvent, lambda: plot_values(R))
-
-
-    final_transform = R.Execute(sitk.Cast(fixed, sitk.sitkFloat32),
-                                                   sitk.Cast(moving, sitk.sitkFloat32))
-
-    return final_transform
-
-
-def register_test(MASKED, INPUT, fixed_index, moving_index):
+# reg from tutorial rotation, xshift, yshift (-0.0034807742960239595, -36.88411114029529, 0.7795425553435908)
+# reg from test rotation, xshift, yshift (0.9989561173433995, -0.048287262488821474, -57.242378687708886, -1.8337162672070968)
+def register_test(INPUT, fixed_index, moving_index):
     pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
     moving_file = os.path.join(INPUT, f'{moving_index}.tif')
-    fixed_mask_file = os.path.join(MASKED, f'{fixed_index}.tif')
-    moving_mask_file = os.path.join(MASKED, f'{moving_index}.tif')
+    #fixed_mask_file = os.path.join(MASKED, f'{fixed_index}.tif')
+    #moving_mask_file = os.path.join(MASKED, f'{moving_index}.tif')
 
-    fixed = sitk.ReadImage(fixed_file, sitk.sitkFloat32);
-    moving = sitk.ReadImage(moving_file, sitk.sitkFloat32)
-    maskFixed = sitk.ReadImage(fixed_mask_file, sitk.sitkUInt8)
-    maskMoving= sitk.ReadImage(moving_mask_file, sitk.sitkUInt8)
+    fixed = sitk.ReadImage(fixed_file, pixelType);
+    moving = sitk.ReadImage(moving_file, pixelType)
+    #maskFixed = sitk.ReadImage(fixed_mask_file, sitk.sitkUInt8)
+    #maskMoving= sitk.ReadImage(moving_mask_file, sitk.sitkUInt8)
     # Handle optimizer
     # Restrict the evaluation of the similarity metric thanks to masks
     #R.SetMetricFixedMask(maskFixed)
@@ -151,6 +107,7 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
     #R.SetMetricAsMeanSquares()
     #rotation, xshift, yshift (0.1611860479695003, -17.06518762920313, -47.4020601708269)
     #R.SetMetricAsANTSNeighborhoodCorrelation(radius=10)
+    #geometry = sitk.CenteredTransformInitializerFilter.GEOMETRY
     ##### ants is really slow
     ## 20 iterations looks fine, LR=0.75
     # Gradient descent optimizer
@@ -162,23 +119,23 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
     #R.SetOptimizerAsRegularStepGradientDescent(learningRate=0.75, minStep=1e-6,
     #                                           numberOfIterations=25, gradientMagnitudeTolerance=1e-8)
     #
+    # Good version with correlation
     R = sitk.ImageRegistrationMethod()
-
-    # correlation
-    #Final  metric value: -0.7039249190388261
-    #Optimizer 's stopping condition, RegularStepGradientDescentOptimizerv4: Maximum number of iterations (25) exceeded.
-    # rotation, xshift, yshift(1.0063625513680365, 0.12324555947756057, -49.463004329446534, -17.263262368310336)
-    # center(959.9599816863847, 491.68844594717933)
     R.SetMetricAsCorrelation()
-    R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
-                                               minStep=1e-4,
-                                               numberOfIterations=80,
-                                               gradientMagnitudeTolerance=1e-8)
+    #R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
+    #                                           minStep=1e-4,
+    #                                           numberOfIterations=80,
+    #                                           gradientMagnitudeTolerance=1e-8)
+    R.SetOptimizerAsGradientDescent(learningRate=1.0, numberOfIterations=100)
     R.SetOptimizerScalesFromIndexShift()
+    moments = sitk.CenteredTransformInitializerFilter.MOMENTS
+    transformation = sitk.CenteredTransformInitializer(fixed, moving,
+                                           sitk.Similarity2DTransform(), moments)
+    R.SetInitialTransform(transformation)
+    R.SetMetricSamplingStrategy(R.REGULAR)  # R.RANDOM
+    R.SetMetricSamplingPercentage(0.1)
+    R.SetInterpolator(sitk.sitkLinear)
 
-    tx = sitk.CenteredTransformInitializer(fixed, moving,
-                                           sitk.Similarity2DTransform())
-    R.SetInitialTransform(tx)
     ## OK version
     """
     R.SetMetricAsJointHistogramMutualInformation(100)
@@ -194,13 +151,8 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
     transformation = sitk.CenteredTransformInitializer(fixed, moving, sitk.Euler2DTransform(), moments)
     R.SetInitialTransform(transformation)
     """
-
-    R.SetInterpolator(sitk.sitkLinear)
     ### done test
     # Define the transformation (Rigid body here)
-    moments = sitk.CenteredTransformInitializerFilter.MOMENTS
-    geometry = sitk.CenteredTransformInitializerFilter.GEOMETRY
-    transformation = sitk.CenteredTransformInitializer(fixed, moving, sitk.Euler2DTransform(), moments)
     #R.SetInitialTransform(transformation)
     # Define interpolation method
     #R.SetInterpolator(sitk.sitkLinear)
@@ -215,69 +167,81 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
     return final_transform, fixed, moving, R
 
 
+def register_from_tutorial(INPUT, fixed_index, moving_index):
+    pixelType = sitk.sitkUInt16
 
-
-def register(MASKED, INPUT, fixed_index, moving_index):
     fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
     moving_file = os.path.join(INPUT, f'{moving_index}.tif')
-    fixed = sitk.ReadImage(fixed_file, sitk.sitkFloat32);
-    moving = sitk.ReadImage(moving_file, sitk.sitkFloat32)
+    fixed = sitk.ReadImage(fixed_file, pixelType);
+    moving = sitk.ReadImage(moving_file, pixelType)
+
+    initial_transform = sitk.CenteredTransformInitializer(
+        fixed, moving,
+        sitk.Euler2DTransform(),
+        sitk.CenteredTransformInitializerFilter.MOMENTS)
+
     R = sitk.ImageRegistrationMethod()
-    #moving_mask_file = os.path.join(MASKED, f'{moving_index}.tif')
-    #maskMoving= sitk.ReadImage(moving_mask_file, sitk.sitkUInt8)
-    #R.SetMetricMovingMask(maskMoving)
-
-    R.SetMetricAsJointHistogramMutualInformation(100)
-
-    # Gradient descent optimizer
-    R.SetOptimizerAsRegularStepGradientDescent(learningRate=0.1, minStep=1e-6,
-                                               numberOfIterations=25, gradientMagnitudeTolerance=1e-8)
-
-    # R.SetOptimizerScalesFromPhysicalShift()
-    R.SetMetricSamplingStrategy(R.REGULAR)  # R.RANDOM
-    # Define the transformation (Rigid body here)
-    moments = sitk.CenteredTransformInitializerFilter.MOMENTS
-    transformation = sitk.CenteredTransformInitializer(fixed, moving, sitk.Euler2DTransform(), moments)
-    R.SetInitialTransform(transformation)
-    # Define interpolation method
-    R.SetInterpolator(sitk.sitkLinear)
-    # Perform registration
-    final_transform = R.Execute(fixed, moving)
-    return final_transform
-
-
-
-
-def register_correlation(INPUT, fixed_index, moving_index):
-    pixelType = sitk.sitkFloat32
-    fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
-    moving_file = os.path.join(INPUT, f'{moving_index}.tif')
-
-    fixed = sitk.ReadImage(fixed_file, sitk.sitkFloat32);
-    moving = sitk.ReadImage(moving_file, sitk.sitkFloat32)
-    R = sitk.ImageRegistrationMethod()
-    # correlation
     R.SetMetricAsCorrelation()
+    R.SetMetricSamplingStrategy(R.REGULAR)
+    R.SetMetricSamplingPercentage(0.1)
+    R.SetInterpolator(sitk.sitkLinear)
+    # Optimizer settings.
     R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
                                                minStep=1e-4,
-                                               numberOfIterations=80,
+                                               numberOfIterations=180,
                                                gradientMagnitudeTolerance=1e-8)
-    R.SetOptimizerScalesFromIndexShift()
+    R.SetOptimizerScalesFromPhysicalShift()
+    R.SetInitialTransform(initial_transform)
 
-    tx = sitk.CenteredTransformInitializer(fixed, moving,
-                                           sitk.Similarity2DTransform())
-    R.SetInitialTransform(tx)
+    # Connect all of the observers so that we can perform plotting during registration.
+    R.AddCommand(sitk.sitkStartEvent, start_plot)
+    R.AddCommand(sitk.sitkEndEvent, end_plot)
+    R.AddCommand(sitk.sitkMultiResolutionIterationEvent, update_multires_iterations)
+    R.AddCommand(sitk.sitkIterationEvent, lambda: plot_values(R))
+
+
+    final_transform = R.Execute(sitk.Cast(fixed, sitk.sitkFloat32),
+                                                   sitk.Cast(moving, sitk.sitkFloat32))
+
+    return final_transform, fixed, moving, R
+
+def register_correlation(INPUT, fixed_index, moving_index):
+    pixelType = sitk.sitkUInt16
+    fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
+    moving_file = os.path.join(INPUT, f'{moving_index}.tif')
+
+    fixed = sitk.ReadImage(fixed_file, pixelType);
+    moving = sitk.ReadImage(moving_file, pixelType)
+
+    initial_transform = sitk.CenteredTransformInitializer(
+        fixed, moving,
+        sitk.Euler2DTransform(),
+        sitk.CenteredTransformInitializerFilter.MOMENTS)
+
+    R = sitk.ImageRegistrationMethod()
+    R.SetMetricAsCorrelation()
+    R.SetMetricSamplingStrategy(R.REGULAR)
+    R.SetMetricSamplingPercentage(0.1)
     R.SetInterpolator(sitk.sitkLinear)
+    # Optimizer settings.
+    R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
+                                               minStep=1e-4,
+                                               numberOfIterations=180,
+                                               gradientMagnitudeTolerance=1e-8)
+    R.SetOptimizerScalesFromPhysicalShift()
+    R.SetInitialTransform(initial_transform)
 
     # Perform registration
-    final_transform = R.Execute(fixed, moving)
+    final_transform = R.Execute(sitk.Cast(fixed, sitk.sitkFloat32),
+                                                   sitk.Cast(moving, sitk.sitkFloat32))
+
     finalParameters = final_transform.GetParameters()
     fixedParameters = final_transform.GetFixedParameters()
-    _, rot_rad, xshift, yshift = finalParameters
+    rot_rad, xshift, yshift = finalParameters
     center = np.array(fixedParameters)
 
     R = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
                   [np.sin(rot_rad), np.cos(rot_rad)]])
-    shift = center + (xshift, yshift) - np.dot(R, center)
-    T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
-    return T
+    t = center + (xshift, yshift) - np.dot(R, center)
+    #T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
+    return R, t
