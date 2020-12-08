@@ -29,10 +29,9 @@ height = sqlController.scan_run.height
 max_width = int(width * SCALING_FACTOR)
 max_height = int(height * SCALING_FACTOR)
 bgcolor = 'black' # this should be black, but white lets you see the rotation and shift
-ITERATIONS = 4
+ITERATIONS = 8
 
 rotations = OrderedDict()
-translations = OrderedDict()
 
 
 for repeats in range(0, ITERATIONS):
@@ -49,13 +48,12 @@ for repeats in range(0, ITERATIONS):
         transformation_to_previous_section[files[i]] = T
 
         if repeats == 0:
-            rotations[files[i]] = R
-            translations[files[i]] = t
+            rotations[files[i]] = T
         else:
             ##### CHECK, are the two lines below correct? I'm multiplying the rotation matrix and adding the
             ##### translation vectors
-            rotations[files[i]] = rotations[files[i]] @ R
-            translations[files[i]] = translations[files[i]] + t
+            #### Check 2, just multiplying the entire matrix 
+            rotations[files[i]] = rotations[files[i]] @ T
 
 
 
@@ -111,8 +109,4 @@ for repeats in range(0, ITERATIONS):
 rotation_storage = os.path.join(fileLocationManager.elastix_dir, 'rotations.pickle')
 with open(rotation_storage, 'wb') as handle:
     pickle.dump(rotations, handle)
-
-translation_storage = os.path.join(fileLocationManager.elastix_dir, 'translations.pickle')
-with open(translation_storage, 'wb') as handle:
-    pickle.dump(translations, handle)
 
