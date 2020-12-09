@@ -41,7 +41,6 @@ for repeats in range(0, ITERATIONS):
     yshifts = 0
 
     files = sorted(os.listdir(INPUT))
-    files = files[0:10]
 
     for i in tqdm(range(1, len(files))):
         fixed_index = str(i - 1).zfill(3)
