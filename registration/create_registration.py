@@ -29,7 +29,7 @@ height = sqlController.scan_run.height
 max_width = int(width * SCALING_FACTOR)
 max_height = int(height * SCALING_FACTOR)
 bgcolor = 'black' # this should be black, but white lets you see the rotation and shift
-ITERATIONS = 6
+ITERATIONS = 10
 
 rotations = OrderedDict()
 
@@ -119,7 +119,10 @@ for repeats in range(0, ITERATIONS):
     print('Iteration', repeats, end="\t")
     print('Avg rotation', avg_rot, end="\t")
     print('Avg x shift', avg_xsh, end="\t")
-    print('Avg y shift', avg_ysh)
+    print('Avg y shift', avg_ysh, end="\t")
+    print('Rotation', round(rot_rads,2), end="\t")
+    print('X shift', round(xshifts,2), end="\t")
+    print('Y shift', round(yshifts,2))
     print()
 
 # Store data (serialize)
