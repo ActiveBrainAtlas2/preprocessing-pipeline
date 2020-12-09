@@ -29,30 +29,37 @@ height = sqlController.scan_run.height
 max_width = int(width * SCALING_FACTOR)
 max_height = int(height * SCALING_FACTOR)
 bgcolor = 'black' # this should be black, but white lets you see the rotation and shift
-ITERATIONS = 8
+ITERATIONS = 6
 
 rotations = OrderedDict()
 
 
 for repeats in range(0, ITERATIONS):
     transformation_to_previous_section = OrderedDict()
+    rot_rads = 0
+    xshifts = 0
+    yshifts = 0
 
     files = sorted(os.listdir(INPUT))
+    files = files[0:10]
 
     for i in tqdm(range(1, len(files))):
         fixed_index = str(i - 1).zfill(3)
         moving_index = str(i).zfill(3)
 
-        R,t = register_correlation(INPUT, fixed_index, moving_index)
+        R,t, rot_rad, xshift, yshift = register_correlation(INPUT, fixed_index, moving_index)
         T = np.vstack([np.column_stack([R, t]), [0, 0, 1]])
         transformation_to_previous_section[files[i]] = T
+        rot_rads += np.abs(rot_rad)
+        xshifts += np.abs(xshift)
+        yshifts += np.abs(yshift)
 
         if repeats == 0:
             rotations[files[i]] = T
         else:
             ##### CHECK, are the two lines below correct? I'm multiplying the rotation matrix and adding the
             ##### translation vectors
-            #### Check 2, just multiplying the entire matrix 
+            #### Check 2, just multiplying the entire matrix
             rotations[files[i]] = rotations[files[i]] @ T
 
 
@@ -94,10 +101,11 @@ for repeats in range(0, ITERATIONS):
         if os.path.exists(output_fp):
             continue
 
-        cmd = f"convert {input_fp} -depth 16 +repage -virtual-pixel background -background {bgcolor} {op_str} -flatten -compress lzw {output_fp}"
+        cmd = f"convert {input_fp} -define white-point=0x0 +repage -virtual-pixel background -background {bgcolor} {op_str} -flatten -compress lzw {output_fp}"
         subprocess.run(cmd, shell=True)
 
     ## move aligned images to cleaned and repeat loop
+
     if repeats < ITERATIONS - 1:
         for file in os.listdir(INPUT):
             filepath = os.path.join(INPUT, file)
@@ -105,8 +113,19 @@ for repeats in range(0, ITERATIONS):
         for file in files:
             move(os.path.join(ALIGNED, file), INPUT)
 
+    len_files = float(len(files))
+    avg_rot = round(rot_rads / len_files ,5)
+    avg_xsh = round(xshifts / len_files, 5)
+    avg_ysh = round(yshifts / len_files, 5)
+    print('Iteration', repeats, end="\t")
+    print('Avg rotation', avg_rot, end="\t")
+    print('Avg x shift', avg_xsh, end="\t")
+    print('Avg y shift', avg_ysh)
+    print()
+
 # Store data (serialize)
 rotation_storage = os.path.join(fileLocationManager.elastix_dir, 'rotations.pickle')
 with open(rotation_storage, 'wb') as handle:
     pickle.dump(rotations, handle)
+
 

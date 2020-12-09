@@ -172,8 +172,14 @@ def register_from_tutorial(INPUT, fixed_index, moving_index):
 
     fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
     moving_file = os.path.join(INPUT, f'{moving_index}.tif')
-    fixed = sitk.ReadImage(fixed_file, pixelType);
-    moving = sitk.ReadImage(moving_file, pixelType)
+    try:
+        fixed = sitk.ReadImage(fixed_file, pixelType);
+    except:
+        print('except in fixed')
+    try:
+        moving = sitk.ReadImage(moving_file, pixelType)
+    except:
+        print('except in moving')
 
     initial_transform = sitk.CenteredTransformInitializer(
         fixed, moving,
@@ -194,10 +200,10 @@ def register_from_tutorial(INPUT, fixed_index, moving_index):
     R.SetInitialTransform(initial_transform)
 
     # Connect all of the observers so that we can perform plotting during registration.
-    R.AddCommand(sitk.sitkStartEvent, start_plot)
-    R.AddCommand(sitk.sitkEndEvent, end_plot)
-    R.AddCommand(sitk.sitkMultiResolutionIterationEvent, update_multires_iterations)
-    R.AddCommand(sitk.sitkIterationEvent, lambda: plot_values(R))
+    #R.AddCommand(sitk.sitkStartEvent, start_plot)
+    #R.AddCommand(sitk.sitkEndEvent, end_plot)
+    #R.AddCommand(sitk.sitkMultiResolutionIterationEvent, update_multires_iterations)
+    #R.AddCommand(sitk.sitkIterationEvent, lambda: plot_values(R))
 
 
     final_transform = R.Execute(sitk.Cast(fixed, sitk.sitkFloat32),
@@ -226,7 +232,7 @@ def register_correlation(INPUT, fixed_index, moving_index):
     # Optimizer settings.
     R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
                                                minStep=1e-4,
-                                               numberOfIterations=180,
+                                               numberOfIterations=80,
                                                gradientMagnitudeTolerance=1e-8)
     R.SetOptimizerScalesFromPhysicalShift()
     R.SetInitialTransform(initial_transform)
@@ -240,8 +246,8 @@ def register_correlation(INPUT, fixed_index, moving_index):
     rot_rad, xshift, yshift = finalParameters
     center = np.array(fixedParameters)
 
-    R = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
+    rotation = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
                   [np.sin(rot_rad), np.cos(rot_rad)]])
-    t = center + (xshift, yshift) - np.dot(R, center)
+    t = center + (xshift, yshift) - np.dot(rotation, center)
     #T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
-    return R, t
+    return rotation, t, rot_rad, xshift, yshift
