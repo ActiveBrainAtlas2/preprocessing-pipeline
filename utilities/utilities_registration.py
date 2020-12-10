@@ -207,7 +207,7 @@ def register_correlation(INPUT, fixed_index, moving_index):
     # Optimizer settings.
     R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
                                                minStep=1e-4,
-                                               numberOfIterations=140,
+                                               numberOfIterations=40,
                                                gradientMagnitudeTolerance=1e-8)
     R.SetOptimizerScalesFromPhysicalShift()
     R.SetInitialTransform(initial_transform)

@@ -38,12 +38,12 @@ def create_register(animal, iterations):
     transforms = OrderedDict()
     #####header
     print('Iteration'.rjust(10), end=" ")
-    print('Total R'.rjust(15), end=" ")
-    print('Total X'.rjust(15), end=" ")
-    print('Total Y'.rjust(15), end=" ")
-    print('Max R'.rjust(10), end=" ")
-    print('Max X'.rjust(10), end=" ")
-    print('Max Y'.rjust(10))
+    print('Total R'.rjust(12), end=" ")
+    print('Total X'.rjust(12), end=" ")
+    print('Total Y'.rjust(12), end=" ")
+    print('Max R'.rjust(12), end=" ")
+    print('Max X'.rjust(12), end=" ")
+    print('Max Y'.rjust(12))
 
     for repeats in range(0, iterations):
         transformation_to_previous_section = OrderedDict()
@@ -52,7 +52,6 @@ def create_register(animal, iterations):
         yshifts = []
 
         files = sorted(os.listdir(INPUT))
-        files = files[0:5]
 
         for i in range(1, len(files)):
             fixed_index = str(i - 1).zfill(3)
@@ -127,12 +126,12 @@ def create_register(animal, iterations):
 
 
         print(str(repeats+1).rjust(10), end=" ")
-        print('{:07.5f}'.rjust(15).format(tot_rot), end=" ")
-        print('{:07.5f}'.rjust(15).format(tot_xsh), end=" ")
-        print('{:07.5f}'.rjust(15).format(tot_ysh), end=" ")
-        print('{:07.5f}'.rjust(10).format(max_rot), end=" ")
-        print('{:07.5f}'.rjust(10).format(max_xsh), end=" ")
-        print('{:07.5f}'.rjust(10).format(max_ysh))
+        print('{:12.5f}'.format(tot_rot), end=" ")
+        print('{:12.5f}'.format(tot_xsh), end=" ")
+        print('{:12.5f}'.format(tot_ysh), end=" ")
+        print('{:12.5f}'.format(max_rot), end=" ")
+        print('{:12.5f}'.format(max_xsh), end=" ")
+        print('{:12.5f}'.format(max_ysh))
 
         ## move aligned images to cleaned and repeat loop
         if repeats < iterations - 1:
@@ -147,7 +146,22 @@ def create_register(animal, iterations):
     with open(rotation_storage, 'wb') as handle:
         pickle.dump(rotations, handle)
 
-    #print(transforms)
+
+    composites = OrderedDict()
+    for k,transform in transforms.items():
+        finalParameters = transform.GetParameters()
+        fixedParameters = transform.GetFixedParameters()
+        rot_rad, xshift, yshift = finalParameters
+        center = np.array(fixedParameters)
+        rotation = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
+                             [np.sin(rot_rad), np.cos(rot_rad)]])
+        t = center + (xshift, yshift) - np.dot(rotation, center)
+        T = np.vstack([np.column_stack([rotation, t]), [0, 0, 1]])
+        composites[k] = T
+
+    composite_storage = os.path.join(fileLocationManager.elastix_dir, 'composite.pickle')
+    with open(composite_storage, 'wb') as handle:
+        pickle.dump(composites, handle)
 
 
 
