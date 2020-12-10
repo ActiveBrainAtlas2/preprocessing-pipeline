@@ -207,7 +207,7 @@ def register_correlation(INPUT, fixed_index, moving_index):
     # Optimizer settings.
     R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
                                                minStep=1e-4,
-                                               numberOfIterations=100,
+                                               numberOfIterations=140,
                                                gradientMagnitudeTolerance=1e-8)
     R.SetOptimizerScalesFromPhysicalShift()
     R.SetInitialTransform(initial_transform)
@@ -225,4 +225,4 @@ def register_correlation(INPUT, fixed_index, moving_index):
                   [np.sin(rot_rad), np.cos(rot_rad)]])
     t = center + (xshift, yshift) - np.dot(rotation, center)
     #T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
-    return rotation, t, rot_rad, xshift, yshift
+    return rotation, t, rot_rad, xshift, yshift, final_transform

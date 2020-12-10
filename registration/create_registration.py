@@ -10,6 +10,7 @@ import numpy as np
 from collections import OrderedDict
 from shutil import move
 import subprocess
+import SimpleITK as sitk
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 
@@ -34,11 +35,12 @@ def create_register(animal, iterations):
     max_height = int(height * SCALING_FACTOR)
     bgcolor = 'black'  # this should be black, but white lets you see the rotation and shift
     rotations = OrderedDict()
+    transforms = OrderedDict()
     #####header
     print('Iteration'.rjust(10), end=" ")
-    print('Total R'.rjust(10), end=" ")
-    print('Total X'.rjust(10), end=" ")
-    print('Total Y'.rjust(10), end=" ")
+    print('Total R'.rjust(15), end=" ")
+    print('Total X'.rjust(15), end=" ")
+    print('Total Y'.rjust(15), end=" ")
     print('Max R'.rjust(10), end=" ")
     print('Max X'.rjust(10), end=" ")
     print('Max Y'.rjust(10))
@@ -50,12 +52,13 @@ def create_register(animal, iterations):
         yshifts = []
 
         files = sorted(os.listdir(INPUT))
+        files = files[0:5]
 
         for i in range(1, len(files)):
             fixed_index = str(i - 1).zfill(3)
             moving_index = str(i).zfill(3)
 
-            R,t, rot_rad, xshift, yshift = register_correlation(INPUT, fixed_index, moving_index)
+            R,t, rot_rad, xshift, yshift, transform = register_correlation(INPUT, fixed_index, moving_index)
             T = np.vstack([np.column_stack([R, t]), [0, 0, 1]])
             transformation_to_previous_section[files[i]] = T
             rot_rads.append(np.abs(rot_rad))
@@ -64,10 +67,14 @@ def create_register(animal, iterations):
 
             if repeats == 0:
                 rotations[files[i]] = T
+                composite_transform = sitk.CompositeTransform([transform])
             else:
                 ##### CHECK, is this correct? I'm multiplying the rotation matrix with itself
                 ##### each iteration
+                composite_transform.AddTransform(transform)
                 rotations[files[i]] = rotations[files[i]] @ T
+
+            transforms[files[i]] = composite_transform
 
 
         ##### This block of code is from Yuncong so I didn't write it.
@@ -120,9 +127,9 @@ def create_register(animal, iterations):
 
 
         print(str(repeats+1).rjust(10), end=" ")
-        print('{:07.5f}'.rjust(10).format(tot_rot), end=" ")
-        print('{:07.5f}'.rjust(10).format(tot_xsh), end=" ")
-        print('{:07.5f}'.rjust(10).format(tot_ysh), end=" ")
+        print('{:07.5f}'.rjust(15).format(tot_rot), end=" ")
+        print('{:07.5f}'.rjust(15).format(tot_xsh), end=" ")
+        print('{:07.5f}'.rjust(15).format(tot_ysh), end=" ")
         print('{:07.5f}'.rjust(10).format(max_rot), end=" ")
         print('{:07.5f}'.rjust(10).format(max_xsh), end=" ")
         print('{:07.5f}'.rjust(10).format(max_ysh))
@@ -135,10 +142,12 @@ def create_register(animal, iterations):
             for file in files:
                 move(os.path.join(ALIGNED, file), INPUT)
 
-        # Store data (serialize)
-        rotation_storage = os.path.join(fileLocationManager.elastix_dir, 'rotations.pickle')
-        with open(rotation_storage, 'wb') as handle:
-            pickle.dump(rotations, handle)
+    # Store data (serialize)
+    rotation_storage = os.path.join(fileLocationManager.elastix_dir, 'rotations.pickle')
+    with open(rotation_storage, 'wb') as handle:
+        pickle.dump(rotations, handle)
+
+    #print(transforms)
 
 
 
