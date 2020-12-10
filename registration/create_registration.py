@@ -18,7 +18,6 @@ from utilities.utilities_registration import create_warp_transforms, register_co
 from utilities.alignment_utility import SCALING_FACTOR
 from utilities.file_location import FileLocationManager
 
-rotations = OrderedDict()
 
 def create_register(animal, iterations):
 
@@ -34,12 +33,21 @@ def create_register(animal, iterations):
     max_width = int(width * SCALING_FACTOR)
     max_height = int(height * SCALING_FACTOR)
     bgcolor = 'black'  # this should be black, but white lets you see the rotation and shift
+    rotations = OrderedDict()
+    #####header
+    print('Iteration'.rjust(10), end=" ")
+    print('Total R'.rjust(10), end=" ")
+    print('Total X'.rjust(10), end=" ")
+    print('Total Y'.rjust(10), end=" ")
+    print('Max R'.rjust(10), end=" ")
+    print('Max X'.rjust(10), end=" ")
+    print('Max Y'.rjust(10))
 
     for repeats in range(0, iterations):
         transformation_to_previous_section = OrderedDict()
-        rot_rads = 0
-        xshifts = 0
-        yshifts = 0
+        rot_rads = []
+        xshifts = []
+        yshifts = []
 
         files = sorted(os.listdir(INPUT))
 
@@ -50,18 +58,16 @@ def create_register(animal, iterations):
             R,t, rot_rad, xshift, yshift = register_correlation(INPUT, fixed_index, moving_index)
             T = np.vstack([np.column_stack([R, t]), [0, 0, 1]])
             transformation_to_previous_section[files[i]] = T
-            rot_rads += np.abs(rot_rad)
-            xshifts += np.abs(xshift)
-            yshifts += np.abs(yshift)
+            rot_rads.append(np.abs(rot_rad))
+            xshifts.append(np.abs(xshift))
+            yshifts.append(np.abs(yshift))
 
             if repeats == 0:
                 rotations[files[i]] = T
             else:
-                ##### CHECK, are the two lines below correct? I'm multiplying the rotation matrix and adding the
-                ##### translation vectors
-                #### Check 2, just multiplying the entire matrix
+                ##### CHECK, is this correct? I'm multiplying the rotation matrix with itself
+                ##### each iteration
                 rotations[files[i]] = rotations[files[i]] @ T
-
 
 
         ##### This block of code is from Yuncong so I didn't write it.
@@ -104,8 +110,24 @@ def create_register(animal, iterations):
             cmd = f"convert {input_fp} -define white-point=0x0 +repage -virtual-pixel background -background {bgcolor} {op_str} -flatten -compress lzw {output_fp}"
             subprocess.run(cmd, shell=True)
 
-        ## move aligned images to cleaned and repeat loop
+        ##### eachloop
+        tot_rot = round(sum(rot_rads),5)
+        tot_xsh = round(sum(xshifts),5)
+        tot_ysh = round(sum(yshifts),5)
+        max_rot = round(max(rot_rads),5)
+        max_xsh = round(max(xshifts),5)
+        max_ysh = round(max(yshifts),5)
 
+
+        print(str(repeats+1).rjust(10), end=" ")
+        print('{:07.5f}'.rjust(10).format(tot_rot), end=" ")
+        print('{:07.5f}'.rjust(10).format(tot_xsh), end=" ")
+        print('{:07.5f}'.rjust(10).format(tot_ysh), end=" ")
+        print('{:07.5f}'.rjust(10).format(max_rot), end=" ")
+        print('{:07.5f}'.rjust(10).format(max_xsh), end=" ")
+        print('{:07.5f}'.rjust(10).format(max_ysh))
+
+        ## move aligned images to cleaned and repeat loop
         if repeats < iterations - 1:
             for file in os.listdir(INPUT):
                 filepath = os.path.join(INPUT, file)
@@ -113,24 +135,16 @@ def create_register(animal, iterations):
             for file in files:
                 move(os.path.join(ALIGNED, file), INPUT)
 
-        len_files = float(len(files))
-        avg_rot = round(rot_rads / len_files ,5)
-        avg_xsh = round(xshifts / len_files, 5)
-        avg_ysh = round(yshifts / len_files, 5)
-        print(repeats + 1, end="\t")
-        print('Averages:', end="\t")
-        print('rotation', avg_rot, end="\t")
-        print('x shift', avg_xsh, end="\t")
-        print('y shift', avg_ysh, end="\t")
-        print('\tTotals:', end="\t")
-        print('Rotation', round(rot_rads,2), end="\t")
-        print('X shift', round(xshifts,2), end="\t")
-        print('Y shift', round(yshifts,2))
+        # Store data (serialize)
+        rotation_storage = os.path.join(fileLocationManager.elastix_dir, 'rotations.pickle')
+        with open(rotation_storage, 'wb') as handle:
+            pickle.dump(rotations, handle)
 
-    # Store data (serialize)
-    rotation_storage = os.path.join(fileLocationManager.elastix_dir, 'rotations.pickle')
-    with open(rotation_storage, 'wb') as handle:
-        pickle.dump(rotations, handle)
+
+
+
+
+
 
 
 
