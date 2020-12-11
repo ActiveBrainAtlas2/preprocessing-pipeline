@@ -148,13 +148,26 @@ def register_test_stuff(INPUT, fixed_index, moving_index):
     return final_transform, fixed, moving, R
 
 
-def register_test(INPUT, fixed_index, moving_index):
-    pixelType = sitk.sitkUInt16
+def register_test(MASKED, INPUT, fixed_index, moving_index):
+    pixelType = sitk.sitkFloat32
 
     fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
     moving_file = os.path.join(INPUT, f'{moving_index}.tif')
     fixed = sitk.ReadImage(fixed_file, pixelType);
     moving = sitk.ReadImage(moving_file, pixelType)
+
+    fixed_mask_file = os.path.join(MASKED, f'{fixed_index}.tif')
+    moving_mask_file = os.path.join(MASKED, f'{moving_index}.tif')
+
+    maskFixed = sitk.ReadImage(fixed_mask_file, sitk.sitkUInt8)
+    maskMoving= sitk.ReadImage(moving_mask_file, sitk.sitkUInt8)
+    # Handle optimizer
+    # Restrict the evaluation of the similarity metric thanks to masks
+    #R.SetMetricFixedMask(maskFixed)
+    #R.SetMetricMovingMask(maskMoving)
+
+
+
 
     initial_transform = sitk.CenteredTransformInitializer(
         fixed, moving,
@@ -162,8 +175,12 @@ def register_test(INPUT, fixed_index, moving_index):
         sitk.CenteredTransformInitializerFilter.MOMENTS)
 
     R = sitk.ImageRegistrationMethod()
-    R.SetMetricAsCorrelation()
-    R.SetMetricSamplingStrategy(R.REGULAR)
+    R.SetInitialTransform(initial_transform)
+    #R.SetInitialTransform(sitk.TranslationTransform(fixed.GetDimension())) # -0.5923
+
+    R.SetMetricAsCorrelation() # -0439
+    #R.SetMetricAsMeanSquares() # different scale, rot=-0.11
+    R.SetMetricSamplingStrategy(R.RANDOM) # random = 0.442 # regular -0.439
     R.SetMetricSamplingPercentage(0.1)
     R.SetInterpolator(sitk.sitkLinear)
     # Optimizer settings.
@@ -172,7 +189,6 @@ def register_test(INPUT, fixed_index, moving_index):
                                                numberOfIterations=80,
                                                gradientMagnitudeTolerance=1e-8)
     #R.SetOptimizerScalesFromPhysicalShift()
-    R.SetInitialTransform(initial_transform)
 
     # Connect all of the observers so that we can perform plotting during registration.
     R.AddCommand(sitk.sitkStartEvent, start_plot)
@@ -187,7 +203,7 @@ def register_test(INPUT, fixed_index, moving_index):
     return final_transform, fixed, moving, R
 
 def register_correlation(INPUT, fixed_index, moving_index):
-    pixelType = sitk.sitkUInt16
+    pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
     moving_file = os.path.join(INPUT, f'{moving_index}.tif')
 
@@ -200,8 +216,10 @@ def register_correlation(INPUT, fixed_index, moving_index):
         sitk.CenteredTransformInitializerFilter.MOMENTS)
 
     R = sitk.ImageRegistrationMethod()
+    R.SetInitialTransform(initial_transform) # -0.5923
     R.SetMetricAsCorrelation()
-    R.SetMetricSamplingStrategy(R.REGULAR)
+    #R.SetMetricAsMeanSquares()
+    R.SetMetricSamplingStrategy(R.RANDOM)
     R.SetMetricSamplingPercentage(0.1)
     R.SetInterpolator(sitk.sitkLinear)
     # Optimizer settings.
@@ -210,7 +228,6 @@ def register_correlation(INPUT, fixed_index, moving_index):
                                                numberOfIterations=140,
                                                gradientMagnitudeTolerance=1e-8)
     R.SetOptimizerScalesFromPhysicalShift()
-    R.SetInitialTransform(initial_transform)
 
     # Perform registration
     final_transform = R.Execute(sitk.Cast(fixed, sitk.sitkFloat32),

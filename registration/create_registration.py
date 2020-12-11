@@ -1,6 +1,9 @@
 """
 Note, file must be sequentially named from 000.tif  -> 468.tif
  where 468 is the last tif and there are a total of 469 files
+ This script will loop through the INPUT files, align the sequential files
+ store the rotation matrix and then do it again until the iterations stop.
+ Each iteration the rotation matrix gets updated.
 """
 import argparse
 import pickle
@@ -10,7 +13,6 @@ import numpy as np
 from collections import OrderedDict
 from shutil import move
 import subprocess
-import SimpleITK as sitk
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 
@@ -35,7 +37,6 @@ def create_register(animal, iterations):
     max_height = int(height * SCALING_FACTOR)
     bgcolor = 'black'  # this should be black, but white lets you see the rotation and shift
     rotations = OrderedDict()
-    transforms = OrderedDict()
     #####header
     print('Iteration'.rjust(10), end=" ")
     print('Total R'.rjust(12), end=" ")
@@ -45,6 +46,9 @@ def create_register(animal, iterations):
     print('Max X'.rjust(12), end=" ")
     print('Max Y'.rjust(12))
 
+    ### For every itertion, create an rotation,translation matrix.
+    ### After the iteration, the images get aligned and then the aligned
+    ### images are used as input in the next iteration
     for repeats in range(0, iterations):
         transformation_to_previous_section = OrderedDict()
         rot_rads = []
@@ -66,14 +70,12 @@ def create_register(animal, iterations):
 
             if repeats == 0:
                 rotations[files[i]] = T
-                composite_transform = sitk.CompositeTransform([transform])
             else:
                 ##### CHECK, is this correct? I'm multiplying the rotation matrix with itself
-                ##### each iteration
-                composite_transform.AddTransform(transform)
+                ##### each iteration and storing it in a dictionary. The final dictionary
+                ##### values are the final matrix used to align the images
                 rotations[files[i]] = rotations[files[i]] @ T
 
-            transforms[files[i]] = composite_transform
 
 
         ##### This block of code is from Yuncong so I didn't write it.
@@ -133,7 +135,7 @@ def create_register(animal, iterations):
         print('{:12.5f}'.format(max_xsh), end=" ")
         print('{:12.5f}'.format(max_ysh))
 
-        ## move aligned images to cleaned and repeat loop
+        ## move aligned images for use as the input on the next iteration and repeat loop
         if repeats < iterations - 1:
             for file in os.listdir(INPUT):
                 filepath = os.path.join(INPUT, file)
@@ -141,34 +143,10 @@ def create_register(animal, iterations):
             for file in files:
                 move(os.path.join(ALIGNED, file), INPUT)
 
-    # Store data (serialize)
+    # The dictionary gets saved so we can use it later for the full resolution images
     rotation_storage = os.path.join(fileLocationManager.elastix_dir, 'rotations.pickle')
     with open(rotation_storage, 'wb') as handle:
         pickle.dump(rotations, handle)
-
-
-    composites = OrderedDict()
-    for k,transform in transforms.items():
-        finalParameters = transform.GetParameters()
-        fixedParameters = transform.GetFixedParameters()
-        rot_rad, xshift, yshift = finalParameters
-        center = np.array(fixedParameters)
-        rotation = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
-                             [np.sin(rot_rad), np.cos(rot_rad)]])
-        t = center + (xshift, yshift) - np.dot(rotation, center)
-        T = np.vstack([np.column_stack([rotation, t]), [0, 0, 1]])
-        composites[k] = T
-
-    composite_storage = os.path.join(fileLocationManager.elastix_dir, 'composite.pickle')
-    with open(composite_storage, 'wb') as handle:
-        pickle.dump(composites, handle)
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
