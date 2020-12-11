@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.figure
 from nipy.labs.mask import compute_mask
-
+from skimage import exposure
 from utilities.alignment_utility import get_last_2d
 
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -544,6 +544,9 @@ def find_contour_count(img):
     return len(contours)
 
 def create_mask_pass1(img):
+    img = exposure.adjust_log(img, 1)
+    img = exposure.adjust_gamma(img, 2)
+
     mask = compute_mask(img, m=0.2, M=0.9, cc=False, opening=2, exclude_zeros=True)
     mask = mask.astype(int)
     mask[mask==0] = 0
