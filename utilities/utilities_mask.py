@@ -258,17 +258,17 @@ def scaled(img, mask, epsilon=0.01):
     _max = vals[ind]
     # print('thr=%d, index=%d'%(vals[ind],index))
     _range = 2 ** 16 - 1
-    scaled = img * (55000. / _max)
+    scaled = img * (45000. / _max)
     del img
     scaled[scaled > _range] = _range
     scaled = scaled * (mask > 10)
-    return scaled
+    return scaled.astype(np.uint16)
 
 def equalized(fixed):
     clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(12, 12))
     fixed = clahe.apply(fixed)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
-    fixed = clahe.apply(fixed)
+    #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
+    #fixed = clahe.apply(fixed)
     return fixed
 
 

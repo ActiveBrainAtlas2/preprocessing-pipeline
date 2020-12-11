@@ -32,11 +32,8 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
     if channel == 1:
+        fixed = scaled(fixed, mask)
         fixed = equalized(fixed)
-        #clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(2, 2))
-        #fixed = clahe.apply(fixed.astype(np.uint16))
-        #clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
-        #fixed = clahe.apply(fixed.astype(np.uint16))
 
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
@@ -116,7 +113,7 @@ def masker(animal, channel, flip, rotation=0, full=False):
     max_width = int(width * SCALING_FACTOR)
     max_height = int(height * SCALING_FACTOR)
     bgcolor = 0
-    dt = 'uint16'
+    dt = np.uint16
     stain = sqlController.histology.counterstain
     if channel == 1:
         sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)
@@ -136,7 +133,7 @@ def masker(animal, channel, flip, rotation=0, full=False):
 
     if 'thion' in stain.lower():
         bgcolor = 255
-        dt = 'uint8'
+        dt = np.uint8
 
     files = sorted(os.listdir(INPUT))
 
