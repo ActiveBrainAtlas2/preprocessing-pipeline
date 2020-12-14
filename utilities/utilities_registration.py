@@ -1,3 +1,16 @@
+"""
+
+ #Notes from the manual regarding MOMENTS vs GEOMETRY:
+
+ The CenteredTransformInitializer supports two modes of operation. In the first mode, the centers of
+ the images are computed as space coordinates using the image origin, size and spacing. The center of
+ the fixed image is assigned as the rotational center of the transform while the vector going from the
+ fixed image center to the moving image center is passed as the initial translation of the transform.
+ In the second mode, the image centers are not computed geometrically but by using the moments of the
+ intensity gray levels.
+
+"""
+
 import os
 import numpy as np
 from matplotlib import pyplot as plt
@@ -166,9 +179,6 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
     #R.SetMetricFixedMask(maskFixed)
     #R.SetMetricMovingMask(maskMoving)
 
-
-
-
     initial_transform = sitk.CenteredTransformInitializer(
         fixed, moving,
         sitk.Euler2DTransform(),
@@ -202,7 +212,7 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
 
     return final_transform, fixed, moving, R
 
-def register_correlation(INPUT, fixed_index, moving_index):
+def register(INPUT, fixed_index, moving_index):
     pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
     moving_file = os.path.join(INPUT, f'{moving_index}.tif')
@@ -213,7 +223,7 @@ def register_correlation(INPUT, fixed_index, moving_index):
     initial_transform = sitk.CenteredTransformInitializer(
         fixed, moving,
         sitk.Euler2DTransform(),
-        sitk.CenteredTransformInitializerFilter.MOMENTS)
+        sitk.CenteredTransformInitializerFilter.GEOMETRY)
 
     R = sitk.ImageRegistrationMethod()
     R.SetInitialTransform(initial_transform) # -0.5923
@@ -225,7 +235,7 @@ def register_correlation(INPUT, fixed_index, moving_index):
     # Optimizer settings.
     R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
                                                minStep=1e-4,
-                                               numberOfIterations=140,
+                                               numberOfIterations=100,
                                                gradientMagnitudeTolerance=1e-8)
     R.SetOptimizerScalesFromPhysicalShift()
 
