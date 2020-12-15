@@ -57,7 +57,7 @@ def create_register(animal, iterations):
 
         files = sorted(os.listdir(INPUT))
 
-        for i in range(1, len(files)):
+        for i in tqdm(range(1, len(files))):
             fixed_index = str(i - 1).zfill(3)
             moving_index = str(i).zfill(3)
 
@@ -99,7 +99,7 @@ def create_register(animal, iterations):
         # scale the translations to either the thumbnail or the full resolution sized images
         warp_transforms = create_warp_transforms(animal, transformation_to_anchor_section, 'thumbnail', resolution)
         ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
-        for file, arr in ordered_transforms.items():
+        for file, arr in tqdm(ordered_transforms.items()):
             T = np.linalg.inv(arr)
             sx = T[0, 0]
             sy = T[1, 1]
