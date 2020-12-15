@@ -304,11 +304,11 @@ def register(INPUT, fixed_index, moving_index):
         sitk.CenteredTransformInitializerFilter.GEOMETRY)
 
     R = sitk.ImageRegistrationMethod()
-    R.SetInitialTransform(initial_transform) # -0.5923
+    R.SetInitialTransform(initial_transform, inPlace=True) # -0.5923
     R.SetMetricAsCorrelation()
     #R.SetMetricAsMeanSquares()
-    R.SetMetricSamplingStrategy(R.RANDOM)
-    R.SetMetricSamplingPercentage(0.1)
+    R.SetMetricSamplingStrategy(R.REGULAR)
+    R.SetMetricSamplingPercentage(0.2)
     R.SetInterpolator(sitk.sitkLinear)
     # Optimizer settings.
     R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
@@ -324,6 +324,43 @@ def register(INPUT, fixed_index, moving_index):
     finalParameters = final_transform.GetParameters()
     fixedParameters = final_transform.GetFixedParameters()
     rot_rad, xshift, yshift = finalParameters
+    center = np.array(fixedParameters)
+
+    rotation = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
+                  [np.sin(rot_rad), np.cos(rot_rad)]])
+    t = center + (xshift, yshift) - np.dot(rotation, center)
+    #T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
+    return rotation, t, rot_rad, xshift, yshift, final_transform
+
+def register2d(INPUT, fixed_index, moving_index):
+    pixelType = sitk.sitkFloat32
+    fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
+    moving_file = os.path.join(INPUT, f'{moving_index}.tif')
+
+    fixed = sitk.ReadImage(fixed_file, pixelType);
+    moving = sitk.ReadImage(moving_file, pixelType)
+
+    rotation_transform = sitk.CenteredTransformInitializer(
+        fixed, moving,
+        sitk.Similarity2DTransform())
+
+    R2 = sitk.ImageRegistrationMethod()
+    R2.SetInitialTransform(rotation_transform, inPlace=True)
+    R2.SetMetricAsCorrelation() # -0439
+    R2.SetMetricSamplingStrategy(R2.REGULAR) # random = 0.442 # regular -0.439
+    R2.SetMetricSamplingPercentage(0.2)
+    R2.SetOptimizerAsRegularStepGradientDescent(learningRate=1.0,
+                                               minStep=1e-4,
+                                               numberOfIterations=100,
+                                               gradientMagnitudeTolerance=1e-8)
+    #R2.SetOptimizerScalesFromPhysicalShift()
+    R2.SetInterpolator(sitk.sitkLinear)
+
+    final_transform = R2.Execute(sitk.Cast(fixed, sitk.sitkFloat32),
+                                                   sitk.Cast(moving, sitk.sitkFloat32))
+    finalParameters = final_transform.GetParameters()
+    fixedParameters = final_transform.GetFixedParameters()
+    scale, rot_rad, xshift, yshift = finalParameters
     center = np.array(fixedParameters)
 
     rotation = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
