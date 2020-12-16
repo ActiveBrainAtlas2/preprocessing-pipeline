@@ -121,8 +121,8 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
 
     initial_transform = sitk.CenteredTransformInitializer(
         fixed, moving,
-        sitk.Euler2DTransform(),
-        sitk.CenteredTransformInitializerFilter.MOMENTS)
+        sitk.Similarity2DTransform(),
+        sitk.CenteredTransformInitializerFilter.GEOMETRY)
 
     R = sitk.ImageRegistrationMethod()
     R.SetInitialTransform(initial_transform, inPlace=True)
@@ -133,7 +133,7 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
     # Optimizer settings.
     R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
                                                minStep=1e-4,
-                                               numberOfIterations=480,
+                                               numberOfIterations=80,
                                                gradientMagnitudeTolerance=1e-8)
     R.SetOptimizerScalesFromPhysicalShift()
 
@@ -338,7 +338,7 @@ def register2d(INPUT, fixed_index, moving_index):
 
     rotation_transform = sitk.CenteredTransformInitializer(
         fixed, moving,
-        sitk.Similarity2DTransform())
+        sitk.Similarity2DTransform(), sitk.CenteredTransformInitializerFilter.MOMENTS)
 
     R2 = sitk.ImageRegistrationMethod()
     R2.SetInitialTransform(rotation_transform, inPlace=True)
@@ -349,7 +349,7 @@ def register2d(INPUT, fixed_index, moving_index):
                                                minStep=1e-4,
                                                numberOfIterations=100,
                                                gradientMagnitudeTolerance=1e-8)
-    #R2.SetOptimizerScalesFromPhysicalShift()
+    R2.SetOptimizerScalesFromPhysicalShift()
     R2.SetInterpolator(sitk.sitkLinear)
 
     final_transform = R2.Execute(sitk.Cast(fixed, sitk.sitkFloat32),
@@ -361,6 +361,7 @@ def register2d(INPUT, fixed_index, moving_index):
 
     rotation = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
                   [np.sin(rot_rad), np.cos(rot_rad)]])
+
     t = center + (xshift, yshift) - np.dot(rotation, center)
     #T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
     return rotation, t, rot_rad, xshift, yshift, final_transform

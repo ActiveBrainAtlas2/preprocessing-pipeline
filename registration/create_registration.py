@@ -17,7 +17,7 @@ import subprocess
 sys.path.append(os.path.join(os.getcwd(), '../'))
 
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_registration import create_warp_transforms, register
+from utilities.utilities_registration import create_warp_transforms, register, register2d
 from utilities.alignment_utility import SCALING_FACTOR
 from utilities.file_location import FileLocationManager
 

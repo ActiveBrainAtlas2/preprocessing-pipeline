@@ -267,8 +267,8 @@ def scaled(img, mask, epsilon=0.01):
 def equalized(fixed):
     clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
     fixed = clahe.apply(fixed)
-    #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
-    #fixed = clahe.apply(fixed)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
+    fixed = clahe.apply(fixed)
     return fixed
 
 
@@ -400,7 +400,7 @@ def fix_with_fill(img, debug=False):
             break
 
     cv2.fillPoly(stencil, lc, 255)
-    dilation = cv2.dilate(stencil, big_kernel, iterations=3)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=2)
 
     if debug:
         del stencil
