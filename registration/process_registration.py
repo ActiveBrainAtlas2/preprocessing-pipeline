@@ -9,7 +9,7 @@ import pickle
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_registration import create_warp_transforms, register_correlation
+from utilities.utilities_registration import create_warp_transforms
 from utilities.alignment_utility import SCALING_FACTOR
 
 
