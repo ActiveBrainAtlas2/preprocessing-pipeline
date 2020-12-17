@@ -1,13 +1,11 @@
 """
 This file does the following operations:
-    1. Copy TIF full or thumbnails to preps/full or preps/thumbnails folders.
+    1. Converts regular filename from main tif dir to CHX/full or
+    2. Converts and downsamples CHX/full to CHX/thumbnail
 """
 import argparse
 import os
-import subprocess
-from shutil import copyfile
 from multiprocessing.pool import Pool
-
 from tqdm import tqdm
 
 from utilities.file_location import FileLocationManager
@@ -15,26 +13,22 @@ from utilities.sqlcontroller import SqlController
 from utilities.utilities_process import workernoshell
 
 
-def make_preps(animal, channel, full, njobs):
+def make_full_resolution(animal, channel):
     """
     Args:
         animal: the prep id of the animal
         channel: the channel of the stack to process
-        full: whether to copy full or thumbnail directory
-
     Returns:
-        nothing
+        list of commands
     """
 
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     commands = []
-    if full:
-        INPUT = os.path.join(fileLocationManager.tif)
-        OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
-    else:
-        INPUT = os.path.join(fileLocationManager.thumbnail)
-        OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
+    INPUT = os.path.join(fileLocationManager.tif)
+    OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
+    os.makedirs(OUTPUT, exist_ok=True)
+
     tifs = sqlController.get_sections(animal, channel)
     for section_number, tif in tqdm(enumerate(tifs)):
         input_path = os.path.join(INPUT, tif.file_name)
@@ -47,13 +41,40 @@ def make_preps(animal, channel, full, njobs):
         if os.path.exists(output_path):
             continue
 
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
         cmd = ['convert', input_path, '-compress', 'lzw', output_path]
         commands.append(cmd)
 
-    with Pool(njobs) as p:
-        p.map(workernoshell, commands)
+    return commands
+
+
+
+
+def make_low_resolution(animal, channel):
+    """
+    Args:
+        takes the full resolution tifs and downsamples them.
+        animal: the prep id of the animal
+        channel: the channel of the stack to process
+    Returns:
+        list of commands
+    """
+
+    fileLocationManager = FileLocationManager(animal)
+    commands = []
+    INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
+    OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
+    os.makedirs(OUTPUT, exist_ok=True)
+    tifs = sorted(os.listdir(INPUT))
+    for tif in tqdm(tifs):
+        input_path = os.path.join(INPUT, tif)
+        output_path = os.path.join(OUTPUT, tif)
+
+        if os.path.exists(output_path):
+            continue
+
+        cmd = ['convert', input_path, '-resize', '3.125%', '-compress', 'lzw', output_path]
+        commands.append(cmd)
+    return commands
 
 
 if __name__ == '__main__':
@@ -69,4 +90,10 @@ if __name__ == '__main__':
     full = bool({'full': True, 'thumbnail': False}[args.resolution])
     njobs = int(args.njobs)
 
-    make_preps(animal, channel, full, njobs)
+    if full:
+        commands = make_full_resolution(animal, channel)
+    else:
+        commands = make_low_resolution(animal, channel)
+
+    with Pool(njobs) as p:
+        p.map(workernoshell, commands)

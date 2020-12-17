@@ -19,16 +19,19 @@
     1. This will read the sections table in the database
     1. Create tif files for channel 1
     1. Repeat process for the other 2 channels when ready
-1. Run: `python create_thumbnails.py --animal DKXX --channel 1` 
-    1. This will read the directory of the full resolution files for channel 1
-    1. Create thumbnail tif files for channel 1
+1. Run: `python create_preps.py --animal DKXX --channel 1 --resolution full --njobs 8` 
+    1. This will fill the directory of the full resolution files for channel 1
+    1. Repeat process for the other 2 channels when ready
+    1. View a couple thumbnails to determine how much rotation/flips to perform
+    1. Note, Imagemagick convert uses lots of CPU. If you are using muralis, you can bump njobs up to a higher number
+1. Run: `python create_preps.py --animal DKXX --channel 1 --resolution thumbnail --njobs 8` 
+    1. This will fill the directory of the downsampled resolution files for channel 1
     1. Repeat process for the other 2 channels when ready
     1. View a couple thumbnails to determine how much rotation/flips to perform
 1. Run: `python create_histogram.py --animal DKXX --channel 1` 
     1. This will read the directory of the thumbnail resolution files for channel 1
     1. Create histogram for each files for channel 1
     1. Repeat process for the other 2 channels when ready
-### CSHL will do from here on
 1. Run: `python create_masks.py --animal DKXX`
     1. This will read the thumbnail directory and create masks in the DKXX/preps/thumbnail_masked dir
     1. No need to use channel 2 or 3. It works solely on channel 1
@@ -38,7 +41,6 @@
 1. Run: `python create_alignment.py --animal DKXX --channel 1`
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair
     1. The elastix dir will be used to align the other channels and the full resoltions
-### Finish CSHL
 1. Run: `python create_neuroglancer.py --animal DKXX --channel 1 --resolution thumbnail`
     1. This will create the data for neuroglancer for channel 1
     1. View results in neuroglancer. Add the layer to the precompute with:
