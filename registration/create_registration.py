@@ -61,7 +61,7 @@ def create_register(animal, iterations):
             fixed_index = str(i - 1).zfill(3)
             moving_index = str(i).zfill(3)
 
-            R,t, rot_rad, xshift, yshift, transform = register2d(INPUT, fixed_index, moving_index)
+            R,t, rot_rad, xshift, yshift, transform = register(INPUT, fixed_index, moving_index)
             T = np.vstack([np.column_stack([R, t]), [0, 0, 1]])
             transformation_to_previous_section[files[i]] = T
             rot_rads.append(np.abs(rot_rad))

@@ -400,7 +400,7 @@ def fix_with_fill(img, debug=False):
             break
 
     cv2.fillPoly(stencil, lc, 255)
-    dilation = cv2.dilate(stencil, big_kernel, iterations=2)
+    dilation = cv2.dilate(stencil, big_kernel, iterations=3)
 
     if debug:
         del stencil

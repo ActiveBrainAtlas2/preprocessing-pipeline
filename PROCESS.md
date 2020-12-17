@@ -37,6 +37,7 @@
     1. No need to use channel 2 or 3. It works solely on channel 1
 1. Run: `python create_clean.py --animal DKXX --channel 1 --rotation 1`
     1. Use the necessary rotations and flip/flop parameters
+    1. Be careful with the rotation and flip. To do a 90 degree right rotation requires `--rotation 1 --flip flip`
     1. View a few of the files in DKXX/preps/CH1/thumbnail_cleaned
 1. Run: `python create_alignment.py --animal DKXX --channel 1`
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair
