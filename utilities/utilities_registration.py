@@ -122,11 +122,12 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
     initial_transform = sitk.CenteredTransformInitializer(
         fixed, moving,
         sitk.Similarity2DTransform(),
-        sitk.CenteredTransformInitializerFilter.GEOMETRY)
+        sitk.CenteredTransformInitializerFilter.MOMENTS)
 
     R = sitk.ImageRegistrationMethod()
     R.SetInitialTransform(initial_transform, inPlace=True)
     R.SetMetricAsCorrelation() # -0439
+    #R.SetMetricAsMeanSquares()
     R.SetMetricSamplingStrategy(R.REGULAR) # random = 0.442 # regular -0.439
     R.SetMetricSamplingPercentage(0.2)
     R.SetInterpolator(sitk.sitkLinear)
@@ -358,6 +359,8 @@ def register2d(INPUT, fixed_index, moving_index):
     fixedParameters = final_transform.GetFixedParameters()
     scale, rot_rad, xshift, yshift = finalParameters
     center = np.array(fixedParameters)
+
+    rot_rad *= scale
 
     rotation = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
                   [np.sin(rot_rad), np.cos(rot_rad)]])
