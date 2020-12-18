@@ -95,7 +95,7 @@ def test_tif(animal, channel):
     fileLocationManager = FileLocationManager(animal)
     # tifs
     for name, dir in zip(checks, [fileLocationManager.tif]):
-        db_files = sqlController.get_distinct_section_filenames(animal, 1)
+        db_files = sqlController.get_distinct_section_filenames(animal, channel)
         valid_file_length = db_files.count()
         dir_exists, lfiles, badsize = directory_filled(dir, channel)
 
