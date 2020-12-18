@@ -265,10 +265,10 @@ def scaled(img, mask, epsilon=0.01):
     return scaled.astype(np.uint16)
 
 def equalized(fixed):
-    clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
     fixed = clahe.apply(fixed)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
-    fixed = clahe.apply(fixed)
+    #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
+    #fixed = clahe.apply(fixed)
     return fixed
 
 

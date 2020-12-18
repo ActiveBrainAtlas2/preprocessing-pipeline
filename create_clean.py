@@ -20,9 +20,6 @@ from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, linnorm, lognorm, scaled, equalized
 
 
-#fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip)
-
-
 def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height):
     try:
         img = io.imread(infile)

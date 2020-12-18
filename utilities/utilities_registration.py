@@ -298,7 +298,7 @@ def register(INPUT, fixed_index, moving_index):
     initial_transform = sitk.CenteredTransformInitializer(
         fixed, moving,
         sitk.Euler2DTransform(),
-        sitk.CenteredTransformInitializerFilter.MOMENTS)
+        sitk.CenteredTransformInitializerFilter.GEOMETRY)
 
     R = sitk.ImageRegistrationMethod()
     R.SetInitialTransform(initial_transform, inPlace=True) # -0.5923
