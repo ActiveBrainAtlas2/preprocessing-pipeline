@@ -330,7 +330,7 @@ def make_tif(session, prep_id, tif_id, file_id, testing=False):
     if testing:
         command = ['touch', tif_file]
     else:
-        command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW', '-separate',
+        command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate',
                                   '-series', str(tif.scene_index), '-channel', str(tif.channel-1), '-nooverwrite', czi_file, tif_file]
     subprocess.run(command)
 
