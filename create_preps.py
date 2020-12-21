@@ -7,13 +7,13 @@ import argparse
 import os
 from multiprocessing.pool import Pool
 from tqdm import tqdm
-
+from shutil import copyfile
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_process import workernoshell
 
 
-def make_full_resolution(animal, channel):
+def make_full_resolution(animal, channel, compress=True):
     """
     Args:
         animal: the prep id of the animal
@@ -41,8 +41,13 @@ def make_full_resolution(animal, channel):
         if os.path.exists(output_path):
             continue
 
-        cmd = ['convert', input_path, '-compress', 'lzw', output_path]
-        commands.append(cmd)
+        if compress:
+            cmd = ['convert', input_path, '-compress', 'lzw', output_path]
+            commands.append(cmd)
+        else:
+            copyfile(input_path, output_path)
+
+
 
     return commands
 
@@ -83,15 +88,17 @@ if __name__ == '__main__':
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
+    parser.add_argument('--compress', help='Compress?', default='true', required=False)
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
     full = bool({'full': True, 'thumbnail': False}[args.resolution])
+    compress = bool({'true': True, 'false': False}[args.compress.lower()])
     njobs = int(args.njobs)
 
     if full:
-        commands = make_full_resolution(animal, channel)
+        commands = make_full_resolution(animal, channel, compress)
     else:
         commands = make_low_resolution(animal, channel)
 

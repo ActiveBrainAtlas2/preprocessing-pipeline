@@ -7,13 +7,13 @@ then
 fi
 #define input
 ANIMAL=$1
-CHANNEL=$2
+CHANNEL="CH$2"
 
 
 MATLABCMD="/usr/local/bin/matlab -nodisplay -nodesktop -nosplash -r "
 
 #define path
-INPUT=/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/$ANIMAL/tif/
-OUTPUT=/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/$ANIMAL/jp2/$CHANNEL/
+INPUT="/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/$ANIMAL/preps/$CHANNEL/full"
+OUTPUT="/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/$ANIMAL/preps/$CHANNEL/jp2"
 mkdir -p $OUTPUT
 $MATLABCMD "maxNumCompThreads(2); tif2jp2('$INPUT', '$OUTPUT'); exit"
