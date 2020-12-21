@@ -317,13 +317,20 @@ def trim_edges(img):
 
 
 def fix_with_fill(img, debug=False):
+    """
+    This is the 2nd pass of the create mask. This removes the bar strip
+    on the right and finds the blobs near the center of the slide.
+    It sets everything that is not a blob of tissue to black.
+    The critical value is the threshold value below. Instead of using
+    the median value, a better way might be to get a value from the histogram????
+    :param img: 8bit image that has already been cleaned from the 1st pass
+    :param debug: shows more info
+    :return: the final mask
+    """
     no_strip, fe = remove_strip(img)
     img_shape = img.shape
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
-    #img = (img / 256).astype(np.uint8)
-    #clahe = cv2.createCLAHE(clipLimit=30.0, tileGridSize=(120, 120))
-    #img = clahe.apply(img)
     img = linnorm(img, 200, np.uint8)
     h_src = img.copy()
     del no_strip
@@ -544,6 +551,13 @@ def find_contour_count(img):
     return len(contours)
 
 def create_mask_pass1(img):
+    """
+    This is the first pass in creating a mask. The skimage.exposure is used as it helps to get rid
+    of the glue around the tissue. This also calls the compute_mask method which is part
+    of the nipy package which you will need to install from github
+    :param img: the raw image
+    :return:  the 1st pass of the image
+    """
     img = exposure.adjust_log(img, 1)
     img = exposure.adjust_gamma(img, 2)
 
