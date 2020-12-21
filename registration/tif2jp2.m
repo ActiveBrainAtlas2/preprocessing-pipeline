@@ -1,7 +1,7 @@
 function tif2jp2(INPUT, OUTPUT)
     parpool('local',6);
     pctRunOnAll maxNumCompThreads(1);
-    imglist = dir(strcat(INPUT, '*.tif'));
+    imglist = dir(strcat(INPUT, '/', '*.tif'));
     [count, a] = size(imglist);
 
     parfor i = 1 : count
