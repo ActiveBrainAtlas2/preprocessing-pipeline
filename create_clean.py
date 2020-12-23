@@ -1,7 +1,9 @@
 """
-This is for cleaning/masking channel 2 and channel 3 from the mask created
-on channel 1. It works on channel one also, but since that is already cleaned and
-normalized, it will just to the rotation and flip
+This is for cleaning/masking all channels from the mask created
+on channel 1. It also does the rotating and flip/flop if necessary.
+On channel one it scales and does an adaptive histogram equalization.
+Note, the scaled method takes 45000 as the default. This is usually
+a good value for 16bit images
 """
 import argparse
 import os
@@ -17,10 +19,24 @@ from utilities.alignment_utility import get_last_2d, SCALING_FACTOR
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import rotate_image, place_image, linnorm, lognorm, scaled, equalized
+from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
 
 
 def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height):
+    """
+    This method clean all NTB images in the specified channel. For channel one it also scales
+    and does an adaptive histogram equalization.
+    :param infile: file path of image
+    :param mask: binary mask image of the image
+    :param maskfile: file path of mask
+    :param ROTATED_MASKS: location of rotated masks
+    :param logger: logger to keep track of things
+    :param rotation: amount of rotation. 1 = rotate by 90degrees
+    :param flip: either flip or flop
+    :param max_width: width of image
+    :param max_height: height of image
+    :return: cleaned and rotated image
+    """
     try:
         img = io.imread(infile)
     except:
@@ -29,7 +45,7 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
     if channel == 1:
-        fixed = scaled(fixed, mask)
+        fixed = scaled(fixed, mask, 45000)
         fixed = equalized(fixed)
 
     if rotation > 0:
@@ -52,6 +68,19 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
 
 
 def fix_thion(infile, mask, maskfile, ROTATED_MASKS,  logger, rotation, flip, max_width, max_height):
+    """
+    This method clean all thionin images. Note that the thionin have 3 channels combined into one.
+    :param infile: file path of image
+    :param mask: binary mask image of the image
+    :param maskfile: file path of mask
+    :param ROTATED_MASKS: location of rotated masks
+    :param logger: logger to keep track of things
+    :param rotation: amount of rotation. 1 = rotate by 90degrees
+    :param flip: either flip or flop
+    :param max_width: width of image
+    :param max_height: height of image
+    :return: cleaned and rotated image
+    """
     try:
         #imgfull = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
         imgfull = io.imread(infile)
@@ -90,11 +119,19 @@ def fix_thion(infile, mask, maskfile, ROTATED_MASKS,  logger, rotation, flip, ma
 
     cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
     fixed = np.dstack((fixed1, fixed2, fixed3))
-    #fixed = fixed3
     return fixed
 
 
 def masker(animal, channel, flip, rotation=0, full=False):
+    """
+    Main method that starts the cleaning/rotating process.
+    :param animal:  prep_id of the animal we are working on.
+    :param channel:  channel {1,2,3}
+    :param flip:  flip or flop or nothing
+    :param rotation: usually 1 for rotating 90 degrees
+    :param full:  resolution, either full or thumbnail
+    :return: nothing, writes to disk the cleaned image
+    """
     logger = get_logger(animal)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)

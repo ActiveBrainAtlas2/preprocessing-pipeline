@@ -1,3 +1,8 @@
+"""
+This takes the image stack that has section to section alignment
+and creates the neuroglancer precomputed volume. It works on thumbnails by default and
+works by channel
+"""
 import argparse
 import os, sys
 import json
@@ -14,7 +19,15 @@ from utilities.utilities_process import test_dir
 
 
 def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolution):
-    # ---------------- Conversion to precomputed format ----------------
+    """
+    Takes the directory with aligned images and creates a new directory available
+    to the internet. Uses resolution from database and 20000 as width of section
+    in nanometers.
+    :param folder_to_convert_from: list of aligned and cleaned images
+    :param folder_to_convert_to: neuroglancer folder available to the web
+    :param resolution: either full or thumbnail
+    :return: nothing
+    """
 
     voxel_resolution = [resolution, resolution, 20000]
     voxel_offset = [0, 0, 0]
@@ -60,6 +73,16 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolut
     compute_scales.main(['', folder_to_convert_to, '--flat', '--no-gzip'])
 
 def run_neuroglancer(animal, channel, full, suffix=None):
+    """
+    Main method to setup the precomputed volume creation. We also test if the
+    input dir has a correct number of sections and they are of the correct size.
+    :param animal: prep_id of animal
+    :param channel:  channel {1,2,3}
+    :param full: either full or thumbnail
+    :param suffix: if we want another directory use this to create a different named directory.
+    This is useful if we want additional dirs
+    :return: nothing
+    """
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)

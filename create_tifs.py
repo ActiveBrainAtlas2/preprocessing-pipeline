@@ -3,8 +3,9 @@ This file does the following operations:
     1. Queries the sections view to get active tifs to be created.
     2. Runs the bfconvert bioformats command to yank the tif out of the czi and place
     it in the correct directory with the correct name
-    3. If you  extracting jp2 files, you need to set this bash variable before running the program:
-    export BF_MAX_MEM=12096M and set the njobs to 1
+    3. If you  want jp2 files, the bioformats tool will die as the memory requirements are too high.
+    To create jp2, first create uncompressed tif files and then use Matlab to create the jp2 files.
+    The Matlab script is in registration/tif2jp2.sh
 """
 import os
 import sys
@@ -22,10 +23,16 @@ from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED
 
 def make_tifs(animal, channel, njobs, compression):
     """
+    This method will:
+        1. Fetch the sections from the database
+        2. Yank the tif out of the czi file according to the index and channel with the bioformats tool.
+        3. Then updates the database with updated meta information
     Args:
         animal: the prep id of the animal
         channel: the channel of the stack to process
         njobs: number of jobs for parallel computing
+        compression: default is no compression so we can create jp2 files for CSHL. The files get
+        compressed using LZW when running create_preps.py
 
     Returns:
         nothing

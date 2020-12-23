@@ -4,6 +4,11 @@
 1. Run: `create_meta.py --animal DKXX`
     1. This will scan each czi file
     2. Extracts the tif meta information and inserts into the slide_czi_to_tif table
+1. Run: `create_scenes.py --animal DKXX`
+    1. This will scan each czi file
+    1. Extracts every tif image and makes a thumbnail, ususally around 20 png files per czi
+    1. Verify the png files are rotated correctly. If not, use Imagemagick convert to rotate all files 
+    in the directory. `for i in slide_*.png; do convert $i -rotate 90 $i; done`
 1. Have someone confirm the status of each slide in: https://activebrainatlas.ucsd.edu/activebrainatlas/admin
     1. After logging in, go to the Slides link in the Brain category
     1. Enter the animal name in the search box

@@ -1,7 +1,5 @@
 """
-This file does the following operations:
-    1. Convert the thumbnails from TIF to PNG format.
-    2. Note: only the channel 1 for each animal is needed for PNG format
+This program creates histograms for each tif file or creates a combined histogram of all files.
 """
 import argparse
 import os
@@ -20,10 +18,10 @@ COLORS = {1: 'b', 2: 'r', 3: 'g'}
 
 def make_histogram(animal, channel):
     """
+    This method creates an individual histogram for each tif file by channel.
     Args:
         animal: the prep id of the animal
-        channel: the channel of the stack to process
-
+        channel: the channel of the stack to process  {1,2,3}
     Returns:
         nothing
     """
@@ -77,6 +75,12 @@ def make_histogram(animal, channel):
 
 
 def make_combined(animal, channel):
+    """
+    This method takes all tif files by channel and creates a histogram of the combined image space.
+    :param animal: the prep_id of the animal we are working with
+    :param channel: the channel {1,2,3}
+    :return: nothing
+    """
     logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.thumbnail)

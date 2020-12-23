@@ -4,6 +4,7 @@ This file does the following operations:
     2. runs the files in sequence through elastix
     3. parses the results from the elastix output file
     4. Sends those results to the Imagemagick convert program with the correct offsets and crop
+    5. The location of elastix is hardcoded below which is a typical linux install location.
 """
 import os, sys
 import argparse
@@ -19,9 +20,9 @@ from sql_setup import ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX, ALIGN_CHANNEL_1_F
 sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from utilities.alignment_utility import (create_if_not_exists, load_consecutive_section_transform,
+from utilities.alignment_utility import (load_consecutive_section_transform,
                                          convert_resolution_string_to_um, SCALING_FACTOR)
-from utilities.utilities_process import workernoshell, workershell, test_dir
+from utilities.utilities_process import workernoshell, workershell
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -32,22 +33,17 @@ def run_elastix(animal, njobs):
     Args:
         animal: the animal
         limit:  how many jobs you want to run.
-    Returns: nothing, just creates a lot of subdirs
+    Returns: nothing, just creates a lot of subdirs in the elastix directory.
     """
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
-
     #MASKPATH = os.path.join(fileLocationManager.prep, 'rotated_masked')
-
-
     image_name_list = sorted(os.listdir(INPUT))
     #mask_name_list = sorted(os.listdir(MASKPATH))
     elastix_output_dir = fileLocationManager.elastix_dir
-
-
     os.makedirs(elastix_output_dir, exist_ok=True)
 
     param_file = os.path.join(os.getcwd(), 'alignment', "Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt")
@@ -70,7 +66,7 @@ def run_elastix(animal, njobs):
 
         command = ['rm', '-rf', output_subdir]
         subprocess.run(command)
-        create_if_not_exists(output_subdir)
+        os.makedirs(output_subdir, exist_ok=True)
         #cmd = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_file, )
         #cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
         cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_file, '-out', output_subdir]
@@ -93,7 +89,6 @@ def parse_elastix(animal):
 
     image_name_list = sorted(os.listdir(INPUT))
     anchor_idx = len(image_name_list) // 2
-    # anchor_idx = len(image_name_list) - 1
     transformation_to_previous_sec = {}
 
     for i in range(1, len(image_name_list)):
@@ -121,10 +116,22 @@ def parse_elastix(animal):
     return transformation_to_anchor_sec
 
 def convert_2d_transform_forms(arr):
+    """
+    Puts array into correct dimensions
+    :param arr: array to transform
+    :return: corrected array
+    """
     return np.vstack([arr, [0,0,1]])
 
 def create_warp_transforms(animal, transforms, transforms_resol, resolution):
-    #transforms_resol = op['resolution']
+    """
+    Changes the dictionary of transforms to the correct resolution
+    :param animal: prep_id of animal we are working on
+    :param transforms: dictionary of filename:array of transforms
+    :param transforms_resol:
+    :param resolution: either full or thumbnail
+    :return: corrected dictionary of filename: array  of transforms
+    """
     transforms_scale_factor = convert_resolution_string_to_um(animal, resolution=transforms_resol) / convert_resolution_string_to_um(animal, resolution=resolution)
     tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
     transforms_to_anchor = {
@@ -184,19 +191,10 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     commands = []
     for file, arr in tqdm(ordered_transforms.items()):
         T = np.linalg.inv(arr)
-        """
         op_str = " +distort AffineProjection %(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
             'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
 
         op_str += ' -crop {}x{}+0.0+0.0!'.format(max_width, max_height)
-        """
-        op_str = " +distort AffineProjection %(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
-            'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
-
-        op_str += ' -crop {}x{}+0.0+0.0!'.format(max_width, max_height)
-        #projections = "%(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
-        #    'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
-        #crop = '{}x{}+0.0+0.0!'.format(max_width, max_height)
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
         if os.path.exists(output_fp):
@@ -204,12 +202,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
 
         cmd = "convert {}  +repage -virtual-pixel background -background {} {} -flatten -compress lzw {}"\
             .format(input_fp, bgcolor, op_str, output_fp)
-        #cmd = ['convert', input_fp, '+repage', '-virtual-pixel',
-        #       'background', '-background', bgcolor,
-        #       '+distort', 'AffineProjection', projections, '-crop', crop,
-        #       '-flatten', '-compress', 'lzw', output_fp]
         commands.append(cmd)
-        #subprocess.run(cmd, shell=True)
 
     with Pool(njobs) as p:
         p.map(workershell, commands)

@@ -1,3 +1,14 @@
+"""
+This program loops through all the thumbnail images and creates a mask for each section.
+The edges of the image are trimmed by filling in with the background color. The edges
+are only filled if the average of the rows is below a threshold. The a good threshold
+value of 44 was found to be useful.
+2 masking methods are used, the first one uses nipy to create the first pass. The 2nd pass
+uses the fix_with_fill method. This works 95% of the time. There are some cases
+where the tissue gets missed due to low intensity values. There is a balancing act
+going between getting all the tissue and getting rid of the junk outside the tissue, like
+the barcode and glue
+"""
 import argparse
 import os
 from multiprocessing.pool import Pool
@@ -17,6 +28,16 @@ from utilities.utilities_process import workernoshell
 
 
 def create_mask(animal, full, njobs):
+    """
+    This method decides if we are working on either full or downsampled image, and also
+    if we are using thionin or NTB stains. The masking process is different depending on the stain.
+    The 1st pass is creating masks for the downsampled images. Once they are made, we can just resize
+    the downsampled masks to the larger ones since they are just binary images.
+    :param animal: prep_id of animal
+    :param full: type of resolution, either full or downsampled.
+    :param njobs: number of jobs to send to subprocess. 4 is default. You don't need to adjust for downsampled images
+    :return: nothing, the mask and rotated mask are written to disk in each loop
+    """
     logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)

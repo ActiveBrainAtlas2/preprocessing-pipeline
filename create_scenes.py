@@ -3,8 +3,9 @@ This file does the following operations:
     1. Queries the sections view to get active tifs to be created.
     2. Runs the bfconvert bioformats command to yank the tif out of the czi and place
     it in the correct directory with the correct name
-    3. If you  extracting jp2 files, you need to set this bash variable before running the program:
-    export BF_MAX_MEM=12096M and set the njobs to 1
+    3. Creates png files in the DKXX/www directory. Files are in the name slide_XXX_index_YYY.png,
+    where XXX is the slide number and YYY is the index number.
+    4. Note, the png files might need to be rotated.
 """
 import os
 import argparse
@@ -15,6 +16,10 @@ from utilities.utilities_process import workernoshell
 
 def make_scenes(animal, njobs):
     """
+    This loops through all czi files and :
+    1. Creates up to 20 tif files for each index, but just the first channel
+    2. Loops through all those tif files and creates a png file
+    3. deletes the tif files
     Args:
         animal: the prep id of the animal
         njobs: number of jobs for parallel computing

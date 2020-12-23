@@ -2,6 +2,7 @@
 This file does the following operations:
     1. Converts regular filename from main tif dir to CHX/full or
     2. Converts and downsamples CHX/full to CHX/thumbnail
+    When creating the full sized images, the LZW compression is used
 """
 import argparse
 import os
@@ -18,6 +19,7 @@ def make_full_resolution(animal, channel, compress=True):
     Args:
         animal: the prep id of the animal
         channel: the channel of the stack to process
+        compress: Use the default LZW compression, otherwise just copy the file with the correct name
     Returns:
         list of commands
     """
@@ -48,10 +50,7 @@ def make_full_resolution(animal, channel, compress=True):
             copyfile(input_path, output_path)
 
 
-
     return commands
-
-
 
 
 def make_low_resolution(animal, channel):

@@ -13,6 +13,13 @@ thickness = 2
 
 
 def rotate_image(img, file, rotation):
+    """
+    Rotate the image by the number of rotation
+    :param img: image to work on
+    :param file: file name and path
+    :param rotation: number of rotations, 1 = 90degrees clockwise
+    :return: rotated image
+    """
     try:
         img = np.rot90(img, rotation)
     except:
@@ -191,6 +198,15 @@ def make_mask(img):
 
 
 def place_image(img, file, max_width, max_height, bgcolor=None):
+    """
+    Places the image in a padded one size container with the correct background
+    :param img: image we are working on.
+    :param file: file name and path location
+    :param max_width: width to pad
+    :param max_height: height to pad
+    :param bgcolor: background color of image, 0 for NTB, white for thionin
+    :return: placed image centered in the correct size.
+    """
     zmidr = max_height // 2
     zmidc = max_width // 2
     startr = zmidr - (img.shape[0] // 2)
@@ -251,28 +267,50 @@ def check_contour(contours, area, lc):
         return contours, lc
 
 
-def scaled(img, mask, epsilon=0.01):
+def scaled(img, mask, epsilon=0.01, limit=45000.0):
+    """
+    This scales the image to the limit specified. You can get this value
+    by looking at the combined histogram of the image stack.
+    :param img: image we are working on.
+    :param mask: binary mask file
+    :param epsilon:
+    :param limit: max value we wish to scale to
+    :return: scaled image in 16bit format
+    """
     vals = np.array(sorted(img[mask > 10]))
     #vals = np.array(sorted(img))
     ind = int(len(vals) * (1 - epsilon))
     _max = vals[ind]
     # print('thr=%d, index=%d'%(vals[ind],index))
     _range = 2 ** 16 - 1
-    scaled = img * (45000. / _max)
+    scaled = img * (limit / _max)
     del img
     scaled[scaled > _range] = _range
     scaled = scaled * (mask > 10)
     return scaled.astype(np.uint16)
 
 def equalized(fixed):
+    """
+    Takes an image that has already been scaled and uses opencv adaptive histogram
+    equalization. This cases uses 40 as the clip limit and splits the image into 8 rows
+    and 8 columns
+    :param fixed: image we are working on
+    :return: a better looking image
+    """
     clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
     fixed = clahe.apply(fixed)
-    #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
-    #fixed = clahe.apply(fixed)
     return fixed
 
 
 def trim_edges(img):
+    """
+    Trim the edges of the image and fill in with the background color. Only used with NTB images.
+    The threshold value below was found to work best. If the mean value of the row/column
+    is equal or below that threshold, the row/column is filled with the background color. For NTB
+    images the background color is black: 0.
+    :param img: image to work on
+    :return: returns the image with trimmed edges
+    """
     no_strip, fe  = remove_strip(img)
     img_shape = img.shape
     if fe != 0:

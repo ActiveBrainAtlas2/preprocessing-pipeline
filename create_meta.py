@@ -1,3 +1,10 @@
+"""
+This is the first script run in the pipeline process.
+It goes through the czi directory and gets the biggest
+4 files with the bioformats tool: showinf. It then
+populates the database with this meta information. The user
+then validates the data with the ActiveAtlasAdmin database portal
+"""
 import argparse
 from utilities.sqlcontroller import SqlController
 from controller.preprocessor import SlideProcessor
