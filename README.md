@@ -1,30 +1,3 @@
-# Setting up SSH connections to the servers
-Refer [Checking for existing SSH keys](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/checking-for-existing-ssh-keys) and [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/enterprise-server@2.19/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) for setting up the SSH on your local machine.
-
-Appending the following test in the SSH config file `~/.ssh/config` to allow SSH server name aliasing
-```
-Host ratto
-  HostName ratto.dk.ucsd.edu
-  User <AD_username_here>
-
-Host muralis
-  HostName muralis.dk.ucsd.edu
-  User <AD_username_here>
-
-Host basalis
-  HostName basalis.dk.ucsd.edu
-  User <AD_username_here>
-```
-
-Then copy the SSH identity to the remote server, enter your AD password when prompted.
-```bash
-for server in ratto muralis basalis; do
-    ssh-copy-id -i $server
-done
-```
-
-Now you should be able to SSH into the servers without password.
-
 # Utilities for the Active Atlas Pipeline
 ## Creating a sandbox on your computer
 1. install `cmake`, `postgresql` and `mysql`
@@ -128,10 +101,36 @@ Step-by-step guide:
 ![MD589](./docs/images/MD589.tree.png)
 
 ### Annotations
-1. Annotation keys are viewable: [here](https://activebrainatlas.ucsd.edu/annotation-keys.html)
+1. Annotation keys are viewable in the database: https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/structure/
 
 ### Database backups
 1. The development and production databases are backed up multiple times each day on basalis
 1. If you need a backup, look on basalis at: `/net/birdstore/Active_Atlas_Data/data_root/database/backups/`
 1. The development database is named `active_atlas_development`
 1. The production database is named `active_atlas_production`
+### Setting up SSH connections to the servers
+1. Refer [Checking for existing SSH keys](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/checking-for-existing-ssh-keys) and [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/enterprise-server@2.19/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) for setting up the SSH on your local machine.
+1. Substitute hostX and domainname names below with real names
+1. Appending the following test in the SSH config file `~/.ssh/config` to allow SSH server name aliasing
+```
+Host host1
+  HostName host1.domainname
+  User <AD_username_here>
+
+Host host2
+  HostName host2.domainname
+  User <AD_username_here>
+
+Host host3
+  HostName host3.domainname
+  User <AD_username_here>
+```
+
+Then copy the SSH identity to the remote server, enter your AD password when prompted.
+```bash
+for server in host1, host2 host3; do
+    ssh-copy-id -i $server
+done
+```
+
+Now you should be able to SSH into the servers without password.
