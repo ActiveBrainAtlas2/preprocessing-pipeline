@@ -26,6 +26,7 @@ def make_scenes(animal, njobs):
     fileLocationManager = FileLocationManager(animal)
     INPUT = fileLocationManager.czi
     OUTPUT = fileLocationManager.thumbnail_web
+    os.makedirs(OUTPUT, exist_ok=True)
     czis = os.listdir(INPUT)
 
     commands = []
