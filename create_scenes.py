@@ -37,7 +37,7 @@ def make_scenes(animal, njobs):
     commands = []
     for czi in czis:
         input_path = os.path.join(INPUT, czi)
-        for i in range(0,21):
+        for i in range(0,22):
             slide_number = czi.replace(animal, '').replace('_slide','').replace('.czi','')[0:3]
             scene_index = str(i).zfill(3)
             tif = f'slide_{slide_number}_index_{scene_index}.tif'
