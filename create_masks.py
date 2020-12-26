@@ -12,6 +12,7 @@ the barcode and glue
 import argparse
 import os, sys
 from multiprocessing.pool import Pool
+import imagesize
 
 import cv2
 import numpy as np
@@ -76,13 +77,14 @@ def create_mask(animal, full, njobs):
             if os.path.exists(outpath):
                 continue
             try:
-                src = io.imread(infile)
+                width, height = imagesize.get(infile)
+                #src = io.imread(infile)
             except:
                 logger.warning(f'Could not open {infile}')
                 continue
-            height, width = src.shape[0], src.shape[1]
+            #height, width = src.shape[0], src.shape[1]
             size = '{}x{}!'.format(width, height)
-            del src
+            #del src
             #cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
             cmd = ['convert', thumbfile, '-resize', size, '-compress', 'lzw', '-depth', '8', outpath]
             commands.append(cmd)
