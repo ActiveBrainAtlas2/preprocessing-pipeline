@@ -3,13 +3,14 @@ This file does the following operations:
     1. Convert the thumbnails from TIF to PNG format from the preps/CH1 dir
 """
 import argparse
-import os
+import os, sys
 import subprocess
 
 from tqdm import tqdm
 
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
+from utilities.utilities_process import test_dir
 
 
 def make_web_thumbnails(animal):
@@ -32,6 +33,11 @@ def make_web_thumbnails(animal):
     len_files = len(os.listdir(INPUT))
     if len_files < 10:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
+    ##### Check if files in dir are valid
+    error = test_dir(animal, INPUT, full=False, same_size=True)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
 
     OUTPUT = fileLocationManager.thumbnail_web
     os.makedirs(OUTPUT, exist_ok=True)

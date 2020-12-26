@@ -6,7 +6,7 @@ Note, the scaled method takes 45000 as the default. This is usually
 a good value for 16bit images
 """
 import argparse
-import os
+import os, sys
 
 import cv2
 import numpy as np
@@ -20,6 +20,7 @@ from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
+from utilities.utilities_process import test_dir
 
 
 def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height):
@@ -138,6 +139,11 @@ def masker(animal, channel, flip, rotation=0, full=False):
     channel_dir = 'CH{}'.format(channel)
     CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
+    error = test_dir(animal, INPUT, full=False, same_size=False)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
+
     MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     ROTATED_MASKS = os.path.join(fileLocationManager.prep, 'rotated_masked')
     os.makedirs(CLEANED, exist_ok=True)
@@ -155,6 +161,10 @@ def masker(animal, channel, flip, rotation=0, full=False):
     if full:
         CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full')
+        error = test_dir(animal, INPUT, full, same_size=False)
+        if len(error) > 0:
+            print(error)
+            sys.exit()
         MASKS = os.path.join(fileLocationManager.prep, 'full_masked')
         max_width = width
         max_height = height

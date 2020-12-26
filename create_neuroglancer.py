@@ -13,6 +13,7 @@ from neuroglancer_scripts.scripts import (generate_scales_info,
 
 from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES, \
     RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
+from utilities.alignment_utility import SCALING_FACTOR
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities_process import test_dir
@@ -90,7 +91,7 @@ def run_neuroglancer(animal, channel, full, suffix=None):
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
     planar_resolution = sqlController.scan_run.resolution
-    resolution = int(planar_resolution * 1000 / 0.03125)
+    resolution = int(planar_resolution * 1000 / SCALING_FACTOR)
 
     if full:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
@@ -112,8 +113,7 @@ def run_neuroglancer(animal, channel, full, suffix=None):
     if suffix is not None:
         NEUROGLANCER += suffix
 
-    error = test_dir(animal, INPUT, full)
-
+    error = test_dir(animal, INPUT, full, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()

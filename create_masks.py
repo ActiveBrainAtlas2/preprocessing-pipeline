@@ -10,7 +10,7 @@ going between getting all the tissue and getting rid of the junk outside the tis
 the barcode and glue
 """
 import argparse
-import os
+import os, sys
 from multiprocessing.pool import Pool
 
 import cv2
@@ -24,7 +24,7 @@ from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import fix_with_fill, fix_thionin, trim_edges, create_mask_pass1
-from utilities.utilities_process import workernoshell
+from utilities.utilities_process import workernoshell, test_dir
 
 
 def create_mask(animal, full, njobs):
@@ -44,11 +44,27 @@ def create_mask(animal, full, njobs):
     stain = sqlController.histology.counterstain
     sqlController.set_task(animal, CREATE_THUMBNAIL_MASKS)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
+    ##### Check if files in dir are valid
+    error = test_dir(animal, INPUT, full=False, same_size=False)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
     MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     os.makedirs(MASKED, exist_ok=True)
     if full:
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
+        ##### Check if files in dir are valid
+        error = test_dir(animal, INPUT, full=True, same_size=False)
+        if len(error) > 0:
+            print(error)
+            sys.exit()
+
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+        ##### Check if files in dir are valid
+        error = test_dir(animal, THUMBNAIL, full=False, same_size=False)
+        if len(error) > 0:
+            print(error)
+            sys.exit()
         MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
         os.makedirs(MASKED, exist_ok=True)
         files = sorted(os.listdir(INPUT))

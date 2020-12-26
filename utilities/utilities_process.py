@@ -35,7 +35,7 @@ def workernoshell(cmd):
     proc = Popen(cmd, shell=False, stderr=stderr_f, stdout=stdout_f)
     proc.wait()
 
-def test_dir(animal, dir, full):
+def test_dir(animal, dir, full=False, same_size=False):
     error = ""
     #thumbnail resolution ntb is 10400 and min size of DK52 is 16074
     #thumbnail resolution thion is 14464 and min size for MD585 is 21954
@@ -43,7 +43,7 @@ def test_dir(animal, dir, full):
     # min size on NTB is 8.8K
     min_size = 7000
     if full:
-        min_size = min_size * SCALING_FACTOR * 10000
+        min_size = min_size * SCALING_FACTOR * 1000
     sqlController = SqlController(animal)
     section_count = sqlController.get_section_count(animal)
     files = sorted(os.listdir(dir))
@@ -61,7 +61,7 @@ def test_dir(animal, dir, full):
         heights.add(int(height))
         size = os.path.getsize(filepath)
         if size < min_size:
-            error += f"File is too small {f}"
+            error += f"File is too small: {size} {filepath} \n"
     # picked 100 as an arbitrary number. the min file count is usually around 380 or so
     if len(files) > 100:
         min_width = min(widths)
@@ -73,11 +73,10 @@ def test_dir(animal, dir, full):
         max_width = 0
         min_height = 0
         max_height = 0
-        error += "Number of files is incorrect.\n"
     if section_count != len(files):
-        error += "Number of files is incorrect.\n"
-    if min_width != max_width and min_width > 0:
+        error += f"Number of files in {dir} is incorrect.\n"
+    if min_width != max_width and min_width > 0 and same_size:
        error += f"Widths are not of equal size, min is {min_width} and max is {max_width}.\n"
-    if min_height != max_height and min_height > 0:
+    if min_height != max_height and min_height > 0 and same_size:
         error += f"Heights are not of equal size, min is {min_height} and max is {max_height}.\n"
     return error

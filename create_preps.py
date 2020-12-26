@@ -5,13 +5,13 @@ This file does the following operations:
     When creating the full sized images, the LZW compression is used
 """
 import argparse
-import os
+import os, sys
 from multiprocessing.pool import Pool
 from tqdm import tqdm
 from shutil import copyfile
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_process import workernoshell
+from utilities.utilities_process import workernoshell, test_dir
 
 
 def make_full_resolution(animal, channel, compress=True):
@@ -28,6 +28,12 @@ def make_full_resolution(animal, channel, compress=True):
     sqlController = SqlController(animal)
     commands = []
     INPUT = os.path.join(fileLocationManager.tif)
+    ##### Check if files in dir are valid
+    error = test_dir(animal, INPUT, full=True, same_size=False)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
+
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
     os.makedirs(OUTPUT, exist_ok=True)
 
@@ -66,6 +72,11 @@ def make_low_resolution(animal, channel):
     fileLocationManager = FileLocationManager(animal)
     commands = []
     INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
+    ##### Check if files in dir are valid
+    error = test_dir(animal, INPUT, full=False, same_size=False)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
     os.makedirs(OUTPUT, exist_ok=True)
     tifs = sorted(os.listdir(INPUT))

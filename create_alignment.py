@@ -22,7 +22,7 @@ from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.alignment_utility import (load_consecutive_section_transform,
                                          convert_resolution_string_to_um, SCALING_FACTOR)
-from utilities.utilities_process import workernoshell, workershell
+from utilities.utilities_process import workernoshell, workershell, test_dir
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -40,6 +40,11 @@ def run_elastix(animal, njobs):
     sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
+    error = test_dir(animal, INPUT, full=False, same_size=True)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
+
     #MASKPATH = os.path.join(fileLocationManager.prep, 'rotated_masked')
     image_name_list = sorted(os.listdir(INPUT))
     #mask_name_list = sorted(os.listdir(MASKPATH))
@@ -86,6 +91,10 @@ def parse_elastix(animal):
     fileLocationManager = FileLocationManager(animal)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
+    error = test_dir(animal, INPUT, full=False, same_size=True)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
 
     image_name_list = sorted(os.listdir(INPUT))
     anchor_idx = len(image_name_list) // 2
@@ -156,6 +165,10 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)
     INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'thumbnail_cleaned')
+    error = test_dir(animal, INPUT, full=False, same_size=True)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
     OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     bgcolor = 'black'
     stain = sqlController.histology.counterstain
@@ -169,6 +182,10 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
 
     if 'full' in resolution.lower():
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
+        error = test_dir(animal, INPUT, full=True, same_size=True)
+        if len(error) > 0:
+            print(error)
+            sys.exit()
         OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
         max_width = width
         max_height = height
