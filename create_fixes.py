@@ -8,10 +8,8 @@ pip install pytest
 
 
 """
-import os, sys
+import os
 import argparse
-from subprocess import run
-sys.path.append(os.path.join(os.getcwd(), '..'))
 
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
@@ -111,8 +109,6 @@ def test_tif(animal, channel):
             count = 1
             for missing in missings:
                 print(count, missing)
-                cmd = ['touch', os.path.join(fileLocationManager.tif, missing)]
-                #run(cmd, shell=False)
                 count += 1
 
 

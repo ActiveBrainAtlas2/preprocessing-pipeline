@@ -23,22 +23,19 @@ import numpy as np
 import re
 import matplotlib
 import matplotlib.figure
-import os
 import cv2
 import pandas as pd
 from tqdm import tqdm
 
-from model.section import Section
-from .bioformats_utilities import get_czi_metadata, get_fullres_series_indices
-from model.animal import Animal
-from model.histology import Histology as AlcHistology
-from model.scan_run import ScanRun as AlcScanRun
-from model.slide import Slide as AlcSlide
-from model.slide_czi_to_tif import SlideCziTif as AlcSlideCziTif
-from model.task import Task
+from utilities.model.section import Section
+from utilities.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
+from utilities.model.animal import Animal
+from utilities.model.histology import Histology as AlcHistology
+from utilities.model.scan_run import ScanRun as AlcScanRun
+from utilities.model.slide import Slide as AlcSlide
+from utilities.model.slide_czi_to_tif import SlideCziTif as AlcSlideCziTif
 from sql_setup import dj, database
 from utilities.file_location import FileLocationManager
-from utilities.sqlcontroller import SqlController
 schema = dj.schema(database)
 
 

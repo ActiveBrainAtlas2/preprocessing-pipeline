@@ -9,6 +9,9 @@ import os, sys
 from multiprocessing.pool import Pool
 from tqdm import tqdm
 from shutil import copyfile
+
+from sql_setup import CREATE_CHANNEL_1_THUMBNAILS, CREATE_CHANNEL_1_FULL_RES, CREATE_CHANNEL_3_FULL_RES, \
+    CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_process import workernoshell, test_dir
@@ -26,6 +29,17 @@ def make_full_resolution(animal, channel, compress=True):
 
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
+    if channel == 3:
+        sqlController.set_task(animal, CREATE_CHANNEL_3_FULL_RES)
+    elif channel == 2:
+        sqlController.set_task(animal, CREATE_CHANNEL_2_FULL_RES)
+    else:
+        sqlController.set_task(animal, CREATE_CHANNEL_1_FULL_RES)
+
+    if 'thion' in sqlController.histology.counterstain:
+        sqlController.set_task(animal, CREATE_CHANNEL_2_FULL_RES)
+        sqlController.set_task(animal, CREATE_CHANNEL_3_FULL_RES)
+
     commands = []
     INPUT = os.path.join(fileLocationManager.tif)
     ##### Check if files in dir are valid
@@ -68,7 +82,17 @@ def make_low_resolution(animal, channel):
     Returns:
         list of commands
     """
+    sqlController = SqlController(animal)
+    if channel == 3:
+        sqlController.set_task(animal, CREATE_CHANNEL_3_THUMBNAILS)
+    elif channel == 2:
+        sqlController.set_task(animal, CREATE_CHANNEL_2_THUMBNAILS)
+    else:
+        sqlController.set_task(animal, CREATE_CHANNEL_1_THUMBNAILS)
 
+    if 'thion' in sqlController.histology.counterstain:
+        sqlController.set_task(animal, CREATE_CHANNEL_2_THUMBNAILS)
+        sqlController.set_task(animal, CREATE_CHANNEL_3_THUMBNAILS)
     fileLocationManager = FileLocationManager(animal)
     commands = []
     INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')

@@ -33,12 +33,12 @@ def make_histogram(animal, channel):
     OUTPUT = os.path.join(fileLocationManager.histogram)
     tifs = sqlController.get_sections(animal, channel)
 
-    if channel == 1:
-        sqlController.set_task(animal, CREATE_CHANNEL_1_HISTOGRAMS)
+    if channel == 3:
+        sqlController.set_task(animal, CREATE_CHANNEL_3_HISTOGRAMS)
     elif channel == 2:
         sqlController.set_task(animal, CREATE_CHANNEL_2_HISTOGRAMS)
     else:
-        sqlController.set_task(animal, CREATE_CHANNEL_3_HISTOGRAMS)
+        sqlController.set_task(animal, CREATE_CHANNEL_1_HISTOGRAMS)
 
     for tif in tqdm(tifs):
         input_path = os.path.join(INPUT, tif.file_name)

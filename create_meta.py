@@ -7,8 +7,8 @@ then validates the data with the ActiveAtlasAdmin database portal
 """
 import argparse
 from utilities.sqlcontroller import SqlController
-from controller.preprocessor import SlideProcessor
-from sql_setup import session, CZI_FILES_ARE_SCANNED_TO_GET_METADATA
+from utilities.preprocessor import SlideProcessor
+from sql_setup import session, SLIDES_ARE_SCANNED, CZI_FILES_ARE_PLACED_ON_BIRDSTORE, CZI_FILES_ARE_SCANNED_TO_GET_METADATA
 
 
 def make_meta(animal):
@@ -22,6 +22,8 @@ def make_meta(animal):
     slide_processor = SlideProcessor(animal, session)
     sqlController = SqlController(animal)
     slide_processor.process_czi_dir()
+    sqlController.set_task(animal, SLIDES_ARE_SCANNED)
+    sqlController.set_task(animal, CZI_FILES_ARE_PLACED_ON_BIRDSTORE)
     sqlController.set_task(animal, CZI_FILES_ARE_SCANNED_TO_GET_METADATA)
 
 if __name__ == '__main__':

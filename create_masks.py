@@ -19,7 +19,7 @@ import numpy as np
 from skimage import io
 from tqdm import tqdm
 
-from sql_setup import CREATE_THUMBNAIL_MASKS
+from sql_setup import CREATE_THUMBNAIL_MASKS, CREATE_FULL_RES_MASKS
 from utilities.alignment_utility import get_last_2d
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
@@ -53,6 +53,7 @@ def create_mask(animal, full, njobs):
     MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     os.makedirs(MASKED, exist_ok=True)
     if full:
+        sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         ##### Check if files in dir are valid
         error = test_dir(animal, INPUT, full=True, same_size=False)

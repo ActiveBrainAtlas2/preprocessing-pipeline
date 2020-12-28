@@ -11,26 +11,23 @@ filled out for each animal to use
 import json
 import pandas as pd
 from collections import OrderedDict
+from datetime import datetime
 
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.exc import DBAPIError
-from sqlalchemy.exc import AmbiguousForeignKeysError
-from sqlalchemy.exc import ArgumentError
-from sqlalchemy.exc import CircularDependencyError
 
-from model.animal import Animal
-from model.histology import Histology
-from model.scan_run import ScanRun
-from model.section import Section
-from model.slide import Slide
-from model.slide_czi_to_tif import SlideCziTif
-from model.structure import Structure
-from model.center_of_mass import CenterOfMass
-from model.task import Task, ProgressLookup
-from model.urlModel import UrlModel
+
+from utilities.model.animal import Animal
+from utilities.model.histology import Histology
+from utilities.model.scan_run import ScanRun
+from utilities.model.section import Section
+from utilities.model.slide import Slide
+from utilities.model.slide_czi_to_tif import SlideCziTif
+from utilities.model.structure import Structure
+from utilities.model.center_of_mass import CenterOfMass
+from utilities.model.task import Task, ProgressLookup
+from utilities.model.urlModel import UrlModel
 from sql_setup import session
-from datetime import datetime
 
 
 class SqlController(object):

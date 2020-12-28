@@ -1,7 +1,7 @@
 import logging
 
 from sql_setup import session
-from model.log import Log
+from utilities.model.log import Log
 
 
 class DatabaseHandler(logging.Handler):

@@ -96,12 +96,12 @@ def run_neuroglancer(animal, channel, full, suffix=None):
     if full:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
         channel_outdir = 'C{}'.format(channel)
-        if channel == 1:
-            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES)
+        if channel == 3:
+            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
         elif channel == 2:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
         else:
-            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
+            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES)
 
         if 'thion' in sqlController.histology.counterstain:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
