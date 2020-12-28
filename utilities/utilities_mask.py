@@ -277,10 +277,7 @@ def scaled(img, mask, epsilon=0.01, limit=45000.0):
     :param limit: max value we wish to scale to
     :return: scaled image in 16bit format
     """
-    vals = np.array(sorted(img[mask > 10]))
-    #vals = np.array(sorted(img))
-    ind = int(len(vals) * (1 - epsilon))
-    _max = vals[ind]
+    _max = np.quantile(img[mask > 10], 1 - epsilon)
     # print('thr=%d, index=%d'%(vals[ind],index))
     _range = 2 ** 16 - 1
     scaled = img * (limit / _max)
