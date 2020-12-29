@@ -7,6 +7,7 @@ a good value for 16bit images
 """
 import argparse
 import os, sys
+import timeit
 
 import cv2
 import numpy as np

@@ -19,7 +19,7 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from utilities.utilities_affine import get_transformation_matrix, DATA_PATH, align_point_sets
+from utilities.utilities_affine import DATA_PATH
 
 start = timer()
 
@@ -65,69 +65,24 @@ def transform_point_dataframe(
     x_dst = np.diag(1 / dst_scale) @ x_dst_phys
     return x_dst
 
-def create_points(src_animal, dst_animal, layer, create):
+def create_points(animal, layer, create):
     debug = True
-    fileLocationManager = FileLocationManager(src_animal)
-    sqlController = SqlController(src_animal)
-    resolution = sqlController.scan_run.resolution
+    fileLocationManager = FileLocationManager(animal)
+    sqlController = SqlController(animal)
     src_url_id = 182 # DK52 this needs to be turned into a variable or looked up somehow
     # Get src points data
-    df_src = sqlController.get_point_dataframe(src_url_id)
-    df_src = df_src[df_src['Layer'] == layer]
-    src_scale = np.array([resolution, resolution, 20])
-    ## now get dst animal resolution
-    sqlController = SqlController(dst_animal)
-    resolution = sqlController.scan_run.resolution
-    dst_scale = np.array([resolution, resolution, 20])
+    df = sqlController.get_point_dataframe(src_url_id)
+    df = df[df['Layer'] == layer]
     if debug:
-        print(df_src['Layer'].unique())
-    df_drc = df_src.loc[df_src['Layer'] == layer]
-    if debug:
-        print(df_src.head())
+        print(df['Layer'].unique())
+        print(df.head())
 
-        # Get transformations from atlas to each animal
-    r_src, t_src = get_transform(src_animal)
-    r_dst, t_dst = get_transform(dst_animal)
-
-    # Get transformation from src to dst
-    r = r_dst @ np.linalg.inv(r_src)
-    t_phys = np.diag(dst_scale) @ t_dst - np.diag(src_scale) @ t_src
-
-
-    # Transform points from src to dst
-    x_src = df_src[['X', 'Y', 'Section']].to_numpy().T
-    x_src_phys = np.diag(src_scale) @ x_src
-    x_dst_phys = r @ x_src_phys + t_phys
-    #x_dst = np.diag(1 / dst_scale) @ x_dst_phys
-
-    x_dst = transform_point_dataframe()
-
-    print('shape of x_dst', x_dst.shape)
-
-    print(x_dst.T[0])
-    results = x_dst.T[0]
-    print(results[0], results[1], results[2])
-    coordinates = []
-
-    i = 0
-    for index, row in df_src.iterrows():
-        x = row['X']
-        y = row['Y']
-        z = row['Section']
-        source_point = np.array([x,y,z]) # get adjusted x,y,z from above loop
-        results = x_dst.T[i]
-        xt = int(round(results[0])) # new x
-        yt = int(round(results[1])) # new y
-        zt = int(round(results[2])) # z
-        print(x,y,z,"\t", xt, yt, zt)
-
-        coordinates.append((xt, yt, zt))
-        i += 1
-
+    records = df[['X', 'Y', 'Section']].to_records(index=False)
+    coordinates = list(records)
 
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
-    sections = sqlController.get_section_count(dst_animal)
+    sections = sqlController.get_section_count(animal)
 
 
     if create:
@@ -162,18 +117,14 @@ def create_points(src_animal, dst_animal, layer, create):
     print(f'Finito! Program took {end - start} seconds')
 
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--src_animal', help='Enter the animal to align from', required=True)
-    parser.add_argument('--dst_animal', help='Enter the animal to align to', required=True)
+    parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--create', help='create volume', required=False, default='false')
     parser.add_argument('--layer', help='layer', required=False, default='PM nucleus')
     args = parser.parse_args()
-    src_animal = args.src_animal
-    dst_animal = args.dst_animal
+    animal = args.animal
     layer = args.layer
     create = bool({'true': True, 'false': False}[args.create.lower()])
-    #create_points(src_animal, dst_animal, layer, create)
-    create_points(src_animal, dst_animal, layer, create)
+    create_points(animal, layer, create)
 
