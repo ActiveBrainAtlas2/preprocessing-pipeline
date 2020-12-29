@@ -1,9 +1,9 @@
 import os, sys
 import json
-from timeit import default_timer as timer
-HOME = os.path.expanduser("~")
-DIR = os.path.join(HOME, 'programming', 'pipeline_utility')
-sys.path.append(DIR)
+from pathlib import Path
+
+PIPELINE_ROOT = Path('.').absolute().parent
+sys.path.append(PIPELINE_ROOT.as_posix())
 
 from utilities.imported_atlas_utilities import create_alignment_specs, load_transformed_volume, load_json, \
     get_structure_contours_from_structure_volumes_v3, VOL_DIR
@@ -13,7 +13,7 @@ import numpy as np
 
 
 def get_structure_colors():
-    color_filepath = os.path.join(DIR, 'neuroglancer/contours/json_cache', 'struct_to_color.json')
+    color_filepath = os.path.join(PIPELINE_ROOT, 'utilities/neuroglancer/contours/json_cache', 'struct_to_color.json')
     with open(color_filepath, 'r') as json_file:
         structure_to_color = json.load(json_file)
     return structure_to_color

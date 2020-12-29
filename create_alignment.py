@@ -17,10 +17,9 @@ from tqdm import tqdm
 from sql_setup import ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX, ALIGN_CHANNEL_1_FULL_RES, ALIGN_CHANNEL_2_FULL_RES, \
     ALIGN_CHANNEL_3_FULL_RES
 
-sys.path.append(os.path.join(os.getcwd(), '../'))
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from utilities.alignment_utility import (load_consecutive_section_transform,
+from utilities.utilities_alignment import (load_consecutive_section_transform,
                                          convert_resolution_string_to_um, SCALING_FACTOR)
 from utilities.utilities_process import workernoshell, workershell, test_dir
 

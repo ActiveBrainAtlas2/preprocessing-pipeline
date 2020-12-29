@@ -28,7 +28,6 @@ def make_web_thumbnails(animal):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = '/home/eodonnell/DK39/cshl/jpg'
-    len_files = len(os.listdir(INPUT))
 
     OUTPUT = os.path.join(fileLocationManager.root, animal, 'cshl/jpg')
     tifs = sqlController.get_sections(animal, 1)

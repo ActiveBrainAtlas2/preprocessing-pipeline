@@ -4,9 +4,7 @@ import pandas as pd
 import json
 from skimage import io
 import subprocess
-#import tables
 import configparser
-#import bloscpack as bp
 import pickle
 import re
 from six.moves import map
@@ -84,11 +82,6 @@ def run_distributed5(stack, command, argument_type='single', kwargs_list=None, j
                 # It is important to wrap command_templates and kwargs_list_str in apostrphes.
                 # That lets bash treat them as single strings.
                 # Reference: http://stackoverflow.com/questions/15783701/which-characters-need-to-be-escaped-in-bash-how-do-we-know-it
-                lineXXX = "%(generic_launcher_path)s %(command_template)s %(kwargs_list_str)s" % \
-                       {'generic_launcher_path': os.path.join(os.getcwd(), 'sequential_dispatcher.py'),
-                        'command_template': command,
-                        'kwargs_list_str': json.dumps(kwargs_list_as_list[fj:lj + 1])
-                        }
                 script = os.path.join(os.getcwd(), 'sequential_dispatcher.py')
                 arguments = json.dumps(kwargs_list_as_list[fj:lj + 1])
                 line = "{} '{}' '{}'\n".format(script, command, arguments)
@@ -229,9 +222,7 @@ def load_data(filepath, filetype=None):
     if not os.path.exists(filepath):
         sys.stderr.write('File does not exist: %s\n' % filepath)
 
-    if filetype == 'bp':
-        return bp.unpack_ndarray_file(filepath)
-    elif filetype == 'npy':
+    if filetype == 'npy':
         return np.load(filepath)
     elif filetype == 'image':
         return io.imread(filepath)

@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-from multiprocessing.pool import Pool
 import matplotlib.pyplot as plt
 import numpy as np
 from pandas import read_hdf
@@ -13,17 +12,19 @@ from skimage.measure import find_contours, regionprops
 from skimage.filters import gaussian
 from scipy.ndimage.morphology import distance_transform_edt
 from skimage.morphology import closing, disk
-from scipy.ndimage.morphology import binary_fill_holes, binary_closing
+from scipy.ndimage.morphology import binary_closing
 import pickle
 import vtk
 #from vtk.util import numpy_support
 import mcubes # https://github.com/pmneila/PyMCubes
 from skimage.transform import resize
 from vtkmodules.util import numpy_support
+from pathlib import Path
 
-sys.path.append(os.path.join(os.getcwd(), '../'))
+PIPELINE_ROOT = Path('.').absolute().parent
+sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController
-from utilities.alignment_utility import load_hdf, one_liner_to_arr, load_ini, convert_resolution_string_to_um, convert_resolution_string_to_voxel_size
+from utilities.utilities_alignment import load_hdf, one_liner_to_arr, convert_resolution_string_to_um, convert_resolution_string_to_voxel_size
 from utilities.file_location import CSHL_DIR as VOLUME_ROOTDIR, FileLocationManager
 from utilities.coordinates_converter import CoordinatesConverter
 SECTION_THICKNESS = 20. # in um
@@ -79,7 +80,6 @@ def create_alignment_specs(stack, detector_id):
         json.dump(data, outfile)
 
     data = {}
-    json_structure_list = []
     for structure in all_structures_total:
         data[structure] = {
             "stack_m":
@@ -218,10 +218,6 @@ def find_contour_points_3d(labeled_volume, along_direction, positions=None, samp
         dict {int: (n,2)-ndarray}: contours. {voxel position: contour vertices (second dim, first dim)}.
         For example, If `along_direction=y`, returns (z,x); if direction=x, returns (z,y).
     """
-
-    import multiprocessing
-    # nproc = multiprocessing.cpu_count()
-    nproc = 1
 
     if along_direction == 'z' or along_direction == 'sagittal':
         if positions is None:

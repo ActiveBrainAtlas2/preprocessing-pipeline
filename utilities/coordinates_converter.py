@@ -6,7 +6,7 @@ import numpy as np
 
 #### visualattion_tools.py
 sys.path.append(os.path.join(os.getcwd(), '../'))
-from utilities.alignment_utility import convert_resolution_string_to_um, load_transforms
+from utilities.utilities_alignment import convert_resolution_string_to_um, load_transforms
 from utilities.sqlcontroller import SqlController
 
 SECTION_THICKNESS = 20.  # in um

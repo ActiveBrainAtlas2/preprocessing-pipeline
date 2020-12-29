@@ -10,10 +10,10 @@ import tinybrain
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
+from pathlib import Path
 
-HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'Projects/pipeline_utility')
-sys.path.append(PATH)
+PIPELINE_ROOT = Path('.').absolute().parent
+sys.path.append(PIPELINE_ROOT.as_posix())
 
 
 from utilities.sqlcontroller import SqlController

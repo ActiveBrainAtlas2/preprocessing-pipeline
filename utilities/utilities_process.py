@@ -1,10 +1,14 @@
-import os
+import os, sys
 from subprocess import Popen, check_output
+from pathlib import Path
 
-from utilities.alignment_utility import SCALING_FACTOR
-from utilities.file_location import FileLocationManager
+PIPELINE_ROOT = Path('.').absolute().parent
+sys.path.append(PIPELINE_ROOT.as_posix())
+
+
 from utilities.sqlcontroller import SqlController
 
+SCALING_FACTOR = 0.03125
 
 
 def workershell(cmd):
@@ -80,3 +84,12 @@ def test_dir(animal, dir, full=False, same_size=False):
     if min_height != max_height and min_height > 0 and same_size:
         error += f"Heights are not of equal size, min is {min_height} and max is {max_height}.\n"
     return error
+
+
+
+def get_last_2d(data):
+    if data.ndim <= 2:
+        return data
+    m,n = data.shape[-2:]
+    return data.flat[:m*n].reshape(m,n)
+

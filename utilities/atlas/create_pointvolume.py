@@ -15,9 +15,9 @@ import shutil
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
+
 from utilities.sqlcontroller import SqlController
-from utilities.file_location import FileLocationManager
-from utilities.utilities_affine import DATA_PATH
+from utilities.file_location import FileLocationManager, DATA_PATH
 
 def create_points(animal, layer, url_id):
     debug = True

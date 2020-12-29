@@ -8,6 +8,7 @@ filled out for each animal to use
 #import traceback
 #import transaction
 ###from logger import Log
+import sys
 import json
 import pandas as pd
 from collections import OrderedDict
@@ -15,8 +16,10 @@ from datetime import datetime
 
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
+from pathlib import Path
 
-
+PIPELINE_ROOT = Path('.').absolute().parent
+sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.model.animal import Animal
 from utilities.model.histology import Histology
 from utilities.model.scan_run import ScanRun

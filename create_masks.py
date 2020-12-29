@@ -20,7 +20,7 @@ from skimage import io
 from tqdm import tqdm
 
 from sql_setup import CREATE_THUMBNAIL_MASKS, CREATE_FULL_RES_MASKS
-from utilities.alignment_utility import get_last_2d
+from utilities.utilities_alignment import get_last_2d
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController

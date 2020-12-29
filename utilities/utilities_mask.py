@@ -1,3 +1,4 @@
+import sys
 import cv2
 import numpy as np
 import pandas as pd
@@ -5,7 +6,12 @@ import matplotlib
 import matplotlib.figure
 from nipy.labs.mask import compute_mask
 from skimage import exposure
-from utilities.alignment_utility import get_last_2d
+from pathlib import Path
+
+PIPELINE_ROOT = Path('.').absolute().parent
+sys.path.append(PIPELINE_ROOT.as_posix())
+
+from utilities.utilities_alignment import get_last_2d
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 fontScale = 1

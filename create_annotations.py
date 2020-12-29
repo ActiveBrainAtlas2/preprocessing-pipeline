@@ -10,9 +10,9 @@ from collections import defaultdict
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
-CSV_PATH = '/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_brain_annotations'
 sys.path.append(PATH)
-from utilities.contour_utilities import get_contours_from_annotations
+CSV_PATH = '/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_brain_annotations'
+from utilities.utilities_contour import get_contours_from_annotations
 from utilities.file_location import FileLocationManager
 
 def make_annotations(animal):

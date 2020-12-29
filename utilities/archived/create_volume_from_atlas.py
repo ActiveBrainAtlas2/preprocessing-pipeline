@@ -13,10 +13,9 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
-from utilities.file_location import FileLocationManager
+from utilities.file_location import FileLocationManager, ROOT_DIR, DATA_PATH
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
-from utilities.utilities_affine import align_point_sets, DK52_centers, MD589_centers, ROOT_DIR, DATA_PATH
-
+from utilities.utilities_affine import align_point_sets
 
 def create_atlas(animal, create):
 

@@ -6,16 +6,12 @@ This file does the following operations:
 import os
 import sys
 import argparse
-import time
-from multiprocessing.pool import Pool
 
 from tqdm import tqdm
 
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_process import workershell
-from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
 
 
 def update_tifs(animal, channel):

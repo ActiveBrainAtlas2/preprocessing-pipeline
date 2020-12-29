@@ -7,7 +7,6 @@ a good value for 16bit images
 """
 import argparse
 import os, sys
-import timeit
 
 import cv2
 import numpy as np
@@ -16,7 +15,7 @@ from tqdm import tqdm
 
 from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK, CLEAN_CHANNEL_1_FULL_RES_WITH_MASK, \
     CLEAN_CHANNEL_2_FULL_RES_WITH_MASK, CLEAN_CHANNEL_3_FULL_RES_WITH_MASK
-from utilities.alignment_utility import get_last_2d, SCALING_FACTOR
+from utilities.utilities_alignment import get_last_2d, SCALING_FACTOR
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController

@@ -17,7 +17,7 @@ from tqdm import tqdm
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_process import workershell, workernoshell
+from utilities.utilities_process import workernoshell
 from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
 
 
@@ -80,7 +80,7 @@ def make_tifs(animal, channel, njobs, compression):
     try:
         os.listdir(fileLocationManager.tif)
     except OSError as e:
-        logger.error(f'Could not find {fileLocationManager.tif}')
+        logger.error(f'Could not find {fileLocationManager.tif} {e}')
         sys.exit()
 
     slide_czi_to_tifs = sqlController.get_slide_czi_to_tifs(channel)

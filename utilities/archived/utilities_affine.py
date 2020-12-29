@@ -9,10 +9,8 @@ from scipy import ndimage
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController
-from utilities.file_location import FileLocationManager
 
 
-DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
 
 
 # Adapted from https://github.com/libigl/eigen/blob/master/Eigen/src/Geometry/Umeyama.h

@@ -13,7 +13,7 @@ import argparse
 
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from controller.preprocessor import SlideProcessor, make_tif
+from utilities.preprocessor import SlideProcessor, make_tif
 from sql_setup import session
 
 

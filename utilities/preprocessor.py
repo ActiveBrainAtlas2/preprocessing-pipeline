@@ -26,7 +26,10 @@ import matplotlib.figure
 import cv2
 import pandas as pd
 from tqdm import tqdm
+from pathlib import Path
 
+PIPELINE_ROOT = Path('.').absolute().parent
+sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.model.section import Section
 from utilities.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
 from utilities.model.animal import Animal
