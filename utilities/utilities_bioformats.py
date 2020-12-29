@@ -1,5 +1,7 @@
 import subprocess
 
+import bioformats
+
 
 def get_czi_metadata(infile):
     """
@@ -7,19 +9,9 @@ def get_czi_metadata(infile):
     :param infile: file location of the CZI file
     :return: dictionary of meta information
     """
-    command = ['/usr/local/share/bftools/showinf', '-nopix', infile]
-    czi_metadata_full = subprocess.check_output(command)
-    czi_metadata_full = czi_metadata_full.decode("utf-8")
-    # I seperate the metadata into 3 seperate sections
-    czi_metadata_header = czi_metadata_full[0:czi_metadata_full.index('\nSeries #0')]
-    czi_metadata_series = czi_metadata_full[0:czi_metadata_full.index('\nReading global metadata')]
-    czi_metadata_global = czi_metadata_full[czi_metadata_full.index('\nReading global metadata'):]
-
-    # This extracts the 'series' count.
-    # Each series is a tissue sample at a certain resolution
-    #  or an erroneous thingy
-    series_count = int(czi_metadata_header[
-                       czi_metadata_header.index('Series count = ') + 15:])
+    command = ['/usr/local/share/bftools/showinf', '-nopix', '-omexml-only', infile]
+    metadata = subprocess.check_output(command).decode('utf-8')
+    metadata = bioformats.OMEXML(metadata)
 
     # Series #0 should be the first tissue sample at full resolution.
     # Series #1 tends to be this same tissue sample at half the resolution.
@@ -28,36 +20,16 @@ def get_czi_metadata(infile):
     # that are much smaller than expected. Valid series are checked in get_fullres_series_indices
 
     metadata_dict = {}
+    for i in range(metadata.image_count):
+        image = metadata.image(i)
+        metadata_dict[i] = {}
+        metadata_dict[i]['width'] = image.Pixels.SizeX
+        metadata_dict[i]['height'] = image.Pixels.SizeY
+        metadata_dict[i]['channels'] = image.Pixels.channel_count
 
-    for series_i in range(series_count):
-        if series_i == series_count - 1:
-            czi_metadata_series_i = czi_metadata_series[
-                                    czi_metadata_series.index('Series #' + str(series_i)):]
-        # Otherwise extract metadata from Series(#) to Series(#+1)
-        else:
-            czi_metadata_series_i = czi_metadata_series[
-                                    czi_metadata_series.index('Series #' + str(series_i)):
-                                    czi_metadata_series.index('Series #' + str(series_i + 1))]
-
-        # Extract width and height
-        width_height_data = czi_metadata_series_i[czi_metadata_series_i.index('Width'):
-                                                  czi_metadata_series_i.index('\n\tSizeZ')]
-        width, height = width_height_data.replace('Width = ', '').replace('Height = ', '').split('\n\t')
-        metadata_dict[series_i] = {}
-        metadata_dict[series_i]['width'] = width
-        metadata_dict[series_i]['height'] = height
-        # Extract number of channels
-        channel_count_index = czi_metadata_series_i.index('SizeC = ') + 8
-        channel_count = int(czi_metadata_series_i[channel_count_index: channel_count_index + 1])
-        metadata_dict[series_i]['channels'] = channel_count
-
-    for channel_i in range(metadata_dict[0]['channels']):
-        # Extract channel names
-        str_to_search = 'Information|Image|Channel|Name #' + str(channel_i + 1) + ': '
-        str_index = czi_metadata_global.index(str_to_search)
-        channel_name = czi_metadata_global[str_index + len(str_to_search):
-                                           czi_metadata_global.find('\n', str_index)]
-        metadata_dict['channel_' + str(channel_i) + '_name'] = channel_name
+    image = metadata.image(0)
+    for i in range(image.Pixels.channel_count):
+        metadata_dict[f'channel_{i}_name'] = image.Pixels.channel(i).Name
 
     return metadata_dict
 
