@@ -44,22 +44,19 @@ def run_elastix(animal, njobs):
         print(error)
         sys.exit()
 
-    #MASKPATH = os.path.join(fileLocationManager.prep, 'rotated_masked')
-    image_name_list = sorted(os.listdir(INPUT))
-    #mask_name_list = sorted(os.listdir(MASKPATH))
+    files = sorted(os.listdir(INPUT))
     elastix_output_dir = fileLocationManager.elastix_dir
     os.makedirs(elastix_output_dir, exist_ok=True)
 
-    param_file = os.path.join(os.getcwd(), 'alignment', "Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt")
+    param_file = os.path.join(os.getcwd(), 'utilities/alignment', "Parameters_Rigid_MutualInfo_noNumberOfSpatialSamples_4000Iters.txt")
     commands = []
-    for i in range(1, len(image_name_list)):
-        prev_img_name = os.path.splitext(image_name_list[i - 1])[0]
-        curr_img_name = os.path.splitext(image_name_list[i])[0]
-        prev_fp = os.path.join(INPUT, image_name_list[i - 1])
-        curr_fp = os.path.join(INPUT, image_name_list[i])
-
-        #prev_mask = os.path.join(MASKPATH, mask_name_list[i - 1])
-        #curr_mask = os.path.join(MASKPATH, mask_name_list[i])
+    # previous file is the fixed image
+    # current file is the moving image
+    for i in range(1, len(files)):
+        prev_img_name = os.path.splitext(files[i - 1])[0]
+        curr_img_name = os.path.splitext(files[i])[0]
+        prev_fp = os.path.join(INPUT, files[i - 1])
+        curr_fp = os.path.join(INPUT, files[i])
 
         new_dir = '{}_to_{}'.format(curr_img_name, prev_img_name)
         output_subdir = os.path.join(elastix_output_dir, new_dir)
@@ -71,8 +68,6 @@ def run_elastix(animal, njobs):
         command = ['rm', '-rf', output_subdir]
         subprocess.run(command)
         os.makedirs(output_subdir, exist_ok=True)
-        #cmd = '{} -f {} -m {} -p {} -out {}'.format(ELASTIX_BIN, prev_fp, curr_fp, param_file, )
-        #cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-fMask', prev_mask, '-p', param_file, '-out', output_subdir]
         cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_file, '-out', output_subdir]
         commands.append(cmd)
 
@@ -95,33 +90,33 @@ def parse_elastix(animal):
         print(error)
         sys.exit()
 
-    image_name_list = sorted(os.listdir(INPUT))
-    anchor_idx = len(image_name_list) // 2
-    transformation_to_previous_sec = {}
+    files = sorted(os.listdir(INPUT))
+    anchor_index = len(files) // 2
+    transformation_to_previous_section = {}
 
-    for i in range(1, len(image_name_list)):
-        fixed_fn = os.path.splitext(image_name_list[i - 1])[0]
-        moving_fn = os.path.splitext(image_name_list[i])[0]
-        transformation_to_previous_sec[i] = load_consecutive_section_transform(animal, moving_fn, fixed_fn)
+    for i in range(1, len(files)):
+        fixed_index = os.path.splitext(files[i - 1])[0]
+        moving_index = os.path.splitext(files[i])[0]
+        transformation_to_previous_section[i] = load_consecutive_section_transform(animal, moving_index, fixed_index)
 
-    transformation_to_anchor_sec = {}
+    transformation_to_anchor_section = {}
     # Converts every transformation
-    for moving_idx in range(len(image_name_list)):
-        if moving_idx == anchor_idx:
-            transformation_to_anchor_sec[image_name_list[moving_idx]] = np.eye(3)
-        elif moving_idx < anchor_idx:
+    for moving_index in range(len(files)):
+        if moving_index == anchor_index:
+            transformation_to_anchor_section[files[moving_index]] = np.eye(3)
+        elif moving_index < anchor_index:
             T_composed = np.eye(3)
-            for i in range(anchor_idx, moving_idx, -1):
-                T_composed = np.dot(np.linalg.inv(transformation_to_previous_sec[i]), T_composed)
-            transformation_to_anchor_sec[image_name_list[moving_idx]] = T_composed
+            for i in range(anchor_index, moving_index, -1):
+                T_composed = np.dot(np.linalg.inv(transformation_to_previous_section[i]), T_composed)
+            transformation_to_anchor_section[files[moving_index]] = T_composed
         else:
             T_composed = np.eye(3)
-            for i in range(anchor_idx + 1, moving_idx + 1):
-                T_composed = np.dot(transformation_to_previous_sec[i], T_composed)
-            transformation_to_anchor_sec[image_name_list[moving_idx]] = T_composed
+            for i in range(anchor_index + 1, moving_index + 1):
+                T_composed = np.dot(transformation_to_previous_section[i], T_composed)
+            transformation_to_anchor_section[files[moving_index]] = T_composed
 
 
-    return transformation_to_anchor_sec
+    return transformation_to_anchor_section
 
 def convert_2d_transform_forms(arr):
     """
@@ -188,12 +183,12 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
         OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
         max_width = width
         max_height = height
-        if channel == 1:
-            sqlController.set_task(animal, ALIGN_CHANNEL_1_FULL_RES)
+        if channel == 3:
+            sqlController.set_task(animal, ALIGN_CHANNEL_3_FULL_RES)
         elif channel == 2:
             sqlController.set_task(animal, ALIGN_CHANNEL_2_FULL_RES)
         else:
-            sqlController.set_task(animal, ALIGN_CHANNEL_3_FULL_RES)
+            sqlController.set_task(animal, ALIGN_CHANNEL_1_FULL_RES)
 
     if masks:
         INPUT = os.path.join(fileLocationManager.prep, 'rotated_masked')
@@ -207,17 +202,29 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     commands = []
     for file, arr in tqdm(ordered_transforms.items()):
         T = np.linalg.inv(arr)
-        op_str = " +distort AffineProjection %(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
-            'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
+        #op_str = " +distort AffineProjection %(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
+        #    'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
 
-        op_str += ' -crop {}x{}+0.0+0.0!'.format(max_width, max_height)
+        #op_str += ' -crop {}x{}+0.0+0.0!'.format(max_width, max_height)
+
+        sx = T[0, 0]
+        sy = T[1, 1]
+        rx = T[1, 0]
+        ry = T[0, 1]
+        tx = T[0, 2]
+        ty = T[1, 2]
+        # sx, rx, ry, sy, tx, ty
+        op_str = f" +distort AffineProjection '{sx},{rx},{ry},{sy},{tx},{ty}'"
+        op_str += f' -crop {max_width}x{max_height}+0.0+0.0!'
+
         input_fp = os.path.join(INPUT, file)
         output_fp = os.path.join(OUTPUT, file)
         if os.path.exists(output_fp):
             continue
 
-        cmd = "convert {}  +repage -virtual-pixel background -background {} {} -flatten -compress lzw {}"\
-            .format(input_fp, bgcolor, op_str, output_fp)
+        #cmd = "convert {}  +repage -virtual-pixel background -background {} {} -flatten -compress lzw {}"\
+        #    .format(input_fp, bgcolor, op_str, output_fp)
+        cmd = f"convert {input_fp} -define white-point=0x0 +repage -virtual-pixel background -background {bgcolor} {op_str} -flatten -compress lzw {output_fp}"
         commands.append(cmd)
 
     with Pool(njobs) as p:
