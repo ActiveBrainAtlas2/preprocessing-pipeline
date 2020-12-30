@@ -6,7 +6,6 @@ import json
 
 import numpy as np
 import neuroglancer
-import tinybrain
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume

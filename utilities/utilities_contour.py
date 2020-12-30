@@ -7,7 +7,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 from utilities.imported_atlas_utilities import create_alignment_specs, load_transformed_volume, load_json, \
     get_structure_contours_from_structure_volumes_v3, VOL_DIR
-from utilities.file_location import FileLocationManager
+from utilities.file_location import FileLocationManager, DATA_PATH
 import neuroglancer
 import numpy as np
 
@@ -47,12 +47,13 @@ def image_contour_generator(stack, detector_id, structure, use_local_alignment=T
     #numpyfile = '{}_volume.npy'.format(structure)
     #atlasV7_10.0um_scoreVolume_VLL_R_origin_wrt_canonicalAtlasSpace.txt
     txtfile = 'atlasV7_10.0um_scoreVolume_{}_origin_wrt_canonicalAtlasSpace.txt'.format(structure)
+    data_path = os.path.join(DATA_PATH, 'CSHL_volumes/all_brains/atlasV7/atlasV7_10.0um_scoreVolume/score_volumes')
     try:
-        t1 = np.load(os.path.join(datapath, numpyfile))
+        t1 = np.load(os.path.join(data_path, numpyfile))
     except:
         print('Could not load:', numpyfile)
     try:
-        t2 = np.loadtxt(os.path.join(datapath, txtfile))
+        t2 = np.loadtxt(os.path.join(data_path, txtfile))
     except:
         print('Could not load:', txtfile)
     # vol is a tuple of np array and 3 numbers
@@ -172,7 +173,6 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
     ng_section_max = 370
     s3_offset_from_local_x = 0
     s3_offset_from_local_y = 0
-    s3_offset_from_local_slices = 0
 
     # Max and Min X/Y Values given random initial values that will be replaced
     # X and Y resolution will be specified by the user in microns (xy_ng_resolution_umx by y_ng_resolution_um)
@@ -283,7 +283,6 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
 
     # If instead of a small volume and an offset, we want no offset and an extremely large+sparse volume
     if no_offset_big_volume:
-        largest_z_offset = np.max([min_z, z_offset])
         big_sparse_structure_volume = np.zeros(
             (z_voxels + z_offset, y_voxels + true_ng_y_offset, x_voxels + true_ng_x_offset), dtype=np.uint8)
 
@@ -460,7 +459,6 @@ def create_full_volume(contour_annotations, structure, first_sec, last_sec, colo
     xyz_structure_offsets = [min_x, min_y, z_offset]
 
     # If instead of a small volume and an offset, we want no offset and an extremely large+sparse volume
-    largest_z_offset = np.max([min_z, z_offset])
     big_sparse_structure_volume = np.zeros(
         (z_voxels + z_offset, y_voxels + true_ng_y_offset, x_voxels + true_ng_x_offset), dtype=np.uint8)
 

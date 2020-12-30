@@ -2,7 +2,6 @@ import subprocess
 
 import bioformats
 
-
 def get_czi_metadata(infile):
     """
     This parses the CZI file with the bioformats tool: showinf.

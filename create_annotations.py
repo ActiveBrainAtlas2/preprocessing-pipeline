@@ -15,6 +15,7 @@ CSV_PATH = '/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_bra
 from utilities.utilities_contour import get_contours_from_annotations
 from utilities.file_location import FileLocationManager
 
+
 def make_annotations(animal):
 
     csvfile = os.path.join(CSV_PATH, f'{animal}_annotation.csv')

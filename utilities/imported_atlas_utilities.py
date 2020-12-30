@@ -24,7 +24,7 @@ from pathlib import Path
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_alignment import load_hdf, one_liner_to_arr, convert_resolution_string_to_um, convert_resolution_string_to_voxel_size
+from utilities.utilities_alignment import load_hdf, one_liner_to_arr, convert_resolution_string_to_um
 from utilities.file_location import CSHL_DIR as VOLUME_ROOTDIR, FileLocationManager
 from utilities.coordinates_converter import CoordinatesConverter
 SECTION_THICKNESS = 20. # in um
@@ -40,23 +40,6 @@ paired_structures = ['5N', '6N', '7N', '7n', 'Amb',
 singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
 singular_structures_with_side_suffix = ['AP_S', '12N_S', 'RtTg_S', 'SC_S', 'IC_S']
 all_known_structures = paired_structures + singular_structures
-
-def all_known_structures_unsided_including_surround_200um():
-    return all_known_structures + [convert_to_surround_name(u, margin='200um') for u in all_known_structures]
-
-
-def get_structures():
-    HOME = os.path.expanduser("~")
-    if os.path.exists(os.path.join(HOME, 'Projects/pipeline_utility')):
-        DIR = os.path.join(HOME, 'Projects/pipeline_utility')
-    else:
-        DIR = os.path.join(HOME, 'programming/pipeline_utility')
-
-    structure_file = os.path.join(DIR, 'neuroglancer', 'structure_key_minimal.json')
-    with open(structure_file, 'r') as f:
-        structures = json.load(f)
-
-    return list(structures.values())
 
 
 def create_alignment_specs(stack, detector_id):

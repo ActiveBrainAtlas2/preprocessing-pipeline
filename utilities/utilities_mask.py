@@ -32,32 +32,12 @@ def rotate_image(img, file, rotation):
         print('Could not rotate', file)
     return img
 
-def remove_strip_orig(src):
-    """
-    from Yoav
-    :param src:
-    :return:
-    """
-    strip_max = 150;
-    strip_min = 5  # the range of width for the stripe
-    projection=np.sum(src,axis=0)/10000.
-    diff=projection[1:]-projection[:-1]
-    loc,=np.nonzero(diff[-strip_max:-strip_min]>50)
-    mval=np.max(diff[-strip_max:-strip_min])
-    no_strip=np.copy(src)
-    if loc.shape[0]>0:
-        loc=np.min(loc)
-        from_end=strip_max-loc
-        no_strip[:,-from_end-2:]=0 # mask the strip
-    return no_strip
-
 def remove_strip(src):
     strip_max = 150;
     strip_min = 5  # the range of width for the stripe
     projection=np.sum(src,axis=0)/10000.
     diff=projection[1:]-projection[:-1]
     loc,=np.nonzero(diff[-strip_max:-strip_min]>50)
-    mval=np.max(diff[-strip_max:-strip_min])
     no_strip=np.copy(src)
     fe = 0
     if loc.shape[0]>0:
@@ -389,13 +369,9 @@ def fix_with_fill(img, debug=False):
     stencil = np.zeros(h_src.shape).astype('uint8')
     del im_th
     del im_floodfill_inv
-    small_kernel = np.ones((3, 3), np.uint8)
     big_kernel = np.ones((16, 16), np.uint8)
-    #opening = cv2.morphologyEx(im_out, cv2.MORPH_OPEN, small_kernel)
-    #opening = cv2.dilate(im_out, small_kernel, iterations=1)
     contours, hierarchy = cv2.findContours(im_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     del im_out
-    #del opening
 
     lc = []
     c1 = max(contours, key=cv2.contourArea)
