@@ -24,7 +24,7 @@ class CoordinatesConverter(object):
         # some from stack name
         # some must be assigned dynamically
         # this import has to be here to avoid circular imports
-        from utilities.imported_atlas_utilities import load_original_volume_v2
+        from utilities.atlas.imported_atlas_utilities import load_original_volume_v2
         self.frames = {'wholebrain': {'origin_wrt_wholebrain_um': (0,0,0),
         'zdim_um': None},
         # 'sagittal': {'origin_wrt_wholebrain_um': None,
@@ -355,8 +355,6 @@ class CoordinatesConverter(object):
                                      stack=None):
         """
         Converts between coordinates that are expressed in different frames and different resolutions.
-
-        Use this in combination with DataManager.get_domain_origin().
 
         `wrt` can be either 3-D frames or 2-D frames.
         Detailed definitions of various frames can be found at https://goo.gl/o2Yydw.

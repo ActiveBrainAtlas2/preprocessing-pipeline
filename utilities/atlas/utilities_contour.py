@@ -1,15 +1,15 @@
 import os, sys
 import json
 from pathlib import Path
+import neuroglancer
+import numpy as np
 
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from utilities.imported_atlas_utilities import create_alignment_specs, load_transformed_volume, load_json, \
+from utilities.atlas.imported_atlas_utilities import create_alignment_specs, load_transformed_volume, load_json, \
     get_structure_contours_from_structure_volumes_v3, VOL_DIR
 from utilities.file_location import FileLocationManager, DATA_PATH
-import neuroglancer
-import numpy as np
 
 
 def get_structure_colors():

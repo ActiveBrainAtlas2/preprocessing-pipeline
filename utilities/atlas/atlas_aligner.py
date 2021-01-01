@@ -1,33 +1,22 @@
 import numpy as np
 import sys
-import os
 import time
 import numdifftools as nd
-
-from skimage.morphology import binary_closing, disk, binary_dilation, binary_erosion
-from skimage.measure import grid_points_in_poly, subdivide_polygon, approximate_polygon
-from skimage.measure import find_contours, regionprops
-from skimage.filters import gaussian
-
-from shapely.geometry import Polygon
-
-import cv2
-import matplotlib.pyplot as plt
+import random
+from itertools import product
 from multiprocessing.pool import Pool
 
-from utilities.imported_atlas_utilities import parallel_where_binary, convert_transform_forms, \
+from utilities.atlas.imported_atlas_utilities import parallel_where_binary, convert_transform_forms, \
     compute_bspline_cp_contribution_to_test_pts, convert_volume_forms, transform_points_affine, compute_gradient_v2, \
     transform_points_bspline, rotate_transform_vector, affine_components_to_vector, compose_alignment_parameters, \
     rotationMatrixToEulerAngles, eulerAnglesToRotationMatrix
-from utilities.lie import matrix_exp_v
+from utilities.atlas.lie import matrix_exp_v
 
 volume_f = None
 volume_m = None
 volume_f_origin = None
 volume_m_origin = None
 nzvoxels_m = None
-# nzvoxels_centered_m = None
-# nzvoxels_m_after_init_T = None
 nzvoxels_centered_m_after_init_T = None
 grad_f = None
 grad_f_origin = None
@@ -326,76 +315,6 @@ class Aligner(object):
         else:
             raise
 
-#     def load_gradient(self, gradient_filepath_map_f=None, indices_f=None, gradients=None, rescale=None):
-#         """Load gradients of fixed volumes.
-
-#         Need to pass `gradient_filepath_map_f` in from outside because Aligner class should be agnostic about structure names.
-
-#         Args:
-#             gradient_filepath_map_f (dict of str): path string that contains formatting parts and (suffix).
-#             gradients (dict of ((3,ydim,xdim,zdim) arrays, origin):
-#         """
-
-#         if indices_f is None:
-#             indices_f = set([self.labelIndexMap_m2f[ind_m] for ind_m in self.all_indices_m])
-#             sys.stderr.write('indices_f: %s\n' % indices_f)
-
-#         global grad_f, grad_f_origin
-
-#         if gradients is not None:
-#             grad_f = {i: g for i, (g, o) in gradients.items()}
-#             grad_f_origin = {i: o.astype(np.int) for i, (g, o) in gradients.items()}
-#         else:
-#             grad_f = {ind_f: np.zeros((3,) + volume_f[ind_f].shape, dtype=np.float16) for ind_f in indices_f}
-#             for ind_f in indices_f:
-#                 if rescale is None:
-#                     grad_f[ind_f][0] = load_data(gradient_filepath_map_f[ind_f] % {'suffix': 'gx'})
-#                     grad_f[ind_f][1] = load_data(gradient_filepath_map_f[ind_f] % {'suffix': 'gy'})
-#                     grad_f[ind_f][2] = load_data(gradient_filepath_map_f[ind_f] % {'suffix': 'gz'})
-#                 else:
-#                     grad_f[ind_f][0] = rescale_volume_by_resampling(load_data(gradient_filepath_map_f[ind_f] % {'suffix': 'gx'}), rescale)
-#                     grad_f[ind_f][1] = rescale_volume_by_resampling(load_data(gradient_filepath_map_f[ind_f] % {'suffix': 'gy'}), rescale)
-#                     grad_f[ind_f][2] = rescale_volume_by_resampling(load_data(gradient_filepath_map_f[ind_f] % {'suffix': 'gz'}), rescale)
-#                 sys.stderr.write('load gradient %s: %f seconds\n' % (ind_f, time.time() - t))
-#             sys.stderr.write('overall: %f seconds\n' % (time.time() - t1)) # ~100s
-
-# #         else:
-# #             assert gradient_filepath_map_f is not None, 'gradient_filepath_map_f not specified.'
-# #             grad_f = {ind_f: np.zeros((3, self.ydim_f, self.xdim_f, self.zdim_f), dtype=np.float16) for ind_f in indices_f}
-
-# #             t1 = time.time()
-
-# #             for ind_f in indices_f:
-
-# #                 t = time.time()
-
-# #                 download_from_s3(gradient_filepath_map_f[ind_f] % {'suffix': 'gx'}, is_dir=False)
-# #                 download_from_s3(gradient_filepath_map_f[ind_f] % {'suffix': 'gy'}, is_dir=False)
-# #                 download_from_s3(gradient_filepath_map_f[ind_f] % {'suffix': 'gz'}, is_dir=False)
-
-# #                 if hasattr(self, 'zl'):
-# #                     if rescale is None:
-# #                         grad_f[ind_f][0] = bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gx'})[..., self.zl:self.zh+1]
-# #                         grad_f[ind_f][1] = bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gy'})[..., self.zl:self.zh+1]
-# #                         grad_f[ind_f][2] = bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gz'})[..., self.zl:self.zh+1]
-# #                     else:
-# #                         grad_f[ind_f][0] = rescale_volume_by_resampling(bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gx'})[..., self.zl:self.zh+1], rescale)
-# #                         grad_f[ind_f][0] = rescale_volume_by_resampling(bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gy'})[..., self.zl:self.zh+1], rescale)
-# #                         grad_f[ind_f][0] = rescale_volume_by_resampling(bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gz'})[..., self.zl:self.zh+1], rescale)
-# #                 else:
-# #                     if rescale is None:
-# #                         grad_f[ind_f][0] = bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gx'})
-# #                         grad_f[ind_f][1] = bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gy'})
-# #                         grad_f[ind_f][2] = bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gz'})
-# #                     else:
-# #                         grad_f[ind_f][0] = rescale_volume_by_resampling(bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gx'}), rescale)
-# #                         grad_f[ind_f][1] = rescale_volume_by_resampling(bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gy'}), rescale)
-# #                         grad_f[ind_f][2] = rescale_volume_by_resampling(bp.unpack_ndarray_file(gradient_filepath_map_f[ind_f] % {'suffix': 'gz'}), rescale)
-
-# #                 sys.stderr.write('load gradient %s: %f seconds\n' % (ind_f, time.time() - t)) # ~6s
-
-# #             sys.stderr.write('overall: %f seconds\n' % (time.time() - t1)) # ~100s
-
 
     def get_valid_voxels_after_transform(self, T, tf_type, ind_m, return_valid, n_sample=None):
         """
@@ -416,7 +335,6 @@ class Aligner(object):
             valid_moving_voxel_indicator = np.zeros((num_nz,), np.bool)
 
             # t = time.time()
-            import random
             random_indices = np.array(sorted(random.sample(range(num_nz), min(num_nz, n_sample))))
             # NOTE: sorted is important
             # sys.stderr.write('random_indices: %.2f seconds\n' % (time.time() - t))
@@ -552,39 +470,6 @@ class Aligner(object):
         xs_prime_valid = xs_prime_valid.astype(np.float)
         ys_prime_valid = ys_prime_valid.astype(np.float)
         zs_prime_valid = zs_prime_valid.astype(np.float)
-
-#         t = time.time()
-
-#         # Sample within valid voxels.
-#         # Note that sampling takes time. Maybe it is better not sampling.
-#         if num_samples is not None:
-
-#             # t = time.time()
-#             n_valid = np.count_nonzero(valid_moving_voxel_indicators)
-#             # Typical n ranges from 63984 to 451341
-#             # sys.stderr.write("count_nonzero: %.2f s\n" % (time.time() - t))
-#             n_sample = min(num_samples, n_valid)
-#             sys.stderr.write('%d: use %d samples out of %d valid\n' % (ind_m, n_sample, n_valid))
-#             import random
-#             ii = sorted(random.sample(range(n_valid), n_sample))
-
-#             S_m_valid_scores = S_m_valid_scores[ii]
-#             dxs = dxs[ii]
-#             dys = dys[ii]
-#             dzs = dzs[ii]
-#             Sx = Sx[ii]
-#             Sy = Sy[ii]
-#             Sz = Sz[ii]
-#             xs_prime_valid = xs_prime_valid[ii]
-#             ys_prime_valid = ys_prime_valid[ii]
-#             zs_prime_valid = zs_prime_valid[ii]
-
-#             if tf_type == 'bspline':
-#                 NuNvNw_allTestPts = NuNvNw_allTestPts[ii]
-#         # else:
-#         #     n_sample = n_valid
-
-#         sys.stderr.write("sample: %.2f s\n" % (time.time() - t))
 
         if tf_type == 'rigid' or tf_type == 'affine':
 
@@ -868,9 +753,6 @@ class Aligner(object):
         Args:
             params ((12,)-array): the parameter vector around which the neighborhood is taken.
         """
-
-        from itertools import product
-
         if parallel:
             #parallel
             pool = Pool(processes=12)
@@ -1060,11 +942,6 @@ class Aligner(object):
                                                                                          eta=grid_search_eta, stop_radius_voxel=stop_radius_voxel,
                                                     return_best_score=True,
                                                                                         parallel=parallel, init_T=init_T)
-        # T = np.r_[1,0,0, tx_best, 0,1,0, ty_best, 0,0,1, tz_best]
-        # T = affine_components_to_vector(tx_best, ty_best, tz_best, theta_xy_best)
-        # d_mat = np.vstack([affine_components_to_vector(dx_best, dy_best, dz_best, dthetaxy_best).reshape((3,4)), (0,0,0,1)])
-        # init_T_mat = np.vstack([init_T.reshape((3,4)), (0,0,0,1)])
-        # T = np.dot(d_mat, init_T_mat)[:3].flatten()
         return T, grid_search_score
 
     def optimize(self, tf_type, init_T=None, label_weights=None, \
@@ -1254,16 +1131,7 @@ class Aligner(object):
         if indices_m is None:
             indices_m = self.all_indices_m
 
-        # print 'T:', np.ravel(T)
-        # t = time.time()
         score, grad = self.compute_score_and_gradient(T, tf_type='rigid', num_samples=num_samples, indices_m=indices_m)
-        # sys.stderr.write("compute_score_and_gradient: %.2f s\n" % (time.time() - t))
-        # grad is (6,)-array
-        # Here grad is dObjective/d\epsilon. epsilon is the small adjustment in the linearization of manifold at current estimate.
-
-        #print('score:', score)
-        #print('grad:', grad)
-
         # # AdaGrad Rule
         grad_historical += grad**2
         grad_adjusted = grad / np.sqrt(grad_historical + epsilon)
@@ -1273,35 +1141,6 @@ class Aligner(object):
             sys.stderr.write('Norm of gradient (translation) = %f\n' % np.linalg.norm(grad_adjusted[:3]))
             sys.stderr.write('Norm of gradient (rotation) = %f\n' % np.linalg.norm(grad_adjusted[3:]))
 
-        # AdaDelta Rule
-        # Does not work, very unstable!
-
-        # gamma = .9
-        # epsilon = 1e-8
-        # grad_historical = gamma * grad_historical + (1-gamma) * grad**2
-        # v_opt = np.sqrt(sq_updates_historical + epsilon)/np.sqrt(grad_historical + epsilon)*grad
-        # sq_updates_historical = gamma * sq_updates_historical + (1-gamma) * v_opt**2
-
-        # print 'grad = %s' % grad
-        # print 'grad_historical = %s' % grad_historical
-        # print 'sq_updates_historical = %s' % sq_updates_historical
-
-        ########### New ############
-
- #       epsilon_opt = lr * grad_adjusted # no minus sign because we are maximizing objective instead of minimizing.
- #       # epsilon_opt is the optimal small adjustment in the linearization of manifold from the current estimate.
-
- #       exp_w_skew, Vt = matrix_exp_v(epsilon_opt) # 3x3, 3x1
- #       exp_epsilon_opt = np.vstack([np.c_[exp_w_skew, Vt], [0,0,0,1]]) # 4x4
- #       T4x4 = np.vstack([np.reshape(T, (3,4)), [0,0,0,1]]) # 4x4
- #       newT4x4 = np.dot(exp_epsilon_opt, T4x4)
- #       R_new = newT4x4[:3, :3]
- #       t_new = newT4x4[:3, 3]
-
- #       print '=========================================='
- #       print R_new
- #       print t_new
- #       print '=========================================='
 
         ############ Old ############
         v_opt = lr * grad_adjusted # no minus sign because we are maximizing objective instead of minimizing.
@@ -1317,22 +1156,6 @@ class Aligner(object):
         R = Tm[:, :3]
         R_new = np.dot(exp_w, R)
         t_new = np.dot(exp_w, t) + Vt
-        # t_new = t + Vt
-        # print 't_new', t_new
-        #print('==========================================')
-        #print R
-        #print R_new # BAD
-        #print t_new # BAD
-        #print exp_w # BAD
-        #print Vt # BAD
-        #print(v_opt)
-        #print(lr)
-        #print(grad_adjusted)
-
-        #print t
-        #print Tm
-        #print('==========================================')
-        ###########################
 
         euler_angles_R_new = rotationMatrixToEulerAngles(R_new) # (around x, around y, around z)
         if self.verbose:
@@ -1394,11 +1217,6 @@ class Aligner(object):
 
         score, grad = self.compute_score_and_gradient(T, tf_type=tf_type, num_samples=num_samples, indices_m=indices_m)
 
-        # if surround:
-        #     s_surr, dMdA_surr = compute_score_and_gradient(T, name, surround=True, num_samples=num_samples)
-        #     dMdA -= surround_weight * dMdA_surr
-        #     score -= surround_weight * s_surr
-
         # AdaGrad Rule
         grad_historical += grad**2
         grad_adjusted = grad / np.sqrt(grad_historical + 1e-10)
@@ -1419,13 +1237,6 @@ class Aligner(object):
                 new_T[5] = np.sign(new_T[5]) * np.abs(new_T[5])
                 new_T[10] = np.sign(new_T[10]) * np.abs(new_T[10])
 
-        # AdaDelta Rule
-        # gamma = .9
-        # epsilon = 1e-10
-        # grad_historical = gamma * grad_historical + (1-gamma) * grad**2
-        # update = np.sqrt(sq_updates_historical + epsilon)/np.sqrt(grad_historical + epsilon)*grad
-        # new_T = T + update
-        # sq_updates_historical = gamma * sq_updates_historical + (1-gamma) * update**2
 
         if tf_type == 'affine' or tf_type == 'rigid':
             sys.stderr.write("in T: %.2f %.2f %.2f, out T: %.2f %.2f %.2f\n" % (T[3], T[7], T[11], new_T[3], new_T[7], new_T[11]))

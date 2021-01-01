@@ -26,7 +26,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_alignment import load_hdf, one_liner_to_arr, convert_resolution_string_to_um
 from utilities.file_location import CSHL_DIR as VOLUME_ROOTDIR, FileLocationManager
-from utilities.coordinates_converter import CoordinatesConverter
+from utilities.atlas.coordinates_converter import CoordinatesConverter
 SECTION_THICKNESS = 20. # in um
 REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_registration_parameters'
 MESH_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_meshes'
@@ -1102,66 +1102,6 @@ def load_all_structures_and_origins(stack_spec, structures, in_bbox_wrt='canonic
             for k, (volume, origin) in list(volumes.items())}
 
 
-def get_domain_origin(stack, domain, resolution, loaded_cropbox_resolution='down32'):
-    """
-    Loads the 3D origin of a domain for a given stack.
-
-    If specimen, the origin is wrt to wholebrain.
-    If atlas, the origin is wrt to atlas space.
-
-    Use this in combination with convert_frame_and_resolution().
-
-    Args:
-        domain (str): domain name
-        resolution (str): output resolution
-        loaded_cropbox_resolution (str): the resolution in which the loaded crop boxes are defined
-    """
-
-    out_resolution_um = convert_resolution_string_to_voxel_size(stack, resolution)
-
-    if stack.startswith('atlas'):
-        if domain == 'atlasSpace':
-            origin_loadedResol = np.zeros((3,))
-            loaded_cropbox_resolution_um = 0. # does not matter
-        elif domain == 'canonicalAtlasSpace':
-            origin_loadedResol = np.zeros((3,))
-            loaded_cropbox_resolution_um = 0. # does not matter
-        elif domain == 'atlasSpaceBrainstem': # obsolete?
-            b = load_original_volume_bbox(stack=stack, volume_type='score',
-                                    downscale=32,
-                                      structure='7N_L')
-            origin_loadedResol = b[[0,2,4]]
-            loaded_cropbox_resolution_um = convert_resolution_string_to_voxel_size(stack='MD589', resolution='down32')
-        else:
-            raise
-    else:
-
-        loaded_cropbox_resolution_um = convert_resolution_string_to_voxel_size(resolution=loaded_cropbox_resolution, stack=stack)
-
-        if domain == 'wholebrain':
-            origin_loadedResol = np.zeros((3,))
-        elif domain == 'wholebrainXYcropped':
-            # alignedBrainstemCrop wrt. alignedPadded
-            crop_xmin_rel2uncropped, crop_ymin_rel2uncropped = metadata_cache['cropbox'][stack][[0,2]]
-            origin_loadedResol = np.array([crop_xmin_rel2uncropped, crop_ymin_rel2uncropped, 0])
-        elif domain == 'brainstemXYfull':
-            s1, s2 = metadata_cache['section_limits'][stack]
-            crop_zmin_rel2uncropped = int(np.floor(np.mean(DataManager.convert_section_to_z(stack=stack, sec=s1, downsample=32, z_begin=0))))
-            origin_loadedResol = np.array([0, 0, crop_zmin_rel2uncropped])
-        elif domain == 'brainstem':
-            crop_xmin_rel2uncropped, crop_ymin_rel2uncropped = metadata_cache['cropbox'][stack][[0,2]]
-            s1, s2 = metadata_cache['section_limits'][stack]
-            crop_zmin_rel2uncropped = int(np.floor(np.mean(DataManager.convert_section_to_z(stack=stack, sec=s1, downsample=32, z_begin=0))))
-            origin_loadedResol = np.array([crop_xmin_rel2uncropped, crop_ymin_rel2uncropped, crop_zmin_rel2uncropped])
-        elif domain == 'brainstemXYFullNoMargin':
-            origin_loadedResol = np.loadtxt(DataManager.get_intensity_volume_bbox_filepath_v2(stack='MD589', prep_id=4, downscale=32)).astype(np.int)[[0,2,4]]
-        else:
-            raise "Domain %s is not recognized.\n" % domain
-
-    origin_outResol = origin_loadedResol * loaded_cropbox_resolution_um / out_resolution_um
-
-    return origin_outResol
-
 def get_original_volume_basename(stack, prep_id=None, detector_id=None, resolution=None, downscale=None, structure=None, volume_type='score', **kwargs):
     """
     Args:
@@ -1281,7 +1221,7 @@ def convert_section_to_z(sec, downsample=None, resolution=None, stack=None, mid=
     if downsample is not None:
         resolution = 'down%d' % downsample
 
-    voxel_size_um = convert_resolution_string_to_voxel_size(resolution=resolution, stack=stack)
+    voxel_size_um = convert_resolution_string_to_um(stack=stack, resolution=resolution)
     section_thickness_in_voxel = SECTION_THICKNESS / voxel_size_um # Voxel size in z direction in unit of x,y pixel.
     # if first_sec is None:
     #     # first_sec, _ = DataManager.load_cropbox(stack)[4:]
@@ -1439,7 +1379,7 @@ def transform_points(pts, transform):
     A = T[:, :3]
 
     if len(np.atleast_2d(pts)) == 1:
-            pts_prime = np.dot(A, np.array(pts).T) + t
+        pts_prime = np.dot(A, np.array(pts).T) + t
     else:
         pts_prime = np.dot(A, np.array(pts).T) + t[:,None]
 
@@ -3357,12 +3297,10 @@ def load_mean_shape(atlas_name, structure, resolution):
     Returns:
         (volume, origin_wrt_meanShapeCentroid)
     """
-    volume_filepath = get_mean_shape_filepath(atlas_name=atlas_name, structure=structure, what='volume', resolution=resolution)
-    volume = load_data(volume_filepath, filetype='npy')
-    origin_filepath = get_mean_shape_filepath(atlas_name=atlas_name, structure=structure, what='origin_wrt_meanShapeCentroid', resolution=resolution)
-    origin_wrt_meanShapeCentroid = load_data(origin_filepath, filetype='txt')
-    print('volume filepath', volume_filepath)
-    print('origin filepath', origin_filepath)
+    volume_filepath = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/atlas_data', atlas_name, 'structure', f'{structure}.npy')
+    volume = np.load(volume_filepath)
+    origin_filepath = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/atlas_data', atlas_name, 'origin', f'{structure}.txt')
+    origin_wrt_meanShapeCentroid = np.loadtxt(origin_filepath)
     return volume, origin_wrt_meanShapeCentroid
 
 def save_original_volume(volume, stack_spec, structure=None, wrt='wholebrain', **kwargs):
@@ -3406,3 +3344,21 @@ def load_transformed_volume_v2(alignment_spec, resolution=None, structure=None, 
     else:
         return convert_volume_forms((vol, origin), out_form=('volume','bbox'))
 
+
+def get_domain_origin(stack, domain, resolution, loaded_cropbox_resolution='down32'):
+    """
+    Loads the 3D origin of a domain for a given stack.
+    If specimen, the origin is wrt to wholebrain.
+    If atlas, the origin is wrt to atlas space.
+    Use this in combination with convert_frame_and_resolution().
+    Args:
+        domain (str): domain name
+        resolution (str): output resolution
+        loaded_cropbox_resolution (str): the resolution in which the loaded crop boxes are defined
+    """
+    out_resolution_um = convert_resolution_string_to_um(stack, resolution)
+    loaded_cropbox_resolution_um = convert_resolution_string_to_um(resolution=loaded_cropbox_resolution, stack=stack)
+    origin_loadedResol = np.zeros((3,))
+    origin_outResol = origin_loadedResol * loaded_cropbox_resolution_um / out_resolution_um
+
+    return origin_outResol

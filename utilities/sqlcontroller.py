@@ -180,6 +180,14 @@ class SqlController(object):
 
         return structures_dict
 
+    def get_structures_list(self):
+        rows = self.session.query(Structure).filter(Structure.active.is_(True)).all()
+        structures = []
+        for structure in rows:
+            structures.append(structure.abbreviation)
+
+        return structures
+
     def get_sided_structures(self):
         """
         Not sure when/if this is needed, but will only return sided structures
@@ -188,7 +196,7 @@ class SqlController(object):
         rows = self.session.query(Structure).filter(Structure.active.is_(True)).all()
         structures = []
         for structure in rows:
-            if structure.abbreviation.contains('_'):
+            if "_" in structure.abbreviation:
                 structures.append(structure.abbreviation)
 
         return sorted(structures)
