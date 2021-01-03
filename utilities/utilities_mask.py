@@ -107,10 +107,10 @@ def fix_with_blob(img):
     :param img: 16 bit channel 1 image
     :return:
     """
-    #no_strip = remove_strip(img)
+    no_strip, _ = remove_strip(img)
     #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(12, 12))
     #no_strip = clahe.apply(no_strip)
-    no_strip = img.copy()
+    #no_strip = img.copy()
     ###### Threshold it so it becomes binary
     threshold = find_threshold(no_strip)
     ret, threshed = cv2.threshold(no_strip,threshold,255,cv2.THRESH_BINARY)
@@ -131,7 +131,7 @@ def fix_with_blob(img):
     centroids = output[3]
 
     # Find the blob that corresponds to the section.
-    row=find_main_blob(stats,no_strip)
+    row=find_main_blob(stats,img)
     blob_label=row[1]['blob_label']
 
     #extract the blob

@@ -71,6 +71,24 @@ class SqlController(object):
         """
         return self.session.query(Section).filter(Section.id == id).one()
 
+    def get_slide(self, id):
+        """
+        Args:
+            id: integer primary key
+
+        Returns: one slide
+        """
+        return self.session.query(Slide).filter(Slide.id == id).one()
+
+    def get_tif(self, id):
+        """
+        Args:
+            id: integer primary key
+
+        Returns: one tif
+        """
+        return self.session.query(SlideCziTif).filter(SlideCziTif.id == id).one()
+
     def get_sections(self, animal, channel):
         """
         The sections table is a view and it is already filtered by active and file_status = 'good'

@@ -13,7 +13,8 @@ import argparse
 
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from utilities.preprocessor import SlideProcessor, make_tif
+from utilities.preprocessor import SlideProcessor
+from utilities.utilities_process import make_tif
 from sql_setup import session
 
 
@@ -63,7 +64,7 @@ def fix_tifs(animal, channel):
         file_id =  source_keys[source_files.index(missing)]
         section = sqlController.get_section(file_id)
         print(i, missing, file_id, section.id, section.file_name)
-        make_tif(session, animal, section.tif_id, file_id, testing=False)
+        make_tif(animal, section.tif_id, file_id, testing=False)
 
 def fix_prep_thumbnail(animal):
     sqlController = SqlController()
