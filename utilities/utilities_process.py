@@ -48,7 +48,7 @@ def test_dir(animal, dir, full=False, same_size=False):
     #thumbnail resolution thion is 14464 and min size for MD585 is 21954
     # so 10000 is a good min size
     # min size on NTB is 8.8K
-    min_size = 7000
+    min_size = 4000
     if full:
         min_size = min_size * SCALING_FACTOR * 1000
     sqlController = SqlController(animal)
@@ -68,7 +68,7 @@ def test_dir(animal, dir, full=False, same_size=False):
         heights.add(int(height))
         size = os.path.getsize(filepath)
         if size < min_size:
-            error += f"File is too small: {size} {filepath} \n"
+            error += f"{size} is less than min: {min_size} {filepath} \n"
     # picked 100 as an arbitrary number. the min file count is usually around 380 or so
     if len(files) > 100:
         min_width = min(widths)

@@ -90,8 +90,8 @@ def run_neuroglancer(animal, channel, full, suffix=None):
     channel_outdir = 'C{}T'.format(channel)
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
-    planar_resolution = sqlController.scan_run.resolution
-    resolution = int(planar_resolution * 1000 / SCALING_FACTOR)
+    resolution = sqlController.scan_run.resolution
+    resolution = int(resolution * 1000 / SCALING_FACTOR)
 
     if full:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
@@ -107,7 +107,7 @@ def run_neuroglancer(animal, channel, full, suffix=None):
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
 
-        resolution = int(planar_resolution * 1000)
+        resolution = int(resolution * 1000)
 
     NEUROGLANCER = os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
     if suffix is not None:

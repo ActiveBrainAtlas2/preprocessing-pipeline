@@ -34,9 +34,11 @@ def create_atlas(animal, create):
     origin_files = sorted(os.listdir(ORIGIN_PATH))
     volume_files = sorted(os.listdir(VOLUME_PATH))
     sqlController = SqlController(animal)
-    resolution = sqlController.scan_run.resolution
     surface_threshold = 0.8
+    resolution = sqlController.scan_run.resolution
     SCALE = (10 / resolution)
+    resolution = int(resolution * 1000 * SCALE)
+    print('Resolution at', resolution)
 
     structure_volume_origin = {}
     for volume_filename, origin_filename in zip(volume_files, origin_files):
@@ -99,9 +101,7 @@ def create_atlas(animal, create):
 
         print()
 
-    resolution = int(resolution * 1000 * SCALE)
     print('Shape of downsampled atlas volume', atlas_volume.shape)
-    print('Resolution at', resolution)
 
     if create:
         #atlasV7_volume = np.rot90(atlasV7_volume, axes=(0, 1))

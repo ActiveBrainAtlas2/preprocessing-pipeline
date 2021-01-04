@@ -192,6 +192,10 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
 
     if masks:
         INPUT = os.path.join(fileLocationManager.prep, 'rotated_masked')
+        error = test_dir(animal, INPUT, full=False, same_size=True)
+        if len(error) > 0:
+            print(error)
+            sys.exit()
         OUTPUT = os.path.join(fileLocationManager.prep, 'rotated_aligned_masked')
         bgcolor = 'black'
 
