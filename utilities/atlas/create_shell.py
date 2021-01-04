@@ -16,7 +16,7 @@ sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import mask_to_shell, NumpyToNeuroglancer
-from utilities.utilities_process import test_dir
+from utilities.utilities_process import test_dir, SCALING_FACTOR
 
 
 def create_shell(animal):
@@ -45,12 +45,10 @@ def create_shell(animal):
     volume = np.swapaxes(volume, 0, 2)
 
     resolution = sqlController.scan_run.resolution
-    SCALE = (10 / resolution)
-    resolution = int(resolution * 1000 * SCALE)
+    resolution = int(resolution * 1000 / SCALING_FACTOR)
     print('Resolution at', resolution)
 
-    offset = [0, 0, 0]
-    ng = NumpyToNeuroglancer(volume, [resolution, resolution, 20000], offset=offset)
+    ng = NumpyToNeuroglancer(volume, [resolution, resolution, 20000], offset=[0,0,0])
     ng.init_precomputed(OUTPUT_DIR)
     #ng.add_segment_properties(get_segment_properties())
     ng.add_downsampled_volumes()

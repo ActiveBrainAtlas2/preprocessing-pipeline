@@ -7,8 +7,6 @@ This file does the following operations:
     To create jp2, first create uncompressed tif files and then use Matlab to create the jp2 files.
     The Matlab script is in registration/tif2jp2.sh
 """
-import os
-import sys
 import argparse
 
 from utilities.utilities_process import make_tifs

@@ -15,12 +15,11 @@ from tqdm import tqdm
 
 from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK, CLEAN_CHANNEL_1_FULL_RES_WITH_MASK, \
     CLEAN_CHANNEL_2_FULL_RES_WITH_MASK, CLEAN_CHANNEL_3_FULL_RES_WITH_MASK
-from utilities.utilities_alignment import get_last_2d, SCALING_FACTOR
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
-from utilities.utilities_process import test_dir
+from utilities.utilities_process import get_last_2d, test_dir, SCALING_FACTOR
 
 
 def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height):

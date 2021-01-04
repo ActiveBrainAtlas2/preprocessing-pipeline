@@ -20,8 +20,8 @@ from sql_setup import ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX, ALIGN_CHANNEL_1_F
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_alignment import (load_consecutive_section_transform,
-                                         convert_resolution_string_to_um, SCALING_FACTOR)
-from utilities.utilities_process import workernoshell, workershell, test_dir
+                                         convert_resolution_string_to_um)
+from utilities.utilities_process import workernoshell, workershell, test_dir, SCALING_FACTOR
 
 ELASTIX_BIN = '/usr/bin/elastix'
 

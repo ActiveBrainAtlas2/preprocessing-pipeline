@@ -14,9 +14,6 @@ from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 
 
-SCALING_FACTOR = 0.03125
-
-
 def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_fn=None):
     """
     Args:
@@ -405,13 +402,5 @@ def convert_resolution_string_to_um(stack, resolution):
     else:
         print(resolution)
         raise Exception("Unknown resolution string %s" % resolution)
-
-
-
-def get_last_2d(data):
-    if data.ndim <= 2:
-        return data
-    m,n = data.shape[-2:]
-    return data.flat[:m*n].reshape(m,n)
 
 
