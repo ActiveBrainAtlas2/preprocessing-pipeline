@@ -167,6 +167,31 @@ def make_tifs(animal, channel, njobs, compression):
             slide_czi_to_tif.file_size = os.path.getsize(tif_path)
             sqlController.update_row(slide_czi_to_tif)
 
+def make_scenes(animal):
+    fileLocationManager = FileLocationManager(animal)
+    INPUT = fileLocationManager.tif
+    OUTPUT = fileLocationManager.thumbnail_web
+    convert_commands = []
+    tifs = os.listdir(INPUT)
+    for tif in tifs:
+        tif_path = os.path.join(INPUT, tif)
+        if not tif.endswith('_C1.tif'):
+            continue
+
+        png = tif.replace('tif', 'png')
+        png_path = os.path.join(OUTPUT, png)
+        if os.path.exists(png_path):
+            continue
+
+        # convert tif to png
+        cmd = ['convert', tif_path, '-resize', '3.125%', '-normalize', png_path]
+        convert_commands.append(cmd)
+
+
+    with Pool(4) as p:
+        p.map(workernoshell, convert_commands)
+
+
 def make_tif(animal, tif_id, file_id, testing=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)

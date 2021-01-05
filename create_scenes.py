@@ -16,10 +16,9 @@ from utilities.utilities_process import workernoshell
 
 def make_scenes(animal, njobs):
     """
-    This loops through all czi files and :
-    1. Creates up to 20 tif files for each index, but just the first channel
+    This loops through all existing tif files in DKXX/czi:
+    1. Creates up to 4 tif files for each czi, but just the first channel
     2. Loops through all those tif files and creates a png file
-    3. deletes the tif files
     Args:
         animal: the prep id of the animal
         njobs: number of jobs for parallel computing

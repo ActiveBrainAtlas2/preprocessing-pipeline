@@ -9,8 +9,7 @@ This file does the following operations:
 """
 import argparse
 
-from utilities.utilities_process import make_tifs
-
+from utilities.utilities_process import make_tifs, make_scenes
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
@@ -26,3 +25,4 @@ if __name__ == '__main__':
     compression = args.compression
 
     make_tifs(animal, channel, njobs, compression)
+    make_scenes(animal)
