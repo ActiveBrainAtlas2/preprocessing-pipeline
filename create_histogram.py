@@ -43,6 +43,12 @@ def make_histogram(animal, channel):
     for tif in tqdm(tifs):
         input_path = os.path.join(INPUT, tif.file_name)
         output_path = os.path.join(OUTPUT, os.path.splitext(tif.file_name)[0] + '.png')
+        if not os.path.exists(input_path):
+            print('Input tif does not exist', input_path)
+            continue
+
+        if os.path.exists(output_path):
+            continue
 
         try:
             img = io.imread(input_path)
