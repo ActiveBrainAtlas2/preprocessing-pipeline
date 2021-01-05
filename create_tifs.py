@@ -25,4 +25,5 @@ if __name__ == '__main__':
     compression = args.compression
 
     make_tifs(animal, channel, njobs, compression)
-    make_scenes(animal)
+    if channel == 1:
+        make_scenes(animal)

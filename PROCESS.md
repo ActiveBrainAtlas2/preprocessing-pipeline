@@ -4,11 +4,12 @@
 1. Run: `create_meta.py --animal DKXX`
     1. This will scan each czi file
     2. Extracts the tif meta information and inserts into the slide_czi_to_tif table
-1. Run: `create_scenes.py --animal DKXX`
-    1. This will scan each czi file
-    1. Extracts every tif image and makes a thumbnail, ususally around 20 png files per czi
-    1. Verify the png files are rotated correctly. If not, use Imagemagick convert to rotate all files 
-    in the directory. `for i in slide_*.png; do convert $i -rotate 90 $i; done`
+1. Run: `python create_tifs.py --animal DKXX --channel 1` 
+    1. This will read the sections view in the database. This can be run before the QC section
+       below. Doing that will create some extra unused tifs, but that is not a problem.
+    1. Create tif files for channel 1
+    1. Create png files for channel 1
+    1. Repeat process for the other 2 channels when ready
 1. Have someone confirm the status of each slide in: https://activebrainatlas.ucsd.edu/activebrainatlas/admin
     1. After logging in, go to the Slides link in the Brain category
     1. Enter the animal name in the search box
@@ -20,10 +21,6 @@
     1. The list of scenes are listed near the bottom of the page. 
     1. When you are done, click one of the Save buttons at the bottom of the page
     1. After editing the slides, you can view the list of sections under the Sections link under Brain
-1. Run: `python create_tifs.py --animal DKXX --channel 1` 
-    1. This will read the sections table in the database
-    1. Create tif files for channel 1
-    1. Repeat process for the other 2 channels when ready
 1. Run: `python create_preps.py --animal DKXX --channel 1 --resolution full --njobs 8` 
     1. This will fill the directory of the full resolution files for channel 1
     1. Repeat process for the other 2 channels when ready

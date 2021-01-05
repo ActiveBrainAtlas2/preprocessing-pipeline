@@ -122,7 +122,7 @@ def fix_thion(infile, mask, maskfile, ROTATED_MASKS,  logger, rotation, flip, ma
     return fixed
 
 
-def masker(animal, channel, flip, rotation=0, full=False):
+def masker(animal, channel, full=False):
     """
     Main method that starts the cleaning/rotating process.
     :param animal:  prep_id of the animal we are working on.
@@ -149,6 +149,8 @@ def masker(animal, channel, flip, rotation=0, full=False):
     os.makedirs(ROTATED_MASKS, exist_ok=True)
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
+    rotation = sqlController.scan_run.rotation
+    flip = sqlController.scan_run.flip
     max_width = int(width * SCALING_FACTOR)
     max_height = int(height * SCALING_FACTOR)
     bgcolor = 0
@@ -207,16 +209,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--rotation', help='Enter rotation', required=False, default=0)
-    parser.add_argument('--flip', help='Enter flip or flop', required=False)
     parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
-    rotation = int(args.rotation)
-    flip = args.flip
     full = bool({'full': True, 'thumbnail': False}[args.resolution])
 
-    masker(animal, channel, flip, rotation, full)
+    masker(animal, channel, full)
 

@@ -28,6 +28,9 @@ class ScanRun(Base, AtlasModel):
     ch_4_filter_set = Column(Enum("68", "47", "38", "46", "63", "64", "50"))
     width = Column(Integer, default=0, nullable=False)
     height = Column(Integer, default=0, nullable=False)
+    rotation = Column(Integer, default=0, nullable=False)
+    flip = Column(Enum("none", "flip", "flop"))
+
     comments = Column(String)
 
     slides = relationship('Slide', lazy=True)
