@@ -43,11 +43,6 @@ def make_full_resolution(animal, channel, compress=True):
     commands = []
     INPUT = os.path.join(fileLocationManager.tif)
     ##### Check if files in dir are valid
-    error = test_dir(animal, INPUT, full=True, same_size=False)
-    if len(error) > 0:
-        print(error)
-        sys.exit()
-
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
     os.makedirs(OUTPUT, exist_ok=True)
 

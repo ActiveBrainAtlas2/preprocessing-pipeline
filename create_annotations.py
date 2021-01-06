@@ -40,17 +40,20 @@ def make_annotations(animal):
 
     fileLocationManager = FileLocationManager(animal)
     section_images = {}
-    thumbnail_dir = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
-    for file_name in tqdm(sorted(os.listdir(thumbnail_dir))):
-        filepath = os.path.join(thumbnail_dir, file_name)
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
+    for file_name in tqdm(sorted(os.listdir(INPUT))):
+        filepath = os.path.join(INPUT, file_name)
         img = io.imread(filepath)
         section = int(file_name.split('.')[0])
 
         for structure in section_structure_vertices[section]:
             pts = section_structure_vertices[section][structure]
             points = np.array(pts, dtype=np.float64)
-            points = points // 32
-            cv2.polylines(img, [points], isClosed=True, color=(0, 0, 0), thickness=2)
+            points = (points / 32).astype(np.int32)
+            try:
+                cv2.polylines(img, [points], isClosed=True, color=(0, 0, 0), thickness=2)
+            except Exception as e:
+                print(f'Could not draw points with {structure} dtype {points.dtype} on {file_name}', e)
 
         section_images[section] = img
 

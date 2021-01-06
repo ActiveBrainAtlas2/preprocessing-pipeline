@@ -2,7 +2,7 @@
 This program creates histograms for each tif file or creates a combined histogram of all files.
 """
 import argparse
-import os
+import os, sys
 from collections import Counter
 from matplotlib import pyplot as plt
 from skimage import io
@@ -12,6 +12,7 @@ from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from sql_setup import CREATE_CHANNEL_1_HISTOGRAMS, CREATE_CHANNEL_2_HISTOGRAMS, CREATE_CHANNEL_3_HISTOGRAMS
+from utilities.utilities_process import test_dir
 
 COLORS = {1: 'b', 2: 'r', 3: 'g'}
 
@@ -30,8 +31,14 @@ def make_histogram(animal, channel):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = os.path.join(fileLocationManager.thumbnail)
-    OUTPUT = os.path.join(fileLocationManager.histogram)
     tifs = sqlController.get_sections(animal, channel)
+    error = test_dir(animal, INPUT, full=False, same_size=False)
+    if len(tifs) == 0:
+        error += " No sections in the database"
+    if len(error) > 0:
+        print(error)
+        sys.exit()
+    OUTPUT = os.path.join(fileLocationManager.histogram)
 
     if channel == 3:
         sqlController.set_task(animal, CREATE_CHANNEL_3_HISTOGRAMS)
