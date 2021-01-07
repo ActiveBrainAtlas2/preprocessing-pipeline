@@ -120,6 +120,7 @@ def make_tifs(animal, channel, njobs, compression):
     sqlController = SqlController(animal)
     INPUT = fileLocationManager.czi
     OUTPUT = fileLocationManager.tif
+    os.makedirs(OUTPUT, exist_ok=True)
     sections = sqlController.get_distinct_section_filenames(animal, channel)
 
     sqlController.set_task(animal, QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN)
@@ -147,7 +148,6 @@ def make_tifs(animal, channel, njobs, compression):
         if os.path.exists(output_path):
             continue
 
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         commands.append(cmd)
 
     with Pool(njobs) as p:
@@ -170,7 +170,9 @@ def make_tifs(animal, channel, njobs, compression):
 def make_scenes(animal):
     fileLocationManager = FileLocationManager(animal)
     INPUT = fileLocationManager.tif
-    OUTPUT = fileLocationManager.thumbnail_web
+    OUTPUT = os.path.join(fileLocationManager.thumbnail_web, 'scene')
+    os.makedirs(OUTPUT, exist_ok=True)
+
     convert_commands = []
     tifs = os.listdir(INPUT)
     for tif in tifs:
