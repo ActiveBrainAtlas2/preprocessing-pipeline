@@ -21,10 +21,9 @@ from utilities.file_location import DATA_PATH, ROOT_DIR
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
 
 
-def create_atlas(animal, create):
+def create_atlas(animal, create, surface_threshold):
 
     atlas_name = 'atlasV8'
-    surface_threshold = 0.8
     ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
     ORIGIN_PATH = os.path.join(ATLAS_PATH, 'origin')
     VOLUME_PATH = os.path.join(ATLAS_PATH, 'structure')
@@ -129,8 +128,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--create', help='create volume', required=False, default='false')
+    parser.add_argument('--level', help='surface threshold', required=False, default=0.8)
     args = parser.parse_args()
     animal = args.animal
     create = bool({'true': True, 'false': False}[args.create.lower()])
-    create_atlas(animal, create)
+    level = float(args.level)
+    create_atlas(animal, create, level)
 
