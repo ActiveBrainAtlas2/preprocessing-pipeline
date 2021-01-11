@@ -161,10 +161,12 @@ for structure in tqdm(structures):
     # Save mean shape.
     volume_filename = f'{structure}.npy'
     volume_filepath = os.path.join(ATLAS_PATH, 'structure', volume_filename)
+    os.makedirs(os.path.dirname(volume_filepath), exist_ok=True)
     np.save(volume_filepath, np.ascontiguousarray(mean_shape_wrt_templateCentroid[0]))
 
     origin_filename = f'{structure}.txt'
     origin_filepath = os.path.join(ATLAS_PATH, 'origin', origin_filename)
+    os.makedirs(os.path.dirname(origin_filepath), exist_ok=True)
     np.savetxt(origin_filepath, mean_shape_wrt_templateCentroid[1])
 
 ##### Combine standard shapes with standard centroid locations
@@ -178,6 +180,7 @@ for structure in tqdm(structures):
 
     volume_filename = f'{structure}.npy'
     volume_filepath = os.path.join(ATLAS_PATH, 'structure', volume_filename)
+    os.makedirs(os.path.dirname(volume_filepath), exist_ok=True)
     volume = np.load(volume_filepath)
 
     if '_L' in structure:
@@ -189,6 +192,7 @@ for structure in tqdm(structures):
     aligned_origin = aligned_tuple[1]
 
     # write over origin
+    os.makedirs(os.path.dirname(origin_filepath), exist_ok=True)
     np.savetxt(origin_filepath, aligned_origin)
 
     # write over numpy volume
@@ -200,4 +204,5 @@ for structure in tqdm(structures):
                                            num_simplify_iter=3, smooth=False,
                                            return_vertex_face_list=False)
     mesh_filepath = os.path.join(ATLAS_PATH, 'mesh', f'{structure}.stl')
+    os.makedirs(os.path.dirname(mesh_filepath), exist_ok=True)
     save_mesh_stl(aligned_mesh, mesh_filepath)
