@@ -6,6 +6,7 @@ Authors, Edward and Litao
 """
 import argparse
 import os
+import shutil
 import sys
 import ast
 import json
@@ -20,23 +21,24 @@ from skimage import io
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 
-sys.path.append(os.path.join(os.getcwd(), '../'))
+HOME = os.path.expanduser("~")
+PATH = os.path.join(HOME, 'programming/pipeline_utility')
+sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from utilities.alignment_utility import SCALING_FACTOR, load_consecutive_section_transform, create_warp_transforms, \
+from utilities.utilities_alignment import load_consecutive_section_transform, create_warp_transforms, \
     transform_create_alignment
-from utilities.contour_utilities import get_contours_from_annotations
+from utilities.atlas.utilities_contour import get_contours_from_annotations
+from utilities.utilities_process import SCALING_FACTOR
 
-
-def create_structures(animal):
+def create_structures(animal, create):
     """
     This is the important method called from main. This does all the work.
     Args:
         animal: string to identify the animal/stack
 
     Returns:
-        Nothing, creates a directory of the precomputed volume. Copy this directory somewhere apache can read it. e.g.,
-        /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/
+        Nothing, creates a directory of the precomputed volume under the neuroglancer_data dir
     """
 
 
@@ -46,7 +48,15 @@ def create_structures(animal):
     THUMBNAIL_PATH = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
     CSV_PATH = '/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_brain_annotations'
     CLEANED = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
-    PRECOMPUTE_PATH = f'/net/birdstore/Active_Atlas_Data/data_root/atlas_data/foundation_brain_annotations/{animal}'
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'structures')
+    if os.path.exists(OUTPUT_DIR) and create:
+        shutil.rmtree(OUTPUT_DIR)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    resolution = sqlController.scan_run.resolution
+    SCALE = (10 / resolution)
+    resolution = int(resolution * 1000 * SCALE)
+    print('Resolution at', resolution)
+
 
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
@@ -130,11 +140,11 @@ def create_structures(animal):
     pr5_sections = []
     other_structures = set()
     volume = np.zeros((aligned_shape[1], aligned_shape[0], num_section), dtype=np.uint8)
-    for section in section_structure_vertices:
+    for section in tqdm(section_structure_vertices):
         template = np.zeros((aligned_shape[1], aligned_shape[0]), dtype=np.uint8)
         for structure in section_structure_vertices[section]:
             points = np.array(section_structure_vertices[section][structure])
-            points = points // 32
+            points = points / 32
             points = points + section_offset[section]  # create_clean offset
             points = transform_create_alignment(points, section_transform[section])  # create_alignment transform
             points = points.astype(np.int32)
@@ -146,7 +156,6 @@ def create_structures(animal):
 
             if section in missing_list:
                 fill_sections[structure][section] = points
-
 
             if 'pr5' in structure.lower():
                 pr5_sections.append(section)
@@ -162,10 +171,10 @@ def create_structures(animal):
             cv2.polylines(template, [points], True, color, 2, lineType=cv2.LINE_AA)
         volume[:, :, section - 1] = template
 
-    print('Pr5 sections')
-    for s in sorted(pr5_sections):
-        print(s)
-    sys.exit()
+    if len(pr5_sections) > 0:
+        print('Pr5 sections')
+        for s in sorted(pr5_sections):
+            print(s)
     # fill up missing sections
     template = np.zeros((aligned_shape[1], aligned_shape[0]), dtype=np.uint8)
     for structure, v in fill_sections.items():
@@ -176,14 +185,15 @@ def create_structures(animal):
     volume_filepath = os.path.join(CSV_PATH, f'{animal}_annotations.npy')
 
     volume = np.swapaxes(volume, 0, 1)
-    print('Saving:', volume_filepath, 'with shape', volume.shape)
-    with open(volume_filepath, 'wb') as file:
-        np.save(file, volume)
+    if create:
+        print('Saving:', volume_filepath, 'with shape', volume.shape)
+        with open(volume_filepath, 'wb') as file:
+            np.save(file, volume)
 
 
     # now use 9-1 notebook to convert to a precomputed.
     # Voxel resolution in nanometer (how much nanometer each element in numpy array represent)
-    resol = (14464, 14464, 20000)
+    #resolution = (14464, 14464, 20000)
     # Voxel offset
     offset = (0, 0, 0)
     # Layer type
@@ -200,57 +210,59 @@ def create_structures(animal):
                         'Cb', 'Pr5VL', 'APT', 'Gr', 'RR', 'InC', 'X', 'EW']
     segmentation_properties += [(len(structure_dict) + index + 1, structure) for index, structure in enumerate(extra_structures)]
 
-    cloudpath = f'file://{PRECOMPUTE_PATH}'
-    info = CloudVolume.create_new_info(
-        num_channels = num_channels,
-        layer_type = layer_type,
-        data_type = str(volume.dtype), # Channel images might be 'uint8'
-        encoding = 'raw', # raw, jpeg, compressed_segmentation, fpzip, kempressed
-        resolution = resol, # Voxel scaling, units are in nanometers
-        voxel_offset = offset, # x,y,z offset in voxels from the origin
-        chunk_size = [64, 64, 64], # units are voxels
-        volume_size = volume.shape, # e.g. a cubic millimeter dataset
-    )
-    vol = CloudVolume(cloudpath, mip=0, info=info, compress=False)
-    vol.commit_info()
-    vol[:, :, :] = volume[:, :, :]
+    if create:
+        cloudpath = f'file://{OUTPUT_DIR}'
+        info = CloudVolume.create_new_info(
+            num_channels = num_channels,
+            layer_type = layer_type,
+            data_type = str(volume.dtype), # Channel images might be 'uint8'
+            encoding = 'raw', # raw, jpeg, compressed_segmentation, fpzip, kempressed
+            resolution = [resolution, resolution, 20000], # Voxel scaling, units are in nanometers
+            voxel_offset = offset, # x,y,z offset in voxels from the origin
+            chunk_size = [64, 64, 64], # units are voxels
+            volume_size = volume.shape, # e.g. a cubic millimeter dataset
+        )
+        vol = CloudVolume(cloudpath, mip=0, info=info, compress=False)
+        vol.commit_info()
+        vol[:, :, :] = volume[:, :, :]
 
-    vol.info['segment_properties'] = 'names'
-    vol.commit_info()
+        vol.info['segment_properties'] = 'names'
+        vol.commit_info()
 
-    segment_properties_path = os.path.join(PRECOMPUTE_PATH, 'names')
-    os.makedirs(segment_properties_path, exist_ok=True)
+        segment_properties_path = os.path.join(OUTPUT_DIR, 'names')
+        os.makedirs(segment_properties_path, exist_ok=True)
 
-    info = {
-        "@type": "neuroglancer_segment_properties",
-        "inline": {
-            "ids": [str(number) for number, label in segmentation_properties],
-            "properties": [{
-                "id": "label",
-                "description": "Name of structures",
-                "type": "label",
-                "values": [str(label) for number, label in segmentation_properties]
-            }]
+        info = {
+            "@type": "neuroglancer_segment_properties",
+            "inline": {
+                "ids": [str(number) for number, label in segmentation_properties],
+                "properties": [{
+                    "id": "label",
+                    "description": "Name of structures",
+                    "type": "label",
+                    "values": [str(label) for number, label in segmentation_properties]
+                }]
+            }
         }
-    }
-    print('Creating names in', segment_properties_path)
-    with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
-        json.dump(info, file, indent=2)
+        print('Creating names in', segment_properties_path)
+        with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
+            json.dump(info, file, indent=2)
 
 
-    # Setting parallel to a number > 1 hangs the script. It still runs fast with parallel=1
-    tq = LocalTaskQueue(parallel=1)
-    tasks = tc.create_downsampling_tasks(cloudpath, compress=False) # Downsample the volumes
-    tq.insert(tasks)
-    tq.execute()
+        # Setting parallel to a number > 1 hangs the script. It still runs fast with parallel=1
+        tq = LocalTaskQueue(parallel=1)
+        tasks = tc.create_downsampling_tasks(cloudpath, compress=False) # Downsample the volumes
+        tq.insert(tasks)
+        tq.execute()
     print('Finished')
-    # delete tasks
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--create', help='create volume', required=False, default='false')
     args = parser.parse_args()
     animal = args.animal
-    create_structures(animal)
+    create = bool({'true': True, 'false': False}[args.create.lower()])
+    create_structures(animal, create)
 

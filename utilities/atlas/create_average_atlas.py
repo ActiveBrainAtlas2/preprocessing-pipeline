@@ -20,12 +20,14 @@ surface_level = 0.9
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import DATA_PATH
 from utilities.atlas.imported_atlas_utilities import volume_to_polydata, save_mesh_stl, \
-    load_original_volume_v2, get_centroid_3d, convert_transform_forms, transform_volume_v4, average_shape, \
+    get_centroid_3d, convert_transform_forms, transform_volume_v4, average_shape, \
     load_alignment_results_v3, transform_points, average_location, mirror_volume_v2, load_all_structures_and_origins, \
-    load_mean_shape
+    crop_volume_to_minimal
 from utilities.atlas.atlas_aligner import Aligner
 
 ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
+VOL_DIR = os.path.join(DATA_PATH, 'CSHL_volumes')
+
 fixed_brain_name = 'MD589'
 sqlController = SqlController(fixed_brain_name)
 structures = sqlController.get_structures_list()
@@ -80,29 +82,27 @@ transform_matrix_to_canonicalAtlasSpace_um = average_location(average_structure_
 
 
 for structure in tqdm(structures):
+
     # for structure in all_known_structures:
     # Load instance volumes.
     instance_volumes = []
     instance_source = []
 
-    for brain_name in [fixed_brain_name] + moving_brain_names:
-        brain_spec = {'name': brain_name, 'vol_type': 'annotationAsScore', 'resolution': atlas_resolution}
+    for animal in [fixed_brain_name] + moving_brain_names:
+        #brain_spec = {'name': animal, 'vol_type': 'annotationAsScore', 'resolution': atlas_resolution}
+
+        volume_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}.npy')
+        origin_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}_origin_wrt_wholebrain.txt')
+        volume = np.load(volume_filepath)
+        origin = np.loadtxt(origin_filepath)
+        volume, origin = crop_volume_to_minimal(vol=volume, origin=origin, return_origin_instead_of_bbox=True)
 
         if '_L' in structure:
-            left_instance_vol, _ = load_original_volume_v2(stack_spec=brain_spec,
-                                                           structure=structure,
-                                                           return_origin_instead_of_bbox=True,
-                                                           crop_to_minimal=True)
-            instance_volumes.append(left_instance_vol[..., ::-1])  # if left, mirror
-            instance_source.append((brain_name, 'L'))
-
+            instance_volumes.append(volume[..., ::-1])  # if left, mirror
+            instance_source.append((animal, 'L'))
         else:
-            right_instance_vol, _ = load_original_volume_v2(stack_spec=brain_spec,
-                                                            structure=structure,
-                                                            return_origin_instead_of_bbox=True,
-                                                            crop_to_minimal=True)
-            instance_volumes.append(right_instance_vol)  # if right, do not mirror
-            instance_source.append((brain_name, 'R'))
+            instance_volumes.append(volume)  # if right, do not mirror
+            instance_source.append((animal, 'R'))
 
     # Use the first instance as registration target.
     # Register every other instance to the first instance.

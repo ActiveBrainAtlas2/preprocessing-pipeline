@@ -3,7 +3,6 @@ import os
 
 DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
 ROOT_DIR = os.path.join(DATA_PATH, 'pipeline_data')
-CSHL_DIR = os.path.join(DATA_PATH, 'CSHL_volumes')
 
 
 class FileLocationManager(object):
@@ -16,7 +15,6 @@ class FileLocationManager(object):
                 stack: the animal brain name, AKA prep_id
         """
         self.root = ROOT_DIR
-        self.cshl = CSHL_DIR
         self.prep = os.path.join(ROOT_DIR, stack, 'preps')
 
         self.czi = os.path.join(ROOT_DIR, stack, 'czi')

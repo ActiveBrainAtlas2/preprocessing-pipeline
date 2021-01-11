@@ -172,7 +172,6 @@ class SqlController(object):
         :param abbrv: the abbreviation of the structure
         :return: structure object
         """
-
         return self.session.query(Structure).filter(Structure.abbreviation == func.binary(abbrv)).one()
 
     def get_structure_color_rgb(self, abbrv):
@@ -199,7 +198,7 @@ class SqlController(object):
         return structures_dict
 
     def get_structures_list(self):
-        rows = self.session.query(Structure).filter(Structure.active.is_(True)).all()
+        rows = self.session.query(Structure).filter(Structure.active.is_(True)).order_by(Structure.abbreviation.asc()).all()
         structures = []
         for structure in rows:
             structures.append(structure.abbreviation)
@@ -291,21 +290,24 @@ class SqlController(object):
         except NoResultFound:
             print(f'No structure for {abbreviation}')
         """
+        try:
+            structure = self.get_structure(str(abbreviation).strip())
+        except NoResultFound as nrf:
+            print('No structure found for ', abbreviation)
+            return
 
-        structure = self.get_structure(abbreviation)
         id = structure.id
 
         com = CenterOfMass(prep_id=animal, structure_id=id, x=x, y=y, section=section,
-                           created=datetime.now, active=True)
+                           created=datetime.utcnow(), active=True)
 
 
         try:
             self.session.add(com)
             self.session.commit()
-        except:
-            print(f'No merge for {abbreviation}')
+        except Exception as e:
+            print(f'No merge for {abbreviation} {e}')
             self.session.rollback()
-            raise
         finally:
             # close the Session.  This will expunge any remaining
             # objects as well as reset any existing SessionTransaction

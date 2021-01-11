@@ -24,17 +24,17 @@ from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToN
 def create_atlas(animal, create):
 
     atlas_name = 'atlasV8'
+    surface_threshold = 0.8
     ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
     ORIGIN_PATH = os.path.join(ATLAS_PATH, 'origin')
     VOLUME_PATH = os.path.join(ATLAS_PATH, 'structure')
-    OUTPUT_DIR = os.path.join(ROOT_DIR, 'structures', 'atlas')
+    OUTPUT_DIR = os.path.join(ROOT_DIR, 'structures', f'{atlas_name}_{surface_threshold}')
     if os.path.exists(OUTPUT_DIR) and create:
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     origin_files = sorted(os.listdir(ORIGIN_PATH))
     volume_files = sorted(os.listdir(VOLUME_PATH))
     sqlController = SqlController(animal)
-    surface_threshold = 0.8
     resolution = sqlController.scan_run.resolution
     SCALE = (10 / resolution)
     resolution = int(resolution * 1000 * SCALE)

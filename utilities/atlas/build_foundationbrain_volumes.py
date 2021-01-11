@@ -3,6 +3,7 @@ from timeit import  default_timer as timer
 import os, sys
 
 import numpy as np
+from scipy import ndimage
 import pandas as pd
 import ast
 
@@ -14,13 +15,15 @@ from utilities.atlas.utilities_contour import get_contours_from_annotations, cre
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import DATA_PATH
 
-xy_ng_resolution_um = 5
+xy_ng_resolution_um = 10
 color_radius = 3
 animal = 'MD589'
 sqlController = SqlController(animal)
 
 csvfile = os.path.join(DATA_PATH, 'atlas_data/foundation_brain_annotations',  f'{animal}_annotation.csv')
+#csvfile = os.path.join(DATA_PATH, 'atlas_data', f'{animal}_corrected_vertices.csv')
 hand_annotations = pd.read_csv(csvfile)
+
 hand_annotations['vertices'] = hand_annotations['vertices'] \
     .apply(lambda x: x.replace(' ', ',')) \
     .apply(lambda x: x.replace('\n', ',')) \
@@ -28,6 +31,7 @@ hand_annotations['vertices'] = hand_annotations['vertices'] \
     .apply(lambda x: x.replace(',,', ',')) \
     .apply(lambda x: x.replace(',,', ',')) \
     .apply(lambda x: x.replace(',,', ',')).apply(lambda x: x.replace(',,', ','))
+
 hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
 
 structures = sqlController.get_structures_dict()
@@ -38,6 +42,8 @@ x_length = 1000
 y_length = 1000
 z_length = 300
 for structure, values in structures.items():
+    if structure not in ['SC', '10N_L', '10N_R']:
+        continue
     try:
         color = values[1]
     except:
@@ -54,7 +60,13 @@ for structure, values in structures.items():
     volume, xyz_offsets = create_full_volume(contour_annotations, structure, first_sec, last_sec, \
         color_radius, xy_ng_resolution_um, threshold, color)
 
-    x, y, z = xyz_offsets
+
+    #x, y, z = xyz_offsets
+    volume = np.swapaxes(volume, 0 ,2)
+    #volume = np.rot90(volume, axes=(0, 1))
+    #volume = np.flip(volume, axis=0)
+    x, y, z = (np.array(xyz_offsets) + ndimage.measurements.center_of_mass(volume))
+
     print(structure, volume.shape, x,y,z)
     continue
     x_start = int(x) + x_length // 2

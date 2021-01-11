@@ -161,6 +161,7 @@ def masker(animal, channel, full=False):
 
     if full:
         CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
+        os.makedirs(CLEANED, exist_ok=True)
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full')
         error = test_dir(animal, INPUT, full, same_size=False)
         if len(error) > 0:

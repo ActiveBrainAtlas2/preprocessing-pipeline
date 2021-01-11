@@ -378,7 +378,8 @@ def create_full_volume(contour_annotations, structure, first_sec, last_sec, colo
     if min_z < 0:
         min_z = 0
     # Scaling factor is (0.46/X). Scaling from resolution of 0.46 microns to X microns.
-    scale_xy = 0.46 / xy_ng_resolution_um
+    # resolution scale is 0.452 for foundation brains
+    scale_xy = 0.452 / xy_ng_resolution_um
 
     # X,Y are 10um voxels. Z is 20um voxels.
     # str_contour_ng_resolution is the previous contour data rescaled to neuroglancer resolution

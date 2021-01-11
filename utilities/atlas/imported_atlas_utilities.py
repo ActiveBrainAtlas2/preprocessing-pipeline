@@ -25,12 +25,13 @@ PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_alignment import load_hdf, one_liner_to_arr, convert_resolution_string_to_um
-from utilities.file_location import CSHL_DIR as VOLUME_ROOTDIR, FileLocationManager
+from utilities.file_location import FileLocationManager, DATA_PATH
 from utilities.atlas.coordinates_converter import CoordinatesConverter
 SECTION_THICKNESS = 20. # in um
 REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_registration_parameters'
-MESH_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_meshes'
-VOL_DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes'
+
+MESH_DIR = os.path.join(DATA_PATH, 'CSHL_meshes')
+VOL_DIR = os.path.join(DATA_PATH, 'CSHL_volumes')
 ATLAS = 'atlasV7'
 paired_structures = ['5N', '6N', '7N', '7n', 'Amb',
                      'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC',
@@ -644,7 +645,7 @@ def get_transformed_volume_origin_filepath(alignment_spec, structure=None, wrt='
     vol_basename = warp_basename + '_' + resolution
     vol_basename_with_structure_suffix = vol_basename + ('_' + structure if structure is not None else '')
 
-    return os.path.join(VOLUME_ROOTDIR, alignment_spec['stack_m']['name'],
+    return os.path.join(VOL_DIR, alignment_spec['stack_m']['name'],
                         vol_basename, 'score_volumes',
                         vol_basename_with_structure_suffix + '_origin_wrt_' + wrt + '.txt')
 
@@ -722,6 +723,8 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
         volume, origin = crop_volume_to_minimal(vol=volume, origin=origin, return_origin_instead_of_bbox=True)
 
     # if return_origin_instead_of_bbox:
+    print(structure, volume_filepath)
+    print(structure, origin_filename)
     return volume, origin
     # else:
     #     convert_frame
@@ -779,13 +782,13 @@ def get_original_volume_origin_filepath_v3(stack_spec, structure, wrt='wholebrai
         #vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
 
     if volume_type == 'score' or volume_type == 'annotationAsScore':
-        #origin_fp = os.path.join(VOLUME_ROOTDIR, '%(stack)s',
+        #origin_fp = os.path.join(VOL_DIR, '%(stack)s',
         #                         '%(basename)s',
         #                         '%(basename)s_%(struct)s_origin' + (
         #                             '_wrt_' + wrt if wrt is not None else '') + '.txt') % \
         #            {'stack': stack_spec['name'], 'basename': vol_basename, 'struct': structure}
         vol_basename = '{}_annotationAsScoreVolume'.format(resolution)
-        origin_fp = os.path.join(VOLUME_ROOTDIR, '%(stack)s',
+        origin_fp = os.path.join(VOL_DIR, '%(stack)s',
                                  '%(basename)s',
                                  '%(struct)s_origin' + (
                                      '_wrt_' + wrt if wrt is not None else '') + '.txt') % \
@@ -1128,13 +1131,9 @@ def get_original_volume_basename(stack, prep_id=None, detector_id=None, resoluti
         basename += '_' + structure
     return basename
 
-def get_volume_root_folder(stack):
-    return os.path.join(VOLUME_ROOTDIR, stack)
-
-
 def get_annotation_volume_bbox_filepath(stack, downscale=32):
     basename = get_original_volume_basename(volume_type='annotation', **locals())
-    return os.path.join(get_volume_root_folder(stack), basename, basename + '_bbox.txt')
+    return os.path.join(VOL_DIR, basename, basename + '_bbox.txt')
 
 def get_score_volume_bbox_filepath_v3(stack_spec, structure, wrt='wholebrain'):
 
@@ -1145,7 +1144,7 @@ def get_score_volume_bbox_filepath_v3(stack_spec, structure, wrt='wholebrain'):
         stack_spec_no_structure['structure'] = None
         vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
 
-    fp = os.path.join(VOLUME_ROOTDIR, '%(stack)s',
+    fp = os.path.join(VOL_DIR, '%(stack)s',
                       '%(basename)s',
                       'score_volumes',
                      '%(basename)s_%(struct)s_bbox' + ('_wrt_'+wrt if wrt is not None else '') + '.txt') % \
@@ -1161,7 +1160,7 @@ def get_score_volume_bbox_filepath(stack_spec, structure, wrt='wholebrain'):
         stack_spec_no_structure['structure'] = None
         vol_basename = get_original_volume_basename_v2(stack_spec=stack_spec_no_structure)
 
-    fp = os.path.join(VOLUME_ROOTDIR, '%(stack)s',
+    fp = os.path.join(VOL_DIR, '%(stack)s',
                       '%(basename)s',
                       'score_volumes',
                      '%(basename)s_%(struct)s_bbox' + ('_wrt_'+wrt if wrt is not None else '') + '.txt') % \
@@ -1169,7 +1168,7 @@ def get_score_volume_bbox_filepath(stack_spec, structure, wrt='wholebrain'):
     return fp
 
 def get_shell_bbox_filepath(stack, label, downscale):
-    bbox_filepath = VOLUME_ROOTDIR + '/%(stack)s/%(stack)s_down%(ds)d_outerContourVolume_bbox.txt' % \
+    bbox_filepath = VOL_DIR + '/%(stack)s/%(stack)s_down%(ds)d_outerContourVolume_bbox.txt' % \
                     dict(stack=stack, ds=downscale)
     return bbox_filepath
 
@@ -1998,7 +1997,6 @@ def convert_volume_forms(volume, out_form):
     """
     Convert a (volume, origin) tuple into a bounding box.
     """
-
     if isinstance(volume, np.ndarray):
         vol = volume
         ori = np.zeros((3,))
@@ -2558,21 +2556,12 @@ def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_
     """
 
     volume, origin = convert_volume_forms(volume=volume, out_form=("volume", "origin"))
-    vol = volume > level
-
+    volume = volume > level
     # vol_padded = np.zeros(vol.shape+(10,10,10), np.bool)
     # vol_padded[5:-5, 5:-5, 5:-5] = vol
-    vol_padded = np.pad(vol, ((5,5),(5,5),(5,5)), 'constant') # need this otherwise the sides of volume will not close and expose the hollow inside of structures
+    vol_padded = np.pad(volume, ((5,5),(5,5),(5,5)), 'constant') # need this otherwise the sides of volume will not close and expose the hollow inside of structures
     vertices, faces = mcubes.marching_cubes(vol_padded, 0) # more than 5 times faster than skimage.marching_cube + correct_orientation
-    # vs, faces = marching_cubes(vol_padded, 0) # y,x,z
-    # sys.stderr.write('marching cube: %.2f seconds\n' % (time.time() - t))
-
-    # fs = correct_mesh_orientation(vol_padded, vs, faces)
-
     vertices = vertices[:, [1,0,2]] + origin - (5,5,5)
-    # vs = vs[:, [1,0,2]] + origin
-    # area = mesh_surface_area(vs, fs)
-
     polydata = mesh_to_polydata(vertices, faces)
 
     for simplify_iter in range(num_simplify_iter):
@@ -2582,6 +2571,7 @@ def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_
         # 0.8 means each iteration causes the point number to drop to 20% the original
         deci.Update()
         polydata = deci.GetOutput()
+
 
         if smooth:
             smoother = vtk.vtkWindowedSincPolyDataFilter()
@@ -2594,6 +2584,7 @@ def volume_to_polydata(volume, num_simplify_iter=0, smooth=False, level=0., min_
 
         if polydata.GetNumberOfPoints() < min_vertices:
             break
+
 
     if return_vertex_face_list:
         return polydata_to_mesh(polydata)
@@ -2610,10 +2601,10 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
     polydata = vtk.vtkPolyData()
     points = vtk.vtkPoints()
 
-    vcolors = vtk.vtkUnsignedCharArray()
-    vcolors.SetNumberOfComponents(3)
-    vcolors.SetName("Colors")
-    vcolors.SetNumberOfTuples(len(faces))
+    colors = vtk.vtkUnsignedCharArray()
+    colors.SetNumberOfComponents(3)
+    colors.SetName("Colors")
+    colors.SetNumberOfTuples(len(faces))
 
     for pt_ind, (x,y,z) in enumerate(vertices):
         points.InsertPoint(pt_ind, x, y, z)
@@ -2625,22 +2616,15 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
         cell_arr[1::4] = faces[:,0]
         cell_arr[2::4] = faces[:,1]
         cell_arr[3::4] = faces[:,2]
-        #Colors.InsertNextTuple(color_arr)
         cell_vtkArray = numpy_support.numpy_to_vtkIdTypeArray(cell_arr, deep=1)
         cells.SetCells(len(faces), cell_vtkArray)
-
-        #for i in range(len(faces)):
-        #    vcolors.SetTuple3(i, 5,15,25)
-        #polydata.GetPointData().SetScalars(vcolors)
+        colors.InsertNextTuple3(255,255,0)
 
     polydata.SetPoints(points)
 
-
     if len(faces) > 0:
         polydata.SetPolys(cells)
-        # polydata.SetVerts(cells)
-
-    if len(faces) > 0:
+        polydata.GetCellData().SetScalars(colors)
         polydata = simplify_polydata(polydata, num_simplify_iter, smooth)
     else:
         sys.stderr.write('mesh_to_polydata: No faces are provided, so skip simplification.\n')
