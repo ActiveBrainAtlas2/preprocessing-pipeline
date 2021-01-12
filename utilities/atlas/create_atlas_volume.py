@@ -73,8 +73,6 @@ def create_atlas(animal, create, com, surface_threshold):
     print('atlas volume shape', atlas_volume.shape)
     coordinates = []
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
-        if structure not in ['DC_L', 'DC_R', '7N_L', '7N_R', '5N_L', '5N_R']:
-            continue
         print(str(structure).ljust(7),end=": ")
         x, y, z = origin
         x_start = int( round(x + col_length / 2))
