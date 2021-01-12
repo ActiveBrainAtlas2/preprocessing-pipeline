@@ -4,13 +4,15 @@ SCALE with 10/resolution  on DK52, x is 1170, y 2112
 scale with 10/resolution on MD589, x is 1464, y 1975
 """
 import argparse
+import json
 import os
+import struct
 import sys
 import numpy as np
 from timeit import default_timer as timer
 import shutil
 
-from scipy.ndimage import affine_transform
+from scipy import ndimage
 
 start = timer()
 HOME = os.path.expanduser("~")
@@ -21,7 +23,7 @@ from utilities.file_location import DATA_PATH, ROOT_DIR
 from utilities.utilities_cvat_neuroglancer import get_structure_number, NumpyToNeuroglancer, get_segment_properties
 
 
-def create_atlas(animal, create, surface_threshold):
+def create_atlas(animal, create, com, surface_threshold):
 
     atlas_name = 'atlasV8'
     ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
@@ -37,7 +39,7 @@ def create_atlas(animal, create, surface_threshold):
     resolution = sqlController.scan_run.resolution
     SCALE = (10 / resolution)
     resolution = int(resolution * 1000 * SCALE)
-    print('Resolution at', resolution)
+    print('Resolution, SCALE', resolution, SCALE)
 
     structure_volume_origin = {}
     for volume_filename, origin_filename in zip(volume_files, origin_files):
@@ -58,16 +60,21 @@ def create_atlas(animal, create, surface_threshold):
         volume = np.flip(volume, axis=0)
         volume[volume > surface_threshold] = color
         volume = volume.astype(np.uint8)
-
+        #x, y, z = (origin + ndimage.measurements.center_of_mass(volume))
+        #com = ndimage.measurements.center_of_mass(volume)
+        #print(structure, origin, com, volume.shape)
         structure_volume_origin[structure] = (volume, origin)
+
 
     col_length = 1000
     row_length = 1000
     z_length = 300
     atlas_volume = np.zeros(( int(row_length), int(col_length), z_length), dtype=np.uint8)
     print('atlas volume shape', atlas_volume.shape)
-
+    coordinates = []
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
+        if structure not in ['DC_L', 'DC_R', '7N_L', '7N_R', '5N_L', '5N_R']:
+            continue
         print(str(structure).ljust(7),end=": ")
         x, y, z = origin
         x_start = int( round(x + col_length / 2))
@@ -77,17 +84,16 @@ def create_atlas(animal, create, surface_threshold):
         y_end = y_start + volume.shape[1]
         z_end = z_start + (volume.shape[2] + 1) // 2
 
-        print('Row range',
-              str(y_start).rjust(4),
-              str(y_end).rjust(4),
-              'col range',
-              str(x_start).rjust(4),
-              str(x_end).rjust(4),
-              'z range',
-              str(z_start).rjust(4),
-              str(z_end).rjust(4),
-              end=" ")
-
+        midx = int(((x_start + x_end) / 2)*SCALE)
+        midy = int(((y_start + y_end) / 2)*SCALE)
+        midz = (z_start + z_end) // 2
+        print('MID Points',
+              str(midx).rjust(8),
+              str(midy).rjust(8),
+              str(midz).rjust(4),
+              end="\t")
+        com = (midx, midy, midz)
+        coordinates.append(com)
 
         z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
         volume = volume[:, :, z_indices]
@@ -103,21 +109,38 @@ def create_atlas(animal, create, surface_threshold):
     print('Shape of downsampled atlas volume', atlas_volume.shape)
 
     if create:
-        #atlasV7_volume = np.rot90(atlasV7_volume, axes=(0, 1))
-        #atlasV7_volume = np.fliplr(atlasV7_volume)
-        #atlasV7_volume = np.flipud(atlasV7_volume)
-        #atlasV7_volume = np.fliplr(atlasV7_volume)
-
-
         offset = [0,0,0]
         ng = NumpyToNeuroglancer(atlas_volume, [resolution, resolution, 20000], offset=offset)
         ng.init_precomputed(OUTPUT_DIR)
         ng.add_segment_properties(get_segment_properties())
         ng.add_downsampled_volumes()
         ng.add_segmentation_mesh()
+    if com:
+        OUTPUT_DIR = os.path.join(ROOT_DIR, 'structures', f'{atlas_name}_COM')
+        if os.path.exists(OUTPUT_DIR):
+            shutil.rmtree(OUTPUT_DIR)
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        info = os.path.join(DATA_PATH, 'atlas_data', 'points', 'info')
+        outfile = os.path.join(OUTPUT_DIR, 'info')
+        with open(info, 'r+') as rf:
+            data = json.load(rf)
+            data['upper_bound'] = [row_length, col_length, z_length]  # <--- add `id` value.
+            rf.seek(0)  # <--- should reset file position to the beginning.
+        with open(outfile, 'w') as wf:
+            json.dump(data, wf, indent=4)
 
-        #outpath = os.path.join(ATLAS_PATH, f'{atlas_name}.npz')
-        #np.savez(outpath, atlasV7_volume.astype(np.uint8))
+        spatial_dir = os.path.join(OUTPUT_DIR, 'spatial0')
+        os.makedirs(spatial_dir)
+        total_count = len(coordinates)  # coordinates is a list of tuples (x,y,z)
+
+        with open(os.path.join(spatial_dir, '0_0_0'), 'wb') as outfile:
+            buf = struct.pack('<Q', total_count)
+            pt_buf = b''.join(struct.pack('<3f', x, y, z) for (x, y, z) in coordinates)
+            buf += pt_buf
+            id_buf = struct.pack('<%sQ' % len(coordinates), *range(len(coordinates)))
+            buf += id_buf
+            outfile.write(buf)
+
 
     end = timer()
     print(f'Finito! Program took {end - start} seconds')
@@ -128,10 +151,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--create', help='create volume', required=False, default='false')
+    parser.add_argument('--com', help='create COM', required=False, default='false')
     parser.add_argument('--level', help='surface threshold', required=False, default=0.8)
     args = parser.parse_args()
     animal = args.animal
     create = bool({'true': True, 'false': False}[args.create.lower()])
+    com = bool({'true': True, 'false': False}[args.create.lower()])
     level = float(args.level)
-    create_atlas(animal, create, level)
+    create_atlas(animal, create, com, level)
 
