@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from skimage import io
 from tqdm import tqdm
 import numpy as np
+import cv2
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
@@ -30,7 +31,8 @@ def make_histogram(animal, channel):
     logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
-    INPUT = os.path.join(fileLocationManager.thumbnail)
+    INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
+    MASK_INPUT = fileLocationManager.thumbnail_masked
     tifs = sqlController.get_sections(animal, channel)
     error = test_dir(animal, INPUT, full=False, same_size=False)
     if len(tifs) == 0:
@@ -47,8 +49,10 @@ def make_histogram(animal, channel):
     else:
         sqlController.set_task(animal, CREATE_CHANNEL_1_HISTOGRAMS)
 
-    for tif in tqdm(tifs):
-        input_path = os.path.join(INPUT, tif.file_name)
+    for i, tif in enumerate(tqdm(tifs)):
+        filename = str(i).zfill(3) + '.tif'
+        input_path = os.path.join(INPUT, filename)
+        mask_path = os.path.join(MASK_INPUT, filename)
         output_path = os.path.join(OUTPUT, os.path.splitext(tif.file_name)[0] + '.png')
         if not os.path.exists(input_path):
             print('Input tif does not exist', input_path)
@@ -62,10 +66,20 @@ def make_histogram(animal, channel):
         except:
             logger.warning(f'Could not open {input_path}')
             continue
+        try:
+            mask = io.imread(mask_path)
+        except:
+            logger.warning(f'Could not open {input_path}')
+            continue
+
+        img = cv2.bitwise_and(img, img, mask=mask)
+
 
         if img.shape[0] * img.shape[1] > 1000000000:
             scale = 1 / float(2)
             img = img[::int(1. / scale), ::int(1. / scale)]
+
+
 
         try:
             flat = img.flatten()

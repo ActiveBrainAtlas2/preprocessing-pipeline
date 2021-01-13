@@ -30,7 +30,22 @@ def insert_origins(atlas, create):
         volume = np.load(volume_file)
         volume = np.rot90(volume, axes=(0, 1))
         volume = np.flip(volume, axis=0)
-        x,y,z = (origin + ndimage.measurements.center_of_mass(volume))
+
+        #x,y,z = (origin + ndimage.measurements.center_of_mass(volume))
+
+        x, y, z = origin
+        x_start = x + 1000 / 2
+        y_start = y + 1000 / 2
+        z_start = z / 2 + 300 / 2
+        x_end = x_start + volume.shape[0]
+        y_end = y_start + volume.shape[1]
+        z_end = z_start + (volume.shape[2] + 1) / 2
+
+        x = ((x_start + x_end) / 2)
+        y = ((y_start + y_end) / 2)
+        z = (z_start + z_end) / 2
+
+
         if create:
             sqlController.add_center_of_mass(structure, atlas, x,y,z)
         else:
