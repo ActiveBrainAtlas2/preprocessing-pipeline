@@ -255,7 +255,7 @@ def check_contour(contours, area, lc):
         return contours, lc
 
 
-def scaled(img, mask, epsilon=0.01, limit=45000.0):
+def scaled(img, mask, limit, epsilon=0.01):
     """
     This scales the image to the limit specified. You can get this value
     by looking at the combined histogram of the image stack.

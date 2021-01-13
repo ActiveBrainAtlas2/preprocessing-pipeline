@@ -22,7 +22,7 @@ from utilities.utilities_mask import rotate_image, place_image, scaled, equalize
 from utilities.utilities_process import get_last_2d, test_dir, SCALING_FACTOR
 
 
-def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height):
+def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, scale):
     """
     This method clean all NTB images in the specified channel. For channel one it also scales
     and does an adaptive histogram equalization.
@@ -35,6 +35,7 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
     :param flip: either flip or flop
     :param max_width: width of image
     :param max_height: height of image
+    :param scale: used in scaling. Gotten from the histogram
     :return: cleaned and rotated image
     """
     try:
@@ -45,7 +46,7 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
     if channel == 1:
-        fixed = scaled(fixed, mask, epsilon=0.01, limit=45000.0)
+        fixed = scaled(fixed, mask, scale, epsilon=0.01)
         fixed = equalized(fixed)
 
     if rotation > 0:
@@ -122,7 +123,7 @@ def fix_thion(infile, mask, maskfile, ROTATED_MASKS,  logger, rotation, flip, ma
     return fixed
 
 
-def masker(animal, channel, full=False):
+def masker(animal, channel, full, scale):
     """
     Main method that starts the cleaning/rotating process.
     :param animal:  prep_id of the animal we are working on.
@@ -194,7 +195,7 @@ def masker(animal, channel, full=False):
         if 'thion' in stain.lower():
             fixed = fix_thion(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height)
         else:
-            fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height)
+            fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, scale)
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
 
@@ -211,11 +212,13 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--scale', help='Enter scaling', required=False, default=45000)
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
+    scale = int(args.scale)
     full = bool({'full': True, 'thumbnail': False}[args.resolution])
 
-    masker(animal, channel, full)
+    masker(animal, channel, full, scale)
 

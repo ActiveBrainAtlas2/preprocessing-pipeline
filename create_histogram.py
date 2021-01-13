@@ -41,6 +41,7 @@ def make_histogram(animal, channel):
         print(error)
         sys.exit()
     OUTPUT = os.path.join(fileLocationManager.histogram)
+    os.makedirs(OUTPUT, exist_ok=True)
 
     if channel == 3:
         sqlController.set_task(animal, CREATE_CHANNEL_3_HISTOGRAMS)
@@ -69,7 +70,7 @@ def make_histogram(animal, channel):
         try:
             mask = io.imread(mask_path)
         except:
-            logger.warning(f'Could not open {input_path}')
+            logger.warning(f'Could not open {mask_path}')
             continue
 
         img = cv2.bitwise_and(img, img, mask=mask)
@@ -97,7 +98,6 @@ def make_histogram(animal, channel):
         plt.ylabel('Frequency')
         plt.title(f'{tif.file_name} @16bit')
         plt.close()
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         fig.savefig(output_path, bbox_inches='tight')
 
 
@@ -110,45 +110,60 @@ def make_combined(animal, channel):
     """
     logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.thumbnail)
+    INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
+    MASK_INPUT = fileLocationManager.thumbnail_masked
     OUTPUT = os.path.join(fileLocationManager.brain_info)
-    files = os.listdir(INPUT)
-    lfiles = len(files)
+    os.makedirs(OUTPUT, exist_ok=True)
+    tifs = os.listdir(INPUT)
+    lfiles = len(tifs)
     hist_dict = Counter({})
 
-    for file in tqdm(files):
-        filepath = os.path.join(INPUT,file)
+    for i, tif in enumerate(tqdm(tifs)):
+        filename = str(i).zfill(3) + '.tif'
+        input_path = os.path.join(INPUT, filename)
+        mask_path = os.path.join(MASK_INPUT, filename)
+
         try:
-            img = io.imread(filepath)
+            img = io.imread(input_path)
         except:
-            logger.error(f'Could not read {filepath}')
+            logger.error(f'Could not read {input_path}')
             lfiles -= 1
             break
+
+        try:
+            mask = io.imread(mask_path)
+        except:
+            logger.warning(f'Could not open {mask_path}')
+            continue
+
+        # mask image
+        img = cv2.bitwise_and(img, img, mask=mask)
+
         try:
             flat = img.flatten()
             #flat = np.random.choice(flat, 1000)
             del img
         except:
-            logger.error(f'Could not flatten file {filepath}')
+            logger.error(f'Could not flatten file {input_path}')
             lfiles -= 1
             break
         try:
             #hist,bins = np.histogram(flat, bins=nbins)
             img_counts = np.bincount(flat)
         except:
-            logger.error(f'Could not create counts {filepath}')
+            logger.error(f'Could not create counts {input_path}')
             lfiles -= 1
             break
         try:
             img_dict = Counter(dict(zip(np.unique(flat), img_counts[img_counts.nonzero()])))
         except:
-            logger.error(f'Could not create counter {filepath}')
+            logger.error(f'Could not create counter {input_path}')
             lfiles -= 1
             break
         try:
             hist_dict = hist_dict + img_dict
         except:
-            logger.error(f'Could not add files {filepath}')
+            logger.error(f'Could not add files {input_path}')
             lfiles -= 1
             break
 
@@ -165,8 +180,8 @@ def make_combined(animal, channel):
     plt.ylabel('Frequency')
     plt.title('{} channel {} @16bit with {} tif files'.format(animal, channel, lfiles))
     outfile = '{}_C{}.histogram.png'.format(animal, channel)
-    outpath = os.path.join(OUTPUT, outfile)
-    fig.savefig(outpath, bbox_inches='tight')
+    output_path = os.path.join(OUTPUT, outfile)
+    fig.savefig(output_path, bbox_inches='tight')
     print('Finished')
 
 
