@@ -1,0 +1,20 @@
+channels:
+  - pytorch
+  - simpleitk
+  - conda-forge
+  - default
+dependencies:
+  - python=3
+  - jupyterlab
+  - matplotlib
+  - nibabel
+  - nilearn
+  - numpy
+  - opencv
+  - pandas
+  - pytorch
+  - scipy
+  - simpleitk
+  - torchvision
+  - pip:
+    - ardent
