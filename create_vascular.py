@@ -21,7 +21,6 @@ def create_shell(animal):
     start = timer()
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
-
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'shell')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
@@ -29,13 +28,17 @@ def create_shell(animal):
 
     files = sorted(os.listdir(INPUT))
 
-    volume = []
+    mesh_list = []
+    limit = 750
+    midpoint = len(files) // 2
+    fstart = midpoint - limit
+    fend = midpoint + limit
     for file in tqdm(files):
         tif = io.imread(os.path.join(INPUT, file))
         #tif = section_to_points(tif)
-        volume.append(tif)
-    volume = np.array(volume).astype('uint8')
-    #volume = np.swapaxes(volume, 0, 2)
+        mesh_list.append(tif)
+    volume = np.dstack(mesh_list)
+    volume = np.transpose(volume, (2, 0, 1))
 
     ng = NumpyToNeuroglancer(volume, [10000, 10000, 1000], offset=[0,0,0])
     ng.init_precomputed(OUTPUT_DIR)
