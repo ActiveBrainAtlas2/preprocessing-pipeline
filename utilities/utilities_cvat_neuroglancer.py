@@ -3,6 +3,7 @@ import sys
 from skimage import measure
 import cv2
 import json
+import socket
 
 import numpy as np
 import neuroglancer
@@ -13,6 +14,18 @@ from pathlib import Path
 
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
+
+
+def get_cpus():
+    usecpus = 3
+    cpus = {}
+    cpus['muralis'] = 20
+    cpus['basalis'] = 8
+    cpus['ratto'] = 8
+    hostname = socket.gethostname()
+    if hostname in cpus.keys():
+        usecpus = cpus[hostname]
+    return usecpus
 
 
 from utilities.sqlcontroller import SqlController
@@ -65,7 +78,6 @@ def get_segment_properties(all_known=False):
 def get_segment_ids(volume):
     ids = [int(i) for i in np.unique(volume[:])]
     segment_properties = [(number, f'{number}: {number}') for number in ids]
-
     return segment_properties
 
 
@@ -149,8 +161,8 @@ class NumpyToNeuroglancer():
     def add_downsampled_volumes(self):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
-
-        tq = LocalTaskQueue(parallel=4)
+        cpus = get_cpus()
+        tq = LocalTaskQueue(parallel=cpus)
         tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=False)
         tq.insert(tasks)
         tq.execute()
@@ -159,7 +171,8 @@ class NumpyToNeuroglancer():
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
-        tq = LocalTaskQueue(parallel=4)
+        cpus = get_cpus()
+        tq = LocalTaskQueue(parallel=cpus)
         tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=False) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()

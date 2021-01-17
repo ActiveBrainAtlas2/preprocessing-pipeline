@@ -30,12 +30,12 @@ def create_shell(animal):
     files = sorted(os.listdir(INPUT))
 
     mesh_list = []
-    limit = 5
+    limit = 2
     midpoint = len(files) // 2
     fstart = midpoint - limit
     fend = midpoint + limit
 
-    for file in tqdm(files):
+    for file in tqdm(files[fstart:fend]):
         infile = os.path.join(INPUT, file)
         tif = io.imread(infile)
         tif = (tif / 256).astype('uint8')
