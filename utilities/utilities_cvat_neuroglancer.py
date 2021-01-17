@@ -23,6 +23,7 @@ def get_cpus():
     cpus['basalis'] = 8
     cpus['ratto'] = 8
     hostname = socket.gethostname()
+    hostname = hostname.split(".")[0]
     if hostname in cpus.keys():
         usecpus = cpus[hostname]
     return usecpus
