@@ -229,6 +229,45 @@ def parameter_elastix_parameter_file_to_dict(filename):
                 d[key] = value
         return d
 
+def parse_elastix(animal):
+    """
+    After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
+    Args:
+        animal: the animal
+    Returns: a dictionary of key=filename, value = coordinates
+    """
+    fileLocationManager = FileLocationManager(animal)
+    DIR = fileLocationManager.prep
+    INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
+
+    image_name_list = sorted(os.listdir(INPUT))
+    anchor_idx = len(image_name_list) // 2
+    # anchor_idx = len(image_name_list) - 1
+    transformation_to_previous_sec = {}
+
+    for i in range(1, len(image_name_list)):
+        fixed_fn = os.path.splitext(image_name_list[i - 1])[0]
+        moving_fn = os.path.splitext(image_name_list[i])[0]
+        transformation_to_previous_sec[i] = load_consecutive_section_transform(animal, moving_fn, fixed_fn)
+
+    transformation_to_anchor_sec = {}
+    # Converts every transformation
+    for moving_idx in range(len(image_name_list)):
+        if moving_idx == anchor_idx:
+            transformation_to_anchor_sec[image_name_list[moving_idx]] = np.eye(3)
+        elif moving_idx < anchor_idx:
+            T_composed = np.eye(3)
+            for i in range(anchor_idx, moving_idx, -1):
+                T_composed = np.dot(np.linalg.inv(transformation_to_previous_sec[i]), T_composed)
+            transformation_to_anchor_sec[image_name_list[moving_idx]] = T_composed
+        else:
+            T_composed = np.eye(3)
+            for i in range(anchor_idx + 1, moving_idx + 1):
+                T_composed = np.dot(transformation_to_previous_sec[i], T_composed)
+            transformation_to_anchor_sec[image_name_list[moving_idx]] = T_composed
+
+    return transformation_to_anchor_sec
+
 
 def create_warp_transforms(animal, transforms, transforms_resol, resolution):
     def convert_2d_transform_forms(arr):

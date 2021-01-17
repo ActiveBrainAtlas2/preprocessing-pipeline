@@ -178,3 +178,12 @@ def mask_to_shell(mask):
     shell = np.array(sub_shells).sum(axis=0)
     del sub_shells
     return shell
+
+
+def section_to_points(section):
+    ret, thresh = cv2.threshold(section, 127, 255, 0)
+    im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+
+
+    return section

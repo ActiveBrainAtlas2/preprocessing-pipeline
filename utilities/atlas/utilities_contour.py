@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import neuroglancer
 import numpy as np
+from pprint import pprint
 
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -192,7 +193,8 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
     scale_xy = 0.46 / xy_ng_resolution_um
 
     # X,Y are 10um voxels. Z is 20um voxels.
-    # str_contour_ng_resolution is the previous contour data rescaled to neuroglancer resolution
+    # str_contour_ng_resolution is the previous contour data rescaled
+    # to neuroglancer resolution
     str_contour_ng_resolution = {}
     for section in str_contour:
         # Load (X,Y) coordinates on this contour
@@ -347,22 +349,19 @@ def add_structure_to_neuroglancer(viewer, str_contour, structure, stack, first_s
 
 
 
-##### this method does lots of the work
-#    str_volume, xyz_str_offsets = create_full_volume(str_contours_annotation, structure, first_sec, last_sec, \
-#        color_radius, xy_ng_resolution_um, threshold, color, solid_volume=True, no_offset_big_volume=True)
-
-def create_full_volume(contour_annotations, structure, first_sec, last_sec, color_radius,
-                                  xy_ng_resolution_um, threshold, color):
+def create_volumeXXX(str_contour, structure, first_sec, last_sec, color=1):
     """
     Takes in the contours of a structure as well as the name, sections spanned by the structure, and a list of
     parameters that dictate how it is rendered.
-
     Returns the binary structure volume.
     """
-    #xy_ng_resolution_um = xy_ng_resolution_um  # X and Y voxel length in microns
+    xy_ng_resolution_um = 10
+    color_radius = 3
+    xy_ng_resolution_um = xy_ng_resolution_um  # X and Y voxel length in microns
     color_radius = color_radius * (10.0 / xy_ng_resolution_um) ** 0.5
     ng_section_min = 92
     ng_section_max = 370
+
     # Max and Min X/Y Values given random initial values that will be replaced
     # X and Y resolution will be specified by the user in microns (xy_ng_resolution_umx by y_ng_resolution_um)
     max_x = 0
@@ -377,32 +376,36 @@ def create_full_volume(contour_annotations, structure, first_sec, last_sec, colo
         max_z = ng_section_min
     if min_z < 0:
         min_z = 0
-    # Scaling factor is (0.46/X). Scaling from resolution of 0.46 microns to X microns.
-    # resolution scale is 0.452 for foundation brains
-    scale_xy = 0.452 / xy_ng_resolution_um
+    # Scaling factor is (0.46/X). Scaling from resolution of 0.46 microns to X microns. x is 10um for neuroglancer in x,y space.
+    scale_xy = 0.46 / xy_ng_resolution_um
 
     # X,Y are 10um voxels. Z is 20um voxels.
-    # str_contour_ng_resolution is the previous contour data rescaled to neuroglancer resolution
+    # str_contour_ng_resolution is the previous contour data rescaled
+    # to neuroglancer resolution
     str_contour_ng_resolution = {}
-    for section in contour_annotations:
+    for section in str_contour:
         # Load (X,Y) coordinates on this contour
-        vertices = contour_annotations[section][structure][threshold]
+        section_contours = str_contour[section][structure]
         # (X,Y) coordinates will be rescaled to the new resolution and placed here
         # str_contour_ng_resolution starts at z=0 for simplicity, must provide section offset later on
         str_contour_ng_resolution[section - first_sec] = []
         # Number of (X,Y) coordinates
-        num_contours = len(vertices)
+        num_contours = len(section_contours)
+        print(section, structure, num_contours)
+        continue
         # Cycle through each coordinate pair
         for coordinate_pair in range(num_contours):
-            curr_coors = vertices[coordinate_pair]
+            curr_coors = section_contours[coordinate_pair]
             # Rescale coordinate pair and add to new contour dictionary
-            str_contour_ng_resolution[section - first_sec].append([scale_xy * curr_coors[0], scale_xy * curr_coors[1]])
+            x = curr_coors[0]
+            y = curr_coors[1]
+            str_contour_ng_resolution[section - first_sec].append([scale_xy * x, scale_xy * y])
             # Replace Min/Max X/Y values with new extremes
-            min_x = min(scale_xy * curr_coors[0], min_x)
-            min_y = min(scale_xy * curr_coors[1], min_y)
-            max_x = max(scale_xy * curr_coors[0], max_x)
-            max_y = max(scale_xy * curr_coors[1], max_y)
-
+            min_x = min(scale_xy * x, min_x)
+            min_y = min(scale_xy * y, min_y)
+            max_x = max(scale_xy * x, max_x)
+            max_y = max(scale_xy * y, max_y)
+    return np.zeros((3,3,3)), [1,2,3]
     # Cast max and min values to int as they are used to build 3D numpy matrix
     max_x = int(np.ceil(max_x))
     max_y = int(np.ceil(max_y))
@@ -412,10 +415,10 @@ def create_full_volume(contour_annotations, structure, first_sec, last_sec, colo
     # Create empty 'structure_volume' using min and max values found earlier. Acts as a bounding box for now
     structure_volume = np.zeros((max_z - min_z, max_y - min_y, max_x - min_x), dtype=np.uint8)
     z_voxels, y_voxels, x_voxels = np.shape(structure_volume)
+    # print(  np.shape(structure_volume) )
 
     # Go through every slice. For every slice color in the voxels corrosponding to the contour's coordinate pair
     for slice in range(z_voxels):
-
         # For Human Annotated files, sometimes there is a missing set of contours for a slice
         try:
             slice_contour = np.asarray(str_contour_ng_resolution[slice])
@@ -449,39 +452,8 @@ def create_full_volume(contour_annotations, structure, first_sec, last_sec, colo
                         except:
                             pass
 
-        #TODOstructure_volume[slice, :, :] = fill_in_structure(structure_volume[slice, :, :], color)
+    return structure_volume, [min_x, min_y, min_z]
 
-    # If the amount of slices to shift by is nonzero
-    z_offset = min_z
-
-    true_ng_x_offset = min_x
-    true_ng_y_offset = min_y
-    #xyz_structure_offsets = [true_ng_x_offset, true_ng_y_offset, z_offset]
-    xyz_structure_offsets = [min_x, min_y, z_offset]
-
-    # If instead of a small volume and an offset, we want no offset and an extremely large+sparse volume
-    big_sparse_structure_volume = np.zeros(
-        (z_voxels + z_offset, y_voxels + true_ng_y_offset, x_voxels + true_ng_x_offset), dtype=np.uint8)
-
-    try:
-        big_sparse_structure_volume[-z_voxels:, -y_voxels:, -x_voxels:] = structure_volume
-    # If part of the structure ends up being cut off due to cropping, retake the size of it
-    except Exception as e:
-        str_new_voxels_zyx = np.shape(structure_volume)
-        large_sparse_str_voxels_zyx = np.shape(big_sparse_structure_volume)
-        low_end_z_len = np.min([large_sparse_str_voxels_zyx[0], str_new_voxels_zyx[0]])
-        low_end_y_len = np.min([large_sparse_str_voxels_zyx[1], str_new_voxels_zyx[1]])
-        low_end_x_len = np.min([large_sparse_str_voxels_zyx[2], str_new_voxels_zyx[2]])
-        print(e)  # Maybe can remove this whole block after new changes
-        print('Cutting out some slices on the edge of the structure')
-        print('New shape: ', low_end_z_len, low_end_y_len, low_end_x_len)
-        big_sparse_structure_volume[-low_end_z_len:, -low_end_y_len:, -low_end_x_len:] = \
-            structure_volume[-low_end_z_len:, -low_end_y_len:, -low_end_x_len:]
-        # big_sparse_structure_volume[-str_new_voxels_zyx[0]:,-str_new_voxels_zyx[1]:,-str_new_voxels_zyx[2]:] = \
-        #    structure_volume[-large_sparse_str_voxels_zyx[0]:,-large_sparse_str_voxels_zyx[1]:,-large_sparse_str_voxels_zyx[2]:]
-
-
-    return big_sparse_structure_volume, xyz_structure_offsets
 
 
 def fill_in_structure(voxel_sheet, color):
@@ -543,7 +515,8 @@ def get_contours_from_annotations(stack, target_structure, hand_annotations, den
                 continue
             str_contours_annotation[section] = {}
             str_contours_annotation[section][structure] = {}
-            str_contours_annotation[section][structure][1] = vertices
+            #str_contours_annotation[section][structure][1] = vertices
+            str_contours_annotation[section][structure] = vertices
 
     try:
         first_sec = np.min(list(str_contours_annotation.keys()))
@@ -583,6 +556,110 @@ def min_max_sections(target_structure, hand_annotations):
 
 
     return first_sec, last_sec
+
+
+def create_volume(str_contour, structure, color):
+    """
+    Takes in the contours of a structure as well as the name, sections spanned by the structure, and a list of
+    parameters that dictate how it is rendered.
+    Returns the binary structure volume.
+    """
+    xy_ng_resolution_um = 10
+    color_radius = 3
+    xy_ng_resolution_um = xy_ng_resolution_um  # X and Y voxel length in microns
+    color_radius = color_radius * (10.0 / xy_ng_resolution_um) ** 0.5
+    ng_section_min = 92
+    ng_section_max = 370
+    first_sec = min(str_contour.keys())
+    last_sec = max(str_contour.keys())
+    # Max and Min X/Y Values given random initial values that will be replaced
+    # X and Y resolution will be specified by the user in microns (xy_ng_resolution_umx by y_ng_resolution_um)
+    max_x = 0
+    max_y = 0
+    min_x = 9999999
+    min_y = 9999999
+    # 'min_z' is the relative starting section (if the prep2 sections start at slice 100, and the structure starts at slice 110, min_z is 10 )
+    # Z resolution is 20um for simple 1-1 correspondance with section thickness
+    max_z = (last_sec - ng_section_min)
+    min_z = (first_sec - ng_section_min)
+    if max_z > ng_section_max:
+        max_z = ng_section_min
+    if min_z < 0:
+        min_z = 0
+    # Scaling factor is (0.46/X). Scaling from resolution of 0.46 microns to X microns. x is 10um for neuroglancer in x,y space.
+    scale_xy = 0.46 / xy_ng_resolution_um
+
+    # X,Y are 10um voxels. Z is 20um voxels.
+    # str_contour_ng_resolution is the previous contour data rescaled
+    # to neuroglancer resolution
+    str_contour_ng_resolution = {}
+    for section, vertices in str_contour.items():
+        # Load (X,Y) coordinates on this contour
+        #section_contours = str_contour[section][structure]
+        # (X,Y) coordinates will be rescaled to the new resolution and placed here
+        # str_contour_ng_resolution starts at z=0 for simplicity, must provide section offset later on
+        str_contour_ng_resolution[section - first_sec] = []
+        # Number of (X,Y) coordinates
+        num_contours = vertices.shape[0]
+        # Cycle through each coordinate pair
+        for coordinate_pair in range(num_contours):
+            curr_coors = vertices[coordinate_pair]
+            # Rescale coordinate pair and add to new contour dictionary
+            x = curr_coors[0]
+            y = curr_coors[1]
+            str_contour_ng_resolution[section - first_sec].append([scale_xy * x, scale_xy * y])
+            # Replace Min/Max X/Y values with new extremes
+            min_x = min(scale_xy * x, min_x)
+            min_y = min(scale_xy * y, min_y)
+            max_x = max(scale_xy * x, max_x)
+            max_y = max(scale_xy * y, max_y)
+    # Cast max and min values to int as they are used to build 3D numpy matrix
+    max_x = int(np.ceil(max_x))
+    max_y = int(np.ceil(max_y))
+    min_x = int(np.floor(min_x))
+    min_y = int(np.floor(min_y))
+
+    # Create empty 'structure_volume' using min and max values found earlier. Acts as a bounding box for now
+    structure_volume = np.zeros((max_z - min_z, max_y - min_y, max_x - min_x), dtype=np.uint8)
+    z_voxels, y_voxels, x_voxels = np.shape(structure_volume)
+
+    # Go through every slice. For every slice color in the voxels corrosponding to the contour's coordinate pair
+    for slice in range(z_voxels):
+        # For Human Annotated files, sometimes there is a missing set of contours for a slice
+        try:
+            slice_contour = np.asarray(str_contour_ng_resolution[slice])
+        except:
+            continue
+
+        for xy_pair in slice_contour:
+            x_voxel = int(xy_pair[0]) - min_x
+            y_voxel = int(xy_pair[1]) - min_y
+
+            structure_volume[slice, y_voxel, x_voxel] = color
+
+            # Instead of coloring a single voxel, color all in a specified radius from this voxel!
+            lower_bnd_offset = int(np.floor(1 - color_radius))
+            upper_bnd_offset = int(np.ceil(color_radius))
+            for x_coor_color_radius in range(lower_bnd_offset, upper_bnd_offset):
+                for y_coor_color_radius in range(lower_bnd_offset, upper_bnd_offset):
+
+                    x_displaced_voxel = x_voxel + x_coor_color_radius
+                    y_displaced_voxel = y_voxel + y_coor_color_radius
+                    distance = ((y_voxel - y_displaced_voxel) ** 2 + (x_voxel - x_displaced_voxel) ** 2) ** 0.5
+                    # If the temporary coordinate is within the specified radius AND inside the 3D matrix
+                    if distance < color_radius and \
+                            x_displaced_voxel < x_voxels and \
+                            y_displaced_voxel < y_voxels and \
+                            x_displaced_voxel > 0 and \
+                            y_displaced_voxel > 0:
+                        try:
+                            # Set temporary coordinate to be visible
+                            structure_volume[slice, y_displaced_voxel, x_displaced_voxel] = color
+                        except:
+                            pass
+
+    return structure_volume, [min_x, min_y, min_z]
+
 
 
 def get_dense_coordinates(coor_list):
