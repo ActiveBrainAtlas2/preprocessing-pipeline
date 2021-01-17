@@ -15,14 +15,12 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_ids
-from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image
 
 
 def create_shell(animal):
     start = timer()
     fileLocationManager = FileLocationManager(animal)
-    sqlController = SqlController(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
@@ -37,23 +35,16 @@ def create_shell(animal):
     fstart = midpoint - limit
     fend = midpoint + limit
 
-    for file in tqdm(files[fstart:fend]):
+    for file in tqdm(files):
         infile = os.path.join(INPUT, file)
         tif = io.imread(infile)
         tif = (tif / 256).astype('uint8')
-        #tif = np.flip(tif)
         tif = np.flip(tif, axis=1)
         tif = rotate_image(tif, infile, 1)
 
 
         mesh_list.append(tif)
     volume = np.dstack(mesh_list)
-    print('volume', volume.shape)
-    #sys.exit()
-
-
-
-
     ng = NumpyToNeuroglancer(volume, [10400, 10400, 20000], offset=[0,0,0])
     ng.init_precomputed(OUTPUT_DIR)
     ng.add_segment_properties(get_segment_ids(volume))
