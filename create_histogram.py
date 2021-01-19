@@ -40,7 +40,8 @@ def make_histogram(animal, channel):
     if len(error) > 0:
         print(error)
         sys.exit()
-    OUTPUT = os.path.join(fileLocationManager.histogram)
+    ch_dir = f'CH{channel}'
+    OUTPUT = os.path.join(fileLocationManager.histogram, ch_dir)
     os.makedirs(OUTPUT, exist_ok=True)
 
     if channel == 3:
