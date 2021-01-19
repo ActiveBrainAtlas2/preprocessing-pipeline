@@ -44,8 +44,7 @@ moving_brains_structure_centroids = []
 # This loops through the 2 moving brains, loads all the hand annotation structures and origins
 for animal in tqdm(moving_brain_names):
     animal_spec = {'name': animal, 'vol_type': 'annotationAsScore', 'resolution': atlas_resolution}
-    moving_brain = load_all_structures_and_origins(stack_spec=animal_spec,
-                                                                structures=structures, in_bbox_wrt='wholebrain')
+    moving_brain = load_all_structures_and_origins(stack_spec=animal_spec, structures=structures, in_bbox_wrt='wholebrain')
 
     alignment_spec = dict(stack_m=animal_spec, stack_f=fixed_brain_spec, warp_setting=109)
     structure_centroids = get_centroid_3d(moving_brain)
@@ -87,12 +86,20 @@ for structure in tqdm(structures):
     # Load instance volumes.
     instance_volumes = []
     instance_source = []
+    atlas_name = 'atlasV9'
 
     for animal in [fixed_brain_name] + moving_brain_names:
         #brain_spec = {'name': animal, 'vol_type': 'annotationAsScore', 'resolution': atlas_resolution}
 
-        volume_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}.npy')
-        origin_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}_origin_wrt_wholebrain.txt')
+        #volume_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}.npy')
+        #origin_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}_origin_wrt_wholebrain.txt')
+        VOL_DIR = os.path.join(DATA_PATH, 'atlas_data', atlas_name, animal)
+        #volume_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}.npy')
+        #origin_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}_origin_wrt_wholebrain.txt')
+
+        volume_filepath = os.path.join(VOL_DIR, 'structure', f'{structure}.npy')
+        origin_filepath = os.path.join(VOL_DIR, 'origin', f'{structure}.txt')
+
         volume = np.load(volume_filepath)
         origin = np.loadtxt(origin_filepath)
         volume, origin = crop_volume_to_minimal(vol=volume, origin=origin, return_origin_instead_of_bbox=True)

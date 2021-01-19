@@ -44,8 +44,8 @@ def create_clean_transform(animal):
 
 def save_volume_origin(animal, structure, volume, xyz_offsets):
     x, y, z = xyz_offsets
-    x = xy_neuroglancer2atlas(x)
-    y = xy_neuroglancer2atlas(y)
+    #x = xy_neuroglancer2atlas(x)
+    #y = xy_neuroglancer2atlas(y)
     origin = [x,y,z]
     atlas_name = 'atlasV9'
     volume = np.swapaxes(volume, 0, 2)
@@ -78,7 +78,6 @@ def create_volumes(animal, create):
     sqlController = SqlController(animal)
     section_structure_vertices = defaultdict(dict)
     csvfile = os.path.join(DATA_PATH, 'atlas_data/foundation_brain_annotations',  f'{animal}_annotation.csv')
-    #csvfile = os.path.join(DATA_PATH, 'atlas_data', f'{animal}_corrected_vertices.csv')
     hand_annotations = pd.read_csv(csvfile)
 
     hand_annotations['vertices'] = hand_annotations['vertices'] \
@@ -132,17 +131,25 @@ def create_volumes(animal, create):
             print(structure, e)
             continue
         x,y,z = xyz_offsets
-        x = xy_neuroglancer2atlas(x)
-        y = xy_neuroglancer2atlas(y)
-        z = section_neuroglancer2atlas(z)
-        print(structure, volume.shape, x,y,z, xyz_offsets)
-        save_volume_origin(animal, structure, volume, xyz_offsets)
+        #x = xy_neuroglancer2atlas(x)
+        #y = xy_neuroglancer2atlas(y)
+        #z = section_neuroglancer2atlas(z)
+        print(animal, structure, volume.shape, x*32,y*32,z)
+        if create:
+            save_volume_origin(animal, structure, volume, xyz_offsets)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--animal', help='Enter the animal', required=False)
     parser.add_argument('--create', help='create volume', required=False, default='false')
     args = parser.parse_args()
     animal = args.animal
     create = bool({'true': True, 'false': False}[args.create.lower()])
-    create_volumes(animal, create)
+    if animal is None:
+        animals = ['MD585', 'MD589', 'MD594']
+    else:
+        animals = [animal]
+
+    for animal in animals:
+        create_volumes(animal, create)
+

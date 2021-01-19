@@ -510,7 +510,7 @@ def get_contours_from_annotations(stack, target_structure, hand_annotations, den
                 vertices = get_dense_coordinates(vertices)
 
             # Skip sections before the 22nd prep2 section for MD585 as there are clear errors
-            if stack == 'MD585' and section < MD585_ng_section_min + 22:
+            if stack == 'MD585XXX' and section < MD585_ng_section_min + 22:
                 # vertices = vertices - np.array(MD585_abberation_correction)
                 continue
             str_contours_annotation[section] = {}

@@ -1064,7 +1064,7 @@ def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox
                         return_origin_instead_of_bbox=return_origin_instead_of_bbox)
                     for k, (v, o) in list(volumes.items())}
 
-def load_all_structures_and_origins(stack_spec, structures, in_bbox_wrt='canonicalAtlasSpace'):
+def load_all_structures_and_originsXXX(stack_spec, structures, in_bbox_wrt='canonicalAtlasSpace'):
 
     #in_bbox_wrt = 'wholebrain'
     name_or_index_as_key = 'name'
@@ -1084,6 +1084,51 @@ def load_all_structures_and_origins(stack_spec, structures, in_bbox_wrt='canonic
 
             in_bbox_origin_wrt_wholebrain = get_domain_origin(stack=stack_spec['name'],
                                                                           domain=in_bbox_wrt,
+                                                                          resolution=stack_spec['resolution'],
+                                                                          loaded_cropbox_resolution=stack_spec['resolution'])
+            origin = origin + in_bbox_origin_wrt_wholebrain
+            if name_or_index_as_key == 'name':
+                volumes[structure] = (volume,origin)
+            else:
+                volumes[index] = (volume,origin)
+
+            structure_to_label[structure] = index
+            label_to_structure[index] = structure
+            index += 1
+
+        except Exception as e:
+            sys.stderr.write('%s\n' % e)
+            #continue
+
+    return {k: crop_volume_to_minimal(vol=volume, origin=origin,
+                return_origin_instead_of_bbox=return_origin_instead_of_bbox)
+            for k, (volume, origin) in list(volumes.items())}
+
+
+
+def load_all_structures_and_origins(stack_spec, structures, in_bbox_wrt='canonicalAtlasSpace'):
+    #in_bbox_wrt = 'wholebrain'
+    name_or_index_as_key = 'name'
+    return_origin_instead_of_bbox = True
+    volumes = {}
+    animal = stack_spec['name']
+
+    structure_to_label = {}
+    label_to_structure = {}
+    index = 1
+    atlas_name = 'atlasV9'
+    VOL_DIR = os.path.join(DATA_PATH, 'atlas_data', atlas_name, animal)
+
+    for structure in structures:
+        try:
+            volume_filepath = os.path.join(VOL_DIR, 'structure', f'{structure}.npy')
+            origin_filepath = os.path.join(VOL_DIR, 'origin', f'{structure}.txt')
+            #volume_filepath = os.path.join(LOADPATH, f'{structure}.npy')
+            volume = np.load(volume_filepath)
+            #origin_filepath = os.path.join(LOADPATH, f'{structure}_origin_wrt_{in_bbox_wrt}.txt')
+            origin = np.loadtxt(origin_filepath)
+
+            in_bbox_origin_wrt_wholebrain = get_domain_origin(stack=animal, domain=in_bbox_wrt,
                                                                           resolution=stack_spec['resolution'],
                                                                           loaded_cropbox_resolution=stack_spec['resolution'])
             origin = origin + in_bbox_origin_wrt_wholebrain

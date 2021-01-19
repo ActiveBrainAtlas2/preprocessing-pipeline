@@ -4,6 +4,8 @@ Creates a shell from  aligned thumbnails
 import argparse
 import os
 import sys
+
+import imagesize
 import numpy as np
 from timeit import default_timer as timer
 import shutil
@@ -21,33 +23,32 @@ from utilities.utilities_mask import rotate_image
 def create_shell(animal):
     start = timer()
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     files = sorted(os.listdir(INPUT))
-
-    mesh_list = []
-    limit = 2
     midpoint = len(files) // 2
-    fstart = midpoint - limit
-    fend = midpoint + limit
+    midfilepath = os.path.join(INPUT, files[midpoint])
+    rows, columns = imagesize.get(midfilepath)
+    volume = np.empty((columns, rows, len(files)))
 
-    for file in tqdm(files[fstart:fend]):
+    for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
         tif = io.imread(infile)
-        tif = (tif / 256).astype('uint8')
-        tif = np.flip(tif, axis=1)
-        tif = rotate_image(tif, infile, 1)
+        # tif = np.flip(tif, axis=1)
+        # tif = rotate_image(tif, infile, 1)
+        volume[:,:,i] = tif
 
-
-        mesh_list.append(tif)
-    volume = np.dstack(mesh_list)
-    ng = NumpyToNeuroglancer(volume, [10400, 10400, 20000], offset=[0,0,0])
+    print(volume.shape)
+    ng = NumpyToNeuroglancer(volume.astype(np.uint8), [1000, 1000, 1000], offset=[0,0,0])
     ng.init_precomputed(OUTPUT_DIR)
-    ng.add_segment_properties(get_segment_ids(volume))
+    fake_volume = np.zeros(3) + 255
+    del volume
+    ng.add_segment_properties(get_segment_ids(fake_volume))
+
     ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
 
