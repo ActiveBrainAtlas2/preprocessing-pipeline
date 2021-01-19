@@ -33,19 +33,19 @@ def create_shell(animal):
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     rows, columns = imagesize.get(midfilepath)
-    files = files[midpoint-3000: midpoint+3000]
+    #files = files[midpoint-1000: midpoint+1000]
     volume = np.empty((columns, rows, len(files)))
     bigarray_path = os.path.join(fileLocationManager.prep, 'bigarray.npy')
     volume = np.memmap(bigarray_path, mode='w+', shape=volume.shape)
-
+    mesh_list = []
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
         tif = io.imread(infile)
         # tif = np.flip(tif, axis=1)
         # tif = rotate_image(tif, infile, 1)
         volume[:,:,i] = tif
+        #mesh_list.append(tif)
 
-    print(volume.shape)
     ng = NumpyToNeuroglancer(volume.astype(np.uint8), [10000, 10000, 1000], offset=[0,0,0])
     ng.init_precomputed(OUTPUT_DIR)
     fake_volume = np.zeros(3) + 255
