@@ -23,7 +23,7 @@ from utilities.utilities_mask import rotate_image
 def create_shell(animal):
     start = timer()
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
@@ -33,20 +33,16 @@ def create_shell(animal):
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     rows, columns = imagesize.get(midfilepath)
-    #files = files[midpoint-1000: midpoint+1000]
-    volume = np.empty((columns, rows, len(files)))
-    bigarray_path = os.path.join(fileLocationManager.prep, 'bigarray.npy')
-    volume = np.memmap(bigarray_path, mode='w+', shape=volume.shape)
-    mesh_list = []
+    bigarray_path = os.path.join('/data/edward', 'bigarray.npy')
+    volume = np.memmap(bigarray_path, mode='w+', shape=(columns, rows, len(files)))
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
         tif = io.imread(infile)
         # tif = np.flip(tif, axis=1)
         # tif = rotate_image(tif, infile, 1)
         volume[:,:,i] = tif
-        #mesh_list.append(tif)
 
-    ng = NumpyToNeuroglancer(volume.astype(np.uint8), [10000, 10000, 1000], offset=[0,0,0])
+    ng = NumpyToNeuroglancer(volume.astype(np.uint8), [1000, 1000, 1000], offset=[0,0,0])
     ng.init_precomputed(OUTPUT_DIR)
     fake_volume = np.zeros(3) + 255
     del volume
