@@ -32,9 +32,9 @@ def create_shell(animal):
     files = sorted(os.listdir(INPUT))
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
-    rows, columns = imagesize.get(midfilepath)
-    bigarray_path = os.path.join('/data/edward', 'bigarray.npy')
-    volume = np.memmap(bigarray_path, mode='w+', shape=(columns, rows, len(files)))
+    width, height = imagesize.get(midfilepath)
+    bigarray_path = os.path.join(fileLocationManager.prep, 'bigarray.npy')
+    volume = np.memmap(bigarray_path, mode='w+', shape=(height, width, len(files)))
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
         tif = io.imread(infile)
@@ -47,7 +47,6 @@ def create_shell(animal):
     fake_volume = np.zeros(3) + 255
     del volume
     ng.add_segment_properties(get_segment_ids(fake_volume))
-
     ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
 
