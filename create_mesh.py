@@ -12,6 +12,8 @@ import shutil
 from skimage import io
 from tqdm import tqdm
 
+from dask_image.imread import imread
+
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
@@ -19,7 +21,7 @@ from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_ids
 
 
-def create_shell(animal):
+def create_mesh(animal):
     start = timer()
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
@@ -29,22 +31,22 @@ def create_shell(animal):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     files = sorted(os.listdir(INPUT))
+    files = files[0:100]
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     width, height = imagesize.get(midfilepath)
     bigarray_path = os.path.join(fileLocationManager.prep, 'bigarray.npy')
-    volume = np.memmap(bigarray_path, mode='w+', shape=(height, width, len(files)))
+    write_volume = np.memmap(bigarray_path, mode='w+', shape=(height, width, len(files)))
+    read_volume = np.memmap(bigarray_path, mode='r+', shape=(height, width, len(files)))
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
         tif = io.imread(infile)
-        # tif = np.flip(tif, axis=1)
-        # tif = rotate_image(tif, infile, 1)
-        volume[:,:,i] = tif
-
-    ng = NumpyToNeuroglancer(volume.astype(np.uint8), [2000, 2000, 1000], offset=[0,0,0])
+        write_volume[:,:,i] = tif
+    read_volume = write_volume
+    del write_volume
+    ng = NumpyToNeuroglancer(read_volume.astype(np.uint8), [2000, 2000, 1000], offset=[0,0,0])
     ng.init_precomputed(OUTPUT_DIR)
     fake_volume = np.zeros(3) + 255
-    del volume
     ng.add_segment_properties(get_segment_ids(fake_volume))
     ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
@@ -59,5 +61,5 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     args = parser.parse_args()
     animal = args.animal
-    create_shell(animal)
+    create_mesh(animal)
 

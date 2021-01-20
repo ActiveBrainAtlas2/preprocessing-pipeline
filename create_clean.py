@@ -18,7 +18,7 @@ from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK, CLEAN_CHANNEL_1_FULL_
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
+from utilities.utilities_mask import rotate_image, place_image, scaled, equalized, linnorm
 from utilities.utilities_process import get_last_2d, test_dir, SCALING_FACTOR
 
 
@@ -45,8 +45,9 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
     img = get_last_2d(img)
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
-    fixed = scaled(fixed, mask, scale, epsilon=0.01)
-    fixed = cv2.medianBlur(fixed, 1)
+    #fixed = scaled(fixed, mask, scale, epsilon=0.01)
+    #fixed = cv2.medianBlur(fixed, 1)
+    fixed = linnorm(fixed, mask, scale)
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
         mask = rotate_image(mask, maskfile, rotation)

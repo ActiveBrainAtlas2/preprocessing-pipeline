@@ -557,7 +557,8 @@ def lognorm(img, limit):
     return -lxf * limit / (xmax - xmin) + xmax * limit / (xmax - xmin)  # log of data and stretch 0 to limit
 
 
-def linnorm(img, limit, dt):
+def linnorm(img, mask, limit):
+    img = img * (mask > 10)
     flat = img.flatten()
     hist, bins = np.histogram(flat, limit + 1)
     cdf = hist.cumsum()  # cumulative distribution function
@@ -565,7 +566,20 @@ def linnorm(img, limit, dt):
     # use linear interpolation of cdf to find new pixel values
     img_norm = np.interp(flat, bins[:-1], cdf)
     img_norm = np.reshape(img_norm, img.shape)
-    return img_norm.astype(dt)
+    img_norm = img_norm * (mask > 10)
+
+    return img_norm
+
+def equalize(f):
+    h = np.histogram(f, bins=np.arange(2**16))[0]
+    H = np.cumsum(h) / float(np.sum(h))
+    e = np.floor(H[f.flatten().astype(np.uint16)]*2**16-1)
+    return e.reshape(f.shape)
+
+def normalize(img):
+    lmin = float(img.min())
+    lmax = float(img.max())
+    return np.floor(img-lmin)/(lmax-lmin) * 2**16-1
 
 def find_contour_count(img):
     contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
