@@ -17,13 +17,12 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_ids
-from utilities.utilities_mask import rotate_image
 
 
 def create_shell(animal):
     start = timer()
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
@@ -42,7 +41,7 @@ def create_shell(animal):
         # tif = rotate_image(tif, infile, 1)
         volume[:,:,i] = tif
 
-    ng = NumpyToNeuroglancer(volume.astype(np.uint8), [1000, 1000, 1000], offset=[0,0,0])
+    ng = NumpyToNeuroglancer(volume.astype(np.uint8), [2000, 2000, 1000], offset=[0,0,0])
     ng.init_precomputed(OUTPUT_DIR)
     fake_volume = np.zeros(3) + 255
     del volume

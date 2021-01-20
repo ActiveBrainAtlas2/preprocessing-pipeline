@@ -46,8 +46,7 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
     fixed = scaled(fixed, mask, scale, epsilon=0.01)
-    fixed = equalized(fixed)
-
+    fixed = cv2.medianBlur(fixed, 1)
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
         mask = rotate_image(mask, maskfile, rotation)

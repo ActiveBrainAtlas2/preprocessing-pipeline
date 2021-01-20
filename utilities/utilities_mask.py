@@ -282,7 +282,9 @@ def equalized(fixed):
     :param fixed: image we are working on
     :return: a better looking image
     """
-    clahe = cv2.createCLAHE(clipLimit=40.0, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
+    fixed = clahe.apply(fixed)
+    clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(2, 2))
     fixed = clahe.apply(fixed)
     return fixed
 
