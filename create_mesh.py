@@ -4,6 +4,8 @@ Creates a shell from  aligned thumbnails
 import argparse
 import os
 import sys
+from taskqueue import LocalTaskQueue
+import igneous.task_creation as tc
 
 import imagesize
 import numpy as np
@@ -36,23 +38,18 @@ def create_mesh(animal):
     midfilepath = os.path.join(INPUT, files[midpoint])
     width, height = imagesize.get(midfilepath)
     bigarray_path = os.path.join(fileLocationManager.prep, 'bigarray.npy')
-    write_volume = np.memmap(bigarray_path, mode='w+', shape=(height, width, len(files)))
-    read_volume = np.memmap(bigarray_path, mode='r+', shape=(height, width, len(files)))
+    volume = np.memmap(bigarray_path, mode='w+', shape=(height, width, len(files)))
     for i, file in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, file)
         tif = io.imread(infile)
-        write_volume[:,:,i] = tif
-    read_volume = write_volume
-    del write_volume
-    ng = NumpyToNeuroglancer(read_volume.astype(np.uint8), [2000, 2000, 1000], offset=[0,0,0])
+        volume[:,:,i] = tif
+    ng = NumpyToNeuroglancer(volume.astype(np.uint8), [2000, 2000, 1000], offset=[0,0,0])
+    del volume
     ng.init_precomputed(OUTPUT_DIR)
     fake_volume = np.zeros(3) + 255
     ng.add_segment_properties(get_segment_ids(fake_volume))
     ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
-
-    end = timer()
-    print(f'Finito! Program took {end - start} seconds')
 
 
 
