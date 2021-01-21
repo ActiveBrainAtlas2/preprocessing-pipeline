@@ -38,7 +38,7 @@ def create_mesh(animal):
     width, height = imagesize.get(midfilepath)
 
     ## limit
-    files = files[midpoint-200:midpoint+200]
+    files = files[midpoint-2000:midpoint+2000]
 
     file_keys = []
     scales = (1000, 1000, 1000)
