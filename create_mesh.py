@@ -4,18 +4,10 @@ Creates a shell from  aligned thumbnails
 import argparse
 import os
 import sys
-from taskqueue import LocalTaskQueue
-import igneous.task_creation as tc
-from concurrent.futures import ProcessPoolExecutor
-
 import imagesize
 import numpy as np
-from timeit import default_timer as timer
 import shutil
-from skimage import io
 from tqdm import tqdm
-
-from dask_image.imread import imread
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
