@@ -1,4 +1,4 @@
-
+import json
 import os, sys
 import shutil
 from concurrent.futures import ProcessPoolExecutor
@@ -23,6 +23,51 @@ from utilities.file_location import FileLocationManager
 
 DIR = 'CH1/thumbnail_aligned'
 
+
+def add_segment_properties(precomputed_vol, segment_properties):
+    precomputed_vol.info['segment_properties'] = 'names'
+    precomputed_vol.commit_info()
+
+    segment_properties_path = os.path.join(precomputed_vol.layer_cloudpath.replace('file://', ''), 'names')
+    os.makedirs(segment_properties_path, exist_ok=True)
+
+    info = {
+        "@type": "neuroglancer_segment_properties",
+        "inline": {
+            "ids": [str(number) for number, label in segment_properties],
+            "properties": [{
+                "id": "label",
+                "type": "label",
+                "values": [str(label) for number, label in segment_properties]
+            }]
+        }
+    }
+    with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
+        json.dump(info, file, indent=2)
+
+
+def add_downsampled_volumes(precomputed_vol):
+    cpus = get_cpus()
+    tq = LocalTaskQueue(parallel=cpus)
+    tasks = tc.create_downsampling_tasks(precomputed_vol.layer_cloudpath, compress=False)
+    tq.insert(tasks)
+    tq.execute()
+
+
+def add_segmentation_mesh(precomputed_vol):
+    cpus = get_cpus()
+    tq = LocalTaskQueue(parallel=cpus)
+    tasks = tc.create_meshing_tasks(precomputed_vol.layer_cloudpath, mip=0,
+                                    compress=False)  # The first phase of creating mesh
+    tq.insert(tasks)
+    tq.execute()
+
+    # It should be able to incoporated to above tasks, but it will give a weird bug. Don't know the reason
+    tasks = tc.create_mesh_manifest_tasks(precomputed_vol.layer_cloudpath)  # The second phase of creating mesh
+    tq.insert(tasks)
+    tq.execute()
+
+
 def make_info_file(volume_size,resolution,layer_dir,commit=True):
     """
     ---PURPOSE---
@@ -45,7 +90,7 @@ def make_info_file(volume_size,resolution,layer_dir,commit=True):
         volume_size = volume_size, # X,Y,Z size in voxels
         )
 
-    volume = CloudVolume(f'file://{layer_dir}', info=info, compress=False)
+    volume = CloudVolume(f'file://{layer_dir}',mip=0, info=info, compress=False, progress=False)
     volume.provenance.description = "Creating a mesh"
     volume.provenance.owners = ['eodonnell'] # list of contact email addresses
     if commit:
@@ -101,7 +146,7 @@ if __name__ == "__main__":
     x_dim = width
     y_dim = height
 
-    #files = files[midpoint-3000:midpoint+3000]
+    #files = files[midpoint-300:midpoint+300]
 
     z_dim = len(files)
     volume_size = (x_dim,y_dim,z_dim)
@@ -117,6 +162,10 @@ if __name__ == "__main__":
     with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(process_slice, file_keys)
         volume.cache.flush()
+
+    add_downsampled_volumes(volume)
+    add_segmentation_mesh(volume)
+
 
 
 
