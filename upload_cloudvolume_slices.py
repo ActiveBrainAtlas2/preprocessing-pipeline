@@ -1,6 +1,9 @@
 
 import os, sys
 import shutil
+from concurrent.futures import ProcessPoolExecutor
+from skimage import io
+
 from tqdm import tqdm
 import imagesize
 import numpy as np
@@ -11,11 +14,14 @@ from cloudvolume import CloudVolume
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 
+from utilities.utilities_cvat_neuroglancer import get_cpus
+
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 
+DIR = 'CH1/thumbnail_aligned'
 
 def make_info_file(volume_size,resolution,layer_dir,commit=True):
     """
@@ -31,82 +37,87 @@ def make_info_file(volume_size,resolution,layer_dir,commit=True):
     info = CloudVolume.create_new_info(
         num_channels = 1,
         layer_type = 'segmentation', # 'image' or 'segmentation'
-        data_type = 'uint16', #
+        data_type = 'uint8', #
         encoding = 'raw', # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
         resolution = resolution, # Size of X,Y,Z pixels in nanometers,
         voxel_offset = [ 0, 0, 0 ], # values X,Y,Z values in voxels
-        chunk_size = [ 1024,1024,1 ], # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
+        chunk_size = [1024, 1024, 1 ], # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
         volume_size = volume_size, # X,Y,Z size in voxels
         )
 
-    vol = CloudVolume(f'file://{layer_dir}', info=info, compress=False)
-    vol.provenance.description = "Test on spock for profiling precomputed creation"
-    vol.provenance.owners = ['eodonnell'] # list of contact email addresses
+    volume = CloudVolume(f'file://{layer_dir}', info=info, compress=False)
+    volume.provenance.description = "Creating a mesh"
+    volume.provenance.owners = ['eodonnell'] # list of contact email addresses
     if commit:
-        vol.commit_info() # generates info json file
-        vol.commit_provenance() # generates provenance json file
-        print("Created CloudVolume info file: ",vol.info_cloudpath)
-    return vol
+        volume.commit_info() # generates info json file
+        volume.commit_provenance() # generates provenance json file
+        print("Created CloudVolume info file: ",volume.info_cloudpath)
+    return volume
 
-def process_slice(i, z):
+def process_slice(file_key):
     """
     ---PURPOSE---
     Upload a tif slice image to cloudvolume
     ---INPUT---
     z          The 0-indexed integer representing the slice number
     """
+    index, filename = file_key
     fileLocationManager = FileLocationManager('X')
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
-    OUTPUT_DIR = os.path.join(fileLocationManager.prep, 'CH1/processed')
-    if os.path.exists(OUTPUT_DIR):
-        shutil.rmtree(OUTPUT_DIR)
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    if os.path.exists(os.path.join(OUTPUT_DIR, z)):
-        print(f"Slice {z} already processed, skipping ")
-        return
-    img_name = os.path.join(INPUT, z)
-    image = Image.open(img_name)
-    width, height = image.size
-    array = np.array(image, dtype=np.uint16, order='F')
-    array = array.reshape((1, height, width)).T
-    vol[:,:, i] = array
-    image.close()
+    INPUT = os.path.join(fileLocationManager.prep, DIR)
+
+    #img_name = os.path.join(INPUT, filename)
+    #image = Image.open(img_name)
+    #width, height = image.size
+    #array = np.array(image, dtype=np.uint8, order='F')
+    #array = array.reshape((1, height, width)).T
+    #print('PIL',filename, array.shape)
+    ##volume[:,:, index] = array
+    #image.close()
+
+    infile = os.path.join(INPUT, filename)
+    tif = io.imread(infile)
+    tif = tif.reshape(tif.shape[1], tif.shape[0], 1)
+    #print('IO ',filename, tif.shape)
+    volume[:,:,index] = tif
+
     return
 
 if __name__ == "__main__":
     # make a list of your slices
     fileLocationManager = FileLocationManager('X')
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
+    INPUT = os.path.join(fileLocationManager.prep, DIR)
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     files = sorted(os.listdir(INPUT))
-    #files = files[1000:1200]
+    #files = files[0:1000]
 
     midpoint = len(files) // 2
+
     midfilepath = os.path.join(INPUT, files[midpoint])
     width, height = imagesize.get(midfilepath)
     x_dim = width
     y_dim = height
+
+    #files = files[midpoint-3000:midpoint+3000]
+
     z_dim = len(files)
-
-    # Make the info file
-    x_scale_nm, y_scale_nm,z_scale_nm = 2000,2000,1000
-
-    """ Handle the different steps """
     volume_size = (x_dim,y_dim,z_dim)
-    resolution = (x_scale_nm,y_scale_nm,z_scale_nm)
+    resolution = (10000, 10000, 1000) # in nm
 
-    vol = make_info_file(volume_size=volume_size,layer_dir=OUTPUT_DIR,resolution=resolution)
+    volume = make_info_file(volume_size=volume_size,layer_dir=OUTPUT_DIR,resolution=resolution)
     print(f"Have {len(files)} planes to upload")
-    # Upload slices in parallel to cloudvolume
-    #with ProcessPoolExecutor(max_workers=2) as executor:
-    #    executor.map(process_slice, to_upload)
-    #    vol.cache.flush()
-    for i, z in enumerate(tqdm(files)):
-        process_slice(i, z)
+    file_keys = []
+    for i, f in enumerate(tqdm(files)):
+        file_keys.append([i,f])
+
+    workers = get_cpus()
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        executor.map(process_slice, file_keys)
+        volume.cache.flush()
+
 
 
 
