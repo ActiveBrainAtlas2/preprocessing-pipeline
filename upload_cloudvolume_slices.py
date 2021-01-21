@@ -14,7 +14,7 @@ from cloudvolume import CloudVolume
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 
-from utilities.utilities_cvat_neuroglancer import get_cpus
+from utilities.utilities_cvat_neuroglancer import get_cpus, get_segment_ids
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -86,7 +86,7 @@ def make_info_file(volume_size,resolution,layer_dir,commit=True):
         encoding = 'raw', # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
         resolution = resolution, # Size of X,Y,Z pixels in nanometers,
         voxel_offset = [ 0, 0, 0 ], # values X,Y,Z values in voxels
-        chunk_size = [1024, 1024, 1 ], # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
+        chunk_size = [64,64,1], # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
         volume_size = volume_size, # X,Y,Z size in voxels
         )
 
@@ -109,7 +109,6 @@ def process_slice(file_key):
     index, filename = file_key
     fileLocationManager = FileLocationManager('X')
     INPUT = os.path.join(fileLocationManager.prep, DIR)
-
     #img_name = os.path.join(INPUT, filename)
     #image = Image.open(img_name)
     #width, height = image.size
@@ -146,7 +145,8 @@ if __name__ == "__main__":
     x_dim = width
     y_dim = height
 
-    #files = files[midpoint-300:midpoint+300]
+    #####limit = 500
+    #####files = files[midpoint-limit:midpoint+limit]
 
     z_dim = len(files)
     volume_size = (x_dim,y_dim,z_dim)
@@ -163,8 +163,11 @@ if __name__ == "__main__":
         executor.map(process_slice, file_keys)
         volume.cache.flush()
 
+    fake_volume = np.zeros(3) + 255
+    add_segment_properties(volume, get_segment_ids(fake_volume))
     add_downsampled_volumes(volume)
     add_segmentation_mesh(volume)
+    #volume.cache.flush()
 
 
 

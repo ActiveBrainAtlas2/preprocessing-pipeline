@@ -24,7 +24,6 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 
 def create_mesh(animal):
-    start = timer()
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
@@ -44,7 +43,6 @@ def create_mesh(animal):
         tif = io.imread(infile)
         volume[:,:,i] = tif
     ng = NumpyToNeuroglancer(volume.astype(np.uint8), [2000, 2000, 1000], offset=[0,0,0])
-    del volume
     ng.init_precomputed(OUTPUT_DIR)
     fake_volume = np.zeros(3) + 255
     ng.add_segment_properties(get_segment_ids(fake_volume))
