@@ -6,6 +6,7 @@ import os
 import sys
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
+from concurrent.futures import ProcessPoolExecutor
 
 import imagesize
 import numpy as np
@@ -25,25 +26,35 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 def create_mesh(animal):
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh2')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     files = sorted(os.listdir(INPUT))
-    files = files[0:100]
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     width, height = imagesize.get(midfilepath)
-    bigarray_path = os.path.join(fileLocationManager.prep, 'bigarray.npy')
-    volume = np.memmap(bigarray_path, mode='w+', shape=(height, width, len(files)))
-    for i, file in enumerate(tqdm(files)):
-        infile = os.path.join(INPUT, file)
-        tif = io.imread(infile)
-        volume[:,:,i] = tif
-    ng = NumpyToNeuroglancer(volume.astype(np.uint8), [2000, 2000, 1000], offset=[0,0,0])
-    ng.init_precomputed(OUTPUT_DIR)
+
+    ## limit
+    files = files[midpoint-200:midpoint+200]
+
+    file_keys = []
+    scales = (1000, 1000, 1000)
+    #volume = np.empty((height, width, len(files)))
+    ng = NumpyToNeuroglancer(None, scales)
+    ng.init_mesh(OUTPUT_DIR, (height, width, len(files)))
+
+    #with ProcessPoolExecutor(max_workers=2) as executor:
+    #    executor.map(ng.process_slice, file_keys)
+    #    #ng.volume.cache.flush()
+    #for file_key in file_keys:
+    for i, f in enumerate(tqdm(files)):
+        filepath = os.path.join(INPUT, f)
+        #file_keys.append([i,filepath])
+        ng.process_slice((i,filepath))
+
     fake_volume = np.zeros(3) + 255
     ng.add_segment_properties(get_segment_ids(fake_volume))
     ng.add_downsampled_volumes()

@@ -106,9 +106,7 @@ def process_slice(file_key):
     ---INPUT---
     z          The 0-indexed integer representing the slice number
     """
-    index, filename = file_key
-    fileLocationManager = FileLocationManager('X')
-    INPUT = os.path.join(fileLocationManager.prep, DIR)
+    index, infile = file_key
     #img_name = os.path.join(INPUT, filename)
     #image = Image.open(img_name)
     #width, height = image.size
@@ -117,8 +115,6 @@ def process_slice(file_key):
     #print('PIL',filename, array.shape)
     ##volume[:,:, index] = array
     #image.close()
-
-    infile = os.path.join(INPUT, filename)
     tif = io.imread(infile)
     tif = tif.reshape(tif.shape[1], tif.shape[0], 1)
     #print('IO ',filename, tif.shape)
@@ -130,7 +126,7 @@ if __name__ == "__main__":
     # make a list of your slices
     fileLocationManager = FileLocationManager('X')
     INPUT = os.path.join(fileLocationManager.prep, DIR)
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh2')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -145,8 +141,8 @@ if __name__ == "__main__":
     x_dim = width
     y_dim = height
 
-    #####limit = 500
-    #####files = files[midpoint-limit:midpoint+limit]
+    limit = 50
+    files = files[midpoint-limit:midpoint+limit]
 
     z_dim = len(files)
     volume_size = (x_dim,y_dim,z_dim)
@@ -156,7 +152,8 @@ if __name__ == "__main__":
     print(f"Have {len(files)} planes to upload")
     file_keys = []
     for i, f in enumerate(tqdm(files)):
-        file_keys.append([i,f])
+        filepath = os.path.join(INPUT, f)
+        file_keys.append([i,filepath])
 
     workers = get_cpus()
     with ProcessPoolExecutor(max_workers=workers) as executor:
