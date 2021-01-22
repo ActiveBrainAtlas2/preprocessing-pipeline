@@ -29,7 +29,6 @@
     	pix_val = 1.0;
   	}
 
-
   	if(invert==1.0){
   	  emitGrayscale((1.0 -( pix_val  - brightness)) * exp(contrast)) ;
   	}
