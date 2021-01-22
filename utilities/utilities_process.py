@@ -80,8 +80,8 @@ def test_dir(animal, dir, full=False, same_size=False):
         max_width = 0
         min_height = 0
         max_height = 0
-    if section_count != len(files):
-        error += f"Number of files in {dir} is incorrect.\n"
+    #if section_count != len(files):
+    #    error += f"Number of files in {dir} is incorrect.\n"
     if min_width != max_width and min_width > 0 and same_size:
        error += f"Widths are not of equal size, min is {min_width} and max is {max_width}.\n"
     if min_height != max_height and min_height > 0 and same_size:
