@@ -20,8 +20,9 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 def create_mesh(animal):
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh2')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
+    chunk = 2**2
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_chunk_{chunk}')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -29,13 +30,14 @@ def create_mesh(animal):
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     width, height = imagesize.get(midfilepath)
-    limit = 500
-    #files = files[midpoint-limit:midpoint+limit]
+    limit = 50
+    files = files[midpoint-limit:midpoint+limit]
 
     file_keys = []
-    scales = (1000, 1000, 1000)
+    scales = (10000, 10000, 1000)
     ng = NumpyToNeuroglancer(None, scales)
-    ng.init_mesh(OUTPUT_DIR, (height, width, len(files)))
+    chunk_size = [chunk, chunk, 1]
+    ng.init_mesh(OUTPUT_DIR, (height, width, len(files)), chunk_size)
 
     for i, f in enumerate(tqdm(files)):
         filepath = os.path.join(INPUT, f)

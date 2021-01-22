@@ -136,7 +136,7 @@ class NumpyToNeuroglancer():
         self.precomputed_vol.commit_info()
         self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
-    def init_mesh(self, path, volume_size):
+    def init_mesh(self, path, volume_size, chunk_size):
         info = CloudVolume.create_new_info(
             num_channels=1,
             layer_type='segmentation',  # 'image' or 'segmentation'
@@ -144,7 +144,7 @@ class NumpyToNeuroglancer():
             encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
             resolution=self.scales,  # Size of X,Y,Z pixels in nanometers,
             voxel_offset=[0, 0, 0],  # values X,Y,Z values in voxels
-            chunk_size=[128, 128, 1],  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
+            chunk_size=chunk_size,  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
@@ -206,6 +206,7 @@ class NumpyToNeuroglancer():
         tif = io.imread(infile)
         tif = tif.reshape(tif.shape[0], tif.shape[1], 1)
         self.precomputed_vol[:,:,index] = tif
+        del tif
 
         return
 
