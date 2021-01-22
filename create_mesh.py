@@ -15,7 +15,7 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_ids
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_ids, get_cpus
 
 
 def create_mesh(animal):
@@ -47,6 +47,7 @@ def create_mesh(animal):
         file_keys.append([i,filepath])
     #    #ng.process_slice((i,filepath))
 
+    workers = get_cpus()
     with ProcessPoolExecutor(max_workers=2) as executor:
         executor.map(ng.process_slice, file_keys)
         ng.precomputed_vol.cache.flush()
