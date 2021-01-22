@@ -48,7 +48,7 @@ def create_mesh(animal):
     #    #ng.process_slice((i,filepath))
 
     workers = get_cpus()
-    with ProcessPoolExecutor(max_workers=2) as executor:
+    with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(ng.process_slice, file_keys)
         ng.precomputed_vol.cache.flush()
 
