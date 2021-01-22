@@ -1,4 +1,5 @@
 // dont copy this line. one is good for 16bit one channel, all controls
+#uicontrol invlerp normalized
 #uicontrol float min slider(min=0, max=1, default=0)
 #uicontrol float max slider(min=0, max=1, default=1)
 #uicontrol float invert slider(min=0, max=1, default=0, step=1)
@@ -33,11 +34,15 @@
   	  emitGrayscale((1.0 -( pix_val  - brightness)) * exp(contrast)) ;
   	}
   	else{
-    	emitGrayscale((pix_val + brightness) *
-                  exp(contrast));
+    	emitGrayscale((pix_val + brightness) * exp(contrast));
   	}
 
 }
+
+//void main() {
+//  emitGrayscale(normalized());
+//}
+
 
 
 

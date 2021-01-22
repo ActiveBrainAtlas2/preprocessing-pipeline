@@ -4,6 +4,8 @@ Creates a shell from  aligned thumbnails
 import argparse
 import os
 import sys
+from concurrent.futures.process import ProcessPoolExecutor
+
 import imagesize
 import numpy as np
 import shutil
@@ -18,8 +20,8 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 def create_mesh(animal):
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh2')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -29,23 +31,25 @@ def create_mesh(animal):
     midfilepath = os.path.join(INPUT, files[midpoint])
     width, height = imagesize.get(midfilepath)
 
-    ## limit
-    files = files[midpoint-2000:midpoint+2000]
+    limit = 500
+    #files = files[midpoint-limit:midpoint+limit]
 
     file_keys = []
-    scales = (1000, 1000, 1000)
+    scales = (10000, 10000, 1000)
     #volume = np.empty((height, width, len(files)))
     ng = NumpyToNeuroglancer(None, scales)
     ng.init_mesh(OUTPUT_DIR, (height, width, len(files)))
 
-    #with ProcessPoolExecutor(max_workers=2) as executor:
-    #    executor.map(ng.process_slice, file_keys)
-    #    #ng.volume.cache.flush()
+        #ng.volume.cache.flush()
     #for file_key in file_keys:
     for i, f in enumerate(tqdm(files)):
         filepath = os.path.join(INPUT, f)
-        #file_keys.append([i,filepath])
-        ng.process_slice((i,filepath))
+        file_keys.append([i,filepath])
+    #    #ng.process_slice((i,filepath))
+
+    with ProcessPoolExecutor(max_workers=2) as executor:
+        executor.map(ng.process_slice, file_keys)
+        ng.precomputed_vol.cache.flush()
 
     fake_volume = np.zeros(3) + 255
     ng.add_segment_properties(get_segment_ids(fake_volume))
