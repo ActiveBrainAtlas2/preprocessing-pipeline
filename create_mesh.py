@@ -20,7 +20,7 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 def create_mesh(animal):
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
@@ -31,11 +31,11 @@ def create_mesh(animal):
     midfilepath = os.path.join(INPUT, files[midpoint])
     width, height = imagesize.get(midfilepath)
 
-    limit = 500
+    #limit = 250
     #files = files[midpoint-limit:midpoint+limit]
 
     file_keys = []
-    scales = (10000, 10000, 1000)
+    scales = (2000, 2000, 1000)
     #volume = np.empty((height, width, len(files)))
     ng = NumpyToNeuroglancer(None, scales)
     ng.init_mesh(OUTPUT_DIR, (height, width, len(files)))
