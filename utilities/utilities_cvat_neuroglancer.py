@@ -20,9 +20,9 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 def get_cpus():
     usecpus = 3
     cpus = {}
-    cpus['muralis'] = 20
-    cpus['basalis'] = 8
-    cpus['ratto'] = 8
+    cpus['muralis'] = 50
+    cpus['basalis'] = 10
+    cpus['ratto'] = 10
     hostname = socket.gethostname()
     hostname = hostname.split(".")[0]
     if hostname in cpus.keys():
@@ -147,7 +147,7 @@ class NumpyToNeuroglancer():
             chunk_size=chunk_size,  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
-        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
+        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
         #self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
@@ -181,7 +181,7 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=False)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=True)
         tq.insert(tasks)
         tq.execute()
 
@@ -191,7 +191,7 @@ class NumpyToNeuroglancer():
 
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=False) # The first phase of creating mesh
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
 
