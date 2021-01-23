@@ -3,18 +3,30 @@ channels:
   - simpleitk
   - conda-forge
   - default
+
 dependencies:
   - python=3
+  - cython
   - jupyterlab
+
+  - graph-tool
   - matplotlib
+  - natsort
   - nibabel
   - nilearn
   - numpy
   - opencv
   - pandas
+  - pyopengl
+  - pyqtgraph
   - pytorch
+  - scikit-image
+  - scikit-learn
   - scipy
   - simpleitk
-  - torchvision
+  - tifffile
+  - vispy
+
+  - pip
   - pip:
     - ardent
