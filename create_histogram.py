@@ -91,7 +91,7 @@ def make_histogram(animal, channel):
 
         fig = plt.figure()
         plt.rcParams['figure.figsize'] = [10, 6]
-        plt.hist(flat, flat.max(), [0, flat.max()], color=COLORS[channel])
+        plt.hist(flat, flat.max(), [0, 10000], color=COLORS[channel])
         plt.style.use('ggplot')
         plt.yscale('log')
         plt.grid(axis='y', alpha=0.75)

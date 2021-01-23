@@ -222,3 +222,22 @@ https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
     // emitGrayscale((pix_val + brightness) * exp(contrast));
 
 }
+
+
+## latest
+#uicontrol invlerp normalized
+#uicontrol float invert slider(min=0, max=1, default=0, step=1)
+#uicontrol float gamma slider(min=0.05, max=2.5, default=1.0, step=0.005)
+
+  void main() {
+    float pix =  normalized();
+    pix = pow(pix,gamma);
+
+  	if(invert==1.0){
+  	  emitGrayscale(1.0 - pix   ) ;
+  	}
+  	else{
+  	  emitGrayscale((pix)) ;
+  	}
+
+}

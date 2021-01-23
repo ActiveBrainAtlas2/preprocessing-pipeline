@@ -205,7 +205,7 @@ class NumpyToNeuroglancer():
         index, infile = file_key
         tif = io.imread(infile)
         tif = tif.reshape(tif.shape[0], tif.shape[1], 1)
-        self.precomputed_vol[:,:,index] = tif
+        self.precomputed_vol[:,:,index] = tif.astype(np.uint8)
         del tif
 
         return
@@ -218,7 +218,6 @@ def mask_to_shell(mask):
     for sub_contour in sub_contours:
         sub_contour.T[[0, 1]] = sub_contour.T[[1, 0]]
         pts = sub_contour.astype(np.int32).reshape((-1, 1, 2))
-
         sub_shell = np.zeros(mask.shape, dtype='uint8')
         sub_shell = cv2.polylines(sub_shell, [pts], True, 1, 5, lineType=cv2.LINE_AA)
         sub_shells.append(sub_shell)
