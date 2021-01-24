@@ -258,20 +258,21 @@ def check_contour(contours, area, lc):
 def scaled(img, mask, limit, epsilon=0.01):
     """
     This scales the image to the limit specified. You can get this value
-    by looking at the combined histogram of the image stack.
+    by looking at the combined histogram of the image stack. It is quite
+    often less than 30000 for channel 1
     :param img: image we are working on.
     :param mask: binary mask file
     :param epsilon:
     :param limit: max value we wish to scale to
     :return: scaled image in 16bit format
     """
-    _max = np.quantile(img[mask > 10], 1 - epsilon)
+    _max = np.quantile(img[mask > 10], 1 - epsilon) # gets almost the max value of img
     # print('thr=%d, index=%d'%(vals[ind],index))
-    _range = 2 ** 16 - 1
-    scaled = img * (limit / _max)
+    _range = 2 ** 16 - 1 # 16bit
+    scaled = img * (limit / _max) # scale the image from original values to e.g., 30000/10000
     del img
-    scaled[scaled > _range] = _range
-    scaled = scaled * (mask > 10)
+    scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
+    scaled = scaled * (mask > 10) # just work on the non masked values
     return scaled.astype(np.uint16)
 
 def equalized(fixed):
@@ -283,8 +284,6 @@ def equalized(fixed):
     :return: a better looking image
     """
     clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
-    fixed = clahe.apply(fixed)
-    clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(2, 2))
     fixed = clahe.apply(fixed)
     return fixed
 

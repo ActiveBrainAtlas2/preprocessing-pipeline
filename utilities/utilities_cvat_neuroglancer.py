@@ -12,7 +12,7 @@ import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 from pathlib import Path
 from skimage import io
-
+from PIL import Image
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -87,13 +87,28 @@ def get_segment_ids(volume):
 class NumpyToNeuroglancer():
     viewer = None
 
-    def __init__(self, volume, scales, offset=[0, 0, 0], layer_type='segmentation'):
-        self.volume = volume
+    def __init__(self, scales, layer_type, data_type, chunk_size):
+        self.volume = None
         self.scales = scales
-        self.offset = offset
         self.layer_type = layer_type
-
+        self.data_type = data_type
+        self.chunk_size = chunk_size
         self.precomputed_vol = None
+        self.offset = [0, 0, 0]
+
+    def init_precomputed(self, path, volume_size):
+        info = CloudVolume.create_new_info(
+            num_channels=1,
+            layer_type=self.layer_type,  # 'image' or 'segmentation'
+            data_type=self.data_type,  #
+            encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
+            resolution=self.scales,  # Size of X,Y,Z pixels in nanometers,
+            voxel_offset=self.offset,  # values X,Y,Z values in voxels
+            chunk_size=self.chunk_size,  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
+            volume_size=volume_size,  # X,Y,Z size in voxels
+        )
+        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
+        self.precomputed_vol.commit_info()
 
     def preview(self, layer_name=None, clear_layer=False):
         if self.viewer is None:
@@ -121,7 +136,7 @@ class NumpyToNeuroglancer():
         print(f'A new layer named {layer_name} is added to:')
         print(self.viewer)
 
-    def init_precomputed(self, path):
+    def init_volume(self, path):
         info = CloudVolume.create_new_info(
             num_channels = self.volume.shape[3] if len(self.volume.shape) > 3 else 1,
             layer_type = self.layer_type,
@@ -135,21 +150,6 @@ class NumpyToNeuroglancer():
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
         self.precomputed_vol.commit_info()
         self.precomputed_vol[:, :, :] = self.volume[:, :, :]
-
-    def init_mesh(self, path, volume_size, chunk_size):
-        info = CloudVolume.create_new_info(
-            num_channels=1,
-            layer_type='segmentation',  # 'image' or 'segmentation'
-            data_type='uint8',  #
-            encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
-            resolution=self.scales,  # Size of X,Y,Z pixels in nanometers,
-            voxel_offset=[0, 0, 0],  # values X,Y,Z values in voxels
-            chunk_size=chunk_size,  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
-            volume_size=volume_size,  # X,Y,Z size in voxels
-        )
-        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
-        self.precomputed_vol.commit_info()
-        #self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
 
     def add_segment_properties(self, segment_properties):
@@ -203,11 +203,12 @@ class NumpyToNeuroglancer():
 
     def process_slice(self, file_key):
         index, infile = file_key
-        tif = io.imread(infile)
-        tif = tif.reshape(tif.shape[0], tif.shape[1], 1)
-        self.precomputed_vol[:,:,index] = tif.astype(np.uint8)
-        del tif
-
+        image = Image.open(infile)
+        width, height = image.size
+        array = np.array(image, dtype=self.data_type, order='F')
+        array = array.reshape((1, height, width)).T
+        self.precomputed_vol[:, :, index] = array
+        image.close()
         return
 
 
