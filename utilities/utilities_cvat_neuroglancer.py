@@ -13,6 +13,7 @@ from cloudvolume import CloudVolume
 from pathlib import Path
 from skimage import io
 from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -181,8 +182,9 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        self.chunk_size = [1024, 1024, 1024]
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=False)
+        chunk_size = [64, 64, 64]
+        self.data_type = chunk_size
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=chunk_size, compress=False)
         tq.insert(tasks)
         tq.execute()
 
