@@ -18,10 +18,10 @@ from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_ids, get_cpus
 
 
-def create_mesh(animal, chunk):
+def create_mesh(animal, limit):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_chunk_{chunk}')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -29,12 +29,12 @@ def create_mesh(animal, chunk):
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     width, height = imagesize.get(midfilepath)
-    limit = 100
-    files = files[midpoint-limit:midpoint+limit]
+    if limit > 0:
+        files = files[midpoint-limit:midpoint+limit]
 
     file_keys = []
     scales = (2000, 2000, 1000)
-    chunk_size = [chunk, chunk, 1]
+    chunk_size = [1024, 1024, 1]
     volume_size = (width, height, len(files))
     #def __init__(self, scales, layer_type, data_type, chunk_size):
     ng = NumpyToNeuroglancer(scales, 'segmentation', np.uint8, chunk_size)
@@ -58,9 +58,9 @@ def create_mesh(animal, chunk):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--chunk', help='Enter the chunk', required=False, default=256)
+    parser.add_argument('--limit', help='Enter the chunk', required=False, default=0)
     args = parser.parse_args()
     animal = args.animal
-    chunk = int(args.chunk)
-    create_mesh(animal, chunk)
+    limit = int(args.limit)
+    create_mesh(animal, limit)
 
