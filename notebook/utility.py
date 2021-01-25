@@ -25,6 +25,6 @@ def imshow_midslice(image, ax=None):
     plt.show()
 
 def normalize_intensity(image):
-    image = 255 - image  # so that 0 means nothing there
-    image = (image - image.mean()) / image.std()
+    v_min, v_max = image.min(), image.max()
+    image = (image - v_min) / (v_max - v_min)
     return image

@@ -33,3 +33,4 @@ dependencies:
   - pip
   - pip:
     - ardent
+    - git+https://github.com/airlab-unibas/airlab.git
