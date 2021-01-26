@@ -110,6 +110,7 @@ class NumpyToNeuroglancer():
         )
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
         self.precomputed_vol.commit_info()
+        print('xxxxxxxxxxx', self.precomputed_vol.layer_cloudpath)
 
     def init_volume(self, path):
         info = CloudVolume.create_new_info(
@@ -156,9 +157,7 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        chunk_size = [64,64,64]
-        self.chunk_size = chunk_size
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=chunk_size, compress=False)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, preserve_chunk_size=False, compress=False)
         tq.insert(tasks)
         tq.execute()
 
@@ -168,7 +167,7 @@ class NumpyToNeuroglancer():
 
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=False, shape=(256,256,256)) # The first phase of creating mesh
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=False) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
         # It should be able to incoporated to above tasks, but it will give a weird bug. Don't know the reason

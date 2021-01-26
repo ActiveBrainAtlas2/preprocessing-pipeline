@@ -34,7 +34,7 @@ def create_mesh(animal, limit):
 
     file_keys = []
     scales = (1000, 1000, 1000)
-    chunk_size = [64, 64, 1]
+    chunk_size = [256, 256, 1]
     volume_size = (width, height, len(files))
     ng = NumpyToNeuroglancer(scales, 'segmentation', np.uint8, chunk_size)
     ng.init_precomputed(OUTPUT_DIR, volume_size)
