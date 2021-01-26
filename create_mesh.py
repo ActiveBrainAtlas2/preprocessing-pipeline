@@ -36,9 +36,7 @@ def create_mesh(animal, limit):
     scales = (1000, 1000, 1000)
     chunk_size = [64, 64, 1]
     volume_size = (width, height, len(files))
-    #def __init__(self, scales, layer_type, data_type, chunk_size):
     ng = NumpyToNeuroglancer(scales, 'segmentation', np.uint8, chunk_size)
-    #def init_precomputed(self, path, volume_size):
     ng.init_precomputed(OUTPUT_DIR, volume_size)
 
     for i, f in enumerate(tqdm(files)):

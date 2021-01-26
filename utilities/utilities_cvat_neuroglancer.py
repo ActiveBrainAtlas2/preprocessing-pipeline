@@ -111,32 +111,6 @@ class NumpyToNeuroglancer():
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
         self.precomputed_vol.commit_info()
 
-    def preview(self, layer_name=None, clear_layer=False):
-        if self.viewer is None:
-            self.viewer = neuroglancer.Viewer()
-
-        if layer_name is None:
-            layer_name = f'{self.layer_type}_{self.scales}'
-
-        source = neuroglancer.LocalVolume(
-            data=self.volume,
-            dimensions=neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='nm', scales=self.scales),
-            voxel_offset=self.offset
-        )
-
-        if self.layer_type == 'segmentation':
-            layer = neuroglancer.SegmentationLayer(source=source)
-        else:
-            layer = neuroglancer.ImageLayer(source=source)
-
-        with self.viewer.txn() as s:
-            if clear_layer:
-                s.layers.clear()
-            s.layers[layer_name] = layer
-
-        print(f'A new layer named {layer_name} is added to:')
-        print(self.viewer)
-
     def init_volume(self, path):
         info = CloudVolume.create_new_info(
             num_channels = self.volume.shape[3] if len(self.volume.shape) > 3 else 1,
@@ -182,8 +156,8 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        chunk_size = [64, 64, 64]
-        self.data_type = chunk_size
+        chunk_size = [64,64,64]
+        self.chunk_size = chunk_size
         tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=chunk_size, compress=False)
         tq.insert(tasks)
         tq.execute()
@@ -194,10 +168,9 @@ class NumpyToNeuroglancer():
 
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=False) # The first phase of creating mesh
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=False, shape=(256,256,256)) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
-
         # It should be able to incoporated to above tasks, but it will give a weird bug. Don't know the reason
         tasks = tc.create_mesh_manifest_tasks(self.precomputed_vol.layer_cloudpath) # The second phase of creating mesh
         tq.insert(tasks)
@@ -211,8 +184,35 @@ class NumpyToNeuroglancer():
         array = np.array(image, dtype=self.data_type, order='F')
         array = array.reshape((1, height, width)).T
         self.precomputed_vol[:, :, index] = array
+        print(infile, array.shape)
         image.close()
         return
+
+    def preview(self, layer_name=None, clear_layer=False):
+        if self.viewer is None:
+            self.viewer = neuroglancer.Viewer()
+
+        if layer_name is None:
+            layer_name = f'{self.layer_type}_{self.scales}'
+
+        source = neuroglancer.LocalVolume(
+            data=self.volume,
+            dimensions=neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='nm', scales=self.scales),
+            voxel_offset=self.offset
+        )
+
+        if self.layer_type == 'segmentation':
+            layer = neuroglancer.SegmentationLayer(source=source)
+        else:
+            layer = neuroglancer.ImageLayer(source=source)
+
+        with self.viewer.txn() as s:
+            if clear_layer:
+                s.layers.clear()
+            s.layers[layer_name] = layer
+
+        print(f'A new layer named {layer_name} is added to:')
+        print(self.viewer)
 
 
 def mask_to_shell(mask):
