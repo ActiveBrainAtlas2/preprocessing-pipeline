@@ -110,7 +110,6 @@ class NumpyToNeuroglancer():
         )
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
         self.precomputed_vol.commit_info()
-        print('xxxxxxxxxxx', self.precomputed_vol.layer_cloudpath)
 
     def init_volume(self, path):
         info = CloudVolume.create_new_info(
@@ -157,7 +156,7 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, preserve_chunk_size=False, compress=False)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, num_mips=4, preserve_chunk_size=False, compress=False)
         tq.insert(tasks)
         tq.execute()
 
@@ -183,7 +182,6 @@ class NumpyToNeuroglancer():
         array = np.array(image, dtype=self.data_type, order='F')
         array = array.reshape((1, height, width)).T
         self.precomputed_vol[:, :, index] = array
-        print(infile, array.shape)
         image.close()
         return
 

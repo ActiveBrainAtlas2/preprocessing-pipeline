@@ -253,10 +253,6 @@ https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
     float pix =  normalized();
     pix = pow(pix,gamma);
 
-  	if((invert==1) && (colour!=1)){
-  	  emitGrayscale(1.0 - pix   ) ;
-  	}
-
     if((invert!=1) && (colour==1)){
   	   emitRGB(vec3(pix,0,0));
   	}
@@ -268,6 +264,7 @@ https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
     if((invert==1) && (colour!=1)){
   	  emitGrayscale(1.0 - pix) ;
   	}
+
     if((invert==0) && (colour==0)){
   	  emitGrayscale(pix) ;
   	}
@@ -285,9 +282,6 @@ https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
     float pix =  normalized();
     pix = pow(pix,gamma);
 
-  	if((invert==1) && (colour!=1)){
-  	  emitGrayscale(1.0 - pix   ) ;
-  	}
 
     if((invert!=1) && (colour==1)){
   	   emitRGB(vec3(0, (pix),0));

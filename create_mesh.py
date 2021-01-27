@@ -21,7 +21,7 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 def create_mesh(animal, limit):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_{limit}')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)

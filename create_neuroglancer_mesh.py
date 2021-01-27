@@ -32,7 +32,7 @@ def create_mesh(animal):
     """
     fileLocationManager = FileLocationManager(animal)
     resolution = 1000
-    scale = 2
+    scale = 10
     voxel_resolution = [resolution*scale, resolution*scale, resolution]
     voxel_offset = [0, 0, 0]
 
@@ -49,7 +49,7 @@ def create_mesh(animal):
         "data_type": None}
 
     # make a folder under the "precomputed" dir and execute conversion routine
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
