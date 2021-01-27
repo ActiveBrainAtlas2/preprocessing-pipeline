@@ -9,6 +9,10 @@ from concurrent.futures.process import ProcessPoolExecutor
 import imagesize
 import numpy as np
 import shutil
+
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
+
 from tqdm import tqdm
 
 HOME = os.path.expanduser("~")
@@ -34,19 +38,38 @@ def create_mesh(animal, limit):
 
     file_keys = []
     scales = (2000, 2000, 1000)
-    chunk_size = [64, 64, 1]
+    chunk_size = [64, 64, 64]
     volume_size = (width, height, len(files))
+    usememmap = True
     ng = NumpyToNeuroglancer(scales, 'segmentation', np.uint8, chunk_size)
-    ng.init_precomputed(OUTPUT_DIR, volume_size)
+    if usememmap:
+        outpath = os.path.join(fileLocationManager.prep, 'bigarray.npy')
+        bigarray = np.memmap(outpath, dtype=np.uint8, mode="w+", shape=volume_size)
+        for i,f in enumerate(files):
+            infile = os.path.join(INPUT, f)
+            image = Image.open(infile)
+            width, height = image.size
+            array = np.array(image, dtype=np.uint8, order='F')
+            #array = array.reshape((1, height, width)).T
+            array = array.reshape((height, width)).T
+            print(infile, array.shape, bigarray.shape)
+            bigarray[:, :, i] = array
+            image.close()
 
-    for i, f in enumerate(tqdm(files)):
-        filepath = os.path.join(INPUT, f)
-        file_keys.append([i,filepath])
 
-    workers = get_cpus()
-    with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(ng.process_slice, file_keys)
-        ng.precomputed_vol.cache.flush()
+
+        ng.volume = bigarray
+        ng.init_volume(OUTPUT_DIR)
+    else:
+        ng.init_precomputed(OUTPUT_DIR, volume_size)
+        for i in range(0, len(files)):
+            filepath = os.path.join(INPUT, files[i])
+            file_keys.append([i,filepath])
+
+        workers = get_cpus()
+        with ProcessPoolExecutor(max_workers=1) as executor:
+            executor.map(ng.process_slice, file_keys)
+            ng.precomputed_vol.cache.flush()
 
     fake_volume = np.zeros(3) + 255
     ng.add_segment_properties(get_segment_ids(fake_volume))
