@@ -25,7 +25,7 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 def create_mesh(animal, limit):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_{limit}')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'bigarray')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -36,37 +36,38 @@ def create_mesh(animal, limit):
     if limit > 0:
         files = files[midpoint-limit:midpoint+limit]
 
+    workers = get_cpus()
     file_keys = []
-    scales = (2000, 2000, 1000)
+
+    resolution = 1000
+    scale = 2
+    scales = (resolution*scale, resolution*scale, resolution)
     chunk_size = [64, 64, 64]
     volume_size = (width, height, len(files))
+    for i, f in enumerate(files):
+        filepath = os.path.join(INPUT, f)
+        file_keys.append([i, filepath])
     usememmap = True
     ng = NumpyToNeuroglancer(scales, 'segmentation', np.uint8, chunk_size)
     if usememmap:
-        outpath = os.path.join(fileLocationManager.prep, 'bigarray.npy')
+        outpath = os.path.join('/data/edward', 'bigarray.npy')
         bigarray = np.memmap(outpath, dtype=np.uint8, mode="w+", shape=volume_size)
-        for i,f in enumerate(files):
+        for i,f in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, f)
             image = Image.open(infile)
             width, height = image.size
             array = np.array(image, dtype=np.uint8, order='F')
             #array = array.reshape((1, height, width)).T
-            array = array.reshape((height, width)).T
-            print(infile, array.shape, bigarray.shape)
+            array = array.reshape((height, width, 1)).T
             bigarray[:, :, i] = array
             image.close()
 
-
-
         ng.volume = bigarray
+        del bigarray
         ng.init_volume(OUTPUT_DIR)
     else:
         ng.init_precomputed(OUTPUT_DIR, volume_size)
-        for i in range(0, len(files)):
-            filepath = os.path.join(INPUT, files[i])
-            file_keys.append([i,filepath])
 
-        workers = get_cpus()
         with ProcessPoolExecutor(max_workers=1) as executor:
             executor.map(ng.process_slice, file_keys)
             ng.precomputed_vol.cache.flush()

@@ -21,7 +21,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 def get_cpus():
     usecpus = 3
     cpus = {}
-    cpus['muralis'] = 50
+    cpus['muralis'] = 25
     cpus['basalis'] = 10
     cpus['ratto'] = 10
     hostname = socket.gethostname()
@@ -156,7 +156,7 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=[64,64,8], compress=False)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=[64,64,64], compress=False)
         tq.insert(tasks)
         tq.execute()
 
