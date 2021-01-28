@@ -43,19 +43,20 @@ def create_mesh(animal, limit):
     chunk_size = [64, 64, 64]
     volume_size = (width, height, len(files))
     outpath = os.path.join(fileLocationManager.prep, 'bigarray.npy')
-    bigwriter = np.memmap(outpath, dtype=np.uint8, mode="w+", shape=volume_size)
+    #bigwriter = np.memmap(outpath, dtype=np.uint8, mode="w+", shape=volume_size)
+    volume = np.zeros(volume_size)
     for i,f in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, f)
         image = Image.open(infile)
         width, height = image.size
         array = np.array(image, dtype=np.uint8, order='F')
         array = array.reshape((height, width,1)).T
-        bigwriter[:, :, i] = array
+        volume[:, :, i] = array
         image.close()
 
-    bigreader = np.memmap(outpath, dtype=np.uint8, mode="r+", shape=volume_size)
-    del bigwriter
-    ng = NumpyToNeuroglancer(bigreader, scales, 'segmentation', np.uint8, chunk_size)
+    #bigreader = np.memmap(outpath, dtype=np.uint8, mode="r+", shape=volume_size)
+    #del bigwriter
+    ng = NumpyToNeuroglancer(volume, scales, 'segmentation', np.uint8, chunk_size)
     ng.init_volume(OUTPUT_DIR)
 
     fake_volume = np.zeros(3) + 255
