@@ -119,7 +119,7 @@ class NumpyToNeuroglancer():
             encoding = 'raw',                    # raw, jpeg, compressed_segmentation, fpzip, kempressed
             resolution = self.scales,            # Voxel scaling, units are in nanometers
             voxel_offset = self.offset,          # x,y,z offset in voxels from the origin
-            chunk_size = [64, 64, 64],           # units are voxels
+            chunk_size = self.chunk_size,           # units are voxels
             volume_size = self.volume.shape[:3], # e.g. a cubic millimeter dataset
         )
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
@@ -156,7 +156,7 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=[64,64,64], compress=False)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, num_mips=4, preserve_chunk_size=False, compress=False)
         tq.insert(tasks)
         tq.execute()
 

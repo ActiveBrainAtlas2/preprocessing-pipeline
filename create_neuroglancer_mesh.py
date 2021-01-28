@@ -31,9 +31,9 @@ def create_mesh(animal):
     :return: nothing
     """
     fileLocationManager = FileLocationManager(animal)
-    resolution = 1000
-    scale = 10
-    voxel_resolution = [resolution*scale, resolution*scale, resolution]
+    scale = 3
+    resolution = 1000 * scale
+    voxel_resolution = [resolution, resolution, resolution]
     voxel_offset = [0, 0, 0]
 
     info_fullres_template = {
@@ -49,7 +49,7 @@ def create_mesh(animal):
         "data_type": None}
 
     # make a folder under the "precomputed" dir and execute conversion routine
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/small')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)

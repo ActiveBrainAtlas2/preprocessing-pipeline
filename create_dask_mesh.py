@@ -27,11 +27,10 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 def create_mesh(animal):
     fileLocationManager = FileLocationManager(animal)
-    COPY_FROM = os.path.join(fileLocationManager.prep, 'CH1/downsampled_cropped')
+    COPY_FROM = os.path.join(fileLocationManager.prep, 'CH1/downsampled_33')
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/small')
     allfiles = sorted(os.listdir(COPY_FROM))
-    scale = 2
-    """
+    scale = 3
     if os.path.exists(INPUT):
         shutil.rmtree(INPUT)
     os.makedirs(INPUT, exist_ok=True)
@@ -40,7 +39,7 @@ def create_mesh(animal):
             source = os.path.join(COPY_FROM, f)
             dest = os.path.join(INPUT, f)
             shutil.copy(source, dest)
-    """
+    sys.exit()
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
