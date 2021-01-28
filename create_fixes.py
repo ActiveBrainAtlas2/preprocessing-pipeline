@@ -101,9 +101,6 @@ def test_tif(animal, channel):
         if not dir_exists:
             print("{} does not exist.".format(dir))
 
-        print("There are {} {} entries in the database and we found {} {}s on the server"\
-                .format(animal, valid_file_length, lfiles, name))
-
         missings = find_missing(dir, db_files)
         if len(missings) > 0:
             print("Missing files:")

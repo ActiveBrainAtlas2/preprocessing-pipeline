@@ -355,7 +355,7 @@ def fix_with_fill(img, debug=False):
     img_shape = img.shape
     if fe != 0:
         img[:, fe:] = 0  # mask the strip
-    img = linnorm(img, 200, np.uint8)
+    img = linnorm(img, 200)
     h_src = img.copy()
     del no_strip
     threshold = np.median(h_src)
@@ -461,8 +461,6 @@ def fix_thionin(img, debug=False, dilation_itr=1, bg_mask=False, threshold_range
     # -70 pretty good
     # -90 missing stuff
     bgcolor = int(round(avg)) - threshold_range # -45 in the debug version
-    #img = linnorm(img, 255, np.uint8)
-    # The followng two lines does not exist in the debug version
     clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(8, 8))
     img = clahe.apply(img)
 
@@ -556,8 +554,9 @@ def lognorm(img, limit):
     return -lxf * limit / (xmax - xmin) + xmax * limit / (xmax - xmin)  # log of data and stretch 0 to limit
 
 
-def linnorm(img, mask, limit):
-    img = img * (mask > 10)
+def linnorm(img, limit, mask=None):
+    if mask is not None:
+        img = img * (mask > 10)
     flat = img.flatten()
     hist, bins = np.histogram(flat, limit + 1)
     cdf = hist.cumsum()  # cumulative distribution function
@@ -565,8 +564,8 @@ def linnorm(img, mask, limit):
     # use linear interpolation of cdf to find new pixel values
     img_norm = np.interp(flat, bins[:-1], cdf)
     img_norm = np.reshape(img_norm, img.shape)
-    img_norm = img_norm * (mask > 10)
-
+    if mask is not None:
+        img_norm = img_norm * (mask > 10)
     return img_norm
 
 def equalize(f):

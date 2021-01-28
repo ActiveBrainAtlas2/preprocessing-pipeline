@@ -11,7 +11,6 @@ from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 from pathlib import Path
-from skimage import io
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 PIPELINE_ROOT = Path('.').absolute().parent
@@ -21,8 +20,8 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 def get_cpus():
     usecpus = 3
     cpus = {}
-    cpus['muralis'] = 25
-    cpus['basalis'] = 10
+    cpus['muralis'] = 40
+    cpus['basalis'] = 12
     cpus['ratto'] = 10
     hostname = socket.gethostname()
     hostname = hostname.split(".")[0]
