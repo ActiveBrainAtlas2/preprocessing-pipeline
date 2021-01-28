@@ -88,8 +88,8 @@ def get_segment_ids(volume):
 class NumpyToNeuroglancer():
     viewer = None
 
-    def __init__(self, scales, layer_type, data_type, chunk_size):
-        self.volume = None
+    def __init__(self, volume, scales, layer_type, data_type, chunk_size):
+        self.volume = volume
         self.scales = scales
         self.layer_type = layer_type
         self.data_type = data_type
