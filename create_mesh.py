@@ -53,6 +53,7 @@ def create_mesh(animal, limit):
         image.close()
 
     ng = NumpyToNeuroglancer(volume.astype(np.uint8), scales, 'segmentation', np.uint8, chunk_size)
+    del volume
     ng.init_volume(OUTPUT_DIR)
 
     fake_volume = np.zeros(3, dtype=np.uint8) + 255
