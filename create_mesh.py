@@ -42,9 +42,7 @@ def create_mesh(animal, limit):
     scales = (resolution, resolution, resolution)
     chunk_size = [64, 64, 64]
     volume_size = (width, height, len(files))
-    outpath = os.path.join(fileLocationManager.prep, 'bigarray.npy')
-    #bigwriter = np.memmap(outpath, dtype=np.uint8, mode="w+", shape=volume_size)
-    volume = np.zeros(volume_size)
+    volume = np.zeros(volume_size, dtype=np.uint8)
     for i,f in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, f)
         image = Image.open(infile)
@@ -54,12 +52,10 @@ def create_mesh(animal, limit):
         volume[:, :, i] = array
         image.close()
 
-    #bigreader = np.memmap(outpath, dtype=np.uint8, mode="r+", shape=volume_size)
-    #del bigwriter
-    ng = NumpyToNeuroglancer(volume, scales, 'segmentation', np.uint8, chunk_size)
+    ng = NumpyToNeuroglancer(volume.astype(np.uint8), scales, 'segmentation', np.uint8, chunk_size)
     ng.init_volume(OUTPUT_DIR)
 
-    fake_volume = np.zeros(3) + 255
+    fake_volume = np.zeros(3, dtype=np.uint8) + 255
     ng.add_segment_properties(get_segment_ids(fake_volume))
     ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
