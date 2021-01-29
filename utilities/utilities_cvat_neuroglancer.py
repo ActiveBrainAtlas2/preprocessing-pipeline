@@ -155,7 +155,8 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, num_mips=4, preserve_chunk_size=False, compress=False)
+        #tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=False)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=False, num_mips=1)
         tq.insert(tasks)
         tq.execute()
 

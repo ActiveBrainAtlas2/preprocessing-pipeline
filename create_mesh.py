@@ -23,12 +23,12 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 def create_mesh(animal, limit):
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_33')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_25')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    scale = 3
+    scale = 4
     allfiles = sorted(os.listdir(INPUT))
     files = [f for i,f in enumerate(allfiles) if i % scale == 0]
     midpoint = len(allfiles) // 2
@@ -40,7 +40,7 @@ def create_mesh(animal, limit):
 
     resolution = 1000 * scale
     scales = (resolution, resolution, resolution)
-    chunk_size = [64, 64, 64]
+    chunk_size = [128, 128, 64]
     volume_size = (width, height, len(files))
     volume = np.zeros(volume_size, dtype=np.uint8)
     for i,f in enumerate(tqdm(files)):
