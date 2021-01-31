@@ -79,6 +79,7 @@ def get_segment_properties(all_known=False):
 
 def get_segment_ids(volume):
     ids = [int(i) for i in np.unique(volume[:])]
+    #print(ids)
     segment_properties = [(number, f'{number}: {number}') for number in ids]
     return segment_properties
 
@@ -173,25 +174,15 @@ class NumpyToNeuroglancer():
         tq.insert(tasks)
         tq.execute()
 
-
-    def process_sliceXXX(self, file_key):
-        index, infile = file_key
-        image = Image.open(infile)
-        width, height = image.size
-        storage = np.zeros([height, width], dtype=self.data_type, order='F')
-        array = np.array(image, dtype=np.bool, order='F')
-        array = array.reshape((1, height, width)).T
-        self.precomputed_vol[:, :, index] = array
-        print(infile, array.shape)
-        image.close()
-        return
-
     def process_slice(self, file_key):
         index, infile = file_key
         img = io.imread(infile)
         height, width = img.shape
-        img = (img * 255).astype(self.data_type)
-        img = img.reshape((height, width, 1))
+        if 'bool' in str(img.dtype):
+            img = (img * 1).astype(self.data_type)
+            img = img.reshape(height, width, 1)
+        else:
+            img = img.reshape(1, height, width).T
         #print(infile, img.shape, img.dtype, np.unique(img, return_counts=True))
         self.precomputed_vol[:, :, index] = img
         return
