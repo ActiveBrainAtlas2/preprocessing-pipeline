@@ -1,10 +1,10 @@
 import os
 import sys
 from skimage import measure
+from skimage import io
 import cv2
 import json
 import socket
-
 import numpy as np
 import neuroglancer
 from taskqueue import LocalTaskQueue
@@ -155,8 +155,7 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        #tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=False)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=False, num_mips=1)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=[64,64,64], compress=False)
         tq.insert(tasks)
         tq.execute()
 
@@ -175,15 +174,26 @@ class NumpyToNeuroglancer():
         tq.execute()
 
 
-    def process_slice(self, file_key):
+    def process_sliceXXX(self, file_key):
         index, infile = file_key
         image = Image.open(infile)
         width, height = image.size
-        array = np.array(image, dtype=self.data_type, order='F')
+        storage = np.zeros([height, width], dtype=self.data_type, order='F')
+        array = np.array(image, dtype=np.bool, order='F')
         array = array.reshape((1, height, width)).T
         self.precomputed_vol[:, :, index] = array
         print(infile, array.shape)
         image.close()
+        return
+
+    def process_slice(self, file_key):
+        index, infile = file_key
+        img = io.imread(infile)
+        height, width = img.shape
+        img = (img * 255).astype(self.data_type)
+        img = img.reshape((height, width, 1))
+        #print(infile, img.shape, img.dtype, np.unique(img, return_counts=True))
+        self.precomputed_vol[:, :, index] = img
         return
 
     def preview(self, layer_name=None, clear_layer=False):

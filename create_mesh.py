@@ -5,6 +5,7 @@ import argparse
 import os
 import sys
 from concurrent.futures.process import ProcessPoolExecutor
+from skimage import io
 
 import imagesize
 import numpy as np
@@ -23,16 +24,17 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 def create_mesh(animal, limit):
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_25')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    scale = 4
-    allfiles = sorted(os.listdir(INPUT))
-    files = [f for i,f in enumerate(allfiles) if i % scale == 0]
-    midpoint = len(allfiles) // 2
-    midfilepath = os.path.join(INPUT, allfiles[midpoint])
+    files = sorted(os.listdir(INPUT))
+    scale = 1
+    if scale > 1:
+        files = [f for i,f in enumerate(files) if i % scale == 0]
+    midpoint = len(files) // 2
+    midfilepath = os.path.join(INPUT, files[midpoint])
     width, height = imagesize.get(midfilepath)
     if limit > 0:
         midpoint = len(files) // 2
@@ -40,21 +42,21 @@ def create_mesh(animal, limit):
 
     resolution = 1000 * scale
     scales = (resolution, resolution, resolution)
-    chunk_size = [128, 128, 64]
-    volume_size = (width, height, len(files))
-    volume = np.zeros(volume_size, dtype=np.uint8)
+    chunk_size = [64, 64, 1]
+    volume_size = (height, width, len(files))
+    ng = NumpyToNeuroglancer(None, scales, 'segmentation', np.uint8, chunk_size)
+    ng.init_precomputed(OUTPUT_DIR, volume_size)
+
+    filekeys = []
     for i,f in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, f)
-        image = Image.open(infile)
-        width, height = image.size
-        array = np.array(image, dtype=np.uint8, order='F')
-        array = array.reshape((height, width,1)).T
-        volume[:, :, i] = array
-        image.close()
+        filekeys.append([i, infile])
 
-    ng = NumpyToNeuroglancer(volume.astype(np.uint8), scales, 'segmentation', np.uint8, chunk_size)
-    del volume
-    ng.init_volume(OUTPUT_DIR)
+    workers = get_cpus()
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        executor.map(ng.process_slice, filekeys)
+        ng.precomputed_vol.cache.flush()
+
 
     fake_volume = np.zeros(3, dtype=np.uint8) + 255
     ng.add_segment_properties(get_segment_ids(fake_volume))

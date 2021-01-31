@@ -1,6 +1,8 @@
 ### New Brain
 ## Post CZI Creation Process
 1. To install the software prerequisites, [look here.](README.md)
+1. Running any of these commands at high resolution, you will want to prefix each command with `nohup`
+   and put a '&' at the end of the command. That will make it run in the background and you can log out.
 1. Run: `create_meta.py --animal DKXX`
     1. This will scan each czi file
     2. Extracts the tif meta information and inserts into the slide_czi_to_tif table
@@ -37,10 +39,12 @@
 1. Run: `python create_masks.py --animal DKXX`
     1. This will read the thumbnail directory and create masks in the DKXX/preps/thumbnail_masked dir
     1. No need to use channel 2 or 3. It works solely on channel 1
-1. Run: `python create_clean.py --animal DKXX --channel 1 --rotation 1`
-    1. Use the necessary rotations and flip/flop parameters
-    1. Be careful with the rotation and flip. To do a 90 degree right rotation requires `--rotation 1 --flip flip`
+1. Run: `python create_clean.py --animal DKXX --channel 1 `
+    1. The necessary rotation and flip parameters must be in the scan run table
+    1. Be careful with the rotation and flip. To do a 90 degree right rotation requires rotation=1
     1. View a few of the files in DKXX/preps/CH1/thumbnail_cleaned
+    1. full resolution on ratto one channel takes 863 minutes. When it is finished, check file count
+   and make sure there are no small files, especially with high resolution.
 1. Run: `python create_alignment.py --animal DKXX --channel 1`
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair
     1. The elastix dir will be used to align the other channels and the full resoltions
