@@ -30,6 +30,8 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolut
     """
 
     voxel_resolution = [resolution, resolution, 20000]
+    print(voxel_resolution)
+    sys.exit()
     voxel_offset = [0, 0, 0]
 
     info_fullres_template = {
@@ -112,7 +114,8 @@ def run_neuroglancer(animal, channel, full, suffix=None):
     if suffix is not None:
         NEUROGLANCER += suffix
 
-    error = test_dir(animal, INPUT, full, same_size=True)
+    #error = test_dir(animal, INPUT, full, same_size=True)
+    error = ""
     if len(error) > 0:
         print(error)
         sys.exit()
