@@ -74,7 +74,7 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolut
     # compute_scales - build the precomputed for other scales
     compute_scales.main(['', folder_to_convert_to, '--flat', '--no-gzip'])
 
-def run_neuroglancer(animal, channel, full, suffix=None):
+def run_neuroglancer(animal, channel, downsample, suffix=None):
     """
     Main method to setup the precomputed volume creation. We also test if the
     input dir has a correct number of sections and they are of the correct size.
@@ -89,13 +89,12 @@ def run_neuroglancer(animal, channel, full, suffix=None):
     sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)
     channel_outdir = 'C{}T'.format(channel)
-    INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, channel_dir, f'{downsample}_aligned')
     sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
     resolution = sqlController.scan_run.resolution
     resolution = int(resolution * 1000 / SCALING_FACTOR)
 
-    if full:
-        INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
+    if downsample == 'full':
         channel_outdir = 'C{}'.format(channel)
         if channel == 3:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
@@ -115,7 +114,7 @@ def run_neuroglancer(animal, channel, full, suffix=None):
     if suffix is not None:
         OUTPUT_DIR += suffix
 
-    error = test_dir(animal, INPUT, full, same_size=True)
+    error = test_dir(animal, INPUT, downsample, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()
@@ -133,6 +132,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
-    full = bool({'full': True, 'thumbnail': False}[args.resolution])
+    resolution = args.resolution
     suffix = args.suffix
-    run_neuroglancer(animal, channel, full, suffix)
+    run_neuroglancer(animal, channel, resolution, suffix)

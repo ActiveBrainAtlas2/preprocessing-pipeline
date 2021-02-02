@@ -182,7 +182,7 @@ class NumpyToNeuroglancer():
             img = (img * 1).astype(self.data_type)
 
         img = img.reshape(1, height, width).T
-        #print(infile, img.shape, img.dtype, np.unique(img, return_counts=True))
+        print(infile, img.shape, img.dtype)
         self.precomputed_vol[:, :, index] = img
         del img
         return
