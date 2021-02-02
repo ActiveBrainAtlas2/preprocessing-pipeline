@@ -95,7 +95,7 @@ def create_layer(animal, channel, full, limit, suffix=None):
 
     workers = get_cpus()
     with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(ng.process_slice, filekeys)
+        executor.map(ng.process_pillow_slice, filekeys)
         ng.precomputed_vol.cache.flush()
 
 
