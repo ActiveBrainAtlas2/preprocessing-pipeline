@@ -187,6 +187,17 @@ class NumpyToNeuroglancer():
         del img
         return
 
+    def process_pillow_slice(self, file_key):
+        index, infile = file_key
+        image = Image.open(infile)
+        width, height = image.size
+        array = np.array(image, dtype=np.bool, order='F')
+        array = (array * 1).astype(self.data_type)
+        array = array.reshape((1, height, width)).T
+        self.precomputed_vol[:, :, index] = array
+        image.close()
+        return
+
     def preview(self, layer_name=None, clear_layer=False):
         if self.viewer is None:
             self.viewer = neuroglancer.Viewer()

@@ -6,7 +6,7 @@ import os
 import sys
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
-
+from timeit import default_timer as timer
 import imagesize
 import numpy as np
 import shutil
@@ -57,9 +57,12 @@ def create_mesh(animal, limit):
         #ng.process_slice([i, infile])
 
     workers = get_cpus()
+    start = timer()
     with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(ng.process_slice, filekeys)
+        executor.map(ng.process_pillow_slice, filekeys)
         ng.precomputed_vol.cache.flush()
+    end = timer()
+    print(f'Finito! Method took {end - start} seconds')
 
     fake_volume = io.imread(midfilepath)
     ng.add_segment_properties(get_segment_ids(fake_volume))
