@@ -7,6 +7,7 @@ import argparse
 import os, sys
 import json
 from skimage import io
+from timeit import default_timer as timer
 from neuroglancer_scripts.scripts import (generate_scales_info,
                                           slices_to_precomputed,
                                           compute_scales)
@@ -15,7 +16,7 @@ from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOM
     RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from utilities.utilities_process import test_dir, SCALING_FACTOR
+from utilities.utilities_process import test_dir, SCALING_FACTOR, test_dir_identify
 
 
 def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolution):
@@ -31,7 +32,6 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolut
 
     voxel_resolution = [resolution, resolution, 20000]
     print(voxel_resolution)
-    sys.exit()
     voxel_offset = [0, 0, 0]
 
     info_fullres_template = {
@@ -108,19 +108,19 @@ def run_neuroglancer(animal, channel, full, suffix=None):
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
 
+        resolution = sqlController.scan_run.resolution
         resolution = int(resolution * 1000)
 
-    NEUROGLANCER = os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
     if suffix is not None:
-        NEUROGLANCER += suffix
+        OUTPUT_DIR += suffix
 
-    #error = test_dir(animal, INPUT, full, same_size=True)
-    error = ""
+    error = test_dir(animal, INPUT, full, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()
     else:
-        convert_to_precomputed(INPUT, NEUROGLANCER, resolution)
+        convert_to_precomputed(INPUT, OUTPUT_DIR, resolution)
 
 
 if __name__ == "__main__":

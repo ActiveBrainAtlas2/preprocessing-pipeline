@@ -8,8 +8,12 @@ pip install pytest
 
 
 """
-import os
+import os, sys
 import argparse
+from pathlib import Path
+
+PIPELINE_ROOT = Path('.').absolute().parent
+sys.path.append(PIPELINE_ROOT.as_posix())
 
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager

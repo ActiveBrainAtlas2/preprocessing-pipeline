@@ -3,7 +3,7 @@ from subprocess import Popen, check_output, run
 from multiprocessing.pool import Pool
 from tqdm import tqdm
 from pathlib import Path
-
+import imagesize
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -42,6 +42,7 @@ def workernoshell(cmd):
     proc = Popen(cmd, shell=False, stderr=stderr_f, stdout=stdout_f)
     proc.wait()
 
+
 def test_dir(animal, dir, full=False, same_size=False):
     error = ""
     #thumbnail resolution ntb is 10400 and min size of DK52 is 16074
@@ -58,12 +59,9 @@ def test_dir(animal, dir, full=False, same_size=False):
         section_count = len(files)
     widths = set()
     heights = set()
-    size_checks = []
     for f in files:
         filepath = os.path.join(dir, f)
-        result_parts = str(check_output(["identify", filepath]))
-        results = result_parts.split()
-        width, height = results[2].split('x')
+        width, height = imagesize.get(filepath)
         widths.add(int(width))
         heights.add(int(height))
         size = os.path.getsize(filepath)
