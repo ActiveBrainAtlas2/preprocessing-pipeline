@@ -16,7 +16,7 @@ sys.path.append(PATH)
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_process import SCALING_FACTOR, test_dir
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus
 from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES, \
     RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES
 
@@ -85,10 +85,9 @@ def create_layer(animal, channel, downsample, limit, suffix=None):
     for i,f in enumerate((files)):
         infile = os.path.join(INPUT, f)
         filekeys.append([i, infile])
-        #ng.process_slice([i, infile])
 
     start = timer()
-    with ProcessPoolExecutor(max_workers=4) as executor:
+    with ProcessPoolExecutor(max_workers=get_cpus()) as executor:
         executor.map(ng.process_slice, filekeys)
     end = timer()
     print(f'Creating and filling volume took {end - start} seconds')
