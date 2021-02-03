@@ -114,9 +114,9 @@ def create_mask(animal, full, njobs):
                 img = trim_edges(img)
                 mask1 = create_mask_pass1(img)
                 pass1 = cv2.bitwise_and(img, img, mask=mask1)
-                img2 = pass1.copy()
                 ## pass2
-                mask = fix_with_fill(img2)
+                pass1 = cv2.GaussianBlur(pass1,(33,33),0)
+                mask = fix_with_fill(pass1)
 
             # save the mask
             cv2.imwrite(outpath, mask.astype(np.uint8))

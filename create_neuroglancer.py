@@ -66,8 +66,8 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolut
 
     # --- neuroglancer-scripts routine ---
     #  generate_scales_info - make info.json
-    generate_scales_info.main(['', os.path.join(folder_to_convert_to, 'info_fullres.json'),
-                               folder_to_convert_to])
+    jsonpath = os.path.join(folder_to_convert_to, 'info_fullres.json')
+    generate_scales_info.main(['',  jsonpath, folder_to_convert_to])
     # slices_to_precomputed - build the precomputed for the fullress
     slices_to_precomputed.main(
         ['', folder_to_convert_from, folder_to_convert_to, '--flat', '--no-gzip'])
@@ -91,8 +91,8 @@ def run_neuroglancer(animal, channel, downsample, suffix=None):
     channel_outdir = 'C{}T'.format(channel)
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, f'{downsample}_aligned')
     sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
-    resolution = sqlController.scan_run.resolution
-    resolution = int(resolution * 1000 / SCALING_FACTOR)
+    db_resolution = sqlController.scan_run.resolution
+    resolution = int(db_resolution * 1000 / SCALING_FACTOR)
 
     if downsample == 'full':
         channel_outdir = 'C{}'.format(channel)
@@ -107,8 +107,7 @@ def run_neuroglancer(animal, channel, downsample, suffix=None):
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
 
-        resolution = sqlController.scan_run.resolution
-        resolution = int(resolution * 1000)
+        resolution = int(db_resolution * 1000)
 
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
     if suffix is not None:
