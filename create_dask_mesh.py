@@ -4,25 +4,20 @@ Creates a shell from  aligned thumbnails
 import argparse
 import os
 import sys
-from concurrent.futures.process import ProcessPoolExecutor
 
 import imageio
-import imagesize
 import numpy as np
 import shutil
 
 from dask_image.imread import imread
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-import dask
-import dask.array as da
-from tqdm import tqdm
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_ids, get_cpus
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_ids
 
 
 def create_mesh(animal):
