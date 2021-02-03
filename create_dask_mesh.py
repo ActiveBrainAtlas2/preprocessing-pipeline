@@ -26,27 +26,16 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 
 def create_mesh(animal):
-    fileLocationManager = FileLocationManager(animal)
-    COPY_FROM = os.path.join(fileLocationManager.prep, 'CH1/downsampled_33')
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/small')
-    allfiles = sorted(os.listdir(COPY_FROM))
     scale = 3
-    if os.path.exists(INPUT):
-        shutil.rmtree(INPUT)
-    os.makedirs(INPUT, exist_ok=True)
-    for i, f in enumerate(allfiles):
-        if i % scale == 0:
-            source = os.path.join(COPY_FROM, f)
-            dest = os.path.join(INPUT, f)
-            shutil.copy(source, dest)
-    sys.exit()
+    fileLocationManager = FileLocationManager(animal)
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     files = sorted(os.listdir(INPUT))
-    midpoint = len(allfiles) // 2
-    midfilepath = os.path.join(COPY_FROM, allfiles[midpoint])
+    midpoint = len(files) // 2
+    midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = imageio.imread(midfilepath)
     height, width = midfile.shape
     print('shape', height, width)
@@ -56,15 +45,11 @@ def create_mesh(animal):
     chunk_size = [64, 64, 64]
     volume_size = (width, height, len(files))
     bigdask = imread(f'{INPUT}/*.tif')
-    outpath = os.path.join(fileLocationManager.prep, 'bigarray.npy')
-    bigarray = np.memmap(outpath, dtype=np.uint8, mode="w+", shape=(len(files), height, width))
-    bigarray[:] = bigdask
-    bigarray = np.swapaxes(bigarray, 0, 2)
-    ng = NumpyToNeuroglancer(bigarray, scales, 'segmentation', np.uint8, chunk_size)
-    ng.init_volume(OUTPUT_DIR)
-    del bigarray
 
-    fake_volume = np.zeros(3) + 255
+    ng = NumpyToNeuroglancer(bigdask, scales, 'segmentation', np.uint8, chunk_size)
+    ng.init_precomputed(OUTPUT_DIR, volume_size)
+
+    fake_volume = np.zeros((1,1), dtype='uint8') + 255
     ng.add_segment_properties(get_segment_ids(fake_volume))
     ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
