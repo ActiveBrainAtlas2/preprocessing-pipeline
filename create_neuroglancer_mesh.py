@@ -27,10 +27,9 @@ def create_mesh(animal, limit):
     data_type = np.uint8
     voxel_resolution = (1000*scale, 1000*scale, 1000*scale)
     INPUT = os.path.join(fileLocationManager.prep, f'CH1/downsampled_33')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_{scale}')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         print(f'Directory: {OUTPUT_DIR} exists.')
-        print('You need to manually delete it. Exiting ...')
         shutil.rmtree(OUTPUT_DIR)
         #sys.exit()
 
@@ -44,7 +43,7 @@ def create_mesh(animal, limit):
         midpoint = len(files) // 2
         files = files[midpoint-limit:midpoint+limit]
         #files = files[-limit:]
-    chunk_size = [64, 64, 1]
+    chunk_size = [128, 128, 1]
     volume_size = (width, height, len(files))
 
     ng = NumpyToNeuroglancer(None, voxel_resolution, 'segmentation', data_type, chunk_size)
@@ -67,7 +66,7 @@ def create_mesh(animal, limit):
     fake_volume = io.imread(midfilepath)
     ng.add_segment_properties(get_segment_ids(fake_volume))
     del fake_volume
-    ng.add_downsampled_volumes()
+    ng.add_downsampled_volumes(chunk_size=[128,128,128])
     ng.add_segmentation_mesh()
 
 if __name__ == '__main__':

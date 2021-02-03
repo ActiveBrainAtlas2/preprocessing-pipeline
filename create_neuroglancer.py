@@ -70,9 +70,9 @@ def convert_to_precomputed(folder_to_convert_from, folder_to_convert_to, resolut
     generate_scales_info.main(['',  jsonpath, folder_to_convert_to])
     # slices_to_precomputed - build the precomputed for the fullress
     slices_to_precomputed.main(
-        ['', folder_to_convert_from, folder_to_convert_to, '--flat', '--no-gzip'])
+        ['', folder_to_convert_from, folder_to_convert_to, '--flat'])
     # compute_scales - build the precomputed for other scales
-    compute_scales.main(['', folder_to_convert_to, '--flat', '--no-gzip'])
+    compute_scales.main(['', folder_to_convert_to, '--flat'])
 
 def run_neuroglancer(animal, channel, downsample, suffix=None):
     """

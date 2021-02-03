@@ -31,7 +31,7 @@ def setup_input_dir(source_dir, output_dir):
     for f in files:
         source = os.path.join(source_dir, f)
         img = io.imread(source)
-        img = (img * 1).astype('uint8')
+        img = (img * 255).astype('uint8')
         outpath = os.path.join(output_dir, f)
         cv2.imwrite(outpath, img)
 
@@ -90,10 +90,16 @@ def convert_to_precomputed(INPUT, OUTPUT_DIR):
     jsonpath = os.path.join(OUTPUT_DIR, 'info_fullres.json')
     generate_scales_info.main(['',  jsonpath, OUTPUT_DIR])
     # slices_to_precomputed - build the precomputed for the fullress
-    slices_to_precomputed.main(
-        ['', INPUT, OUTPUT_DIR, '--flat', '--no-gzip'])
-    # compute_scales - build the precomputed for other scales
-    compute_scales.main(['', OUTPUT_DIR, '--flat', '--no-gzip'])
+    gzip = True
+    if gzip:
+        slices_to_precomputed.main(['', INPUT, OUTPUT_DIR, '--flat'])
+        # compute_scales - build the precomputed for other scales
+        compute_scales.main(['', OUTPUT_DIR, '--flat'])
+    else:
+        slices_to_precomputed.main(['', INPUT, OUTPUT_DIR, '--flat', '--no-gzip'])
+        # compute_scales - build the precomputed for other scales
+        compute_scales.main(['', OUTPUT_DIR, '--flat', '--no-gzip'])
+
 
 def run_neuroglancer(animal, channel):
     fileLocationManager = FileLocationManager(animal)
@@ -101,6 +107,7 @@ def run_neuroglancer(animal, channel):
     source_dir = os.path.join(fileLocationManager.prep, channel_dir, 'downsampled_33')
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     setup_input_dir(source_dir, INPUT)
+    sys.exit()
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     convert_to_precomputed(INPUT, OUTPUT_DIR)
 

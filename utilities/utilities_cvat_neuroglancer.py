@@ -108,7 +108,7 @@ class NumpyToNeuroglancer():
             chunk_size=self.chunk_size,  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
-        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
+        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
 
     def init_volume(self, path):
@@ -122,7 +122,7 @@ class NumpyToNeuroglancer():
             chunk_size = self.chunk_size,           # units are voxels
             volume_size = self.volume.shape[:3], # e.g. a cubic millimeter dataset
         )
-        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=False, progress=False)
+        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
         self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
@@ -151,12 +151,12 @@ class NumpyToNeuroglancer():
         with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
             json.dump(info, file, indent=2)
 
-    def add_downsampled_volumes(self):
+    def add_downsampled_volumes(self, chunk_size=[64,64,64]):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=[64,64,64], compress=False)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=chunk_size, compress=True)
         tq.insert(tasks)
         tq.execute()
 
@@ -166,7 +166,7 @@ class NumpyToNeuroglancer():
 
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=False) # The first phase of creating mesh
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
         # It should be able to incoporated to above tasks, but it will give a weird bug. Don't know the reason
@@ -179,7 +179,7 @@ class NumpyToNeuroglancer():
         img = io.imread(infile)
         height, width = img.shape
         if 'bool' in str(img.dtype):
-            img = (img * 1).astype(self.data_type)
+            img = (img * 255).astype(self.data_type)
 
         img = img.reshape(1, height, width).T
         print(infile, img.shape, img.dtype)
@@ -192,7 +192,7 @@ class NumpyToNeuroglancer():
         image = Image.open(infile)
         width, height = image.size
         array = np.array(image, dtype=np.bool, order='F')
-        array = (array * 1).astype(self.data_type)
+        array = (array * 255).astype(self.data_type)
         array = array.reshape((1, height, width)).T
         self.precomputed_vol[:, :, index] = array
         image.close()
