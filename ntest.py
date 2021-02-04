@@ -8,6 +8,7 @@ import os, sys
 import json
 import shutil
 import cv2
+import numpy as np
 
 from skimage import io
 from timeit import default_timer as timer
@@ -16,7 +17,9 @@ from neuroglancer_scripts.scripts import (generate_scales_info,
                                           compute_scales)
 
 from utilities.file_location import FileLocationManager
-
+from utilities.utilities_cvat_neuroglancer import get_cpus, get_segment_ids
+from taskqueue import LocalTaskQueue
+import igneous.task_creation as tc
 
 def setup_input_dir(source_dir, output_dir):
 
@@ -24,7 +27,7 @@ def setup_input_dir(source_dir, output_dir):
         print(f'Directory: {output_dir} exists.')
         shutil.rmtree(output_dir)
 
-    scale = 3
+    scale = 10
     os.makedirs(output_dir, exist_ok=True)
     files = sorted(os.listdir(source_dir))
     files = [f for i,f in enumerate(files) if i % scale == 0]
@@ -38,16 +41,12 @@ def setup_input_dir(source_dir, output_dir):
 
 
 
-def convert_to_precomputed(INPUT, OUTPUT_DIR):
-    """
-    Takes the directory with aligned images and creates a new directory available
-    to the internet. Uses resolution from database and 20000 as width of section
-    in nanometers.
-    :param INPUT: list of aligned and cleaned images
-    :param OUTPUT_DIR: neuroglancer folder available to the web
-    :param resolution: either full or thumbnail
-    :return: nothing
-    """
+def create_mesh():
+    animal = 'X'
+    fileLocationManager = FileLocationManager(animal)
+    channel_dir = 'CH1'
+    INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_v1')
     scale = 3
     resolution = 1000*scale
     voxel_resolution = [resolution, resolution, resolution]
@@ -70,8 +69,7 @@ def convert_to_precomputed(INPUT, OUTPUT_DIR):
     img = io.imread(os.path.join(INPUT, files[0]))
     if os.path.exists(OUTPUT_DIR):
         print(f'Directory: {OUTPUT_DIR} exists.')
-        shutil.rmtree(OUTPUT_DIR)
-        #sys.exit()
+        sys.exit()
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -90,34 +88,40 @@ def convert_to_precomputed(INPUT, OUTPUT_DIR):
     jsonpath = os.path.join(OUTPUT_DIR, 'info_fullres.json')
     generate_scales_info.main(['',  jsonpath, OUTPUT_DIR])
     # slices_to_precomputed - build the precomputed for the fullress
-    gzip = True
-    if gzip:
-        slices_to_precomputed.main(['', INPUT, OUTPUT_DIR, '--flat'])
-        # compute_scales - build the precomputed for other scales
-        compute_scales.main(['', OUTPUT_DIR, '--flat'])
-    else:
-        slices_to_precomputed.main(['', INPUT, OUTPUT_DIR, '--flat', '--no-gzip'])
-        # compute_scales - build the precomputed for other scales
-        compute_scales.main(['', OUTPUT_DIR, '--flat', '--no-gzip'])
+    slices_to_precomputed.main(['', INPUT, OUTPUT_DIR, '--flat'])
+    # compute_scales - build the precomputed for other scales
+    compute_scales.main(['', OUTPUT_DIR, '--flat'])
+    layer_cloudpath = f"file:///net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{animal}/neuroglancer_data/mesh"
+    fake_volume = np.zeros((1,1), dtype=np.uint8) + 255
+    segment_properties = get_segment_ids(fake_volume)
+    segment_properties_path = os.path.join(layer_cloudpath.replace('file://', ''), 'names')
+    os.makedirs(segment_properties_path, exist_ok=True)
 
+    info = {
+        "@type": "neuroglancer_segment_properties",
+        "inline": {
+            "ids": [str(number) for number, label in segment_properties],
+            "properties": [{
+                "id": "label",
+                "type": "label",
+                "values": [str(label) for number, label in segment_properties]
+            }]
+        }
+    }
+    with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
+        json.dump(info, file, indent=2)
 
-def run_neuroglancer(animal, channel):
-    fileLocationManager = FileLocationManager(animal)
-    channel_dir = 'CH{}'.format(channel)
-    source_dir = os.path.join(fileLocationManager.prep, channel_dir, 'downsampled_33')
-    INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
-    setup_input_dir(source_dir, INPUT)
-    sys.exit()
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
-    convert_to_precomputed(INPUT, OUTPUT_DIR)
-
+    cpus = get_cpus()
+    tq = LocalTaskQueue(parallel=cpus)
+    tasks = tc.create_meshing_tasks(layer_cloudpath, mip=0,compress=True)  # The first phase of creating mesh
+    tq.insert(tasks)
+    tq.execute()
+    tasks = tc.create_mesh_manifest_tasks(layer_cloudpath)  # The second phase of creating mesh
+    tq.insert(tasks)
+    tq.execute()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--animal', help='Enter the animal animal', required=True)
-    parser.add_argument('--channel', help='Enter channel', required=False, default=1)
-
-    args = parser.parse_args()
-    animal = args.animal
-    channel = args.channel
-    run_neuroglancer(animal, channel)
+    source = ''
+    dest = ''
+    create_mesh()
