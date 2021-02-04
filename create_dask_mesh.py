@@ -23,7 +23,8 @@ def create_mesh(animal, limit):
     scale = 3
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
+    """you might want to change the output dir"""
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'meshX')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
