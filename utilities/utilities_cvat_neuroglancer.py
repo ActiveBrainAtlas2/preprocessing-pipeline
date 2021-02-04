@@ -160,13 +160,13 @@ class NumpyToNeuroglancer():
         tq.insert(tasks)
         tq.execute()
 
-    def add_segmentation_mesh(self):
+    def add_segmentation_mesh(self, shape=[448, 448, 448]):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, compress=True) # The first phase of creating mesh
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, shape=shape, compress=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
         # It should be able to incoporated to above tasks, but it will give a weird bug. Don't know the reason

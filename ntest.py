@@ -27,7 +27,7 @@ def setup_input_dir(source_dir, output_dir):
         print(f'Directory: {output_dir} exists.')
         shutil.rmtree(output_dir)
 
-    scale = 10
+    scale = 3
     os.makedirs(output_dir, exist_ok=True)
     files = sorted(os.listdir(source_dir))
     files = [f for i,f in enumerate(files) if i % scale == 0]
@@ -47,6 +47,7 @@ def create_mesh():
     channel_dir = 'CH1'
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_v1')
+    setup_input_dir()
     scale = 3
     resolution = 1000*scale
     voxel_resolution = [resolution, resolution, resolution]
