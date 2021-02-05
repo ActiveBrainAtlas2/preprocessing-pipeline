@@ -61,14 +61,15 @@ def create_mesh(animal, limit, chunk, debug):
     """The hard part is getting the volume set. Maybe if it were a dask array it might work.
     This creates the CloudVolume from the NumpyToNeuroglancer class"
     """
-    ng = NumpyToNeuroglancer(volume, scales, 'segmentation', data_type, chunk_size)
-    ng.init_volume(OUTPUT_DIR)
 
-    """Don't worry about anything below"""
-    fake_volume = np.zeros((1,1), dtype=data_type) + 255
-    ng.add_segment_properties(get_segment_ids(fake_volume))
-    ng.add_downsampled_volumes(chunk_size=chunk_size)
+    ids = [(255, '255: 255')]
+    ng = NumpyToNeuroglancer(volume, scales,
+                             layer_type='segmentation', data_type=np.uint8, chunk_size=chunk_size)
+    ng.init_volume(OUTPUT_DIR)
+    ng.add_segment_properties(ids)
+    ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')

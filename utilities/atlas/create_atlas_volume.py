@@ -107,9 +107,9 @@ def create_atlas(animal, create, com, surface_threshold):
     print('Shape of downsampled atlas volume', atlas_volume.shape)
 
     if create:
-        offset = [0,0,0]
-        ng = NumpyToNeuroglancer(atlas_volume, [resolution, resolution, 20000], offset=offset)
-        ng.init_precomputed(OUTPUT_DIR)
+        ng = NumpyToNeuroglancer(atlas_volume, [resolution, resolution, 20000],
+                                 layer_type='segmentation', data_type=np.uint8)
+        ng.init_volume(OUTPUT_DIR)
         ng.add_segment_properties(get_segment_properties())
         ng.add_downsampled_volumes()
         ng.add_segmentation_mesh()

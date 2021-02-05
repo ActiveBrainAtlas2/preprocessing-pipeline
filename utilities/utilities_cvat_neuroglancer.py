@@ -88,7 +88,7 @@ def get_segment_ids(volume):
 class NumpyToNeuroglancer():
     viewer = None
 
-    def __init__(self, volume, scales, layer_type, data_type, chunk_size):
+    def __init__(self, volume, scales, layer_type, data_type, chunk_size=[64,64,64]):
         self.volume = volume
         self.scales = scales
         self.layer_type = layer_type
@@ -156,8 +156,7 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, num_mips=1,
-                                             compress=True)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=True)
         tq.insert(tasks)
         tq.execute()
 
