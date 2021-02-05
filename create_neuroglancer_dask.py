@@ -23,11 +23,11 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 def create_mesh(animal, limit):
     fileLocationManager = FileLocationManager(animal)
 
-    scale = 1
+    scale = 10
     data_type = np.uint8
     voxel_resolution = (1000*scale, 1000*scale, 1000*scale)
-    INPUT = os.path.join(fileLocationManager.prep, f'CH1/full_aligned')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
+    INPUT = os.path.join(fileLocationManager.prep, f'CH1/downsampled_10')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_10')
     if os.path.exists(OUTPUT_DIR):
         print(f'Directory: {OUTPUT_DIR} exists.')
         shutil.rmtree(OUTPUT_DIR)

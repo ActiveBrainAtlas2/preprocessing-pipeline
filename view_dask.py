@@ -21,15 +21,18 @@ from utilities.file_location import FileLocationManager
 def add_dask_layer(animal, limit, debug):
     """Adds a lazily-computed data source backed by dask."""
     # https://docs.dask.org/en/latest/array-creation.html#using-dask-delayed
+    scale = 10
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_dask')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_10')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     data_type = np.uint8
     files = sorted(os.listdir(INPUT))
+    if scale > 1:
+        files = [f for i, f in enumerate(files) if i % scale == 0]
     midpoint = len(files) // 2
     ## take a sample from the middle of the stack
     if limit > 0:
@@ -54,16 +57,16 @@ def add_dask_layer(animal, limit, debug):
     print('img0',type(img0), np.shape(img0))
     print('dask',type(volume), np.shape(volume))
     #sys.exit()
-    resolution = 1000
+    resolution = 1000 * scale
     ids = [(255, '255: 255')]
 
     scales = (resolution, resolution, resolution)
     ng = NumpyToNeuroglancer(volume.compute(), scales,
-                             layer_type='segmentation', data_type=np.uint8)
+                             layer_type='image', data_type=np.uint8, chunk_size=[64, 64, 16])
     ng.init_volume(OUTPUT_DIR)
-    ng.add_segment_properties(ids)
+    #ng.add_segment_properties(ids)
     ng.add_downsampled_volumes()
-    ng.add_segmentation_mesh()
+    #ng.add_segmentation_mesh()
 
 
 if __name__ == '__main__':
