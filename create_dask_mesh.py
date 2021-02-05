@@ -20,11 +20,11 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 
 def create_mesh(animal, limit, chunk, debug):
-    scale = 3
+    scale = 1
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     """you might want to change the output dir"""
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_chunk_{chunk}')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -48,10 +48,13 @@ def create_mesh(animal, limit, chunk, debug):
         filepath = os.path.join(INPUT, f)
         img = io.imread(filepath)
         img = np.rot90(img, 1)
+        if 'bool' in str(img.dtype):
+            img = (img * 255).astype(data_type)
         if debug:
-            print(img.dtype, np.amin(img), np.amax(img))
+            print(img.dtype, np.amin(img), np.amax(img), np.unique(img, return_counts=True))
             continue
         volume[:,:,i] = img
+
 
     if debug:
         sys.exit()

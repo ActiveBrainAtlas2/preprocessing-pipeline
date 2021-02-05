@@ -63,10 +63,9 @@ def create_mesh(animal, limit):
 
     print(f'Finito! Method took {end - start} seconds')
 
-    fake_volume = np.zeros((3,3), dtype='uint8') + 255
-    ng.add_segment_properties(get_segment_ids(fake_volume))
-    del fake_volume
-    ng.add_downsampled_volumes(chunk_size=[128,128,128])
+    ids = [(255, '255: 255')]
+    ng.add_segment_properties(ids)
+    ng.add_downsampled_volumes(chunk_size=[64,64,64])
     ng.add_segmentation_mesh()
 
 if __name__ == '__main__':

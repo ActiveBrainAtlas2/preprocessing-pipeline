@@ -46,8 +46,8 @@ def create_mesh():
     fileLocationManager = FileLocationManager(animal)
     channel_dir = 'CH1'
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_v1')
-    setup_input_dir()
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
+    #setup_input_dir()
     scale = 3
     resolution = 1000*scale
     voxel_resolution = [resolution, resolution, resolution]
@@ -92,9 +92,9 @@ def create_mesh():
     slices_to_precomputed.main(['', INPUT, OUTPUT_DIR, '--flat'])
     # compute_scales - build the precomputed for other scales
     compute_scales.main(['', OUTPUT_DIR, '--flat'])
+
     layer_cloudpath = f"file:///net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{animal}/neuroglancer_data/mesh"
-    fake_volume = np.zeros((1,1), dtype=np.uint8) + 255
-    segment_properties = get_segment_ids(fake_volume)
+    segment_properties = [(255, '255: 255')]
     segment_properties_path = os.path.join(layer_cloudpath.replace('file://', ''), 'names')
     os.makedirs(segment_properties_path, exist_ok=True)
 
