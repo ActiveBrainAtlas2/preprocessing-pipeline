@@ -126,6 +126,24 @@ class NumpyToNeuroglancer():
         self.precomputed_vol.commit_info()
         self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
+    def init_mesh(self, path):
+        info = CloudVolume.create_new_info(
+            num_channels=1,
+            layer_type='segmentation',
+            data_type='uint8',  # Channel images might be 'uint8'
+            encoding='raw',  # raw, jpeg, compressed_segmentation, fpzip, kempressed
+            resolution=[1000, 1000, 1000],  # Voxel scaling, units are in nanometers
+            voxel_offset=[0, 0, 0],  # x,y,z offset in voxels from the origin
+            mesh='mesh',
+            # Pick a convenient size for your underlying chunk representation
+            # Powers of two are recommended, doesn't need to cover image exactly
+            chunk_size=[512, 512, 16],  # units are voxels
+            volume_size=self.volume.shape[:3],  # e.g. a cubic millimeter dataset
+        )
+        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
+        self.precomputed_vol.commit_info()
+        self.precomputed_vol[:, :, :] = self.volume[:, :, :]
+
 
     def add_segment_properties(self, segment_properties):
         if self.precomputed_vol is None:
@@ -151,7 +169,7 @@ class NumpyToNeuroglancer():
         with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
             json.dump(info, file, indent=2)
 
-    def add_downsampled_volumes(self, chunk_size=[64,64,64]):
+    def add_downsampled_volumes(self):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()

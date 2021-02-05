@@ -19,7 +19,7 @@ from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_ids
 
 
-def create_mesh(animal, limit, chunk, debug):
+def create_mesh(animal, limit, debug):
     scale = 1
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
@@ -40,7 +40,6 @@ def create_mesh(animal, limit, chunk, debug):
 
     resolution = 1000
     scales = (resolution*scale, resolution*scale, resolution*scale)
-    chunk_size = [chunk, chunk, chunk]
     volume_size = (width, height, len(files))
     data_type = np.uint8
     volume = np.zeros((volume_size), dtype=data_type)
@@ -64,8 +63,8 @@ def create_mesh(animal, limit, chunk, debug):
 
     ids = [(255, '255: 255')]
     ng = NumpyToNeuroglancer(volume, scales,
-                             layer_type='segmentation', data_type=np.uint8, chunk_size=chunk_size)
-    ng.init_volume(OUTPUT_DIR)
+                             layer_type='segmentation', data_type=np.uint8)
+    ng.init_mesh(OUTPUT_DIR)
     ng.add_segment_properties(ids)
     ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
@@ -75,12 +74,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--limit', help='Enter the # of files to test', required=False, default=0)
-    parser.add_argument('--chunk', help='Enter the chunk size', required=True)
     parser.add_argument('--debug', help='debug?', required=True)
     args = parser.parse_args()
     animal = args.animal
     limit = int(args.limit)
-    chunk = int(args.chunk)
     debug = bool({'true': True, 'false': False}[args.debug.lower()])
-    create_mesh(animal, limit, chunk, debug)
+    create_mesh(animal, limit, debug)
 
