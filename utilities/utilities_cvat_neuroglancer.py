@@ -97,7 +97,7 @@ class NumpyToNeuroglancer():
         self.precomputed_vol = None
         self.offset = [0, 0, 0]
 
-    def init_precomputed(self, path, volume_size):
+    def init_delayed_mesh(self, path, volume_size):
         info = CloudVolume.create_new_info(
             num_channels=1,
             layer_type=self.layer_type,  # 'image' or 'segmentation'
@@ -105,7 +105,7 @@ class NumpyToNeuroglancer():
             encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
             resolution=self.scales,  # Size of X,Y,Z pixels in nanometers,
             voxel_offset=self.offset,  # values X,Y,Z values in voxels
-            chunk_size=self.chunk_size,  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
+            chunk_size=[512,512,1],  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
@@ -116,29 +116,11 @@ class NumpyToNeuroglancer():
             num_channels = self.volume.shape[3] if len(self.volume.shape) > 3 else 1,
             layer_type = self.layer_type,
             data_type = str(self.volume.dtype),  # Channel images might be 'uint8'
-            encoding = 'raw',                    # raw, jpeg, compressed_segmentation, fpzip, kempressed
+            encoding = 'raw',  # raw, jpeg, compressed_segmentation, fpzip, kempressed
             resolution = self.scales,            # Voxel scaling, units are in nanometers
             voxel_offset = self.offset,          # x,y,z offset in voxels from the origin
             chunk_size = self.chunk_size,           # units are voxels
             volume_size = self.volume.shape[:3], # e.g. a cubic millimeter dataset
-        )
-        self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
-        self.precomputed_vol.commit_info()
-        self.precomputed_vol[:, :, :] = self.volume[:, :, :]
-
-    def init_mesh(self, path):
-        info = CloudVolume.create_new_info(
-            num_channels=1,
-            layer_type='segmentation',
-            data_type='uint8',  # Channel images might be 'uint8'
-            encoding='raw',  # raw, jpeg, compressed_segmentation, fpzip, kempressed
-            resolution=[1000, 1000, 1000],  # Voxel scaling, units are in nanometers
-            voxel_offset=[0, 0, 0],  # x,y,z offset in voxels from the origin
-            mesh='mesh',
-            # Pick a convenient size for your underlying chunk representation
-            # Powers of two are recommended, doesn't need to cover image exactly
-            chunk_size=[512, 512, 16],  # units are voxels
-            volume_size=self.volume.shape[:3],  # e.g. a cubic millimeter dataset
         )
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
@@ -200,7 +182,7 @@ class NumpyToNeuroglancer():
             img = (img * 255).astype(self.data_type)
 
         img = img.reshape(1, height, width).T
-        print(infile, img.shape, img.dtype)
+        print(index, infile, img.shape, img.dtype)
         self.precomputed_vol[:, :, index] = img
         del img
         return

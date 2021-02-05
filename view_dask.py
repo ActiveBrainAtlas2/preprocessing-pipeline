@@ -1,11 +1,15 @@
 import os, sys
 import argparse
+import shutil
+
 import numpy as np
 import dask.array as da
 import neuroglancer
 import neuroglancer.cli
 import dask.array
 from skimage import io
+
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -14,55 +18,61 @@ from utilities.file_location import FileLocationManager
 
 
 
-def add_dask_layer(state):
+def add_dask_layer(animal, limit, debug):
     """Adds a lazily-computed data source backed by dask."""
     # https://docs.dask.org/en/latest/array-creation.html#using-dask-delayed
-    fileLocationManager = FileLocationManager('X')
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
+    fileLocationManager = FileLocationManager(animal)
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_dask')
+    if os.path.exists(OUTPUT_DIR):
+        shutil.rmtree(OUTPUT_DIR)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    def make_array(k):
-        print('Computing k=%d' % (k, ))
-        filepath = os.path.join()
-        img = io.imread(filepath)
-        return np.full(shape=(256, 256), fill_value=k, dtype=np.uint8)
-
-    #lazy_make_array = dask.delayed(make_array, pure=True)
-
+    data_type = np.uint8
     files = sorted(os.listdir(INPUT))
+    midpoint = len(files) // 2
+    ## take a sample from the middle of the stack
+    if limit > 0:
+        files = files[midpoint-limit:midpoint+limit]
+
     lazy_chunks = []
-    for f in files[0:15]:
+    for f in files:
         filepath = os.path.join(INPUT, f)
         img = io.imread(filepath)
-        lazy_chunks.append(dask.delayed(img.reshape(1, img.shape[0],img.shape[1])))
+        if 'bool' in str(img.dtype):
+            img = (img * 255).astype(data_type)
+        img = np.rot90(img, 1)
+        lazy_chunks.append(dask.delayed(img.reshape(img.shape[0],img.shape[1], 1)))
 
     img0 = lazy_chunks[0].compute()  # load the first chunk (assume rest are same shape/dtype)
     arrays = [
-        dask.array.from_delayed(lazy_chunk, dtype=img0.dtype, shape=img0.shape)
+        dask.array.from_delayed(lazy_chunk, dtype=data_type, shape=img0.shape)
         for lazy_chunk in lazy_chunks
     ]
 
-    x = dask.array.concatenate(arrays)
-    print(type(img0), np.shape(img0))
-    print(type(x), np.shape(x))
-    sys.exit()
+    volume = dask.array.concatenate(arrays)
+    print('img0',type(img0), np.shape(img0))
+    print('dask',type(volume), np.shape(volume))
+    #sys.exit()
     resolution = 1000
-    scale = 3
-    scales = (resolution*scale, resolution*scale, resolution*scale)
-    dims = neuroglancer.CoordinateSpace(
-        names=['x', 'y', 'z'],
-        units=['nm', 'nm', 'nm'],
-        scales=scales)
+    ids = [(255, '255: 255')]
 
-    state.layers['dask'] = neuroglancer.ImageLayer(source=neuroglancer.LocalVolume(x, dimensions=dims))
-    #state.layers['dask'] = neuroglancer.SegmentationLayer(source=neuroglancer.LocalVolume(x, dimensions=dims))
+    scales = (resolution, resolution, resolution)
+    ng = NumpyToNeuroglancer(volume.compute(), scales,
+                             layer_type='segmentation', data_type=np.uint8)
+    ng.init_volume(OUTPUT_DIR)
+    ng.add_segment_properties(ids)
+    ng.add_downsampled_volumes()
+    ng.add_segmentation_mesh()
 
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser()
-    neuroglancer.cli.add_server_arguments(ap)
-    args = ap.parse_args()
-    neuroglancer.cli.handle_server_arguments(args)
-    viewer = neuroglancer.Viewer()
-    with viewer.txn() as s:
-        add_dask_layer(s)
-    print(viewer)
+    parser = argparse.ArgumentParser(description='Work on Animal')
+    parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--limit', help='Enter the # of files to test', required=False, default=0)
+    parser.add_argument('--debug', help='debug?', required=False, default='false')
+    args = parser.parse_args()
+    animal = args.animal
+    limit = int(args.limit)
+    debug = bool({'true': True, 'false': False}[args.debug.lower()])
+    add_dask_layer(animal, limit, debug)

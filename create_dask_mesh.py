@@ -63,8 +63,8 @@ def create_mesh(animal, limit, debug):
 
     ids = [(255, '255: 255')]
     ng = NumpyToNeuroglancer(volume, scales,
-                             layer_type='segmentation', data_type=np.uint8)
-    ng.init_mesh(OUTPUT_DIR)
+                             layer_type='segmentation', data_type=np.uint8, chunk_size=[512, 512, 16])
+    ng.init_volume(OUTPUT_DIR)
     ng.add_segment_properties(ids)
     ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()

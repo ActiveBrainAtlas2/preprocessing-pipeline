@@ -23,10 +23,10 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 def create_mesh(animal, limit):
     fileLocationManager = FileLocationManager(animal)
 
-    scale = 3
+    scale = 1
     data_type = np.uint8
     voxel_resolution = (1000*scale, 1000*scale, 1000*scale)
-    INPUT = os.path.join(fileLocationManager.prep, f'CH1/downsampled_33')
+    INPUT = os.path.join(fileLocationManager.prep, f'CH1/full_aligned')
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR):
         print(f'Directory: {OUTPUT_DIR} exists.')
@@ -43,11 +43,10 @@ def create_mesh(animal, limit):
         midpoint = len(files) // 2
         files = files[midpoint-limit:midpoint+limit]
         #files = files[-limit:]
-    chunk_size = [1024, 1024, 1]
     volume_size = (width, height, len(files))
 
-    ng = NumpyToNeuroglancer(None, voxel_resolution, 'segmentation', data_type, chunk_size)
-    ng.init_precomputed(OUTPUT_DIR, volume_size)
+    ng = NumpyToNeuroglancer(None, voxel_resolution, 'segmentation', data_type, volume_size)
+    ng.init_delayed_mesh(OUTPUT_DIR, volume_size)
 
     filekeys = []
     for i,f in enumerate(tqdm(files)):
@@ -65,7 +64,7 @@ def create_mesh(animal, limit):
 
     ids = [(255, '255: 255')]
     ng.add_segment_properties(ids)
-    ng.add_downsampled_volumes(chunk_size=[64,64,64])
+    ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
 
 if __name__ == '__main__':
