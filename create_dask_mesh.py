@@ -24,6 +24,10 @@ def create_mesh(animal, limit, debug):
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     """you might want to change the output dir"""
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_sagittal')
+    if os.path.exists(OUTPUT_DIR):
+        print(f'DIR {OUTPUT_DIR} exists, exiting.')
+        sys.exit()
+
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     files = sorted(os.listdir(INPUT))
     midpoint = len(files) // 2
@@ -36,8 +40,8 @@ def create_mesh(animal, limit, debug):
     if limit > 0:
         files = files[midpoint-limit:midpoint+limit]
 
-    resolution = 1000
-    scales = (resolution*scale, resolution*scale, resolution*scale)
+    resolution = 1000*scale
+    scales = (resolution, resolution, resolution)
     center = width // 2
     limit = 100
     left = center - limit
@@ -47,24 +51,21 @@ def create_mesh(animal, limit, debug):
     volume_size = (height, width, len(files))
     data_type = np.uint8
     volume = np.zeros((volume_size), dtype=data_type)
+
     for i, f in enumerate(tqdm(files)):
         filepath = os.path.join(INPUT, f)
-        img = io.imread(filepath)
-        #img = np.rot90(img, 1)
-        if 'bool' in str(img.dtype):
-            img = (img * 255).astype(data_type)
-        img = img[:, left:right]
         if debug:
             print(img.dtype, np.amin(img), np.amax(img), np.unique(img, return_counts=True))
             continue
-        #img = img.reshape(img.shape[0], 1, img.shape[1])
+        img = io.imread(filepath)
+        if 'bool' in str(img.dtype):
+            img = (img * 255).astype(data_type)
+        img = img[:, left:right]
         volume[:,:,i] = img
 
     volume = np.rot90(volume, axes=(2, 1))
     volume = np.rot90(volume, 3)
     volume = np.flip(volume, axis=1)
-    midpoint = volume.shape[2] // 2
-    #volume = volume[:,:,midpoint-50:midpoint+50]
     if debug:
         print('volume shape', volume.shape)
         sys.exit()
@@ -74,10 +75,9 @@ def create_mesh(animal, limit, debug):
 
     ids = [(255, '255: 255')]
     ng = NumpyToNeuroglancer(volume, scales,
-                             layer_type='segmentation', data_type=np.uint8, chunk_size=[128, 128, 16])
+                             layer_type='segmentation', data_type=np.uint8, chunk_size=[16, 16, 1])
     ng.init_volume(OUTPUT_DIR)
     ng.add_segment_properties(ids)
-    ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
 
 

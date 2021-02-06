@@ -27,7 +27,8 @@
     1. loading: very slow
     1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_chunk_1024 
 ### Notes
-1. num_mips must be greater than 0, default is around 6
+1. num_mips must be greater than 0, default is around 6, but is useless for mesh. don't
+   downsample.
 1. using the hybrid neuroglancer-scripts and igneuos gives same slow result at 3x3x3
 1. seung: chunk_size=[512, 512, 16] when volume size is [250000, 250000, 25000], res: [4,4,40]
 1. at 1um, our volume size is 10368x7885x13312
