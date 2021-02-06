@@ -23,7 +23,7 @@ def create_mesh(animal, limit, debug):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     """you might want to change the output dir"""
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_sagittal')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_sagittal_200')
     if os.path.exists(OUTPUT_DIR):
         print(f'DIR {OUTPUT_DIR} exists, exiting.')
         sys.exit()
