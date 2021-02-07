@@ -1,102 +1,92 @@
-import os, sys
-import shutil
-from pathlib import Path
+"""
+Creates a shell from  aligned thumbnails
+"""
 import argparse
+import os
+import sys
+
+import imageio
 import numpy as np
-import tifffile as tiff
-import neuroglancer
+import shutil
+
+from skimage import io
 from tqdm import tqdm
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 
 
-def create_mesh(animal, limit, chunk, debug):
-    scale = 3
+def create_mesh(animal, limit, debug):
+    scale = 1
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     """you might want to change the output dir"""
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_chunk_{chunk}')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_sagittal_200')
     if os.path.exists(OUTPUT_DIR):
-        shutil.rmtree(OUTPUT_DIR)
+        print(f'DIR {OUTPUT_DIR} exists, exiting.')
+        sys.exit()
+
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     files = sorted(os.listdir(INPUT))
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
-    midfile = tiff.imread(midfilepath)
+    midfile = imageio.imread(midfilepath)
     height, width = midfile.shape
-
+    if scale > 1:
+        files = [f for i,f in enumerate(files) if i % scale == 0]
     ## take a sample from the middle of the stack
     if limit > 0:
         files = files[midpoint-limit:midpoint+limit]
 
-    resolution = 1000
-    scales = (resolution*scale, resolution*scale, resolution*scale)
-    chunk_size = [chunk, chunk, chunk]
-    volume_size = (width, height, len(files))
+    resolution = 1000*scale
+    scales = (resolution, resolution, resolution)
+    center = width // 2
+    limit = 100
+    left = center - limit
+    right = center + limit
+    width = right - left
+
+    volume_size = (height, width, len(files))
     data_type = np.uint8
     volume = np.zeros((volume_size), dtype=data_type)
 
-    voxel_size = scales
-
-    json_descriptor = '{{"fragments": ["mesh.{}.{}"]}}'
-
-    img_path = Path(INPUT)
-
-    mesh_list = []
-    for f in tqdm(files):
+    for i, f in enumerate(tqdm(files)):
         filepath = os.path.join(INPUT, f)
-        img = tiff.imread(filepath)
-        mesh_list.append(img)
-    mesh = np.dstack(mesh_list)
-    mesh = np.transpose(mesh, (2, 0, 1))
+        if debug:
+            print(img.dtype, np.amin(img), np.amax(img), np.unique(img, return_counts=True))
+            continue
+        img = io.imread(filepath)
+        if 'bool' in str(img.dtype):
+            img = (img * 255).astype(data_type)
+        img = img[:, left:right]
+        volume[:,:,i] = img
 
-    ids = [int(i) for i in np.unique(midfile[:])]
+    volume = np.rot90(volume, axes=(2, 1))
+    volume = np.rot90(volume, 3)
+    volume = np.flip(volume, axis=1)
+    if debug:
+        print('volume shape', volume.shape)
+        sys.exit()
 
-    dims = neuroglancer.CoordinateSpace(
-        names=['x', 'y', 'z'],
-        units=['nm', 'nm', 'nm'],
-        scales=scales)
-
-    vol = neuroglancer.LocalVolume(
-        data=mesh,
-        dimensions=dims
-    )
-
-    img_path.parent.joinpath(
-        'output', 'mesh').mkdir(exist_ok=True, parents=True)
-
-    for ID in ids[1:]:
-        print(ID)
-        mesh_data = vol.get_object_mesh(ID)
-        with open(
-                str(img_path.parent / 'output' / 'mesh' / '.'.join(
-                    ('mesh', str(ID), str(ID)))), 'wb') as meshfile:
-            meshfile.write(mesh_data)
-        with open(
-                str(img_path.parent / 'output' / 'mesh' / ''.join(
-                    (str(ID), ':0'))), 'w') as ff:
-            ff.write(json_descriptor.format(ID, ID))
-
-    print('ids to insert into URL:')
-    ids_string = '[\'' + '\'_\''.join([str(i) for i in ids[1:]]) + '\']'
-    print(ids_string)
-
-    print('done')
-
+    ids = [(255, '255: 255')]
+    ng = NumpyToNeuroglancer(volume, scales,
+                             layer_type='segmentation', data_type=np.uint8, chunk_size=[16, 16, 1])
+    ng.init_volume(OUTPUT_DIR)
+    del volume
+    ng.add_segment_properties(ids)
+    ng.add_segmentation_mesh()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--limit', help='Enter the # of files to test', required=False, default=0)
-    parser.add_argument('--chunk', help='Enter the chunk size', required=True)
     parser.add_argument('--debug', help='debug?', required=True)
     args = parser.parse_args()
     animal = args.animal
     limit = int(args.limit)
-    chunk = int(args.chunk)
     debug = bool({'true': True, 'false': False}[args.debug.lower()])
-    create_mesh(animal, limit, chunk, debug)
+    create_mesh(animal, limit, debug)
 
