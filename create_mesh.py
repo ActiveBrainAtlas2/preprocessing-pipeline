@@ -23,7 +23,7 @@ def create_mesh(animal, limit, debug):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     """you might want to change the output dir"""
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_sagittal_200')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_midsagittal')
     if os.path.exists(OUTPUT_DIR):
         print(f'DIR {OUTPUT_DIR} exists, exiting.')
         sys.exit()
@@ -37,13 +37,10 @@ def create_mesh(animal, limit, debug):
     if scale > 1:
         files = [f for i,f in enumerate(files) if i % scale == 0]
     ## take a sample from the middle of the stack
-    if limit > 0:
-        files = files[midpoint-limit:midpoint+limit]
-
+    files = files[midpoint:-1]
     resolution = 1000*scale
     scales = (resolution, resolution, resolution)
     center = width // 2
-    limit = 100
     left = center - limit
     right = center + limit
     width = right - left
@@ -72,7 +69,7 @@ def create_mesh(animal, limit, debug):
 
     ids = [(255, '255: 255')]
     ng = NumpyToNeuroglancer(volume, scales,
-                             layer_type='segmentation', data_type=np.uint8, chunk_size=[16, 16, 1])
+                             layer_type='segmentation', data_type=np.uint8, chunk_size=[64,64,64])
     ng.init_volume(OUTPUT_DIR)
     del volume
     ng.add_segment_properties(ids)

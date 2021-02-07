@@ -32,3 +32,5 @@
 1. using the hybrid neuroglancer-scripts and igneuos gives same slow result at 3x3x3
 1. seung: chunk_size=[512, 512, 16] when volume size is [250000, 250000, 25000], res: [4,4,40]
 1. at 1um, our volume size is 10368x7885x13312
+1. sagittal slice 1um iostropic with 200 sections doesn't load all the way. chunk_size = []128,128,16]
+1. dask still uses lots of RAM
