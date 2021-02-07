@@ -8,6 +8,7 @@ import dask.array as da
 import dask.array
 from skimage import io
 from tqdm import tqdm
+from timeit import default_timer as timer
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 
 HOME = os.path.expanduser("~")
@@ -23,7 +24,7 @@ def add_dask_layer(animal, limit, orientation, debug):
     scale = 1
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_mid{orientation}')
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -63,6 +64,7 @@ def add_dask_layer(animal, limit, orientation, debug):
         limit = 250 # creates the z (sections) in neuroglancer
         left = center - limit
         right = center + limit
+        start = timer()
         for f in tqdm(files):
             filepath = os.path.join(INPUT, f)
             img = io.imread(filepath)
@@ -70,7 +72,8 @@ def add_dask_layer(animal, limit, orientation, debug):
                 img = (img * 255).astype(data_type)
             img = img[:,left:right]
             lazy_chunks.append(dask.delayed(img.reshape(1, img.shape[0],img.shape[1])))
-
+        end = timer()
+        print(f'Reading all files took {end - start} seconds')
         img0 = lazy_chunks[0].compute()  # load the first chunk (assume rest are same shape/dtype)
         arrays = [
             dask.array.from_delayed(lazy_chunk, dtype=data_type, shape=img0.shape)
@@ -86,10 +89,16 @@ def add_dask_layer(animal, limit, orientation, debug):
     ids = [(255, '255: 255')]
 
     scales = (resolution, resolution, resolution)
+    start = timer()
     ng = NumpyToNeuroglancer(volume.compute(), scales,
                              layer_type='segmentation', data_type=np.uint8, chunk_size=[512, 512, 16])
+    end = timer()
+    print(f'Creating neuroglancer object  took {end - start} seconds')
     del volume
+    start = timer()
     ng.init_volume(OUTPUT_DIR)
+    end = timer()
+    print(f'Initializing neuroglancer object  took {end - start} seconds')
     ng.add_segment_properties(ids)
     ng.add_segmentation_mesh()
 
