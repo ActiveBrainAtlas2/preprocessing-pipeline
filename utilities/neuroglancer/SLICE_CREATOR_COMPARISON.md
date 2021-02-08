@@ -21,16 +21,41 @@
     1. size of dir: 900M
     1. loading: very slow
     1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_chunk_512
-1. Chunk size of 1024
-    1. Time to build: 30m31.084s  
-    1. size of dir: 897M
-    1. loading: very slow
-    1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_chunk_1024 
+1. Chunk size of 64,64,64
+    1. sections: 200
+    1. loading: ok
+    1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_midsagittal 
+1. Chunk size of 64,64,64 @ 1x1x1
+    1. sections: 1000
+    1. loading: slow and stalled at 192/556
+    1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_midsagittal 
+1. Chunk size of 64,64,64
+    1. Time to build: 56m22.163s
+    1. dir size: 1.4GB   
+    1. sections: 200
+    1. loading: slow but completed
+    1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_midsagittal_nocompress 
+1. Chunk size of 128,128,128
+    1. Time to build: real	85m27.526s
+    1. sections: 500
+    1. loading: stalled at 264/369
+    1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_midsagittal
+1. Chunk size of 64,64,16
+    1. Time to build: 93m19.556s
+    1. sections: 500
+    1. loading: stalled at 264/369
+    1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_midsagittal
+1. Chunk size of 256, 256, 32
+    1. dir size: 391MB
+    1. Time to build: 58m3.246s
+    1. sections: 200
+    1. loading: ok completed 187/187
+    1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_midsagittal_256_256_32
 ### Notes
 1. num_mips must be greater than 0, default is around 6, but is useless for mesh. don't
    downsample.
 1. using the hybrid neuroglancer-scripts and igneuos gives same slow result at 3x3x3
 1. seung: chunk_size=[512, 512, 16] when volume size is [250000, 250000, 25000], res: [4,4,40]
 1. at 1um, our volume size is 10368x7885x13312
-1. sagittal slice 1um iostropic with 200 sections doesn't load all the way. chunk_size = []128,128,16]
-1. dask still uses lots of RAM
+1. sagittal slice 1um iostropic with 200 sections doesn't load all the way. chunk_size = [128,128,16]
+1. dask still uses lots of RAM and dies at compute()

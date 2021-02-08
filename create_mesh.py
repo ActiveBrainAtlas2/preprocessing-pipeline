@@ -8,14 +8,17 @@ import sys
 import imageio
 import numpy as np
 import shutil
-
+from timeit import default_timer as timer
 from skimage import io
 from tqdm import tqdm
+from concurrent.futures.process import ProcessPoolExecutor
+
+
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus
 
 
 def create_mesh(animal, limit, debug):
@@ -23,53 +26,74 @@ def create_mesh(animal, limit, debug):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     """you might want to change the output dir"""
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_midsagittal')
-    if os.path.exists(OUTPUT_DIR):
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_half_half')
+    if os.path.exists(OUTPUT_DIR) and not debug:
         print(f'DIR {OUTPUT_DIR} exists, exiting.')
         sys.exit()
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     files = sorted(os.listdir(INPUT))
+    if scale > 1:
+        files = [f for i,f in enumerate(files) if i % scale == 0]
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = imageio.imread(midfilepath)
     height, width = midfile.shape
-    if scale > 1:
-        files = [f for i,f in enumerate(files) if i % scale == 0]
-    ## take a sample from the middle of the stack
-    files = files[midpoint:-1]
-    resolution = 1000*scale
-    scales = (resolution, resolution, resolution)
-    center = width // 2
-    left = center - limit
-    right = center + limit
-    width = right - left
-
-    volume_size = (height, width, len(files))
     data_type = np.uint8
-    volume = np.zeros((volume_size), dtype=data_type)
+    ## take a sample from the middle of the stack
+    sagittal = False
 
-    for i, f in enumerate(tqdm(files)):
-        filepath = os.path.join(INPUT, f)
-        if debug:
-            print(img.dtype, np.amin(img), np.amax(img), np.unique(img, return_counts=True))
-            continue
-        img = io.imread(filepath)
-        if 'bool' in str(img.dtype):
+    if sagittal:
+
+        files = files[midpoint:midpoint+1000]
+        resolution = 1000*scale
+        scales = (resolution, resolution, resolution)
+        center = width // 2
+        left = center - limit
+        right = center + limit
+        width = right - left
+        volume_size = (height, width, len(files))
+        volume = np.zeros((volume_size), dtype=data_type)
+
+        for i, f in enumerate(tqdm(files)):
+            filepath = os.path.join(INPUT, f)
+            img = io.imread(filepath)
             img = (img * 255).astype(data_type)
-        img = img[:, left:right]
-        volume[:,:,i] = img
+            img = img[:, left:right]
+            volume[:,:,i] = img
 
-    volume = np.rot90(volume, axes=(2, 1))
-    volume = np.rot90(volume, 3)
-    volume = np.flip(volume, axis=1)
+
+        volume = np.rot90(volume, axes=(2, 1))
+        volume = np.rot90(volume, 3)
+        volume = np.flip(volume, axis=1)
+
+    else:
+        sections = 2000
+        files = files[midpoint:midpoint+sections]
+        resolution = 1000 * scale
+        scales = (resolution, resolution, resolution)
+        half_width = width // 2
+        volume_size = (height, half_width, len(files))
+
+        if not debug:
+            volume = np.zeros((volume_size), dtype=data_type)
+            for i, f in enumerate(tqdm(files)):
+                filepath = os.path.join(INPUT, f)
+                img = io.imread(filepath)
+                img = (img * 255).astype(data_type)
+                img = np.rot90(img, 2)
+                img = np.flip(img)
+                img = img[:, half_width:-1]
+                volume[:, :, i] = img
+
+
     if debug:
-        print('volume shape', volume.shape)
+        print('volume shape', volume_size)
         sys.exit()
 
     ids = [(255, '255: 255')]
     ng = NumpyToNeuroglancer(volume, scales,
-                             layer_type='segmentation', data_type=np.uint8, chunk_size=[64,64,64])
+                             layer_type='segmentation', data_type=np.uint8, chunk_size=[512,512,32])
     ng.init_volume(OUTPUT_DIR)
     del volume
     ng.add_segment_properties(ids)

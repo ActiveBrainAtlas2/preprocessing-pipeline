@@ -18,7 +18,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 
 def get_cpus():
-    usecpus = 3
+    usecpus = 2
     cpus = {}
     cpus['muralis'] = 40
     cpus['basalis'] = 12
