@@ -39,15 +39,15 @@ def create_mesh(animal, limit, debug):
     midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = imageio.imread(midfilepath)
     height, width = midfile.shape
+    print('Starting volume size', height, width, len(files))
     data_type = np.uint8
+    resolution = 1000 * scale
+    scales = (resolution, resolution, resolution)
     ## take a sample from the middle of the stack
     sagittal = False
 
     if sagittal:
-
         files = files[midpoint:midpoint+1000]
-        resolution = 1000*scale
-        scales = (resolution, resolution, resolution)
         center = width // 2
         left = center - limit
         right = center + limit
@@ -62,18 +62,21 @@ def create_mesh(animal, limit, debug):
             img = img[:, left:right]
             volume[:,:,i] = img
 
-
         volume = np.rot90(volume, axes=(2, 1))
         volume = np.rot90(volume, 3)
         volume = np.flip(volume, axis=1)
 
     else:
-        sections = 2000
-        files = files[midpoint:midpoint+sections]
-        resolution = 1000 * scale
-        scales = (resolution, resolution, resolution)
-        half_width = width // 2
-        volume_size = (height, half_width, len(files))
+        startx = 5400
+        endx = 8000
+        starty = 500
+        endy = 4000
+        startz = 7000
+        endz = 10000
+        files = files[startz:endz]
+        height = endy - starty
+        width = endx - startx
+        volume_size = (height, width, len(files))
 
         if not debug:
             volume = np.zeros((volume_size), dtype=data_type)
@@ -83,7 +86,7 @@ def create_mesh(animal, limit, debug):
                 img = (img * 255).astype(data_type)
                 img = np.rot90(img, 2)
                 img = np.flip(img)
-                img = img[:, half_width:-1]
+                img = img[starty-1:endy, startx-1:endx]
                 volume[:, :, i] = img
 
 
