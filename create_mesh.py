@@ -102,8 +102,8 @@ def create_mesh(animal, limit, debug):
     ng.init_volume(OUTPUT_DIR)
     print('Ending volume size', volume.shape)
     del volume
-    ng.add_downsampled_volumes()
     ng.add_segment_properties(ids)
+    ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
 
 
