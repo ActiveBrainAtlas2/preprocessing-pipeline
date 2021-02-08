@@ -97,25 +97,26 @@ class NumpyToNeuroglancer():
         self.precomputed_vol = None
         self.offset = [0, 0, 0]
 
-    def init_delayed_mesh(self, path, volume_size):
+    def init_mesh(self, path, volume_size):
         info = CloudVolume.create_new_info(
             num_channels=1,
             layer_type=self.layer_type,  # 'image' or 'segmentation'
             data_type=self.data_type,  #
-            encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
+            encoding='compressed_segmentation',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
             resolution=self.scales,  # Size of X,Y,Z pixels in nanometers,
             voxel_offset=self.offset,  # values X,Y,Z values in voxels
-            chunk_size=[512,512,1],  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
+            chunk_size=[512,512,64],  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
+        self.precomputed_vol[:, :, :] = self.volume
 
     def init_volume(self, path):
         info = CloudVolume.create_new_info(
             num_channels = self.volume.shape[3] if len(self.volume.shape) > 3 else 1,
             layer_type = self.layer_type,
-            data_type = str(self.volume.dtype),  # Channel images might be 'uint8'
+            data_type = self.data_type, # str(self.volume.dtype),  # Channel images might be 'uint8'
             encoding = 'raw',  # raw, jpeg, compressed_segmentation, fpzip, kempressed
             resolution = self.scales,            # Voxel scaling, units are in nanometers
             voxel_offset = self.offset,          # x,y,z offset in voxels from the origin
@@ -166,7 +167,8 @@ class NumpyToNeuroglancer():
 
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0, shape=shape, compress=True) # The first phase of creating mesh
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0,
+                                        shape=shape, compress=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
         # It should be able to incoporated to above tasks, but it will give a weird bug. Don't know the reason

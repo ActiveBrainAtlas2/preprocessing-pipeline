@@ -8,6 +8,7 @@ import sys
 import imageio
 import numpy as np
 import shutil
+import compressed_segmentation as cg
 from timeit import default_timer as timer
 from skimage import io
 from tqdm import tqdm
@@ -72,7 +73,7 @@ def create_mesh(animal, limit, debug):
         starty = 500
         endy = 4000
         startz = 7000
-        endz = 10000
+        endz = startz + limit
         files = files[startz:endz]
         height = endy - starty
         width = endx - startx
@@ -86,7 +87,7 @@ def create_mesh(animal, limit, debug):
                 img = (img * 255).astype(data_type)
                 img = np.rot90(img, 2)
                 img = np.flip(img)
-                img = img[starty-1:endy, startx-1:endx]
+                img = img[starty:endy, startx:endx]
                 volume[:, :, i] = img
 
 
@@ -95,10 +96,13 @@ def create_mesh(animal, limit, debug):
         sys.exit()
 
     ids = [(255, '255: 255')]
+    #compressed_volume = cg.compress(volume.astype(np.uint32), order='F')
     ng = NumpyToNeuroglancer(volume, scales,
-                             layer_type='segmentation', data_type=np.uint8, chunk_size=[512,512,32])
+                             layer_type='segmentation', data_type=np.uint8, chunk_size=[256, 256, 128])
     ng.init_volume(OUTPUT_DIR)
+    print('Ending volume size', volume.shape)
     del volume
+    ng.add_downsampled_volumes()
     ng.add_segment_properties(ids)
     ng.add_segmentation_mesh()
 
