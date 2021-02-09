@@ -76,10 +76,10 @@
     1. loading: stalled at 210/641 
     1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_1024x1024x256
 1. Chunk size of 1024x1024x128
-    1. dir size: 1.4GB
-    1. Time to build: 79m38.659s
+    1. dir size: 904MB
+    1. Time to build: about an hour
     1. sections: 3500x2600x3000
-    1. loading: stalled at 210/641
+    1. loading: ok, but stalled at 78/85
     1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_half_half
 ### Notes
 1. num_mips must be greater than 0, default is around 6, but is useless for mesh. don't

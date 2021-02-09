@@ -27,10 +27,10 @@ def create_mesh(animal, limit, debug):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     """you might want to change the output dir"""
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_half_half')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_midsagittal')
     if os.path.exists(OUTPUT_DIR) and not debug:
-        print(f'DIR {OUTPUT_DIR} exists, exiting.')
-        sys.exit()
+        print(f'DIR {OUTPUT_DIR} exists, removing.')
+        shutil.rmtree((OUTPUT_DIR))
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     files = sorted(os.listdir(INPUT))
@@ -68,13 +68,13 @@ def create_mesh(animal, limit, debug):
         volume = np.flip(volume, axis=1)
 
     else:
-        startx = 5400
-        endx = 8000
-        starty = 500
-        endy = 4000
-        startz = 7000
+        startx = 0
+        endx = width // 2
+        starty = 0
+        endy = midfile.shape[0]
+        startz = 0
         endz = startz + limit
-        files = files[startz:endz]
+        #files = files[startz:endz]
         height = endy - starty
         width = endx - startx
         volume_size = (height, width, len(files))

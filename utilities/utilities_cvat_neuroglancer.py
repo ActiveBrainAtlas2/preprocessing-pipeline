@@ -88,7 +88,7 @@ def get_segment_ids(volume):
 class NumpyToNeuroglancer():
     viewer = None
 
-    def __init__(self, volume, scales, layer_type, data_type, chunk_size=[64,64,64]):
+    def __init__(self, volume, scales, layer_type, data_type, chunk_size=[256,256,128]):
         self.volume = volume
         self.scales = scales
         self.layer_type = layer_type
@@ -97,20 +97,19 @@ class NumpyToNeuroglancer():
         self.precomputed_vol = None
         self.offset = [0, 0, 0]
 
-    def init_mesh(self, path, volume_size):
+    def init_precomputed(self, path, volume_size):
         info = CloudVolume.create_new_info(
             num_channels=1,
             layer_type=self.layer_type,  # 'image' or 'segmentation'
             data_type=self.data_type,  #
-            encoding='compressed_segmentation',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
+            encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
             resolution=self.scales,  # Size of X,Y,Z pixels in nanometers,
             voxel_offset=self.offset,  # values X,Y,Z values in voxels
-            chunk_size=[512,512,64],  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
+            chunk_size=[256, 256, 128],  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
-        self.precomputed_vol[:, :, :] = self.volume
 
     def init_volume(self, path):
         info = CloudVolume.create_new_info(
@@ -167,7 +166,7 @@ class NumpyToNeuroglancer():
 
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=0,
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=1,
                                         shape=shape, compress=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
@@ -190,13 +189,18 @@ class NumpyToNeuroglancer():
         return
 
     def process_pillow_slice(self, file_key):
+        """
+        needs work
+        :param file_key:
+        :return:
+        """
         index, infile = file_key
         image = Image.open(infile)
         width, height = image.size
-        array = np.array(image, dtype=np.bool, order='F')
-        array = (array * 255).astype(self.data_type)
+        array = np.array(image, dtype=self.data_type, order='F')
         array = array.reshape((1, height, width)).T
         self.precomputed_vol[:, :, index] = array
+        print(index, array.shape, array.dtype)
         image.close()
         return
 
