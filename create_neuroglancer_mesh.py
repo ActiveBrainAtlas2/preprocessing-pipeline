@@ -29,15 +29,16 @@ def create_mesh(animal, limit, debug):
     scales = (resolution, resolution, resolution)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
-    """you might want to change the output dir"""
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_midsagittal')
+    files = sorted(os.listdir(INPUT))
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_midbrain')
     if os.path.exists(OUTPUT_DIR) and not debug:
-        print(f'DIR {OUTPUT_DIR} exists, removing.')
-        shutil.rmtree((OUTPUT_DIR))
+        print(f'DIR {OUTPUT_DIR} exists, exiting.')
+        sys.exit()
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    files = sorted(os.listdir(INPUT))
     if scale > 1:
+        INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_10')
+        files = sorted(os.listdir(INPUT))
         files = [f for i,f in enumerate(files) if i % scale == 0]
         chunk = 64
         zchunk = chunk
@@ -47,7 +48,7 @@ def create_mesh(animal, limit, debug):
     height, width = midfile.shape
     startx = 0
     endx = width // 2
-    starty = height // 2
+    starty = 0
     endy = midfile.shape[0]
     height = endy - starty
     width = endx - startx
