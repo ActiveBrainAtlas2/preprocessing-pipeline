@@ -24,6 +24,9 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus
 
 def create_mesh(animal, limit, debug):
     scale = 1
+    data_type = np.uint8
+    resolution = 1000 * scale
+    scales = (resolution, resolution, resolution)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     """you might want to change the output dir"""
@@ -38,12 +41,9 @@ def create_mesh(animal, limit, debug):
         files = [f for i,f in enumerate(files) if i % scale == 0]
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
-    midfile = imageio.imread(midfilepath)
+    midfile = io.imread(midfilepath)
     height, width = midfile.shape
     print('Starting volume size', height, width, len(files))
-    data_type = np.uint8
-    resolution = 1000 * scale
-    scales = (resolution, resolution, resolution)
     ## take a sample from the middle of the stack
     sagittal = False
 
@@ -68,13 +68,15 @@ def create_mesh(animal, limit, debug):
         volume = np.flip(volume, axis=1)
 
     else:
+        sections = len(files)
         startx = 0
         endx = width // 2
-        starty = 0
+        starty = 3000
         endy = midfile.shape[0]
-        startz = 0
-        endz = startz + limit
+        startz = sections // 2
+        endz = len(files)
         #files = files[startz:endz]
+        files = files[startz:startx+10]
         height = endy - starty
         width = endx - startx
         volume_size = (height, width, len(files))
@@ -97,10 +99,10 @@ def create_mesh(animal, limit, debug):
 
     ids = [(255, '255: 255')]
     #compressed_volume = cg.compress(volume.astype(np.uint32), order='F')
-    ng = NumpyToNeuroglancer(volume, scales,
-                             layer_type='segmentation', data_type=np.uint8, chunk_size=[256, 256, 128])
+    ng = NumpyToNeuroglancer(volume, scales, layer_type='segmentation', data_type=np.uint8, chunk_size=[256, 256, 128])
     ng.init_volume(OUTPUT_DIR)
     print('Ending volume size', volume.shape)
+    print('Ending pre volume size', ng.precomputed_vol.shape)
     del volume
     ng.add_segment_properties(ids)
     ng.add_downsampled_volumes()

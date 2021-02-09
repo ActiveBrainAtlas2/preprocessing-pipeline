@@ -96,8 +96,9 @@ class NumpyToNeuroglancer():
         self.chunk_size = chunk_size
         self.precomputed_vol = None
         self.offset = [0, 0, 0]
+        self.starting_points = None
 
-    def init_precomputed(self, path, volume_size):
+    def init_precomputed(self, path, volume_size, starting_points):
         info = CloudVolume.create_new_info(
             num_channels=1,
             layer_type=self.layer_type,  # 'image' or 'segmentation'
@@ -105,9 +106,10 @@ class NumpyToNeuroglancer():
             encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
             resolution=self.scales,  # Size of X,Y,Z pixels in nanometers,
             voxel_offset=self.offset,  # values X,Y,Z values in voxels
-            chunk_size=[256, 256, 128],  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
+            chunk_size=self.chunk_size,  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
+        self.starting_points = starting_points
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
 
@@ -151,12 +153,13 @@ class NumpyToNeuroglancer():
         with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
             json.dump(info, file, indent=2)
 
-    def add_downsampled_volumes(self):
+    def add_downsampled_volumes(self, chunk_size=[256, 256, 128]):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, compress=True)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath,
+                                             chunk_size=chunk_size, compress=True)
         tq.insert(tasks)
         tq.execute()
 
@@ -166,7 +169,7 @@ class NumpyToNeuroglancer():
 
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=1,
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=2,
                                         shape=shape, compress=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
@@ -175,15 +178,17 @@ class NumpyToNeuroglancer():
         tq.insert(tasks)
         tq.execute()
 
-    def process_slice(self, file_key):
+    def process_coronal_slice(self, file_key):
         index, infile = file_key
         img = io.imread(infile)
-        height, width = img.shape
-        if 'bool' in str(img.dtype):
-            img = (img * 255).astype(self.data_type)
+        img = (img * 255).astype(self.data_type)
+        starty, endy, startx, endx = self.starting_points
+        img = np.rot90(img, 2)
+        img = np.flip(img)
+        img = img[starty:endy, startx:endx]
 
-        img = img.reshape(1, height, width).T
-        print(index, infile, img.shape, img.dtype)
+        img = img.reshape(img.shape[0], img.shape[1], 1)
+        #print(index, infile, img.shape, img.dtype)
         self.precomputed_vol[:, :, index] = img
         del img
         return
@@ -200,7 +205,7 @@ class NumpyToNeuroglancer():
         array = np.array(image, dtype=self.data_type, order='F')
         array = array.reshape((1, height, width)).T
         self.precomputed_vol[:, :, index] = array
-        print(index, array.shape, array.dtype)
+        #print(index, array.shape, array.dtype, 'self.precomputed_vol.shape', self.precomputed_vol.shape)
         image.close()
         return
 

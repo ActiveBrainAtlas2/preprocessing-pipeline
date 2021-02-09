@@ -51,11 +51,11 @@ def run_neuroglancer(animal, channel, downsample, suffix=None):
     for i, f in enumerate(tqdm(files)):
         filepath = os.path.join(INPUT, f)
         file_keys.append([i,filepath])
-        ng.process_slice((i, filepath))
 
-    #with ProcessPoolExecutor(max_workers=1) as executor:
-    #    executor.map(ng.process_pillow_slice, file_keys)
+    with ProcessPoolExecutor(max_workers=2) as executor:
+        executor.map(ng.process_pillow_slice, file_keys)
     #    ng.precomputed_vol.cache.flush()
+        #ng.process_pillow_slice((i, filepath))
 
     ng.add_downsampled_volumes()
 
