@@ -11,8 +11,6 @@ from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 from pathlib import Path
-from PIL import Image
-Image.MAX_IMAGE_PIXELS = None
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -193,6 +191,15 @@ class NumpyToNeuroglancer():
         del img
         return
 
+    def process_image(self, file_key):
+        index, infile = file_key
+        img = io.imread(infile)
+        img = img.reshape(1, img.shape[0], img.shape[1]).T
+        #print(index, infile, img.shape, img.dtype)
+        self.precomputed_vol[:, :, index] = img
+        del img
+        return
+
     def process_pillow_slice(self, file_key):
         """
         needs work
@@ -200,12 +207,13 @@ class NumpyToNeuroglancer():
         :return:
         """
         index, infile = file_key
+        print('XXXX', infile)
         image = Image.open(infile)
         width, height = image.size
         array = np.array(image, dtype=self.data_type, order='F')
         array = array.reshape((1, height, width)).T
         self.precomputed_vol[:, :, index] = array
-        #print(index, array.shape, array.dtype, 'self.precomputed_vol.shape', self.precomputed_vol.shape)
+        print(index, array.shape, array.dtype, 'self.precomputed_vol.shape', self.precomputed_vol.shape)
         image.close()
         return
 

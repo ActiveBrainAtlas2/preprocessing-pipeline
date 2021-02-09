@@ -58,6 +58,7 @@ def run_neuroglancer(animal, channel, downsample, suffix):
         sys.exit()
 
     error = test_dir(animal, INPUT, downsample_bool, same_size=True)
+    #error = ""
     if len(error) > 0:
         print(error)
         sys.exit()
@@ -71,7 +72,9 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     file_keys = []
     scales = (resolution, resolution, 20000)
     chunk_size = [256, 256, 1]
+    #files = files[midpoint-10:midpoint+10]
     volume_size = (width, height, len(files))
+    print('vol size', volume_size)
 
     ng = NumpyToNeuroglancer(None, scales, 'image', np.uint16, chunk_size)
     ng.init_precomputed(OUTPUT_DIR, volume_size)
@@ -81,8 +84,8 @@ def run_neuroglancer(animal, channel, downsample, suffix):
         file_keys.append([i,filepath])
 
     start = timer()
-    with ProcessPoolExecutor(max_workers=2) as executor:
-        executor.map(ng.process_pillow_slice, file_keys)
+    with ProcessPoolExecutor(max_workers=1) as executor:
+        executor.map(ng.process_image, file_keys)
 
     end = timer()
     print(f'Finito! Method took {end - start} seconds')
