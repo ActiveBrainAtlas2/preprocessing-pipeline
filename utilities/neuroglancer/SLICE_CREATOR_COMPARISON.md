@@ -90,6 +90,7 @@
 1. sagittal slice 1um iostropic with 200 sections doesn't load all the way. chunk_size = [128,128,16]
 1. dask still uses lots of RAM and dies at compute()
 1. decrease chunk size when using a downsampled volume
-1. Will recommendations: "The chunk size is pretty small. 64x64x64 results in relatively slow loading times because the files are cut up so much. I'd recommend at least 128x128x64 or even 256x256x128."
+1. Will recommendations: "The chunk size is pretty small. 64x64x64 results in relatively slow loading times because the 
+   files are cut up so much. I'd recommend at least 128x128x64 or even 256x256x128."
 
 

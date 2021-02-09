@@ -63,7 +63,8 @@ def create_mesh(animal, limit, debug):
         filekeys.append([i, infile])
 
     start = timer()
-    with ProcessPoolExecutor(max_workers=2) as executor:
+    workers = get_cpus()
+    with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(ng.process_coronal_slice, filekeys)
         ng.precomputed_vol.cache.flush()
     end = timer()

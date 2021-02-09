@@ -98,7 +98,7 @@ class NumpyToNeuroglancer():
         self.offset = [0, 0, 0]
         self.starting_points = None
 
-    def init_precomputed(self, path, volume_size, starting_points):
+    def init_precomputed(self, path, volume_size, starting_points=None):
         info = CloudVolume.create_new_info(
             num_channels=1,
             layer_type=self.layer_type,  # 'image' or 'segmentation'

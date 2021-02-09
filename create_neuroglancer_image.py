@@ -5,34 +5,38 @@ import argparse
 import os
 import sys
 from concurrent.futures.process import ProcessPoolExecutor
-from skimage import io
-from tqdm import tqdm
 
+import imagesize
+import numpy as np
+from tqdm import tqdm
 from timeit import default_timer as timer
+
+from utilities.utilities_process import SCALING_FACTOR
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
-from utilities.sqlcontroller import SqlController
-from utilities.utilities_process import SCALING_FACTOR, test_dir
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus
-from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES, \
-    RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from utilities.sqlcontroller import SqlController
+from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES, \
+    RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
+from utilities.utilities_process import test_dir, SCALING_FACTOR
 
-
-def create_layer(animal, channel, downsample, limit, suffix=None):
+def run_neuroglancer(animal, channel, downsample, suffix):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
-    channel_dir = f'CH{channel}'
-    channel_outdir = f'C{channel}T'
+    channel_dir = 'CH{}'.format(channel)
+    channel_outdir = 'C{}T'.format(channel)
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, f'{downsample}_aligned')
     sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
-    resolution = sqlController.scan_run.resolution
-    resolution = int(resolution * 1000 / SCALING_FACTOR)
+    db_resolution = sqlController.scan_run.resolution
+    resolution = int(db_resolution * 1000 / SCALING_FACTOR)
+    downsample_bool = False
 
     if downsample == 'full':
-        channel_outdir = f'C{channel}'
+        downsample_bool = True
+        channel_outdir = 'C{}'.format(channel)
         if channel == 3:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
         elif channel == 2:
@@ -44,72 +48,59 @@ def create_layer(animal, channel, downsample, limit, suffix=None):
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
 
-        resolution = sqlController.scan_run.resolution
-        resolution = int(resolution * 1000)
+        resolution = int(db_resolution * 1000)
 
-    voxel_resolution = (resolution, resolution, 20000)
-
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, '{}'.format(channel_outdir))
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
     if suffix is not None:
         OUTPUT_DIR += suffix
     if os.path.exists(OUTPUT_DIR):
-        print(f'Directory: {OUTPUT_DIR} exists.')
-        print('You need to manually delete it. Exiting ...')
+        print(f'Error: {OUTPUT_DIR} exists, you must manually delete it before proceeding.')
         sys.exit()
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    #error = test_dir(animal, INPUT, full, same_size=True)
-    error = ""
+    error = test_dir(animal, INPUT, downsample_bool, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()
 
-
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     files = sorted(os.listdir(INPUT))
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
-    sample_img = io.imread((midfilepath))
-    height, width = sample_img.shape
-    if limit > 0:
-        files = files[midpoint-limit:midpoint+limit]
+    width, height = imagesize.get(midfilepath)
 
-    chunk_size = [64, 64, 1]
+    file_keys = []
+    scales = (resolution, resolution, 20000)
+    chunk_size = [256, 256, 1]
     volume_size = (width, height, len(files))
 
-    ng = NumpyToNeuroglancer(None, voxel_resolution, 'image', sample_img.dtype, chunk_size)
+    ng = NumpyToNeuroglancer(None, scales, 'image', np.uint16, chunk_size)
     ng.init_precomputed(OUTPUT_DIR, volume_size)
-    del sample_img
 
-    filekeys = []
-    for i,f in enumerate((files)):
-        infile = os.path.join(INPUT, f)
-        filekeys.append([i, infile])
+    for i, f in enumerate(tqdm(files)):
+        filepath = os.path.join(INPUT, f)
+        file_keys.append([i,filepath])
 
     start = timer()
-    with ProcessPoolExecutor(max_workers=get_cpus()) as executor:
-        executor.map(ng.process_slice, filekeys)
-    end = timer()
-    print(f'Creating and filling volume took {end - start} seconds')
+    with ProcessPoolExecutor(max_workers=2) as executor:
+        executor.map(ng.process_pillow_slice, file_keys)
 
+    end = timer()
+    print(f'Finito! Method took {end - start} seconds')
+    print(ng.precomputed_vol.shape)
 
     ng.add_downsampled_volumes()
-    ng.precomputed_vol.cache.flush()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--limit', help='Enter limit', required=False, default=0)
-    parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
-    parser.add_argument('--suffix', help='Enter suffix to add to the output dir', required=False, default=None)
+    parser.add_argument('--downsample', help='Enter full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--suffix', help='Enter suffix to add to the output dir', required=False)
 
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
-    limit = int(args.limit)
-    downsample = args.resolution
+    downsample = args.downsample
     suffix = args.suffix
-    create_layer(animal, channel, downsample, limit, suffix)
-
+    run_neuroglancer(animal, channel, downsample, suffix)
 
