@@ -17,11 +17,11 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_ids, get_cpus
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus
 
 
 def create_mesh(animal, limit, debug):
-    scale = 10
+    scale = 1
     chunk = 256
     zchunk = 128
     data_type = np.uint8
@@ -30,7 +30,7 @@ def create_mesh(animal, limit, debug):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     files = sorted(os.listdir(INPUT))
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_10')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_fullbrain')
     if os.path.exists(OUTPUT_DIR) and not debug:
         print(f'DIR {OUTPUT_DIR} exists, exiting.')
         sys.exit()
@@ -45,10 +45,11 @@ def create_mesh(animal, limit, debug):
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = io.imread(midfilepath)
+    if debug:
+        files = files[midpoint-limit:midpoint+limit]
     height, width = midfile.shape
     startx = 0
     endx = width // 2
-    endx = width
     starty = 0
     endy = midfile.shape[0]
     height = endy - starty
