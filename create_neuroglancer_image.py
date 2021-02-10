@@ -17,7 +17,7 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus
 from utilities.sqlcontroller import SqlController
 from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES, \
     RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
@@ -57,6 +57,8 @@ def run_neuroglancer(animal, channel, downsample, suffix):
         print(f'Error: {OUTPUT_DIR} exists, you must manually delete it before proceeding.')
         sys.exit()
 
+    PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
+
     error = test_dir(animal, INPUT, downsample_bool, same_size=True)
     #error = ""
     if len(error) > 0:
@@ -64,6 +66,7 @@ def run_neuroglancer(animal, channel, downsample, suffix):
         sys.exit()
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(PROGRESS_DIR, exist_ok=True)
     files = sorted(os.listdir(INPUT))
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
@@ -77,14 +80,15 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     print('vol size', volume_size)
 
     ng = NumpyToNeuroglancer(None, scales, 'image', np.uint16, chunk_size)
-    ng.init_precomputed(OUTPUT_DIR, volume_size)
+    ng.init_precomputed(OUTPUT_DIR, volume_size, progress_dir=PROGRESS_DIR)
 
     for i, f in enumerate(tqdm(files)):
         filepath = os.path.join(INPUT, f)
         file_keys.append([i,filepath])
-
+        ng.process_image((i, filepath))
     start = timer()
-    with ProcessPoolExecutor(max_workers=1) as executor:
+    workers = min(get_cpus(), 4)
+    with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(ng.process_image, file_keys)
 
     end = timer()

@@ -82,11 +82,15 @@
     1. loading: ok, but stalled at 78/85
     1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_half_half
 1. Chunk size of 256x256x128
-    1. dir size: 
     1. Time to build: 160m48.592s
     1. sections: 3943, 5184, 13312
-    1. loading: 
+    1. loading: ok 
     1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_midsagittal
+1. Chunk size of 256x256x128, mip=2
+    1. Time to build: 159m55.436s
+    1. sections: 7885x5184x13312
+    1. loading: stalled at 118/276
+    1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_midbrain
 ### Notes
 1. num_mips must be greater than 0, default is around 6, but is useless for mesh. don't
    downsample.

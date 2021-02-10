@@ -10,6 +10,7 @@ import neuroglancer
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
+from cloudvolume.lib import touch
 from pathlib import Path
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -96,7 +97,7 @@ class NumpyToNeuroglancer():
         self.offset = [0, 0, 0]
         self.starting_points = None
 
-    def init_precomputed(self, path, volume_size, starting_points=None):
+    def init_precomputed(self, path, volume_size, starting_points=None, progress_dir=None):
         info = CloudVolume.create_new_info(
             num_channels=1,
             layer_type=self.layer_type,  # 'image' or 'segmentation'
@@ -108,6 +109,7 @@ class NumpyToNeuroglancer():
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
         self.starting_points = starting_points
+        self.progress_dir = progress_dir
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
 
@@ -161,13 +163,13 @@ class NumpyToNeuroglancer():
         tq.insert(tasks)
         tq.execute()
 
-    def add_segmentation_mesh(self, shape=[448, 448, 448]):
+    def add_segmentation_mesh(self, shape=[448, 448, 448], mip=0):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=2,
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=mip,
                                         shape=shape, compress=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
@@ -175,6 +177,18 @@ class NumpyToNeuroglancer():
         tasks = tc.create_mesh_manifest_tasks(self.precomputed_vol.layer_cloudpath) # The second phase of creating mesh
         tq.insert(tasks)
         tq.execute()
+
+    def process_simple_slice(self, file_key):
+        index, infile = file_key
+        img = io.imread(infile)
+        img = (img * 255).astype(self.data_type)
+        img = np.rot90(img, 2)
+        img = np.flip(img)
+        img = img.reshape(img.shape[0], img.shape[1], 1)
+        #print(index, infile, img.shape, img.dtype)
+        self.precomputed_vol[:, :, index] = img
+        del img
+        return
 
     def process_coronal_slice(self, file_key):
         index, infile = file_key
@@ -184,7 +198,6 @@ class NumpyToNeuroglancer():
         img = np.rot90(img, 2)
         img = np.flip(img)
         img = img[starty:endy, startx:endx]
-
         img = img.reshape(img.shape[0], img.shape[1], 1)
         #print(index, infile, img.shape, img.dtype)
         self.precomputed_vol[:, :, index] = img
@@ -195,26 +208,11 @@ class NumpyToNeuroglancer():
         index, infile = file_key
         img = io.imread(infile)
         img = img.reshape(1, img.shape[0], img.shape[1]).T
-        #print(index, infile, img.shape, img.dtype)
         self.precomputed_vol[:, :, index] = img
+        touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
+        touch(touchfile)
+        #print(index, infile, img.shape, img.dtype, touchfile)
         del img
-        return
-
-    def process_pillow_slice(self, file_key):
-        """
-        needs work
-        :param file_key:
-        :return:
-        """
-        index, infile = file_key
-        print('XXXX', infile)
-        image = Image.open(infile)
-        width, height = image.size
-        array = np.array(image, dtype=self.data_type, order='F')
-        array = array.reshape((1, height, width)).T
-        self.precomputed_vol[:, :, index] = array
-        print(index, array.shape, array.dtype, 'self.precomputed_vol.shape', self.precomputed_vol.shape)
-        image.close()
         return
 
     def preview(self, layer_name=None, clear_layer=False):

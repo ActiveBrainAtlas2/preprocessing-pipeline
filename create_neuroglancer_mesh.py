@@ -21,7 +21,7 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segme
 
 
 def create_mesh(animal, limit, debug):
-    scale = 1
+    scale = 10
     chunk = 256
     zchunk = 128
     data_type = np.uint8
@@ -30,7 +30,7 @@ def create_mesh(animal, limit, debug):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     files = sorted(os.listdir(INPUT))
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_midbrain')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_10')
     if os.path.exists(OUTPUT_DIR) and not debug:
         print(f'DIR {OUTPUT_DIR} exists, exiting.')
         sys.exit()
@@ -48,13 +48,14 @@ def create_mesh(animal, limit, debug):
     height, width = midfile.shape
     startx = 0
     endx = width // 2
+    endx = width
     starty = 0
     endy = midfile.shape[0]
     height = endy - starty
     width = endx - startx
     starting_points = [starty,endy, startx,endx]
     volume_size = (height, width, len(files))
-    print('volume size', height, width, len(files))
+    print('volume size', volume_size)
     ng = NumpyToNeuroglancer(None, scales, layer_type='segmentation', data_type=data_type, chunk_size=[chunk, chunk, 1])
     ng.init_precomputed(OUTPUT_DIR, volume_size, starting_points)
 
@@ -62,6 +63,7 @@ def create_mesh(animal, limit, debug):
     for i,f in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, f)
         filekeys.append([i, infile])
+        #ng.process_simple_slice((i, infile))
 
     start = timer()
     workers = get_cpus()
@@ -70,7 +72,7 @@ def create_mesh(animal, limit, debug):
         ng.precomputed_vol.cache.flush()
     end = timer()
 
-    print(f'Finito! Method took {end - start} seconds')
+    print(f'simple slice Method took {end - start} seconds')
     print(ng.precomputed_vol.shape)
 
     ids = [(255, '255: 255')]
