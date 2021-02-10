@@ -199,8 +199,10 @@ class NumpyToNeuroglancer():
         img = np.flip(img)
         img = img[starty:endy, startx:endx]
         img = img.reshape(img.shape[0], img.shape[1], 1)
-        #print(index, infile, img.shape, img.dtype)
+        #print(index, infile, img.shape, img.dtype, self.precomputed_vol.dtype, self.precomputed_vol.shape)
         self.precomputed_vol[:, :, index] = img
+        touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
+        touch(touchfile)
         del img
         return
 

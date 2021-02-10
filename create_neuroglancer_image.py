@@ -3,6 +3,7 @@ Creates a shell from  aligned thumbnails
 """
 import argparse
 import os
+import shutil
 import sys
 from concurrent.futures.process import ProcessPoolExecutor
 
@@ -51,13 +52,15 @@ def run_neuroglancer(animal, channel, downsample, suffix):
         resolution = int(db_resolution * 1000)
 
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
+    PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
     if suffix is not None:
         OUTPUT_DIR += suffix
     if os.path.exists(OUTPUT_DIR):
         print(f'Error: {OUTPUT_DIR} exists, you must manually delete it before proceeding.')
         sys.exit()
+    if os.path.exists(PROGRESS_DIR):
+        shutil.rmtree(PROGRESS_DIR)
 
-    PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
 
     error = test_dir(animal, INPUT, downsample_bool, same_size=True)
     #error = ""

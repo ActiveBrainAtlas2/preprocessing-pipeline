@@ -30,12 +30,18 @@ def create_mesh(animal, limit, debug):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     files = sorted(os.listdir(INPUT))
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_fullbrain')
+    channel_outdir = 'mesh_partial'
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, channel_outdir)
+    PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
     if os.path.exists(OUTPUT_DIR) and not debug:
         print(f'DIR {OUTPUT_DIR} exists, exiting.')
         sys.exit()
+    if os.path.exists(PROGRESS_DIR):
+        shutil.rmtree(PROGRESS_DIR)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(PROGRESS_DIR, exist_ok=True)
+
     if scale > 1:
         INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_10')
         files = sorted(os.listdir(INPUT))
@@ -47,6 +53,8 @@ def create_mesh(animal, limit, debug):
     midfile = io.imread(midfilepath)
     if debug:
         files = files[midpoint-limit:midpoint+limit]
+    else:
+        files = files[midpoint:-1]
     height, width = midfile.shape
     startx = 0
     endx = width // 2
@@ -58,19 +66,18 @@ def create_mesh(animal, limit, debug):
     volume_size = (height, width, len(files))
     print('volume size', volume_size)
     ng = NumpyToNeuroglancer(None, scales, layer_type='segmentation', data_type=data_type, chunk_size=[chunk, chunk, 1])
-    ng.init_precomputed(OUTPUT_DIR, volume_size, starting_points)
+    ng.init_precomputed(OUTPUT_DIR, volume_size, starting_points=starting_points, progress_dir=PROGRESS_DIR)
 
     filekeys = []
     for i,f in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, f)
         filekeys.append([i, infile])
-        #ng.process_simple_slice((i, infile))
+        #ng.process_coronal_slice((i, infile))
 
     start = timer()
     workers = get_cpus()
     with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(ng.process_coronal_slice, filekeys)
-        ng.precomputed_vol.cache.flush()
     end = timer()
 
     print(f'simple slice Method took {end - start} seconds')

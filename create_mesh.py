@@ -30,7 +30,7 @@ def create_mesh(animal, limit, debug):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     """you might want to change the output dir"""
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_midsagittal')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if os.path.exists(OUTPUT_DIR) and not debug:
         print(f'DIR {OUTPUT_DIR} exists, removing.')
         shutil.rmtree((OUTPUT_DIR))
@@ -68,34 +68,31 @@ def create_mesh(animal, limit, debug):
         volume = np.flip(volume, axis=1)
 
     else:
-        sections = len(files)
+        midpoint = len(files) // 2
+        midfilepath = os.path.join(INPUT, files[midpoint])
+        midfile = io.imread(midfilepath)
+        files = files[midpoint:-1]
+        height, width = midfile.shape
         startx = 0
         endx = width // 2
-        starty = 3000
+        starty = midfile.shape[0] // 2
         endy = midfile.shape[0]
-        startz = sections // 2
-        endz = len(files)
-        #files = files[startz:endz]
-        files = files[startz:startx+10]
         height = endy - starty
         width = endx - startx
         volume_size = (height, width, len(files))
 
-        if not debug:
-            volume = np.zeros((volume_size), dtype=data_type)
-            for i, f in enumerate(tqdm(files)):
-                filepath = os.path.join(INPUT, f)
-                img = io.imread(filepath)
-                img = (img * 255).astype(data_type)
-                img = np.rot90(img, 2)
-                img = np.flip(img)
-                img = img[starty:endy, startx:endx]
-                volume[:, :, i] = img
+        volume = np.zeros((volume_size), dtype=data_type)
+        for i, f in enumerate(tqdm(files)):
+            filepath = os.path.join(INPUT, f)
+            img = io.imread(filepath)
+            img = (img * 255).astype(data_type)
+            img = np.rot90(img, 2)
+            img = np.flip(img)
+            img = img[starty:endy, startx:endx]
+            volume[:, :, i] = img
 
 
-    if debug:
-        print('volume shape', volume_size)
-        sys.exit()
+    print('volume shape', volume_size)
 
     ids = [(255, '255: 255')]
     #compressed_volume = cg.compress(volume.astype(np.uint32), order='F')
