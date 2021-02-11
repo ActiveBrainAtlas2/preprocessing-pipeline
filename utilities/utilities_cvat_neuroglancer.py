@@ -169,7 +169,7 @@ class NumpyToNeuroglancer():
 
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath, mip=mip,
+        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath,mip=mip,
                                         shape=shape, compress=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
@@ -188,6 +188,20 @@ class NumpyToNeuroglancer():
         #print(index, infile, img.shape, img.dtype)
         self.precomputed_vol[:, :, index] = img
         del img
+        return
+
+    def process_chunk(self, file_keys):
+        for (index, infile) in file_keys:
+            img = io.imread(infile)
+            img = (img * 255).astype(self.data_type)
+            img = np.rot90(img, 2)
+            img = np.flip(img)
+            img = img.reshape(img.shape[0], img.shape[1], 1)
+            print(index, infile, img.shape, img.dtype)
+            self.precomputed_vol[:, :, index] = img
+            touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
+            touch(touchfile)
+            del img
         return
 
     def process_coronal_slice(self, file_key):

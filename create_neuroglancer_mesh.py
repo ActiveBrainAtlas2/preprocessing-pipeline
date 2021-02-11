@@ -19,8 +19,11 @@ sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus
 
+def chunker(seq, size):
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
-def create_mesh(animal, limit, debug):
+
+def create_mesh(animal, limit):
     scale = 1
     chunk = 256
     zchunk = 128
@@ -30,10 +33,10 @@ def create_mesh(animal, limit, debug):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
     files = sorted(os.listdir(INPUT))
-    channel_outdir = 'mesh_partial'
+    channel_outdir = 'mesh'
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, channel_outdir)
     PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
-    if os.path.exists(OUTPUT_DIR) and not debug:
+    if os.path.exists(OUTPUT_DIR):
         print(f'DIR {OUTPUT_DIR} exists, exiting.')
         sys.exit()
     if os.path.exists(PROGRESS_DIR):
@@ -51,13 +54,11 @@ def create_mesh(animal, limit, debug):
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = io.imread(midfilepath)
-    if debug:
+    if limit > 0:
         files = files[midpoint-limit:midpoint+limit]
-    else:
-        files = files[midpoint:-1]
     height, width = midfile.shape
     startx = 0
-    endx = width // 2
+    endx = midfile.shape[1]
     starty = 0
     endy = midfile.shape[0]
     height = endy - starty
@@ -72,12 +73,12 @@ def create_mesh(animal, limit, debug):
     for i,f in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, f)
         filekeys.append([i, infile])
-        #ng.process_coronal_slice((i, infile))
 
     start = timer()
     workers = get_cpus()
     with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(ng.process_coronal_slice, filekeys)
+
     end = timer()
 
     print(f'simple slice Method took {end - start} seconds')
@@ -92,10 +93,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--limit', help='Enter the # of files to test', required=False, default=0)
-    parser.add_argument('--debug', help='debug?', required=True)
     args = parser.parse_args()
     animal = args.animal
     limit = int(args.limit)
-    debug = bool({'true': True, 'false': False}[args.debug.lower()])
-    create_mesh(animal, limit, debug)
+    create_mesh(animal, limit)
 
