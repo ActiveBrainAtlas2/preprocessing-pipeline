@@ -112,6 +112,7 @@ class NumpyToNeuroglancer():
         self.progress_dir = progress_dir
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
+        self.precomputed_vol.commit_provenance()
 
     def init_volume(self, path):
         info = CloudVolume.create_new_info(
@@ -206,6 +207,11 @@ class NumpyToNeuroglancer():
 
     def process_coronal_slice(self, file_key):
         index, infile = file_key
+
+        if os.path.exists(os.path.join(self.progress_dir, os.path.basename(infile))):
+            print(f"Slice {index} already processed, skipping ")
+            return
+
         img = io.imread(infile)
         img = (img * 255).astype(self.data_type)
         starty, endy, startx, endx = self.starting_points

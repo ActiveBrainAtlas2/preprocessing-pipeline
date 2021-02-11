@@ -24,7 +24,7 @@ def chunker(seq, size):
 
 
 def create_mesh(animal, limit):
-    scale = 1
+    scale = 10
     chunk = 256
     zchunk = 128
     data_type = np.uint8
@@ -36,12 +36,6 @@ def create_mesh(animal, limit):
     channel_outdir = 'mesh'
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, channel_outdir)
     PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
-    if os.path.exists(OUTPUT_DIR):
-        print(f'DIR {OUTPUT_DIR} exists, exiting.')
-        sys.exit()
-    if os.path.exists(PROGRESS_DIR):
-        shutil.rmtree(PROGRESS_DIR)
-
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(PROGRESS_DIR, exist_ok=True)
 
@@ -75,19 +69,21 @@ def create_mesh(animal, limit):
         filekeys.append([i, infile])
 
     start = timer()
-    workers = get_cpus()
+    workers = min(get_cpus(), 2)
     with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(ng.process_coronal_slice, filekeys)
 
     end = timer()
 
     print(f'simple slice Method took {end - start} seconds')
-    print(ng.precomputed_vol.shape)
-
-    ids = [(255, '255: 255')]
-    ng.add_segment_properties(ids)
-    ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk])
-    ng.add_segmentation_mesh()
+    dir_count = len(next(os.walk(OUTPUT_DIR))[1])
+    if dir_count < 2:
+        ids = [(255, '255: 255')]
+        ng.add_segment_properties(ids)
+        ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk])
+        ng.add_segmentation_mesh()
+    else:
+        print('Already calculated downsamples.')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
