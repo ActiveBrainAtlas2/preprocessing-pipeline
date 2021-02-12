@@ -159,8 +159,8 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath,
-                                             chunk_size=chunk_size, compress=True)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=chunk_size,
+                                              compress=True)
         tq.insert(tasks)
         tq.execute()
 
@@ -171,6 +171,7 @@ class NumpyToNeuroglancer():
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
         tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath,mip=mip,
+                                        max_simplification_error=40,
                                         shape=shape, compress=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
@@ -178,6 +179,7 @@ class NumpyToNeuroglancer():
         tasks = tc.create_mesh_manifest_tasks(self.precomputed_vol.layer_cloudpath) # The second phase of creating mesh
         tq.insert(tasks)
         tq.execute()
+
 
     def process_simple_slice(self, file_key):
         index, infile = file_key

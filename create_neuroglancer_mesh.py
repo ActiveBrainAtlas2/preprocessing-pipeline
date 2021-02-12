@@ -76,14 +76,10 @@ def create_mesh(animal, limit):
     end = timer()
 
     print(f'simple slice Method took {end - start} seconds')
-    dir_count = len(next(os.walk(OUTPUT_DIR))[1])
-    if dir_count < 2:
-        ids = [(255, '255: 255')]
-        ng.add_segment_properties(ids)
-        ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk])
-        ng.add_segmentation_mesh()
-    else:
-        print('Already calculated downsamples.')
+    ids = [(255, '255: 255')]
+    ng.add_segment_properties(ids)
+    ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk])
+    ## add mesh in separate file: create_different_mesh.py
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
