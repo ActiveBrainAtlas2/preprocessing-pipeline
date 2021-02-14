@@ -209,7 +209,6 @@ class NumpyToNeuroglancer():
 
     def process_coronal_slice(self, file_key):
         index, infile = file_key
-
         if os.path.exists(os.path.join(self.progress_dir, os.path.basename(infile))):
             print(f"Slice {index} already processed, skipping ")
             return
@@ -230,12 +229,14 @@ class NumpyToNeuroglancer():
 
     def process_image(self, file_key):
         index, infile = file_key
+        if os.path.exists(os.path.join(self.progress_dir, os.path.basename(infile))):
+            print(f"Section {index} already processed, skipping ")
+            return
         img = io.imread(infile)
         img = img.reshape(1, img.shape[0], img.shape[1]).T
         self.precomputed_vol[:, :, index] = img
         touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
         touch(touchfile)
-        #print(index, infile, img.shape, img.dtype, touchfile)
         del img
         return
 

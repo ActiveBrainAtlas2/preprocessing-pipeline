@@ -7,9 +7,7 @@ import sys
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from timeit import default_timer as timer
-import imagesize
 import numpy as np
-import shutil
 
 from tqdm import tqdm
 

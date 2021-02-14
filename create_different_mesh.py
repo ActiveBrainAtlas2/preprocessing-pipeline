@@ -4,7 +4,6 @@ Creates a shell from  aligned thumbnails
 import argparse
 import os
 import sys
-import numpy as np
 from cloudvolume import CloudVolume
 
 from taskqueue import LocalTaskQueue

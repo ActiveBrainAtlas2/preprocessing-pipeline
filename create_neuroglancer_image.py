@@ -3,7 +3,6 @@ Creates a shell from  aligned thumbnails
 """
 import argparse
 import os
-import shutil
 import sys
 from concurrent.futures.process import ProcessPoolExecutor
 
@@ -11,8 +10,6 @@ import imagesize
 import numpy as np
 from tqdm import tqdm
 from timeit import default_timer as timer
-
-from utilities.utilities_process import SCALING_FACTOR
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -55,12 +52,6 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
     if suffix is not None:
         OUTPUT_DIR += suffix
-    if os.path.exists(OUTPUT_DIR):
-        print(f'Error: {OUTPUT_DIR} exists, you must manually delete it before proceeding.')
-        sys.exit()
-    if os.path.exists(PROGRESS_DIR):
-        shutil.rmtree(PROGRESS_DIR)
-
 
     error = test_dir(animal, INPUT, downsample_bool, same_size=True)
     #error = ""
@@ -88,7 +79,7 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     for i, f in enumerate(tqdm(files)):
         filepath = os.path.join(INPUT, f)
         file_keys.append([i,filepath])
-        ng.process_image((i, filepath))
+
     start = timer()
     workers = min(get_cpus(), 4)
     with ProcessPoolExecutor(max_workers=workers) as executor:
