@@ -84,12 +84,15 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     workers = min(get_cpus(), 4)
     with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(ng.process_image, file_keys)
+        ng.precomputed_vol.cache.flush()
 
     end = timer()
-    print(f'Finito! Method took {end - start} seconds')
-    print(ng.precomputed_vol.shape)
+    print(f'Initial method took {end - start} seconds')
 
+    start = timer()
     ng.add_downsampled_volumes()
+    end = timer()
+    print(f'Finito! Downsampling method took {end - start} seconds')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
