@@ -89,10 +89,11 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     end = timer()
     print(f'Initial method took {end - start} seconds')
 
-    start = timer()
-    ng.add_downsampled_volumes()
-    end = timer()
-    print(f'Finito! Downsampling method took {end - start} seconds')
+
+    #start = timer()
+    #ng.add_downsampled_volumes()
+    #end = timer()
+    #print(f'Finito! Downsampling method took {end - start} seconds')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
