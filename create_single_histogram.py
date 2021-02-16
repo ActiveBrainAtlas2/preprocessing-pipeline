@@ -1,6 +1,5 @@
 import argparse
 import os, sys
-from collections import Counter
 from matplotlib import pyplot as plt
 from skimage import io
 import cv2
@@ -8,32 +7,51 @@ import cv2
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
-
-# no preprocessing on channels 2 and 3
-# above 2000 are the high colored cells
-#1300 - 4200 is the important stuff
-# add a histogram below the normalization slider
-# for the individual section
-input_path = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK55/preps/CH3/thumbnail/175.tif'
-mask_path = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK55/preps/thumbnail_masked/175.tif'
-output_path = os.path.join(HOME, '175.green.tif')
-
-img = io.imread(input_path)
-mask = io.imread(mask_path)
-
-img = cv2.bitwise_and(img, img, mask=mask)
+from utilities.file_location import FileLocationManager
+COLORS = {1: 'b', 2: 'r', 3: 'g'}
 
 
-flat = img.flatten()
+def create_histogram(animal, channel, section):
 
-fig = plt.figure()
-plt.rcParams['figure.figsize'] = [10, 6]
-plt.hist(flat, flat.max(), [0, 10000], color='r')
-plt.style.use('ggplot')
-plt.yscale('log')
-plt.grid(axis='y', alpha=0.75)
-plt.xlabel('Value')
-plt.ylabel('Frequency')
-plt.title(f'175 @16bit')
-plt.close()
-fig.savefig(output_path, bbox_inches='tight')
+    fileLocationManager = FileLocationManager(animal)
+    channel_dir = f'CH{channel}/thumbnail_aligned'
+
+    filename = str(section).zfill(3) + '.tif'
+    filepath = os.path.join(fileLocationManager.prep, channel_dir, filename)
+    #maskpath = os.path.join(fileLocationManager.prep, 'thumbnail_masked', filename)
+    outputpath = os.path.join(HOME, filename)
+
+    img = io.imread(filepath)
+    #mask = io.imread(maskpath)
+
+    #img = cv2.bitwise_and(img, img, mask=mask)
+
+
+    flat = img.flatten()
+
+    fig = plt.figure()
+    plt.rcParams['figure.figsize'] = [10, 6]
+    plt.hist(flat, flat.max(), [0, 65535], color=COLORS[channel])
+    plt.style.use('ggplot')
+    plt.yscale('log')
+    plt.grid(axis='y', alpha=0.75)
+    plt.xlabel('Value')
+    plt.ylabel('Frequency')
+    plt.title(f'CH{channel} {filename} @{img.dtype}')
+    plt.close()
+    fig.savefig(outputpath, bbox_inches='tight')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Work on Animal')
+    parser.add_argument('--animal', help='Enter the animal animal', required=True)
+    parser.add_argument('--channel', help='Enter channel', required=True)
+    parser.add_argument('--section', help='Enter section', required=True)
+
+    args = parser.parse_args()
+    animal = args.animal
+    channel = int(args.channel)
+    section = int(args.section)
+    create_histogram(animal, channel, section)
+
+

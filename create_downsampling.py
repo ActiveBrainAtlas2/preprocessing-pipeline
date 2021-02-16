@@ -32,7 +32,7 @@ def create_downsamples(animal, channel, downsample):
     cloudpath = f"file://{OUTPUT_DIR}"
     workers = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
-    tasks = tc.create_downsampling_tasks(cloudpath, chunk_size=[256,256,128], compress=True)
+    tasks = tc.create_downsampling_tasks(cloudpath, compress=True, num_mips=6, preserve_chunk_size=False)
     tq.insert(tasks)
     tq.execute()
 
@@ -41,7 +41,11 @@ def create_downsamples(animal, channel, downsample):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--channel', help='Enter channel', required=True)
+    parser.add_argument('--downsample', help='Enter full or thumbnail', required=False, default='thumbnail')
     args = parser.parse_args()
     animal = args.animal
-    create_downsamples(animal)
+    channel = args.channel
+    downsample = args.downsample
+    create_downsamples(animal, channel, downsample)
 

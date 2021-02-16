@@ -83,7 +83,7 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     start = timer()
     workers = min(get_cpus(), 4)
     with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(ng.process_image, file_keys)
+        executor.map(ng.process_image, sorted(file_keys))
         ng.precomputed_vol.cache.flush()
 
     end = timer()
