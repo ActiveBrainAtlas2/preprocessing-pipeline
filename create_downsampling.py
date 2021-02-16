@@ -35,7 +35,7 @@ def create_downsamples(animal, channel, downsample):
     cv = CloudVolume(cloudpath, 0)
     workers = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
-    tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, compress=True, num_mips=mips, preserve_chunk_size=False)
+    tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, num_mips=mips, compress=True, preserve_chunk_size=False)
     tq.insert(tasks)
     tq.execute()
 

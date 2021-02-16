@@ -31,8 +31,12 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     db_resolution = sqlController.scan_run.resolution
     resolution = int(db_resolution * 1000 / SCALING_FACTOR)
     downsample_bool = False
+    chunk = 64
+    zchunk = chunk
 
     if downsample == 'full':
+        chunk = 256
+        zchunk = 128
         downsample_bool = True
         channel_outdir = 'C{}'.format(channel)
         if channel == 3:
@@ -68,12 +72,11 @@ def run_neuroglancer(animal, channel, downsample, suffix):
 
     file_keys = []
     scales = (resolution, resolution, 20000)
-    chunk_size = [256, 256, 1]
     #files = files[midpoint-10:midpoint+10]
     volume_size = (width, height, len(files))
     print('vol size', volume_size)
 
-    ng = NumpyToNeuroglancer(None, scales, 'image', np.uint16, chunk_size)
+    ng = NumpyToNeuroglancer(None, scales, 'image', np.uint16, chunk_size=[chunk, chunk, 1])
     ng.init_precomputed(OUTPUT_DIR, volume_size, progress_dir=PROGRESS_DIR)
 
     for i, f in enumerate(tqdm(files)):
@@ -89,11 +92,10 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     end = timer()
     print(f'Initial method took {end - start} seconds')
 
-
-    #start = timer()
-    #ng.add_downsampled_volumes()
-    #end = timer()
-    #print(f'Finito! Downsampling method took {end - start} seconds')
+    start = timer()
+    ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk])
+    end = timer()
+    print(f'Finito! Downsampling method took {end - start} seconds')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
