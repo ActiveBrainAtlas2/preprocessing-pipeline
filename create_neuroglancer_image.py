@@ -33,10 +33,12 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     downsample_bool = False
     chunk = 64
     zchunk = chunk
+    mips = 4
 
     if downsample == 'full':
         chunk = 128
         zchunk = 64
+        mips = 8
         downsample_bool = True
         channel_outdir = 'C{}'.format(channel)
         if channel == 3:
@@ -72,7 +74,6 @@ def run_neuroglancer(animal, channel, downsample, suffix):
 
     file_keys = []
     scales = (resolution, resolution, 20000)
-    #files = files[midpoint-10:midpoint+10]
     volume_size = (width, height, len(files))
     print('vol size', volume_size)
 
@@ -93,7 +94,7 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     print(f'Initial method took {end - start} seconds')
 
     start = timer()
-    ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk])
+    ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk], num_mips=mips)
     end = timer()
     print(f'Finito! Downsampling method took {end - start} seconds')
 

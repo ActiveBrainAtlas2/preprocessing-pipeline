@@ -154,12 +154,13 @@ class NumpyToNeuroglancer():
         with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
             json.dump(info, file, indent=2)
 
-    def add_downsampled_volumes(self, chunk_size=[256, 256, 128]):
+    def add_downsampled_volumes(self, chunk_size=[128, 128, 64], num_mips=4):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=chunk_size, compress=True)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath,
+                                             num_mips=num_mips, chunk_size=chunk_size, compress=True)
         tq.insert(tasks)
         tq.execute()
 

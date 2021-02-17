@@ -108,9 +108,9 @@
     1. Time to build: 56m39.127s
     1. loading: ok, but lots of chunks to render
     1. url: https://activebrainatlas.ucsd.edu/data/DK55/neuroglancer_data/C1
-1. Chunk size of 256x256x64 image
-    1. Time to build: 31m52.597s
-    1. loading: sluggish, big chunks take a while
+1. Chunk size of 128x128x64 with 6 extra mips image
+    1. Time to build: 54m34.380s
+    1. loading: 
     1. url: https://activebrainatlas.ucsd.edu/data/DK55/neuroglancer_data/C1
 ### Notes
 1. num_mips must be greater than 0, default is around 6, but is useless for mesh. don't
@@ -121,7 +121,8 @@
 1. sagittal slice 1um iostropic with 200 sections doesn't load all the way. chunk_size = [128,128,16]
 1. dask still uses lots of RAM and dies at compute()
 1. decrease chunk size when using a downsampled volume
-1. Will recommendations: "The chunk size is pretty small. 64x64x64 results in relatively slow loading times because the 
-   files are cut up so much. I'd recommend at least 128x128x64 or even 256x256x128."
+1. Will recommendations: "The chunk size is pretty small. 64x64x64 results in relatively slow 
+   loading times because the files are cut up so much. I'd recommend at least 128x128x64 
+   or even 256x256x128."
 
 
