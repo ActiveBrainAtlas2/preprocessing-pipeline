@@ -23,7 +23,7 @@ def create_downsamples(animal, channel, downsample):
 
     if downsample == 'full':
         channel_outdir = 'C{}'.format(channel)
-        mips = 6
+        mips = 4
 
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
 
@@ -35,7 +35,7 @@ def create_downsamples(animal, channel, downsample):
     cv = CloudVolume(cloudpath, 0)
     workers = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
-    tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, num_mips=mips, compress=True, preserve_chunk_size=False)
+    tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, compress=True, chunk_size=[128,128,32])
     tq.insert(tasks)
     tq.execute()
 

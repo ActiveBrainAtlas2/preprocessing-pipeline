@@ -1,5 +1,5 @@
 ### Comparison of different methods of creating a mesh volume
-#### 1000 sections at 3456x2628 8-bit, data is gzipped compressed
+#### 8-bit, data is gzipped compressed
 
 1. Chunk size of 64
     1. Time to build: 24m24.429s  
@@ -91,6 +91,27 @@
     1. sections: 7885x5184x13312
     1. loading: stalled at 118/276
     1. url: https://activebrainatlas.ucsd.edu/data/X/neuroglancer_data/mesh_midbrain
+#### Images   
+1. Chunk size of 256x256x32 image
+    1. Time to build: 86m17.377s
+    1. loading: painfully slow
+    1. url: https://activebrainatlas.ucsd.edu/data/DK55/neuroglancer_data/C1
+1. Chunk size of 128x128x64 image
+    1. Time to build: 62m22.826s
+    1. loading: much faster than above
+    1. url: https://activebrainatlas.ucsd.edu/data/DK55/neuroglancer_data/C1
+1. Chunk size of 256x256x128 image
+    1. Time to build: 77m8.027s
+    1. loading: kinda sluggish
+    1. url: https://activebrainatlas.ucsd.edu/data/DK55/neuroglancer_data/C1
+1. Chunk size of 64x64x64 image
+    1. Time to build: 56m39.127s
+    1. loading: ok, but lots of chunks to render
+    1. url: https://activebrainatlas.ucsd.edu/data/DK55/neuroglancer_data/C1
+1. Chunk size of 256x256x64 image
+    1. Time to build: 31m52.597s
+    1. loading: sluggish, big chunks take a while
+    1. url: https://activebrainatlas.ucsd.edu/data/DK55/neuroglancer_data/C1
 ### Notes
 1. num_mips must be greater than 0, default is around 6, but is useless for mesh. don't
    downsample.
