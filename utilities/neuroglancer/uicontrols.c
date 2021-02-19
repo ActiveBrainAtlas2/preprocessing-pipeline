@@ -237,29 +237,18 @@ https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
 
 
 ## latest for red channel
-#uicontrol invlerp normalized
+#uicontrol invlerp normalized  (range=[0,5000])
 #uicontrol float gamma slider(min=0.05, max=2.5, default=1.0, step=0.05)
 #uicontrol int colour slider(min=0, max=1, default=0, step=1)
-#uicontrol int invert slider(min=0, max=1, default=0, step=1)
 
 
   void main() {
     float pix =  normalized();
     pix = pow(pix,gamma);
 
-    if((invert!=1) && (colour==1)){
+    if (colour==1) {
   	   emitRGB(vec3(pix,0,0));
-  	}
-
-  	if((invert==1) && (colour==1)){
-  	   emitRGB(vec3((1.0 - pix),0,0));
-  	}
-
-    if((invert==1) && (colour!=1)){
-  	  emitGrayscale(1.0 - pix) ;
-  	}
-
-    if((invert==0) && (colour==0)){
+  	} else {
   	  emitGrayscale(pix) ;
   	}
 
@@ -269,26 +258,15 @@ https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
 #uicontrol invlerp normalized
 #uicontrol float gamma slider(min=0.05, max=2.5, default=1.0, step=0.05)
 #uicontrol int colour slider(min=0, max=1, default=0, step=1)
-#uicontrol int invert slider(min=0, max=1, default=0, step=1)
 
 
   void main() {
     float pix =  normalized();
     pix = pow(pix,gamma);
 
-
-    if((invert!=1) && (colour==1)){
+    if (colour==1){
   	   emitRGB(vec3(0, (pix),0));
-  	}
-
-  	if((invert==1) && (colour==1)){
-  	   emitRGB(vec3(0, (1.0 - pix),0));
-  	}
-
-    if((invert==1) && (colour!=1)){
-  	  emitGrayscale(1.0 - pix) ;
-  	}
-    if((invert==0) && (colour==0)){
+  	} else {
   	  emitGrayscale(pix) ;
   	}
 
