@@ -17,11 +17,11 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 
 def get_cpus():
-    usecpus = 2
+    usecpus = (2,2)
     cpus = {}
-    cpus['muralis'] = 40
-    cpus['basalis'] = 12
-    cpus['ratto'] = 10
+    cpus['muralis'] = (8,30)
+    cpus['basalis'] = (4,8)
+    cpus['ratto'] = (4,8)
     hostname = socket.gethostname()
     hostname = hostname.split(".")[0]
     if hostname in cpus.keys():
@@ -157,7 +157,7 @@ class NumpyToNeuroglancer():
     def add_downsampled_volumes(self, chunk_size=[128, 128, 64], num_mips=4):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
-        cpus = get_cpus()
+        _, cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
         tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath,
                                              num_mips=num_mips, chunk_size=chunk_size, compress=True)
@@ -168,7 +168,7 @@ class NumpyToNeuroglancer():
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
-        cpus = get_cpus()
+        _, cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
         tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath,mip=mip,
                                         max_simplification_error=40,
