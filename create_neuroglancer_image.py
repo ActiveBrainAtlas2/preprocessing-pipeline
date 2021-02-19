@@ -38,7 +38,7 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     if downsample == 'full':
         chunk = 128
         zchunk = 64
-        mips = 8
+        mips = 6
         downsample_bool = True
         channel_outdir = 'C{}'.format(channel)
         if channel == 3:

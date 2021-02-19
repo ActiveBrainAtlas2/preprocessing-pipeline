@@ -19,9 +19,9 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 def get_cpus():
     usecpus = (2,2)
     cpus = {}
-    cpus['muralis'] = (8,30)
-    cpus['basalis'] = (4,8)
-    cpus['ratto'] = (4,8)
+    cpus['muralis'] = (8,40)
+    cpus['basalis'] = (4,12)
+    cpus['ratto'] = (4,10)
     hostname = socket.gethostname()
     hostname = hostname.split(".")[0]
     if hostname in cpus.keys():
