@@ -206,10 +206,6 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     commands = []
     for file, arr in tqdm(ordered_transforms.items()):
         T = np.linalg.inv(arr)
-        #op_str = " +distort AffineProjection %(sx)f,%(rx)f,%(ry)f,%(sy)f,%(tx)f,%(ty)f " % {
-        #    'sx': T[0, 0], 'sy': T[1, 1], 'rx': T[1, 0], 'ry': T[0, 1], 'tx': T[0, 2], 'ty': T[1, 2]}
-
-        #op_str += ' -crop {}x{}+0.0+0.0!'.format(max_width, max_height)
 
         sx = T[0, 0]
         sy = T[1, 1]

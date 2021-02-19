@@ -19,13 +19,13 @@ from utilities.utilities_cvat_neuroglancer import get_cpus
 def create_downsamples(animal, channel, downsample):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = 'C{}T'.format(channel)
-    mips = 5
+    mips = 4
     chunk = 64
     zchunk = chunk
 
     if downsample == 'full':
         channel_outdir = 'C{}'.format(channel)
-        mips = 8
+        mips = 6
         chunk = 128
         zchunk = 64
 
@@ -39,7 +39,7 @@ def create_downsamples(animal, channel, downsample):
     cv = CloudVolume(cloudpath, 0)
     workers = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
-    tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, num_mips=mips, mip=2, compress=True, chunk_size=[chunk,chunk,zchunk])
+    tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, num_mips=mips, compress=True, chunk_size=[chunk,chunk,zchunk])
     tq.insert(tasks)
     tq.execute()
 
