@@ -21,7 +21,7 @@ from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOM
     RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
 from utilities.utilities_process import test_dir, SCALING_FACTOR
 
-def run_neuroglancer(animal, channel, downsample, suffix):
+def create_neuroglancer(animal, channel, downsample, mips, suffix):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)
@@ -33,12 +33,10 @@ def run_neuroglancer(animal, channel, downsample, suffix):
     downsample_bool = False
     chunk = 64
     zchunk = chunk
-    mips = 4
 
     if downsample == 'full':
         chunk = 128
         zchunk = 64
-        mips = 6
         downsample_bool = True
         channel_outdir = 'C{}'.format(channel)
         if channel == 3:
@@ -91,24 +89,27 @@ def run_neuroglancer(animal, channel, downsample, suffix):
         ng.precomputed_vol.cache.flush()
 
     end = timer()
-    print(f'Initial method took {end - start} seconds')
+    print(f'Create volume method took {end - start} seconds')
 
-    start = timer()
-    ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk], num_mips=mips)
-    end = timer()
-    print(f'Finito! Downsampling method took {end - start} seconds')
+    if mips > 0:
+        start = timer()
+        ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk], num_mips=mips)
+        end = timer()
+        print(f'Finito! Downsampling method took {end - start} seconds')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
+    parser.add_argument('--mips', help='Enter mips', required=False, default=0)
     parser.add_argument('--downsample', help='Enter full or thumbnail', required=False, default='thumbnail')
     parser.add_argument('--suffix', help='Enter suffix to add to the output dir', required=False)
 
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
+    mips = int(args.mips)
     downsample = args.downsample
     suffix = args.suffix
-    run_neuroglancer(animal, channel, downsample, suffix)
+    create_neuroglancer(animal, channel, downsample, mips, suffix)
 
