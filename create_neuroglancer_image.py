@@ -8,7 +8,6 @@ from concurrent.futures.process import ProcessPoolExecutor
 
 import imagesize
 import numpy as np
-from tqdm import tqdm
 from timeit import default_timer as timer
 
 HOME = os.path.expanduser("~")
@@ -33,10 +32,12 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix):
     downsample_bool = False
     chunk = 64
     zchunk = chunk
+    workers, _ = get_cpus()
 
     if downsample == 'full':
         chunk = 128
         zchunk = 64
+        workers = workers // 2
         downsample_bool = True
         channel_outdir = 'C{}'.format(channel)
         if channel == 3:
@@ -73,20 +74,22 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix):
     file_keys = []
     scales = (resolution, resolution, 20000)
     volume_size = (width, height, len(files))
-    print('vol size', volume_size)
+    print('Volume shape:', volume_size)
 
     ng = NumpyToNeuroglancer(None, scales, 'image', np.uint16, chunk_size=[chunk, chunk, 1])
     ng.init_precomputed(OUTPUT_DIR, volume_size, progress_dir=PROGRESS_DIR)
 
-    for i, f in enumerate(tqdm(files)):
+    for i, f in enumerate(files):
         filepath = os.path.join(INPUT, f)
         file_keys.append([i,filepath])
 
     start = timer()
-    workers, _ = get_cpus()
+    print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(ng.process_image, sorted(file_keys))
-        ng.precomputed_vol.cache.flush()
+        executor.map(ng.process_image, sorted(file_keys), chunksize=workers)
+        executor.shutdown(wait=True)
+
+    ng.precomputed_vol.cache.flush()
 
     end = timer()
     print(f'Create volume method took {end - start} seconds')

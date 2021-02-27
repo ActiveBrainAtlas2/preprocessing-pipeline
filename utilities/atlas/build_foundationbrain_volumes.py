@@ -21,7 +21,7 @@ from utilities.utilities_neuroglancer import xy_neuroglancer2atlas, section_neur
 from utilities.utilities_alignment import parse_elastix, transform_create_alignment
 
 DOWNSAMPLE_FACTOR = 1
-
+ATLAS_NAME = 'atlasV8'
 
 def create_clean_transform(animal):
     sqlController = SqlController(animal)
@@ -42,12 +42,11 @@ def create_clean_transform(animal):
         section_offset[section] = (downsampled_aligned_shape - downsampled_shape) // 2
     return section_offset
 
-def save_volume_origin(animal, structure, volume, xyz_offsets):
+def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     x, y, z = xyz_offsets
     #x = xy_neuroglancer2atlas(x)
     #y = xy_neuroglancer2atlas(y)
     origin = [x,y,z]
-    atlas_name = 'atlasV9'
     volume = np.swapaxes(volume, 0, 2)
     volume = np.rot90(volume, axes=(0, 1))
     volume = np.flip(volume, axis=0)
@@ -136,7 +135,7 @@ def create_volumes(animal, create):
         #z = section_neuroglancer2atlas(z)
         print(animal, structure, volume.shape, x*32,y*32,z)
         if create:
-            save_volume_origin(animal, structure, volume, xyz_offsets)
+            save_volume_origin(ATLAS_NAME, animal, structure, volume, xyz_offsets)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')

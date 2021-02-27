@@ -110,11 +110,10 @@
     1. url: https://activebrainatlas.ucsd.edu/data/DK55/neuroglancer_data/C1
 1. Chunk size of 128x128x64 with 6 extra mips image
     1. Time to build: 54m34.380s
-    1. loading: 
+    1. loading: pretty good
     1. url: https://activebrainatlas.ucsd.edu/data/DK55/neuroglancer_data/C1
 ### Notes
-1. num_mips must be greater than 0, default is around 6, but is useless for mesh. don't
-   downsample.
+1. num_mips must be greater than 0, default is around 5 for full res, 3 for thumbnails.
 1. using the hybrid neuroglancer-scripts and igneuos gives same slow result at 3x3x3
 1. seung: chunk_size=[512, 512, 16] when volume size is [250000, 250000, 25000], res: [4,4,40]
 1. at 1um, our volume size is 10368x7885x13312
@@ -124,5 +123,5 @@
 1. Will recommendations: "The chunk size is pretty small. 64x64x64 results in relatively slow 
    loading times because the files are cut up so much. I'd recommend at least 128x128x64 
    or even 256x256x128."
-
+1. Creating base chunk on DK39 on basalis with 3 cpus stalled.
 

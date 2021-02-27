@@ -15,7 +15,6 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 
-atlas_name = 'atlasV8'
 surface_level = 0.9
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import DATA_PATH
@@ -24,9 +23,9 @@ from utilities.atlas.imported_atlas_utilities import volume_to_polydata, save_me
     load_alignment_results_v3, transform_points, average_location, mirror_volume_v2, load_all_structures_and_origins, \
     crop_volume_to_minimal
 from utilities.atlas.atlas_aligner import Aligner
+from utilities.atlas.build_foundationbrain_volumes import ATLAS_NAME
 
-ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
-VOL_DIR = os.path.join(DATA_PATH, 'CSHL_volumes')
+ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', ATLAS_NAME)
 
 fixed_brain_name = 'MD589'
 sqlController = SqlController(fixed_brain_name)
@@ -86,14 +85,13 @@ for structure in tqdm(structures):
     # Load instance volumes.
     instance_volumes = []
     instance_source = []
-    atlas_name = 'atlasV9'
 
     for animal in [fixed_brain_name] + moving_brain_names:
         #brain_spec = {'name': animal, 'vol_type': 'annotationAsScore', 'resolution': atlas_resolution}
 
         #volume_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}.npy')
         #origin_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}_origin_wrt_wholebrain.txt')
-        VOL_DIR = os.path.join(DATA_PATH, 'atlas_data', atlas_name, animal)
+        VOL_DIR = os.path.join(DATA_PATH, 'atlas_data', ATLAS_NAME, animal)
         #volume_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}.npy')
         #origin_filepath = os.path.join(VOL_DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}_origin_wrt_wholebrain.txt')
 
@@ -131,13 +129,17 @@ for structure in tqdm(structures):
         ### max_iter_num was originally 100 and 1000
         _, _ = aligner.optimize(tf_type='rigid',
                                 history_len=100,
-                                max_iter_num=100 if structure in ['SC', 'IC'] else 500,
+                                max_iter_num=100 if structure in ['SC', 'IC'] else 1000,
                                 grad_computation_sample_number=None,
                                 full_lr=np.array([lr, lr, lr, 0.1, 0.1, 0.1]),
                                 terminate_thresh_trans=.01)
 
         # Transform instances.
-        T = convert_transform_forms(aligner=aligner, out_form=(3, 4), select_best='max_value')
+        try:
+            T = convert_transform_forms(aligner=aligner, out_form=(3, 4), select_best='max_value')
+        except:
+            print('Died on', animal, structure)
+            sys.exit()
         aligned_moving_instance_volume, aligned_moving_instance_origin_wrt_templateCentroid = \
             transform_volume_v4(volume=(moving_instance_volume, (0, 0, 0)), transform=T,
                                 return_origin_instead_of_bbox=True)

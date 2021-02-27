@@ -2,6 +2,8 @@ import os
 import sys
 from skimage import measure
 from skimage import io
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 import cv2
 import json
 import socket
@@ -14,14 +16,15 @@ from cloudvolume.lib import touch
 from pathlib import Path
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
+from utilities.sqlcontroller import SqlController
 
 
 def get_cpus():
-    usecpus = (2,2)
+    usecpus = (4,4)
     cpus = {}
-    cpus['muralis'] = (8,40)
-    cpus['basalis'] = (4,12)
-    cpus['ratto'] = (4,10)
+    cpus['muralis'] = (16,40)
+    cpus['basalis'] = (12,12)
+    cpus['ratto'] = (10,10)
     hostname = socket.gethostname()
     hostname = hostname.split(".")[0]
     if hostname in cpus.keys():
@@ -29,7 +32,6 @@ def get_cpus():
     return usecpus
 
 
-from utilities.sqlcontroller import SqlController
 
 def get_db_structure_infos():
     sqlController = SqlController('MD589')
@@ -105,7 +107,7 @@ class NumpyToNeuroglancer():
             encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
             resolution=self.scales,  # Size of X,Y,Z pixels in nanometers,
             voxel_offset=self.offset,  # values X,Y,Z values in voxels
-            chunk_size=self.chunk_size,  # rechunk of image X,Y,Z in voxels -- only used for downsampling task I think
+            chunk_size=self.chunk_size,  # rechunk of image X,Y,Z in voxels
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
         self.starting_points = starting_points
@@ -183,14 +185,18 @@ class NumpyToNeuroglancer():
 
     def process_simple_slice(self, file_key):
         index, infile = file_key
-        img = io.imread(infile)
-        img = (img * 255).astype(self.data_type)
-        img = np.rot90(img, 2)
-        img = np.flip(img)
-        img = img.reshape(img.shape[0], img.shape[1], 1)
-        #print(index, infile, img.shape, img.dtype)
-        self.precomputed_vol[:, :, index] = img
-        del img
+        print(index, infile)
+        try:
+            image = Image.open(infile)
+        except:
+            print('Could not open', infile)
+        width, height = image.size
+        array = np.array(image, dtype=self.data_type, order='F')
+        array = array.reshape((1, height, width)).T
+        self.precomputed_vol[:,:, index] = array
+        touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
+        touch(touchfile)
+        image.close()
         return
 
     def process_chunk(self, file_keys):
