@@ -3,13 +3,11 @@ Creates a 3D Mesh
 """
 import argparse
 import os
-from re import M
 import sys
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from timeit import default_timer as timer
 import numpy as np
-import shutil
 from taskqueue.taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 
@@ -19,7 +17,7 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus, get_segment_ids, get_segment_properties
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus, get_segment_ids
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
