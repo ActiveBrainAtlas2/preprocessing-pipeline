@@ -31,8 +31,7 @@ def create_mesh(animal, limit):
     resolution = 1000 * scale
     scales = (resolution, resolution, resolution)
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH2/full_aligned')
-    #INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
+    INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
     files = sorted(os.listdir(INPUT))
     channel_outdir = 'color_mesh'
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, channel_outdir)
