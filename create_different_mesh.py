@@ -28,7 +28,7 @@ def create_mesh(animal, mip, mse):
     cv = CloudVolume(cloudpath, mip)
     workers, _ = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
-    mesh = False
+    mesh = True
     if mesh:
         mesh_dir = f'mesh_mip_{mip}_err_{mse}'
         cv.info['mesh'] = mesh_dir
@@ -50,7 +50,7 @@ def create_mesh(animal, mip, mse):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--mip', help='Enter the mip', required=True)
+    parser.add_argument('--mip', help='Enter the mip', required=False, default=0)
     parser.add_argument('--mse', help='Enter the mse', required=False, default=40)
     args = parser.parse_args()
     animal = args.animal

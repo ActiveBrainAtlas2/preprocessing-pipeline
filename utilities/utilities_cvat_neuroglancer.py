@@ -80,7 +80,6 @@ def get_segment_properties(all_known=False):
 
 def get_segment_ids(volume):
     ids = [int(i) for i in np.unique(volume[:])]
-    #print(ids)
     segment_properties = [(number, f'{number}: {number}') for number in ids]
     return segment_properties
 
@@ -161,7 +160,7 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         _, cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath,
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, 
                                              num_mips=num_mips, chunk_size=chunk_size, compress=True)
         tq.insert(tasks)
         tq.execute()
@@ -199,18 +198,17 @@ class NumpyToNeuroglancer():
         image.close()
         return
 
-    def process_chunk(self, file_keys):
-        for (index, infile) in file_keys:
-            img = io.imread(infile)
-            img = (img * 255).astype(self.data_type)
-            img = np.rot90(img, 2)
-            img = np.flip(img)
-            img = img.reshape(img.shape[0], img.shape[1], 1)
-            print(index, infile, img.shape, img.dtype)
-            self.precomputed_vol[:, :, index] = img
-            touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
-            touch(touchfile)
-            del img
+    def process_mesh(self, file_key):
+        index, infile = file_key
+        if os.path.exists(os.path.join(self.progress_dir, os.path.basename(infile))):
+            print(f"Section {index} already processed, skipping ")
+            return
+        img = io.imread(infile)
+        img = img.T
+        self.precomputed_vol[:, :, index] = img.reshape(img.shape[0], img.shape[1], 1)
+        touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
+        touch(touchfile)
+        del img
         return
 
     def process_coronal_slice(self, file_key):
@@ -220,10 +218,9 @@ class NumpyToNeuroglancer():
             return
 
         img = io.imread(infile)
-        img = (img * 255).astype(self.data_type)
         starty, endy, startx, endx = self.starting_points
-        img = np.rot90(img, 2)
-        img = np.flip(img)
+        #img = np.rot90(img, 2)
+        #img = np.flip(img)
         img = img[starty:endy, startx:endx]
         img = img.reshape(img.shape[0], img.shape[1], 1)
         #print(index, infile, img.shape, img.dtype, self.precomputed_vol.dtype, self.precomputed_vol.shape)

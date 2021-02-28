@@ -112,6 +112,11 @@
     1. Time to build: 54m34.380s
     1. loading: pretty good
     1. url: https://activebrainatlas.ucsd.edu/data/DK55/neuroglancer_data/C1
+1. python create_neuroglancer_image.py --animal DK52 --channel 2 --downsample full
+    1. Volume shape: (65000, 36000, 486)
+    1. Working on 486 files with 8 cpus
+    1. Create volume method took 12541.12985865702 seconds
+    
 ### Notes
 1. num_mips must be greater than 0, default is around 5 for full res, 3 for thumbnails.
 1. using the hybrid neuroglancer-scripts and igneuos gives same slow result at 3x3x3

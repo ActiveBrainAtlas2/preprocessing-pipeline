@@ -1,13 +1,17 @@
 """
-Creates a shell from  aligned thumbnails
+Creates a 3D Mesh
 """
 import argparse
 import os
+from re import M
 import sys
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from timeit import default_timer as timer
 import numpy as np
+import shutil
+from taskqueue.taskqueue import LocalTaskQueue
+import igneous.task_creation as tc
 
 from tqdm import tqdm
 
@@ -15,39 +19,38 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus, get_segment_ids, get_segment_properties
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
 def create_mesh(animal, limit):
-    scale = 10
+    scale = 1
     chunk = 256
-    zchunk = 128
+    zchunk = 64
     data_type = np.uint8
     resolution = 1000 * scale
     scales = (resolution, resolution, resolution)
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1/full_aligned')
+    #INPUT = os.path.join(fileLocationManager.prep, 'CH2/full_aligned')
+    INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
     files = sorted(os.listdir(INPUT))
-    channel_outdir = 'mesh'
+    channel_outdir = 'color_mesh'
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, channel_outdir)
     PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
+
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(PROGRESS_DIR, exist_ok=True)
 
-    if scale > 1:
-        INPUT = os.path.join(fileLocationManager.prep, 'CH1/downsampled_10')
-        files = sorted(os.listdir(INPUT))
-        files = [f for i,f in enumerate(files) if i % scale == 0]
-        chunk = 64
-        zchunk = chunk
-    midpoint = len(files) // 2
+    len_files = len(files)
+    midpoint = len_files // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = io.imread(midfilepath)
     if limit > 0:
         files = files[midpoint-limit:midpoint+limit]
+        #files = files[len_files-limit:len_files]
+        zchunk = limit
     height, width = midfile.shape
     startx = 0
     endx = midfile.shape[1]
@@ -56,28 +59,46 @@ def create_mesh(animal, limit):
     height = endy - starty
     width = endx - startx
     starting_points = [starty,endy, startx,endx]
-    volume_size = (height, width, len(files))
+    volume_size = (width, height, len(files)) # neuroglancer is width, height
     print('volume size', volume_size)
     ng = NumpyToNeuroglancer(None, scales, layer_type='segmentation', data_type=data_type, chunk_size=[chunk, chunk, 1])
     ng.init_precomputed(OUTPUT_DIR, volume_size, starting_points=starting_points, progress_dir=PROGRESS_DIR)
 
-    filekeys = []
+    file_keys = []
     for i,f in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, f)
-        filekeys.append([i, infile])
+        file_keys.append([i, infile])
 
     start = timer()
-    workers = min(get_cpus(), 2)
+    workers, cpus = get_cpus()
+    print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(ng.process_coronal_slice, filekeys)
+        executor.map(ng.process_mesh, sorted(file_keys), chunksize=workers)
+        executor.shutdown(wait=True)
+
+    ng.precomputed_vol.cache.flush()
+
 
     end = timer()
+    print(f'Create volume method took {end - start} seconds')
 
-    print(f'simple slice Method took {end - start} seconds')
-    ids = [(255, '255: 255')]
+    ids = get_segment_ids(midfile)
+    del midfile
     ng.add_segment_properties(ids)
-    ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk])
-    ## add mesh in separate file: create_different_mesh.py
+
+    start = timer()
+    tq = LocalTaskQueue(parallel=cpus)
+    tasks = tc.create_downsampling_tasks(ng.precomputed_vol.layer_cloudpath, 
+                                            num_mips=2, chunk_size=[chunk, 
+                                            chunk, zchunk], factor=[2,2,2], 
+                                            compress=True)
+    tq.insert(tasks)
+    tq.execute()
+    end = timer()
+    print(f'Downsampling took {end - start} seconds')
+
+
+    print('Finished')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')

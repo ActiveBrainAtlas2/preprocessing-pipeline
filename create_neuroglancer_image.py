@@ -30,7 +30,7 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix):
     db_resolution = sqlController.scan_run.resolution
     resolution = int(db_resolution * 1000 / SCALING_FACTOR)
     downsample_bool = False
-    chunk = 64
+    chunk = 128
     zchunk = chunk
     workers, _ = get_cpus()
 
