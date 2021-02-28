@@ -124,4 +124,4 @@
    loading times because the files are cut up so much. I'd recommend at least 128x128x64 
    or even 256x256x128."
 1. Creating base chunk on DK39 on basalis with 3 cpus stalled.
-
+1. Downsampling of DK39 at mips=1 took 1276m16.638s

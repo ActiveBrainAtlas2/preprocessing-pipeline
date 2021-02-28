@@ -35,7 +35,7 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix):
     workers, _ = get_cpus()
 
     if downsample == 'full':
-        chunk = 128
+        chunk = 1024
         zchunk = 64
         workers = workers // 2
         downsample_bool = True
@@ -58,8 +58,8 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix):
     if suffix is not None:
         OUTPUT_DIR += suffix
 
-    error = test_dir(animal, INPUT, downsample_bool, same_size=True)
-    #error = ""
+    #error = test_dir(animal, INPUT, downsample_bool, same_size=True)
+    error = ""
     if len(error) > 0:
         print(error)
         sys.exit()
