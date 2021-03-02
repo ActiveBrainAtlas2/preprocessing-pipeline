@@ -1,14 +1,15 @@
 from threading import Thread
 from multiprocessing import Process
-from os import remove
+import os
 import argparse
-
+import shutil
 from time import time
 
 class IOTest:
     max_workers = 10
     max_lines = 10000000    
-    file_location = '/home/eddyod/tmp/db'
+    file_location = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/IOTEST'
+    os.makedirs(file_location, exist_ok=True)
     
     worker_model = None
     
@@ -22,7 +23,7 @@ class IOTest:
         with open(filename, 'w') as f:
             for x in range(self.max_lines):
                 f.write('Nothing signed "THE MGT." would ever be challenged; the Midget could always pass himself off as the Management.\n')
-        remove(filename)
+        os.remove(filename)
                 
     def run(self):
         results = []
