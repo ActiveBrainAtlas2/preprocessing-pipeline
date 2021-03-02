@@ -14,10 +14,11 @@ import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 from cloudvolume.lib import touch
 from pathlib import Path
+from matplotlib import colors, cm
+
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController
-
 
 def get_cpus():
     usecpus = (4,4)
@@ -83,6 +84,10 @@ def get_segment_ids(volume):
     segment_properties = [(number, f'{number}: {number}') for number in ids]
     return segment_properties
 
+def get_hex_from_id(id, colormap='coolwarm'):
+    cmap = cm.get_cmap(colormap, 255)
+    rgba = cmap(id)
+    return colors.rgb2hex(rgba)
 
 
 class NumpyToNeuroglancer():
