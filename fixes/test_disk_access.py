@@ -7,8 +7,9 @@ from time import time
 
 class IOTest:
     max_workers = 10
-    max_lines = 10000000    
-    file_location = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/IOTEST'
+    max_lines = 10000000
+    #file_location = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/IOTEST'
+    file_location = '/tmp/IOTEST'
     os.makedirs(file_location, exist_ok=True)
     
     worker_model = None
