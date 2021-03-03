@@ -7,3 +7,5 @@ env/
 
 .ipynb_checkpoints/
 *.pyc
+
+*.pdf
