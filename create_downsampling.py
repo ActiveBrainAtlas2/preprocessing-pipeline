@@ -33,21 +33,27 @@ def create_downsamples(animal, channel, mips, downsample):
     workers, _ = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
 
-    for mip in range(0, mips):
-        cv = CloudVolume(cloudpath, mip)
-        chunks = calculate_chunks(downsample, mip)
-        factors = calculate_factors(downsample, mip)
-        tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors, preserve_chunk_size=False,
+    loop = False
+
+    if loop:
+        for mip in range(0, mips):
+            cv = CloudVolume(cloudpath, mip)
+            chunks = calculate_chunks(downsample, mip)
+            factors = calculate_factors(downsample, mip)
+            tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors, preserve_chunk_size=False,
+                compress=True, chunk_size=chunks)
+            tq.insert(tasks)
+            tq.execute()
+    else:
+        cv = CloudVolume(cloudpath, mips)
+        chunks = calculate_chunks(downsample, mips)
+        factors = calculate_factors(downsample, mips)
+        tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mips, num_mips=1, factor=factors, preserve_chunk_size=False,
             compress=True, chunk_size=chunks)
         tq.insert(tasks)
         tq.execute()
 
-    #cv = CloudVolume(cloudpath, 0)
-    #tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=0, preserve_chunk_size=False, num_mips=mips,
-    #    compress=True, chunk_size=[128,128,64])
-    #tq.insert(tasks)
-    #tq.execute()
-
+    
     print("Done!")
 
 if __name__ == '__main__':
