@@ -55,8 +55,7 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix):
     if suffix is not None:
         OUTPUT_DIR += suffix
 
-    #error = test_dir(animal, INPUT, downsample_bool, same_size=True)
-    error = ""
+    error = test_dir(animal, INPUT, downsample_bool, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()
