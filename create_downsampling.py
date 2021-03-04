@@ -19,19 +19,34 @@ from utilities.utilities_cvat_neuroglancer import calculate_chunks, calculate_fa
 def create_downsamples(animal, channel, mips, downsample):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = f'C{channel}'
+    first_chunk = [128,128,64]
 
     if downsample == 'thumbnail':
         channel_outdir += 'T'
+        first_chunk = [64,64,64]
 
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
+    outpath = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
+    outpath = f'file://{outpath}'
 
-    if not os.path.exists(OUTPUT_DIR):
-        print(f'DIR {OUTPUT_DIR} does not exist, exiting.')
+    channel_outdir += "_rechunkme"
+    INPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
+
+    if not os.path.exists(INPUT_DIR):
+        print(f'DIR {INPUT_DIR} does not exist, exiting.')
         sys.exit()
 
-    cloudpath = f"file://{OUTPUT_DIR}"
+    cloudpath = f"file://{INPUT_DIR}"
     workers, _ = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
+
+    tasks = tc.create_transfer_tasks(cloudpath, dest_layer_path=outpath, 
+        chunk_size=first_chunk, mip=0, skip_downsamples=False, preserve_chunk_size=False)
+    tq.insert(tasks)
+    tq.execute()
+
+    sys.exit()
+
+
 
     loop = False
 

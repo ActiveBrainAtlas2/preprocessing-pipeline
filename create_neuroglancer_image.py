@@ -20,11 +20,11 @@ from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOM
     RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
 from utilities.utilities_process import test_dir, SCALING_FACTOR
 
-def create_neuroglancer(animal, channel, downsample, mips, suffix, debug=False):
+def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)
-    channel_outdir = 'C{}T'.format(channel)
+    channel_outdir = 'C{}T_rechunkme'.format(channel)
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, f'{downsample}_aligned')
     sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
     db_resolution = sqlController.scan_run.resolution
@@ -37,7 +37,7 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix, debug=False):
         chunks = [1024,1024,1]
         workers = workers // 2
         downsample_bool = True
-        channel_outdir = 'C{}'.format(channel)
+        channel_outdir = 'C{}_rechunkme'.format(channel)
         if channel == 3:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
         elif channel == 2:
@@ -91,17 +91,10 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix, debug=False):
     end = timer()
     print(f'Create volume method took {end - start} seconds')
 
-    if mips > 0:
-        start = timer()
-        ng.add_downsampled_volumes(num_mips=mips)
-        end = timer()
-        print(f'Finito! Downsampling method took {end - start} seconds')
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--mips', help='Enter mips', required=False, default=0)
     parser.add_argument('--downsample', help='Enter full or thumbnail', required=False, default='thumbnail')
     parser.add_argument('--suffix', help='Enter suffix to add to the output dir', required=False)
     parser.add_argument('--debug', help='Enter debug True|False', required=False, default='false')
@@ -109,10 +102,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
-    mips = int(args.mips)
     downsample = args.downsample
     suffix = args.suffix
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
 
-    create_neuroglancer(animal, channel, downsample, mips, suffix, debug)
+    create_neuroglancer(animal, channel, downsample, suffix, debug)
 

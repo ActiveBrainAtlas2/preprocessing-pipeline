@@ -221,6 +221,18 @@ class NumpyToNeuroglancer():
         with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
             json.dump(info, file, indent=2)
 
+    def add_rechunking(self):
+        if self.precomputed_vol is None:
+            raise NotImplementedError('You have to call init_precomputed before calling this function.')
+        _, cpus = get_cpus()
+        tq = LocalTaskQueue(parallel=cpus)
+        outpath = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK52/neuroglancer_data/stuff'
+        outpath = f'file://{outpath}'
+        tasks = tc.create_transfer_tasks(self.precomputed_vol.layer_cloudpath, dest_layer_path=outpath)
+        tq.insert(tasks)
+        tq.execute()
+
+
     def add_downsampled_volumes(self, chunk_size=[128, 128, 64], num_mips=4):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
