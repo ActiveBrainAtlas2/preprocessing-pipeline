@@ -18,7 +18,7 @@ from utilities.utilities_cvat_neuroglancer import get_cpus
 
 def create_mesh(animal, mip, mse):
     fileLocationManager = FileLocationManager(animal)
-    channel_outdir = 'color_mesh'
+    channel_outdir = 'color_mesh_v2'
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, channel_outdir)
     if not os.path.exists(OUTPUT_DIR):
         print(f'DIR {OUTPUT_DIR} does not exist, exiting.')

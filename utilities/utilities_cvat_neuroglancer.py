@@ -41,6 +41,7 @@ def calculate_chunks(downsample, mip):
     """
     d = defaultdict(dict)
     result = [64,64,64]
+    d['full'][-1] = [1024,1024,1]
     d['full'][0] = [256,256,128]
     d['full'][1] = [128,128,64]
     d['full'][2] = [128,128,64]
@@ -52,6 +53,7 @@ def calculate_chunks(downsample, mip):
     d['full'][8] = [64,64,64]
     d['full'][9] = [64,64,64]
 
+    d['thumbnail'][-1] = [128,128,1]
     d['thumbnail'][0] = [128,128,64]
     d['thumbnail'][1] = [64,64,64]
     d['thumbnail'][2] = [64,64,32]
@@ -221,12 +223,11 @@ class NumpyToNeuroglancer():
         with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
             json.dump(info, file, indent=2)
 
-    def add_rechunking(self):
+    def add_rechunking(self, outpath):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         _, cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        outpath = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK52/neuroglancer_data/stuff'
         outpath = f'file://{outpath}'
         tasks = tc.create_transfer_tasks(self.precomputed_vol.layer_cloudpath, dest_layer_path=outpath)
         tq.insert(tasks)

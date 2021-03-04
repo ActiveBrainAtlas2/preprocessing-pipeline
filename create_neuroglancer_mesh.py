@@ -17,7 +17,7 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus, get_segment_ids
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks, get_cpus, get_segment_ids
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
@@ -25,8 +25,7 @@ def chunker(seq, size):
 
 def create_mesh(animal, limit):
     scale = 1
-    chunk = 1024
-    zchunk = 64
+    chunks = calculate_chunks('full', -1)
     data_type = np.uint8
     resolution = 1000 * scale
     scales = (resolution, resolution, resolution)
@@ -34,7 +33,7 @@ def create_mesh(animal, limit):
     #INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
     INPUT = os.path.join(fileLocationManager.prep, 'CH2', 'full_aligned')
     files = sorted(os.listdir(INPUT))
-    channel_outdir = 'color_mesh'
+    channel_outdir = 'mesh_input'
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, channel_outdir)
     PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
 
@@ -47,7 +46,6 @@ def create_mesh(animal, limit):
     midfile = io.imread(midfilepath)
     if limit > 0:
         files = files[midpoint-limit:midpoint+limit]
-        #files = files[len_files-limit:len_files]
         zchunk = limit
     height, width = midfile.shape
     startx = 0
@@ -59,7 +57,7 @@ def create_mesh(animal, limit):
     starting_points = [starty,endy, startx,endx]
     volume_size = (width, height, len(files)) # neuroglancer is width, height
     print('volume size', volume_size)
-    ng = NumpyToNeuroglancer(None, scales, layer_type='segmentation', data_type=data_type, chunk_size=[chunk, chunk, 1])
+    ng = NumpyToNeuroglancer(None, scales, layer_type='segmentation', data_type=data_type, chunk_size=chunks)
     ng.init_precomputed(OUTPUT_DIR, volume_size, starting_points=starting_points, progress_dir=PROGRESS_DIR)
 
     file_keys = []
@@ -85,13 +83,9 @@ def create_mesh(animal, limit):
     ng.add_segment_properties(ids)
 
     start = timer()
-    tq = LocalTaskQueue(parallel=cpus)
-    tasks = tc.create_downsampling_tasks(ng.precomputed_vol.layer_cloudpath, 
-                                            num_mips=2, chunk_size=[256, 
-                                            256, zchunk], factor=[2,2,2], 
-                                            compress=True)
-    tq.insert(tasks)
-    tq.execute()
+
+    ng.add_rechunking()
+
     end = timer()
     print(f'Downsampling took {end - start} seconds')
 
