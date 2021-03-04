@@ -14,7 +14,7 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_cpus
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks, get_cpus
 from utilities.sqlcontroller import SqlController
 from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES, \
     RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
@@ -29,14 +29,11 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix):
     sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
     db_resolution = sqlController.scan_run.resolution
     resolution = int(db_resolution * 1000 / SCALING_FACTOR)
-    downsample_bool = False
-    chunk = 128
-    zchunk = chunk
     workers, _ = get_cpus()
+    chunks = calculate_chunks(downsample, 0)
+    downsample_bool = False
 
     if downsample == 'full':
-        chunk = 1024
-        zchunk = 64
         workers = workers // 2
         downsample_bool = True
         channel_outdir = 'C{}'.format(channel)
@@ -76,7 +73,7 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix):
     volume_size = (width, height, len(files))
     print('Volume shape:', volume_size)
 
-    ng = NumpyToNeuroglancer(None, scales, 'image', np.uint16, chunk_size=[chunk, chunk, 1])
+    ng = NumpyToNeuroglancer(None, scales, 'image', np.uint16, chunk_size=chunks)
     ng.init_precomputed(OUTPUT_DIR, volume_size, progress_dir=PROGRESS_DIR)
 
     for i, f in enumerate(files):
@@ -96,7 +93,7 @@ def create_neuroglancer(animal, channel, downsample, mips, suffix):
 
     if mips > 0:
         start = timer()
-        ng.add_downsampled_volumes(chunk_size=[chunk, chunk, zchunk], num_mips=mips)
+        ng.add_downsampled_volumes(num_mips=mips)
         end = timer()
         print(f'Finito! Downsampling method took {end - start} seconds')
 

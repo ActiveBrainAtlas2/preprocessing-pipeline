@@ -25,13 +25,14 @@ def chunker(seq, size):
 
 def create_mesh(animal, limit):
     scale = 1
-    chunk = 512
+    chunk = 1024
     zchunk = 64
     data_type = np.uint8
     resolution = 1000 * scale
     scales = (resolution, resolution, resolution)
     fileLocationManager = FileLocationManager(animal)
-    INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
+    #INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
+    INPUT = os.path.join(fileLocationManager.prep, 'CH2', 'full_aligned')
     files = sorted(os.listdir(INPUT))
     channel_outdir = 'color_mesh'
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, channel_outdir)

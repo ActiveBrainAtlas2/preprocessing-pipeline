@@ -14,18 +14,14 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import get_cpus
+from utilities.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors, get_cpus
 
 def create_downsamples(animal, channel, mips, downsample):
     fileLocationManager = FileLocationManager(animal)
-    channel_outdir = 'C{}T'.format(channel)
-    chunk = 64
-    zchunk = chunk
+    channel_outdir = f'C{channel}'
 
-    if downsample == 'full':
-        channel_outdir = 'C{}'.format(channel)
-        chunk = 128
-        zchunk = 64
+    if downsample == 'thumbnail':
+        channel_outdir += 'T'
 
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
 
@@ -34,12 +30,23 @@ def create_downsamples(animal, channel, mips, downsample):
         sys.exit()
 
     cloudpath = f"file://{OUTPUT_DIR}"
-    cv = CloudVolume(cloudpath, 0)
     workers, _ = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
-    tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, num_mips=mips, compress=True, chunk_size=[chunk,chunk,zchunk])
-    tq.insert(tasks)
-    tq.execute()
+
+    for mip in range(0, mips):
+        cv = CloudVolume(cloudpath, mip)
+        chunks = calculate_chunks(downsample, mip)
+        factors = calculate_factors(downsample, mip)
+        tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors, preserve_chunk_size=False,
+            compress=True, chunk_size=chunks)
+        tq.insert(tasks)
+        tq.execute()
+
+    #cv = CloudVolume(cloudpath, 0)
+    #tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=0, preserve_chunk_size=False, num_mips=mips,
+    #    compress=True, chunk_size=[128,128,64])
+    #tq.insert(tasks)
+    #tq.execute()
 
     print("Done!")
 

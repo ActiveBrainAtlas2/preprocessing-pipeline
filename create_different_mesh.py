@@ -31,9 +31,9 @@ def create_mesh(animal, mip, mse):
     mesh_dir = f'mesh_mip_{mip}_err_{mse}'
     cv.info['mesh'] = mesh_dir
     cv.commit_info()
-    #tasks = tc.create_meshing_tasks(cv.layer_cloudpath, mip=mip, mesh_dir=mesh_dir, max_simplification_error=mse)
-    #tq.insert(tasks)
-    #tq.execute()
+    tasks = tc.create_meshing_tasks(cv.layer_cloudpath, mip=mip, mesh_dir=mesh_dir, max_simplification_error=mse)
+    tq.insert(tasks)
+    tq.execute()
     tasks = tc.create_mesh_manifest_tasks(cv.layer_cloudpath, mesh_dir=mesh_dir)
     tq.insert(tasks)
     tq.execute()
