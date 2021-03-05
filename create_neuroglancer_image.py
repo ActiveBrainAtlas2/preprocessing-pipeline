@@ -23,21 +23,20 @@ from utilities.utilities_process import test_dir, SCALING_FACTOR
 def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
-    channel_dir = 'CH{}'.format(channel)
-    channel_outdir = 'C{}T_rechunkme'.format(channel)
+    channel_dir = f'CH{channel}'
+    channel_outdir = f'C{channel}T_rechunkme'
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, f'{downsample}_aligned')
     sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
     db_resolution = sqlController.scan_run.resolution
     resolution = int(db_resolution * 1000 / SCALING_FACTOR)
     workers, _ = get_cpus()
-    chunks = [256,256,1]
+    chunks = calculate_chunks(downsample, -1)
     full_resolution = False
 
     if downsample == 'full':
-        chunks = [1024,1024,1]
         workers = workers // 2
         full_resolution = True
-        channel_outdir = 'C{}_rechunkme'.format(channel)
+        channel_outdir = 'C{channel}_rechunkme'
         if channel == 3:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
         elif channel == 2:

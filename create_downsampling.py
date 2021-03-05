@@ -16,14 +16,15 @@ sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors, get_cpus
 
-def create_downsamples(animal, channel, mips, downsample):
+def create_downsamples(animal, channel, downsample):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = f'C{channel}'
-    first_chunk = [128,128,64]
+    first_chunk = calculate_chunks(downsample, 0)
+    mips = [0,1,2,3,4,5,6,7]
 
     if downsample == 'thumbnail':
         channel_outdir += 'T'
-        first_chunk = [64,64,64]
+        mips = [0,1,2]
 
     outpath = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
     outpath = f'file://{outpath}'
@@ -45,22 +46,12 @@ def create_downsamples(animal, channel, mips, downsample):
     tq.execute()
 
 
-    loop = True
     #mips = 7 shows good results in neuroglancer
-    if loop:
-        for mip in range(0, mips):
-            cv = CloudVolume(outpath, mip)
-            chunks = calculate_chunks(downsample, mip)
-            factors = calculate_factors(downsample, mip)
-            tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors, preserve_chunk_size=False,
-                compress=True, chunk_size=chunks)
-            tq.insert(tasks)
-            tq.execute()
-    else:
-        cv = CloudVolume(outpath, mips)
-        chunks = calculate_chunks(downsample, mips)
-        factors = calculate_factors(downsample, mips)
-        tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mips, num_mips=1, factor=factors, preserve_chunk_size=False,
+    for mip in mips:
+        cv = CloudVolume(outpath, mip)
+        chunks = calculate_chunks(downsample, mip)
+        factors = calculate_factors(downsample, mip)
+        tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors, preserve_chunk_size=False,
             compress=True, chunk_size=chunks)
         tq.insert(tasks)
         tq.execute()
@@ -72,12 +63,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--mips', help='Enter mips', required=True)
     parser.add_argument('--downsample', help='Enter full or thumbnail', required=False, default='thumbnail')
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
-    mips = int(args.mips)
     downsample = args.downsample
-    create_downsamples(animal, channel, mips, downsample)
+    create_downsamples(animal, channel, downsample)
 
