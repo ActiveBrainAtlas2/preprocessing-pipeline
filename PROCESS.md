@@ -48,7 +48,7 @@
 1. Run: `python create_alignment.py --animal DKXX --channel 1`
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair
     1. The elastix dir will be used to align the other channels and the full resoltions
-1. Run: `python create_neuroglancer.py --animal DKXX --channel 1 --resolution thumbnail`
+1. Run: `python create_neuroglancer_image.py --animal DKXX --channel 1 --downsample thumbnail`
     1. This will create the data for neuroglancer for channel 1
     1. View results in neuroglancer. Add the layer to the precompute with:
         https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C1T
@@ -56,17 +56,17 @@
     1. `python create_masks.py --animal DKXX --resolution full`
     1. `python create_masks.py --animal DKXX --channel 1 --rotation 1 --resolution full`
     1. `python create_alignment.py --animal DKXX --channel 1 --resolution full`
-    1. `python create_neuroglancer.py --animal DKXX --channel 1 --resolution full`
+    1. `python create_neuroglancer_image.py --animal DKXX --channel 1 --downsample full`
     1. View results in neuroglancer. Add the layer to the precompute with:
         https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C1
-1. When you are satisfied with the full resolution results, finishe the other two channels
+1. When you are satisfied with the full resolution results, finish the other two channels
     1. python `create_clean.py --animal DKXX --channel 2 --rotation 1 --resolution full`
     1. python `create_alignment.py --animal DKXX --channel 2 --resolution full`
-    1. python `create_neuroglancer.py --animal DKXX --channel 2 --resolution full`
+    1. python `create_neuroglancer_image.py --animal DKXX --channel 2 --downsample full`
     1. View results in neuroglancer. Add the layer to the precompute with:
         https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C2
     1. python `create_clean.py --animal DKXX --channel 3 --rotation 1 --resolution full`
     1. python `create_alignment.py --animal DKXX --channel 3 --resolution full`
-    1. python `create_neuroglancer.py --animal DKXX --channel 3 --resolution full`
+    1. python `create_neuroglancer_image.py --animal DKXX --channel 3 --downsample full`
     1. View results in neuroglancer. Add the layer to the precompute with:
         https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C3

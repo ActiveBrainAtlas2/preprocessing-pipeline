@@ -117,6 +117,11 @@
     1. Volume shape: (65000, 36000, 486)
     1. Working on 486 files with 8 cpus
     1. Create volume method took 13942.277278383961 seconds
+1. python create_neuroglancer_image.py --animal DK52 --channel 2 --downsample full
+    1. Volume shape: (65000, 36000, 486)
+    1. Working on basalis with 486 files with 6 cpus
+    1. Create volume method took 14280.015378038865 seconds
+
 
     
 ### Notes

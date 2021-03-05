@@ -42,7 +42,7 @@ def calculate_chunks(downsample, mip):
     d = defaultdict(dict)
     result = [64,64,64]
     d['full'][-1] = [1024,1024,1]
-    d['full'][0] = [256,256,128]
+    d['full'][0] = [128,128,64]
     d['full'][1] = [128,128,64]
     d['full'][2] = [128,128,64]
     d['full'][3] = [128,128,64]

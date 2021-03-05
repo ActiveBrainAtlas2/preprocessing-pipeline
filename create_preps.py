@@ -117,7 +117,7 @@ if __name__ == '__main__':
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
-    parser.add_argument('--compress', help='Compress?', default='true', required=False)
+    parser.add_argument('--compress', help='Compress?', default='false', required=False)
 
     args = parser.parse_args()
     animal = args.animal
