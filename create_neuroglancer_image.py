@@ -36,7 +36,7 @@ def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
     if downsample == 'full':
         workers = workers // 2
         full_resolution = True
-        channel_outdir = 'C{channel}_rechunkme'
+        channel_outdir = f'C{channel}_rechunkme'
         if channel == 3:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
         elif channel == 2:
