@@ -223,13 +223,16 @@ class NumpyToNeuroglancer():
         with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
             json.dump(info, file, indent=2)
 
-    def add_rechunking(self, outpath):
+    def add_rechunking(self, outpath, downsample, chunks=None):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         _, cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
         outpath = f'file://{outpath}'
-        tasks = tc.create_transfer_tasks(self.precomputed_vol.layer_cloudpath, dest_layer_path=outpath)
+        if chunks is None:
+            chunks = calculate_chunks(downsample, 0)
+        tasks = tc.create_transfer_tasks(self.precomputed_vol.layer_cloudpath, 
+            dest_layer_path=outpath, chunk_size=chunks, skip_downsamples=True)
         tq.insert(tasks)
         tq.execute()
 

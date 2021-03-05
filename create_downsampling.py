@@ -46,7 +46,7 @@ def create_downsamples(animal, channel, mips, downsample):
 
 
     loop = True
-
+    #mips = 7 shows good results in neuroglancer
     if loop:
         for mip in range(0, mips):
             cv = CloudVolume(outpath, mip)

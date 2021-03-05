@@ -33,20 +33,20 @@ def create_mesh(animal, limit):
     #INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
     INPUT = os.path.join(fileLocationManager.prep, 'CH2', 'full_aligned')
     files = sorted(os.listdir(INPUT))
-    channel_outdir = 'mesh_input'
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, channel_outdir)
-    PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
+    OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
+    OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
+    PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', 'mesh_input')
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(OUTPUT1_DIR, exist_ok=True)
     os.makedirs(PROGRESS_DIR, exist_ok=True)
 
     len_files = len(files)
     midpoint = len_files // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = io.imread(midfilepath)
+    ids = get_segment_ids(midfile)
     if limit > 0:
         files = files[midpoint-limit:midpoint+limit]
-        zchunk = limit
     height, width = midfile.shape
     startx = 0
     endx = midfile.shape[1]
@@ -58,7 +58,7 @@ def create_mesh(animal, limit):
     volume_size = (width, height, len(files)) # neuroglancer is width, height
     print('volume size', volume_size)
     ng = NumpyToNeuroglancer(None, scales, layer_type='segmentation', data_type=data_type, chunk_size=chunks)
-    ng.init_precomputed(OUTPUT_DIR, volume_size, starting_points=starting_points, progress_dir=PROGRESS_DIR)
+    ng.init_precomputed(OUTPUT1_DIR, volume_size, starting_points=starting_points, progress_dir=PROGRESS_DIR)
 
     file_keys = []
     for i,f in enumerate(tqdm(files)):
@@ -72,19 +72,23 @@ def create_mesh(animal, limit):
         executor.map(ng.process_mesh, sorted(file_keys), chunksize=workers)
         executor.shutdown(wait=True)
 
+    volume = ng.precomputed_vol
     ng.precomputed_vol.cache.flush()
 
 
     end = timer()
     print(f'Create volume method took {end - start} seconds')
 
-    ids = get_segment_ids(midfile)
-    del midfile
+    chunks = calculate_chunks('full', 0)
+    ng = NumpyToNeuroglancer(volume, scales, layer_type='segmentation', data_type=data_type, chunk_size=chunks)
+    ng.init_volume(OUTPUT2_DIR)
+
     ng.add_segment_properties(ids)
 
     start = timer()
+    ng.add_rechunking(OUTPUT2_DIR, downsample='full', chunks=chunks)
 
-    ng.add_rechunking()
+    ng.add_segmentation_mesh()
 
     end = timer()
     print(f'Downsampling took {end - start} seconds')

@@ -31,12 +31,12 @@ def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
     resolution = int(db_resolution * 1000 / SCALING_FACTOR)
     workers, _ = get_cpus()
     chunks = [256,256,1]
-    downsample_bool = False
+    full_resolution = False
 
     if downsample == 'full':
         chunks = [1024,1024,1]
         workers = workers // 2
-        downsample_bool = True
+        full_resolution = True
         channel_outdir = 'C{}_rechunkme'.format(channel)
         if channel == 3:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
@@ -56,7 +56,7 @@ def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
     if suffix is not None:
         OUTPUT_DIR += suffix
 
-    error = test_dir(animal, INPUT, downsample_bool, same_size=True)
+    error = test_dir(animal, INPUT, full_resolution, same_size=True)
     if len(error) > 0 and not debug:
         print(error)
         sys.exit()
