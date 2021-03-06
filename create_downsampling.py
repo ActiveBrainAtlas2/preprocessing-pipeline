@@ -37,7 +37,7 @@ def create_downsamples(animal, channel, downsample):
         sys.exit()
 
     cloudpath = f"file://{INPUT_DIR}"
-    workers, _ = get_cpus()
+    _, workers = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
 
     tasks = tc.create_transfer_tasks(cloudpath, dest_layer_path=outpath, 
