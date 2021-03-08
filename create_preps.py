@@ -93,7 +93,7 @@ def make_low_resolution(animal, channel):
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
     os.makedirs(OUTPUT, exist_ok=True)
     tifs = sorted(os.listdir(INPUT))
-    for tif in tqdm(tifs):
+    for tif in tifs:
         input_path = os.path.join(INPUT, tif)
         output_path = os.path.join(OUTPUT, tif)
 

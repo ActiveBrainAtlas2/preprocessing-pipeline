@@ -24,10 +24,9 @@ def chunker(seq, size):
 
 
 def create_mesh(animal, limit):
-    scale = 1
     chunks = calculate_chunks('full', -1)
     data_type = np.uint8
-    resolution = 1000 * scale
+    resolution = 1000 
     scales = (resolution, resolution, resolution)
     fileLocationManager = FileLocationManager(animal)
     #INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
@@ -44,7 +43,11 @@ def create_mesh(animal, limit):
     midpoint = len_files // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = io.imread(midfilepath)
-    ids = get_segment_ids(midfile)
+    ids = [  0,   8,  16,  24,  32,  40,  48,  56,  64,  72,  80,  88,  96,
+       104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200,
+       208, 216, 224, 232, 240, 248, 255]
+    ids = [(number, f'{number}: {number}') for number in ids]
+
     if limit > 0:
         files = files[midpoint-limit:midpoint+limit]
     height, width = midfile.shape
@@ -79,8 +82,9 @@ def create_mesh(animal, limit):
     end = timer()
     print(f'Create volume method took {end - start} seconds')
 
-    chunks = calculate_chunks('full', 0)
-    ng = NumpyToNeuroglancer(volume, scales, layer_type='segmentation', data_type=data_type, chunk_size=chunks)
+    chunks = [256,256,128]
+    ng = NumpyToNeuroglancer(volume, scales, layer_type='segmentation', 
+        data_type=data_type, chunk_size=chunks)
     ng.init_volume(OUTPUT2_DIR)
 
     ng.add_segment_properties(ids)

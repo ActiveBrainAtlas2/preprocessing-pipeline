@@ -226,7 +226,7 @@ class NumpyToNeuroglancer():
     def add_rechunking(self, outpath, downsample, chunks=None):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
-        _, cpus = get_cpus()
+        cpus, _ = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
         outpath = f'file://{outpath}'
         if chunks is None:
@@ -286,7 +286,14 @@ class NumpyToNeuroglancer():
             print(f"Section {index} already processed, skipping ")
             return
         img = io.imread(infile)
-        img = img.T
+        labels = [[v-8,v-1] for v in range(9,256,8)]
+        arr = np.copy(img)
+        for label in labels:
+            mask = (arr >= label[0]) & (arr <= label[1])
+            arr[mask] = label[1]
+        arr[arr > 248] = 255        
+        img = arr.T
+        del arr
         self.precomputed_vol[:, :, index] = img.reshape(img.shape[0], img.shape[1], 1)
         touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
         touch(touchfile)
