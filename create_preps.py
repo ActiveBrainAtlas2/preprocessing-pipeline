@@ -17,7 +17,7 @@ from utilities.sqlcontroller import SqlController
 from utilities.utilities_process import workernoshell, test_dir
 
 
-def make_full_resolution(animal, channel, compress=True):
+def make_full_resolution(animal, channel):
     """
     Args:
         animal: the prep id of the animal
@@ -40,14 +40,13 @@ def make_full_resolution(animal, channel, compress=True):
         sqlController.set_task(animal, CREATE_CHANNEL_2_FULL_RES)
         sqlController.set_task(animal, CREATE_CHANNEL_3_FULL_RES)
 
-    commands = []
     INPUT = os.path.join(fileLocationManager.tif)
     ##### Check if files in dir are valid
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
     os.makedirs(OUTPUT, exist_ok=True)
 
     tifs = sqlController.get_sections(animal, channel)
-    for section_number, tif in tqdm(enumerate(tifs)):
+    for section_number, tif in enumerate(tqdm(tifs)):
         input_path = os.path.join(INPUT, tif.file_name)
         output_path = os.path.join(OUTPUT, str(section_number).zfill(3) + '.tif')
 
@@ -58,14 +57,9 @@ def make_full_resolution(animal, channel, compress=True):
         if os.path.exists(output_path):
             continue
 
-        if compress:
-            cmd = ['convert', input_path, '-compress', 'lzw', output_path]
-            commands.append(cmd)
-        else:
-            copyfile(input_path, output_path)
+        copyfile(input_path, output_path)
 
 
-    return commands
 
 
 def make_low_resolution(animal, channel):
@@ -115,21 +109,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
-    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
-    parser.add_argument('--compress', help='Compress?', default='false', required=False)
+    parser.add_argument('--downsample', help='Enter full or thumbnail', required=False, default='thumbnail')
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
-    full = bool({'full': True, 'thumbnail': False}[args.resolution])
-    compress = bool({'true': True, 'false': False}[args.compress.lower()])
-    njobs = int(args.njobs)
-
+    full = bool({'full': True, 'thumbnail': False}[args.downsample])
+    commands = []
     if full:
-        commands = make_full_resolution(animal, channel, compress)
+        make_full_resolution(animal, channel)
     else:
         commands = make_low_resolution(animal, channel)
 
-    with Pool(njobs) as p:
+    with Pool(4) as p:
         p.map(workernoshell, commands)
