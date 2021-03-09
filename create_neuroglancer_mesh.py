@@ -4,12 +4,14 @@ Creates a 3D Mesh
 import argparse
 import os
 import sys
+import json
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from timeit import default_timer as timer
 import numpy as np
 from taskqueue.taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
+from cloudvolume import CloudVolume
 
 from tqdm import tqdm
 
@@ -43,62 +45,103 @@ def create_mesh(animal, limit):
     midpoint = len_files // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = io.imread(midfilepath)
-    ids = [  0,   8,  16,  24,  32,  40,  48,  56,  64,  72,  80,  88,  96,
+    ids = [  8,  16,  24,  32,  40,  48,  56,  64,  72,  80,  88,  96,
        104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200,
        208, 216, 224, 232, 240, 248, 255]
     ids = [(number, f'{number}: {number}') for number in ids]
 
-    if limit > 0:
-        files = files[midpoint-limit:midpoint+limit]
-    height, width = midfile.shape
-    startx = 0
-    endx = midfile.shape[1]
-    starty = 0
-    endy = midfile.shape[0]
-    height = endy - starty
-    width = endx - startx
-    starting_points = [starty,endy, startx,endx]
-    volume_size = (width, height, len(files)) # neuroglancer is width, height
-    print('volume size', volume_size)
-    ng = NumpyToNeuroglancer(None, scales, layer_type='segmentation', data_type=data_type, chunk_size=chunks)
-    ng.init_precomputed(OUTPUT1_DIR, volume_size, starting_points=starting_points, progress_dir=PROGRESS_DIR)
+    if False:
 
-    file_keys = []
-    for i,f in enumerate(tqdm(files)):
-        infile = os.path.join(INPUT, f)
-        file_keys.append([i, infile])
+        if limit > 0:
+            files = files[midpoint-limit:midpoint+limit]
+        height, width = midfile.shape
+        startx = 0
+        endx = midfile.shape[1]
+        starty = 0
+        endy = midfile.shape[0]
+        height = endy - starty
+        width = endx - startx
+        starting_points = [starty,endy, startx,endx]
+        volume_size = (width, height, len(files)) # neuroglancer is width, height
+        print('volume size', volume_size)
+        ng = NumpyToNeuroglancer(None, scales, layer_type='segmentation', data_type=data_type, chunk_size=chunks)
+        ng.init_precomputed(OUTPUT1_DIR, volume_size, starting_points=starting_points, progress_dir=PROGRESS_DIR)
 
-    start = timer()
-    workers, cpus = get_cpus()
-    print(f'Working on {len(file_keys)} files with {workers} cpus')
-    with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(ng.process_mesh, sorted(file_keys), chunksize=workers)
-        executor.shutdown(wait=True)
+        file_keys = []
+        for i,f in enumerate(tqdm(files)):
+            infile = os.path.join(INPUT, f)
+            file_keys.append([i, infile])
 
-    volume = ng.precomputed_vol
-    ng.precomputed_vol.cache.flush()
+        start = timer()
+        workers, cpus = get_cpus()
+        print(f'Working on {len(file_keys)} files with {workers} cpus')
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(ng.process_mesh, sorted(file_keys), chunksize=workers)
+            executor.shutdown(wait=True)
 
+        volume = ng.precomputed_vol
+        ng.precomputed_vol.cache.flush()
 
-    end = timer()
-    print(f'Create volume method took {end - start} seconds')
-
-    chunks = [256,256,128]
-    ng = NumpyToNeuroglancer(volume, scales, layer_type='segmentation', 
-        data_type=data_type, chunk_size=chunks)
-    ng.init_volume(OUTPUT2_DIR)
-
-    ng.add_segment_properties(ids)
-
-    start = timer()
-    ng.add_rechunking(OUTPUT2_DIR, downsample='full', chunks=chunks)
-
-    ng.add_segmentation_mesh()
-
-    end = timer()
-    print(f'Downsampling took {end - start} seconds')
+        end = timer()
+        print(f'Create volume method took {end - start} seconds')
 
 
-    print('Finished')
+    mse = 100
+
+    ##### rechunk
+    cloudpath1 = f"file://{OUTPUT1_DIR}"
+    cv1 = CloudVolume(cloudpath1, 0)
+    _, workers = get_cpus()
+    tq = LocalTaskQueue(parallel=workers)
+    cloudpath2 = f'file://{OUTPUT2_DIR}'
+
+    tasks = tc.create_transfer_tasks(cloudpath1, dest_layer_path=cloudpath2, 
+        chunk_size=[256,256,128], mip=0, skip_downsamples=True)
+    tq.insert(tasks)
+    tq.execute()
+
+    ##### add segment properties
+    cv2 = CloudVolume(cloudpath2, 0)
+    cv2.info['segment_properties'] = 'names'
+    cv2.commit_info()
+
+    segment_properties_path = os.path.join(cloudpath2.replace('file://', ''), 'names')
+    os.makedirs(segment_properties_path, exist_ok=True)
+
+    info = {
+        "@type": "neuroglancer_segment_properties",
+        "inline": {
+            "ids": [str(number) for number, label in ids],
+            "properties": [{
+                "id": "label",
+                "type": "label",
+                "values": [str(label) for number, label in ids]
+            }]
+        }
+    }
+    with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
+        json.dump(info, file, indent=2)
+
+
+    ##### first mesh task
+    workers, _ = get_cpus()
+    tq = LocalTaskQueue(parallel=workers)
+    mesh_dir = f'mesh_mip_0_err_{mse}'
+    cv2.info['mesh'] = mesh_dir
+    cv2.commit_info()
+    tasks = tc.create_meshing_tasks(cv2.layer_cloudpath, mip=0, mesh_dir=mesh_dir, max_simplification_error=mse)
+    tq.insert(tasks)
+    tq.execute()
+    ##### 2nd mesh task
+    tasks = tc.create_mesh_manifest_tasks(cv2.layer_cloudpath, mesh_dir=mesh_dir)
+    tq.insert(tasks)
+    tq.execute()
+
+
+    
+    print("Done!")
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')

@@ -196,7 +196,7 @@ class NumpyToNeuroglancer():
         )
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
-        self.precomputed_vol[:, :, :] = self.volume[:, :, :]
+        #self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
 
     def add_segment_properties(self, segment_properties):
