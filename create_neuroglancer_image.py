@@ -6,7 +6,7 @@ import os
 import sys
 from concurrent.futures.process import ProcessPoolExecutor
 
-import imagesize
+from skimage import io
 import numpy as np
 from timeit import default_timer as timer
 
@@ -65,19 +65,25 @@ def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
     files = sorted(os.listdir(INPUT))
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
-    width, height = imagesize.get(midfilepath)
+    midfile = io.imread(midfilepath)
+    height = midfile.shape[0]
+    width = midfile.shape[1]
+    num_channels = midfile.ndim
 
     file_keys = []
     scales = (resolution, resolution, 20000)
     volume_size = (width, height, len(files))
     print('Volume shape:', volume_size)
 
-    ng = NumpyToNeuroglancer(None, scales, 'image', np.uint16, chunk_size=chunks)
-    ng.init_precomputed(OUTPUT_DIR, volume_size, progress_dir=PROGRESS_DIR)
+    ng = NumpyToNeuroglancer(None, scales, 'image', midfile.dtype, chunk_size=chunks)
+    ng.init_precomputed(OUTPUT_DIR, volume_size, num_channels=num_channels, progress_dir=PROGRESS_DIR)
 
     for i, f in enumerate(files):
         filepath = os.path.join(INPUT, f)
         file_keys.append([i,filepath])
+        ng.process_3channel([i, filepath])
+
+    sys.exit()
 
     start = timer()
     print(f'Working on {len(file_keys)} files with {workers} cpus')

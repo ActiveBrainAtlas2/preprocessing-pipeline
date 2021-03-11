@@ -234,7 +234,7 @@ https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
 
 }
 
-## for colour=slider
+## for colour=slider channel 2 RED
 #uicontrol invlerp normalized  (range=[0,5000])
 #uicontrol float gamma slider(min=0.05, max=2.5, default=1.0, step=0.05)
 #uicontrol int colour slider(min=0, max=1, default=1, step=1)
@@ -246,6 +246,23 @@ https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
 
     if (colour==1) {
   	   emitRGB(vec3(pix,0,0));
+  	} else {
+  	  emitGrayscale(pix) ;
+  	}
+
+}
+## for colour=slider channel 3 GREEN
+#uicontrol invlerp normalized  (range=[0,5000])
+#uicontrol float gamma slider(min=0.05, max=2.5, default=1.0, step=0.05)
+#uicontrol int colour slider(min=0, max=1, default=1, step=1)
+
+
+  void main() {
+    float pix =  normalized();
+    pix = pow(pix,gamma);
+
+    if (colour==1) {
+  	   emitRGB(vec3(0,pix,0));
   	} else {
   	  emitGrayscale(pix) ;
   	}

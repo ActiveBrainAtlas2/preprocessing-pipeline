@@ -32,13 +32,13 @@
     1. This will fill the directory of the downsampled resolution files for channel 1
     1. Repeat process for the other 2 channels when ready
     1. View a couple thumbnails to determine how much rotation/flips to perform
-1. Run: `python create_histogram.py --animal DKXX --channel 1` 
-    1. This will read the directory of the thumbnail resolution files for channel 1
-    1. Create histogram for each files for channel 1
-    1. Repeat process for the other 2 channels when ready
 1. Run: `python create_masks.py --animal DKXX`
     1. This will read the thumbnail directory and create masks in the DKXX/preps/thumbnail_masked dir
     1. No need to use channel 2 or 3. It works solely on channel 1
+1. Run: `python create_histogram.py --animal DKXX --channel 1 --single single` 
+    1. This will read the directory of the thumbnail resolution files for channel 1
+    1. Create histogram for each files for channel 1
+    1. Repeat process for the other 2 channels when ready
 1. Run: `python create_clean.py --animal DKXX --channel 1 `
     1. The necessary rotation and flip parameters must be in the scan run table
     1. Be careful with the rotation and flip. To do a 90 degree right rotation requires rotation=1

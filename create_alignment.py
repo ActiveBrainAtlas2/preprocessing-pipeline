@@ -14,6 +14,9 @@ import numpy as np
 from collections import OrderedDict
 from tqdm import tqdm
 
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
+
 from sql_setup import ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX, ALIGN_CHANNEL_1_FULL_RES, ALIGN_CHANNEL_2_FULL_RES, \
     ALIGN_CHANNEL_3_FULL_RES
 
@@ -217,18 +220,27 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
         op_str = f" +distort AffineProjection '{sx},{rx},{ry},{sy},{tx},{ty}'"
         op_str += f' -crop {max_width}x{max_height}+0.0+0.0!'
 
-        input_fp = os.path.join(INPUT, file)
-        output_fp = os.path.join(OUTPUT, file)
-        if os.path.exists(output_fp):
+        infile = os.path.join(INPUT, file)
+        outfile = os.path.join(OUTPUT, file)
+        if os.path.exists(outfile):
             continue
 
+        # Bili, i substituted the convert operations with the PIL operations
         #cmd = "convert {}  +repage -virtual-pixel background -background {} {} -flatten -compress lzw {}"\
         #    .format(input_fp, bgcolor, op_str, output_fp)
-        cmd = f"convert {input_fp} -define white-point=0x0 +repage -virtual-pixel background -background {bgcolor} {op_str} -flatten -compress lzw {output_fp}"
-        commands.append(cmd)
+        #cmd = f"convert {input_fp} -define white-point=0x0 +repage -virtual-pixel background -background {bgcolor} {op_str} -flatten -compress lzw {output_fp}"
+        #commands.append(cmd)
 
-    with Pool(njobs) as p:
-        p.map(workershell, commands)
+    #with Pool(njobs) as p:
+    #    p.map(workershell, commands)
+        im1 = Image.open(infile)
+        im2 = im1.transform(im1.size, Image.AFFINE, data=[sx,rx,tx,ry,sy,ty], resample=Image.NEAREST)
+        # crop
+        # w, h = im2.size
+        left, upper, right, lower = 0, 0, max_width, max_height
+        im3 = im2.crop((left, upper, right, lower))
+
+        im2.save(outfile)    
 
 
 

@@ -22,14 +22,19 @@ PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController
 
+
+def get_hostname():
+    hostname = socket.gethostname()
+    hostname = hostname.split(".")[0]
+    return hostname
+
 def get_cpus():
     usecpus = (4,4)
     cpus = {}
     cpus['muralis'] = (16,40)
     cpus['basalis'] = (12,12)
     cpus['ratto'] = (10,10)
-    hostname = socket.gethostname()
-    hostname = hostname.split(".")[0]
+    hostname = get_hostname()
     if hostname in cpus.keys():
         usecpus = cpus[hostname]
     return usecpus
@@ -166,9 +171,9 @@ class NumpyToNeuroglancer():
         self.offset = [0, 0, 0]
         self.starting_points = None
 
-    def init_precomputed(self, path, volume_size, starting_points=None, progress_dir=None):
+    def init_precomputed(self, path, volume_size, num_channels=1, starting_points=None, progress_dir=None):
         info = CloudVolume.create_new_info(
-            num_channels=1,
+            num_channels=num_channels,
             layer_type=self.layer_type,  # 'image' or 'segmentation'
             data_type=self.data_type,  #
             encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
@@ -326,6 +331,20 @@ class NumpyToNeuroglancer():
             return
         img = io.imread(infile)
         img = img.reshape(1, img.shape[0], img.shape[1]).T
+        self.precomputed_vol[:, :, index] = img
+        touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
+        touch(touchfile)
+        del img
+        return
+
+    def process_3channel(self, file_key):
+        index, infile = file_key
+        if os.path.exists(os.path.join(self.progress_dir, os.path.basename(infile))):
+            print(f"Section {index} already processed, skipping ")
+            return
+        img = io.imread(infile)
+        img = img.T
+        img = img.reshape(img.shape[0], img.shape[1], img.shape[2])
         self.precomputed_vol[:, :, index] = img
         touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
         touch(touchfile)

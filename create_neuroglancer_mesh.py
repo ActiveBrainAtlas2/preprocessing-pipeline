@@ -12,6 +12,7 @@ import numpy as np
 from taskqueue.taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
+import shutil
 
 from tqdm import tqdm
 
@@ -19,24 +20,29 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks, get_cpus, get_segment_ids
+from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks, get_cpus, get_hostname, get_segment_ids
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
-def create_mesh(animal, limit):
+def create_mesh(animal, limit, mse):
     chunks = calculate_chunks('full', -1)
     data_type = np.uint8
     resolution = 1000 
     scales = (resolution, resolution, resolution)
     fileLocationManager = FileLocationManager(animal)
     INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
-    #INPUT = os.path.join(fileLocationManager.prep, 'CH2', 'full_aligned')
-    files = sorted(os.listdir(INPUT))
     OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
     OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', 'mesh_input')
+    if 'ultraman' in get_hostname():
+        INPUT = os.path.join(fileLocationManager.prep, 'CH2', 'full_aligned')
+        shutil.rmtree(OUTPUT1_DIR)
+        shutil.rmtree(OUTPUT2_DIR)
+        shutil.rmtree(PROGRESS_DIR)
+
+    files = sorted(os.listdir(INPUT))
 
     os.makedirs(OUTPUT1_DIR, exist_ok=True)
     os.makedirs(PROGRESS_DIR, exist_ok=True)
@@ -50,43 +56,41 @@ def create_mesh(animal, limit):
        208, 216, 224, 232, 240, 248, 255]
     ids = [(number, f'{number}: {number}') for number in ids]
 
-    if False:
 
-        if limit > 0:
-            files = files[midpoint-limit:midpoint+limit]
-        height, width = midfile.shape
-        startx = 0
-        endx = midfile.shape[1]
-        starty = 0
-        endy = midfile.shape[0]
-        height = endy - starty
-        width = endx - startx
-        starting_points = [starty,endy, startx,endx]
-        volume_size = (width, height, len(files)) # neuroglancer is width, height
-        print('volume size', volume_size)
-        ng = NumpyToNeuroglancer(None, scales, layer_type='segmentation', data_type=data_type, chunk_size=chunks)
-        ng.init_precomputed(OUTPUT1_DIR, volume_size, starting_points=starting_points, progress_dir=PROGRESS_DIR)
+    if limit > 0:
+        files = files[midpoint-limit:midpoint+limit]
+    height, width = midfile.shape
+    startx = 0
+    endx = midfile.shape[1]
+    starty = 0
+    endy = midfile.shape[0]
+    height = endy - starty
+    width = endx - startx
+    starting_points = [starty,endy, startx,endx]
+    volume_size = (width, height, len(files)) # neuroglancer is width, height
+    print('volume size', volume_size)
+    ng = NumpyToNeuroglancer(None, scales, layer_type='segmentation', data_type=data_type, chunk_size=chunks)
+    ng.init_precomputed(OUTPUT1_DIR, volume_size, starting_points=starting_points, progress_dir=PROGRESS_DIR)
 
-        file_keys = []
-        for i,f in enumerate(tqdm(files)):
-            infile = os.path.join(INPUT, f)
-            file_keys.append([i, infile])
+    file_keys = []
+    for i,f in enumerate(tqdm(files)):
+        infile = os.path.join(INPUT, f)
+        file_keys.append([i, infile])
 
-        start = timer()
-        workers, cpus = get_cpus()
-        print(f'Working on {len(file_keys)} files with {workers} cpus')
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(ng.process_mesh, sorted(file_keys), chunksize=workers)
-            executor.shutdown(wait=True)
+    start = timer()
+    workers, cpus = get_cpus()
+    print(f'Working on {len(file_keys)} files with {workers} cpus')
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        executor.map(ng.process_mesh, sorted(file_keys), chunksize=workers)
+        executor.shutdown(wait=True)
 
-        volume = ng.precomputed_vol
-        ng.precomputed_vol.cache.flush()
+    volume = ng.precomputed_vol
+    ng.precomputed_vol.cache.flush()
 
-        end = timer()
-        print(f'Create volume method took {end - start} seconds')
+    end = timer()
+    print(f'Create volume method took {end - start} seconds')
 
 
-    mse = 100
 
     ##### rechunk
     cloudpath1 = f"file://{OUTPUT1_DIR}"
@@ -96,7 +100,7 @@ def create_mesh(animal, limit):
     cloudpath2 = f'file://{OUTPUT2_DIR}'
 
     tasks = tc.create_transfer_tasks(cloudpath1, dest_layer_path=cloudpath2, 
-        chunk_size=[256,256,128], mip=0, skip_downsamples=True)
+        chunk_size=[128,128,64], mip=0, skip_downsamples=True)
     tq.insert(tasks)
     tq.execute()
 
@@ -123,7 +127,7 @@ def create_mesh(animal, limit):
         json.dump(info, file, indent=2)
 
 
-    ##### first mesh task
+    ##### first mesh task, create meshing tasks
     workers, _ = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
     mesh_dir = f'mesh_mip_0_err_{mse}'
@@ -132,7 +136,7 @@ def create_mesh(animal, limit):
     tasks = tc.create_meshing_tasks(cv2.layer_cloudpath, mip=0, mesh_dir=mesh_dir, max_simplification_error=mse)
     tq.insert(tasks)
     tq.execute()
-    ##### 2nd mesh task
+    ##### 2nd mesh task, create manifest
     tasks = tc.create_mesh_manifest_tasks(cv2.layer_cloudpath, mesh_dir=mesh_dir)
     tq.insert(tasks)
     tq.execute()
@@ -147,8 +151,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--limit', help='Enter the # of files to test', required=False, default=0)
+    parser.add_argument('--mse', help='Enter the MSE', required=False, default=40)
     args = parser.parse_args()
     animal = args.animal
     limit = int(args.limit)
-    create_mesh(animal, limit)
+    mse = int(args.mse)
+    create_mesh(animal, limit, mse)
 
