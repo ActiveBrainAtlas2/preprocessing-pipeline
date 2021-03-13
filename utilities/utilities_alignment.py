@@ -189,6 +189,7 @@ def parse_elastix_parameter_file(filepath, tf_type=None):
         # T = np.column_stack([L, shift])
         return L, shift, center
     elif tf_type is None:
+        """this is the default"""
         # For alignment composition script
         rot_rad, x_mm, y_mm = d['TransformParameters']
         center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])

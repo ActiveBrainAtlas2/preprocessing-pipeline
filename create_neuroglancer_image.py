@@ -81,9 +81,6 @@ def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
     for i, f in enumerate(files):
         filepath = os.path.join(INPUT, f)
         file_keys.append([i,filepath])
-        ng.process_3channel([i, filepath])
-
-    sys.exit()
 
     start = timer()
     print(f'Working on {len(file_keys)} files with {workers} cpus')
