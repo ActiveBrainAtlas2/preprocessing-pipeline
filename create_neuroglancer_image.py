@@ -68,7 +68,7 @@ def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
     midfile = io.imread(midfilepath)
     height = midfile.shape[0]
     width = midfile.shape[1]
-    num_channels = midfile.ndim
+    num_channels = midfile.shape[3] if len(midfile.shape) > 3 else 1
 
     file_keys = []
     scales = (resolution, resolution, 20000)
