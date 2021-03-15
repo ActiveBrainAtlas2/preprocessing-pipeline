@@ -229,12 +229,13 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
         #cmd = "convert {}  +repage -virtual-pixel background -background {} {} -flatten -compress lzw {}"\
         #    .format(input_fp, bgcolor, op_str, output_fp)
         cmd = f"convert {infile} -define white-point=0x0 +repage -virtual-pixel background -background {bgcolor} {op_str} -flatten -compress lzw {outfile}"
-        #commands.append(cmd)
+        commands.append(cmd)
 
-    #with Pool(njobs) as p:
-    #    p.map(workershell, commands)
+    with Pool(njobs) as p:
+        p.map(workershell, commands)
 
-            
+
+        """    
         im1 = Image.open(infile)
         im2 = im1.transform(im1.size, Image.AFFINE, data=[sx,rx,tx,ry,sy,ty], resample=Image.NEAREST)
         #im2 = im1.transform(im1.size, Image.AFFINE, data=T.flatten()[:6], resample=Image.NEAREST)
@@ -243,7 +244,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
         left, upper, right, lower = 0, 0, max_width, max_height
         im3 = im2.crop((left, upper, right, lower))
         im3.save(outfile)
-        
+        """
 
 
 
