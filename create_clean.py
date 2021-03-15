@@ -122,7 +122,7 @@ def fix_thion(infile, mask, maskfile, ROTATED_MASKS,  logger, rotation, flip, ma
     return fixed
 
 
-def masker(animal, channel, full, scale):
+def masker(animal, channel, downsample, scale):
     """
     Main method that starts the cleaning/rotating process.
     :param animal:  prep_id of the animal we are working on.
@@ -159,11 +159,11 @@ def masker(animal, channel, full, scale):
     if channel == 1:
         sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)
 
-    if full:
+    if not downsample:
         CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         os.makedirs(CLEANED, exist_ok=True)
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full')
-        error = test_dir(animal, INPUT, full, same_size=False)
+        error = test_dir(animal, INPUT, downsample, same_size=False)
         if len(error) > 0:
             print(error)
             sys.exit()
@@ -210,14 +210,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--scale', help='Enter scaling', required=False, default=45000)
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
     scale = int(args.scale)
-    full = bool({'full': True, 'thumbnail': False}[args.resolution])
+    downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
 
-    masker(animal, channel, full, scale)
+    masker(animal, channel, downsample, scale)
 

@@ -27,7 +27,7 @@ from utilities.utilities_mask import fix_with_fill, fix_thionin, trim_edges, cre
 from utilities.utilities_process import get_last_2d, test_dir, workernoshell
 
 
-def create_mask(animal, full, njobs):
+def create_mask(animal, downsample, njobs):
     """
     This method decides if we are working on either full or downsampled image, and also
     if we are using thionin or NTB stains. The masking process is different depending on the stain.
@@ -51,7 +51,7 @@ def create_mask(animal, full, njobs):
         sys.exit()
     MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     os.makedirs(MASKED, exist_ok=True)
-    if full:
+    if not downsample:
         sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         ##### Check if files in dir are valid
@@ -125,12 +125,12 @@ def create_mask(animal, full, njobs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--resolution', help='Enter full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
 
     args = parser.parse_args()
     animal = args.animal
-    full = bool({'full': True, 'thumbnail': False}[args.resolution])
+    downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     njobs = int(args.njobs)
 
-    create_mask(animal, full, njobs)
+    create_mask(animal, downsample, njobs)
