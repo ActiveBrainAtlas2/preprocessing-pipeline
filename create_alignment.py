@@ -129,16 +129,16 @@ def convert_2d_transform_forms(arr):
     """
     return np.vstack([arr, [0,0,1]])
 
-def create_warp_transforms(animal, transforms, transforms_resol, resolution):
+def create_warp_transforms(animal, transforms, transforms_resol, downsample):
     """
     Changes the dictionary of transforms to the correct resolution
     :param animal: prep_id of animal we are working on
     :param transforms: dictionary of filename:array of transforms
     :param transforms_resol:
-    :param resolution: either full or thumbnail
+    :param downsample; either true or false
     :return: corrected dictionary of filename: array  of transforms
     """
-    transforms_scale_factor = convert_resolution_string_to_um(animal, resolution=transforms_resol) / convert_resolution_string_to_um(animal, resolution=resolution)
+    transforms_scale_factor = convert_resolution_string_to_um(animal, resolution=transforms_resol) / convert_resolution_string_to_um(animal, resolution=downsample)
     tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
     transforms_to_anchor = {
         img_name:
@@ -148,7 +148,7 @@ def create_warp_transforms(animal, transforms, transforms_resol, resolution):
     return transforms_to_anchor
 
 
-def run_offsets(animal, transforms, channel, resolution, njobs, masks):
+def run_offsets(animal, transforms, channel, downsample, njobs, masks):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -177,7 +177,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
     if 'thion' in stain.lower():
         bgcolor = 'white'
 
-    if 'full' in resolution.lower():
+    if not downsample:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         error = test_dir(animal, INPUT, full=True, same_size=True)
         if len(error) > 0:
@@ -204,7 +204,7 @@ def run_offsets(animal, transforms, channel, resolution, njobs, masks):
 
     os.makedirs(OUTPUT, exist_ok=True)
 
-    warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', resolution)
+    warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', downsample)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
     commands = []
     for file, arr in tqdm(ordered_transforms.items()):
@@ -253,16 +253,16 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--resolution', help='full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--masks', help='Enter True for running masks', required=False, default=False)
 
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
     channel = args.channel
-    resolution = args.resolution
+    downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     masks = args.masks
 
     run_elastix(animal, njobs)
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel, resolution, njobs, masks)
+    run_offsets(animal, transforms, channel, downsample, njobs, masks)

@@ -411,7 +411,7 @@ orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
     }
 
 
-def convert_resolution_string_to_um(stack, resolution):
+def convert_resolution_string_to_um(stack, downsample):
     """
     Args:
         resolution (str):
@@ -424,23 +424,12 @@ def convert_resolution_string_to_um(stack, resolution):
     except:
         planar_resolution = 0.452
     #planar_resolution =  0.452
-    assert resolution is not None, 'Resolution argument cannot be None.'
+    assert downsample is not None, 'Resolution argument cannot be None.'
 
-    if resolution in ['down32', 'thumbnail']:
+    if downsample:
         assert stack is not None
         return planar_resolution * 32.
-    elif resolution == 'lossless' or resolution == 'down1' or resolution == 'raw' or resolution == 'full':
-        assert stack is not None
-        return planar_resolution
-    elif resolution.startswith('down'):
-        assert stack is not None
-        return planar_resolution * int(resolution[4:])
-    elif resolution == 'um':
-        return 1.
-    elif resolution.endswith('um'):
-        return float(resolution[:-2])
     else:
-        print(resolution)
-        raise Exception("Unknown resolution string %s" % resolution)
+        return planar_resolution
 
 

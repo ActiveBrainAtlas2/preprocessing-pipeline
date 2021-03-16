@@ -27,20 +27,21 @@ def chunker(seq, size):
 
 
 def create_mesh(animal, limit, mse):
-    chunks = calculate_chunks('full', -1)
+    #chunks = calculate_chunks('full', -1)
+    chunks = [2048,2048,1]
     data_type = np.uint8
     resolution = 1000 
     scales = (resolution, resolution, resolution)
     fileLocationManager = FileLocationManager(animal)
     INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
     OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
-    OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
+    OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh2')
     PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', 'mesh_input')
     if 'ultraman' in get_hostname():
         INPUT = os.path.join(fileLocationManager.prep, 'CH2', 'full_aligned')
         shutil.rmtree(OUTPUT1_DIR)
         shutil.rmtree(OUTPUT2_DIR)
-        shutil.rmtree(PROGRESS_DIR)
+    shutil.rmtree(PROGRESS_DIR)
 
     files = sorted(os.listdir(INPUT))
 
@@ -100,7 +101,7 @@ def create_mesh(animal, limit, mse):
     cloudpath2 = f'file://{OUTPUT2_DIR}'
 
     tasks = tc.create_transfer_tasks(cloudpath1, dest_layer_path=cloudpath2, 
-        chunk_size=[128,128,64], mip=0, skip_downsamples=True)
+        chunk_size=[256,256,64], mip=0, skip_downsamples=True)
     tq.insert(tasks)
     tq.execute()
 
