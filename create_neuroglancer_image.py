@@ -57,8 +57,8 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
         print(error)
         sys.exit()
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(PROGRESS_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True, mode=0o770)
+    os.makedirs(PROGRESS_DIR, exist_ok=True, mode=0o770)
     files = sorted(os.listdir(INPUT))
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
