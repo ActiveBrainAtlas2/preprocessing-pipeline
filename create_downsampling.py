@@ -16,7 +16,7 @@ sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors, get_cpus
 
-def create_downsamples(animal, channel, downsample):
+def create_downsamples(animal, channel, suffix, downsample):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = f'C{channel}'
     first_chunk = calculate_chunks(downsample, 0)
@@ -25,9 +25,12 @@ def create_downsamples(animal, channel, downsample):
     if downsample:
         channel_outdir += 'T'
         mips = [0,1,2]
+ 
 
     outpath = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
     outpath = f'file://{outpath}'
+    if suffix is not None:
+        outpath += suffix
 
     channel_outdir += "_rechunkme"
     INPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
@@ -63,10 +66,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
+    parser.add_argument('--suffix', help='Enter suffix to add to the output dir', required=False)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
+    suffix = args.suffix
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
-    create_downsamples(animal, channel, downsample)
+    create_downsamples(animal, channel, suffix, downsample)
 

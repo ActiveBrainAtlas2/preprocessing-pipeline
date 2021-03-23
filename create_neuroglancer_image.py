@@ -20,7 +20,7 @@ from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOM
     RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
 from utilities.utilities_process import test_dir, SCALING_FACTOR
 
-def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
+def create_neuroglancer(animal, channel, downsample, debug=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel_dir = f'CH{channel}'
@@ -51,8 +51,6 @@ def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
 
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
     PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
-    if suffix is not None:
-        OUTPUT_DIR += suffix
 
     error = test_dir(animal, INPUT, downsample, same_size=True)
     if len(error) > 0 and not debug:
@@ -97,15 +95,12 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
-    parser.add_argument('--suffix', help='Enter suffix to add to the output dir', required=False)
     parser.add_argument('--debug', help='Enter debug True|False', required=False, default='false')
 
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
-    suffix = args.suffix
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-
-    create_neuroglancer(animal, channel, downsample, suffix, debug)
+    create_neuroglancer(animal, channel, downsample, debug)
 
