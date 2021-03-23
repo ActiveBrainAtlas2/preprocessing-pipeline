@@ -46,24 +46,24 @@ def calculate_chunks(downsample, mip):
     """
     d = defaultdict(dict)
     result = [64,64,64]
-    d['full'][-1] = [1024,1024,1]
-    d['full'][0] = [128,128,64]
-    d['full'][1] = [128,128,64]
-    d['full'][2] = [128,128,64]
-    d['full'][3] = [128,128,64]
-    d['full'][4] = [128,128,64]
-    d['full'][5] = [64,64,64]
-    d['full'][6] = [64,64,64]
-    d['full'][7] = [64,64,64]
-    d['full'][8] = [64,64,64]
-    d['full'][9] = [64,64,64]
+    d[True][-1] = [1024,1024,1]
+    d[True][0] = [128,128,64]
+    d[True][1] = [128,128,64]
+    d[True][2] = [128,128,64]
+    d[True][3] = [128,128,64]
+    d[True][4] = [128,128,64]
+    d[True][5] = [64,64,64]
+    d[True][6] = [64,64,64]
+    d[True][7] = [64,64,64]
+    d[True][8] = [64,64,64]
+    d[True][9] = [64,64,64]
 
-    d['thumbnail'][-1] = [128,128,1]
-    d['thumbnail'][0] = [128,128,64]
-    d['thumbnail'][1] = [64,64,64]
-    d['thumbnail'][2] = [64,64,32]
-    d['thumbnail'][3] = [32,32,16]
-    d['thumbnail'][3] = [32,32,8]
+    d[False][-1] = [128,128,1]
+    d[False][0] = [128,128,64]
+    d[False][1] = [64,64,64]
+    d[False][2] = [64,64,32]
+    d[False][3] = [32,32,16]
+    d[False][3] = [32,32,8]
     try:
         result = d[downsample][mip]
     except:
@@ -76,21 +76,21 @@ def calculate_factors(downsample, mip):
     """
     d = defaultdict(dict)
     result = [2,2,1]
-    d['full'][0] = result
-    d['full'][1] = result
-    d['full'][2] = result
-    d['full'][3] = result
-    d['full'][4] = result
-    d['full'][5] = result
-    d['full'][6] = result
-    d['full'][7] = [2,2,2]
-    d['full'][8] = [2,2,2]
-    d['full'][9] = [2,2,2]
+    d[True][0] = result
+    d[True][1] = result
+    d[True][2] = result
+    d[True][3] = result
+    d[True][4] = result
+    d[True][5] = result
+    d[True][6] = result
+    d[True][7] = [2,2,2]
+    d[True][8] = [2,2,2]
+    d[True][9] = [2,2,2]
 
-    d['thumbnail'][0] = [2,2,1]
-    d['thumbnail'][1] = [2,2,1]
-    d['thumbnail'][2] = [2,2,2]
-    d['thumbnail'][3] = [2,2,2]
+    d[False][0] = [2,2,1]
+    d[False][1] = [2,2,1]
+    d[False][2] = [2,2,2]
+    d[False][3] = [2,2,2]
     try:
         result = d[downsample][mip]
     except:

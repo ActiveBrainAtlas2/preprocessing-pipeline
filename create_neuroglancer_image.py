@@ -25,17 +25,16 @@ def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
     sqlController = SqlController(animal)
     channel_dir = f'CH{channel}'
     channel_outdir = f'C{channel}T_rechunkme'
-    INPUT = os.path.join(fileLocationManager.prep, channel_dir, f'{downsample}_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
     db_resolution = sqlController.scan_run.resolution
     resolution = int(db_resolution * 1000 / SCALING_FACTOR)
     workers, _ = get_cpus()
     chunks = calculate_chunks(downsample, -1)
-    full_resolution = False
 
-    if downsample == 'full':
+    if not downsample:
+        INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
         workers = workers // 2
-        full_resolution = True
         channel_outdir = f'C{channel}_rechunkme'
         if channel == 3:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
@@ -55,7 +54,7 @@ def create_neuroglancer(animal, channel, downsample, suffix, debug=False):
     if suffix is not None:
         OUTPUT_DIR += suffix
 
-    error = test_dir(animal, INPUT, full_resolution, same_size=True)
+    error = test_dir(animal, INPUT, downsample, same_size=True)
     if len(error) > 0 and not debug:
         print(error)
         sys.exit()
@@ -97,14 +96,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--downsample', help='Enter full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--suffix', help='Enter suffix to add to the output dir', required=False)
     parser.add_argument('--debug', help='Enter debug True|False', required=False, default='false')
 
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
-    downsample = args.downsample
+    downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     suffix = args.suffix
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
 
