@@ -14,7 +14,7 @@ from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
 
 
-def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_fn=None):
+def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_filepath=None):
     """
     Args:
         use_inverse (bool): If True, load the 2-d rigid transforms that when multiplied
@@ -33,7 +33,7 @@ def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=
         assert downsample_factor is not None
         resolution = 'down%d' % downsample_factor
 
-    fp = get_transforms_filename(stack, anchor_fn=anchor_fn)
+    fp = get_transforms_filename(stack, anchor_filepath=anchor_filepath)
     # download_from_s3(fp, local_root=THUMBNAIL_DATA_ROOTDIR)
     Ts_down32 = load_data(fp)
     if isinstance(Ts_down32.values()[0], list): # csv, the returned result are dict of lists
@@ -57,7 +57,7 @@ def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=
         return Ts_rescaled
 
 
-def get_transforms_filename(stack, anchor_fn=None):
+def get_transforms_filename(stack, anchor_filepath=None):
     fileLocationManager = FileLocationManager(stack)
     fp = os.path.join(fileLocationManager.brain_info, 'transforms_to_anchor.csv')
     return fp
@@ -97,8 +97,8 @@ def load_data(filepath, filetype=None):
         return label_to_name, name_to_label
     elif filetype == 'anchor':
         with open(filepath, 'r') as f:
-            anchor_fn = f.readline().strip()
-        return anchor_fn
+            anchor_filepath = f.readline().strip()
+        return anchor_filepath
     elif filetype == 'transform_params':
         with open(filepath, 'r') as f:
             lines = f.readlines()
@@ -130,81 +130,41 @@ def one_liner_to_arr(line, func):
     return np.array(list(map(func, line.strip().split())))
 
 
-def load_consecutive_section_transform(stack, moving_fn, fixed_fn):
+def load_consecutive_section_transform(animal, moving_filepath, fixed_filepath):
     """
     Load pairwise transform.
 
     Returns:
         (3,3)-array.
     """
-    assert stack is not None
-    fileLocationManager = FileLocationManager(stack)
-    elastix_output_dir = fileLocationManager.elastix_dir
-    param_fp = os.path.join(elastix_output_dir, moving_fn + '_to_' + fixed_fn, 'TransformParameters.0.txt')
-    #sys.stderr.write('Load elastix-computed transform: %s\n' % param_fp)
-    if not os.path.exists(param_fp):
-        raise Exception('Transform file does not exist: %s to %s, %s' % (moving_fn, fixed_fn, param_fp))
-    transformation_to_previous_sec = parse_elastix_parameter_file(param_fp)
-
-    return transformation_to_previous_sec
+    assert animal is not None
+    fileLocationManager = FileLocationManager(animal)
+    ELASTIX_DIR = fileLocationManager.elastix_dir
+    param_file = os.path.join(ELASTIX_DIR, moving_filepath + '_to_' + fixed_filepath, 'TransformParameters.0.txt')
+    if not os.path.exists(param_file):
+        raise Exception('Transform file does not exist: %s to %s, %s' % (moving_filepath, fixed_filepath, param_file))
+    return parse_elastix_parameter_file(param_file)
 
 
-def parse_elastix_parameter_file(filepath, tf_type=None):
+def parse_elastix_parameter_file(filepath):
     """
     Parse elastix parameter result file.
     """
 
     d = parameter_elastix_parameter_file_to_dict(filepath)
+    # For alignment composition script
+    rot_rad, x_mm, y_mm = d['TransformParameters']
+    center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
+    # center[1] = d['Size'][1] - center[1]
 
+    xshift = x_mm / d['Spacing'][0]
+    yshift = y_mm / d['Spacing'][1]
 
-    if tf_type == 'rigid3d':
-        p = np.array(d['TransformParameters'])
-        center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
-        shift = p[3:] / np.array(d['Spacing'])
-
-        thetax, thetay, thetaz = p[:3]
-        # Important to use the negative angle.
-        cx = np.cos(-thetax)
-        cy = np.cos(-thetay)
-        cz = np.cos(-thetaz)
-        sx = np.sin(-thetax)
-        sy = np.sin(-thetay)
-        sz = np.sin(-thetaz)
-        Rx = np.array([[1, 0, 0], [0, cx, sx], [0, -sx, cx]])
-        Ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
-        Rz = np.array([[cz, sz, 0], [-sz, cz, 0], [0, 0, 1]])
-
-        R = np.dot(np.dot(Rz, Ry), Rx)
-        # R = np.dot(np.dot(Rx, Ry), Rz)
-        # The order could be Rx,Ry,Rz - not sure.
-
-        return R, shift, center
-
-    elif tf_type == 'affine3d':
-        p = np.array(d['TransformParameters'])
-        L = p[:9].reshape((3, 3))
-        shift = p[9:] / np.array(d['Spacing'])
-        center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
-        # shift = center + shift - np.dot(L, center)
-        # T = np.column_stack([L, shift])
-        return L, shift, center
-    elif tf_type is None:
-        """this is the default"""
-        # For alignment composition script
-        rot_rad, x_mm, y_mm = d['TransformParameters']
-        center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
-        # center[1] = d['Size'][1] - center[1]
-
-        xshift = x_mm / d['Spacing'][0]
-        yshift = y_mm / d['Spacing'][1]
-
-        R = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
-                      [np.sin(rot_rad), np.cos(rot_rad)]])
-        shift = center + (xshift, yshift) - np.dot(R, center)
-        T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
-        return T
-    else:
-        print('Nothing to do')
+    R = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
+                    [np.sin(rot_rad), np.cos(rot_rad)]])
+    shift = center + (xshift, yshift) - np.dot(R, center)
+    T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
+    return T
 
 
 def parameter_elastix_parameter_file_to_dict(filename):
@@ -247,9 +207,9 @@ def parse_elastix(animal):
     transformation_to_previous_sec = {}
 
     for i in range(1, len(image_name_list)):
-        fixed_fn = os.path.splitext(image_name_list[i - 1])[0]
-        moving_fn = os.path.splitext(image_name_list[i])[0]
-        transformation_to_previous_sec[i] = load_consecutive_section_transform(animal, moving_fn, fixed_fn)
+        fixed_filepath = os.path.splitext(image_name_list[i - 1])[0]
+        moving_filepath = os.path.splitext(image_name_list[i])[0]
+        transformation_to_previous_sec[i] = load_consecutive_section_transform(animal, moving_filepath, fixed_filepath)
 
     transformation_to_anchor_sec = {}
     # Converts every transformation

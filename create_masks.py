@@ -44,18 +44,13 @@ def create_mask(animal, downsample, njobs):
     stain = sqlController.histology.counterstain
     sqlController.set_task(animal, CREATE_THUMBNAIL_MASKS)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
-    ##### Check if files in dir are valid
-    error = test_dir(animal, INPUT, full=False, same_size=False)
-    if len(error) > 0:
-        print(error)
-        sys.exit()
     MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     os.makedirs(MASKED, exist_ok=True)
     if not downsample:
         sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         ##### Check if files in dir are valid
-        error = test_dir(animal, INPUT, full=True, same_size=False)
+        error = test_dir(animal, INPUT, downsample, same_size=False)
         if len(error) > 0:
             print(error)
             sys.exit()
@@ -79,16 +74,17 @@ def create_mask(animal, downsample, njobs):
             except:
                 logger.warning(f'Could not open {infile}')
                 continue
-            #height, width = src.shape[0], src.shape[1]
             size = '{}x{}!'.format(width, height)
-            #del src
-            #cmd = "convert {} -resize {}x{}! -compress lzw -depth 8 {}".format(thumbfile, width, height, outfile)
             cmd = ['convert', thumbfile, '-resize', size, '-compress', 'lzw', '-depth', '8', outpath]
             commands.append(cmd)
 
         with Pool(njobs) as p:
             p.map(workernoshell, commands)
     else:
+        error = test_dir(animal, INPUT, downsample, same_size=False)
+        if len(error) > 0:
+            print(error)
+            sys.exit()
         files = sorted(os.listdir(INPUT))
 
         for i, file in enumerate(tqdm(files)):

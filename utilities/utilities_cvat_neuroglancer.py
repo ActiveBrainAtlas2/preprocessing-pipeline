@@ -46,24 +46,24 @@ def calculate_chunks(downsample, mip):
     """
     d = defaultdict(dict)
     result = [64,64,64]
-    d[True][-1] = [1024,1024,1]
-    d[True][0] = [128,128,64]
-    d[True][1] = [128,128,64]
-    d[True][2] = [128,128,64]
-    d[True][3] = [128,128,64]
-    d[True][4] = [128,128,64]
-    d[True][5] = [64,64,64]
-    d[True][6] = [64,64,64]
-    d[True][7] = [64,64,64]
-    d[True][8] = [64,64,64]
-    d[True][9] = [64,64,64]
-
-    d[False][-1] = [128,128,1]
+    d[False][-1] = [1024,1024,1]
     d[False][0] = [128,128,64]
-    d[False][1] = [64,64,64]
-    d[False][2] = [64,64,32]
-    d[False][3] = [32,32,16]
-    d[False][3] = [32,32,8]
+    d[False][1] = [128,128,64]
+    d[False][2] = [128,128,64]
+    d[False][3] = [128,128,64]
+    d[False][4] = [128,128,64]
+    d[False][5] = [64,64,64]
+    d[False][6] = [64,64,64]
+    d[False][7] = [64,64,64]
+    d[False][8] = [64,64,64]
+    d[False][9] = [64,64,64]
+
+    d[True][-1] = [128,128,1]
+    d[True][0] = [128,128,64]
+    d[True][1] = [64,64,64]
+    d[True][2] = [64,64,32]
+    d[True][3] = [32,32,16]
+    d[True][3] = [32,32,8]
     try:
         result = d[downsample][mip]
     except:
@@ -76,21 +76,21 @@ def calculate_factors(downsample, mip):
     """
     d = defaultdict(dict)
     result = [2,2,1]
-    d[True][0] = result
-    d[True][1] = result
-    d[True][2] = result
-    d[True][3] = result
-    d[True][4] = result
-    d[True][5] = result
-    d[True][6] = result
-    d[True][7] = [2,2,2]
-    d[True][8] = [2,2,2]
-    d[True][9] = [2,2,2]
+    d[False][0] = result
+    d[False][1] = result
+    d[False][2] = result
+    d[False][3] = result
+    d[False][4] = result
+    d[False][5] = result
+    d[False][6] = result
+    d[False][7] = [2,2,2]
+    d[False][8] = [2,2,2]
+    d[False][9] = [2,2,2]
 
-    d[False][0] = [2,2,1]
-    d[False][1] = [2,2,1]
-    d[False][2] = [2,2,2]
-    d[False][3] = [2,2,2]
+    d[True][0] = [2,2,1]
+    d[True][1] = [2,2,1]
+    d[True][2] = [2,2,1]
+    d[True][3] = [2,2,1]
     try:
         result = d[downsample][mip]
     except:

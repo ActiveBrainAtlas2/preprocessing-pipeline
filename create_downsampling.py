@@ -22,7 +22,7 @@ def create_downsamples(animal, channel, downsample):
     first_chunk = calculate_chunks(downsample, 0)
     mips = [0,1,2,3,4,5,6,7]
 
-    if downsample == 'thumbnail':
+    if downsample:
         channel_outdir += 'T'
         mips = [0,1,2]
 
@@ -63,10 +63,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--downsample', help='Enter full or thumbnail', required=False, default='thumbnail')
+    parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
-    downsample = args.downsample
+    downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     create_downsamples(animal, channel, downsample)
 

@@ -230,10 +230,13 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
 
 
 def process_image(file_key):
+    import cv2
+
     index, infile, outfile, T = file_key
     im1 = Image.open(infile)
     im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
-    im2.save(outfile)
+    im2.save(outfile, compression=None, quality=100)
+
     del im1, im2
     return
 

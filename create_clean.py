@@ -3,7 +3,8 @@ This is for cleaning/masking all channels from the mask created
 on channel 1. It also does the rotating and flip/flop if necessary.
 On channel one it scales and does an adaptive histogram equalization.
 Note, the scaled method takes 45000 as the default. This is usually
-a good value for 16bit images
+a good value for 16bit images. Note, opencv uses lzw compression by default
+to save files.
 """
 import argparse
 import os, sys
@@ -138,10 +139,6 @@ def masker(animal, channel, downsample, scale):
     channel_dir = 'CH{}'.format(channel)
     CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
-    error = test_dir(animal, INPUT, full=False, same_size=False)
-    if len(error) > 0:
-        print(error)
-        sys.exit()
 
     MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
     ROTATED_MASKS = os.path.join(fileLocationManager.prep, 'rotated_masked')
@@ -163,10 +160,6 @@ def masker(animal, channel, downsample, scale):
         CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         os.makedirs(CLEANED, exist_ok=True)
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full')
-        error = test_dir(animal, INPUT, downsample, same_size=False)
-        if len(error) > 0:
-            print(error)
-            sys.exit()
         MASKS = os.path.join(fileLocationManager.prep, 'full_masked')
         max_width = width
         max_height = height
@@ -181,6 +174,10 @@ def masker(animal, channel, downsample, scale):
         bgcolor = 255
         dt = np.uint8
 
+    error = test_dir(animal, INPUT, downsample, same_size=False)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
     files = sorted(os.listdir(INPUT))
 
     for i, file in enumerate(tqdm(files)):
