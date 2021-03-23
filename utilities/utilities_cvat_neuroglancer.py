@@ -89,8 +89,8 @@ def calculate_factors(downsample, mip):
 
     d['thumbnail'][0] = [2,2,1]
     d['thumbnail'][1] = [2,2,1]
-    d['thumbnail'][2] = [2,2,1]
-    d['thumbnail'][3] = [2,2,1]
+    d['thumbnail'][2] = [2,2,2]
+    d['thumbnail'][3] = [2,2,2]
     try:
         result = d[downsample][mip]
     except:

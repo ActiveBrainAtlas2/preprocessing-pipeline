@@ -13,6 +13,8 @@ from multiprocessing.pool import Pool
 import numpy as np
 from collections import OrderedDict
 from tqdm import tqdm
+from concurrent.futures.process import ProcessPoolExecutor
+from timeit import default_timer as timer
 
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
@@ -25,6 +27,7 @@ from utilities.sqlcontroller import SqlController
 from utilities.utilities_alignment import (load_consecutive_section_transform,
                                          convert_resolution_string_to_um)
 from utilities.utilities_process import workernoshell, workershell, test_dir, SCALING_FACTOR
+from utilities.utilities_cvat_neuroglancer import get_cpus
 
 ELASTIX_BIN = '/usr/bin/elastix'
 
@@ -42,7 +45,7 @@ def run_elastix(animal, njobs):
     sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
-    error = test_dir(animal, INPUT, full=False, same_size=True)
+    error = test_dir(animal, INPUT, downsample=True, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()
@@ -88,7 +91,7 @@ def parse_elastix(animal):
     fileLocationManager = FileLocationManager(animal)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
-    error = test_dir(animal, INPUT, full=False, same_size=True)
+    error = test_dir(animal, INPUT, downsample=True, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()
@@ -138,7 +141,7 @@ def create_warp_transforms(animal, transforms, transforms_resol, downsample):
     :param downsample; either true or false
     :return: corrected dictionary of filename: array  of transforms
     """
-    transforms_scale_factor = convert_resolution_string_to_um(animal, resolution=transforms_resol) / convert_resolution_string_to_um(animal, resolution=downsample)
+    transforms_scale_factor = convert_resolution_string_to_um(animal, downsample=transforms_resol) / convert_resolution_string_to_um(animal, downsample=downsample)
     tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
     transforms_to_anchor = {
         img_name:
@@ -162,10 +165,6 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
     sqlController = SqlController(animal)
     channel_dir = 'CH{}'.format(channel)
     INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'thumbnail_cleaned')
-    error = test_dir(animal, INPUT, full=False, same_size=True)
-    if len(error) > 0:
-        print(error)
-        sys.exit()
     OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     bgcolor = 'black'
     stain = sqlController.histology.counterstain
@@ -179,10 +178,6 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
 
     if not downsample:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
-        error = test_dir(animal, INPUT, full=True, same_size=True)
-        if len(error) > 0:
-            print(error)
-            sys.exit()
         OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
         max_width = width
         max_height = height
@@ -192,6 +187,12 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
             sqlController.set_task(animal, ALIGN_CHANNEL_2_FULL_RES)
         else:
             sqlController.set_task(animal, ALIGN_CHANNEL_1_FULL_RES)
+
+    #error = test_dir(animal, INPUT, downsample=downsample, same_size=True)
+    error = ""
+    if len(error) > 0:
+        print(error)
+        sys.exit()
 
     if masks:
         INPUT = os.path.join(fileLocationManager.prep, 'rotated_masked')
@@ -206,45 +207,35 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
 
     warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', downsample)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
-    commands = []
-    for file, arr in tqdm(ordered_transforms.items()):
-        T = np.linalg.inv(arr)
-
-        sx = T[0, 0]
-        sy = T[1, 1]
-        rx = T[1, 0]
-        ry = T[0, 1]
-        tx = T[0, 2]
-        ty = T[1, 2]
-        # sx, rx, ry, sy, tx, ty
-        op_str = f" +distort AffineProjection '{sx},{rx},{ry},{sy},{tx},{ty}'"
-        op_str += f' -crop {max_width}x{max_height}+0.0+0.0!'
+    file_keys = []
+    for i, (file, T) in enumerate(ordered_transforms.items()):
 
         infile = os.path.join(INPUT, file)
         outfile = os.path.join(OUTPUT, file)
         if os.path.exists(outfile):
             continue
 
-        # Bili, i substituted the convert operations with the PIL operations
-        #cmd = "convert {}  +repage -virtual-pixel background -background {} {} -flatten -compress lzw {}"\
-        #    .format(input_fp, bgcolor, op_str, output_fp)
-        cmd = f"convert {infile} -define white-point=0x0 +repage -virtual-pixel background -background {bgcolor} {op_str} -flatten -compress lzw {outfile}"
-        commands.append(cmd)
+        file_keys.append([i,infile, outfile, T])
 
-    with Pool(njobs) as p:
-        p.map(workershell, commands)
+    start = timer()
+    workers, _ = get_cpus()
+    print(f'Working on {len(file_keys)} files with {workers} cpus')
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        executor.map(process_image, sorted(file_keys), chunksize=workers)
+        executor.shutdown(wait=True)
+
+    end = timer()
+    print(f'Create aligned files took {end - start} seconds')
+        
 
 
-        """    
-        im1 = Image.open(infile)
-        im2 = im1.transform(im1.size, Image.AFFINE, data=[sx,rx,tx,ry,sy,ty], resample=Image.NEAREST)
-        #im2 = im1.transform(im1.size, Image.AFFINE, data=T.flatten()[:6], resample=Image.NEAREST)
-        # crop
-        # w, h = im2.size
-        left, upper, right, lower = 0, 0, max_width, max_height
-        im3 = im2.crop((left, upper, right, lower))
-        im3.save(outfile)
-        """
+def process_image(file_key):
+    index, infile, outfile, T = file_key
+    im1 = Image.open(infile)
+    im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
+    im2.save(outfile)
+    del im1, im2
+    return
 
 
 
