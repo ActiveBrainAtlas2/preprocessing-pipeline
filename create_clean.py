@@ -14,12 +14,11 @@ import numpy as np
 from skimage import io
 from tqdm import tqdm
 
-from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK, CLEAN_CHANNEL_1_FULL_RES_WITH_MASK, \
-    CLEAN_CHANNEL_2_FULL_RES_WITH_MASK, CLEAN_CHANNEL_3_FULL_RES_WITH_MASK
+from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import rotate_image, place_image, scaled, equalized, linnorm
+from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
 from utilities.utilities_process import get_last_2d, test_dir, SCALING_FACTOR
 
 
@@ -156,6 +155,8 @@ def masker(animal, channel, downsample, scale):
     if channel == 1:
         sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)
 
+
+
     if not downsample:
         CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         os.makedirs(CLEANED, exist_ok=True)
@@ -163,12 +164,6 @@ def masker(animal, channel, downsample, scale):
         MASKS = os.path.join(fileLocationManager.prep, 'full_masked')
         max_width = width
         max_height = height
-        if channel == 1:
-            sqlController.set_task(animal, CLEAN_CHANNEL_1_FULL_RES_WITH_MASK)
-        elif channel == 2:
-            sqlController.set_task(animal, CLEAN_CHANNEL_2_FULL_RES_WITH_MASK)
-        else:
-            sqlController.set_task(animal, CLEAN_CHANNEL_3_FULL_RES_WITH_MASK)
 
     if 'thion' in stain.lower():
         bgcolor = 255
@@ -200,6 +195,9 @@ def masker(animal, channel, downsample, scale):
         #io.imsave(outpath, fixed.astype(dt), check_contrast=False)
         cv2.imwrite(outpath, fixed.astype(dt))
 
+    # set task as completed
+    progress_id = sqlController.get_progress_id(downsample, channel, 'CLEAN')
+    sqlController.set_task(animal, progress_id)
     print('Finished')
 
 

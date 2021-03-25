@@ -20,8 +20,7 @@ from collections import defaultdict
 
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
-from utilities.sqlcontroller import SqlController
-
+from utilities.sqlcontroller import SqlController, file_processed, set_file_completed
 
 def get_hostname():
     hostname = socket.gethostname()
@@ -98,10 +97,6 @@ def calculate_factors(downsample, mip):
     return result
 
 
-
-
-
-
 def get_db_structure_infos():
     sqlController = SqlController('MD589')
     db_structures = sqlController.get_structures_dict()
@@ -161,7 +156,7 @@ def get_hex_from_id(id, colormap='coolwarm'):
 class NumpyToNeuroglancer():
     viewer = None
 
-    def __init__(self, volume, scales, layer_type, data_type, chunk_size=[256,256,128]):
+    def __init__(self, animal, volume, scales, layer_type, data_type, chunk_size=[256,256,128]):
         self.volume = volume
         self.scales = scales
         self.layer_type = layer_type
@@ -170,8 +165,10 @@ class NumpyToNeuroglancer():
         self.precomputed_vol = None
         self.offset = [0, 0, 0]
         self.starting_points = None
+        self.animal = animal
 
-    def init_precomputed(self, path, volume_size, num_channels=1, starting_points=None, progress_dir=None):
+
+    def init_precomputed(self, path, volume_size, num_channels=1, starting_points=None, progress_id=None):
         info = CloudVolume.create_new_info(
             num_channels=num_channels,
             layer_type=self.layer_type,  # 'image' or 'segmentation'
@@ -183,7 +180,7 @@ class NumpyToNeuroglancer():
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
         self.starting_points = starting_points
-        self.progress_dir = progress_dir
+        self.progress_id = progress_id
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
         self.precomputed_vol.commit_provenance()
@@ -326,14 +323,15 @@ class NumpyToNeuroglancer():
 
     def process_image(self, file_key):
         index, infile = file_key
-        if os.path.exists(os.path.join(self.progress_dir, os.path.basename(infile))):
+        basefile = os.path.basename(infile)
+        completed = file_processed(self.animal, self.progress_id, basefile)
+        if completed:
             print(f"Section {index} already processed, skipping ")
             return
         img = io.imread(infile)
         img = img.reshape(1, img.shape[0], img.shape[1]).T
         self.precomputed_vol[:, :, index] = img
-        touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
-        touch(touchfile)
+        set_file_completed(self.animal, self.progress_id, basefile)
         del img
         return
 

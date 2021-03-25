@@ -7,7 +7,6 @@ import sys
 from concurrent.futures.process import ProcessPoolExecutor
 
 from skimage import io
-import numpy as np
 from timeit import default_timer as timer
 
 HOME = os.path.expanduser("~")
@@ -31,17 +30,13 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
     resolution = int(db_resolution * 1000 / SCALING_FACTOR)
     workers, _ = get_cpus()
     chunks = calculate_chunks(downsample, -1)
-
+    progress_id = sqlController.get_progress_id(downsample, channel, 'NEUROGLANCER')
+    sqlController.session.close()
     if not downsample:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
         workers = workers // 2
         channel_outdir = f'C{channel}_rechunkme'
-        if channel == 3:
-            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
-        elif channel == 2:
-            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
-        else:
-            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES)
+        sqlController.set_task(animal, progress_id)
 
         if 'thion' in sqlController.histology.counterstain:
             sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
@@ -50,7 +45,6 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
         resolution = int(db_resolution * 1000)
 
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
-    PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', f'{channel_outdir}')
 
     error = test_dir(animal, INPUT, downsample, same_size=True)
     if len(error) > 0 and not debug:
@@ -58,9 +52,6 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
         sys.exit()
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(PROGRESS_DIR, exist_ok=True)
-    os.chmod(OUTPUT_DIR, 0o770)
-    os.chmod(PROGRESS_DIR, 0o770)
     files = sorted(os.listdir(INPUT))
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
@@ -74,12 +65,14 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
     volume_size = (width, height, len(files))
     print('Volume shape:', volume_size)
 
-    ng = NumpyToNeuroglancer(None, scales, 'image', midfile.dtype, chunk_size=chunks)
-    ng.init_precomputed(OUTPUT_DIR, volume_size, num_channels=num_channels, progress_dir=PROGRESS_DIR)
+    ng = NumpyToNeuroglancer(animal, None, scales, 'image', midfile.dtype, chunk_size=chunks)
+    ng.init_precomputed(OUTPUT_DIR, volume_size, num_channels=num_channels, progress_id=progress_id)
 
     for i, f in enumerate(files):
         filepath = os.path.join(INPUT, f)
         file_keys.append([i,filepath])
+        #ng.process_image([i,filepath])
+    #sys.exit()
 
     start = timer()
     print(f'Working on {len(file_keys)} files with {workers} cpus')
@@ -87,10 +80,10 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
         executor.map(ng.process_image, sorted(file_keys), chunksize=workers)
         executor.shutdown(wait=True)
 
-    ng.precomputed_vol.cache.flush()
-
     end = timer()
     print(f'Create volume method took {end - start} seconds')
+    ng.precomputed_vol.cache.flush()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')

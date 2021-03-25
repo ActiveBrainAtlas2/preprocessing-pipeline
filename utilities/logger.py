@@ -4,7 +4,8 @@ from pathlib import Path
 
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
-from sql_setup import session
+
+from sql_setup import DBSession
 from utilities.model.log import Log
 
 
@@ -12,8 +13,8 @@ from utilities.model.log import Log
 class DatabaseHandler(logging.Handler):
     def emit(self, record):
         log = Log(prep_id=record.name, level=record.levelname, logger=record.module, msg=record.msg)
-        session.add(log)
-        session.commit()
+        DBSession.add(log)
+        DBSession.commit()
 
 
 def get_logger(prep_id, level=logging.INFO):

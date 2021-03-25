@@ -70,7 +70,6 @@ def create_mask(animal, downsample, njobs):
                 continue
             try:
                 width, height = imagesize.get(infile)
-                #src = io.imread(infile)
             except:
                 logger.warning(f'Could not open {infile}')
                 continue

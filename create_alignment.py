@@ -12,21 +12,17 @@ import subprocess
 from multiprocessing.pool import Pool
 import numpy as np
 from collections import OrderedDict
-from tqdm import tqdm
 from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
 
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 
-from sql_setup import ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX, ALIGN_CHANNEL_1_FULL_RES, ALIGN_CHANNEL_2_FULL_RES, \
-    ALIGN_CHANNEL_3_FULL_RES
-
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_alignment import (load_consecutive_section_transform,
                                          convert_resolution_string_to_um)
-from utilities.utilities_process import workernoshell, workershell, test_dir, SCALING_FACTOR
+from utilities.utilities_process import workernoshell, test_dir
 from utilities.utilities_cvat_neuroglancer import get_cpus
 
 ELASTIX_BIN = '/usr/bin/elastix'
@@ -41,8 +37,6 @@ def run_elastix(animal, njobs):
     Returns: nothing, just creates a lot of subdirs in the elastix directory.
     """
     fileLocationManager = FileLocationManager(animal)
-    sqlController = SqlController(animal)
-    sqlController.set_task(animal, ALIGN_CHANNEL_1_THUMBNAILS_WITH_ELASTIX)
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
     error = test_dir(animal, INPUT, downsample=True, same_size=True)
@@ -97,7 +91,7 @@ def parse_elastix(animal):
         sys.exit()
 
     files = sorted(os.listdir(INPUT))
-    anchor_index = len(files) // 2
+    midpoint_index = len(files) // 2
     transformation_to_previous_section = {}
 
     for i in range(1, len(files)):
@@ -108,16 +102,16 @@ def parse_elastix(animal):
     transformation_to_anchor_section = {}
     # Converts every transformation
     for moving_index in range(len(files)):
-        if moving_index == anchor_index:
+        if moving_index == midpoint_index:
             transformation_to_anchor_section[files[moving_index]] = np.eye(3)
-        elif moving_index < anchor_index:
+        elif moving_index < midpoint_index:
             T_composed = np.eye(3)
-            for i in range(anchor_index, moving_index, -1):
+            for i in range(midpoint_index, moving_index, -1):
                 T_composed = np.dot(np.linalg.inv(transformation_to_previous_section[i]), T_composed)
             transformation_to_anchor_section[files[moving_index]] = T_composed
         else:
             T_composed = np.eye(3)
-            for i in range(anchor_index + 1, moving_index + 1):
+            for i in range(midpoint_index + 1, moving_index + 1):
                 T_composed = np.dot(transformation_to_previous_section[i], T_composed)
             transformation_to_anchor_section[files[moving_index]] = T_composed
 
@@ -166,30 +160,12 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
     channel_dir = 'CH{}'.format(channel)
     INPUT = os.path.join(fileLocationManager.prep,  channel_dir, 'thumbnail_cleaned')
     OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
-    bgcolor = 'black'
-    stain = sqlController.histology.counterstain
-    width = sqlController.scan_run.width
-    height = sqlController.scan_run.height
-    max_width = int(width * SCALING_FACTOR)
-    max_height = int(height * SCALING_FACTOR)
-
-    if 'thion' in stain.lower():
-        bgcolor = 'white'
 
     if not downsample:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
-        max_width = width
-        max_height = height
-        if channel == 3:
-            sqlController.set_task(animal, ALIGN_CHANNEL_3_FULL_RES)
-        elif channel == 2:
-            sqlController.set_task(animal, ALIGN_CHANNEL_2_FULL_RES)
-        else:
-            sqlController.set_task(animal, ALIGN_CHANNEL_1_FULL_RES)
 
-    #error = test_dir(animal, INPUT, downsample=downsample, same_size=True)
-    error = ""
+    error = test_dir(animal, INPUT, downsample=downsample, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()
@@ -201,7 +177,6 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
             print(error)
             sys.exit()
         OUTPUT = os.path.join(fileLocationManager.prep, 'rotated_aligned_masked')
-        bgcolor = 'black'
 
     os.makedirs(OUTPUT, exist_ok=True)
 
@@ -226,12 +201,14 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
 
     end = timer()
     print(f'Create aligned files took {end - start} seconds')
+    # set task as completed
+    progress_id = sqlController.get_progress_id(downsample, channel, 'ALIGN')
+    sqlController.set_task(animal, progress_id)
+    print('Finished')
         
 
 
 def process_image(file_key):
-    import cv2
-
     index, infile, outfile, T = file_key
     im1 = Image.open(infile)
     im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)

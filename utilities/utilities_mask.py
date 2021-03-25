@@ -278,7 +278,7 @@ def scaled(img, mask, limit, epsilon=0.01):
 def equalized(fixed):
     """
     Takes an image that has already been scaled and uses opencv adaptive histogram
-    equalization. This cases uses 40 as the clip limit and splits the image into 8 rows
+    equalization. This cases uses 10 as the clip limit and splits the image into 8 rows
     and 8 columns
     :param fixed: image we are working on
     :return: a better looking image

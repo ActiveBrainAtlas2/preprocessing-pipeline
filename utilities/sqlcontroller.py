@@ -30,7 +30,8 @@ from utilities.model.structure import Structure
 from utilities.model.center_of_mass import CenterOfMass
 from utilities.model.task import Task, ProgressLookup
 from utilities.model.urlModel import UrlModel
-from sql_setup import session
+from utilities.model.file_log import FileLog
+from sql_setup import DBSession, pooledengine, pooledsession
 
 
 class SqlController(object):
@@ -41,24 +42,22 @@ class SqlController(object):
         """ setup the attributes for the SlidesProcessor class
             Args:
                 animal: object of animal to process
-                session: sql session to run queries
         """
-        self.session = session
-        self.stack_metadata = {}
-        self.all_stacks = []
-        self.animal = session.query(Animal).filter(Animal.prep_id == animal).one()
+        self.session = DBSession()
+        self.animal = self.session.query(Animal).filter(Animal.prep_id == animal).one()
         try:
-            self.histology = session.query(Histology).filter(Histology.prep_id == animal).one()
+            self.histology = self.session.query(Histology).filter(Histology.prep_id == animal).one()
         except NoResultFound:
             print(f'No histology for {animal}')
         try:
-            self.scan_run = session.query(ScanRun).filter(ScanRun.prep_id == animal).order_by(ScanRun.id.desc()).one()
+            self.scan_run = self.session.query(ScanRun).filter(ScanRun.prep_id == animal).order_by(ScanRun.id.desc()).one()
         except NoResultFound:
             print(f'No scan run for {animal}')
         self.slides = None
         self.tifs = None
         self.valid_sections = OrderedDict()
         # fill up the metadata_cache variable
+        self.session.close()
 
     def get_section(self, id):
         """
@@ -293,14 +292,13 @@ class SqlController(object):
         try:
             structure = self.get_structure(str(abbreviation).strip())
         except NoResultFound as nrf:
-            print('No structure found for ', abbreviation)
+            print(f'No structure found for {abbreviation} {nrf}')
             return
 
         id = structure.id
 
         com = CenterOfMass(prep_id=animal, structure_id=id, x=x, y=y, section=section,
                            created=datetime.utcnow(), active=True)
-
 
         try:
             self.session.add(com)
@@ -317,8 +315,6 @@ class SqlController(object):
             # user-defined event handler), .close() will ensure that
             # invalid state is removed.
             self.session.close()
-
-
 
 
     def get_centers_dict(self, prep_id):
@@ -373,6 +369,65 @@ class SqlController(object):
                 result = pd.concat(dfs)
 
         return result
+
+
+    def get_progress_id(self, downsample, channel, action):
+
+        try:
+            lookup = self.session.query(ProgressLookup) \
+            .filter(ProgressLookup.downsample == downsample) \
+            .filter(ProgressLookup.channel == channel) \
+            .filter(ProgressLookup.action == action).one()
+        except NoResultFound as nrf:
+            print(f'Bad lookup code for {downsample} {channel} {action} error: {nrf}')
+            return 0
+
+        return lookup.id
+
+
+def file_processed(animal, progress_id, filename):
+    """
+    Args:
+        animal: prep_id
+        progress_id: ID from progress_lookup table
+        filename: filename you are working on
+    Returns:
+        boolean if file exists or not
+    """
+    try:
+        file_log = pooledsession.query(FileLog) \
+        .filter(FileLog.prep_id == animal) \
+        .filter(FileLog.progress_id == progress_id) \
+        .filter(FileLog.filename == filename).one()
+    except NoResultFound as nrf:
+        return False
+    finally:
+        pooledsession.close()
+
+    return True
+
+
+def set_file_completed(animal, progress_id, filename):
+    """
+    Args:
+        animal: prep_id
+        progress_id: ID from progress_lookup table
+        filename: filename you are working on
+    Returns:
+        nothing, just merges
+    """
+
+    file_log = FileLog(prep_id=animal, progress_id=progress_id, filename=filename,
+                        created=datetime.utcnow(), active=True)
+
+    try:
+        pooledsession.add(file_log)
+        pooledsession.commit()
+    except Exception as e:
+        print(f'No merge for {animal} {filename} {e}')
+        pooledsession.rollback()
+    finally:
+        pooledsession.close()
 
 
 """

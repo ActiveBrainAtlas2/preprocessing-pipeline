@@ -1,5 +1,5 @@
 import os, sys, time
-from subprocess import Popen, check_output, run
+from subprocess import Popen, run
 from multiprocessing.pool import Pool
 from tqdm import tqdm
 from pathlib import Path

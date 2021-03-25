@@ -1,5 +1,6 @@
 import yaml
 from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 import datajoint as dj
 import os
@@ -9,6 +10,7 @@ file_path = os.path.join(dirname, 'parameters.yaml')
 with open(file_path) as file:
     parameters = yaml.load(file, Loader=yaml.FullLoader)
 
+
 user = parameters['user']
 password = parameters['password']
 host = parameters['host']
@@ -16,7 +18,10 @@ database = parameters['schema']
 connection_string = f'mysql+pymysql://{user}:{password}@{host}/{database}?charset=utf8'
 engine = create_engine(connection_string, echo=False)
 DBSession = sessionmaker(bind=engine)
-session = DBSession()
+
+
+pooledengine = create_engine(connection_string, pool_size=10, max_overflow=50)
+pooledsession = scoped_session(sessionmaker(bind=pooledengine)) 
 
 ##### DJ parameters
 # Connect to the datajoint database
@@ -55,6 +60,9 @@ CLEAN_CHANNEL_3_FULL_RES_WITH_MASK = 200
 ALIGN_CHANNEL_1_FULL_RES = 209
 ALIGN_CHANNEL_2_FULL_RES = 210
 ALIGN_CHANNEL_3_FULL_RES = 220
-RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES = 225
-RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES = 230
-RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES = 240
+RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_LOW_RES = 225
+RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_LOW_RES = 230
+RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_LOW_RES = 240
+RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES = 245
+RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES = 250
+RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES = 255

@@ -30,5 +30,8 @@ class ProgressLookup(Base, AtlasModel):
     id =  Column(Integer, primary_key=True, nullable=False)
     description = Column(String, nullable=False)
     script = Column(String, nullable=True)
+    channel = Column(Integer, nullable=False)
+    action = Column(String, nullable=False)
+    downsample = Column(Boolean, nullable=False, default=True)
 
 
