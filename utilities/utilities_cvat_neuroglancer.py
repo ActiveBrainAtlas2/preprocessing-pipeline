@@ -1,7 +1,7 @@
 import os
 import sys
-from skimage import measure
-from skimage import io
+from skimage import measure, io
+from skimage.color import rgb2gray
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import cv2
@@ -156,7 +156,7 @@ def get_hex_from_id(id, colormap='coolwarm'):
 class NumpyToNeuroglancer():
     viewer = None
 
-    def __init__(self, animal, volume, scales, layer_type, data_type, chunk_size=[256,256,128]):
+    def __init__(self, animal, volume, scales, layer_type, data_type, num_channels=1, chunk_size=[256,256,128]):
         self.volume = volume
         self.scales = scales
         self.layer_type = layer_type
@@ -166,11 +166,12 @@ class NumpyToNeuroglancer():
         self.offset = [0, 0, 0]
         self.starting_points = None
         self.animal = animal
+        self.num_channels = num_channels
 
 
-    def init_precomputed(self, path, volume_size, num_channels=1, starting_points=None, progress_id=None):
+    def init_precomputed(self, path, volume_size, starting_points=None, progress_id=None):
         info = CloudVolume.create_new_info(
-            num_channels=num_channels,
+            num_channels=self.num_channels,
             layer_type=self.layer_type,  # 'image' or 'segmentation'
             data_type=self.data_type,  #
             encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
@@ -187,7 +188,7 @@ class NumpyToNeuroglancer():
 
     def init_volume(self, path):
         info = CloudVolume.create_new_info(
-            num_channels = self.volume.shape[3] if len(self.volume.shape) > 3 else 1,
+            num_channels = self.volume.shape[2] if len(self.volume.shape) > 2 else 1,
             layer_type = self.layer_type,
             data_type = self.data_type, # str(self.volume.dtype),  # Channel images might be 'uint8'
             encoding = 'raw',  # raw, jpeg, compressed_segmentation, fpzip, kempressed
@@ -325,11 +326,12 @@ class NumpyToNeuroglancer():
         index, infile = file_key
         basefile = os.path.basename(infile)
         completed = file_processed(self.animal, self.progress_id, basefile)
+        completed = False
         if completed:
             print(f"Section {index} already processed, skipping ")
             return
         img = io.imread(infile)
-        img = img.reshape(1, img.shape[0], img.shape[1]).T
+        img = img.reshape(self.num_channels, img.shape[0], img.shape[1]).T
         self.precomputed_vol[:, :, index] = img
         set_file_completed(self.animal, self.progress_id, basefile)
         del img
@@ -337,15 +339,17 @@ class NumpyToNeuroglancer():
 
     def process_3channel(self, file_key):
         index, infile = file_key
-        if os.path.exists(os.path.join(self.progress_dir, os.path.basename(infile))):
+        basefile = os.path.basename(infile)
+        completed = file_processed(self.animal, self.progress_id, basefile)
+        if completed:
             print(f"Section {index} already processed, skipping ")
             return
         img = io.imread(infile)
-        img = img.T
-        img = img.reshape(img.shape[0], img.shape[1], img.shape[2])
+        img = img.reshape(img.shape[0], img.shape[1], 1, img.shape[2])
+        img = np.rot90(img, 1)
+        img = np.flipud(img)
         self.precomputed_vol[:, :, index] = img
-        touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
-        touch(touchfile)
+        set_file_completed(self.animal, self.progress_id, basefile)
         del img
         return
 

@@ -2,7 +2,6 @@ import argparse
 import os, sys
 from matplotlib import pyplot as plt
 from skimage import io
-import cv2
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')

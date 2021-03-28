@@ -9,13 +9,15 @@ from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from timeit import default_timer as timer
 
+from skimage.color.colorconv import rgb2gray
+
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks, get_cpus
 from utilities.sqlcontroller import SqlController
-from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_1_FULL_RES, \
+from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS,  \
     RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
 from utilities.utilities_process import test_dir, SCALING_FACTOR
 
@@ -58,26 +60,35 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
     midfile = io.imread(midfilepath)
     height = midfile.shape[0]
     width = midfile.shape[1]
-    num_channels = midfile.shape[3] if len(midfile.shape) > 3 else 1
+    num_channels = midfile.shape[2] if len(midfile.shape) > 2 else 1
+    #gs = rgb2gray(midfile)
+    #import numpy as np
+    #print(gs.dtype, gs.shape, np.amax(gs), np.mean(gs))
+    #sys.exit()
+
 
     file_keys = []
     scales = (resolution, resolution, 20000)
     volume_size = (width, height, len(files))
     print('Volume shape:', volume_size)
 
-    ng = NumpyToNeuroglancer(animal, None, scales, 'image', midfile.dtype, chunk_size=chunks)
-    ng.init_precomputed(OUTPUT_DIR, volume_size, num_channels=num_channels, progress_id=progress_id)
+    ng = NumpyToNeuroglancer(animal, None, scales, 'image', midfile.dtype, num_channels=num_channels, chunk_size=chunks)
+    ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=progress_id)
 
     for i, f in enumerate(files):
         filepath = os.path.join(INPUT, f)
         file_keys.append([i,filepath])
-        #ng.process_image([i,filepath])
+        #ng.process_3channel([i, filepath])
     #sys.exit()
 
     start = timer()
     print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(ng.process_image, sorted(file_keys), chunksize=workers)
+        if num_channels == 1:
+            executor.map(ng.process_image, sorted(file_keys), chunksize=workers)
+        else:
+            executor.map(ng.process_3channel, sorted(file_keys), chunksize=workers)
+
         executor.shutdown(wait=True)
 
     end = timer()
