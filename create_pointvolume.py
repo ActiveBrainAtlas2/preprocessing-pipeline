@@ -11,6 +11,7 @@ import os
 import struct
 import sys
 import shutil
+import gzip
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -25,6 +26,7 @@ def create_points(animal, layer, url_id, create):
     # Get src points data
     df = sqlController.get_point_dataframe(url_id)
     df = df[df['Layer'] == layer]
+    df.sort_values(by=['Section','X','Y'], inplace=True)
     if create:
         records = df[['X', 'Y', 'Section']].to_records(index=False)
         coordinates = list(records)
@@ -52,13 +54,15 @@ def create_points(animal, layer, url_id, create):
         os.makedirs(spatial_dir)
         total_count = len(coordinates)  # coordinates is a list of tuples (x,y,z)
 
-        with open(os.path.join(spatial_dir, '0_0_0'), 'wb') as outfile:
+        with open(os.path.join(spatial_dir, '0_0_0.gz'), 'wb') as unzippedfile:
             buf = struct.pack('<Q', total_count)
             pt_buf = b''.join(struct.pack('<3f', x, y, z) for (x, y, z) in coordinates)
             buf += pt_buf
             id_buf = struct.pack('<%sQ' % len(coordinates), *range(len(coordinates)))
             buf += id_buf
-            outfile.write(buf)
+            bufout = gzip.compress(buf)
+            unzippedfile.write(bufout)
+
     else:
         print(df['Layer'].unique())
         print(df.head(25))
