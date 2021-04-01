@@ -43,7 +43,7 @@ class SqlController(object):
             Args:
                 animal: object of animal to process
         """
-        self.session = session()
+        self.session = session
         self.animal = self.session.query(Animal).filter(Animal.prep_id == animal).one()
         try:
             self.histology = self.session.query(Histology).filter(Histology.prep_id == animal).one()
