@@ -31,7 +31,7 @@ from utilities.model.center_of_mass import CenterOfMass
 from utilities.model.task import Task, ProgressLookup
 from utilities.model.urlModel import UrlModel
 from utilities.model.file_log import FileLog
-from sql_setup import DBSession, pooledengine, pooledsession
+from sql_setup import session, pooledengine, pooledsession
 
 
 class SqlController(object):
@@ -43,7 +43,7 @@ class SqlController(object):
             Args:
                 animal: object of animal to process
         """
-        self.session = DBSession()
+        self.session = session()
         self.animal = self.session.query(Animal).filter(Animal.prep_id == animal).one()
         try:
             self.histology = self.session.query(Histology).filter(Histology.prep_id == animal).one()

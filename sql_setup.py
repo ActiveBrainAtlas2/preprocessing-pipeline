@@ -17,7 +17,8 @@ host = parameters['host']
 database = parameters['schema']
 connection_string = f'mysql+pymysql://{user}:{password}@{host}/{database}?charset=utf8'
 engine = create_engine(connection_string, echo=False)
-DBSession = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine)
+session = Session()
 
 
 pooledengine = create_engine(connection_string, pool_size=10, max_overflow=50)
