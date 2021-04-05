@@ -153,19 +153,6 @@ def make_tifs(animal, channel, njobs, compression):
     with Pool(njobs) as p:
         p.map(workernoshell, commands)
 
-    # Update TIFs' size
-    try:
-        os.listdir(fileLocationManager.tif)
-    except OSError as e:
-        logger.error(f'Could not find {fileLocationManager.tif} {e}')
-        sys.exit()
-
-    slide_czi_to_tifs = sqlController.get_slide_czi_to_tifs(channel)
-    for slide_czi_to_tif in slide_czi_to_tifs:
-        tif_path = os.path.join(fileLocationManager.tif, slide_czi_to_tif.file_name)
-        if os.path.exists(tif_path):
-            slide_czi_to_tif.file_size = os.path.getsize(tif_path)
-            sqlController.update_row(slide_czi_to_tif)
 
 def make_scenes(animal):
     fileLocationManager = FileLocationManager(animal)

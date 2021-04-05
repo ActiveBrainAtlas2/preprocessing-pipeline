@@ -26,6 +26,7 @@ def make_meta(animal):
     sqlController.set_task(animal, CZI_FILES_ARE_PLACED_ON_BIRDSTORE)
     sqlController.set_task(animal, CZI_FILES_ARE_SCANNED_TO_GET_METADATA)
 
+
 if __name__ == '__main__':
     # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')

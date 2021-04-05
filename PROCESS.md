@@ -5,7 +5,10 @@
    and put a '&' at the end of the command. That will make it run in the background and you can log out.
 1. Run: `create_meta.py --animal DKXX`
     1. This will scan each czi file
-    2. Extracts the tif meta information and inserts into the slide_czi_to_tif table
+    2. Extracts the tif meta information and inserts into the slide_czi_to_tif 
+    1. On basalis takes: 437m57.460s for 147 czi files
+    1. On muralis: 513m50.446s for 147 czi files
+    1. On ratto: 527m9.581s for 147 czi files
 1. Run: `python create_tifs.py --animal DKXX --channel 1` 
     1. This will read the sections view in the database. This can be run before the QC section
        below. Doing that will create some extra unused tifs, but that is not a problem.

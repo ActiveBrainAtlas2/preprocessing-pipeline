@@ -28,19 +28,22 @@ def update_tifs(animal, channel):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     tifs = sqlController.get_distinct_section_filenames(animal, channel)
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
     # Update TIFs' size
     try:
-        os.listdir(fileLocationManager.tif)
+        os.listdir(INPUT)
     except OSError as e:
         print(e)
         sys.exit()
 
-    for tif in tqdm(tifs):
-        tif_path = os.path.join(fileLocationManager.tif, tif.file_name)
-        print(tif_path)
-        if os.path.exists(tif_path):
-            tif.file_size = os.path.getsize(tif_path)
+    for i, tif in enumerate(tqdm(tifs)):
+        print(tif.file_name)
+        input_path = os.path.join(INPUT, str(i).zfill(3) + '.tif')
+        if os.path.exists(input_path):
+            print(input_path)
+            tif.file_size = os.path.getsize(input_path)
             sqlController.update_row(tif)
+        
 
 
 if __name__ == '__main__':

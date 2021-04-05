@@ -8,6 +8,18 @@ filled out for each animal to use
 #import traceback
 #import transaction
 ###from logger import Log
+from sql_setup import session, pooledengine, pooledsession
+from utilities.model.file_log import FileLog
+from utilities.model.urlModel import UrlModel
+from utilities.model.task import Task, ProgressLookup
+from utilities.model.center_of_mass import CenterOfMass
+from utilities.model.structure import Structure
+from utilities.model.slide_czi_to_tif import SlideCziTif
+from utilities.model.slide import Slide
+from utilities.model.section import Section
+from utilities.model.scan_run import ScanRun
+from utilities.model.histology import Histology
+from utilities.model.animal import Animal
 import sys
 import json
 import pandas as pd
@@ -20,18 +32,6 @@ from pathlib import Path
 
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
-from utilities.model.animal import Animal
-from utilities.model.histology import Histology
-from utilities.model.scan_run import ScanRun
-from utilities.model.section import Section
-from utilities.model.slide import Slide
-from utilities.model.slide_czi_to_tif import SlideCziTif
-from utilities.model.structure import Structure
-from utilities.model.center_of_mass import CenterOfMass
-from utilities.model.task import Task, ProgressLookup
-from utilities.model.urlModel import UrlModel
-from utilities.model.file_log import FileLog
-from sql_setup import session, pooledengine, pooledsession
 
 
 class SqlController(object):
@@ -44,20 +44,23 @@ class SqlController(object):
                 animal: object of animal to process
         """
         self.session = session
-        self.animal = self.session.query(Animal).filter(Animal.prep_id == animal).one()
+        self.animal = self.session.query(Animal).filter(
+            Animal.prep_id == animal).one()
         try:
-            self.histology = self.session.query(Histology).filter(Histology.prep_id == animal).one()
+            self.histology = self.session.query(Histology).filter(
+                Histology.prep_id == animal).one()
         except NoResultFound:
             print(f'No histology for {animal}')
         try:
-            self.scan_run = self.session.query(ScanRun).filter(ScanRun.prep_id == animal).order_by(ScanRun.id.desc()).one()
+            self.scan_run = self.session.query(ScanRun).filter(
+                ScanRun.prep_id == animal).order_by(ScanRun.id.desc()).one()
         except NoResultFound:
             print(f'No scan run for {animal}')
         self.slides = None
         self.tifs = None
         self.valid_sections = OrderedDict()
         # fill up the metadata_cache variable
-        self.session.close()
+        # self.session.close()
 
     def get_section(self, id):
         """
@@ -143,11 +146,46 @@ class SqlController(object):
         return slide_czi_to_tifs
 
     def update_row(self, row):
-        self.session.merge(row)
-        self.session.commit()
+        try:
+            self.session.merge(row)
+            self.session.commit()
+        except Exception as e:
+            print(f'No merge for  {e}')
+            self.session.rollback()
+
+    def update_scanrun(self, id):
+        width = self.session.query(func.max(SlideCziTif.width)).join(Slide).join(ScanRun)\
+            .filter(SlideCziTif.active == True) \
+            .filter(ScanRun.id == id).scalar()
+        height = self.session.query(func.max(SlideCziTif.height)).join(Slide).join(ScanRun)\
+            .filter(SlideCziTif.active == True) \
+            .filter(ScanRun.id == id).scalar()
+        SAFEMAX = 10000
+        # just to be safe, we don't want to update numbers that aren't realistic
+        if height > SAFEMAX and width > SAFEMAX:
+            height = round(height, -3)
+            width = round(width, -3)
+            # width and height get flipped
+            try:
+                self.session.query(ScanRun).filter(ScanRun.id == id).update(
+                    {'width': height, 'height': width})
+                self.session.commit()
+            except Exception as e:
+                print(f'No merge for  {e}')
+                self.session.rollback()
+
+    def update_tif(self, id, width, height):
+        try:
+            self.session.query(SlideCziTif).filter(
+                SlideCziTif.id == id).update({'width': width, 'height': height})
+            self.session.commit()
+        except Exception as e:
+            print(f'No merge for  {e}')
+            self.session.rollback()
 
     def get_sections_numbers(self, animal):
-        sections = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).all()
+        sections = self.session.query(Section).filter(
+            Section.prep_id == animal).filter(Section.channel == 1).all()
 
         section_numbers = []
         for i, r in enumerate(sections):
@@ -156,7 +194,8 @@ class SqlController(object):
         return section_numbers
 
     def get_sections_dict(self, animal):
-        sections = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).all()
+        sections = self.session.query(Section).filter(
+            Section.prep_id == animal).filter(Section.channel == 1).all()
 
         sections_dict = {}
         for i, r in enumerate(sections):
@@ -180,7 +219,8 @@ class SqlController(object):
         :param abbrv: the abbreviation of the structure
         :return: tuple of rgb
         """
-        row = self.session.query(Structure).filter(Structure.abbreviation == func.binary(abbrv)).one()
+        row = self.session.query(Structure).filter(
+            Structure.abbreviation == func.binary(abbrv)).one()
         hexa = row.hexadecimal
         h = hexa.lstrip('#')
         return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
@@ -189,15 +229,18 @@ class SqlController(object):
         return self.session.query(Structure).filter(Structure.active.is_(True)).all()
 
     def get_structures_dict(self):
-        rows = self.session.query(Structure).filter(Structure.active.is_(True)).all()
+        rows = self.session.query(Structure).filter(
+            Structure.active.is_(True)).all()
         structures_dict = {}
         for structure in rows:
-            structures_dict[structure.abbreviation] = [structure.description, structure.color]
+            structures_dict[structure.abbreviation] = [
+                structure.description, structure.color]
 
         return structures_dict
 
     def get_structures_list(self):
-        rows = self.session.query(Structure).filter(Structure.active.is_(True)).order_by(Structure.abbreviation.asc()).all()
+        rows = self.session.query(Structure).filter(Structure.active.is_(
+            True)).order_by(Structure.abbreviation.asc()).all()
         structures = []
         for structure in rows:
             structures.append(structure.abbreviation)
@@ -209,7 +252,8 @@ class SqlController(object):
         Not sure when/if this is needed, but will only return sided structures
         :return: list of structures that are not singules
         """
-        rows = self.session.query(Structure).filter(Structure.active.is_(True)).all()
+        rows = self.session.query(Structure).filter(
+            Structure.active.is_(True)).all()
         structures = []
         for structure in rows:
             if "_" in structure.abbreviation:
@@ -219,7 +263,8 @@ class SqlController(object):
 
     def get_section_count(self, animal):
         try:
-            count = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).count()
+            count = self.session.query(Section).filter(
+                Section.prep_id == animal).filter(Section.channel == 1).count()
         except:
             count = 666
         return count
@@ -234,7 +279,8 @@ class SqlController(object):
             return step
 
         try:
-            lookup = self.session.query(ProgressLookup).filter(ProgressLookup.id == lookup_id).one()
+            lookup = self.session.query(ProgressLookup).filter(
+                ProgressLookup.id == lookup_id).one()
         except NoResultFound as nrf:
             print('Bad lookup code for {} error: {}'.format(lookup_id, nrf))
             return step
@@ -270,7 +316,6 @@ class SqlController(object):
         except:
             print('Bad lookup code for {}'.format(lookup.id))
             self.session.rollback()
-
 
     def add_center_of_mass(self, abbreviation, animal, x, y, section):
         """
@@ -316,17 +361,15 @@ class SqlController(object):
             # invalid state is removed.
             self.session.close()
 
-
     def get_centers_dict(self, prep_id):
-        rows = self.session.query(CenterOfMass).filter(CenterOfMass.active.is_(True)).filter(CenterOfMass.prep_id==prep_id).all()
+        rows = self.session.query(CenterOfMass).filter(
+            CenterOfMass.active.is_(True)).filter(CenterOfMass.prep_id == prep_id).all()
         row_dict = {}
         for row in rows:
             structure = row.structure.abbreviation
             row_dict[structure] = [row.x, row.y, row.section]
 
         return row_dict
-
-
 
     def get_point_dataframe(self, id):
         """
@@ -339,7 +382,8 @@ class SqlController(object):
         """
 
         try:
-            urlModel = self.session.query(UrlModel).filter(UrlModel.id == id).one()
+            urlModel = self.session.query(
+                UrlModel).filter(UrlModel.id == id).one()
         except NoResultFound as nrf:
             print('Bad ID for {} error: {}'.format(id, nrf))
             return
@@ -370,16 +414,16 @@ class SqlController(object):
 
         return result
 
-
     def get_progress_id(self, downsample, channel, action):
 
         try:
             lookup = self.session.query(ProgressLookup) \
-            .filter(ProgressLookup.downsample == downsample) \
-            .filter(ProgressLookup.channel == channel) \
-            .filter(ProgressLookup.action == action).one()
+                .filter(ProgressLookup.downsample == downsample) \
+                .filter(ProgressLookup.channel == channel) \
+                .filter(ProgressLookup.action == action).one()
         except NoResultFound as nrf:
-            print(f'Bad lookup code for {downsample} {channel} {action} error: {nrf}')
+            print(
+                f'Bad lookup code for {downsample} {channel} {action} error: {nrf}')
             return 0
 
         return lookup.id
@@ -396,9 +440,9 @@ def file_processed(animal, progress_id, filename):
     """
     try:
         file_log = pooledsession.query(FileLog) \
-        .filter(FileLog.prep_id == animal) \
-        .filter(FileLog.progress_id == progress_id) \
-        .filter(FileLog.filename == filename).one()
+            .filter(FileLog.prep_id == animal) \
+            .filter(FileLog.progress_id == progress_id) \
+            .filter(FileLog.filename == filename).one()
     except NoResultFound as nrf:
         return False
     finally:
@@ -418,7 +462,7 @@ def set_file_completed(animal, progress_id, filename):
     """
 
     file_log = FileLog(prep_id=animal, progress_id=progress_id, filename=filename,
-                        created=datetime.utcnow(), active=True)
+                       created=datetime.utcnow(), active=True)
 
     try:
         pooledsession.add(file_log)
