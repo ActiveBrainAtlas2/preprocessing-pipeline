@@ -23,7 +23,7 @@ from sql_setup import CREATE_THUMBNAIL_MASKS, CREATE_FULL_RES_MASKS
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import fix_with_fill, fix_thionin, trim_edges, create_mask_pass1
+from utilities.utilities_mask import fix_with_fill, fix_thionin, get_binary_mask, trim_edges, create_mask_pass1
 from utilities.utilities_process import get_last_2d, test_dir, workernoshell
 
 
@@ -107,11 +107,12 @@ def create_mask(animal, downsample, njobs):
                     continue
                 # perform 2 pass masking
                 img = trim_edges(img)
-                mask1 = create_mask_pass1(img)
-                pass1 = cv2.bitwise_and(img, img, mask=mask1)
+                #mask1 = create_mask_pass1(img)
+                #pass1 = cv2.bitwise_and(img, img, mask=mask1)
                 ## pass2
-                pass1 = cv2.GaussianBlur(pass1,(33,33),0)
-                mask = fix_with_fill(pass1)
+                #pass1 = cv2.GaussianBlur(pass1,(33,33),0)
+                #mask = fix_with_fill(pass1)
+                mask = get_binary_mask(img)
 
             # save the mask
             cv2.imwrite(outpath, mask.astype(np.uint8))

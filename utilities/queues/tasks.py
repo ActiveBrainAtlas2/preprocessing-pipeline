@@ -1,10 +1,22 @@
-from celery import Celery
+from utilities.queues.main_celery import app
 
-app = Celery('hello', broker='amqp://guest@localhost//')
-app.conf.broker_url = 'redis://localhost:6379/0'
-app.conf.result_backend = 'redis://localhost:6379/0'
 
 
 @app.task
-def hello():
-    return 'hello world'
+def creation():
+    return 'Starting creation'
+
+
+@app.task
+def add(x, y):
+    return x + y
+
+
+@app.task
+def mul(x, y):
+    return x * y
+
+
+@app.task
+def xsum(numbers):
+    return sum(numbers)

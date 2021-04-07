@@ -702,9 +702,27 @@ def resample_scoremap(sparse_scores, sample_locations, gridspec=None, downscale=
     else:
         return dense_scoremap
 
-
-
     return im_out
 
+
+def get_binary_mask(img):
+    '''
+    img: numpy 8 bit 2 dimension array
+    1. blur img
+    2. get opencv OTSUs threshold,
+    3. open/close with opencv
+    '''
+    kernel_size = (199, 199)
+    normed = equalized(img)
+
+    blurred_img = cv2.GaussianBlur(normed, kernel_size, 0)
+    gray_img = blurred_img.copy()
+    thresh = 80  # initial value, but OTSU calculates it
+    ret, otsu = cv2.threshold(gray_img, thresh, 255,
+                              cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    ksize = 50
+    kernel = np.ones((ksize, ksize), np.uint8)
+    closed_mask = cv2.morphologyEx(otsu, cv2.MORPH_CLOSE, kernel)
+    return closed_mask
 
 

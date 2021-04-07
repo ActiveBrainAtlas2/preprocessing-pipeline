@@ -2,7 +2,7 @@ import yaml
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
-import datajoint as dj
+#import datajoint as dj
 import os
 
 dirname = os.path.dirname(__file__)
@@ -26,12 +26,12 @@ pooledsession = scoped_session(sessionmaker(bind=pooledengine))
 
 ##### DJ parameters
 # Connect to the datajoint database
-dj.config['database.user'] = user
-dj.config['database.password'] = password
-dj.config['database.host'] = host
-dj.conn()
-schema = dj.schema(database)
-schema.spawn_missing_classes()
+#dj.config['database.user'] = user
+#dj.config['database.password'] = password
+#dj.config['database.host'] = host
+#dj.conn()
+#schema = dj.schema(database)
+#schema.spawn_missing_classes()
 
 
 ##### Lookup IDs
