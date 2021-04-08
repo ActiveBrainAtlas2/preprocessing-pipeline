@@ -30,9 +30,9 @@ from utilities.model.histology import Histology as AlcHistology
 from utilities.model.scan_run import ScanRun as AlcScanRun
 from utilities.model.slide import Slide as AlcSlide
 from utilities.model.slide_czi_to_tif import SlideCziTif as AlcSlideCziTif
-from sql_setup import dj, database
+from sql_setup import database
 from utilities.file_location import FileLocationManager
-schema = dj.schema(database)
+#schema = dj.schema(database)
 
 
 class SlideProcessor(object):
