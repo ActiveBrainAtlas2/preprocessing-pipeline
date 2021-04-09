@@ -104,6 +104,7 @@ def create_mask(animal, downsample, njobs):
                     img = get_last_2d(img)
                 except:
                     logger.warning(f'Could not open {infile}')
+                    print(f'Could not open {infile}')
                     continue
                 # perform 2 pass masking
                 img = trim_edges(img)
