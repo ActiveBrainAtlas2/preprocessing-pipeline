@@ -79,7 +79,7 @@ def make_low_resolution(animal, channel):
     commands = []
     INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
     ##### Check if files in dir are valid
-    error = test_dir(animal, INPUT, full=False, same_size=False)
+    error = test_dir(animal, INPUT, downsample=False, same_size=False)
     if len(error) > 0:
         print(error)
         sys.exit()
@@ -97,38 +97,28 @@ def make_low_resolution(animal, channel):
         cmd = ['convert', input_path, '-resize',
                '3.125%', '-compress', 'lzw', output_path]
         commands.append(cmd)
-    return commands
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument(
-        '--animal', help='Enter the animal animal', required=True)
-    parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument(
-        '--downsample', help='Enter true or false', required=False, default='true')
-
-    args = parser.parse_args()
-    animal = args.animal
-    channel = int(args.channel)
-    downsample = bool({'true': True, 'false': False}
-                      [str(args.downsample).lower()])
-    sqlController = SqlController(animal)
-    commands = []
-    if downsample:
-        commands = make_low_resolution(animal, channel)
-    else:
-        make_full_resolution(animal, channel)
-        if channel == 1:
-            sqlController.update_scanrun(sqlController.scan_run.id)
 
     with Pool(4) as p:
         p.map(workernoshell, commands)
 
-    progress_id = sqlController.get_progress_id(downsample, channel, 'TIF')
-    if progress_id > 0:
-        sqlController.set_task(animal, progress_id)
-        print('Finished')
-    else:
-        print(
-            f'Bad progress ID for downsample: {downsample}, channel: {channel}, TIF')
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Work on Animal')
+    parser.add_argument('--animal', help='Enter the animal animal', required=True)
+    parser.add_argument('--channel', help='Enter channel', required=True)
+    #parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
+
+    args = parser.parse_args()
+    animal = args.animal
+    channel = int(args.channel)
+    #downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    sqlController = SqlController(animal)
+    make_full_resolution(animal, channel)
+    make_low_resolution(animal, channel)
+
+    if channel == 1:
+        sqlController.update_scanrun(sqlController.scan_run.id)
+    progress_id = sqlController.get_progress_id(True, channel, 'TIF')
+    sqlController.set_task(animal, progress_id)
+    progress_id = sqlController.get_progress_id(False, channel, 'TIF')
+    sqlController.set_task(animal, progress_id)

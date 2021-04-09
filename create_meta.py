@@ -21,7 +21,7 @@ from utilities.utilities_bioformats import get_czi_metadata, get_fullres_series_
 from sql_setup import session, SLIDES_ARE_SCANNED, CZI_FILES_ARE_PLACED_ON_BIRDSTORE, CZI_FILES_ARE_SCANNED_TO_GET_METADATA
 
 
-def make_meta(animal):
+def make_meta(animal, remove):
     """
     Scans the czi dir to extract the meta information for each tif file
     Args:
@@ -32,6 +32,13 @@ def make_meta(animal):
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
     scan_id = sqlController.scan_run.id
+    slides = session.query(Slide).filter(Slide.scan_run_id == scan_id).count()
+
+    if slides > 0 and not remove:
+        print(f'There are {slides} existing slides. You must manually delete the slides first.')
+        print('Rerun this script as create_meta.py --animal DKXX --remove true')
+        sys.exit()
+
     session.query(Slide).filter(Slide.scan_run_id == scan_id).delete(synchronize_session=False)
     session.commit()
 
@@ -90,7 +97,7 @@ def make_meta(animal):
                     tif.created = time.strftime('%Y-%m-%d %H:%M:%S')
                     session.add(tif)
                 section_number += 1
-    session.commit()
+        session.commit()
 
 
 
@@ -101,9 +108,12 @@ if __name__ == '__main__':
     # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--remove', help='Enter true or false', required=False, default='false')
     args = parser.parse_args()
     animal = args.animal
-    make_meta(animal)
+    remove = bool({'true': True, 'false': False}
+                      [str(args.remove).lower()])
+    make_meta(animal, remove)
     sqlController = SqlController(animal)
     sqlController.set_task(animal, SLIDES_ARE_SCANNED)
     sqlController.set_task(animal, CZI_FILES_ARE_PLACED_ON_BIRDSTORE)

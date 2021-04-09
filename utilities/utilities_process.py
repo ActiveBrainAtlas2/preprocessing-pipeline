@@ -98,7 +98,7 @@ def get_last_2d(data):
 
 
 
-def make_tifs(animal, channel, njobs, compression):
+def make_tifs(animal, channel, njobs):
     """
     This method will:
         1. Fetch the sections from the database
@@ -127,20 +127,11 @@ def make_tifs(animal, channel, njobs, compression):
     sqlController.set_task(animal, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1)
 
     commands = []
-    for section in tqdm(sections):
+    for section in sections:
         input_path = os.path.join(INPUT, section.czi_file)
         output_path = os.path.join(OUTPUT, section.file_name)
-        if 'lzw' in compression.lower():
-            cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-compression', 'LZW','-separate', '-series', str(section.scene_index),
-                   '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
-        elif 'jp' in compression.lower():
-            section_jp2 = str(section.file_name).replace('tif', 'jp2')
-            output_path = os.path.join(fileLocationManager.jp2, section_jp2)
-            cmd = ['/usr/local/share/bftools/bfconvert', '-compression', 'JPEG-2000', '-separate', '-series', str(section.scene_index),
-                   '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
-        else:
-            cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate', '-series', str(section.scene_index),
-                   '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
+        cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate', '-series', str(section.scene_index),
+                '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
 
         if not os.path.exists(input_path):
             continue

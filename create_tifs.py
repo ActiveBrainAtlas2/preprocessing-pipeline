@@ -15,15 +15,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--compression', help='Enter compression LZW or JPG-2000', required=False, default='no')
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
 
     args = parser.parse_args()
     animal = args.animal
     njobs = int(args.njobs)
     channel = int(args.channel)
-    compression = args.compression
 
-    make_tifs(animal, channel, njobs, compression)
+    make_tifs(animal, channel, njobs)
     if channel == 1:
         make_scenes(animal)
