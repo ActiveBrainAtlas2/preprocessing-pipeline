@@ -4,8 +4,7 @@ This file does the following operations:
 """
 import argparse
 import os, sys
-from shutil import copyfile
-
+from PIL import Image
 from tqdm import tqdm
 
 from utilities.file_location import FileLocationManager
@@ -53,8 +52,8 @@ def make_web_thumbnails(animal):
         if os.path.exists(output_path):
             continue
 
-
-        copyfile(input_path, output_path)
+        original = Image.open(input_path)
+        original.save(output_path, format="png")
 
 
 if __name__ == '__main__':
