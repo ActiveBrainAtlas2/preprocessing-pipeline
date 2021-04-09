@@ -1,11 +1,13 @@
 """
-Use pytest to run tests in this directory.
-Just go into this directory and run:
-pytest
-
-You'll want this in your virtualenv
-pip install pytest
-
+If you need to swap out a tif. Get the section number, go to:
+https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/section/
+search for the animal and then the section number and get the file name
+Remove that file from DKXX/tif then run this script
+python fix_missing_tif.py --animal DKXX --channel 1 --fix false 
+after confirming it will be replaced, run:
+python fix_missing_tif.py --animal DKXX --channel 1 --fix true
+do a ls -lh DKXX/tif/filename to confirm or
+python fix_missing_tif.py --animal DKXX --channel 1 --fix false 
 
 """
 import os, sys

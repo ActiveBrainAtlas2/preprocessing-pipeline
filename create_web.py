@@ -4,7 +4,7 @@ This file does the following operations:
 """
 import argparse
 import os, sys
-import subprocess
+from shutil import copyfile
 
 from tqdm import tqdm
 
@@ -34,7 +34,7 @@ def make_web_thumbnails(animal):
     if len_files < 10:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
     ##### Check if files in dir are valid
-    error = test_dir(animal, INPUT, full=False, same_size=True)
+    error = test_dir(animal, INPUT, downsample=False, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()
@@ -53,8 +53,8 @@ def make_web_thumbnails(animal):
         if os.path.exists(output_path):
             continue
 
-        cmd = "convert {} {}".format(input_path, output_path)
-        subprocess.run(cmd, shell=True)
+
+        copyfile(input_path, output_path)
 
 
 if __name__ == '__main__':
