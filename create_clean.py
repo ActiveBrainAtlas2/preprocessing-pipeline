@@ -22,7 +22,7 @@ from utilities.utilities_mask import rotate_image, place_image, scaled, equalize
 from utilities.utilities_process import get_last_2d, test_dir, SCALING_FACTOR
 
 
-def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, scale):
+def fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, scale):
     """
     This method clean all NTB images in the specified channel. For channel one it also scales
     and does an adaptive histogram equalization.
@@ -59,15 +59,10 @@ def fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_w
         fixed = np.flip(fixed, axis=1)
         mask = np.flip(mask, axis=1)
 
-
-    rotated_maskpath = os.path.join(ROTATED_MASKS, os.path.basename(maskfile))
-    mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
-    cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
-
     return fixed
 
 
-def fix_thion(infile, mask, maskfile, ROTATED_MASKS,  logger, rotation, flip, max_width, max_height):
+def fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height):
     """
     This method clean all thionin images. Note that the thionin have 3 channels combined into one.
     :param infile: file path of image
@@ -114,10 +109,6 @@ def fix_thion(infile, mask, maskfile, ROTATED_MASKS,  logger, rotation, flip, ma
         fixed3 = np.flip(fixed3, axis=1)
         mask = np.flip(mask, axis=1)
 
-    rotated_maskpath = os.path.join(ROTATED_MASKS, os.path.basename(maskfile))
-    mask = place_image(mask, rotated_maskpath, max_width, max_height, 0)
-
-    cv2.imwrite(rotated_maskpath, mask.astype('uint8'))
     fixed = np.dstack((fixed1, fixed2, fixed3))
     return fixed
 
@@ -140,9 +131,7 @@ def masker(animal, channel, downsample, scale):
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
 
     MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
-    ROTATED_MASKS = os.path.join(fileLocationManager.prep, 'rotated_masked')
     os.makedirs(CLEANED, exist_ok=True)
-    os.makedirs(ROTATED_MASKS, exist_ok=True)
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     rotation = sqlController.scan_run.rotation
@@ -184,9 +173,9 @@ def masker(animal, channel, downsample, scale):
         mask = io.imread(maskfile)
 
         if 'thion' in stain.lower():
-            fixed = fix_thion(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height)
+            fixed = fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height)
         else:
-            fixed = fix_ntb(infile, mask, maskfile, ROTATED_MASKS, logger, rotation, flip, max_width, max_height, scale)
+            fixed = fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, scale)
 
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
 
