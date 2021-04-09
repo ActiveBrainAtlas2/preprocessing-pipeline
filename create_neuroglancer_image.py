@@ -17,8 +17,7 @@ sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks, get_cpus
 from utilities.sqlcontroller import SqlController
-from sql_setup import CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS,  \
-    RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
+from sql_setup import RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
 from utilities.utilities_process import test_dir, SCALING_FACTOR
 
 def create_neuroglancer(animal, channel, downsample, debug=False):
@@ -27,7 +26,6 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
     channel_dir = f'CH{channel}'
     channel_outdir = f'C{channel}T_rechunkme'
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
-    sqlController.set_task(animal, CREATE_NEUROGLANCER_TILES_CHANNEL_1_THUMBNAILS)
     db_resolution = sqlController.scan_run.resolution
     resolution = int(db_resolution * 1000 / SCALING_FACTOR)
     workers, _ = get_cpus()
@@ -61,12 +59,6 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
     height = midfile.shape[0]
     width = midfile.shape[1]
     num_channels = midfile.shape[2] if len(midfile.shape) > 2 else 1
-    #gs = rgb2gray(midfile)
-    #import numpy as np
-    #print(gs.dtype, gs.shape, np.amax(gs), np.mean(gs))
-    #sys.exit()
-
-
     file_keys = []
     scales = (resolution, resolution, 20000)
     volume_size = (width, height, len(files))
