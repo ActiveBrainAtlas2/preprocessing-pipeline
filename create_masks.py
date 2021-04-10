@@ -12,7 +12,8 @@ the barcode and glue
 import argparse
 import os, sys
 from multiprocessing.pool import Pool
-import imagesize
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 
 import cv2
 import numpy as np
@@ -24,7 +25,7 @@ from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import fix_with_fill, fix_thionin, get_binary_mask, trim_edges, create_mask_pass1
-from utilities.utilities_process import get_last_2d, test_dir, workernoshell
+from utilities.utilities_process import get_last_2d, test_dir, workernoshell, get_image_size
 
 
 def create_mask(animal, downsample, njobs):
@@ -50,7 +51,8 @@ def create_mask(animal, downsample, njobs):
         sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         ##### Check if files in dir are valid
-        error = test_dir(animal, INPUT, downsample, same_size=False)
+        #error = test_dir(animal, INPUT, downsample, same_size=False)
+        error = ""
         if len(error) > 0:
             print(error)
             sys.exit()
@@ -69,12 +71,13 @@ def create_mask(animal, downsample, njobs):
             if os.path.exists(outpath):
                 continue
             try:
-                width, height = imagesize.get(infile)
+                width, height = get_image_size(infile)
             except:
-                logger.warning(f'Could not open {infile}')
-                continue
-            size = '{}x{}!'.format(width, height)
-            cmd = ['convert', thumbfile, '-resize', size, '-compress', 'lzw', '-depth', '8', outpath]
+                logger.error(f'Could not open {infile}')
+                print(f'Could not open {infile}')
+            size = f'{width}x{height}!'
+            cmd = ['convert', thumbfile, '-resize', size, '-depth', '8', outpath]
+            print(" ".join(cmd))
             commands.append(cmd)
 
         with Pool(njobs) as p:

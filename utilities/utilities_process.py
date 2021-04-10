@@ -1,9 +1,8 @@
 import os, sys, time
-from subprocess import Popen, run
+from subprocess import Popen, run, check_output
 from multiprocessing.pool import Pool
 from tqdm import tqdm
 from pathlib import Path
-import imagesize
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -12,6 +11,13 @@ from utilities.sqlcontroller import SqlController
 from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
 from utilities.logger import get_logger
 SCALING_FACTOR = 0.03125
+
+
+def get_image_size(filepath):
+    result_parts = str(check_output(["identify", filepath]))
+    results = result_parts.split()
+    width, height = results[2].split('x')
+    return width, height
 
 
 def workershell(cmd):
@@ -63,7 +69,7 @@ def test_dir(animal, dir, downsample=True, same_size=False):
     heights = set()
     for f in files:
         filepath = os.path.join(dir, f)
-        width, height = imagesize.get(filepath)
+        width, height = get_image_size(filepath)
         widths.add(int(width))
         heights.add(int(height))
         size = os.path.getsize(filepath)
