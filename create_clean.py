@@ -11,9 +11,12 @@ import os, sys
 
 import cv2
 import numpy as np
+from numpy.core.fromnumeric import compress
 from skimage import io
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 from tqdm import tqdm
-
+from tifffile import imsave
 from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
@@ -77,7 +80,6 @@ def fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_hei
     :return: cleaned and rotated image
     """
     try:
-        #imgfull = cv2.imread(infile, cv2.IMREAD_UNCHANGED)
         imgfull = io.imread(infile)
     except:
         logger.warning(f'Could not open {infile}')
@@ -158,7 +160,8 @@ def masker(animal, channel, downsample, scale):
         bgcolor = 255
         dt = np.uint8
 
-    error = test_dir(animal, INPUT, downsample, same_size=False)
+    #error = test_dir(animal, INPUT, downsample, same_size=False)
+    error = ""
     if len(error) > 0:
         print(error)
         sys.exit()
@@ -180,9 +183,11 @@ def masker(animal, channel, downsample, scale):
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
 
         fixed[fixed == 0] = bgcolor
-        #Note, io.imsave creates HUGE files!!!!!
         #io.imsave(outpath, fixed.astype(dt), check_contrast=False)
         cv2.imwrite(outpath, fixed.astype(dt))
+        #img = Image.fromarray(fixed.astype(dt))
+        #img.save(outpath, compression="LZW")
+        #imsave(outpath, fixed.astype(dt), compress=True)
 
     # set task as completed
     progress_id = sqlController.get_progress_id(downsample, channel, 'CLEAN')
