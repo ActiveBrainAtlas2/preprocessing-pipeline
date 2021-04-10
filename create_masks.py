@@ -77,7 +77,7 @@ def create_mask(animal, downsample, njobs):
                 print(f'Could not open {infile}')
             size = f'{width}x{height}!'
             cmd = ['convert', thumbfile, '-resize', size, '-depth', '8', outpath]
-            print(" ".join(cmd))
+            #print(" ".join(cmd))
             commands.append(cmd)
 
         with Pool(njobs) as p:

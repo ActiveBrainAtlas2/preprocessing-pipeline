@@ -15,6 +15,7 @@ from collections import OrderedDict
 from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
 
+from skimage import io
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 
@@ -210,7 +211,8 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
 
 def process_image(file_key):
     index, infile, outfile, T = file_key
-    im1 = Image.open(infile)
+    img = io.imread(infile)
+    im1 = Image.fromarray(img)
     im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
     im2.save(outfile, compression=None, quality=100)
 
