@@ -183,11 +183,7 @@ def masker(animal, channel, downsample, scale):
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
 
         fixed[fixed == 0] = bgcolor
-        #io.imsave(outpath, fixed.astype(dt), check_contrast=False)
         cv2.imwrite(outpath, fixed.astype(dt))
-        #img = Image.fromarray(fixed.astype(dt))
-        #img.save(outpath, compression="LZW")
-        #imsave(outpath, fixed.astype(dt), compress=True)
 
     # set task as completed
     progress_id = sqlController.get_progress_id(downsample, channel, 'CLEAN')

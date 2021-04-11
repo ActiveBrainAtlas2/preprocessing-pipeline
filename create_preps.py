@@ -33,7 +33,6 @@ def make_full_resolution(animal, channel):
     sqlController = SqlController(animal)
 
     if 'thion' in sqlController.histology.counterstain:
-        sqlController.set_task(animal, CREATE_CHANNEL_1_FULL_RES)
         sqlController.set_task(animal, CREATE_CHANNEL_2_FULL_RES)
         sqlController.set_task(animal, CREATE_CHANNEL_3_FULL_RES)
 
@@ -72,7 +71,6 @@ def make_low_resolution(animal, channel):
     sqlController = SqlController(animal)
 
     if 'thion' in sqlController.histology.counterstain:
-        sqlController.set_task(animal, CREATE_CHANNEL_1_THUMBNAILS)
         sqlController.set_task(animal, CREATE_CHANNEL_2_THUMBNAILS)
         sqlController.set_task(animal, CREATE_CHANNEL_3_THUMBNAILS)
     fileLocationManager = FileLocationManager(animal)

@@ -165,7 +165,8 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
 
-    error = test_dir(animal, INPUT, downsample=downsample, same_size=True)
+    #error = test_dir(animal, INPUT, downsample=downsample, same_size=True)
+    error = ""
     if len(error) > 0:
         print(error)
         sys.exit()
@@ -191,7 +192,9 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
             continue
 
         file_keys.append([i,infile, outfile, T])
+        #process_image([i,infile, outfile, T])
 
+    
     start = timer()
     workers, _ = get_cpus()
     print(f'Working on {len(file_keys)} files with {workers} cpus')
@@ -204,6 +207,7 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
     # set task as completed
     progress_id = sqlController.get_progress_id(downsample, channel, 'ALIGN')
     sqlController.set_task(animal, progress_id)
+    
     print('Finished')
         
 
@@ -212,7 +216,7 @@ def process_image(file_key):
     index, infile, outfile, T = file_key
     im1 = Image.open(infile)
     im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
-    im2.save(outfile)
+    im2.save(outfile, compression=None, quality=100)
 
     del im1, im2
     return
