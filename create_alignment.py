@@ -8,8 +8,6 @@ This file does the following operations:
 """
 import os, sys
 import argparse
-import subprocess
-from multiprocessing.pool import Pool
 import numpy as np
 from collections import OrderedDict
 from concurrent.futures.process import ProcessPoolExecutor
@@ -22,58 +20,8 @@ from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_alignment import (load_consecutive_section_transform,
                                          convert_resolution_string_to_um)
-from utilities.utilities_process import workernoshell, test_dir
+from utilities.utilities_process import test_dir
 from utilities.utilities_cvat_neuroglancer import get_cpus
-
-ELASTIX_BIN = '/usr/bin/elastix'
-
-def run_elastix(animal, njobs):
-    """
-    Sets up the arguments for running elastix in a sequence. Each file pair
-    creates a sub directory with the results. Uses a pool to spawn multiple processes
-    Args:
-        animal: the animal
-        limit:  how many jobs you want to run.
-    Returns: nothing, just creates a lot of subdirs in the elastix directory.
-    """
-    fileLocationManager = FileLocationManager(animal)
-    DIR = fileLocationManager.prep
-    INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
-    error = test_dir(animal, INPUT, downsample=True, same_size=True)
-    if len(error) > 0:
-        print(error)
-        sys.exit()
-
-    files = sorted(os.listdir(INPUT))
-    elastix_output_dir = fileLocationManager.elastix_dir
-    os.makedirs(elastix_output_dir, exist_ok=True)
-
-    param_file = os.path.join(os.getcwd(), 'utilities/alignment', "Parameters_Rigid.txt")
-    commands = []
-    # previous file is the fixed image
-    # current file is the moving image
-    for i in range(1, len(files)):
-        prev_img_name = os.path.splitext(files[i - 1])[0]
-        curr_img_name = os.path.splitext(files[i])[0]
-        prev_fp = os.path.join(INPUT, files[i - 1])
-        curr_fp = os.path.join(INPUT, files[i])
-
-        new_dir = '{}_to_{}'.format(curr_img_name, prev_img_name)
-        output_subdir = os.path.join(elastix_output_dir, new_dir)
-
-        if os.path.exists(output_subdir) and 'TransformParameters.0.txt' in os.listdir(output_subdir):
-            continue
-
-
-        command = ['rm', '-rf', output_subdir]
-        subprocess.run(command)
-        os.makedirs(output_subdir, exist_ok=True)
-        cmd = [ELASTIX_BIN, '-f', prev_fp, '-m', curr_fp, '-p', param_file, '-out', output_subdir]
-        commands.append(cmd)
-
-    with Pool(njobs) as p:
-        p.map(workernoshell, commands)
-
 
 def parse_elastix(animal):
     """
@@ -165,8 +113,7 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
 
-    #error = test_dir(animal, INPUT, downsample=downsample, same_size=True)
-    error = ""
+    error = test_dir(animal, INPUT, downsample=downsample, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()
@@ -238,6 +185,5 @@ if __name__ == '__main__':
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     masks = args.masks
 
-    run_elastix(animal, njobs)
     transforms = parse_elastix(animal)
     run_offsets(animal, transforms, channel, downsample, njobs, masks)
