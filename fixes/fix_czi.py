@@ -41,12 +41,11 @@ def test_czi(animal, czi_file):
         channel_counter = 0
         width = metadata_dict[series_index]['width']
         height = metadata_dict[series_index]['height']
-        print(f'Width={width}, height={height}')
         for channel in channels:
             channel_counter += 1
             newtif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
             newtif = newtif.replace('.czi', '').replace('__','_')
-            print(newtif)
+            print(f'file:{newtif} width={width}, height={height}')
 
 
 if __name__ == '__main__':
