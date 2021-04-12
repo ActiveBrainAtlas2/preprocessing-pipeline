@@ -8,7 +8,7 @@ then validates the data with the ActiveAtlasAdmin database portal
 import os, sys
 import argparse
 from pathlib import Path
-
+from pprint import pprint
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.file_location import FileLocationManager
@@ -30,9 +30,10 @@ def test_czi(animal, czi_file):
     # Get metadata from the czi file
     czi_file_path = os.path.join(fileLocationManager.czi, czi_file)
     metadata_dict = get_czi_metadata(czi_file_path)
-    print(metadata_dict)
+    pprint(metadata_dict)
+
+    print()
     series = get_fullres_series_indices(metadata_dict)
-    print('series', series)
 
     for j, series_index in enumerate(series):
         scene_number = j + 1
