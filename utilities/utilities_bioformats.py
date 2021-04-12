@@ -63,11 +63,12 @@ def get_fullres_series_indices(metadata_dict):
             # If the curr series is about half the size of the previous series
             # this indicates that it is not a new tissue sample, just a
             # downsampled version of the previous series.
+            #print(f'series_curr_width - series_prev_width_halved {series_curr_width}  {series_prev_width_halved}')
             if abs(series_curr_width - series_prev_width_halved) < 5:
                 continue
             # If this series is suspisciously small, it is not likely to be fullres
             # Currently this assumed that series#0 is fullres
-            if series_curr_width < series_0_width * 0.5:
+            if series_curr_width < series_0_width * 0.47:
                 continue
         # We ignore the last two series.
         # 2nd last should be "label image"
