@@ -30,6 +30,7 @@ def test_czi(animal, czi_file):
     # Get metadata from the czi file
     czi_file_path = os.path.join(fileLocationManager.czi, czi_file)
     metadata_dict = get_czi_metadata(czi_file_path)
+    print(f'All data for {czi_file}')
     pprint(metadata_dict)
 
     print()
@@ -46,7 +47,7 @@ def test_czi(animal, czi_file):
             channel_counter += 1
             newtif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
             newtif = newtif.replace('.czi', '').replace('__','_')
-            print(f'file:{newtif} width={width}, height={height}')
+            print(f'INDEX={series_index}, file:{newtif}, height={height}, width={width}')
 
 
 if __name__ == '__main__':
