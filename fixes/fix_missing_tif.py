@@ -19,7 +19,6 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 from utilities.sqlcontroller import SqlController
 from utilities.file_location import FileLocationManager
-from utilities.preprocessor import SlideProcessor
 from utilities.utilities_process import make_tif
 from sql_setup import session
 
@@ -72,26 +71,6 @@ def fix_tifs(animal, channel):
         print(i, missing, file_id, section.id, section.file_name)
         make_tif(animal, section.tif_id, file_id, testing=False)
 
-def fix_prep_thumbnail(animal):
-    sqlController = SqlController()
-    fileLocationManager = FileLocationManager(animal)
-    dir = fileLocationManager.thumbnail_prep
-    db_files = sqlController.get_valid_sections(animal)
-    slideProcessor = SlideProcessor(animal, session)
-
-    source_files = []
-    source_keys = []
-    for key, file in db_files.items():
-        source_files.append(file['destination'])
-        source_keys.append(key)
-    files = os.listdir(dir)
-    missing_files =  (list(set(source_files) - set(files)))
-    print(len(missing_files))
-    for i,missing in enumerate(missing_files):
-        file_id =  source_keys[source_files.index(missing)]
-        print(i, missing, file_id)
-        slideProcessor.make_thumbnail(file_id, missing, testing=False)
-        slideProcessor.make_web_thumbnail(file_id, missing, testing=False)
 
 
 def test_tif(animal, channel):
