@@ -10,13 +10,12 @@ import sys
 from multiprocessing.pool import Pool
 from tqdm import tqdm
 from shutil import copyfile
-import imagesize
 
 from sql_setup import CREATE_CHANNEL_1_THUMBNAILS, CREATE_CHANNEL_1_FULL_RES, CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_process import workernoshell, test_dir
+from utilities.utilities_process import workernoshell, test_dir, get_image_size
 
 
 def make_full_resolution(animal, channel):
@@ -55,7 +54,7 @@ def make_full_resolution(animal, channel):
             continue
 
         copyfile(input_path, output_path)
-        width, height = imagesize.get(input_path)
+        width, height = get_image_size(input_path)
         sqlController.update_tif(section.id, width, height)
 
 
@@ -104,12 +103,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    #parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
-    #downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     sqlController = SqlController(animal)
     make_full_resolution(animal, channel)
     make_low_resolution(animal, channel)

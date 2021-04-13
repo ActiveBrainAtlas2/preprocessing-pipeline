@@ -15,6 +15,7 @@
     1. Create tif files for channel 1
     1. Create png files for channel 1
     1. Repeat process for the other 2 channels when ready
+1. Run `tif2jp2.sh DKXX` in programming/pipeline_utility/registration
 1. Have someone confirm the status of each slide in: https://activebrainatlas.ucsd.edu/activebrainatlas/admin
     1. After logging in, go to the Slides link in the Brain category
     1. Enter the animal name in the search box
