@@ -161,10 +161,13 @@ class SqlController(object):
             .filter(SlideCziTif.active == True) \
             .filter(ScanRun.id == id).scalar()
         SAFEMAX = 10000
+        LITTLE_BIT_MORE = 500
         # just to be safe, we don't want to update numbers that aren't realistic
         if height > SAFEMAX and width > SAFEMAX:
             height = round(height, -3)
             width = round(width, -3)
+            height += LITTLE_BIT_MORE
+            width += LITTLE_BIT_MORE
             # width and height get flipped
             try:
                 self.session.query(ScanRun).filter(ScanRun.id == id).update(

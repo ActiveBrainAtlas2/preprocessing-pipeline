@@ -209,3 +209,4 @@ def make_tif(animal, tif_id, file_id, testing=False):
     sqlController.update_row(tif)
 
     return 1
+

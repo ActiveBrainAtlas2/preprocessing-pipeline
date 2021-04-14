@@ -4,7 +4,6 @@ import pandas as pd
 from skimage import io
 import pickle
 import re
-from six.moves import map
 from pathlib import Path
 
 PIPELINE_ROOT = Path('.').absolute().parent

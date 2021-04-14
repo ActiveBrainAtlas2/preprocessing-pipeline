@@ -53,14 +53,14 @@ def fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_heigh
         fixed = equalized(fixed)
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
-        mask = rotate_image(mask, maskfile, rotation)
+        #mask = rotate_image(mask, maskfile, rotation)
 
     if flip == 'flip':
         fixed = np.flip(fixed)
-        mask = np.flip(mask)
+        #mask = np.flip(mask)
     if flip == 'flop':
         fixed = np.flip(fixed, axis=1)
-        mask = np.flip(mask, axis=1)
+        #mask = np.flip(mask, axis=1)
 
     return fixed
 

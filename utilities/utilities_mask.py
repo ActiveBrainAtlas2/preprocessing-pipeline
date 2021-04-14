@@ -29,7 +29,7 @@ def rotate_image(img, file, rotation):
     :return: rotated image
     """
     try:
-        img = np.rot90(img, rotation)
+        img = np.rot90(img, rotation, axes=(1,0))
     except:
         print('Could not rotate', file)
     return img
