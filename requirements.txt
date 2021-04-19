@@ -41,7 +41,6 @@ greenlet==1.0.0
 grpcio==1.37.0
 httplib2==0.19.1
 idna==2.10
-igneous==0.0.1.dev393
 imagecodecs==2020.5.30
 imagecodecs-lite==2019.12.3
 imageio==2.9.0
@@ -62,7 +61,6 @@ multiprocess==0.70.11.1
 networkx==2.5.1
 neuroglancer==2.20
 nibabel==3.2.1
-nipy==0.5.1.dev1
 numpy==1.19.4
 oauth2client==4.1.3
 opencv-python==4.5.1.48

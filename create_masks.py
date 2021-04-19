@@ -24,7 +24,7 @@ from sql_setup import CREATE_THUMBNAIL_MASKS, CREATE_FULL_RES_MASKS
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import fix_with_fill, fix_thionin, get_binary_mask, trim_edges, create_mask_pass1
+from utilities.utilities_mask import fix_thionin, get_binary_mask, trim_edges
 from utilities.utilities_process import get_last_2d, test_dir, workernoshell, get_image_size
 
 
@@ -51,8 +51,7 @@ def create_mask(animal, downsample, njobs):
         sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         ##### Check if files in dir are valid
-        #error = test_dir(animal, INPUT, downsample, same_size=False)
-        error = ""
+        error = test_dir(animal, INPUT, downsample, same_size=False)
         if len(error) > 0:
             print(error)
             sys.exit()
@@ -77,7 +76,6 @@ def create_mask(animal, downsample, njobs):
                 print(f'Could not open {infile}')
             size = f'{width}x{height}!'
             cmd = ['convert', thumbfile, '-resize', size, '-depth', '8', outpath]
-            #print(" ".join(cmd))
             commands.append(cmd)
 
         with Pool(njobs) as p:

@@ -9,6 +9,7 @@ This file does the following operations:
 import os, sys
 import argparse
 import numpy as np
+import pandas as pd
 from collections import OrderedDict
 from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
@@ -93,7 +94,7 @@ def create_warp_transforms(animal, transforms, transforms_resol, downsample):
     return transforms_to_anchor
 
 
-def run_offsets(animal, transforms, channel, downsample, njobs, masks):
+def run_offsets(animal, transforms, channel, downsample, masks, create_csv):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -114,7 +115,7 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
         OUTPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
 
     error = test_dir(animal, INPUT, downsample=downsample, same_size=True)
-    if len(error) > 0:
+    if len(error) > 0 and not create_csv:
         print(error)
         sys.exit()
 
@@ -135,25 +136,29 @@ def run_offsets(animal, transforms, channel, downsample, njobs, masks):
 
         infile = os.path.join(INPUT, file)
         outfile = os.path.join(OUTPUT, file)
-        if os.path.exists(outfile):
+        if os.path.exists(outfile) and not create_csv:
             continue
 
         file_keys.append([i,infile, outfile, T])
-        #process_image([i,infile, outfile, T])
 
     
-    start = timer()
-    workers, _ = get_cpus()
-    print(f'Working on {len(file_keys)} files with {workers} cpus')
-    with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(process_image, sorted(file_keys), chunksize=workers)
-        executor.shutdown(wait=True)
+    if create_csv:
+        create_csv_data(animal, file_keys)
+    else:
+        start = timer()
+        workers, _ = get_cpus()
+        print(f'Working on {len(file_keys)} files with {workers} cpus')
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(process_image, sorted(file_keys), chunksize=workers)
+            executor.shutdown(wait=True)
 
-    end = timer()
-    print(f'Create aligned files took {end - start} seconds')
-    # set task as completed
-    progress_id = sqlController.get_progress_id(downsample, channel, 'ALIGN')
-    sqlController.set_task(animal, progress_id)
+        end = timer()
+        print(f'Create aligned files took {end - start} seconds')
+        # set task as completed
+        progress_id = sqlController.get_progress_id(downsample, channel, 'ALIGN')
+        sqlController.set_task(animal, progress_id)
+
+
     
     print('Finished')
         
@@ -169,21 +174,41 @@ def process_image(file_key):
     return
 
 
+def create_csv_data(animal, file_keys):
+    data = []
+    for index, infile, outfile, T in file_keys:
+        T = np.linalg.inv(T)
+        file = os.path.basename(infile)
+
+        data.append({
+            'i': index,
+            'infile': file,
+            'sx': T[0, 0],
+            'sy': T[1, 1],
+            'rx': T[1, 0],
+            'ry': T[0, 1],
+            'tx': T[0, 2],
+            'ty': T[1, 2],
+        })
+    df = pd.DataFrame(data)
+    df.to_csv(f'/tmp/{animal}.section2sectionalignments.csv', index=False)
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--masks', help='Enter True for running masks', required=False, default=False)
+    parser.add_argument('--csv', help='Enter true or false', required=False, default='false')
 
     args = parser.parse_args()
     animal = args.animal
-    njobs = int(args.njobs)
     channel = args.channel
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    create_csv = bool({'true': True, 'false': False}[str(args.csv).lower()])
     masks = args.masks
 
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel, downsample, njobs, masks)
+    run_offsets(animal, transforms, channel, downsample, masks, create_csv)

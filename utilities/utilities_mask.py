@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.figure
-from nipy.labs.mask import compute_mask
+#from nipy.labs.mask import compute_mask
 from skimage import exposure
 from pathlib import Path
 from scipy.ndimage.interpolation import map_coordinates
@@ -110,8 +110,8 @@ def fix_with_blob(img):
     :return:
     """
     no_strip, _ = remove_strip(img)
-    #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(12, 12))
-    #no_strip = clahe.apply(no_strip)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(12, 12))
+    no_strip = clahe.apply(no_strip)
     #no_strip = img.copy()
     ###### Threshold it so it becomes binary
     threshold = find_threshold(no_strip)
@@ -150,7 +150,7 @@ def make_mask(img):
     no_strip, fe = remove_strip(img)
 
     # Threshold it so it becomes binary
-    min_value, threshold = find_threshold(img)
+    threshold = find_threshold(img)
     # threshold = 272
     ret, threshed = cv2.threshold(no_strip, threshold, 255, cv2.THRESH_BINARY)
     threshed = np.uint8(threshed)
@@ -583,127 +583,6 @@ def find_contour_count(img):
     contours, hierarchy = cv2.findContours(img.astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     return len(contours)
 
-def create_mask_pass1(img):
-    """
-    This is the first pass in creating a mask. The skimage.exposure is used as it helps to get rid
-    of the glue around the tissue. This also calls the compute_mask method which is part
-    of the nipy package which you will need to install from github
-    :param img: the raw image
-    :return:  the 1st pass of the image
-    """
-    img = exposure.adjust_log(img, 1)
-    img = exposure.adjust_gamma(img, 2)
-
-    mask = compute_mask(img, m=0.2, M=0.9, cc=False, opening=2, exclude_zeros=True)
-    mask = mask.astype(int)
-    mask[mask==0] = 0
-    mask[mask==1] = 255
-    kernel = np.ones((5, 5), np.uint8)
-    mask = cv2.dilate(mask.astype(np.uint8), kernel, iterations=2)
-    mask = mask.astype(np.uint8)
-    return mask
-
-
-
-def rescale_by_resampling(v, scaling=None, new_shape=None):
-    """
-    This was taken from the old python2 utilities file
-    :param v:
-    :param scaling:
-    :param new_shape:
-    :return:
-    """
-    if new_shape is not None:
-        arr1 = np.floor(np.linspace(0, v.shape[0]-1, new_shape[1]))
-        arr2 = np.floor(np.linspace(0, v.shape[1]-1, new_shape[0]))
-        return v[np.meshgrid(arr1.astype(np.int), arr2.astype(np.int), indexing='ij')]
-    else:
-        if scaling == 1:
-            return v
-
-        if v.ndim == 3:
-            if v.shape[-1] == 3: # RGB image
-                return v[np.meshgrid(np.floor(np.arange(0, v.shape[0], 1./scaling)).astype(np.int),
-                  np.floor(np.arange(0, v.shape[1], 1./scaling)).astype(np.int), indexing='ij')]
-            else: # 3-d volume
-                return v[np.meshgrid(np.floor(np.arange(0, v.shape[0], 1./scaling)).astype(np.int),
-                  np.floor(np.arange(0, v.shape[1], 1./scaling)).astype(np.int),
-                  np.floor(np.arange(0, v.shape[2], 1./scaling)).astype(np.int), indexing='ij')]
-        elif v.ndim == 2:
-            return v[np.meshgrid(np.floor(np.arange(0, v.shape[0], 1./scaling)).astype(np.int),
-                  np.floor(np.arange(0, v.shape[1], 1./scaling)).astype(np.int), indexing='ij')]
-        else:
-            raise
-
-
-
-
-def resample_scoremap(sparse_scores, sample_locations, gridspec=None, downscale=None,
-                      out_resolution_um=None,
-                      in_resolution_um=None,
-                      return_sparse_map=False,
-                      interpolation_order=2):
-    """
-    Resample a dense scoremap based on score at sparse locations.
-
-    Note: Make sure `sample_locations` are on the grid specified by `gridspec`.
-
-    Args:
-        sparse_scores ((n,) float): scores
-        sample_locations ((n,2) int): locations of the scores
-        gridspec: the tuple (patch size in pixel, spacing in pixel, width, height in pixel)
-        downscale (int):
-        in_resolution_um (float):
-        out_resolution_um (float):
-        return_sparse_map (bool): if true, return tuple (dense map, sparse map), else return only dense map.
-
-    Returns:
-        (2d-array): scoremap over the entire grid
-    """
-
-    sample_locations = np.array(sample_locations)
-    assert len(sparse_scores) == len(sample_locations)
-
-    if len(gridspec) == 4:
-        patch_size_px, spacing_px, w, h = gridspec
-        grid_origin = (patch_size_px / 2, patch_size_px / 2)
-    elif len(gridspec) == 5:
-        patch_size_px, spacing_px, w, h, grid_origin = gridspec
-    else:
-        raise
-
-#     half_size_px = patch_size_px / 2
-
-    if downscale is None:
-        assert out_resolution_um is not None and in_resolution_um is not None
-        downscale = out_resolution_um / in_resolution_um
-
-    downscaled_grid_ys = np.arange(0, h, downscale)
-    downscaled_grid_xs = np.arange(0, w, downscale)
-    downscaled_ny = len(downscaled_grid_ys)
-    downscaled_nx = len(downscaled_grid_xs)
-
-    scores_on_unit_grid = np.zeros(((h - grid_origin[1]) // spacing_px + 1, (w - grid_origin[0]) // spacing_px + 1))
-    sample_locations_unit_grid = (sample_locations - grid_origin) // spacing_px
-    scores_on_unit_grid[sample_locations_unit_grid[:,1], sample_locations_unit_grid[:,0]] = sparse_scores
-
-    out_ys_on_unit_grid = (downscaled_grid_ys - grid_origin[1]) / float(spacing_px)
-    out_xs_on_unit_grid = (downscaled_grid_xs - grid_origin[0]) / float(spacing_px)
-
-    points_y, points_x = np.broadcast_arrays(out_ys_on_unit_grid.reshape(-1,1), out_xs_on_unit_grid)
-    out_yxs_on_unit_grid = np.c_[points_y.flat, points_x.flat]
-    f_interp = map_coordinates(scores_on_unit_grid, out_yxs_on_unit_grid.T,
-                               order=interpolation_order,
-                               prefilter=False)
-    dense_scoremap = f_interp.reshape((downscaled_ny, downscaled_nx))
-
-    if return_sparse_map:
-        return dense_scoremap, scores_on_unit_grid
-    else:
-        return dense_scoremap
-
-    return im_out
-
 
 def get_binary_mask(img):
     '''
@@ -713,6 +592,7 @@ def get_binary_mask(img):
     3. open/close with opencv
     '''
     kernel_size = (199, 199)
+    img = exposure.adjust_gamma(img, 2)
     normed = equalized(img)
 
     blurred_img = cv2.GaussianBlur(normed, kernel_size, 0)
