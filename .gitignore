@@ -9,3 +9,4 @@ env/
 *.pyc
 
 *.pdf
+*.pkl
