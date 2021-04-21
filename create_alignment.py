@@ -94,7 +94,7 @@ def create_warp_transforms(animal, transforms, transforms_resol, downsample):
     return transforms_to_anchor
 
 
-def run_offsets(animal, transforms, channel, downsample, masks, create_csv):
+def run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -134,21 +134,22 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv):
     file_keys = []
     r90 = np.array([[0,-1,0],[1,0,0],[0,0,1]])
     for i, (file, T) in enumerate(ordered_transforms.items()):
-        ROT_DIR = os.path.join(fileLocationManager.root, animal, 'rotations')
-        rotfile = file.replace('tif', 'txt')
-        rotfile = os.path.join(ROT_DIR, rotfile)
-        R_cshl = np.loadtxt(rotfile)
-        R_cshl[0,2] = R_cshl[0,2] / 32
-        R_cshl[1,2] = R_cshl[1,2] / 32
-        R_cshl = R_cshl @ r90
-        R_cshl = np.linalg.inv(R_cshl)
-        R = T @ R_cshl
+        if allen:
+            ROT_DIR = os.path.join(fileLocationManager.root, animal, 'rotations')
+            rotfile = file.replace('tif', 'txt')
+            rotfile = os.path.join(ROT_DIR, rotfile)
+            R_cshl = np.loadtxt(rotfile)
+            R_cshl[0,2] = R_cshl[0,2] / 32
+            R_cshl[1,2] = R_cshl[1,2] / 32
+            R_cshl = R_cshl @ r90
+            R_cshl = np.linalg.inv(R_cshl)
+            R = T @ R_cshl
         infile = os.path.join(INPUT, file)
         outfile = os.path.join(OUTPUT, file)
         if os.path.exists(outfile) and not create_csv:
             continue
 
-        file_keys.append([i,infile, outfile, R])
+        file_keys.append([i,infile, outfile, T])
 
     
     if create_csv:
@@ -211,13 +212,15 @@ if __name__ == '__main__':
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--masks', help='Enter True for running masks', required=False, default=False)
     parser.add_argument('--csv', help='Enter true or false', required=False, default='false')
+    parser.add_argument('--allen', help='Enter true or false', required=False, default='false')
 
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     create_csv = bool({'true': True, 'false': False}[str(args.csv).lower()])
+    allen = bool({'true': True, 'false': False}[str(args.allen).lower()])
     masks = args.masks
 
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel, downsample, masks, create_csv)
+    run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen)
