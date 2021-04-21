@@ -275,18 +275,6 @@ def scaled(img, mask, limit, epsilon=0.01):
     scaled = scaled * (mask > 10) # just work on the non masked values
     return scaled.astype(np.uint16)
 
-def equalized(fixed):
-    """
-    Takes an image that has already been scaled and uses opencv adaptive histogram
-    equalization. This cases uses 10 as the clip limit and splits the image into 8 rows
-    and 8 columns
-    :param fixed: image we are working on
-    :return: a better looking image
-    """
-    clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
-    fixed = clahe.apply(fixed)
-    return fixed
-
 
 def trim_edges(img):
     """
@@ -584,6 +572,19 @@ def find_contour_count(img):
     return len(contours)
 
 
+def equalized(fixed):
+    """
+    Takes an image that has already been scaled and uses opencv adaptive histogram
+    equalization. This cases uses 10 as the clip limit and splits the image into 8 rows
+    and 8 columns
+    :param fixed: image we are working on
+    :return: a better looking image
+    """
+    clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(8, 8))
+    fixed = clahe.apply(fixed)
+    return fixed
+
+
 def get_binary_mask(img):
     '''
     img: numpy 8 bit 2 dimension array
@@ -591,18 +592,37 @@ def get_binary_mask(img):
     2. get opencv OTSUs threshold,
     3. open/close with opencv
     '''
-    kernel_size = (199, 199)
-    img = exposure.adjust_gamma(img, 2)
+    #normed = exposure.adjust_gamma(normed, 2)
+    #normed = exposure.adjust_log(normed)
+    # first pass
+    img[img < 45] = 0
     normed = equalized(img)
 
-    blurred_img = cv2.GaussianBlur(normed, kernel_size, 0)
-    gray_img = blurred_img.copy()
+
+    kernel_size = (9, 9)
+    img = cv2.GaussianBlur(normed, kernel_size, 0)
+    gray_img = img.copy()
     thresh = 80  # initial value, but OTSU calculates it
-    ret, otsu = cv2.threshold(gray_img, thresh, 255,
-                              cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    ksize = 50
+    ret, otsu = cv2.threshold(gray_img, thresh, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    ksize = 100
     kernel = np.ones((ksize, ksize), np.uint8)
     closed_mask = cv2.morphologyEx(otsu, cv2.MORPH_CLOSE, kernel)
+    return closed_mask
+    # 2nd pass
+    img = cv2.bitwise_and(img, img, mask=closed_mask)
+    kernel_size = (99, 99)
+    #normed = equalized(img)    
+    img = cv2.GaussianBlur(img, kernel_size, 0)
+    gray_img = img.copy()
+    thresh = 80  # initial value, but OTSU calculates it
+    ret, otsu = cv2.threshold(gray_img, thresh, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    ksize = 10
+    kernel = np.ones((ksize, ksize), np.uint8)
+    closed_mask = cv2.morphologyEx(otsu, cv2.MORPH_CLOSE, kernel)
+
+
+
+
     return closed_mask
 
 
