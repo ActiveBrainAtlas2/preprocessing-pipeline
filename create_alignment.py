@@ -132,14 +132,23 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv):
     warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', downsample)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
     file_keys = []
+    r90 = np.array([[0,-1,0],[1,0,0],[0,0,1]])
     for i, (file, T) in enumerate(ordered_transforms.items()):
-
+        ROT_DIR = os.path.join(fileLocationManager.root, animal, 'rotations')
+        rotfile = file.replace('tif', 'txt')
+        rotfile = os.path.join(ROT_DIR, rotfile)
+        R_cshl = np.loadtxt(rotfile)
+        R_cshl[0,2] = R_cshl[0,2] / 32
+        R_cshl[1,2] = R_cshl[1,2] / 32
+        R_cshl = R_cshl @ r90
+        R_cshl = np.linalg.inv(R_cshl)
+        R = T @ R_cshl
         infile = os.path.join(INPUT, file)
         outfile = os.path.join(OUTPUT, file)
         if os.path.exists(outfile) and not create_csv:
             continue
 
-        file_keys.append([i,infile, outfile, T])
+        file_keys.append([i,infile, outfile, R])
 
     
     if create_csv:
