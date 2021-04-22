@@ -28,9 +28,8 @@ def chunker(seq, size):
 
 def create_mesh(animal, limit, mse):
     #chunks = calculate_chunks('full', -1)
-    chunks = [2048,2048,1]
-    data_type = np.uint8
-    resolution = 1000 
+    chunks = [64,64,1]
+    resolution = 25 
     scales = (resolution, resolution, resolution)
     fileLocationManager = FileLocationManager(animal)
     INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"
@@ -38,7 +37,7 @@ def create_mesh(animal, limit, mse):
     OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     PROGRESS_DIR = os.path.join(fileLocationManager.prep, 'progress', 'mesh_input')
     if 'ultraman' in get_hostname():
-        INPUT = os.path.join(fileLocationManager.prep, 'CH2', 'full_aligned')
+        INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full_aligned')
         if os.path.exists(OUTPUT1_DIR):
             shutil.rmtree(OUTPUT1_DIR)
         if os.path.exists(OUTPUT2_DIR):
@@ -55,9 +54,14 @@ def create_mesh(animal, limit, mse):
     midpoint = len_files // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = io.imread(midfilepath)
+    data_type = midfile.dtype
+    """
     ids = [  8,  16,  24,  32,  40,  48,  56,  64,  72,  80,  88,  96,
        104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200,
        208, 216, 224, 232, 240, 248, 255]
+    """
+    image = np.load('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/allen/allen.npy')
+    ids = np.unique(image)
     ids = [(number, f'{number}: {number}') for number in ids]
 
 
@@ -74,18 +78,20 @@ def create_mesh(animal, limit, mse):
     volume_size = (width, height, len(files)) # neuroglancer is width, height
     print('volume size', volume_size)
     ng = NumpyToNeuroglancer(animal, None, scales, layer_type='segmentation', data_type=data_type, chunk_size=chunks)
-    ng.init_precomputed(OUTPUT1_DIR, volume_size, starting_points=starting_points, progress_dir=PROGRESS_DIR)
+    ng.init_precomputed(OUTPUT1_DIR, volume_size, starting_points=starting_points, progress_id=1)
 
     file_keys = []
     for i,f in enumerate(tqdm(files)):
         infile = os.path.join(INPUT, f)
         file_keys.append([i, infile])
+        #ng.process_image([i, infile])
+    #sys.exit()
 
     start = timer()
     workers, cpus = get_cpus()
     print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(ng.process_mesh, sorted(file_keys), chunksize=workers)
+        executor.map(ng.process_image, sorted(file_keys), chunksize=workers)
         executor.shutdown(wait=True)
 
     ng.precomputed_vol.cache.flush()
@@ -102,8 +108,10 @@ def create_mesh(animal, limit, mse):
     tq = LocalTaskQueue(parallel=workers)
     cloudpath2 = f'file://{OUTPUT2_DIR}'
 
-    tasks = tc.create_transfer_tasks(cv1.layer_path, dest_layer_path=cloudpath2, 
-        chunk_size=[256,256,64], skip_downsamples=True)
+
+    tasks = tc.create_transfer_tasks(cloudpath1, dest_layer_path=cloudpath2, 
+        chunk_size=[64,64,64], mip=0, skip_downsamples=True)
+
     tq.insert(tasks)
     tq.execute()
 

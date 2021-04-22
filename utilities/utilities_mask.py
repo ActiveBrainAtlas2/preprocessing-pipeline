@@ -296,11 +296,13 @@ def trim_edges(img):
     limit = img_shape[1] // 12
     threshold = 44
     # trim left
-    for i in range(0,limit):
+    """
+    for i in range(0,limit//2):
         b = h_src[:,i]
         m = np.mean(b)
         if m <= threshold:
             h_src[:,i] = 0
+    """
     # trim right
     for i in range(img_shape[1]-limit,img_shape[1]):
         b = h_src[:,i]
@@ -594,34 +596,19 @@ def get_binary_mask(img):
     '''
     #normed = exposure.adjust_gamma(normed, 2)
     #normed = exposure.adjust_log(normed)
-    # first pass
+    # get rid of glue and normalize
     img[img < 45] = 0
     normed = equalized(img)
 
 
-    kernel_size = (9, 9)
+    kernel_size = (19, 19)
     img = cv2.GaussianBlur(normed, kernel_size, 0)
-    gray_img = img.copy()
     thresh = 80  # initial value, but OTSU calculates it
-    ret, otsu = cv2.threshold(gray_img, thresh, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    ksize = 100
-    kernel = np.ones((ksize, ksize), np.uint8)
-    closed_mask = cv2.morphologyEx(otsu, cv2.MORPH_CLOSE, kernel)
-    return closed_mask
-    # 2nd pass
-    img = cv2.bitwise_and(img, img, mask=closed_mask)
-    kernel_size = (99, 99)
-    #normed = equalized(img)    
-    img = cv2.GaussianBlur(img, kernel_size, 0)
-    gray_img = img.copy()
-    thresh = 80  # initial value, but OTSU calculates it
-    ret, otsu = cv2.threshold(gray_img, thresh, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    ret, otsu = cv2.threshold(img, thresh, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     ksize = 10
     kernel = np.ones((ksize, ksize), np.uint8)
     closed_mask = cv2.morphologyEx(otsu, cv2.MORPH_CLOSE, kernel)
-
-
-
+    #closed_mask = cv2.dilate(closed_mask, (200,200), iterations=33)
 
     return closed_mask
 
