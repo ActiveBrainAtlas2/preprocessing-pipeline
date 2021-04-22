@@ -29,7 +29,7 @@ def chunker(seq, size):
 def create_mesh(animal, limit, mse):
     #chunks = calculate_chunks('full', -1)
     chunks = [64,64,1]
-    resolution = 25 
+    resolution = 25000 
     scales = (resolution, resolution, resolution)
     fileLocationManager = FileLocationManager(animal)
     INPUT = "/net/birdstore/Vessel/WholeBrain/ML_2018_08_15/visualization/Neuroglancer_cc"

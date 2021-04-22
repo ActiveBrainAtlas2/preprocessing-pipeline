@@ -599,16 +599,15 @@ def get_binary_mask(img):
     # get rid of glue and normalize
     img[img < 45] = 0
     normed = equalized(img)
-
-
-    kernel_size = (19, 19)
+    # size of 121 gives smooth outline and also captures almost
+    # all the detail
+    kernel_size = (121, 121) 
     img = cv2.GaussianBlur(normed, kernel_size, 0)
     thresh = 80  # initial value, but OTSU calculates it
     ret, otsu = cv2.threshold(img, thresh, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    ksize = 10
+    ksize = 100
     kernel = np.ones((ksize, ksize), np.uint8)
     closed_mask = cv2.morphologyEx(otsu, cv2.MORPH_CLOSE, kernel)
-    #closed_mask = cv2.dilate(closed_mask, (200,200), iterations=33)
 
     return closed_mask
 

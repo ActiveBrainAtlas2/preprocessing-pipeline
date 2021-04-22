@@ -5,6 +5,7 @@ from sqlalchemy.sql import func
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, Float
 from .atlas_model import Base, AtlasModel
 from .structure import Structure
+from .animal import Animal
 
 
 
@@ -20,6 +21,7 @@ class CenterOfMass(Base, AtlasModel):
     input_type = Column(String, nullable=False)
 
     structure = relationship("Structure")
+    animal = relationship("Animal")
 
 
 
