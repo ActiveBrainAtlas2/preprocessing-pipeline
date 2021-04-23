@@ -320,7 +320,7 @@ class SqlController(object):
             print('Bad lookup code for {}'.format(lookup.id))
             self.session.rollback()
 
-    def add_center_of_mass(self, abbreviation, animal, x, y, section):
+    def add_center_of_mass(self, abbreviation, animal, x, y, section, person_id):
         """
         Look up the structure id from the structure.
         Args:
@@ -346,7 +346,7 @@ class SqlController(object):
         id = structure.id
 
         com = CenterOfMass(prep_id=animal, structure_id=id, x=x, y=y, section=section,
-                           created=datetime.utcnow(), active=True)
+                           created=datetime.utcnow(), active=True, person_id=person_id)
 
         try:
             self.session.add(com)

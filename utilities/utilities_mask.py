@@ -597,7 +597,8 @@ def get_binary_mask(img):
     #normed = exposure.adjust_gamma(normed, 2)
     #normed = exposure.adjust_log(normed)
     # get rid of glue and normalize
-    img[img < 45] = 0
+    thresh = np.quantile(img[img > 0], 0.75)
+    img[img < thresh] = 0
     normed = equalized(img)
     # size of 121 gives smooth outline and also captures almost
     # all the detail
