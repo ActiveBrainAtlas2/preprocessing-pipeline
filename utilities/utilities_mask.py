@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.figure
-#from nipy.labs.mask import compute_mask
+from nipy.labs.mask import compute_mask
 from skimage import exposure
 from pathlib import Path
 from scipy.ndimage.interpolation import map_coordinates
@@ -255,7 +255,7 @@ def check_contour(contours, area, lc):
         return contours, lc
 
 
-def scaled(img, mask, limit, epsilon=0.01):
+def scaled(img, mask, scale=45000, epsilon=0.01):
     """
     This scales the image to the limit specified. You can get this value
     by looking at the combined histogram of the image stack. It is quite
@@ -269,7 +269,7 @@ def scaled(img, mask, limit, epsilon=0.01):
     _max = np.quantile(img[mask > 10], 1 - epsilon) # gets almost the max value of img
     # print('thr=%d, index=%d'%(vals[ind],index))
     _range = 2 ** 16 - 1 # 16bit
-    scaled = img * (limit / _max) # scale the image from original values to e.g., 30000/10000
+    scaled = img * (scale / _max) # scale the image from original values to e.g., 30000/10000
     del img
     scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
     scaled = scaled * (mask > 10) # just work on the non masked values
@@ -327,6 +327,26 @@ def trim_edges(img):
             h_src[i,:] = 0
 
     return h_src
+
+def create_mask_pass1(img):
+    """
+    This is the first pass in creating a mask. The skimage.exposure is used as it helps to get rid
+    of the glue around the tissue. This also calls the compute_mask method which is part
+    of the nipy package which you will need to install from github
+    :param img: the raw image
+    :return:  the 1st pass of the image
+    """
+    img = exposure.adjust_log(img, 1)
+    img = exposure.adjust_gamma(img, 2)
+
+    mask = compute_mask(img, m=0.2, M=0.9, cc=False, opening=2, exclude_zeros=True)
+    mask = mask.astype(int)
+    mask[mask==0] = 0
+    mask[mask==1] = 255
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.dilate(mask.astype(np.uint8), kernel, iterations=2)
+    mask = mask.astype(np.uint8)
+    return mask
 
 
 
@@ -597,12 +617,12 @@ def get_binary_mask(img):
     #normed = exposure.adjust_gamma(normed, 2)
     #normed = exposure.adjust_log(normed)
     # get rid of glue and normalize
-    thresh = np.quantile(img[img > 0], 0.75)
+    thresh = np.quantile(img[img > 10], 0.75)
     img[img < thresh] = 0
     normed = equalized(img)
     # size of 121 gives smooth outline and also captures almost
     # all the detail
-    kernel_size = (121, 121) 
+    kernel_size = (81, 81) 
     img = cv2.GaussianBlur(normed, kernel_size, 0)
     thresh = 80  # initial value, but OTSU calculates it
     ret, otsu = cv2.threshold(img, thresh, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)

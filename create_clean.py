@@ -42,7 +42,7 @@ def fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_heigh
     :return: cleaned and rotated image
     """
     try:
-        img = io.imread(infile)
+        img = io.imread(infile, img_num=0)
     except:
         logger.warning(f'Could not open {infile}')
     img = get_last_2d(img)
