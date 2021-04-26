@@ -45,12 +45,12 @@ def fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_heigh
         img = io.imread(infile, img_num=0)
     except:
         logger.warning(f'Could not open {infile}')
-    img = get_last_2d(img)
+    #img = get_last_2d(img)
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
     if channel == 1:
         fixed = scaled(fixed, mask, scale, epsilon=0.01)
-        fixed = equalized(fixed)
+        #fixed = equalized(fixed)
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
         #mask = rotate_image(mask, maskfile, rotation)
@@ -141,7 +141,6 @@ def masker(animal, channel, downsample, scale):
     max_width = int(width * SCALING_FACTOR)
     max_height = int(height * SCALING_FACTOR)
     bgcolor = 0
-    dt = np.uint16
     stain = sqlController.histology.counterstain
     if channel == 1:
         sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)
@@ -158,7 +157,6 @@ def masker(animal, channel, downsample, scale):
 
     if 'thion' in stain.lower():
         bgcolor = 255
-        dt = np.uint8
 
     #error = test_dir(animal, INPUT, downsample, same_size=False)
     error = ""
@@ -183,7 +181,7 @@ def masker(animal, channel, downsample, scale):
         fixed = place_image(fixed, file, max_width, max_height, bgcolor)
 
         fixed[fixed == 0] = bgcolor
-        cv2.imwrite(outpath, fixed.astype(dt))
+        cv2.imwrite(outpath, fixed)
 
     # set task as completed
     progress_id = sqlController.get_progress_id(downsample, channel, 'CLEAN')

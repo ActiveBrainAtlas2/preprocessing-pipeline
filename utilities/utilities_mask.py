@@ -268,12 +268,17 @@ def scaled(img, mask, scale=45000, epsilon=0.01):
     """
     _max = np.quantile(img[mask > 10], 1 - epsilon) # gets almost the max value of img
     # print('thr=%d, index=%d'%(vals[ind],index))
-    _range = 2 ** 16 - 1 # 16bit
+    if scale > 255:
+        _range = 2 ** 16 - 1 # 16bit
+        data_type = np.uint16
+    else:
+        _range = 2 ** 256 - 1 # 16bit
+        data_type = np.uint8        
     scaled = img * (scale / _max) # scale the image from original values to e.g., 30000/10000
-    del img
     scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
     scaled = scaled * (mask > 10) # just work on the non masked values
-    return scaled.astype(np.uint16)
+    del img
+    return scaled.astype(data_type)
 
 
 def trim_edges(img):
