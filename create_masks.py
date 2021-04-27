@@ -109,12 +109,12 @@ def create_mask(animal, downsample, njobs):
                     continue
                 # perform 2 pass masking
                 img = trim_edges(img)
-                mask1 = create_mask_pass1(img)
-                pass1 = cv2.bitwise_and(img, img, mask=mask1)
+                #mask1 = create_mask_pass1(img)
+                #pass1 = cv2.bitwise_and(img, img, mask=mask1)
                 ## pass2
-                pass1 = cv2.GaussianBlur(pass1,(133,133),0)
-                mask = fix_with_fill(pass1)
-                #mask = get_binary_mask(img)
+                #pass1 = cv2.GaussianBlur(pass1,(133,133),0)
+                #mask = fix_with_fill(pass1)
+                mask = get_binary_mask(img)
 
             # save the mask
             cv2.imwrite(outpath, mask.astype(np.uint8))

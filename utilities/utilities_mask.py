@@ -622,13 +622,15 @@ def get_binary_mask(img):
     #normed = exposure.adjust_gamma(normed, 2)
     #normed = exposure.adjust_log(normed)
     # get rid of glue and normalize
-    thresh = np.quantile(img[img > 10], 0.75)
-    img[img < thresh] = 0
+    thresh1 = np.quantile(img[img > 0], 0.75)
+    thresh2 = np.median(img)
+    thresh = int(min(thresh1, thresh2))
+    img[img < 20] = 0
     normed = equalized(img)
     # size of 121 gives smooth outline and also captures almost
     # all the detail
-    kernel_size = (81, 81) 
-    img = cv2.GaussianBlur(normed, kernel_size, 0)
+    kernel_size = (21, 21) 
+    img = cv2.GaussianBlur(img, kernel_size, 250)
     thresh = 80  # initial value, but OTSU calculates it
     ret, otsu = cv2.threshold(img, thresh, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     ksize = 100
