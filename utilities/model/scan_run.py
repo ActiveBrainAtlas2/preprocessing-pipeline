@@ -37,6 +37,6 @@ class ScanRun(Base, AtlasModel):
 
 
     def __repr__(self):
-        return "ScanRun(prep_id='%s', scan_id='%s'" % (self.prep_id, self.scan_id)
+        return "ScanRun(prep_id='%s', scan_id='%s'" % (self.prep_id, self.id)
 
 
