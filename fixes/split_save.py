@@ -4,6 +4,12 @@ from tqdm import tqdm
 import cv2
 from nipy.labs.mask import compute_mask
 from skimage import io
+from pathlib import Path
+
+PIPELINE_ROOT = Path('.').absolute().parent
+sys.path.append(PIPELINE_ROOT.as_posix())
+
+from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
 
 BASEINPUT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/CHATM3/preps'
 INPUT = os.path.join(BASEINPUT, 'CH0/thumbnail')
@@ -16,7 +22,7 @@ os.makedirs(os.path.join(BASEINPUT, 'CH1/thumbnail_cleaned'), exist_ok=True)
 os.makedirs(os.path.join(BASEINPUT, 'CH2/thumbnail_cleaned'), exist_ok=True)
 os.makedirs(os.path.join(BASEINPUT, 'CH3/thumbnail_cleaned'), exist_ok=True)
 
-
+"""
 for file in tqdm(files):
     infile = os.path.join(INPUT, file)
     img = cv2.imread(infile)
@@ -29,7 +35,7 @@ for file in tqdm(files):
     cv2.imwrite(ch1_outpath, ch1_img.astype(np.uint8))
     cv2.imwrite(ch2_outpath, ch2_img.astype(np.uint8))
     cv2.imwrite(ch3_outpath, ch3_img.astype(np.uint8))
-
+"""
 
 for channel in [1,2,3]:
     INPUT = os.path.join(BASEINPUT, f'CH{channel}/thumbnail')
@@ -49,4 +55,8 @@ for channel in [1,2,3]:
         BASEOUTPUT = os.path.join(BASEINPUT, f'CH{channel}/thumbnail_cleaned')
         outpath = os.path.join(BASEOUTPUT, file)
         os.makedirs(BASEOUTPUT, exist_ok=True)
+        max_width = 2000
+        max_height = 1000
+        fixed = place_image(fixed, file, max_width, max_height, 0)
+
         cv2.imwrite(outpath, fixed.astype(np.uint8))
