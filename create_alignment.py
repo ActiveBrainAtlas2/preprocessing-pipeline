@@ -20,7 +20,7 @@ Image.MAX_IMAGE_PIXELS = None
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_alignment import (load_consecutive_section_transform,
-                                         convert_resolution_string_to_um)
+                                         convert_resolution_string_to_um, process_image)
 from utilities.utilities_process import test_dir
 from utilities.utilities_cvat_neuroglancer import get_cpus
 
@@ -172,16 +172,6 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
     
     print('Finished')
         
-
-
-def process_image(file_key):
-    index, infile, outfile, T = file_key
-    im1 = Image.open(infile)
-    im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
-    im2.save(outfile)
-
-    del im1, im2
-    return
 
 
 def create_csv_data(animal, file_keys):

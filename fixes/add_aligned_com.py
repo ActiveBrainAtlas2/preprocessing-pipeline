@@ -1,6 +1,8 @@
+import argparse
 from sqlalchemy import func
 from tqdm import tqdm
-
+import json
+from pprint import pprint
 import numpy as np
 import os
 import sys
@@ -68,19 +70,17 @@ def get_transformation_matrix(animal):
     except Exception as err:
         print(f'Other error occurred: {err}')
 
-    return transformation_matrix
+    r = np.array(transformation_matrix['rotation'])
+    t = np.array(transformation_matrix['translation'])
+    return r,t
 
 
 animals = ['DK39', 'DK41', 'DK43', 'DK52', 'DK54', 'DK55','MD589']
 
-person_id = 1
-beth = 2
-for animal in tqdm(animals):
-    transformation = get_transformation_matrix(animal)
-    r = np.array(transformation['rotation'])
-    t = np.array(transformation['translation'])
-    person_id = 1 # me
-    scan_run = session.query(ScanRun).filter(ScanRun.prep_id == animal).one()
+def get_manual_centers(animal):
+
+    person_id = 1
+    beth = 2
     rows = session.query(CenterOfMass).filter(
         CenterOfMass.active.is_(True))\
             .filter(CenterOfMass.prep_id == animal)\
@@ -91,26 +91,63 @@ for animal in tqdm(animals):
     for row in rows:
         structure = row.structure.abbreviation
         row_dict[structure] = [row.x, row.y, row.section]
+    return row_dict
+
+
+def add_center_of_mass(animal, structure, x, y, section, person_id):
+    com = CenterOfMass(
+        prep_id=animal, structure=structure, x=x, y=y, section=section,
+        created=datetime.utcnow(), active=True, person_id=person_id, input_type='aligned'
+    )
+    try:
+        session.add(com)
+        session.commit()
+    except Exception as e:
+        print(f'No merge {e}')
+        session.rollback()
+
+
+
+def transform_and_add_dict(animal, person_id, row_dict, r=None, t=None):
 
     for abbrev,v in row_dict.items():
         x = v[0]
         y = v[1]
         section = v[2]
         structure = session.query(Structure).filter(Structure.abbreviation == func.binary(abbrev)).one()
-        brain_coords = np.asarray([x, y, section])
-        brain_scale = [scan_run.resolution, scan_run.resolution, 20]
-        transformed = brain_to_atlas_transform(brain_coords, r, t, brain_scale=brain_scale)
-        x = transformed[0]
-        y = transformed[1]
-        section = transformed[2]
-        com = CenterOfMass(
-            prep_id=animal, structure=structure, x=x, y=y, section=section,
-            created=datetime.utcnow(), active=True, person_id=person_id, input_type='aligned'
-        )
-        try:
-            session.add(com)
-            session.commit()
-        except Exception as e:
-            print(f'No merge for {abbrev} {e}')
-            session.rollback()
+        if r is not None:
+            scan_run = session.query(ScanRun).filter(ScanRun.prep_id == animal).one()
+            brain_coords = np.asarray([x, y, section])
+            brain_scale = [scan_run.resolution, scan_run.resolution, 20]
+            transformed = brain_to_atlas_transform(brain_coords, r, t, brain_scale=brain_scale)
+            x = transformed[0]
+            y = transformed[1]
+            section = transformed[2]
+
+        add_center_of_mass(animal, structure, x, y, section, person_id)
+
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Work on Animal')
+    parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--jsonfile', help='Enter json file', required=True)
+    parser.add_argument('--transform', help='Enter true or false', required=True)
+
+    args = parser.parse_args()
+    animal = args.animal
+    jsonfile = args.jsonfile
+    person_id = 28 # bili
+    transform = bool({'true': True, 'false': False}[str(args.transform).lower()])
+
+    with open(jsonfile) as f:
+      row_dict = json.load(f)
+
+    r = None
+    t = None
+
+    if transform:
+        r, t = get_transformation_matrix(animal)
+    
+    transform_and_add_dict(animal, person_id, row_dict, r, t)
 
