@@ -20,8 +20,10 @@ function transform_fast_marmo(img_path, recon_path, output_dir)
 
 
                 % build the location of each pixel, it is zero centered
-                xJ = (1 : size(J,2))*dx(1); xJ = xJ - mean(xJ);
-                yJ = (1 : size(J,1))*dx(2); yJ = yJ - mean(yJ);
+                xJ = (1 : size(J,2))*dx(1); 
+                xJ = xJ - mean(xJ);
+                yJ = (1 : size(J,1))*dx(2); 
+                yJ = yJ - mean(yJ);
 
                 %%
                 % build a correction for the 3D affine
@@ -31,8 +33,10 @@ function transform_fast_marmo(img_path, recon_path, output_dir)
 
 
 
-                x = (1:36000) * dx(1); x = x - mean(x);
-                y = (1:56000) * dx(2); y = y - mean(y);
+                x = (1:36000) * dx(1); 
+                x = x - mean(x);
+                y = (1:56000) * dx(2); 
+                y = y - mean(y);
 
                 % %%%%
                 % x = (1 : size(J,2))*dx(1); x = x - mean(x);

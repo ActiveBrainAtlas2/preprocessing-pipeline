@@ -272,7 +272,7 @@ def scaled(img, mask, scale=45000, epsilon=0.01):
         _range = 2 ** 16 - 1 # 16bit
         data_type = np.uint16
     else:
-        _range = 2 ** 256 - 1 # 16bit
+        _range = 2 ** 256 - 1 # 8bit
         data_type = np.uint8        
     scaled = img * (scale / _max) # scale the image from original values to e.g., 30000/10000
     scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit

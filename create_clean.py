@@ -11,18 +11,14 @@ import os, sys
 
 import cv2
 import numpy as np
-from numpy.core.fromnumeric import compress
 from skimage import io
-from PIL import Image
-Image.MAX_IMAGE_PIXELS = None
 from tqdm import tqdm
-from tifffile import imsave
 from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from utilities.file_location import FileLocationManager
 from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
-from utilities.utilities_process import get_last_2d, test_dir, SCALING_FACTOR
+from utilities.utilities_process import test_dir, SCALING_FACTOR
 
 
 def fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_height, scale):
@@ -45,12 +41,12 @@ def fix_ntb(infile, mask, maskfile, logger, rotation, flip, max_width, max_heigh
         img = io.imread(infile, img_num=0)
     except:
         logger.warning(f'Could not open {infile}')
-    #img = get_last_2d(img)
+
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
     if channel == 1:
         fixed = scaled(fixed, mask, scale, epsilon=0.01)
-        #fixed = equalized(fixed)
+        fixed = equalized(fixed)
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
         #mask = rotate_image(mask, maskfile, rotation)
@@ -158,8 +154,7 @@ def masker(animal, channel, downsample, scale):
     if 'thion' in stain.lower():
         bgcolor = 255
 
-    #error = test_dir(animal, INPUT, downsample, same_size=False)
-    error = ""
+    error = test_dir(animal, INPUT, downsample, same_size=False)
     if len(error) > 0:
         print(error)
         sys.exit()

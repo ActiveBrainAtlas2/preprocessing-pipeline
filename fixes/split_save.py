@@ -9,9 +9,11 @@ from pathlib import Path
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
+from utilities.utilities_mask import rotate_image, place_image, scaled, equalized, remove_strip
 
-BASEINPUT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/CHATM3/preps'
+BASEINPUT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/CHATM2/preps'
+
+"""
 INPUT = os.path.join(BASEINPUT, 'CH0/thumbnail')
 files = sorted(os.listdir(INPUT))
 os.makedirs(os.path.join(BASEINPUT, 'CH1/thumbnail'), exist_ok=True)
@@ -22,7 +24,6 @@ os.makedirs(os.path.join(BASEINPUT, 'CH1/thumbnail_cleaned'), exist_ok=True)
 os.makedirs(os.path.join(BASEINPUT, 'CH2/thumbnail_cleaned'), exist_ok=True)
 os.makedirs(os.path.join(BASEINPUT, 'CH3/thumbnail_cleaned'), exist_ok=True)
 
-"""
 for file in tqdm(files):
     infile = os.path.join(INPUT, file)
     img = cv2.imread(infile)
@@ -36,14 +37,17 @@ for file in tqdm(files):
     cv2.imwrite(ch2_outpath, ch2_img.astype(np.uint8))
     cv2.imwrite(ch3_outpath, ch3_img.astype(np.uint8))
 """
+max_width = 2000
+max_height = 1000
 
-for channel in [1,2,3]:
+for channel in [2]:
     INPUT = os.path.join(BASEINPUT, f'CH{channel}/thumbnail')
     files = sorted(os.listdir(INPUT))
 
     for file in tqdm(files):
         infile = os.path.join(INPUT, file)
         img = io.imread(infile)
+        img, _ = remove_strip(img)
         mask = compute_mask(img, m=0.2, M=0.9, cc=False, opening=2, exclude_zeros=True)
         mask = mask.astype(int)
         mask[mask==0] = 0
@@ -52,11 +56,12 @@ for channel in [1,2,3]:
         mask = cv2.dilate(mask.astype(np.uint8), kernel, iterations=2)
         mask = mask.astype(np.uint8)
         fixed = cv2.bitwise_and(img, img, mask=mask)
+        fixed = equalized(fixed)
         BASEOUTPUT = os.path.join(BASEINPUT, f'CH{channel}/thumbnail_cleaned')
         outpath = os.path.join(BASEOUTPUT, file)
         os.makedirs(BASEOUTPUT, exist_ok=True)
-        max_width = 2000
-        max_height = 1000
+        fixed = np.rot90(fixed, 3, axes=(1,0))
+        fixed = np.flip(fixed, axis=1)
         fixed = place_image(fixed, file, max_width, max_height, 0)
 
-        cv2.imwrite(outpath, fixed.astype(np.uint8))
+        cv2.imwrite(outpath, fixed.astype(np.uint16))
