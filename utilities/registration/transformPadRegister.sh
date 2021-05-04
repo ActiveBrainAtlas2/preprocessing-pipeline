@@ -15,7 +15,7 @@ MATLABCMD="/usr/local/bin/matlab -nodisplay -nodesktop -nosplash -r "
 #define paths
 PIPELINE_DIR="/net/birdstore/Active_Atlas_Data/data_root/pipeline_data"
 IMG_PATH="$PIPELINE_DIR/$ANIMAL/preps/$CHANNEL/full/"
-ROT_PATH="$PIPELINE_DIR/$ANIMAL/rotations/"
+ROT_PATH="$PIPELINE_DIR/$ANIMAL/preps/rotations/"
 OUTPUT="$PIPELINE_DIR/$ANIMAL/preps/$CHANNEL/full_transformed/"
 mkdir -p $OUTPUT
 #################################start process: target to registered space##############################

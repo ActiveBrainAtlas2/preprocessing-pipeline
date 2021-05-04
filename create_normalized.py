@@ -57,7 +57,6 @@ def create_normalization(animal, channel):
         infile = os.path.join(INPUT, file)
         outpath = os.path.join(CLEANED, file)
         if os.path.exists(outpath):
-            print(outpath)
             continue
 
         fixed = fix_image(infile, rotation, flip)

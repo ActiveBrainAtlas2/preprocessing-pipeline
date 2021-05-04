@@ -14,6 +14,6 @@ MATLABCMD="/usr/local/bin/matlab -nodisplay -nodesktop -nosplash -r "
 
 #define path
 INPUT="/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/$ANIMAL/preps/$CHANNEL/full"
-OUTPUT="/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/$ANIMAL/preps/$CHANNEL/jp2"
+OUTPUT="/data2/dklabs_dropbox/UCSD_to_from_CSHL/$ANIMAL/$CHANNEL"
 mkdir -p $OUTPUT
 $MATLABCMD "maxNumCompThreads(2); tif2jp2('$INPUT', '$OUTPUT'); exit"

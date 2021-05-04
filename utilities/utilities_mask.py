@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.figure
 from nipy.labs.mask import compute_mask
-from skimage import exposure
+from skimage import exposure, io
 from pathlib import Path
 from scipy.ndimage.interpolation import map_coordinates
 from skimage.exposure import rescale_intensity, adjust_gamma
@@ -640,3 +640,52 @@ def get_binary_mask(img):
     return closed_mask
 
 
+
+def fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height):
+    """
+    This method clean all thionin images. Note that the thionin have 3 channels combined into one.
+    :param infile: file path of image
+    :param mask: binary mask image of the image
+    :param maskfile: file path of mask
+    :param ROTATED_MASKS: location of rotated masks
+    :param logger: logger to keep track of things
+    :param rotation: amount of rotation. 1 = rotate by 90degrees
+    :param flip: either flip or flop
+    :param max_width: width of image
+    :param max_height: height of image
+    :return: cleaned and rotated image
+    """
+    try:
+        imgfull = io.imread(infile)
+    except:
+        logger.warning(f'Could not open {infile}')
+
+    img_ch1 = imgfull[:, :, 0]
+    img_ch2 = imgfull[:, :, 1]
+    img_ch3 = imgfull[:, :, 2]
+    fixed1 = cv2.bitwise_and(img_ch1, img_ch1, mask=mask)
+    fixed2 = cv2.bitwise_and(img_ch2, img_ch2, mask=mask)
+    fixed3 = cv2.bitwise_and(img_ch3, img_ch3, mask=mask)
+    del img_ch1
+    del img_ch2
+    del img_ch3
+
+    if rotation > 0:
+        fixed1 = rotate_image(fixed1, infile, rotation)
+        fixed2 = rotate_image(fixed2, infile, rotation)
+        fixed3 = rotate_image(fixed3, infile, rotation)
+        mask = rotate_image(mask, maskfile, rotation)
+
+    if flip == 'flip':
+        fixed1 = np.flip(fixed1)
+        fixed2 = np.flip(fixed2)
+        fixed3 = np.flip(fixed3)
+        mask = np.flip(mask)
+    if flip == 'flop':
+        fixed1 = np.flip(fixed1, axis=1)
+        fixed2 = np.flip(fixed2, axis=1)
+        fixed3 = np.flip(fixed3, axis=1)
+        mask = np.flip(mask, axis=1)
+
+    fixed = np.dstack((fixed1, fixed2, fixed3))
+    return fixed

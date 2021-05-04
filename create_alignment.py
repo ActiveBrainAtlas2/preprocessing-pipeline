@@ -128,6 +128,8 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
         OUTPUT = os.path.join(fileLocationManager.prep, 'rotated_aligned_masked')
 
     os.makedirs(OUTPUT, exist_ok=True)
+    progress_id = sqlController.get_progress_id(downsample, channel, 'ALIGN')
+    sqlController.set_task(animal, progress_id)
 
     warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', downsample)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
@@ -165,8 +167,6 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
         end = timer()
         print(f'Create aligned files took {end - start} seconds')
         # set task as completed
-        progress_id = sqlController.get_progress_id(downsample, channel, 'ALIGN')
-        sqlController.set_task(animal, progress_id)
 
 
     

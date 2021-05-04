@@ -325,15 +325,13 @@ class NumpyToNeuroglancer():
     def process_image(self, file_key):
         index, infile = file_key
         basefile = os.path.basename(infile)
-        #completed = file_processed(self.animal, self.progress_id, basefile)
-        completed = False
+        completed = file_processed(self.animal, self.progress_id, basefile)
         if completed:
             print(f"Section {index} already processed, skipping ")
             return
         img = io.imread(infile)
         img = img.reshape(self.num_channels, img.shape[0], img.shape[1]).T
         self.precomputed_vol[:, :, index] = img
-        #set_file_completed(self.animal, self.progress_id, basefile)
         del img
         return
 
