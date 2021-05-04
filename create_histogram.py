@@ -34,7 +34,7 @@ def make_histogram(animal, channel):
     INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
     MASK_INPUT = fileLocationManager.thumbnail_masked
     tifs = sqlController.get_sections(animal, channel)
-    error = test_dir(animal, INPUT, downsample=False, same_size=False)
+    error = test_dir(animal, INPUT, downsample=True, same_size=False)
     if len(tifs) == 0:
         error += " No sections in the database"
     if len(error) > 0:
