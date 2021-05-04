@@ -33,7 +33,7 @@ def make_web_thumbnails(animal):
     if len_files < 10:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
     ##### Check if files in dir are valid
-    error = test_dir(animal, INPUT, downsample=False, same_size=True)
+    error = test_dir(animal, INPUT, downsample=True, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()
