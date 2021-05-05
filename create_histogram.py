@@ -43,13 +43,8 @@ def make_histogram(animal, channel):
     ch_dir = f'CH{channel}'
     OUTPUT = os.path.join(fileLocationManager.histogram, ch_dir)
     os.makedirs(OUTPUT, exist_ok=True)
-
-    if channel == 3:
-        sqlController.set_task(animal, CREATE_CHANNEL_3_HISTOGRAMS)
-    elif channel == 2:
-        sqlController.set_task(animal, CREATE_CHANNEL_2_HISTOGRAMS)
-    else:
-        sqlController.set_task(animal, CREATE_CHANNEL_1_HISTOGRAMS)
+    progress_id = sqlController.get_progress_id(True, channel, 'HISTOGRAM')
+    sqlController.set_task(animal, progress_id)
 
     for i, tif in enumerate(tqdm(tifs)):
         filename = str(i).zfill(3) + '.tif'
@@ -113,7 +108,7 @@ def make_combined(animal, channel):
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
     MASK_INPUT = fileLocationManager.thumbnail_masked
-    OUTPUT = os.path.join(fileLocationManager.brain_info)
+    OUTPUT = os.path.join(fileLocationManager.histogram, f'CH{channel}')
     os.makedirs(OUTPUT, exist_ok=True)
     tifs = os.listdir(INPUT)
     lfiles = len(tifs)
@@ -179,10 +174,10 @@ def make_combined(animal, channel):
     plt.grid(axis='y', alpha=0.75)
     plt.xlabel('Value')
     plt.ylabel('Frequency')
-    plt.title('{} channel {} @16bit with {} tif files'.format(animal, channel, lfiles))
-    outfile = '{}_C{}.histogram.png'.format(animal, channel)
-    output_path = os.path.join(OUTPUT, outfile)
-    fig.savefig(output_path, bbox_inches='tight')
+    plt.title(f'{animal} channel {channel} @16bit with {lfiles} tif files')
+    outfile = f'{animal}.png'
+    outpath = os.path.join(OUTPUT, outfile)
+    fig.savefig(outpath, bbox_inches='tight')
     print('Finished')
 
 
@@ -190,12 +185,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--single', help='Enter single or combined', required=True, default='single')
+    parser.add_argument('--single', help='Enter true or false', required=False, default='true')
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
-    single = bool({'single': True, 'combined': False}[args.single])
+    single = bool({'true': True, 'false': False}[str(args.single).lower()])
 
     if single:
         make_histogram(animal, channel)
