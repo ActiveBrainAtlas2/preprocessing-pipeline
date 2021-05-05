@@ -11,7 +11,7 @@ from multiprocessing.pool import Pool
 from tqdm import tqdm
 from shutil import copyfile
 
-from sql_setup import CREATE_CHANNEL_1_THUMBNAILS, CREATE_CHANNEL_1_FULL_RES, CREATE_CHANNEL_3_FULL_RES, \
+from sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
@@ -107,10 +107,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
-    sqlController = SqlController(animal)
     make_full_resolution(animal, channel)
     make_low_resolution(animal, channel)
 
+    sqlController = SqlController(animal)
     if channel == 1:
         sqlController.update_scanrun(sqlController.scan_run.id)
     progress_id = sqlController.get_progress_id(True, channel, 'TIF')

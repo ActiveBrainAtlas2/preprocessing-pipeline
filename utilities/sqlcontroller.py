@@ -365,9 +365,12 @@ class SqlController(object):
             # invalid state is removed.
             self.session.close()
 
-    def get_centers_dict(self, prep_id):
+    def get_centers_dict(self, prep_id, input_type='manual', person_id=2):
+        #get_centers_dict(animal, input_type=input_type, person_id=person_id)
         rows = self.session.query(CenterOfMass).filter(
-            CenterOfMass.active.is_(True)).filter(CenterOfMass.prep_id == prep_id).all()
+            CenterOfMass.active.is_(True)).filter(CenterOfMass.prep_id == prep_id)\
+            .filter(CenterOfMass.input_type == input_type)\
+            .filter(CenterOfMass.person_id == person_id).all()
         row_dict = {}
         for row in rows:
             structure = row.structure.abbreviation
