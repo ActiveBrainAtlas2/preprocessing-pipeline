@@ -131,7 +131,7 @@ def transform_and_add_dict(animal, person_id, row_dict, r=None, t=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--jsonfile', help='Enter json file', required=True)
+    parser.add_argument('--jsonfile', help='Enter json file', required=False)
     parser.add_argument('--transform', help='Enter true or false', required=True)
 
     args = parser.parse_args()
@@ -140,8 +140,11 @@ if __name__ == '__main__':
     person_id = 28 # bili
     transform = bool({'true': True, 'false': False}[str(args.transform).lower()])
 
-    with open(jsonfile) as f:
-      row_dict = json.load(f)
+    if jsonfile is not None:
+        with open(jsonfile) as f:
+            row_dict = json.load(f)
+    else:
+        row_dict = get_manual_centers(animal)
 
     r = None
     t = None
