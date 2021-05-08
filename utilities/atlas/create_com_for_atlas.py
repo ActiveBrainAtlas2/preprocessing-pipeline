@@ -76,19 +76,20 @@ def insert_origins(atlas, create):
         x_end = x_start + volume.shape[0]
         y_end = y_start + volume.shape[1]
         z_end = z_start + (volume.shape[2] + 1) / 2
-        #x = ((x_start + x_end) / 2)
-        #y = ((y_start + y_end) / 2)
-        #z = (z_start + z_end) / 2
+        x = ((x_start + x_end) / 2)
+        y = ((y_start + y_end) / 2)
+        z = (z_start + z_end) / 2
 
 
-        if '7' in structure:
+        if 'VLL_R' in structure:
             if create:
                 input_type = 'manual'
                 person_id = 16 # lauren
                 sqlController.add_center_of_mass(structure, atlas, x,y,z, person_id, input_type)
             else:
                 center = calc_com(origin[0], origin[1], origin[2], volume)
-                print(structure, atlas, x,y,z, center)
+                print(structure, atlas, x,y,z, 
+                atlas_scale_xy(x), atlas_scale_xy(y), atlas_scale_section(z))
 
 
 if __name__ == '__main__':
