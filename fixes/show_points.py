@@ -71,7 +71,7 @@ def create_points(animal, section, layer, debug=False):
         proc.wait()
 
     outfile = str(section).zfill(3) + '.png'
-    outpath = os.path.join(fileLocationManager.thumbnail_web, 'points')
+    outpath = os.path.join(fileLocationManager.thumbnail_web, 'points', 'layer')
     os.makedirs(outpath, exist_ok=True)
     png = os.path.join(outpath, outfile)
     cmd = f'convert {outpath} -resize 5% -normalize -auto-level {png}' 
