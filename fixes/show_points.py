@@ -4,7 +4,7 @@ from subprocess import Popen
 import argparse
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
-
+from tqdm import tqdm
 HOME = os.path.expanduser("~")
 
 HOME = os.path.expanduser("~")
@@ -32,7 +32,7 @@ def create_points(animal, section, layer, debug=False):
 
     df = df[(df["Layer"] == layer)]
     sections = df['Section'].unique()
-    for section in sections:
+    for section in tqdm(sections):
         df = df[(df["Layer"] == layer) & (df["Section"] == section)]
         if debug:
             print('section', section)
@@ -102,7 +102,7 @@ def create_points(animal, section, layer, debug=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--section', help='Enter section', required=True)
+    parser.add_argument('--section', help='Enter section', required=False, default=0)
     parser.add_argument('--layer', help='Enter layer', required=True)
     parser.add_argument('--debug', help='Enter true or false', required=False, default='true')
     
