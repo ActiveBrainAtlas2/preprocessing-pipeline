@@ -17,7 +17,8 @@ def create_points(animal, section, layer, debug=False):
     fileLocationManager = FileLocationManager(animal)
 
     INPUT = os.path.join(fileLocationManager.prep, 'CH3', 'full_aligned')
-    dfpath = os.path.join(HOME, f'programming/brains/{animal}', f'{animal}.CH3.Premotor.csv')
+    
+    dfpath = os.path.join(fileLocationManager.brain_info, 'CH3.points.csv')
     if not os.path.exists(dfpath):
         print(dfpath, 'does not exist')
         return
