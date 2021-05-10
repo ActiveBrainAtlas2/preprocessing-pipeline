@@ -29,15 +29,19 @@ def create_points(animal, section, layer, debug=False):
     counts = df[['Layer', 'X', 'Section']].groupby(['Layer','Section']).agg(['count'])
     if debug:
         print(counts.to_string())
+    
 
     df = df[(df["Layer"] == layer)]
     sections = df['Section'].unique()
     for section in tqdm(sections):
-        df = df[(df["Layer"] == layer) & (df["Section"] == section)]
+        df_layer = df[df["Section"] == section]
         if debug:
             print('section', section)
-            print(df.head())
-        pts = df[['X','Y']].values / 1
+            print(df_layer.head())
+        pts = df_layer[['X','Y']].values
+        points = pts.tolist()
+        if len(points) < 3:
+            continue
         means = np.mean(pts, axis=0)
         mean_x = means[0]
         mean_y = means[1]
@@ -45,12 +49,14 @@ def create_points(animal, section, layer, debug=False):
         D = squareform(D);
         max_distance, [I_row, I_col] = np.nanmax(D), np.unravel_index( np.argmax(D), D.shape )
 
-        points = pts.tolist()
+        if debug:
+            print(f'means for section {section} {means}, pts {pts}')
+
 
         file = f'{section}.tif' 
         infile = os.path.join(INPUT, file)
 
-        if not os.path.exists(infile):
+        if not os.path.exists(infile) and not debug:
             print(infile, 'does not exist')
             return
 
