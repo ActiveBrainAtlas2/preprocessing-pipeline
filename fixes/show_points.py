@@ -61,7 +61,7 @@ def create_points(animal, section, layer, debug=False):
         proc.wait()
     
     width, height = get_image_size(infile)
-    chop = width//2
+    chop = int(width)//2
 
     cmd = f'convert {outpath} -gravity West -chop {chop}x0 {outpath}' 
     if debug:
