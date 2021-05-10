@@ -70,10 +70,10 @@ def create_points(animal, section, layer, debug=False):
         proc = Popen(cmd, shell=True)
         proc.wait()
 
-    outfile = str(section).zfill(3) + '.png'
-    outpath = os.path.join(fileLocationManager.thumbnail_web, 'points', 'layer')
-    os.makedirs(outpath, exist_ok=True)
-    png = os.path.join(outpath, outfile)
+    pngfile = str(section).zfill(3) + '.png'
+    pngpath = os.path.join(fileLocationManager.thumbnail_web, 'points', layer)
+    os.makedirs(pngpath, exist_ok=True)
+    png = os.path.join(pngpath, pngfile)
     cmd = f'convert {outpath} -resize 5% -normalize -auto-level {png}' 
     if debug:
         print(cmd)
