@@ -32,7 +32,10 @@ def create_points(animal, section, layer, debug=False):
     
 
     df = df[(df["Layer"] == layer)]
-    sections = df['Section'].unique()
+    if section > 0:
+        sections = [section]
+    else:
+        sections = df['Section'].unique()
     for section in tqdm(sections):
         df_layer = df[df["Section"] == section]
         if debug:
@@ -68,10 +71,17 @@ def create_points(animal, section, layer, debug=False):
             print(outpath, 'exists')
             continue
 
-        cmd = f'convert {infile} -fill transparent -stroke yellow'  
+        cmd = f'convert {infile} -normalize -auto-level {outpath}' 
+        if debug:
+            print(cmd)
+        else:
+            proc = Popen(cmd, shell=True)
+            proc.wait()
+
+        cmd = f'convert {outpath} -fill transparent -stroke yellow'  
         for point in points:
             endcircle = point[0] + (20*5)
-            cmd += f' -draw "circle {point[0]},{point[1]},{endcircle},{point[1]}" '
+            cmd += f' -draw "stroke-width 2 circle {point[0]},{point[1]},{endcircle},{point[1]}" '
 
         cmd += f' {outpath}'
         if debug:
@@ -86,7 +96,7 @@ def create_points(animal, section, layer, debug=False):
         offsety = int(mean_y - max_distance/2)
 
         #cmd = f'convert {outpath} -gravity West -chop {chop}x0 {outpath}' 
-        cmd = f'convert {outpath} -crop {sizex}x{sizey}+{offsetx}+{offsety} -normalize -auto-level {outpath}' 
+        cmd = f'convert {outpath} -crop {sizex}x{sizey}+{offsetx}+{offsety} {outpath}' 
         if debug:
             print(cmd)
         else:
