@@ -29,69 +29,74 @@ def create_points(animal, section, layer, debug=False):
     counts = df[['Layer', 'X', 'Section']].groupby(['Layer','Section']).agg(['count'])
     if debug:
         print(counts.to_string())
-    df = df[(df["Layer"] == layer) & (df["Section"] == section)]
-    if debug:
-        print(df.head())
-    pts = df[['X','Y']].values / 1
-    means = np.mean(pts, axis=0)
-    mean_x = means[0]
-    mean_y = means[1]
-    D = pdist(pts)
-    D = squareform(D);
-    max_distance, [I_row, I_col] = np.nanmax(D), np.unravel_index( np.argmax(D), D.shape )
 
-    points = pts.tolist()
+    df = df[(df["Layer"] == layer)]
+    sections = df['Section'].unique()
+    for section in sections:
+        df = df[(df["Layer"] == layer) & (df["Section"] == section)]
+        if debug:
+            print('section', section)
+            print(df.head())
+        pts = df[['X','Y']].values / 1
+        means = np.mean(pts, axis=0)
+        mean_x = means[0]
+        mean_y = means[1]
+        D = pdist(pts)
+        D = squareform(D);
+        max_distance, [I_row, I_col] = np.nanmax(D), np.unravel_index( np.argmax(D), D.shape )
 
-    file = f'{section}.tif' 
-    infile = os.path.join(INPUT, file)
+        points = pts.tolist()
 
-    if not os.path.exists(infile):
-        print(infile, 'does not exist')
-        return
+        file = f'{section}.tif' 
+        infile = os.path.join(INPUT, file)
 
-    OUTPUT = f'{HOME}/programming/brains/{animal}/CH3'
-    os.makedirs(OUTPUT, exist_ok=True)
-    outpath =  os.path.join(OUTPUT, f'{section}.points.tif')
+        if not os.path.exists(infile):
+            print(infile, 'does not exist')
+            return
 
-    if os.path.exists(outpath):
-        print(outpath, 'exists')
-        return
+        OUTPUT = f'{HOME}/programming/brains/{animal}/CH3'
+        os.makedirs(OUTPUT, exist_ok=True)
+        outpath =  os.path.join(OUTPUT, f'{section}.points.tif')
 
-    cmd = f'convert {infile} -fill transparent -stroke yellow'  
-    for point in points:
-        endcircle = point[0] + (20*5)
-        cmd += f' -draw "circle {point[0]},{point[1]},{endcircle},{point[1]}" '
+        if os.path.exists(outpath):
+            print(outpath, 'exists')
+            return
 
-    cmd += f' {outpath}'
-    if debug:
-        print(cmd)
-    else:
-        proc = Popen(cmd, shell=True)
-        proc.wait()
-    
-    sizex = int(max_distance + 500)
-    sizey = sizex
-    offsetx = int(mean_x - max_distance/2)
-    offsety = int(mean_y - max_distance/2)
+        cmd = f'convert {infile} -fill transparent -stroke yellow'  
+        for point in points:
+            endcircle = point[0] + (20*5)
+            cmd += f' -draw "circle {point[0]},{point[1]},{endcircle},{point[1]}" '
 
-    #cmd = f'convert {outpath} -gravity West -chop {chop}x0 {outpath}' 
-    cmd = f'convert {outpath} -crop {sizex}x{sizey}+{offsetx}+{offsety} -normalize -auto-level {outpath}' 
-    if debug:
-        print(cmd)
-    else:
-        proc = Popen(cmd, shell=True)
-        proc.wait()
+        cmd += f' {outpath}'
+        if debug:
+            print(cmd)
+        else:
+            proc = Popen(cmd, shell=True)
+            proc.wait()
+        
+        sizex = int(max_distance + 500)
+        sizey = sizex
+        offsetx = int(mean_x - max_distance/2)
+        offsety = int(mean_y - max_distance/2)
 
-    pngfile = str(section).zfill(3) + '.png'
-    pngpath = os.path.join(fileLocationManager.thumbnail_web, 'points', layer)
-    os.makedirs(pngpath, exist_ok=True)
-    png = os.path.join(pngpath, pngfile)
-    cmd = f'convert {outpath} -resize 12% {png}' 
-    if debug:
-        print(cmd)
-    else:
-        proc = Popen(cmd, shell=True)
-        proc.wait()
+        #cmd = f'convert {outpath} -gravity West -chop {chop}x0 {outpath}' 
+        cmd = f'convert {outpath} -crop {sizex}x{sizey}+{offsetx}+{offsety} -normalize -auto-level {outpath}' 
+        if debug:
+            print(cmd)
+        else:
+            proc = Popen(cmd, shell=True)
+            proc.wait()
+
+        pngfile = str(section).zfill(3) + '.png'
+        pngpath = os.path.join(fileLocationManager.thumbnail_web, 'points', layer)
+        os.makedirs(pngpath, exist_ok=True)
+        png = os.path.join(pngpath, pngfile)
+        cmd = f'convert {outpath} -resize 12% {png}' 
+        if debug:
+            print(cmd)
+        else:
+            proc = Popen(cmd, shell=True)
+            proc.wait()
 
 
 if __name__ == '__main__':
