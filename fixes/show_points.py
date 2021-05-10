@@ -60,7 +60,7 @@ def create_points(animal, section, layer, debug=False):
             print(infile, 'does not exist')
             continue
 
-        OUTPUT = f'{HOME}/programming/brains/{animal}/CH3'
+        OUTPUT = f'{HOME}/programming/brains/{animal}/CH3/{layer}'
         os.makedirs(OUTPUT, exist_ok=True)
         outpath =  os.path.join(OUTPUT, f'{section}.points.tif')
 
