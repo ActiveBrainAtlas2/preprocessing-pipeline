@@ -2,6 +2,8 @@ import os, sys
 import pandas as pd
 from subprocess import Popen
 import argparse
+import numpy as np
+from scipy.spatial.distance import pdist, squareform
 
 HOME = os.path.expanduser("~")
 
@@ -31,6 +33,13 @@ def create_points(animal, section, layer, debug=False):
     if debug:
         print(df.head())
     pts = df[['X','Y']].values / 1
+    means = np.mean(pts, axis=0)
+    mean_x = means[0]
+    mean_y = means[1]
+    D = pdist(pts)
+    D = squareform(D);
+    max_distance, [I_row, I_col] = np.nanmax(D), np.unravel_index( np.argmax(D), D.shape )
+
     points = pts.tolist()
 
     file = f'{section}.tif' 
@@ -60,10 +69,13 @@ def create_points(animal, section, layer, debug=False):
         proc = Popen(cmd, shell=True)
         proc.wait()
     
-    width, height = get_image_size(infile)
-    chop = int(width)//2
+    sizex = int(max_distance + 500)
+    sizey = sizex
+    offsetx = int(mean_x - max_distance/2)
+    offsety = int(mean_y - max_distance/2)
 
-    cmd = f'convert {outpath} -gravity West -chop {chop}x0 {outpath}' 
+    #cmd = f'convert {outpath} -gravity West -chop {chop}x0 {outpath}' 
+    cmd = f'convert {outpath} -crop {sizex}x{sizey}+{offsetx}+{offsety} -normalize -auto-level {outpath}' 
     if debug:
         print(cmd)
     else:
@@ -74,7 +86,7 @@ def create_points(animal, section, layer, debug=False):
     pngpath = os.path.join(fileLocationManager.thumbnail_web, 'points', layer)
     os.makedirs(pngpath, exist_ok=True)
     png = os.path.join(pngpath, pngfile)
-    cmd = f'convert {outpath} -resize 5% -normalize -auto-level {png}' 
+    cmd = f'convert {outpath} -resize 12% {png}' 
     if debug:
         print(cmd)
     else:
