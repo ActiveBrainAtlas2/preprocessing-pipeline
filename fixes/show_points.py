@@ -58,7 +58,7 @@ def create_points(animal, section, layer, debug=False):
 
         if not os.path.exists(infile) and not debug:
             print(infile, 'does not exist')
-            return
+            continue
 
         OUTPUT = f'{HOME}/programming/brains/{animal}/CH3'
         os.makedirs(OUTPUT, exist_ok=True)
@@ -66,7 +66,7 @@ def create_points(animal, section, layer, debug=False):
 
         if os.path.exists(outpath):
             print(outpath, 'exists')
-            return
+            continue
 
         cmd = f'convert {infile} -fill transparent -stroke yellow'  
         for point in points:
