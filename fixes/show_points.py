@@ -26,6 +26,8 @@ def create_points(animal, section, layer, debug=False):
         return
     df = pd.read_csv(dfpath)
     df.drop(["Description"], inplace=True, axis=1)
+    df['Section'] = df['Section'].astype(int)
+
     counts = df[['Layer', 'X', 'Section']].groupby(['Layer','Section']).agg(['count'])
     if debug:
         print(counts.to_string())
@@ -80,8 +82,8 @@ def create_points(animal, section, layer, debug=False):
 
         cmd = f'convert {outpath} -fill transparent -stroke yellow'  
         for point in points:
-            endcircle = point[0] + (20*5)
-            cmd += f' -draw "stroke-width 2 circle {point[0]},{point[1]},{endcircle},{point[1]}" '
+            endcircle = point[0] + (15*5)
+            cmd += f' -draw "stroke-width 20 circle {point[0]},{point[1]},{endcircle},{point[1]}" '
 
         cmd += f' {outpath}'
         if debug:
@@ -103,7 +105,7 @@ def create_points(animal, section, layer, debug=False):
             proc = Popen(cmd, shell=True)
             proc.wait()
 
-        pngfile = str(section).zfill(3) + '.png'
+        pngfile = str(section).zfill(3) + '_v1.png'
         pngpath = os.path.join(fileLocationManager.thumbnail_web, 'points', layer)
         os.makedirs(pngpath, exist_ok=True)
         png = os.path.join(pngpath, pngfile)

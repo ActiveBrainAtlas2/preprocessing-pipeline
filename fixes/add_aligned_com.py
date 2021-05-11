@@ -137,7 +137,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     animal = args.animal
     jsonfile = args.jsonfile
-    person_id = 28 # bili
+    person_id = 1 # bili
     transform = bool({'true': True, 'false': False}[str(args.transform).lower()])
 
     if jsonfile is not None:
