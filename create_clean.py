@@ -40,11 +40,16 @@ def fix_ntb(file_keys):
         :param scale: used in scaling. Gotten from the histogram
     :return: nothing. we write the image to disk
     """
-    infile, outpath, mask, rotation, flip, max_width, max_height, scale = file_keys
+    infile, outpath, maskfile, rotation, flip, max_width, max_height, scale = file_keys
     try:
         img = io.imread(infile)
     except:
         print(f'Could not open {infile}')
+        
+    try:
+        mask = io.imread(maskfile)
+    except:
+        print(f'Mask {maskfile} does not exist')
 
     fixed = cv2.bitwise_and(img, img, mask=mask)
     del img
@@ -121,13 +126,12 @@ def masker(animal, channel, downsample, scale):
         if os.path.exists(outpath):
             continue
         maskfile = os.path.join(MASKS, file)
-        mask = io.imread(maskfile)
 
         if 'thion' in stain.lower():
             print('Not implemented.')
             #fixed = fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height)
         else:
-            file_keys.append([infile, outpath, mask, rotation, flip, max_width, max_height, scale])
+            file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, scale])
 
     start = timer()
     workers, _ = get_cpus()
