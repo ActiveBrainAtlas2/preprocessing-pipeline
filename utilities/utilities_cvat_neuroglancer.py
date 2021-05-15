@@ -31,8 +31,8 @@ def get_cpus():
     usecpus = (4,4)
     cpus = {}
     cpus['muralis'] = (16,40)
-    cpus['basalis'] = (12,12)
-    cpus['ratto'] = (10,10)
+    cpus['basalis'] = (4,12)
+    cpus['ratto'] = (4,10)
     hostname = get_hostname()
     if hostname in cpus.keys():
         usecpus = cpus[hostname]
