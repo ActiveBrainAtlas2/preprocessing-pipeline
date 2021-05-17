@@ -4,17 +4,15 @@ from PIL import Image
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from torchvision import datasets
 from torchvision.transforms import ToTensor, Lambda, Compose
-import matplotlib.pyplot as plt
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection import FasterRCNN
 from torchvision.models.detection.rpn import AnchorGenerator
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
-
-PATH = '/home/eddyod/programming/pipeline_utility'
+HOME = os.path.expanduser("~")
+PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 
 import utilities.labelstudio.transforms as T
@@ -232,4 +230,7 @@ def train_model():
     print("That's it!")
 
 if __name__ == '__main__':
+    # Get cpu or gpu device for training.
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("Using {} device".format(device))    
     train_model()
