@@ -42,38 +42,24 @@ class PennFudanDataset(object):
         mask = Image.open(mask_path)
         # convert the PIL Image into a numpy array
         mask = np.array(mask)
-        # instances are encoded as different colors
-        obj_ids = np.unique(mask)
-        # first id is the background, so remove it
-        obj_ids = obj_ids[1:]
-        #print('obj_ids', obj_ids)
 
-        # split the color-encoded mask into a set
-        # of binary masks
-        masks = mask == obj_ids[:, None, None]
+        boxes = extract_bboxes(mask)
 
-        # get bounding box coordinates for each mask
-        num_objs = len(obj_ids)
-        boxes = []
-        for i in range(num_objs):
-            pos = np.where(masks[i])
-            xmin = np.min(pos[1])
-            xmax = np.max(pos[1])
-            ymin = np.min(pos[0])
-            ymax = np.max(pos[0])
-            #print(i,xmin, xmax, ymin, ymax)
-            boxes.append([xmin, ymin, xmax, ymax])
+
+        boxes = torch.as_tensor(boxes, dtype=torch.float32)
+
+
 
         # convert everything into a torch.Tensor
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         # there is only one class
-        labels = torch.ones((num_objs,), dtype=torch.int64)
-        masks = torch.as_tensor(masks, dtype=torch.uint8)
+        labels = torch.ones((1,), dtype=torch.int64)
+        masks = torch.as_tensor(mask, dtype=torch.uint8)
 
         image_id = torch.tensor([idx])
         area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
         # suppose all instances are not crowd
-        iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
+        iscrowd = torch.zeros((1,), dtype=torch.int64)
 
         target = {}
         target["boxes"] = boxes
@@ -91,6 +77,35 @@ class PennFudanDataset(object):
     def __len__(self):
         return len(self.imgs)
 
+def extract_bboxes(mask):
+    """Compute bounding boxes from masks.
+    mask: [height, width, num_instances]. Mask pixels are either 1 or 0.
+    Returns: bbox array [num_instances, (y1, x1, y2, x2)].
+    """
+    mask = mask.reshape(mask.shape[0], mask.shape[1], 1)
+    mask[mask>0] = 1
+
+    boxes = np.zeros([mask.shape[-1], 4], dtype=np.int32)
+    for i in range(mask.shape[-1]):
+        m = mask[:, :, i]
+        # Bounding box.
+        horizontal_indicies = np.where(np.any(m, axis=0))[0]
+        #print("np.any(m, axis=0)",np.any(m, axis=0))
+        #print("p.where(np.any(m, axis=0))",np.where(np.any(m, axis=0)))
+        vertical_indicies = np.where(np.any(m, axis=1))[0]
+        if horizontal_indicies.shape[0]:
+            x1, x2 = horizontal_indicies[[0, -1]]
+            y1, y2 = vertical_indicies[[0, -1]]
+            # x2 and y2 should not be part of the box. Increment by 1.
+            x2 += 1
+            y2 += 1
+        else:
+            # No mask for this instance. Might happen due to
+            # resizing or cropping. Set bbox to zeros
+            x1, x2, y1, y2 = 0, 0, 0, 0
+        boxes[i] = np.array([y1, x1, y2, x2])
+
+    return boxes.astype(np.int32)
 
 model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
 # replace the classifier with a new one, that has
