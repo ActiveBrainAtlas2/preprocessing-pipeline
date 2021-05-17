@@ -299,7 +299,10 @@ def trim_edges(img):
     img = clahe.apply(img)
     h_src = img.copy()
     limit = img_shape[1] // 12
-    threshold = 44
+    thresh1 = np.quantile(img[img > 0], 0.75)
+    thresh2 = np.median(img)
+    threshold = int(min(thresh1, thresh2))
+
     # trim left
     """
     for i in range(0,limit//2):
@@ -625,8 +628,7 @@ def get_binary_mask(img):
     thresh1 = np.quantile(img[img > 0], 0.75)
     thresh2 = np.median(img)
     thresh = int(min(thresh1, thresh2))
-    img[img < 20] = 0
-    normed = equalized(img)
+    #img[img < 20] = 0
     # size of 121 gives smooth outline and also captures almost
     # all the detail
     kernel_size = (21, 21) 
