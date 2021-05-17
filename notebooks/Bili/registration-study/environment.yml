@@ -1,0 +1,36 @@
+channels:
+  - pytorch
+  - simpleitk
+  - conda-forge
+  - default
+
+dependencies:
+  - python=3
+  - cython
+  - jupyterlab
+
+  - graph-tool
+  - matplotlib
+  - natsort
+  - nibabel
+  - nilearn
+  - numpy
+  - opencv
+  - pandas
+  - pyopengl
+  - pyqtgraph
+  - pytorch
+  - scikit-image
+  - scikit-learn
+  - scipy
+  - simpleitk
+  - tifffile
+  - vispy
+
+  # https://github.com/ipython/ipython/issues/12740
+  - jedi<0.18.0
+
+  - pip
+  - pip:
+    - ardent
+    - git+https://github.com/airlab-unibas/airlab.git

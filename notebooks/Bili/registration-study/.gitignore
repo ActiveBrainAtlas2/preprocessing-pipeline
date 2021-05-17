@@ -1,0 +1,12 @@
+data/bb/
+data/cellmap/
+data/fb/
+data/ff/
+data/local/
+env/
+
+.ipynb_checkpoints/
+*.pyc
+
+*.pdf
+*.pkl
