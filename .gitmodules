@@ -1,6 +1,0 @@
-[submodule "test-data"]
-	path = data/test-data
-	url = https://github.com/ActiveBrainAtlasPipeline/test-data.git
-[submodule "ClearMap2"]
-	path = extern/ClearMap2
-	url = https://github.com/ChristophKirst/ClearMap2.git
