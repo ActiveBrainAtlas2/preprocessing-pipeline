@@ -24,7 +24,7 @@ class PennFudanDataset(object):
     def __init__(self, root, transforms):
         self.root =  '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK46/preps'
         self.transforms = transforms
-        self.input = 'CH1/thumbnail_cleaned'
+        self.input = 'CH1/thumbnail'
         # load all image files, sorting them to
         # ensure that they are aligned
         self.imgs = list(sorted(os.listdir(os.path.join(self.root, self.input))))
@@ -41,7 +41,7 @@ class PennFudanDataset(object):
         # because each color corresponds to a different instance
         # with 0 being background
         mask = Image.open(mask_path)
-        mask = mask.resize((600, 800), resample=Image.BILINEAR)
+        #mask = mask.resize((600, 800), resample=Image.BILINEAR)
         mask = np.expand_dims(mask, axis=0)
 
         pos = np.where(np.array(mask)[0, :, :])
@@ -169,8 +169,9 @@ def train_model():
 
     # split the dataset in train and test set
     indices = torch.randperm(len(dataset)).tolist()
-    dataset = torch.utils.data.Subset(dataset, indices[:-50])
-    dataset_test = torch.utils.data.Subset(dataset_test, indices[-50:])
+    N = 400
+    dataset = torch.utils.data.Subset(dataset, indices[:-N])
+    dataset_test = torch.utils.data.Subset(dataset_test, indices[-N:])
 
     # define training and validation data loaders
     data_loader = torch.utils.data.DataLoader(
