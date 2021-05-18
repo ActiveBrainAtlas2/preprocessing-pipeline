@@ -1,13 +1,15 @@
 import math
-import sys
+import os, sys
 import time
 import torch
 import numpy as np
 
 import torchvision.models.detection.mask_rcnn
 
-PATH = '/home/eddyod/programming/pipeline_utility'
+HOME = os.path.expanduser("~")
+PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
+
 
 from utilities.labelstudio.coco_utils import get_coco_api_from_dataset
 from utilities.labelstudio.coco_eval import CocoEvaluator

@@ -170,6 +170,7 @@ def train_model():
     # split the dataset in train and test set
     indices = torch.randperm(len(dataset)).tolist()
     N = int(len(indices) * 0.2)
+    print('N and len indices', N, len(indices))
     dataset = torch.utils.data.Subset(dataset, indices[:-N])
     dataset_test = torch.utils.data.Subset(dataset_test, indices[-N:])
 
