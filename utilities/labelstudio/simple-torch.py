@@ -16,11 +16,11 @@ DIR =  '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK46/preps'
 
 def load_split_train_test(datadir, valid_size = .2):
     train_transforms = transforms.Compose([
-                                       transforms.ToTensor(),
-                                       ])
+        transforms.Resize((800,600)),
+        transforms.ToTensor()])
     test_transforms = transforms.Compose([
-                                      transforms.ToTensor(),
-                                      ])
+        transforms.Resize((800,600)),
+        transforms.ToTensor()])
     train_data = datasets.ImageFolder(datadir,       
                     transform=train_transforms)
     test_data = datasets.ImageFolder(datadir,
@@ -60,7 +60,7 @@ criterion = nn.NLLLoss()
 optimizer = optim.Adam(model.fc.parameters(), lr=0.003)
 model.to(device)
 
-epochs = 10
+epochs = 1
 steps = 0
 running_loss = 0
 print_every = 2

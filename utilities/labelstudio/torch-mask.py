@@ -24,41 +24,37 @@ class PennFudanDataset(object):
     def __init__(self, root, transforms):
         self.root =  '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK46/preps'
         self.transforms = transforms
+        self.input = 'CH1/thumbnail_cleaned'
         # load all image files, sorting them to
         # ensure that they are aligned
-        self.imgs = list(sorted(os.listdir(os.path.join(self.root, "CH1/rgb"))))
-        self.masks = list(sorted(os.listdir(os.path.join(self.root, "thumbnail_masked_small"))))
+        self.imgs = list(sorted(os.listdir(os.path.join(self.root, self.input))))
+        self.masks = list(sorted(os.listdir(os.path.join(self.root, "thumbnail_masked"))))
 
     def __getitem__(self, idx):
         # load images and masks
-        img_path = os.path.join(self.root, "CH1/rgb", self.imgs[idx])
+        img_path = os.path.join(self.root, self.input, self.imgs[idx])
         mask_path = os.path.join(self.root, "thumbnail_masked", self.masks[idx])
-        #img = Image.open(img_path)
-        img = Image.open(img_path).convert("RGB")
+        #img = Image.open(img_path).convert("RGB")
+        img = Image.open(img_path).convert("L")
         #img = np.array(img)
         # note that we haven't converted the mask to RGB,
         # because each color corresponds to a different instance
         # with 0 being background
         mask = Image.open(mask_path)
-        # convert the PIL Image into a numpy array
-        mask = np.array(mask)
+        mask = mask.resize((600, 800), resample=Image.BILINEAR)
+        mask = np.expand_dims(mask, axis=0)
 
-        boxes = extract_bboxes(mask)
+        pos = np.where(np.array(mask)[0, :, :])
+        xmin = np.min(pos[1])
+        xmax = np.max(pos[1])
+        ymin = np.min(pos[0])
+        ymax = np.max(pos[0])
 
-
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
-
-
-
-        # convert everything into a torch.Tensor
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
-        # there is only one class
+        boxes = torch.as_tensor([[xmin, ymin, xmax, ymax]], dtype=torch.float32)
         labels = torch.ones((1,), dtype=torch.int64)
-        masks = torch.as_tensor(mask, dtype=torch.uint8)
-
+        masks = torch.as_tensor(np.array(mask), dtype=torch.uint8)
         image_id = torch.tensor([idx])
         area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
-        # suppose all instances are not crowd
         iscrowd = torch.zeros((1,), dtype=torch.int64)
 
         target = {}
@@ -69,43 +65,12 @@ class PennFudanDataset(object):
         target["area"] = area
         target["iscrowd"] = iscrowd
 
-        if self.transforms is not None:
-            img, target = self.transforms(img, target)
+        return ToTensor()(img), target
 
-        return img, target
 
     def __len__(self):
         return len(self.imgs)
 
-def extract_bboxes(mask):
-    """Compute bounding boxes from masks.
-    mask: [height, width, num_instances]. Mask pixels are either 1 or 0.
-    Returns: bbox array [num_instances, (y1, x1, y2, x2)].
-    """
-    mask = mask.reshape(mask.shape[0], mask.shape[1], 1)
-    mask[mask>0] = 1
-
-    boxes = np.zeros([mask.shape[-1], 4], dtype=np.int32)
-    for i in range(mask.shape[-1]):
-        m = mask[:, :, i]
-        # Bounding box.
-        horizontal_indicies = np.where(np.any(m, axis=0))[0]
-        #print("np.any(m, axis=0)",np.any(m, axis=0))
-        #print("p.where(np.any(m, axis=0))",np.where(np.any(m, axis=0)))
-        vertical_indicies = np.where(np.any(m, axis=1))[0]
-        if horizontal_indicies.shape[0]:
-            x1, x2 = horizontal_indicies[[0, -1]]
-            y1, y2 = vertical_indicies[[0, -1]]
-            # x2 and y2 should not be part of the box. Increment by 1.
-            x2 += 1
-            y2 += 1
-        else:
-            # No mask for this instance. Might happen due to
-            # resizing or cropping. Set bbox to zeros
-            x1, x2, y1, y2 = 0, 0, 0, 0
-        boxes[i] = np.array([y1, x1, y2, x2])
-
-    return boxes.astype(np.int32)
 
 model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
 # replace the classifier with a new one, that has
@@ -247,5 +212,6 @@ def train_model():
 if __name__ == '__main__':
     # Get cpu or gpu device for training.
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print("Using {} device".format(device))    
-    train_model()
+    print("Using {} device".format(device))
+    test_model()    
+    #train_model()
