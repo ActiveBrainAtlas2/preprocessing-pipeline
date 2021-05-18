@@ -144,8 +144,8 @@ def test_model():
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
     dataset = PennFudanDataset('PennFudanPed', get_transform(train=True))
     data_loader = torch.utils.data.DataLoader(
-    dataset, batch_size=2, shuffle=True, num_workers=4,
-    collate_fn=collate_fn)
+        dataset, batch_size=2, shuffle=True, num_workers=4,
+        collate_fn=collate_fn)
     # For Training
     images,targets = next(iter(data_loader))
     images = list(image for image in images)
@@ -169,7 +169,7 @@ def train_model():
 
     # split the dataset in train and test set
     indices = torch.randperm(len(dataset)).tolist()
-    N = 400
+    N = int(len(indices) * 0.2)
     dataset = torch.utils.data.Subset(dataset, indices[:-N])
     dataset_test = torch.utils.data.Subset(dataset_test, indices[-N:])
 
