@@ -125,6 +125,12 @@ if __name__ == '__main__':
     parser.add_argument('brain')
     parser.add_argument('--base_brain', default='DK52')
     parser.add_argument('--workdir', type=Path)
+    parser.add_argument('--dx', help='downsampling factor in x',
+        type=int, default=8)
+    parser.add_argument('--dy', help='downsampling factor in x',
+        type=int, default=8)
+    parser.add_argument('--dz', help='downsampling factor in x',
+        type=int, default=2)
     parser.add_argument('--lr', help='learning rate',
         type=float, default=1e-2)
     parser.add_argument('--niter', help='number of optimization iterations',
@@ -148,7 +154,7 @@ if __name__ == '__main__':
     mov_img, fix_img = load_and_prep_images(
         mov_img_dir, mov_img_thumb_dir,
         fix_img_dir, fix_img_thumb_dir,
-        downsample_factor=(8, 8, 2)
+        downsample_factor=(args.dx, args.dy, args.dz)
     )
 
     transform = affine_registrate(
@@ -162,11 +168,11 @@ if __name__ == '__main__':
 
     print('Saving results')
 
-    np.save(work_dir / 'mov_img.npy', mov_img.image[0,0].numpy())
-    np.save(work_dir / 'fix_img.npy', fix_img.image[0,0].numpy())
-    np.save(work_dir / 'wrp_img.npy', wrp_img.image[0,0].numpy())
+    np.save(work_dir / 'img-mov.npy', mov_img.image[0,0].numpy())
+    np.save(work_dir / 'img-fix.npy', fix_img.image[0,0].numpy())
+    np.save(work_dir / 'img-wrp.npy', wrp_img.image[0,0].numpy())
 
-    transform_param_file = work_dir / 'al-affine-transform.json'
+    transform_param_file = work_dir / 'transform-affine-al.json'
     dump_al_affine_transform(mov_img, fix_img, transform, transform_param_file)
     transform = load_al_affine_transform(transform_param_file)
 
