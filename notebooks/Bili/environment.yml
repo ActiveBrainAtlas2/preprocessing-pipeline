@@ -19,6 +19,7 @@ dependencies:
   - numpy
   - opencv
   - pandas
+  - pymysql
   - pyopengl
   - pyqtgraph
   - pytorch
@@ -28,6 +29,7 @@ dependencies:
   - scipy
   - seaborn
   - simpleitk
+  - sqlalchemy
   - tifffile
   - vispy
 
