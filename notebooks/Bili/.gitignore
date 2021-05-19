@@ -1,4 +1,7 @@
+# data files
+*.npy
+*.pdf
+
+# Python files
 .ipynb_checkpoints/
 *.pyc
-
-*.npy
