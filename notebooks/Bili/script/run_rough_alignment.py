@@ -41,11 +41,11 @@ def load_and_prep_images(
     print('Padding image')
     mov_img_stack, fix_img_stack = pad([mov_img_stack, fix_img_stack])
 
-    print('Downsampling image')
+    print(f'Downsampling image with factor {downsample_factor}')
     dx, dy, dz = downsample_factor
     mov_img_stack = mov_img_stack[::dx, ::dy, ::dz]
     fix_img_stack = fix_img_stack[::dx, ::dy, ::dz]
-    
+
     print('Converting to AirLab image')
     dtype = torch.float32
     device = torch.device('cpu')
@@ -101,11 +101,14 @@ def pad(images):
 
 def affine_registrate(
     mov_img, fix_img,
-    lr=None, niter=None 
+    lr=None, niter=None,
+    init_transform=None
 ):
     registration = al.PairwiseRegistration(verbose=True)
 
     transformation = al.transformation.pairwise.AffineTransformation(mov_img)
+    if init_transform:
+        init_transform.init_al_transform(transformation)
     registration.set_transformation(transformation)
 
     image_loss = al.loss.pairwise.MSE(fix_img, mov_img)
@@ -135,6 +138,7 @@ if __name__ == '__main__':
         type=float, default=1e-2)
     parser.add_argument('--niter', help='number of optimization iterations',
         type=int, default=64)
+    parser.add_argument('--cont', action='store_true')
     args = parser.parse_args()
 
     data_dir = Path('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data')
@@ -144,6 +148,8 @@ if __name__ == '__main__':
     mov_brain = args.base_brain
     fix_brain = args.brain
     print(f'Aligning {mov_brain} (moving image) to {fix_brain} (fixed image)')
+    if args.cont:
+        print('Continue from last time')
 
     mov_img_dir = data_dir / mov_brain / 'preps/CH1/full_aligned'
     mov_img_thumb_dir = data_dir / mov_brain / 'preps/CH1/thumbnail_aligned'
@@ -157,9 +163,14 @@ if __name__ == '__main__':
         downsample_factor=(args.dx, args.dy, args.dz)
     )
 
+    transform_param_file = work_dir / f'transform-affine-al.json'
+    init_transform = None
+    if args.cont:
+        init_transform = load_al_affine_transform(transform_param_file)
     transform = affine_registrate(
         mov_img, fix_img,
-        lr=args.lr, niter=args.niter
+        lr=args.lr, niter=args.niter,
+        init_transform=init_transform
     )
 
     print('Warping moving image')
@@ -172,7 +183,6 @@ if __name__ == '__main__':
     np.save(work_dir / 'img-fix.npy', fix_img.image[0,0].numpy())
     np.save(work_dir / 'img-wrp.npy', wrp_img.image[0,0].numpy())
 
-    transform_param_file = work_dir / 'transform-affine-al.json'
     dump_al_affine_transform(mov_img, fix_img, transform, transform_param_file)
     transform = load_al_affine_transform(transform_param_file)
 
@@ -185,3 +195,5 @@ if __name__ == '__main__':
         fix_coms[name] = transform.forward_point(com).tolist()
     with open(coms_file, 'w') as f:
         json.dump(fix_coms, f, sort_keys=True, indent=4)
+
+    print('Finished!\n')

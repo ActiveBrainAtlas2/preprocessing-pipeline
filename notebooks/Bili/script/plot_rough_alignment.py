@@ -12,7 +12,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('brain')
     parser.add_argument('--workdir', type=Path)
-    parser.add_argument('--zstep', type=int, default=5)
+    parser.add_argument('--zstep', type=int, default=10)
     args = parser.parse_args()
 
     data_dir = Path('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data')
@@ -47,5 +47,28 @@ if __name__ == '__main__':
             ax[2].set_axis_off()
             fig.suptitle(f'z = {z}')
             fig.tight_layout()
+            pdf.savefig(fig)
+            plt.close()
+
+    with PdfPages(work_dir / f'diagnostic-alt.pdf') as pdf:
+        sz = img_fix.shape[-1]
+        for z in range(0, sz, args.zstep):
+            print(f'{z}/{sz}')
+            kwargs = {
+                'aspect':'equal',
+                'cmap': 'gray',
+            }
+
+            fig, ax = plt.subplots(1, 1, dpi=200, figsize=(8, 6))
+            ax.imshow(img_wrp[:,:,z].T, **kwargs)
+            ax.set_title(f'DK52 transformed\nz = {z}')
+            ax.set_axis_off()
+            pdf.savefig(fig)
+            plt.close()
+
+            fig, ax = plt.subplots(1, 1, dpi=200, figsize=(8, 6))
+            ax.imshow(img_fix[:,:,z].T, **kwargs)
+            ax.set_title(f'{args.brain} fixed\nz = {z}')
+            ax.set_axis_off()
             pdf.savefig(fig)
             plt.close()

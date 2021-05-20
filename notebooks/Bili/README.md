@@ -1,5 +1,7 @@
 # Bili's Workspace
 
+I'm wrapping up all my work here, to make it easier for someone else to pick up.
+
 ## Directory Structure
 
 - `backup`: a temparory place for code and notebook to be refined and brought back later
