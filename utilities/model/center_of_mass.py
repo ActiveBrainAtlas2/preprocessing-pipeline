@@ -18,7 +18,7 @@ class CenterOfMass(Base, AtlasModel):
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
     section = Column(Float, nullable=False)
-    input_type = Column(String, nullable=False)
+    input_type_id = Column(Integer, nullable=False)
 
     structure = relationship("Structure")
     animal = relationship("Animal")

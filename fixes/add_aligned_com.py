@@ -18,6 +18,7 @@ from utilities.model.structure import Structure
 from utilities.model.center_of_mass import CenterOfMass
 from utilities.model.scan_run import ScanRun
 from sql_setup import session
+CORRECTED = 2
 
 def brain_to_atlas_transform(
     brain_coord, r, t,
@@ -57,9 +58,9 @@ def brain_to_atlas_transform(
     return atlas_coord.T[0] # Convert back to a row vector
 
 
-def get_transformation_matrix(animal):
+def get_transformation_matrix(animal, input_type):
     try:
-        url = f'https://activebrainatlas.ucsd.edu/activebrainatlas/rotation/{animal}/manual/2'
+        url = f'https://activebrainatlas.ucsd.edu/activebrainatlas/rotation/{animal}/{input_type}/2'
         response = requests.get(url)
         response.raise_for_status()
         # access JSOn content
@@ -75,9 +76,8 @@ def get_transformation_matrix(animal):
     return r,t
 
 
-animals = ['DK39', 'DK41', 'DK43', 'DK52', 'DK54', 'DK55','MD589']
 
-def get_manual_centers(animal):
+def get_centers(animal, input_type_id):
 
     person_id = 1
     beth = 2
@@ -85,7 +85,7 @@ def get_manual_centers(animal):
         CenterOfMass.active.is_(True))\
             .filter(CenterOfMass.prep_id == animal)\
             .filter(CenterOfMass.person_id == beth)\
-            .filter(CenterOfMass.input_type == 'manual')\
+            .filter(CenterOfMass.input_type_id == input_type_id)\
             .all()
     row_dict = {}
     for row in rows:
@@ -97,7 +97,7 @@ def get_manual_centers(animal):
 def add_center_of_mass(animal, structure, x, y, section, person_id):
     com = CenterOfMass(
         prep_id=animal, structure=structure, x=x, y=y, section=section,
-        created=datetime.utcnow(), active=True, person_id=person_id, input_type='aligned'
+        created=datetime.utcnow(), active=True, person_id=person_id, input_type_id=CORRECTED
     )
     try:
         session.add(com)
@@ -137,20 +137,21 @@ if __name__ == '__main__':
     args = parser.parse_args()
     animal = args.animal
     jsonfile = args.jsonfile
-    person_id = 1 # bili
+    person_id = 28 # bili
     transform = bool({'true': True, 'false': False}[str(args.transform).lower()])
+    animals = ['DK39', 'DK41', 'DK43', 'DK52', 'DK54', 'DK55','MD589']
 
     if jsonfile is not None:
         with open(jsonfile) as f:
             row_dict = json.load(f)
     else:
-        row_dict = get_manual_centers(animal)
+        row_dict = get_centers(animal, CORRECTED)
 
     r = None
     t = None
 
     if transform:
-        r, t = get_transformation_matrix(animal)
+        r, t = get_transformation_matrix(animal, 'corrected')
     
     transform_and_add_dict(animal, person_id, row_dict, r, t)
 
