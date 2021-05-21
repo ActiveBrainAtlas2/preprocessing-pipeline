@@ -9,6 +9,7 @@ import airlab as al
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from matplotlib.backends.backend_pdf import PdfPages
 
 from toolbox.airlab import dump_al_affine_transform
 from toolbox.airlab import load_al_affine_transform
@@ -123,6 +124,59 @@ def affine_registrate(
     end = time.time()
     return transformation
 
+def plot_diagnostic(brain, img_wrp, img_fix, work_dir, zstep=10):
+    img_diff = img_wrp - img_fix
+    with PdfPages(work_dir / f'diagnostic.pdf') as pdf:
+        sz = img_fix.shape[-1]
+        for z in range(0, sz, zstep):
+            print(f'{z}/{sz}')
+            px = 1 / plt.rcParams['figure.dpi']
+            fig, ax = plt.subplots(1, 3, dpi=250, figsize=(8, 6))
+            kwargs = {
+                'aspect':'equal',
+                'cmap': 'gray',
+            }
+            ax[0].imshow(img_wrp[:,:,z], **kwargs)
+            ax[0].set_title('DK52 transformed')
+            ax[0].set_axis_off()
+            ax[1].imshow(img_fix[:,:,z], **kwargs)
+            ax[1].set_title(f'{brain} fixed')
+            ax[1].set_axis_off()
+            kwargs['cmap'] = 'coolwarm'
+            kwargs['vmin'] = -1
+            kwargs['vmax'] = 1
+            ax[2].imshow(img_diff[:,:,z], **kwargs)
+            ax[2].set_title(f'DK52 (red) - {brain} (blue)')
+            ax[2].set_axis_off()
+            fig.suptitle(f'z = {z}')
+            fig.tight_layout()
+            pdf.savefig(fig)
+            plt.close()
+
+def plot_diagnostic_alt(brain, img_wrp, img_fix, work_dir, zstep=10):
+    with PdfPages(work_dir / f'diagnostic-alt.pdf') as pdf:
+        sz = img_fix.shape[-1]
+        for z in range(0, sz, zstep):
+            print(f'{z}/{sz}')
+            kwargs = {
+                'aspect':'equal',
+                'cmap': 'gray',
+            }
+
+            fig, ax = plt.subplots(1, 1, dpi=200, figsize=(8, 6))
+            ax.imshow(img_wrp[:,:,z].T, **kwargs)
+            ax.set_title(f'DK52 transformed\nz = {z}')
+            ax.set_axis_off()
+            pdf.savefig(fig)
+            plt.close()
+
+            fig, ax = plt.subplots(1, 1, dpi=200, figsize=(8, 6))
+            ax.imshow(img_fix[:,:,z].T, **kwargs)
+            ax.set_title(f'{brain} fixed\nz = {z}')
+            ax.set_axis_off()
+            pdf.savefig(fig)
+            plt.close()
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('brain')
@@ -139,6 +193,7 @@ if __name__ == '__main__':
     parser.add_argument('--niter', help='number of optimization iterations',
         type=int, default=64)
     parser.add_argument('--cont', action='store_true')
+    parser.add_argument('--plot', action='store_true')
     args = parser.parse_args()
 
     data_dir = Path('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data')
@@ -179,10 +234,6 @@ if __name__ == '__main__':
 
     print('Saving results')
 
-    np.save(work_dir / 'img-mov.npy', mov_img.image[0,0].numpy())
-    np.save(work_dir / 'img-fix.npy', fix_img.image[0,0].numpy())
-    np.save(work_dir / 'img-wrp.npy', wrp_img.image[0,0].numpy())
-
     dump_al_affine_transform(mov_img, fix_img, transform, transform_param_file)
     transform = load_al_affine_transform(transform_param_file)
 
@@ -195,5 +246,13 @@ if __name__ == '__main__':
         fix_coms[name] = transform.forward_point(com).tolist()
     with open(coms_file, 'w') as f:
         json.dump(fix_coms, f, sort_keys=True, indent=4)
+
+    if args.plot:
+        print('Making plots')
+        mov_img = mov_img.image[0,0].numpy()
+        fix_img = fix_img.image[0,0].numpy()
+        wrp_img = wrp_img.image[0,0].numpy()
+        plot_diagnostic(args.brain, wrp_img, fix_img, work_dir)
+        plot_diagnostic_alt(args.brain, wrp_img, fix_img, work_dir)
 
     print('Finished!\n')
