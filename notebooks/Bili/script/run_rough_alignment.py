@@ -153,7 +153,10 @@ def plot_diagnostic(brain, img_wrp, img_fix, work_dir, zstep=10):
             pdf.savefig(fig)
             plt.close()
 
-def plot_diagnostic_alt(brain, img_wrp, img_fix, work_dir, zstep=10):
+def plot_diagnostic_alt(brain, img_wrp, img_fix, work_dir, res, zstep=10):
+    dx, dy, _ = res
+    x = [10, 10 + 1000 / dx]
+    y = [20, 20]
     with PdfPages(work_dir / f'diagnostic-alt.pdf') as pdf:
         sz = img_fix.shape[-1]
         for z in range(0, sz, zstep):
@@ -165,6 +168,12 @@ def plot_diagnostic_alt(brain, img_wrp, img_fix, work_dir, zstep=10):
 
             fig, ax = plt.subplots(1, 1, dpi=200, figsize=(8, 6))
             ax.imshow(img_wrp[:,:,z].T, **kwargs)
+            ax.plot(x, y, '-w')
+            ax.text(
+                (x[0] + x[1]) / 2, y[0], '1 mm', c='white',
+                horizontalalignment='center',
+                verticalalignment='bottom'
+            )
             ax.set_title(f'DK52 transformed\nz = {z}')
             ax.set_axis_off()
             pdf.savefig(fig)
@@ -172,6 +181,12 @@ def plot_diagnostic_alt(brain, img_wrp, img_fix, work_dir, zstep=10):
 
             fig, ax = plt.subplots(1, 1, dpi=200, figsize=(8, 6))
             ax.imshow(img_fix[:,:,z].T, **kwargs)
+            ax.plot(x, y, '-w')
+            ax.text(
+                (x[0] + x[1]) / 2, y[0], '1 mm', c='white',
+                horizontalalignment='center',
+                verticalalignment='bottom'
+            )
             ax.set_title(f'{brain} fixed\nz = {z}')
             ax.set_axis_off()
             pdf.savefig(fig)
@@ -228,9 +243,10 @@ if __name__ == '__main__':
         init_transform=init_transform
     )
 
-    print('Warping moving image')
-    displacement = transform.get_displacement()
-    wrp_img = al.transformation.utils.warp_image(mov_img, displacement)
+    if args.plot:
+        print('Warping moving image')
+        displacement = transform.get_displacement()
+        wrp_img = al.transformation.utils.warp_image(mov_img, displacement)
 
     print('Saving results')
 
@@ -249,10 +265,11 @@ if __name__ == '__main__':
 
     if args.plot:
         print('Making plots')
+        res = np.array([0.325, 0.325, 20]) * fix_img.spacing
         mov_img = mov_img.image[0,0].numpy()
         fix_img = fix_img.image[0,0].numpy()
         wrp_img = wrp_img.image[0,0].numpy()
         plot_diagnostic(args.brain, wrp_img, fix_img, work_dir)
-        plot_diagnostic_alt(args.brain, wrp_img, fix_img, work_dir)
+        plot_diagnostic_alt(args.brain, wrp_img, fix_img, work_dir, res)
 
     print('Finished!\n')
