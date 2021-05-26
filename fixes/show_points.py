@@ -31,8 +31,8 @@ def create_points(animal, section, layer, debug=False):
         .filter(LayerData.layer == layer).filter(LayerData.prep_id == animal)
 
     for annotation in annotations:
-        x = annotation.x * SCALE
-        y = annotation.y * SCALE
+        x = annotation.x
+        y = annotation.y
         pts = [x,y]
         section = int(annotation.section)
         sections[section].append(pts)
@@ -44,7 +44,7 @@ def create_points(animal, section, layer, debug=False):
             print(section, len(points))
             continue
         if len(points) < 2:
-            print(f'section: {section} only has less than 2 points')
+            print(f'Section {section} has less than 2 points')
             continue
         pts = np.array(points)
         means = np.mean(pts, axis=0)
@@ -58,7 +58,7 @@ def create_points(animal, section, layer, debug=False):
             print(f'means for section {section} {means}, pts {pts}')
 
 
-        file = f'{section}.tif' 
+        file = str(section).zfill(3) + '.tif'
         infile = os.path.join(INPUT, file)
 
         if not os.path.exists(infile) and not debug:
