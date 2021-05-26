@@ -1,10 +1,10 @@
 import os, sys
-import pandas as pd
+#import pandas as pd
+from collections import defaultdict
 from subprocess import Popen
 import argparse
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
-from tqdm import tqdm
 HOME = os.path.expanduser("~")
 
 HOME = os.path.expanduser("~")
@@ -13,40 +13,40 @@ sys.path.append(DIR)
 
 from utilities.utilities_process import get_image_size
 from utilities.file_location import FileLocationManager
+from utilities.model.layer_data import LayerData
+from sql_setup import session
+SCALE = 10000/325.0
+
 
 def create_points(animal, section, layer, debug=False):
 
     fileLocationManager = FileLocationManager(animal)
 
     INPUT = os.path.join(fileLocationManager.prep, 'CH3', 'full_aligned')
+    OUTPUT = os.path.join(fileLocationManager.prep, 'CH3', 'points', layer)
+    os.makedirs(OUTPUT, exist_ok=True)
     
-    dfpath = os.path.join(fileLocationManager.brain_info, 'CH3.points.csv')
-    if not os.path.exists(dfpath):
-        print(dfpath, 'does not exist')
-        return
-    df = pd.read_csv(dfpath)
-    df.drop(["Description"], inplace=True, axis=1)
-    df['Section'] = df['Section'].astype(int)
+    sections = defaultdict(list)
+    annotations = session.query(LayerData)\
+        .filter(LayerData.layer == layer).filter(LayerData.prep_id == animal)
 
-    counts = df[['Layer', 'X', 'Section']].groupby(['Layer','Section']).agg(['count'])
-    if debug:
-        print(counts.to_string())
-    
-
-    df = df[(df["Layer"] == layer)]
-    if section > 0:
-        sections = [section]
-    else:
-        sections = df['Section'].unique()
-    for section in tqdm(sections):
-        df_layer = df[df["Section"] == section]
+    for annotation in annotations:
+        x = annotation.x * SCALE
+        y = annotation.y * SCALE
+        pts = [x,y]
+        section = int(annotation.section)
+        sections[section].append(pts)
         if debug:
-            print('section', section)
-            print(df_layer.head())
-        pts = df_layer[['X','Y']].values
-        points = pts.tolist()
-        if len(points) < 3:
+            print(annotation.layer, x, y, section)
+
+    for section, points in sections.items():
+        if debug:
+            print(section, len(points))
             continue
+        if len(points) < 2:
+            print(f'section: {section} only has less than 2 points')
+            continue
+        pts = np.array(points)
         means = np.mean(pts, axis=0)
         mean_x = means[0]
         mean_y = means[1]
@@ -65,9 +65,7 @@ def create_points(animal, section, layer, debug=False):
             print(infile, 'does not exist')
             continue
 
-        OUTPUT = f'{HOME}/programming/brains/{animal}/CH3/{layer}'
-        os.makedirs(OUTPUT, exist_ok=True)
-        outpath =  os.path.join(OUTPUT, f'{section}.points.tif')
+        outpath =  os.path.join(OUTPUT, f'{section}.tif')
 
         if os.path.exists(outpath):
             print(outpath, 'exists')
@@ -105,7 +103,7 @@ def create_points(animal, section, layer, debug=False):
             proc = Popen(cmd, shell=True)
             proc.wait()
 
-        pngfile = str(section).zfill(3) + '_v1.png'
+        pngfile = str(section).zfill(3) + '.png'
         pngpath = os.path.join(fileLocationManager.thumbnail_web, 'points', layer)
         os.makedirs(pngpath, exist_ok=True)
         png = os.path.join(pngpath, pngfile)
@@ -115,6 +113,9 @@ def create_points(animal, section, layer, debug=False):
         else:
             proc = Popen(cmd, shell=True)
             proc.wait()
+    if debug:
+        print()
+        print(sections)
 
 
 if __name__ == '__main__':

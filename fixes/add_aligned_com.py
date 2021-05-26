@@ -79,7 +79,6 @@ def get_transformation_matrix(animal, input_type):
 
 def get_centers(animal, input_type_id):
 
-    person_id = 1
     beth = 2
     rows = session.query(CenterOfMass).filter(
         CenterOfMass.active.is_(True))\
