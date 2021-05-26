@@ -129,6 +129,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     animal = args.animal
     section = int(args.section)
-    layer = args.layer
+    layer = str(args.layer).lower()
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
     create_points(animal, section, layer, debug)
