@@ -8,11 +8,8 @@
     <h2>{{animal}}</h2>
     <p>This page shows {{lfiles}} thumbnail images for {{animal}} {{layer}} layer.</p>
     <p>These thumbnails have been cropped to only show the area of interest. Sections
-        with less than 3 annotations are not shown.
+        with less than 2 annotations are not shown.
 
-    </p>
-      <p>Scroll down the page to start viewing the images.</p>
-    </div>
 
 
     {% for row in valid_sections %}
@@ -25,8 +22,7 @@
 
     <div class="row mt-3">
         <div class="col-md-12">
-          <img data-src="https://activebrainatlas.ucsd.edu/data/{{ animal }}/www/points/{{layer}}/{{ row }}"
-           src="http://placehold.it/600x350&text=Placeholder">
+          <img src="https://activebrainatlas.ucsd.edu/data/{{ animal }}/www/points/{{layer}}/{{ row }}">
         </div>
     </div>
 
