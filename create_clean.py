@@ -12,17 +12,14 @@ import os, sys
 import cv2
 import numpy as np
 from skimage import io
-from tqdm import tqdm
 from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
 
 from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from utilities.file_location import FileLocationManager
-from utilities.logger import get_logger
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
 from utilities.utilities_process import test_dir, SCALING_FACTOR
-from utilities.utilities_cvat_neuroglancer import get_cpus
 
 
 def fix_ntb(file_keys):
@@ -80,7 +77,6 @@ def masker(animal, channel, downsample, scale):
     :param full:  resolution, either full or thumbnail
     :return: nothing, writes to disk the cleaned image
     """
-    logger = get_logger(animal)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
     channel_dir = 'CH{}'.format(channel)
@@ -95,7 +91,6 @@ def masker(animal, channel, downsample, scale):
     flip = sqlController.scan_run.flip
     max_width = int(width * SCALING_FACTOR)
     max_height = int(height * SCALING_FACTOR)
-    bgcolor = 0
     stain = sqlController.histology.counterstain
     if channel == 1:
         sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)
@@ -108,8 +103,6 @@ def masker(animal, channel, downsample, scale):
         max_width = width
         max_height = height
 
-    if 'thion' in stain.lower():
-        bgcolor = 255
 
     error = test_dir(animal, INPUT, downsample, same_size=False)
     if len(error) > 0:
@@ -134,7 +127,7 @@ def masker(animal, channel, downsample, scale):
             file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, scale])
 
     start = timer()
-    workers, _ = get_cpus()
+    workers = 4 # any number bigger than this will blow up ratto!!!!!!
     print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(fix_ntb, sorted(file_keys), chunksize=workers)
