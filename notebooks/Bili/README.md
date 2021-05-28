@@ -14,5 +14,8 @@ I'm wrapping up all my work here, to make it easier for someone else to pick up.
 
 - Everything are assumed to run on ratto.
 - The root repo is assumed to be placed as `~/programming/pipeline_utility`.
-- I manage my Python environment using Conda. And that's the easiest way to set up the reproduction environment. Use `conda env create -f environment.yml` to create a Conda environment named `pipeline`, and `conda activate pipeline` to activate it.
+- I manage my Python environment using Conda. And that's the easiest way to set up the reproduction environment.
+    - Use `conda env create -n pipeline -f environment.yml` to create a Conda environment named `pipeline`.
+    - Use `conda activate pipeline` to activate the environment.
+    - Use `conda env update -n pipeline -f environment.yml --prune` to update the environment.
 - Database credentials are needed to access the database. Ask Ed for it.

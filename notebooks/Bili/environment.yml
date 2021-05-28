@@ -4,7 +4,7 @@ channels:
   - pytorch
   - simpleitk
   - conda-forge
-  - default
+  - defaults
 
 dependencies:
   - python=3
@@ -12,6 +12,7 @@ dependencies:
   - jupyterlab
 
   - graph-tool
+  - ipywidgets
   - matplotlib
   - natsort
   - nibabel
