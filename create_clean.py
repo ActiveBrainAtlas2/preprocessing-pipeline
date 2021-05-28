@@ -128,9 +128,10 @@ def masker(animal, channel, downsample, scale):
 
     start = timer()
     workers = 4 # any number bigger than this will blow up ratto!!!!!!
+    chunksize = workers * 14
     print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(fix_ntb, sorted(file_keys), chunksize=workers)
+        executor.map(fix_ntb, sorted(file_keys), chunksize=chunksize)
         executor.shutdown(wait=True)
 
     end = timer()
