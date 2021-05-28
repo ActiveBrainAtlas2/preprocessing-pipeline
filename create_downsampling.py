@@ -14,7 +14,8 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors, get_cpus
+from utilities.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors
+from utilities.utilities_process import get_cpus
 
 def create_downsamples(animal, channel, suffix, downsample):
     fileLocationManager = FileLocationManager(animal)
@@ -47,7 +48,6 @@ def create_downsamples(animal, channel, suffix, downsample):
         chunk_size=first_chunk, mip=0, skip_downsamples=True)
     tq.insert(tasks)
     tq.execute()
-
 
     #mips = 7 shows good results in neuroglancer
     for mip in mips:
