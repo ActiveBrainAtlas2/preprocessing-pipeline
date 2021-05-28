@@ -9,7 +9,6 @@ from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from timeit import default_timer as timer
 
-from skimage.color.colorconv import rgb2gray
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
@@ -34,7 +33,6 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
     sqlController.session.close()
     if not downsample:
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
-        workers = workers // 2
         channel_outdir = f'C{channel}_rechunkme'
         sqlController.set_task(animal, progress_id)
 

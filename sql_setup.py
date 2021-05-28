@@ -21,7 +21,7 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 
-pooledengine = create_engine(connection_string, pool_size=10, max_overflow=50)
+pooledengine = create_engine(connection_string, pool_size=10, max_overflow=50, pool_recycle=3600)
 pooledsession = scoped_session(sessionmaker(bind=pooledengine)) 
 
 ##### DJ parameters

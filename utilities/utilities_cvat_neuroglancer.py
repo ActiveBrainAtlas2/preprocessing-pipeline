@@ -31,8 +31,8 @@ def get_cpus():
     usecpus = (4,4)
     cpus = {}
     cpus['muralis'] = (16,40)
-    cpus['basalis'] = (4,12)
-    cpus['ratto'] = (4,10)
+    cpus['basalis'] = (6,12)
+    cpus['ratto'] = (6,10)
     hostname = get_hostname()
     if hostname in cpus.keys():
         usecpus = cpus[hostname]
@@ -332,6 +332,7 @@ class NumpyToNeuroglancer():
         img = io.imread(infile)
         img = img.reshape(self.num_channels, img.shape[0], img.shape[1]).T
         self.precomputed_vol[:, :, index] = img
+        set_file_completed(self.animal, self.progress_id, basefile)
         del img
         return
 
