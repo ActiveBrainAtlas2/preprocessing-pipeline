@@ -17,7 +17,7 @@ from utilities.file_location import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
 from utilities.sqlcontroller import SqlController
 from sql_setup import RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
-from utilities.utilities_process import CHUNKSIZE,  get_cpus, SCALING_FACTOR, test_dir
+from utilities.utilities_process import get_cpus, SCALING_FACTOR, test_dir
 
 def create_neuroglancer(animal, channel, downsample, debug=False):
     fileLocationManager = FileLocationManager(animal)
@@ -75,11 +75,10 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
     print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
         if num_channels == 1:
-            executor.map(ng.process_image, sorted(file_keys), chunksize=workers*CHUNKSIZE)
+            executor.map(ng.process_image, sorted(file_keys))
         else:
-            executor.map(ng.process_3channel, sorted(file_keys), chunksize=workers*CHUNKSIZE)
+            executor.map(ng.process_3channel, sorted(file_keys))
 
-        executor.shutdown(wait=True)
 
     end = timer()
     print(f'Create volume method took {end - start} seconds')

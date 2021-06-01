@@ -21,7 +21,7 @@ from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_alignment import (load_consecutive_section_transform,
                                          convert_resolution_string_to_um, process_image)
-from utilities.utilities_process import test_dir, get_cpus, CHUNKSIZE
+from utilities.utilities_process import test_dir, get_cpus
 
 def parse_elastix(animal):
     """
@@ -160,12 +160,11 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
         workers, _ = get_cpus()
         print(f'Working on {len(file_keys)} files with {workers} cpus')
         with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(process_image, sorted(file_keys), chunksize=workers*CHUNKSIZE)
-            executor.shutdown(wait=True)
+            executor.map(process_image, sorted(file_keys))
 
         end = timer()
-        print(f'Create aligned files took {end - start} seconds')
-        # set task as completed
+        print(f'Create cleaned files took {end - start} seconds total', end="\t")
+        print(f' { (end - start)/len(file_keys)} per file')
 
 
     

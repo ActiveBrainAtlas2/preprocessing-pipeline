@@ -12,7 +12,6 @@ from utilities.sqlcontroller import SqlController
 from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
 from utilities.logger import get_logger
 SCALING_FACTOR = 0.03125
-CHUNKSIZE = 14
 
 
 def get_hostname():
@@ -25,8 +24,8 @@ def get_cpus():
     usecpus = (nmax,nmax)
     cpus = {}
     cpus['muralis'] = (16,40)
-    cpus['basalis'] = (6,12)
-    cpus['ratto'] = (6,10)
+    cpus['basalis'] = (10,12)
+    cpus['ratto'] = (10,10)
     hostname = get_hostname()
     if hostname in cpus.keys():
         usecpus = cpus[hostname]
@@ -81,7 +80,11 @@ def test_dir(animal, dir, downsample=True, same_size=False):
     
     sqlController = SqlController(animal)
     section_count = sqlController.get_section_count(animal)
-    files = sorted(os.listdir(dir))
+    try:
+        files = sorted(os.listdir(dir))
+    except:
+        return f'{dir} does not exist'
+        
     if section_count == 0:
         section_count = len(files)
     widths = set()

@@ -19,7 +19,7 @@ from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
-from utilities.utilities_process import test_dir, SCALING_FACTOR, CHUNKSIZE
+from utilities.utilities_process import get_cpus, test_dir, SCALING_FACTOR
 
 
 def fix_ntb(file_keys):
@@ -127,14 +127,14 @@ def masker(animal, channel, downsample, scale):
             file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, scale])
 
     start = timer()
-    workers = 4 # any number bigger than this will blow up ratto!!!!!!
+    workers, _ = get_cpus()
     print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(fix_ntb, sorted(file_keys), chunksize=workers*CHUNKSIZE)
-        executor.shutdown(wait=True)
+        executor.map(fix_ntb, sorted(file_keys))
 
     end = timer()
-    print(f'Create cleaned files took {end - start} seconds')
+    print(f'Create cleaned files took {end - start} seconds total', end="\t")
+    print(f' { (end - start)/len(files)} per file')
 
 
 if __name__ == '__main__':
