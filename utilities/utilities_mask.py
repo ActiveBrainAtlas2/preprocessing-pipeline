@@ -223,7 +223,7 @@ def place_image(img, file, max_width, max_height, bgcolor=None):
         except:
             print('Could not place {} with width:{}, height:{} in {}x{}'
                   .format(file, img.shape[1], img.shape[0], max_width, max_height))
-
+    del img
     return new_img.astype(dt)
 
 

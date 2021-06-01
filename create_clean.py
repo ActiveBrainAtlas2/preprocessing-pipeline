@@ -19,7 +19,7 @@ from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from utilities.file_location import FileLocationManager
 from utilities.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
-from utilities.utilities_process import get_cpus, test_dir, SCALING_FACTOR
+from utilities.utilities_process import test_dir, SCALING_FACTOR
 
 
 def fix_ntb(file_keys):
@@ -53,6 +53,7 @@ def fix_ntb(file_keys):
     if channel == 1:
         fixed = scaled(fixed, mask, scale, epsilon=0.01)
         fixed = equalized(fixed)
+    del mask
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
     if flip == 'flip':
@@ -63,6 +64,8 @@ def fix_ntb(file_keys):
     fixed = place_image(fixed, infile, max_width, max_height, 0)
 
     cv2.imwrite(outpath, fixed)
+    del fixed
+    return
 
 
 
@@ -127,7 +130,7 @@ def masker(animal, channel, downsample, scale):
             file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, scale])
 
     start = timer()
-    workers, _ = get_cpus()
+    workers = 4 # this is the upper limit. More than this and it crashes.
     print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(fix_ntb, sorted(file_keys))
