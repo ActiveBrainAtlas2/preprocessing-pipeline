@@ -6,7 +6,6 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import cv2
 import json
-import socket
 import numpy as np
 import neuroglancer
 from taskqueue import LocalTaskQueue
@@ -21,22 +20,6 @@ from collections import defaultdict
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController, file_processed, set_file_completed
-
-def get_hostname():
-    hostname = socket.gethostname()
-    hostname = hostname.split(".")[0]
-    return hostname
-
-def get_cpus():
-    usecpus = (4,4)
-    cpus = {}
-    cpus['muralis'] = (16,40)
-    cpus['basalis'] = (4,12)
-    cpus['ratto'] = (4,10)
-    hostname = get_hostname()
-    if hostname in cpus.keys():
-        usecpus = cpus[hostname]
-    return usecpus
 
 def calculate_chunks(downsample, mip):
     """
@@ -332,6 +315,7 @@ class NumpyToNeuroglancer():
         img = io.imread(infile)
         img = img.reshape(self.num_channels, img.shape[0], img.shape[1]).T
         self.precomputed_vol[:, :, index] = img
+        set_file_completed(self.animal, self.progress_id, basefile)
         del img
         return
 

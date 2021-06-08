@@ -2,6 +2,7 @@ import os, sys, time
 from subprocess import Popen, run, check_output
 from multiprocessing.pool import Pool
 from tqdm import tqdm
+import socket
 from pathlib import Path
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -12,6 +13,23 @@ from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED
 from utilities.logger import get_logger
 SCALING_FACTOR = 0.03125
 
+
+def get_hostname():
+    hostname = socket.gethostname()
+    hostname = hostname.split(".")[0]
+    return hostname
+
+def get_cpus():
+    nmax = 4
+    usecpus = (nmax,nmax)
+    cpus = {}
+    cpus['muralis'] = (16,40)
+    cpus['basalis'] = (10,12)
+    cpus['ratto'] = (10,10)
+    hostname = get_hostname()
+    if hostname in cpus.keys():
+        usecpus = cpus[hostname]
+    return usecpus
 
 def get_image_size(filepath):
     result_parts = str(check_output(["identify", filepath]))
@@ -62,7 +80,11 @@ def test_dir(animal, dir, downsample=True, same_size=False):
     
     sqlController = SqlController(animal)
     section_count = sqlController.get_section_count(animal)
-    files = sorted(os.listdir(dir))
+    try:
+        files = sorted(os.listdir(dir))
+    except:
+        return f'{dir} does not exist'
+        
     if section_count == 0:
         section_count = len(files)
     widths = set()

@@ -280,7 +280,6 @@ https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
 #uicontrol float gamma slider(min=0.05, max=2.5, default=1.0, step=0.05)
 #uicontrol bool colour checkbox(default=true)
 
-
   void main() {
     float pix =  normalized();
     pix = pow(pix,gamma);

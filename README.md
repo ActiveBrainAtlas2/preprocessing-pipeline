@@ -1,6 +1,5 @@
 # Utilities for the Active Atlas Pipeline
 ## Creating a sandbox on your computer
-1. install `cmake`, `postgresql` and `mysql`
 1. git clone this repository, create a virtual environment in your home dir and install the required packages
     ```bash
     git clone git@github.com:eddyod/pipeline_utility.git
@@ -71,9 +70,8 @@ Step-by-step guide:
 
 ### Tools we use
 1. Here is a list of the software we use on a daily basis
-1. Jetbrains pycharm - IDE for python, the professional version is available to UCSD, check blink.ucsd.edu
-1. Jetbrains datagrip - database GUI tool, use same license as above
-1. Jetbrains webstorm - useful for javascript, typescript. Feel free to use atom, Code or eclipse
+1. Visual Code - IDE for python and typescript. This is free and works on most OSs.
+1. Dbeaver - database GUI tool
 1. imagemagick - used for converting images.
 1. matlab - we are just starting to use this. UCSD license is also available
 1. jupyter notebooks
@@ -82,16 +80,6 @@ Step-by-step guide:
 1. Gimp - image editing software
 1. Geeqie - image viewer
 
-### For Neuroglancer scripts,
-1. Clone up the repository and set up the virtual environments
-    ```bash
-    git clone https://github.com/HumanBrainProject/neuroglancer-scripts.git`
-    python3 -m venv ~/.virtualenvs/neuroglancer
-    source ~/.virtualenvs/neuroglancer/bin/activate
-    cd neuroglancer-scripts
-    python setup.py install
-    ```
-2. Look in `~/.virtualenvs/neuroglancer/bin/` for the precomputed scripts
 
 ### Directory structure of the pipeline
 1. The base directory is located on birdstore at: `/net/birdstore/Active_Atlas_Data/data_root/pipeline_data`
