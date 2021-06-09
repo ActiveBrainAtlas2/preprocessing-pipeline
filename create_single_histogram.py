@@ -20,7 +20,7 @@ def create_histogram(animal, channel, section):
     #maskpath = os.path.join(fileLocationManager.prep, 'thumbnail_masked', filename)
     outputpath = os.path.join(HOME, filename)
 
-    img = io.imread(filepath)
+    img = io.imread(filepath, img_num=0)
     #mask = io.imread(maskpath)
 
     #img = cv2.bitwise_and(img, img, mask=mask)
