@@ -3,9 +3,9 @@
 1. git clone this repository, create a virtual environment in your home dir and install the required packages
     ```bash
     git clone git@github.com:eddyod/pipeline_utility.git
-    python3 -m venv ~/.virtualenvs/pipeline
+    python3 -m venv ~/usr/local/share/pipeline
     cd pipeline_utility
-    source ~/.virtualenvs/pipeline/bin/activate
+    source /usr/local/share/pipeline/bin/activate
     pip install -r prerequirements.txt
     pip install -r requirements.txt
     ```
@@ -19,13 +19,10 @@ get upgraded to that, you may as well install 20.04
 /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK52/preps/CH1/thumbnails/`
 1. You can now experiment with some of the thumbnails for DK52
 ### Setup the database portal on your local machine
-1. Clone the repository, create a virtual environment in your home dir and install the required packages
+1. Clone the repository, use the same virtualenv as above. You might need to install some more packages.
     ```bash
     git clone git@github.com:eddyod/ActiveBrainAtlasAdmin.git
-    python3 -m venv ~/.virtualenvs/activebrainatlas
-    cd activebrainatlas
-    source ~/.virtualenvs/activebrainatlas/bin/activate
-    pip install -r requirements.txt
+    source /usr/local/share/pipeline/bin/activate
     ```
 ### Mysql for the database portal on Ubuntu
 - For complete instructions, look at this page: https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04
