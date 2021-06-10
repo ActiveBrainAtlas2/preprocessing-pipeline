@@ -3,7 +3,7 @@
 1. git clone this repository, create a virtual environment in your home dir and install the required packages
     ```bash
     git clone git@github.com:eddyod/pipeline_utility.git
-    python3 -m venv ~/usr/local/share/pipeline
+    python3 -m venv /usr/local/share/pipeline
     cd pipeline_utility
     source /usr/local/share/pipeline/bin/activate
     pip install -r prerequirements.txt
