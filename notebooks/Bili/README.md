@@ -2,6 +2,27 @@
 
 I'm wrapping up all my work here, to make it easier for someone else to pick up.
 
+## Notebooks
+Here are the brief descriptions of the notebooks I have:
+
+### Automatic Pipline
+These notebooks contains the current explorations of the new automatic alignment pipeline. It has 3 steps.
+
+- [automatic-alignment-1-rough-alignment.ipynb](notebook/automatic-alignment-1-rough-alignment.ipynb
+) describes step 1 of rough alignment.
+- [automatic-alignment-1-rough-alignment-diagnostics.ipynb](notebook/automatic-alignment-1-rough-alignment-diagnostics.ipynb) makes some disgnostic plots for step 1.
+- [automatic-alignment-2-detection-initial-coms.ipynb](notebook/automatic-alignment-2-detection-initial-coms.ipynb) describes step 2 of preparing the COMs for Kui's detection.
+
+### Example
+There are some examples demonstrating doing various things.
+
+- [example-landmark-registration-pytorch.ipynb](notebook/example-landmark-registration-pytorch.ipynb) demonstrates how to use PyTorch to do the landmark registration.
+
+### Reference
+These notebooks mostly work as references.
+
+- [reference-alignment-error.ipynb](notebook/reference-alignment-error.ipynb) generates the box plots for alignment errors. It can be extended to include more brains in the future.
+
 ## Directory Structure
 
 - `backup`: a temparory place for code and notebook to be refined and brought back later
