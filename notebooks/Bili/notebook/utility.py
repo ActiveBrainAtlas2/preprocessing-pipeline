@@ -1,4 +1,3 @@
-"""SimpleITK related utilities"""
 from pathlib import Path
 
 import SimpleITK as sitk
