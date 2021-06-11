@@ -1,6 +1,7 @@
 from pathlib import Path
 import SimpleITK as sitk
 import toolbox.sitk
+from toolbox.sitk_optimization_reporter_functions import *
 
 def get_fixed_and_moving_image(fixed_brain,moving_brain):
     thumb_spacing = (10.4, 10.4, 20.0)
@@ -48,17 +49,48 @@ def set_multi_resolution_parameters(registration_method):
     registration_method.SetShrinkFactorsPerLevel(shrinkFactors=[4, 2, 1])
     registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas=[2, 1, 0])
     registration_method.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
+    
+def set_report_events(registration_method):
+    registration_method.AddCommand(sitk.sitkStartEvent, start_optimization)
+    registration_method.AddCommand(sitk.sitkIterationEvent, lambda: print_values(registration_method))
+    registration_method.AddCommand(sitk.sitkMultiResolutionIterationEvent, report_multi_resolution_events) 
 
 def get_affine_transform_that_aligns_images(fixed_image, moving_image,transform):
     registration_method = init_regerstration_method()
     set_mutual_information_as_similarity_metic(registration_method)
     set_optimizer(registration_method)
-    set_centering_transform_as_initial_starting_point(registration_method, transform)
+    transform = set_centering_transform_as_initial_starting_point(registration_method, transform)
     set_multi_resolution_parameters(registration_method)
+    set_report_events(registration_method)
     registration_method.Execute(fixed_image, moving_image)
+    return transform
 
-def rough_alignment_affine(moving_brain = 'DK52',fixed_brain = 'DK43'):
+def start_optimization():
+    global n_resolution
+    n_resolution = 0
+
+def print_values(registration_method):
+    global n_iter
+    n_iter+=1
+    if n_iter%10 == 0 :
+        print(f'iteration: {n_iter} {registration_method.GetMetricValue():4f}')                                  
+
+def report_multi_resolution_events():
+    global n_iter,n_resolution
+    n_iter=0
+    if n_resolution !=0:
+        print('switching to higher resolution')
+    elif n_resolution == 0:
+        print('starting optimization')
+    n_resolution+=1
+    
+def get_rough_alignment_affine_transform(moving_brain = 'DK52',fixed_brain = 'DK43'):
+    print(f'aligning brain {moving_brain} to brain {fixed_brain}')
+    print('loading image')
     moving_image,fixed_image = get_fixed_and_moving_image(fixed_brain,moving_brain)
+    print('aligning image center')
     transform = get_initial_transform_to_align_image_centers(fixed_image, moving_image)
-    get_affine_transform_that_aligns_images(fixed_image, moving_image,transform)
+    print('finding affine tranformation')
+    transform = get_affine_transform_that_aligns_images(fixed_image, moving_image,transform)
+    print(transform)
     return transform
