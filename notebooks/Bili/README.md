@@ -2,36 +2,30 @@
 
 I'm wrapping up all my work here, to make it easier for someone else to pick up.
 
-## Notebooks
-Here are the brief descriptions of the notebooks I have:
-
-### Rough Alignment
-These notebooks contains the current explorations of the new automatic alignment pipeline. It has 3 steps.
-
-- [automatic-alignment-1-rough-alignment.ipynb](notebook/automatic-alignment-1-rough-alignment.ipynb) describes step 1 of rough alignment.
-- [automatic-alignment-1-rough-alignment-diagnostics.ipynb](notebook/automatic-alignment-1-rough-alignment-diagnostics.ipynb) makes some disgnostic plots for step 1.
-- [automatic-alignment-2-detection-initial-coms.ipynb](notebook/automatic-alignment-2-detection-initial-coms.ipynb) describes step 2 of preparing the COMs for Kui's detection.
-
-### Landmark-based Alignment
-- [rigid alignment](TBD).
-- [example-landmark-registration-pytorch.ipynb](notebook/example-landmark-registration-pytorch.ipynb) demonstrates how to use PyTorch to do the landmark registration.
-
-### Error Visualization
-- [reference-alignment-error.ipynb](notebook/reference-alignment-error.ipynb) generates the box plots for alignment errors. It can be extended to include more brains in the future.
-
 ## Directory Structure
 
-- `old`: all the old stuff
-- `data`: a place for data files
-- `notebook`: polished notebooks
-<!-- - `script`: command line scripts -->
-<!-- - `toolbox`: reusable code to be integrated into the pipeline -->
+- `data`: data files generated and used by the notebooks
+- `notebook`: the main place for my work
+- `old`: all the old stuff not useful for the current work
+
+## Notebook List
+
+### Rough Alignment
+- [Rough Alignment 1: Image Registration](notebook/rough-alignment-1-image-registration.ipynb) demonstrates doing image registrations (affine & Demons) using SimpleITK.
+- [Rough Alignment 1: Diagnostic Plot](notebook/rough-alignment-2-diagnostic-plot.ipynb) demonstrates how to generate diagnostic plots for the SimpleTK transformations the in the format of PDF.
+- [Rough Alignment 3: Initial COMs](notebook/rough-alignment-3-initial-coms.ipynb) demonstrates how to also transform the COMs along with the images.
+
+### Landmark Registration
+- [Landmark Registration: Analytical](notebook/landmark-registration-analytical.ipynb) describes a closed-form analytical solution of landmark registration assuming the rigid + unform scaling transformation and the squared error metric.
+- [Landmark Registration: PyTorch](notebook/landmark-registration-pytorch.ipynb) demonstrates how to set up a general framework for landmark registration using PyTorch.
+
+### Miscellaneous
+- [Alignment Error Visualization](notebook/alignment-error-visualization.ipynb) generates the box plots for alignment errors. It can be easily extended to include more brains in the future.
 
 ## Reproduction Notes
-
-- Everything are assumed to run on ratto.
+- Everything were ran on ratto. But they shall work on other machines too, assuming there is access to the required data.
 - The root repo is assumed to be placed as `~/programming/pipeline_utility`.
-- I manage my Python environment using Conda. And that's the easiest way to set up the reproduction environment.
+- I manage my Python environment using Conda. And I think that's the easiest way to set up the reproduction environment.
     - Use `conda env create -n pipeline -f environment.yml` to create a Conda environment named `pipeline`.
     - Use `conda activate pipeline` to activate the environment.
     - Use `conda env update -n pipeline -f environment.yml --prune` to update the environment.
