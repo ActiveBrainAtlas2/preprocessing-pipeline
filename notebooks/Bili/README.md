@@ -22,7 +22,7 @@ demonstrates how to also transform the COMs along with the images.
 ### Landmark Registration
 - [[nbviewer](https://nbviewer.jupyter.org/github/eddyod/pipeline_utility/blob/master/notebooks/Bili/notebook/landmark-registration-analytical.ipynb)]
 [Landmark Registration: Analytical](notebook/landmark-registration-analytical.ipynb)
-presents a closed-form analytical solution of landmark registration assuming the rigid + unform scaling transformation and the squared error metric, and applies it to align DK52 to the atlas.
+presents a closed-form analytical solution of landmark registration assuming a rigid + unform scaling transformation and a squared error metric. This method is applied to align DK52 to the atlas.
 - [[nbviewer](https://nbviewer.jupyter.org/github/eddyod/pipeline_utility/blob/master/notebooks/Bili/notebook/landmark-registration-pytorch.ipynb)]
 [Landmark Registration: PyTorch](notebook/landmark-registration-pytorch.ipynb)
 demonstrates how to set up a general framework for landmark registration using PyTorch, which is similar to the SimpleITK registration process.
