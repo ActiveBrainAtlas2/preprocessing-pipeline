@@ -15,7 +15,7 @@ HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(DIR)
 from utilities.model.structure import Structure
-from utilities.model.center_of_mass import CenterOfMass
+from utilities.model.layer_data import LayerData
 from utilities.model.scan_run import ScanRun
 from sql_setup import session
 CORRECTED = 2
@@ -80,11 +80,12 @@ def get_transformation_matrix(animal, input_type):
 def get_centers(animal, input_type_id):
 
     beth = 2
-    rows = session.query(CenterOfMass).filter(
-        CenterOfMass.active.is_(True))\
-            .filter(CenterOfMass.prep_id == animal)\
-            .filter(CenterOfMass.person_id == beth)\
-            .filter(CenterOfMass.input_type_id == input_type_id)\
+    rows = session.query(LayerData).filter(
+        LayerData.active.is_(True))\
+            .filter(LayerData.prep_id == animal)\
+            .filter(LayerData.person_id == beth)\
+            .filter(LayerData.layer == 'COM')\
+            .filter(LayerData).input_type_id == input_type_id)\
             .all()
     row_dict = {}
     for row in rows:
@@ -94,7 +95,7 @@ def get_centers(animal, input_type_id):
 
 
 def add_center_of_mass(animal, structure, x, y, section, person_id):
-    com = CenterOfMass(
+    com = LayerData(
         prep_id=animal, structure=structure, x=x, y=y, section=section,
         created=datetime.utcnow(), active=True, person_id=person_id, input_type_id=CORRECTED
     )

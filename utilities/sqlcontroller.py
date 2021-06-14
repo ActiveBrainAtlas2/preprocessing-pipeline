@@ -12,7 +12,7 @@ from sql_setup import session, pooledengine, pooledsession
 from utilities.model.file_log import FileLog
 from utilities.model.urlModel import UrlModel
 from utilities.model.task import Task, ProgressLookup
-from utilities.model.center_of_mass import CenterOfMass
+from utilities.model.layer_data import LayerData
 from utilities.model.structure import Structure
 from utilities.model.slide_czi_to_tif import SlideCziTif
 from utilities.model.slide import Slide
@@ -320,7 +320,7 @@ class SqlController(object):
             print('Bad lookup code for {}'.format(lookup.id))
             self.session.rollback()
 
-    def add_center_of_mass(self, abbreviation, animal, x, y, section, person_id, input_type):
+    def add_layer_data(self, abbreviation, animal, x, y, section, person_id, input_type):
         """
         Look up the structure id from the structure.
         Args:
@@ -345,7 +345,7 @@ class SqlController(object):
 
         id = structure.id
 
-        com = CenterOfMass(prep_id=animal, structure_id=id, x=x, y=y, section=section,
+        com = LayerData(prep_id=animal, structure_id=id, x=x, y=y, section=section,
                            created=datetime.utcnow(), active=True, person_id=person_id, 
                            input_type=input_type)
 
@@ -366,11 +366,11 @@ class SqlController(object):
             self.session.close()
 
     def get_centers_dict(self, prep_id, input_type_id=1, person_id=2):
-        rows = self.session.query(CenterOfMass)\
-            .filter(CenterOfMass.active.is_(True))\
-            .filter(CenterOfMass.prep_id == prep_id)\
-            .filter(CenterOfMass.input_type_id == input_type_id)\
-            .filter(CenterOfMass.person_id == person_id)\
+        rows = self.session.query(LayerData)\
+            .filter(LayerData.active.is_(True))\
+            .filter(LayerData.prep_id == prep_id)\
+            .filter(LayerData.input_type_id == input_type_id)\
+            .filter(LayerData.person_id == person_id)\
             .all()
         row_dict = {}
         for row in rows:
