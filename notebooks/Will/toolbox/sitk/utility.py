@@ -34,7 +34,7 @@ def get_fixed_and_moving_image(fixed_brain,moving_brain):
     return moving_image,fixed_image
 
 def get_3d_test_grid():
-    test_grid = sitk.GridSource(outputPixelType=sitk.sitkUInt32, size=(100,100,100),
+    test_grid = sitk.GridSource(outputPixelType=sitk.sitkFloat32, size=(100,100,100),
                              sigma=(0.1,0.1,0.1), gridSpacing=(20.0,20.0,20.0))
     return test_grid
 
