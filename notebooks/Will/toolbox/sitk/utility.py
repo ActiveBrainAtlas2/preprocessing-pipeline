@@ -32,3 +32,13 @@ def get_fixed_and_moving_image(fixed_brain,moving_brain):
     moving_image = sitk.Cast(moving_image_16_bit, sitk.sitkFloat32)
     fixed_image = sitk.Cast(fixed_image_16_bit, sitk.sitkFloat32)
     return moving_image,fixed_image
+
+def get_3d_test_grid():
+    test_grid = sitk.GridSource(outputPixelType=sitk.sitkUInt32, size=(100,100,100),
+                             sigma=(0.1,0.1,0.1), gridSpacing=(20.0,20.0,20.0))
+    return test_grid
+
+def get_test_fixed_and_moving_image():
+    moving_image = get_3d_test_grid()
+    fixed_image = get_3d_test_grid()
+    return fixed_image,moving_image
