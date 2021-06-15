@@ -7,6 +7,7 @@ def get_demons_transform(fixed_image, moving_image, transform):
     set_optimizer(registration_method)
     initial_demons_transform = get_initial_demons_transform(fixed_image,transform)
     registration_method.SetInitialTransform(initial_demons_transform)
+    set_multi_resolution_parameters(registration_method,shrinkFactors=[4])
     set_report_events(registration_method)
     registration_method.Execute(fixed_image, moving_image)
     return transform

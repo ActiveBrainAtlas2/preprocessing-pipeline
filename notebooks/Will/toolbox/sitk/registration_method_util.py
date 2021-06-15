@@ -14,7 +14,8 @@ def set_centering_transform_as_initial_starting_point(registration_method, cente
 
 def set_multi_resolution_parameters(registration_method,shrinkFactors=[4, 2, 1]):
     registration_method.SetShrinkFactorsPerLevel(shrinkFactors=shrinkFactors)
-    registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas=floor(shrinkFactors/2))
+    smoothingSigmas = [floor(factori/2) for factori in shrinkFactors]
+    registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas=smoothingSigmas)
     registration_method.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
 
 def set_report_events(registration_method):
