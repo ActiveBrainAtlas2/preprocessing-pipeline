@@ -2,12 +2,20 @@ import numpy as np
 from utilities.model.center_of_mass import CenterOfMass
 from sql_setup import session
 from utilities.sqlcontroller import SqlController
-from notebooks.Will.toolbox.brain_and_structure_info import get_common_structures
 import pandas as pd
 import sys
 from pathlib import Path
+from notebooks.Will.toolbox.brain_and_structure_info import get_list_of_brains_to_align
 PIPELINE_ROOT = Path('.').absolute().parents[2]
 sys.path.append(PIPELINE_ROOT.as_posix())
+
+def get_common_structures():
+    brains_to_align = get_list_of_brains_to_align()
+    common_structures = set()
+    for brain in brains_to_align:
+        common_structures = common_structures | set(query_brain_coms(brain).keys())
+    common_structures = list(sorted(common_structures))
+    return common_structures
 
 def get_atlas_centers(
         atlas_box_size=(1000, 1000, 300),
