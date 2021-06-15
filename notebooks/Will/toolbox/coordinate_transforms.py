@@ -17,7 +17,7 @@ def image_to_physical_coord(image_coord):
 def physical_to_atlas_coord(coord_phys):
     global atlas_scale
     atlas_scale = np.diag(atlas_scale)
-    atlas_coord = np.linalg.inv(atlas_scale) @ get_column_vector((coord_phys)
+    atlas_coord = np.linalg.inv(atlas_scale) @ get_column_vector((coord_phys))
     return atlas_coord
 
 def atlas_to_physical_coord(atlas_coord):
