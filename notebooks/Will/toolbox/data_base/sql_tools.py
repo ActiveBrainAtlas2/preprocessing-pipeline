@@ -1,16 +1,46 @@
-from notebooks.Will.toolbox.sitk.get_registeration_method_demons import get_demons_transform
-from notebooks.Will.toolbox.sitk.utility import *
+import numpy as np
+from utilities.model.center_of_mass import CenterOfMass
+from sql_setup import session
+from utilities.sqlcontroller import SqlController
+from notebooks.Will.toolbox.brain_and_structure_info import get_common_structures
+import pandas as pd
+import sys
+from pathlib import Path
+PIPELINE_ROOT = Path('.').absolute().parents[2]
+sys.path.append(PIPELINE_ROOT.as_posix())
 
-def get_rough_alignment_demons_transform(moving_brain = 'DK52',fixed_brain = 'DK43'):
-    print(f'aligning brain {moving_brain} to brain {fixed_brain}')
-    print('loading image')
-    moving_image,fixed_image = get_fixed_and_moving_image(fixed_brain,moving_brain)
-    print('aligning image center')
-    transform = get_initial_transform_to_align_image_centers(fixed_image, moving_image)
-    print('finding affine tranformation')
-    transform = get_demons_transform(fixed_image, moving_image, transform)
-    print(transform)
-    return transform
+def get_atlas_centers(
+        atlas_box_size=(1000, 1000, 300),
+        atlas_box_scales=(10, 10, 20),
+        atlas_raw_scale=10
+):
+    atlas_box_scales = np.array(atlas_box_scales)
+    atlas_box_size = np.array(atlas_box_size)
+    atlas_box_center = atlas_box_size / 2
+    sqlController = SqlController('Atlas')
+    # person is lauren, input_type is manual
+    atlas_centers = sqlController.get_centers_dict('Atlas', input_type_id=1, person_id=16)
+
+    for structure, center in atlas_centers.items():
+        # transform into the atlas box coordinates that neuroglancer assumes
+        center = atlas_box_center + np.array(center) * atlas_raw_scale / atlas_box_scales
+        atlas_centers[structure] = center
+
+    return atlas_centers
+
+def query_brain_coms(brain, person_id=28, input_type_id=4):
+    rows = session.query(CenterOfMass)\
+        .filter(CenterOfMass.active.is_(True))\
+        .filter(CenterOfMass.prep_id == brain)\
+        .filter(CenterOfMass.person_id == person_id)\
+        .filter(CenterOfMass.input_type_id == input_type_id)\
+        .all()
+    brain_centers = {}
+    for row in rows:
+        structure = row.structure.abbreviation
+        brain_centers[structure] = np.array([row.x, row.y, row.section])
+    return brain_centers
+
 
 
 def prepare_table(brains, person_id, input_type_id, save_path):
@@ -50,7 +80,8 @@ def get_brain_coms(brains, person_id, input_type_id):
 
 def prepare_table_for_save(brains, person_id, input_type_id):
     brain_coms = get_brain_coms(brains, person_id, input_type_id)
-
+    common_structures = get_common_structures()
+    atlas_coms = get_atlas_centers()
     data = {}
     data['name'] = []
     for s in common_structures:
@@ -74,7 +105,8 @@ def prepare_table_for_save(brains, person_id, input_type_id):
 
 def prepare_table_for_plot(brains, person_id, input_type_id):
     brain_coms = get_brain_coms(brains, person_id, input_type_id)
-
+    common_structures = get_common_structures()
+    atlas_coms = get_atlas_centers()
     df = pd.DataFrame()
     for brain in brain_coms.keys():
         offset = [brain_coms[brain][s] - atlas_coms[s]
