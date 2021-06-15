@@ -2,8 +2,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 sns.set_style("whitegrid")
 import SimpleITK as sitk
-from notebooks.Will.toolbox.data_base.sql_tools import get_atlas_centers
-from notebooks.Will.toolbox.brain_and_structure_info import get_common_structures,get_list_of_brains_to_align
+from notebooks.Will.toolbox.data_base.sql_tools import get_atlas_centers,get_common_structures
+from notebooks.Will.toolbox.brain_and_structure_info import get_list_of_brains_to_align
 import pandas as pd
 import numpy as np
 
