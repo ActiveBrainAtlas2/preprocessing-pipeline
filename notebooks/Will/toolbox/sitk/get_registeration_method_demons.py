@@ -10,7 +10,7 @@ def get_demons_transform(fixed_image, moving_image, transform):
     set_multi_resolution_parameters(registration_method,shrinkFactors=[4])
     set_report_events(registration_method)
     registration_method.Execute(fixed_image, moving_image)
-    return transform
+    return initial_demons_transform
 
 def set_default_demons_simiparity_metric(registration_method):
     registration_method.SetMetricAsDemons(10)

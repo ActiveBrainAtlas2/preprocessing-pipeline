@@ -27,9 +27,9 @@ def prepare_table_for_plot():
     atlas_coms = get_atlas_centers()
     df = pd.DataFrame()
     for brain in brain_coms.keys():
-        offset = [brain_coms[brain][s] - atlas_coms[s]
-                  if s in brain_coms[brain] else [np.nan, np.nan, np.nan]
-                  for s in common_structures]
+        offset = [brain_coms[brain][structure] - atlas_coms[structure]
+                  if structure in brain_coms[brain] else [np.nan, np.nan, np.nan]
+                  for structure in common_structures]
         offset = np.array(offset)
         scale = np.array([10, 10, 20])
         dx, dy, dz = (offset * scale).T
