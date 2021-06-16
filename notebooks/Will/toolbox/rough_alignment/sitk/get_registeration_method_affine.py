@@ -1,5 +1,3 @@
-from notebooks.Will.toolbox.sitk.registration_method_util import *
-
 def get_affine_transform(fixed_image, moving_image, transform):
     registration_method = init_regerstration_method()
     set_mutual_information_as_similarity_metic(registration_method)

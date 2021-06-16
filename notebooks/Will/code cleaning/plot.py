@@ -1,21 +1,27 @@
+import sys
 import numpy as np
+import pandas as pd
+pipeline_utility_root = '/home/zhw272/programming/pipeline_utility'
+sys.path.append(pipeline_utility_root)
 from utilities.model.center_of_mass import CenterOfMass
 from sql_setup import session
 from utilities.sqlcontroller import SqlController
-import pandas as pd
-import sys
-from pathlib import Path
-from notebooks.Will.toolbox.brain_and_structure_info import get_list_of_brains_to_align
-PIPELINE_ROOT = Path('.').absolute().parents[2]
-sys.path.append(PIPELINE_ROOT.as_posix())
+from notebooks.Will.toolbox.IOs.get_landmark_lists import \
+    get_shared_landmarks_between_specimens
 
-def get_common_structures():
-    brains_to_align = get_list_of_brains_to_align()
-    common_structures = set()
-    for brain in brains_to_align:
-        common_structures = common_structures | set(query_brain_coms(brain).keys())
-    common_structures = list(sorted(common_structures))
-    return common_structures
+def query_brain_coms(brain, person_id=28, input_type_id=4):
+    # default: person is bili, input_type is aligned
+    rows = session.query(CenterOfMass)\
+        .filter(CenterOfMass.active.is_(True))\
+        .filter(CenterOfMass.prep_id == brain)\
+        .filter(CenterOfMass.person_id == person_id)\
+        .filter(CenterOfMass.input_type_id == input_type_id)\
+        .all()
+    row_dict = {}
+    for row in rows:
+        structure = row.structure.abbreviation
+        row_dict[structure] = np.array([row.x, row.y, row.section])
+    return row_dict
 
 def get_atlas_centers(
         atlas_box_size=(1000, 1000, 300),
@@ -36,21 +42,6 @@ def get_atlas_centers(
 
     return atlas_centers
 
-def query_brain_coms(brain, person_id=28, input_type_id=4):
-    rows = session.query(CenterOfMass)\
-        .filter(CenterOfMass.active.is_(True))\
-        .filter(CenterOfMass.prep_id == brain)\
-        .filter(CenterOfMass.person_id == person_id)\
-        .filter(CenterOfMass.input_type_id == input_type_id)\
-        .all()
-    brain_centers = {}
-    for row in rows:
-        structure = row.structure.abbreviation
-        brain_centers[structure] = np.array([row.x, row.y, row.section])
-    return brain_centers
-
-
-
 def prepare_table(brains, person_id, input_type_id, save_path):
     df_save = prepare_table_for_save(
         brains,
@@ -66,7 +57,6 @@ def prepare_table(brains, person_id, input_type_id, save_path):
     )
 
     return df_save, df
-
 
 def get_brain_coms(brains, person_id, input_type_id):
     brain_coms = {}
@@ -85,11 +75,9 @@ def get_brain_coms(brains, person_id, input_type_id):
             )
     return brain_coms
 
-
 def prepare_table_for_save(brains, person_id, input_type_id):
-    brain_coms = get_brain_coms(brains, person_id, input_type_id)
-    common_structures = get_common_structures()
     atlas_coms = get_atlas_centers()
+    brain_coms = get_brain_coms(brains, person_id, input_type_id)
     data = {}
     data['name'] = []
     for s in common_structures:
@@ -110,11 +98,18 @@ def prepare_table_for_save(brains, person_id, input_type_id):
 
     return df
 
+def get_row(row_type='dx'):
+    global dx, dy, dz, dist, structurei
+    row = {}
+    row['structure'] = common_structures[structurei] + '_' + row_type
+    row['value'] = eval(row_type + '[structurei]')
+    row['type'] = '_' + row_type
+    return row
 
 def prepare_table_for_plot(brains, person_id, input_type_id):
-    brain_coms = get_brain_coms(brains, person_id, input_type_id)
-    common_structures = get_common_structures()
+    global dx, dy, dz, dist, structurei
     atlas_coms = get_atlas_centers()
+    brain_coms = get_brain_coms(brains, person_id, input_type_id)
     df = pd.DataFrame()
     for brain in brain_coms.keys():
         offset = [brain_coms[brain][s] - atlas_coms[s]
@@ -127,30 +122,31 @@ def prepare_table_for_plot(brains, person_id, input_type_id):
 
         df_brain = pd.DataFrame()
 
-        data = {}
-        data['structure'] = common_structures
-        data['value'] = dx
-        data['type'] = 'dx'
-        df_brain = df_brain.append(pd.DataFrame(data), ignore_index=True)
-
-        data = {}
-        data['structure'] = common_structures
-        data['value'] = dy
-        data['type'] = 'dy'
-        df_brain = df_brain.append(pd.DataFrame(data), ignore_index=True)
-
-        data = {}
-        data['structure'] = common_structures
-        data['value'] = dz
-        data['type'] = 'dz'
-        df_brain = df_brain.append(pd.DataFrame(data), ignore_index=True)
-
-        data = {}
-        data['structure'] = common_structures
-        data['value'] = dist
-        data['type'] = 'dist'
-        df_brain = df_brain.append(pd.DataFrame(data), ignore_index=True)
+        n_structures = len(common_structures)
+        for structurei in range(n_structures):
+            row = get_row('dx')
+            print(row)
+            df_brain = df_brain.append(pd.DataFrame(row), ignore_index=True)
+            row = get_row('dy')
+            df_brain = df_brain.append(pd.DataFrame(row), ignore_index=True)
+            row = get_row('dz')
+            df_brain = df_brain.append(pd.DataFrame(row), ignore_index=True)
+            row = get_row('dist')
+            df_brain = df_brain.append(pd.DataFrame(row), ignore_index=True)
 
         df_brain['brain'] = brain
         df = df.append(df_brain, ignore_index=True)
     return df
+
+brains_to_extract_common_structures = ['DK39', 'DK41', 'DK43', 'DK54', 'DK55']
+brains_to_examine = ['DK39', 'DK41', 'DK43', 'DK52', 'DK54', 'DK55']
+
+common_structures = get_shared_landmarks_between_specimens(brains_to_extract_common_structures)
+
+df_save, df = prepare_table(
+    brains_to_examine,
+    person_id=28,
+    input_type_id=4,
+    save_path=pipeline_utility_root+'/notebooks/Bili/data/rigid-alignment-error.csv'
+)
+df.head()

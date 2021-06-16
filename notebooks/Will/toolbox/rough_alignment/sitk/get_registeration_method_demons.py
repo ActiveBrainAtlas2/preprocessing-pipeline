@@ -1,4 +1,3 @@
-from notebooks.Will.toolbox.sitk.registration_method_util import *
 import SimpleITK as sitk
 
 def get_demons_transform(fixed_image, moving_image, transform):

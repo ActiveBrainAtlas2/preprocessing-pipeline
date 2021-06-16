@@ -1,5 +1,5 @@
-from notebooks.Will.toolbox.sitk.get_registeration_method_affine import get_affine_transform
-from notebooks.Will.toolbox.sitk.utility import *
+from notebooks.Will.toolbox.rough_alignment.sitk.get_registeration_method_affine import get_affine_transform
+from notebooks.Will.toolbox.rough_alignment.sitk.utility import *
 
 def get_rough_alignment_affine_transform(moving_brain = 'DK52',fixed_brain = 'DK43'):
     print(f'aligning brain {moving_brain} to brain {fixed_brain}')
