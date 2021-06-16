@@ -2,8 +2,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 sns.set_style("whitegrid")
 import SimpleITK as sitk
-from notebooks.Will.toolbox.data_base.sql_tools import get_atlas_centers,get_common_structures
-from notebooks.Will.toolbox.brain_and_structure_info import get_list_of_brains_to_align
+from notebooks.Will.toolbox.IOs.get_center_of_mass import get_atlas_centers_in_physical_coord
+from notebooks.Will.toolbox.IOs.get_specimen_lists import get_list_of_brains_to_align
+from notebooks.Will.toolbox.IOs.get_landmark_lists import get_shared_landmarks_between_specimens
 import pandas as pd
 import numpy as np
 
@@ -23,8 +24,8 @@ def prepare_table_for_plot():
     brain_coms = {}
     for braini in brains_to_examine:
         brain_coms[braini] = get_demon_transformed_com(braini)
-    common_structures = get_common_structures()
-    atlas_coms = get_atlas_centers()
+    common_structures = get_shared_landmarks_between_specimens(brains_to_examine)
+    atlas_coms = get_atlas_centers_in_physical_coord()
     df = pd.DataFrame()
     for brain in brain_coms.keys():
         offset = [brain_coms[brain][structure] - atlas_coms[structure]

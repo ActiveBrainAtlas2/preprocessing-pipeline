@@ -1,5 +1,4 @@
 import SimpleITK as sitk
-from notebooks.Will.toolbox.sitk.optimization_status_report_functions import *
 from math import floor
 
 def init_regerstration_method():
