@@ -126,13 +126,13 @@ def prepare_table_for_plot(brains, person_id, input_type_id):
         for structurei in range(n_structures):
             row = get_row('dx')
             print(row)
-            df_brain = df_brain.append(pd.DataFrame(row), ignore_index=True)
+            df_brain = df_brain.append(pd.DataFrame(row,index=[0]), ignore_index=True)
             row = get_row('dy')
-            df_brain = df_brain.append(pd.DataFrame(row), ignore_index=True)
+            df_brain = df_brain.append(pd.DataFrame(row,index=[0]), ignore_index=True)
             row = get_row('dz')
-            df_brain = df_brain.append(pd.DataFrame(row), ignore_index=True)
+            df_brain = df_brain.append(pd.DataFrame(row,index=[0]), ignore_index=True)
             row = get_row('dist')
-            df_brain = df_brain.append(pd.DataFrame(row), ignore_index=True)
+            df_brain = df_brain.append(pd.DataFrame(row,index=[0]), ignore_index=True)
 
         df_brain['brain'] = brain
         df = df.append(df_brain, ignore_index=True)
