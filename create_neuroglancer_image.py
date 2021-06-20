@@ -53,7 +53,7 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
     files = sorted(os.listdir(INPUT))
     midpoint = len(files) // 2
     midfilepath = os.path.join(INPUT, files[midpoint])
-    midfile = io.imread(midfilepath)
+    midfile = io.imread(midfilepath, img_num=0)
     height = midfile.shape[0]
     width = midfile.shape[1]
     num_channels = midfile.shape[2] if len(midfile.shape) > 2 else 1

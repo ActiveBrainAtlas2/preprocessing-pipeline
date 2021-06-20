@@ -20,6 +20,7 @@ from collections import defaultdict
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 from utilities.sqlcontroller import SqlController, file_processed, set_file_completed
+from utilities.utilities_process import get_cpus
 
 def calculate_chunks(downsample, mip):
     """
@@ -139,14 +140,15 @@ def get_hex_from_id(id, colormap='coolwarm'):
 class NumpyToNeuroglancer():
     viewer = None
 
-    def __init__(self, animal, volume, scales, layer_type, data_type, num_channels=1, chunk_size=[256,256,128]):
+    def __init__(self, animal, volume, scales, layer_type, data_type, num_channels=1, 
+        chunk_size=[256,256,128], offset=[0,0,0]):
         self.volume = volume
         self.scales = scales
         self.layer_type = layer_type
         self.data_type = data_type
         self.chunk_size = chunk_size
         self.precomputed_vol = None
-        self.offset = [0, 0, 0]
+        self.offset = offset
         self.starting_points = None
         self.animal = animal
         self.num_channels = num_channels
@@ -308,14 +310,15 @@ class NumpyToNeuroglancer():
     def process_image(self, file_key):
         index, infile = file_key
         basefile = os.path.basename(infile)
-        completed = file_processed(self.animal, self.progress_id, basefile)
+        #completed = file_processed(self.animal, self.progress_id, basefile)
+        completed = False
         if completed:
             print(f"Section {index} already processed, skipping ")
             return
-        img = io.imread(infile)
+        img = io.imread(infile, img_num=0)
         img = img.reshape(self.num_channels, img.shape[0], img.shape[1]).T
         self.precomputed_vol[:, :, index] = img
-        set_file_completed(self.animal, self.progress_id, basefile)
+        #set_file_completed(self.animal, self.progress_id, basefile)
         del img
         return
 
@@ -326,7 +329,7 @@ class NumpyToNeuroglancer():
         if completed:
             print(f"Section {index} already processed, skipping ")
             return
-        img = io.imread(infile)
+        img = io.imread(infile, img_num=0)
         img = img.reshape(img.shape[0], img.shape[1], 1, img.shape[2])
         img = np.rot90(img, 1)
         img = np.flipud(img)

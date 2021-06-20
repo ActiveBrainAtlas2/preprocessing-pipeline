@@ -25,7 +25,7 @@ def create_downsamples(animal, channel, suffix, downsample):
 
     if downsample:
         channel_outdir += 'T'
-        mips = [0,1,2]
+        mips = [0,1]
  
 
     outpath = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
