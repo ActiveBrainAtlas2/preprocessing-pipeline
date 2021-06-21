@@ -62,6 +62,11 @@ class SqlController(object):
         # fill up the metadata_cache variable
         # self.session.close()
 
+    def get_values_from_column(query_result):
+        query_result = query_result.all()
+        query_result = [entryi[0] for entryi in query_result]
+        return query_result
+
     def get_section(self, id):
         """
         The sections table is a view and it is already filtered by active and file_status = 'good'
