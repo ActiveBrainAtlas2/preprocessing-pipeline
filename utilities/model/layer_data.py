@@ -5,6 +5,7 @@ from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, T
 from sqlalchemy.sql.expression import null
 from sqlalchemy.sql.sqltypes import Float
 from .atlas_model import Base, AtlasModel
+from .structure import Structure
 
 
 
