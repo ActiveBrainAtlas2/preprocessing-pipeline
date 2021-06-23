@@ -270,6 +270,24 @@ https://s3.amazonaws.com/test-bucket-sid/final_precomputed_volumes/MD594
 }
 
 
+## for normalized 3 color
+void main () {
+  emitRGB(vec3(toNormalized(getDataValue(0)),
+               toNormalized(getDataValue(1)),
+               toNormalized(getDataValue(2))));
+}
+
+# same as above but with contrast and brightness
+#uicontrol float brightness slider(min=-1, max=1)
+#uicontrol float contrast slider(min=-3, max=3, step=0.01)
+
+void main() {
+	emitRGB(vec3(
+	toNormalized(getDataValue(0)) + brightness,
+  	toNormalized(getDataValue(1)) + brightness,
+  	toNormalized(getDataValue(2)) + brightness) * exp(contrast));
+}
+
 
 
 

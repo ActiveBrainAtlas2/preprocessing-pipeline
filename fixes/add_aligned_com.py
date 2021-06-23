@@ -85,7 +85,7 @@ def get_centers(animal, input_type_id):
             .filter(LayerData.prep_id == animal)\
             .filter(LayerData.person_id == beth)\
             .filter(LayerData.layer == 'COM')\
-            .filter(LayerData).input_type_id == input_type_id)\
+            .filter(LayerData.input_type_id == input_type_id)\
             .all()
     row_dict = {}
     for row in rows:
