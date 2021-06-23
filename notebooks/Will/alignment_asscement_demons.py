@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from notebooks.Will.toolbox.brain_lists import get_prep_list_for_rough_alignment_test
 from utilities.brain_specimens.get_com import get_atlas_com_dict,get_manual_annotation_from_beth
 from utilities.alignment.align_point_sets import align_point_sets
@@ -67,3 +68,7 @@ def get_demons_diagonastics():
     transformation_displacement = np.array(transformation_displacement)
     deviation_from_Beth_annotation = np.array(deviation_from_Beth_annotation)
     return transformation_displacement,deviation_from_Beth_annotation
+=======
+from utilities.atlas.center_of_mass import align_atlas
+from utilities.sqlcontroller import get_centers_dict
+>>>>>>> 15c0d28f2be48a48d7dd5e04dbb796ced5d1f407
