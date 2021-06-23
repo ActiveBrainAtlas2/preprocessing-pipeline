@@ -7,10 +7,7 @@ def get_active_prep_list():
     preps.remove('Atlas')
     return preps
 
-<<<<<<< HEAD
-=======
 def get_prep_list_excluding_DK52():
     preps = get_active_prep_list()
     preps.remove('DK52')
     return preps
->>>>>>> 15c0d28f2be48a48d7dd5e04dbb796ced5d1f407
