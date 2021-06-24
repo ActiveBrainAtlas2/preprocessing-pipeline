@@ -31,7 +31,7 @@ def get_atlas_com_dict():
 
 def get_manual_annotation_from_beth(prep_id):
     PERSON_ID_BETH = 2
-    INPUT_TYPE_MANUAL = 1
+    INPUT_TYPE_MANUAL = 2
     center_of_mass = get_com_dict(prep_id,PERSON_ID_BETH,INPUT_TYPE_MANUAL,pixel_to_physical_coord)
     return center_of_mass
 
