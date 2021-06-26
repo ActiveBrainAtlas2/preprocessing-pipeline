@@ -1,11 +1,10 @@
 import pickle
 import os
+from .get_path import get_data_save_folder
 
-def ger_save_folder():
-    return '/home/zhw272/data/'
 
 def get_file_path(file_name,folder):
-    save_folder = ger_save_folder()
+    save_folder = get_data_save_folder()
     if not os.path.exists(save_folder+ folder):
         os.mkdir(save_folder+ folder)
     file_path = save_folder + folder+'/'+file_name+'.p'

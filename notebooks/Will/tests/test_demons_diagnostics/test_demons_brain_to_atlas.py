@@ -2,12 +2,16 @@
 import sys
 sys.path.append('/home/zhw272/programming/pipeline_utility/')
 from notebooks.Will.toolbox.IOs.pickle_io import save_pickle,load_pickle
-from notebooks.Will.demons_assessment_brain_to_atlas import get_deviation_from_atlas_com, get_transformed_coms
+from notebooks.Will.demons_assessment_brain_to_atlas import get_deviation_from_atlas_com, get_transformed_coms,get_demons_transform
 from notebooks.Will.toolbox.rough_alignment.diagnostics import get_atlas_com,get_reference_com
-from notebooks.Will.toolbox.plotting.com_offset_box_plot import plot_offsets,save_offsets
+from notebooks.Will.toolbox.plotting.plot_com_offset import plot_offsets_scatter,save_offsets_scatter
 
 #%%
 com_diff = get_deviation_from_atlas_com()
+#%%
+transfrom = get_demons_transform('DK39')
+#%%
+DK52_com = get_reference_com('DK52')
 #%%
 transformed_coms = get_transformed_coms()
 # %%
