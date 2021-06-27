@@ -34,7 +34,6 @@ class PennFudanDataset(object):
         # load images and masks
         img_path = os.path.join(self.root, self.input, self.imgs[idx])
         mask_path = os.path.join(self.root, "thumbnail_masked", self.masks[idx])
-        #img = Image.open(img_path).convert("RGB")
         img = Image.open(img_path).convert("L")
         #img = np.array(img)
         # note that we haven't converted the mask to RGB,
@@ -215,5 +214,5 @@ if __name__ == '__main__':
     # Get cpu or gpu device for training.
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using {} device".format(device))
-    test_model()    
-    #train_model()
+    #test_model()    
+    train_model()
