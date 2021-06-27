@@ -12,11 +12,11 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from engine import train_one_epoch, evaluate
 import utils
 import transforms as T
+HOME = os.path.expanduser("~")
 
-
-def create_box_df(animal, prep, dfpath):
+def create_box_df(dfpath):
     data = []
-    INPUT = os.path.join(prep, 'thumbnail_masked')
+    INPUT = os.path.join(HOME, 'programming/brains/thumbnail_masked')
     masks = sorted(os.listdir(INPUT))
     for file in masks:
         maskfile = os.path.join(INPUT, file)
@@ -48,13 +48,13 @@ class MaskDataset(torch.utils.data.Dataset):
     def __init__(self, root, data_file, transforms=None):
         self.root = root
         self.transforms = transforms
-        self.imgs = sorted(os.listdir(os.path.join(root, 'CH1/normalized')))
-        self.masks = sorted(os.listdir(os.path.join(root, 'thumbnail_masked')))
+        self.imgs = sorted(os.listdir(os.path.join(root, 'programming/brains/normalized')))
+        self.masks = sorted(os.listdir(os.path.join(root, 'programming/brains/thumbnail_masked')))
         self.path_to_data_file = data_file
 
     def __getitem__(self, idx):
         # load images and bounding boxes
-        img_path = os.path.join(self.root, 'CH1/normalized', self.imgs[idx])
+        img_path = os.path.join(self.root, 'programming/brains/normalized', self.imgs[idx])
         img = Image.open(img_path).convert("L")
         box_list = parse_one_annot(self.path_to_data_file, 
         self.imgs[idx])
@@ -66,7 +66,7 @@ class MaskDataset(torch.utils.data.Dataset):
         image_id = torch.tensor([idx])
         area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:,0])
         ## masks
-        mask_path = os.path.join(self.root, 'thumbnail_masked', self.masks[idx])
+        mask_path = os.path.join(self.root, 'programming/brains/thumbnail_masked', self.masks[idx])
         mask = Image.open(mask_path) # 
         mask = np.array(mask)
         mask[mask > 0] = 255
@@ -131,20 +131,17 @@ def get_transform(train):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--create', help='create volume', required=False, default='false')
     
     args = parser.parse_args()
-    animal = args.animal
     create = bool({'true': True, 'false': False}[args.create.lower()])
-    PREP = os.path.join(f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{animal}/preps')
-    dfpath = os.path.join(PREP, 'boxes.csv')
+    dfpath = os.path.join(HOME, 'programming/brains/boxes.csv')
     if not os.path.exists(dfpath):
         print(f'Creating bounding box csv file {dfpath}')
-        data = create_box_df(animal, PREP, dfpath)
+        data = create_box_df(dfpath)
 
-    dataset = MaskDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=True))
-    dataset_test = MaskDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=False))
+    dataset = MaskDataset(HOME, data_file= dfpath, transforms = get_transform(train=True))
+    dataset_test = MaskDataset(HOME, data_file= dfpath, transforms = get_transform(train=False))
 
     # split the dataset in train and test set
     torch.manual_seed(1)
@@ -169,9 +166,7 @@ if __name__ == '__main__':
         print('Using CPU')
     # our dataset has two classes only - raccoon and not racoon
     num_classes = 2
-    modelpath = os.path.join(PREP, 'model.pth')
-    datatestpath = os.path.join(PREP, 'data_loader_test.pth')
-    torch.save(data_loader_test, datatestpath)
+    modelpath = os.path.join(HOME, 'programming/brains/mask.model.pth')
     if create:
         # get the model using our helper function
         model = get_model_instance_segmentation(num_classes)
@@ -185,7 +180,7 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # let's train it for 10 epochs
-        epochs = 20
+        epochs = 2
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
