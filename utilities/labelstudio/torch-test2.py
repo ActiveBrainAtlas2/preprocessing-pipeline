@@ -24,12 +24,12 @@ def create_box_df(animal, prep, dfpath):
         mask = np.expand_dims(mask, axis=0)
 
         pos = np.where(np.array(mask)[0, :, :])
-        xmin = np.min(pos[1])
-        xmax = np.max(pos[1])
-        ymin = np.min(pos[0])
-        ymax = np.max(pos[0])
+        limit = 5
+        xmin = np.min(pos[1]) - limit
+        xmax = np.max(pos[1]) + limit
+        ymin = np.min(pos[0]) - limit
+        ymax = np.max(pos[0]) + limit
         data.append([file, xmin, ymin, xmax, ymax])
-        #data[maskfile] = [xmin, ymin, xmax, ymax]
 
     df = pd.DataFrame(data, columns = ['filename', 'xmin', 'ymin', 'xmax', 'ymax'])
     df['xmin'] = pd.to_numeric(df['xmin'])
@@ -185,7 +185,7 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # let's train it for 10 epochs
-        epochs = 2
+        epochs = 20
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
