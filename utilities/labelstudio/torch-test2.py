@@ -42,36 +42,39 @@ def parse_one_annot(dfpath, filename):
    return boxes_array
 
 
-class MaskDataset(torch.utils.data.Dataset):
+class RaccoonDataset(torch.utils.data.Dataset):
     def __init__(self, root, data_file, transforms=None):
         self.root = root
         self.transforms = transforms
-        self.input_path = 'CH1/normalized'
-        self.mask_path = 'thumbnail_masked'
-        self.imgs = sorted(os.listdir(os.path.join(root, self.input_path)))
+        self.imgs = sorted(os.listdir(os.path.join(root, 'CH1/normalized')))
         self.path_to_data_file = data_file
 
     def __getitem__(self, idx):
         # load images and bounding boxes
-        img_path = os.path.join(self.root, self.input_path, self.imgs[idx])
+        img_path = os.path.join(self.root, 'CH1/normalized', self.imgs[idx])
         img = Image.open(img_path).convert("L")
         box_list = parse_one_annot(self.path_to_data_file, 
         self.imgs[idx])
         boxes = torch.as_tensor(box_list, dtype=torch.float32)
 
-        mask_path = os.path.join(self.root, self.mask_path, self.imgs[idx])
-        mask = Image.open(mask_path)
-        mask = np.array(mask)
-        obj_ids = np.unique(mask)
-        obj_ids = obj_ids[1:]
-        masks = mask == obj_ids[:, None, None]
-        masks = torch.as_tensor(masks, dtype=torch.uint8)
-        
         num_objs = len(box_list)
         # there is only one class
         labels = torch.ones((num_objs,), dtype=torch.int64)
         image_id = torch.tensor([idx])
         area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:,0])
+        ## masks
+        mask_path = os.path.join(self.root, 'thumbnail_masked', self.imgs[idx])
+        mask = Image.open(mask_path) # defaults to boolean
+        mask = np.array(mask)
+        obj_ids = np.unique(mask)
+        # print('1',obj_ids) = 0 or 255
+        obj_ids = obj_ids[1:] 
+        #print('2',obj_ids) = 255
+        masks = mask == obj_ids[:, None, None]
+        #print('shape of masks', masks.shape)
+        #print('dtype of masks', masks.dtype)
+        masks = torch.as_tensor(masks, dtype=torch.uint8)
+
         # suppose all instances are not crowd
         iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
         target = {}
@@ -124,8 +127,8 @@ if __name__ == '__main__':
         print(f'Creating bounding box csv file {dfpath}')
         data = create_box_df(animal, PREP, dfpath)
 
-    dataset = MaskDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=True))
-    dataset_test = MaskDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=False))
+    dataset = RaccoonDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=True))
+    dataset_test = RaccoonDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=False))
 
     # split the dataset in train and test set
     torch.manual_seed(1)
@@ -148,13 +151,12 @@ if __name__ == '__main__':
     else:
         device = torch.device('cpu')
         print('Using CPU')
-    # our dataset has two classes only - mask and not mask
+    # our dataset has two classes only - raccoon and not racoon
     num_classes = 2
     modelpath = os.path.join(PREP, 'model.pth')
     datatestpath = os.path.join(PREP, 'data_loader_test.pth')
     torch.save(data_loader_test, datatestpath)
-    epochs = 1
-    if create:        
+    if create:
         # get the model using our helper function
         model = get_model(num_classes)
         # move model to the right device
@@ -164,16 +166,18 @@ if __name__ == '__main__':
         optimizer = torch.optim.SGD(params, lr=0.005,
                                 momentum=0.9, weight_decay=0.0005)
         # and a learning rate scheduler which decreases the learning rate by # 10x every 3 epochs
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.1)
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # let's train it for 10 epochs
+        epochs = 2
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
-            train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=5)
+            train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
             # update the learning rate
             lr_scheduler.step()
-            # evaluate on the test dataset
-            evaluate(model, data_loader_test, device=device)
+        # evaluate on the test dataset
+        evaluate(model, data_loader_test, device=device)
 
 
         torch.save(model.state_dict(), modelpath)
+        print('Finished with masks')
