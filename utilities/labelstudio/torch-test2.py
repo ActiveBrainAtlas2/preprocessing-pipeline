@@ -47,6 +47,7 @@ class MaskDataset(torch.utils.data.Dataset):
         self.root = root
         self.transforms = transforms
         self.input_path = 'CH1/normalized'
+        self.mask_path = 'thumbnail_masked'
         self.imgs = sorted(os.listdir(os.path.join(root, self.input_path)))
         self.path_to_data_file = data_file
 
@@ -58,6 +59,14 @@ class MaskDataset(torch.utils.data.Dataset):
         self.imgs[idx])
         boxes = torch.as_tensor(box_list, dtype=torch.float32)
 
+        mask_path = os.path.join(self.root, self.mask_path, self.imgs[idx])
+        mask = Image.open(mask_path)
+        mask = np.array(mask)
+        obj_ids = np.unique(mask)
+        obj_ids = obj_ids[1:]
+        masks = mask == obj_ids[:, None, None]
+        masks = torch.as_tensor(masks, dtype=torch.uint8)
+        
         num_objs = len(box_list)
         # there is only one class
         labels = torch.ones((num_objs,), dtype=torch.int64)
@@ -71,6 +80,7 @@ class MaskDataset(torch.utils.data.Dataset):
         target["image_id"] = image_id
         target["area"] = area
         target["iscrowd"] = iscrowd
+        target["masks"] = masks
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
@@ -136,14 +146,15 @@ if __name__ == '__main__':
         device = torch.device('cuda') 
         print('Using GPU')
     else:
-        torch.device('cpu')
+        device = torch.device('cpu')
         print('Using CPU')
     # our dataset has two classes only - mask and not mask
     num_classes = 2
     modelpath = os.path.join(PREP, 'model.pth')
     datatestpath = os.path.join(PREP, 'data_loader_test.pth')
     torch.save(data_loader_test, datatestpath)
-    if create:
+    epochs = 1
+    if create:        
         # get the model using our helper function
         model = get_model(num_classes)
         # move model to the right device
@@ -153,17 +164,16 @@ if __name__ == '__main__':
         optimizer = torch.optim.SGD(params, lr=0.005,
                                 momentum=0.9, weight_decay=0.0005)
         # and a learning rate scheduler which decreases the learning rate by # 10x every 3 epochs
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.1)
 
         # let's train it for 10 epochs
-        num_epochs = 10
-        for epoch in range(num_epochs):
+        for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=5)
             # update the learning rate
             lr_scheduler.step()
-        # evaluate on the test dataset
-        evaluate(model, data_loader_test, device=device)
+            # evaluate on the test dataset
+            evaluate(model, data_loader_test, device=device)
 
 
         torch.save(model.state_dict(), modelpath)
