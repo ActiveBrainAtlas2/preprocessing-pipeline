@@ -110,7 +110,7 @@ if __name__ == '__main__':
     PREP = os.path.join(f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{animal}/preps')
     dfpath = os.path.join(PREP, 'boxes.csv')
     if not os.path.exists(dfpath):
-        print(f'Creating bounding box csv file', dfpath)
+        print(f'Creating bounding box csv file {dfpath}')
         data = create_box_df(animal, PREP, dfpath)
 
     dataset = RaccoonDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=True))
