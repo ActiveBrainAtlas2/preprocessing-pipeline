@@ -42,11 +42,12 @@ def parse_one_annot(dfpath, filename):
    return boxes_array
 
 
-class RaccoonDataset(torch.utils.data.Dataset):
+class MaskDataset(torch.utils.data.Dataset):
     def __init__(self, root, data_file, transforms=None):
         self.root = root
         self.transforms = transforms
         self.imgs = sorted(os.listdir(os.path.join(root, 'CH1/normalized')))
+        self.masks = sorted(os.listdir(os.path.join(root, 'thumbnail_masked')))
         self.path_to_data_file = data_file
 
     def __getitem__(self, idx):
@@ -63,16 +64,14 @@ class RaccoonDataset(torch.utils.data.Dataset):
         image_id = torch.tensor([idx])
         area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:,0])
         ## masks
-        mask_path = os.path.join(self.root, 'thumbnail_masked', self.imgs[idx])
-        mask = Image.open(mask_path) # defaults to boolean
+        mask_path = os.path.join(self.root, 'thumbnail_masked', self.masks[idx])
+        mask = Image.open(mask_path) # 
         mask = np.array(mask)
+        mask[mask > 0] = 255
         obj_ids = np.unique(mask)
         # print('1',obj_ids) = 0 or 255
         obj_ids = obj_ids[1:] 
-        #print('2',obj_ids) = 255
-        masks = mask == obj_ids[:, None, None]
-        #print('shape of masks', masks.shape)
-        #print('dtype of masks', masks.dtype)
+        masks = mask == obj_ids[:]
         masks = torch.as_tensor(masks, dtype=torch.uint8)
 
         # suppose all instances are not crowd
@@ -127,8 +126,8 @@ if __name__ == '__main__':
         print(f'Creating bounding box csv file {dfpath}')
         data = create_box_df(animal, PREP, dfpath)
 
-    dataset = RaccoonDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=True))
-    dataset_test = RaccoonDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=False))
+    dataset = MaskDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=True))
+    dataset_test = MaskDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=False))
 
     # split the dataset in train and test set
     torch.manual_seed(1)
@@ -169,7 +168,7 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # let's train it for 10 epochs
-        epochs = 2
+        epochs = 12
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
