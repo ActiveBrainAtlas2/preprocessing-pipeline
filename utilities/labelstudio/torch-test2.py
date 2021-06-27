@@ -7,6 +7,8 @@ from PIL import Image
 import pandas as pd
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+
 from engine import train_one_epoch, evaluate
 import utils
 import transforms as T
@@ -71,7 +73,7 @@ class MaskDataset(torch.utils.data.Dataset):
         obj_ids = np.unique(mask)
         # print('1',obj_ids) = 0 or 255
         obj_ids = obj_ids[1:] 
-        masks = mask == obj_ids[:]
+        masks = mask == obj_ids[:, None, None]
         masks = torch.as_tensor(masks, dtype=torch.uint8)
 
         # suppose all instances are not crowd
@@ -100,6 +102,21 @@ def get_model(num_classes):
     # replace the pre-trained head with a new on
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
+    return model
+
+
+def get_model_instance_segmentation(num_classes):
+    # load an instance segmentation model pre-trained pre-trained on COCO
+    model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
+    # get number of input features for the classifier
+    in_features = model.roi_heads.box_predictor.cls_score.in_features
+    # replace the pre-trained head with a new one
+    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+    # now get the number of input features for the mask classifier
+    in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
+    hidden_layer = 256
+    # and replace the mask predictor with a new one
+    model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask, hidden_layer, num_classes)
     return model
 
 def get_transform(train):
@@ -157,7 +174,7 @@ if __name__ == '__main__':
     torch.save(data_loader_test, datatestpath)
     if create:
         # get the model using our helper function
-        model = get_model(num_classes)
+        model = get_model_instance_segmentation(num_classes)
         # move model to the right device
         model.to(device)
         # construct an optimizer
@@ -168,7 +185,7 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # let's train it for 10 epochs
-        epochs = 12
+        epochs = 2
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
