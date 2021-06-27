@@ -42,16 +42,17 @@ def parse_one_annot(dfpath, filename):
    return boxes_array
 
 
-class RaccoonDataset(torch.utils.data.Dataset):
+class MaskDataset(torch.utils.data.Dataset):
     def __init__(self, root, data_file, transforms=None):
         self.root = root
         self.transforms = transforms
-        self.imgs = sorted(os.listdir(os.path.join(root, 'CH1/thumbnail')))
+        self.input_path = 'CH1/normalized'
+        self.imgs = sorted(os.listdir(os.path.join(root, self.input_path)))
         self.path_to_data_file = data_file
 
     def __getitem__(self, idx):
         # load images and bounding boxes
-        img_path = os.path.join(self.root, 'CH1/thumbnail', self.imgs[idx])
+        img_path = os.path.join(self.root, self.input_path, self.imgs[idx])
         img = Image.open(img_path).convert("L")
         box_list = parse_one_annot(self.path_to_data_file, 
         self.imgs[idx])
@@ -113,8 +114,8 @@ if __name__ == '__main__':
         print(f'Creating bounding box csv file {dfpath}')
         data = create_box_df(animal, PREP, dfpath)
 
-    dataset = RaccoonDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=True))
-    dataset_test = RaccoonDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=False))
+    dataset = MaskDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=True))
+    dataset_test = MaskDataset(root= PREP, data_file= dfpath, transforms = get_transform(train=False))
 
     # split the dataset in train and test set
     torch.manual_seed(1)
@@ -137,8 +138,7 @@ if __name__ == '__main__':
     else:
         torch.device('cpu')
         print('Using CPU')
-    sys.exit()
-    # our dataset has two classes only - raccoon and not racoon
+    # our dataset has two classes only - mask and not mask
     num_classes = 2
     modelpath = os.path.join(PREP, 'model.pth')
     datatestpath = os.path.join(PREP, 'data_loader_test.pth')
@@ -156,7 +156,7 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # let's train it for 10 epochs
-        num_epochs = 2
+        num_epochs = 10
         for epoch in range(num_epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=5)
