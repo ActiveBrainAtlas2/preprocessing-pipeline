@@ -36,7 +36,7 @@ def create_box_df(dfpath):
     df['ymin'] = pd.to_numeric(df['ymin'])
     df['xmax'] = pd.to_numeric(df['xmax'])
     df['ymax'] = pd.to_numeric(df['ymax'])
-    df.to_csv(dfpath)
+    df.to_csv(dfpath, index=False, header=True)
 
 def parse_one_annot(dfpath, filename):
    data = pd.read_csv(dfpath)
@@ -180,7 +180,7 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # let's train it for 10 epochs
-        epochs = 2
+        epochs = 20
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
