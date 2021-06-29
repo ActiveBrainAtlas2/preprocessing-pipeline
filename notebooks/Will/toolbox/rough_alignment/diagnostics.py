@@ -9,6 +9,10 @@ def get_common_land_marks():
     common_landmarks = get_shared_landmarks_between_specimens(prep_list)
     return common_landmarks
 
+def get_common_landmarks_between_dk52_and_atlas():
+    common_landmarks = get_shared_landmarks_between_specimens(['Dk52','Atlas'])
+    return common_landmarks
+
 def get_common_com_from_dict(com_dict): 
     common_landmarks = get_common_land_marks()
     return np.array([com_dict[landmarki] for landmarki in common_landmarks])

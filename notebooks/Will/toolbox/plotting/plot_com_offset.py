@@ -21,7 +21,11 @@ def save_offsets_scatter(offsets,file_name,folder,title = ''):
     save_path = get_plot_save_path(folder = folder,file_name = file_name)
     fig.write_html(save_path)
 
-def plot_offset_box(offsets, ymin = -1000, ymax = 1000, ystep = 100, title = ''):
+def plot_offset_box(offsets, title = ''):
+    mean = np.mean(offsets)
+    std = np.std(offsets)
+    ymin,ymax = mean - 2*std,mean+2*std
+    ystep = round(ymax-ymin)/10
     df_manual = prepare_table_for_plot(offsets)
     fig, ax = plt.subplots(2, 1, figsize=(16, 12), dpi=200)
     sns.boxplot(ax=ax[0], x="structure", y="value", hue="type", data=df_manual)
