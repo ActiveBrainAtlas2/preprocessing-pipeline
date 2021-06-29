@@ -1,6 +1,7 @@
 import argparse
 import os, sys
 import numpy as np
+from numpy.core.defchararray import translate
 import torch
 import torch.utils.data
 from PIL import Image
@@ -24,7 +25,7 @@ def create_box_df(dfpath):
         mask = np.expand_dims(mask, axis=0)
 
         pos = np.where(np.array(mask)[0, :, :])
-        limit = 5
+        limit = 3
         xmin = np.min(pos[1]) - limit
         xmax = np.max(pos[1]) + limit
         ymin = np.min(pos[0]) - limit
@@ -180,7 +181,7 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # let's train it for 10 epochs
-        epochs = 20
+        epochs = 10
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
