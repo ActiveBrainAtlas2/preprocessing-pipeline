@@ -12,6 +12,14 @@ def compare_two_coms(com1,com2,names):
                     mode='markers',marker = marker, name = name2))
     fig.show()
 
+def compare_two_com_dict(com1,com2,names):
+    landmarks1 = set(com1.keys())
+    landmarks2 = set(com2.keys())
+    shared_landmarks = landmarks1 & landmarks2
+    com1 = [com1[landmarki] for landmarki in shared_landmarks]
+    com2 = [com2[landmarki] for landmarki in shared_landmarks]
+    compare_two_coms(com1,com2,names)
+
 def compare_multiple_coms(com_list,name_list):
     assert(len(com_list) == len( name_list))
     ncoms = len(com_list)

@@ -1,4 +1,6 @@
 #%%
+import sys
+sys.path.append('/home/zhw272/programming/pipeline_utility')
 import neuroglancer
 import imageio
 from notebooks.Will.toolbox.IOs.get_path import get_subpath_to_tif_files
@@ -6,6 +8,7 @@ ip='localhost' # or public IP of the machine for sharable display
 port=98092 # change to an unused port number
 neuroglancer.set_server_bind_address(bind_address=ip,bind_port=port)
 viewer=neuroglancer.Viewer()
+import matplotlib.pyplot as plt
 # %%
 # SNEMI
 import numpy as np
@@ -39,25 +42,23 @@ vol = folder2Vol(D0)
 
 # %%
 def neuroglancerLayer(data,oo=[0,0,0],tt='segmentation'):
-    dimension = neuroglancer.CoordinateSpace(names=['x', 'y', 'z'],units='um',scales=[0.325, 0.325, 20])
+    dimension = neuroglancer.CoordinateSpace(names=['x', 'y', 'z'],units='um',scales=[10.4,10.4, 20])
     return neuroglancer.LocalVolume(data,volume_type=tt,dimensions=dimension,voxel_offset=oo)
 
 
 #%%
-all_volume_layer = neuroglancer.SegmentationLayer(
-    source = neuroglancer.LocalVolume(
+all_volume_layer = neuroglancer.LocalVolume(
         data=vol, 
-        dimensions=neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='nm', scales=[325, 325, 20000]), 
-        voxel_offset=(0, 0, 0)
-    ),
-)
+        dimensions=neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='um', scales=[10.4,10.4, 20]), 
+        voxel_offset=(0, 0, 0))
+
 with viewer.txn() as s:
     s.layers.clear()
-    s.layers['all'] = all_volume_layer
+    s.layers.append(name = 'text', layer = all_volume_layer)
 print(viewer)
 
 # %%
-plt.imshow(vol[200])
+plt.imshow(vol[:,:,200])
 # %%
 vol = np.swapaxes(vol, 0, 2)
 
