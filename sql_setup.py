@@ -10,7 +10,6 @@ file_path = os.path.join(dirname, 'parameters.yaml')
 with open(file_path) as file:
     parameters = yaml.load(file, Loader=yaml.FullLoader)
 
-
 user = parameters['user']
 password = parameters['password']
 host = parameters['host']
