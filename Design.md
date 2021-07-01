@@ -25,7 +25,7 @@ At any time there must be only one version of each file in src (github automatic
 
 # Alignments
 
-###Coordinate systems:
+### Coordinate systems:
 * **atlas coordinates**: coordinates units are in microns, origin is at the center of the brain. This is a rescaled version of the Yncong (10,10,20) coordinate system.
 * **Stack coordinates**:  Coordinate units are in microns, origin is at (0,0,0) of the containing box (top,left, first slice).
 * **Neuroglancer coordinates**: a scaled version of the stack coordinate system, where the units are (pixel x, pixel y, section number)
