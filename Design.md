@@ -26,7 +26,8 @@ At any time there must be only one version of each file in src (github automatic
 # Lucidchart diagrams
 * [workflow](https://lucid.app/lucidchart/invitations/accept/inv_0534f70f-378d-4708-bbae-056f1aa7d3b3)
 * [Data Organization](https://lucid.app/lucidchart/invitations/accept/inv_9d5af939-c120-46a5-b6da-649119d54ffe)
-* 
+
+
 # Alignments
 
 ### Coordinate systems:
