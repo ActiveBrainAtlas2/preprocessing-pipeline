@@ -4,7 +4,7 @@ from notebooks.Will.toolbox.IOs.sql_get_functions import get_atlas_centers,get_c
 
 
 def get_atlas_centers_in_physical_coord():
-    atlas_centers_physical_coord  = get_atlas_centers
+    atlas_centers_physical_coord  = get_atlas_centers()
     atlas_centers = transform_atlas_centers_to_neuroglancer_coord(atlas_centers_physical_coord)
     return atlas_centers
 
@@ -13,7 +13,7 @@ def transform_atlas_centers_to_neuroglancer_coord(atlas_centers,
               atlas_to_neuroglancer = np.array([1, 1, 0.5])):
     for structure, center in atlas_centers.items():
         transformed_center = atlas_origin + np.array(center) * atlas_to_neuroglancer
-        atlas_centers[structure] = transformed_center
+        atlas_centers[structure] = transformed_center * np.array([10, 10, 20])
     return atlas_centers
 
 

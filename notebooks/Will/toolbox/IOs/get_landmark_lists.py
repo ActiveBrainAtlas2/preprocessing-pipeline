@@ -12,8 +12,7 @@ def get_shared_landmarks_between_specimens(prep_ids):
     return shared_landmarks
 
 def get_all_landmarks_in_specimens(prep_ids):
-    last_prep = prep_ids.pop()
-    shared_landmarks = set(get_list_of_landmarks_in_prep(last_prep))
+    shared_landmarks = set()
     for prepi in prep_ids:
         landmarks_in_prepi = set(get_list_of_landmarks_in_prep(prepi))
         shared_landmarks = shared_landmarks|landmarks_in_prepi

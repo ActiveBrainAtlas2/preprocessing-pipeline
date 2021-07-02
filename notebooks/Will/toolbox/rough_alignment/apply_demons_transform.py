@@ -15,5 +15,4 @@ def transform_point_demons(demons_transform,all_com):
         transformed_com = np.array(demons_transform.TransformPoint(com_thumbnail_coord))
         transformed_com_phys = thumbnail_to_phys_coord(transformed_com)
         all_transformed_com.append(transformed_com_phys)
-        print(com - transformed_com_phys)
     return np.array(all_transformed_com)

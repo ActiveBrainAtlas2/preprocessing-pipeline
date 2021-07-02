@@ -8,7 +8,7 @@ def pixel_to_physical_coord(com):
 def atlas_to_physical_coord(com):
     return (com*10/np.array([10,10,20])+np.array([500,500,150]))*np.array([10,10,20])
 
-def get_com_dict(prep_id,person_id,input_type_id,scale_function):
+def get_com_dict(prep_id,person_id,input_type_id):
     query_results = session.query(LayerData)\
         .filter(LayerData.active.is_(True))\
         .filter(LayerData.prep_id == prep_id)\
@@ -20,19 +20,19 @@ def get_com_dict(prep_id,person_id,input_type_id,scale_function):
     for row in query_results:
         structure = row.structure.abbreviation
         com = np.array([row.x, row.y, row.section])
-        center_of_mass[structure] = scale_function(com)
+        center_of_mass[structure] = com
     return center_of_mass
 
 def get_atlas_com_dict():
     PERSON_ID_LAUREN = 16
     INPUT_TYPE_MANUAL = 1
-    center_of_mass = get_com_dict('Atlas',PERSON_ID_LAUREN,INPUT_TYPE_MANUAL,atlas_to_physical_coord)
+    center_of_mass = get_com_dict('Atlas',PERSON_ID_LAUREN,INPUT_TYPE_MANUAL)
     return center_of_mass
 
 def get_manual_annotation_from_beth(prep_id):
     PERSON_ID_BETH = 2
     INPUT_TYPE_MANUAL = 2
-    center_of_mass = get_com_dict(prep_id,PERSON_ID_BETH,INPUT_TYPE_MANUAL,pixel_to_physical_coord)
+    center_of_mass = get_com_dict(prep_id,PERSON_ID_BETH,INPUT_TYPE_MANUAL)
     return center_of_mass
 
 def pixel_to_physcial_coord(coordinate):
