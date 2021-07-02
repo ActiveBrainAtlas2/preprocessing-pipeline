@@ -1,4 +1,5 @@
 import numpy as np
+import SimpleITK as sitk
 
 def phys_to_thumbnail_coord(com):
     spacing = np.array([10,10,20])

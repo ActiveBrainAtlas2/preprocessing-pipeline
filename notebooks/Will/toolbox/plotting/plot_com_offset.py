@@ -17,6 +17,21 @@ def plot_offset_from_coms_to_a_reference(coms,reference,prep_list_function,landm
     offset_table = get_offset_table_from_coms_to_a_reference(coms,reference,prep_list_function,landmark_list_function)
     plot_offset_box(offset_table, title = title)
 
+def get_fig_offset_between_two_com_sets(com1,com2,prep_list_function,landmark_list_function,title):
+    offset_table = get_offset_table_from_two_com_sets(com1,com2,prep_list_function,landmark_list_function)
+    fig = get_fig_offset_box(offset_table, title = title)
+    return fig
+
+def get_fig_offset_from_offset_arrays(offsets,prep_list_function,landmark_list_function,title):
+    offset_table = get_offset_table_from_offset_array(offsets,prep_list_function,landmark_list_function)
+    fig = get_fig_offset_box(offset_table, title = title)
+    return fig
+
+def get_fig_offset_from_coms_to_a_reference(coms,reference,prep_list_function,landmark_list_function,title):
+    offset_table = get_offset_table_from_coms_to_a_reference(coms,reference,prep_list_function,landmark_list_function)
+    fig = get_fig_offset_box(offset_table, title = title)
+    return fig
+
 def get_offset_table_from_coms_to_a_reference(coms,reference,prep_list_function,landmark_list_function):
     offset_table = get_offset_table(coms,reference,prep_list_function,landmark_list_function,get_offseti_from_com_list_and_reference)
     return offset_table
@@ -31,6 +46,8 @@ def get_offset_table_from_offset_array(offsets,prep_list_function,landmark_list_
     return offset_table
 
 def get_offset_table(com1,com2,prep_list_function,landmark_list_function,offset_function):
+    # if type(com2) == list:
+    #     breakpoint()
     prep_list = prep_list_function()
     landmarks = landmark_list_function(prep_list)
     offset_table = pd.DataFrame()
@@ -45,7 +62,7 @@ def get_offset_table(com1,com2,prep_list_function,landmark_list_function,offset_
 
 def get_offseti_from_com_list_and_reference(coms,reference,landmarks,comi):
     offset = [coms[comi][s] - reference[s]
-                  if s in coms[comi]  else [np.nan, np.nan, np.nan]
+                  if s in coms[comi] and s in reference  else [np.nan, np.nan, np.nan]
                   for s in landmarks]
     return offset
 
@@ -67,16 +84,19 @@ def get_offset_table_entry(offset,landmarks):
         data['type'] = data_type
         df_brain = df_brain.append(pd.DataFrame(data), ignore_index=True)
     return df_brain
-    
-def plot_offset_box(offsets_table, title = ''):
+
+def get_fig_offset_box(offsets_table, title = ''):
     fig, ax = plt.subplots(1, 1, figsize=(16, 6), dpi=200)
     sns.boxplot(ax=ax, x="structure", y="value", hue="type", data=offsets_table)
     ax.xaxis.grid(True)
     ax.set_xlabel('Structure')
     ax.set_ylabel('um')
     ax.set_title(title)
-    plt.show()
     return fig
+    
+def plot_offset_box(offsets_table, title = ''):
+    fig = get_fig_offset_box(offsets_table, title = '')
+    plt.show()
 
 def get_fig(offsets,title = ''):
     df_manual = get_offset_table_from_offset_array(offsets)

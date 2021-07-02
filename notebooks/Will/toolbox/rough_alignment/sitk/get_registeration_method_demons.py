@@ -1,4 +1,5 @@
 import SimpleITK as sitk
+from notebooks.Will.toolbox.rough_alignment.sitk.registration_method_util import *
 
 def get_demons_transform(fixed_image, moving_image, transform):
     registration_method = init_regerstration_method()

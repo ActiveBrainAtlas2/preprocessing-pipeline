@@ -41,12 +41,13 @@ D0=str(get_subpath_to_tif_files("DK39"))
 vol = folder2Vol(D0)
 
 # %%
-def neuroglancerLayer(data,oo=[0,0,0],tt='segmentation'):
+def neuroglancerLayer(data,oo=[0,0,0],tt='image'):
     dimension = neuroglancer.CoordinateSpace(names=['x', 'y', 'z'],units='um',scales=[10.4,10.4, 20])
     return neuroglancer.LocalVolume(data,volume_type=tt,dimensions=dimension,voxel_offset=oo)
 
 
 #%%
+viewer=neuroglancer.Viewer()
 all_volume_layer = neuroglancer.LocalVolume(
         data=vol, 
         dimensions=neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='um', scales=[10.4,10.4, 20]), 
