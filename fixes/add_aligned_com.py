@@ -125,7 +125,7 @@ def transform_and_add_dict(animal, person_id, row_dict, r=None, t=None):
             section = transformed[2]
 
         print(animal, abbrev, x,y,section)
-        #add_center_of_mass(animal, structure, x, y, section, person_id)
+        add_center_of_mass(animal, structure, x, y, section, person_id)
 
 
 
