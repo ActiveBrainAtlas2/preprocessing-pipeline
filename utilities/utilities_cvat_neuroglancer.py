@@ -136,7 +136,6 @@ def get_hex_from_id(id, colormap='coolwarm'):
     rgba = cmap(id)
     return colors.rgb2hex(rgba)
 
-
 class NumpyToNeuroglancer():
     viewer = None
 
@@ -152,6 +151,9 @@ class NumpyToNeuroglancer():
         self.starting_points = None
         self.animal = animal
         self.num_channels = num_channels
+
+    def add_annotation_point():
+        ...
 
 
     def init_precomputed(self, path, volume_size, starting_points=None, progress_id=None):
@@ -185,7 +187,6 @@ class NumpyToNeuroglancer():
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
         #self.precomputed_vol[:, :, :] = self.volume[:, :, :]
-
 
     def add_segment_properties(self, segment_properties):
         if self.precomputed_vol is None:
@@ -224,7 +225,6 @@ class NumpyToNeuroglancer():
         tq.insert(tasks)
         tq.execute()
 
-
     def add_downsampled_volumes(self, chunk_size=[128, 128, 64], num_mips=4):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
@@ -250,7 +250,6 @@ class NumpyToNeuroglancer():
         tasks = tc.create_mesh_manifest_tasks(self.precomputed_vol.layer_cloudpath) # The second phase of creating mesh
         tq.insert(tasks)
         tq.execute()
-
 
     def process_simple_slice(self, file_key):
         index, infile = file_key
@@ -337,8 +336,8 @@ class NumpyToNeuroglancer():
         set_file_completed(self.animal, self.progress_id, basefile)
         del img
         return
-
-    def preview(self, layer_name=None, clear_layer=False):
+    
+    def add_volume(self,volume,layer_name=None, clear_layer=False):
         if self.viewer is None:
             self.viewer = neuroglancer.Viewer()
 
@@ -346,7 +345,7 @@ class NumpyToNeuroglancer():
             layer_name = f'{self.layer_type}_{self.scales}'
 
         source = neuroglancer.LocalVolume(
-            data=self.volume,
+            data=volume,
             dimensions=neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='nm', scales=self.scales),
             voxel_offset=self.offset
         )
@@ -364,6 +363,8 @@ class NumpyToNeuroglancer():
         print(f'A new layer named {layer_name} is added to:')
         print(self.viewer)
 
+    def preview(self, layer_name=None, clear_layer=False):
+        self.add_volume(self.volume,layer_name=layer_name, clear_layer=clear_layer)
 
 def mask_to_shell(mask):
     sub_contours = measure.find_contours(mask, 1)
