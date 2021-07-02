@@ -58,6 +58,7 @@ Landmark based alignments find a transformation from stack coordinates to atlas 
 * **rigid transformation**: can be solved algebraicly.
 * **affine transformation** Implemented.
 * **spline-based transformation** - we plan to implement next.
+* Demon based diffeomorphic transformation.
 
 ### Evaluating the quality of landmark-based alignments.
 
