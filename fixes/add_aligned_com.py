@@ -1,3 +1,8 @@
+"""
+THis script is the interface between the pipeline / database and the alignment software
+Ed, please comple and move to pipeline/src
+"""
+
 import argparse
 from sqlalchemy import func
 from tqdm import tqdm
