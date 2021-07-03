@@ -11,9 +11,9 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 
 
-from utilities.labelstudio.coco_utils import get_coco_api_from_dataset
-from utilities.labelstudio.coco_eval import CocoEvaluator
-from utilities.labelstudio.utils import MetricLogger, SmoothedValue, warmup_lr_scheduler, reduce_dict
+from coco_utils import get_coco_api_from_dataset
+from coco_eval import CocoEvaluator
+from utils import MetricLogger, SmoothedValue, warmup_lr_scheduler, reduce_dict
 
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
