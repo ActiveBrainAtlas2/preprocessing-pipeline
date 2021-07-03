@@ -44,8 +44,12 @@ class SqlController(object):
                 animal: object of animal to process
         """
         self.session = session
-        self.animal = self.session.query(Animal).filter(
-            Animal.prep_id == animal).one()
+        try:
+            self.animal = self.session.query(Animal).filter(
+                Animal.prep_id == animal).one()
+        except NoResultFound:
+            print(f'No animal/brain with the name {animal} was found in the database.')
+            sys.exit()
         try:
             self.histology = self.session.query(Histology).filter(
                 Histology.prep_id == animal).one()

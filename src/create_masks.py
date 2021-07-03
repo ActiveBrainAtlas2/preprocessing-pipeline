@@ -1,134 +1,113 @@
-"""
-This program loops through all the thumbnail images and creates a mask for each section.
-The edges of the image are trimmed by filling in with the background color. The edges
-are only filled if the average of the rows is below a threshold. The a good threshold
-value of 44 was found to be useful.
-2 masking methods are used, the first one uses nipy to create the first pass. The 2nd pass
-uses the fix_with_fill method. This works 95% of the time. There are some cases
-where the tissue gets missed due to low intensity values. There is a balancing act
-going between getting all the tissue and getting rid of the junk outside the tissue, like
-the barcode and glue
-"""
 import argparse
 import os, sys
-from multiprocessing.pool import Pool
-from PIL import Image
-Image.MAX_IMAGE_PIXELS = None
-
-import cv2
 import numpy as np
-from skimage import io
+import torch
+import torch.utils.data
+from PIL import Image
+import torchvision
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+HOME = os.path.expanduser("~")
+PATH = os.path.join(HOME, 'programming/pipeline_utility')
+sys.path.append(PATH)
+import cv2
 from tqdm import tqdm
 
-from sql_setup import CREATE_THUMBNAIL_MASKS, CREATE_FULL_RES_MASKS
-from utilities.file_location import FileLocationManager
-from utilities.logger import get_logger
-from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import fix_thionin, get_binary_mask, trim_edges, fix_with_fill, create_mask_pass1
-from utilities.utilities_process import get_last_2d, test_dir, workernoshell, get_image_size
-
-
-def create_mask(animal, downsample, njobs):
-    """
-    This method decides if we are working on either full or downsampled image, and also
-    if we are using thionin or NTB stains. The masking process is different depending on the stain.
-    The 1st pass is creating masks for the downsampled images. Once they are made, we can just resize
-    the downsampled masks to the larger ones since they are just binary images.
-    :param animal: prep_id of animal
-    :param full: type of resolution, either full or downsampled.
-    :param njobs: number of jobs to send to subprocess. 4 is default. You don't need to adjust for downsampled images
-    :return: nothing, the mask and rotated mask are written to disk in each loop
-    """
-    logger = get_logger(animal)
-    fileLocationManager = FileLocationManager(animal)
-    sqlController = SqlController(animal)
-    stain = sqlController.histology.counterstain
-    sqlController.set_task(animal, CREATE_THUMBNAIL_MASKS)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
-    MASKED = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
-    os.makedirs(MASKED, exist_ok=True)
-    if not downsample:
-        sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
-        INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
-        ##### Check if files in dir are valid
-        error = test_dir(animal, INPUT, downsample, same_size=False)
-        if len(error) > 0:
-            print(error)
-            sys.exit()
-
-        THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
-        ##### Check if files in dir are valid
-        ##error = test_dir(animal, THUMBNAIL, full=False, same_size=False)
-        MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
-        os.makedirs(MASKED, exist_ok=True)
-        files = sorted(os.listdir(INPUT))
-        commands = []
-        for i, file in enumerate(tqdm(files)):
-            infile = os.path.join(INPUT, file)
-            thumbfile = os.path.join(THUMBNAIL, file)
-            outpath = os.path.join(MASKED, file)
-            if os.path.exists(outpath):
-                continue
-            try:
-                width, height = get_image_size(infile)
-            except:
-                logger.error(f'Could not open {infile}')
-                print(f'Could not open {infile}')
-            size = f'{width}x{height}!'
-            cmd = ['convert', thumbfile, '-resize', size, '-depth', '8', outpath]
-            commands.append(cmd)
-
-        with Pool(njobs) as p:
-            p.map(workernoshell, commands)
+def combine_dims(a):
+    if a.shape[0] > 0:
+        a1 = a[0,:,:]
+        a2 = a[1,:,:]
+        a3 = np.add(a1,a2)
     else:
-        error = test_dir(animal, INPUT, downsample, same_size=False)
-        if len(error) > 0:
-            print(error)
-            sys.exit()
-        files = sorted(os.listdir(INPUT))
+        a3 = np.zeros([a.shape[1], a.shape[2]]) + 255
+    return a3
 
-        for i, file in enumerate(tqdm(files)):
-            infile = os.path.join(INPUT, file)
-            outpath = os.path.join(MASKED, file)
-            if os.path.exists(outpath):
-                continue
-            if 'thion' in stain.lower():
-                try:
-                    img = cv2.imread(infile, cv2.IMREAD_GRAYSCALE)
-                except:
-                    logger.warning(f'Could not open {infile}')
-                    continue
-                mask = fix_thionin(img)
-            else:
-                try:
-                    img = io.imread(infile, img_num=0)
-                    #img = get_last_2d(img)
-                except:
-                    logger.warning(f'Could not open {infile}')
-                    print(f'Could not open {infile}')
-                    continue
-                # perform 2 pass masking
-                img = trim_edges(img)
-                #mask1 = create_mask_pass1(img)
-                #pass1 = cv2.bitwise_and(img, img, mask=mask1)
-                ## pass2
-                #pass1 = cv2.GaussianBlur(pass1,(133,133),0)
-                #mask = fix_with_fill(pass1)
-                mask = get_binary_mask(img)
+def greenify_mask(image):
+    r = np.zeros_like(image).astype(np.uint8)
+    g = np.zeros_like(image).astype(np.uint8)
+    b = np.zeros_like(image).astype(np.uint8)
+    r[image == 1], g[image == 1], b[image == 1] = [0,255,0]
+    coloured_mask = np.stack([r, g, b], axis=2)
+    return coloured_mask
 
-            # save the mask
-            cv2.imwrite(outpath, mask.astype(np.uint8))
+
+def get_model_instance_segmentation(num_classes):
+    # load an instance segmentation model pre-trained pre-trained on COCO
+    model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
+    # get number of input features for the classifier
+    in_features = model.roi_heads.box_predictor.cls_score.in_features
+    # replace the pre-trained head with a new one
+    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+    # now get the number of input features for the mask classifier
+    in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
+    hidden_layer = 256
+    # and replace the mask predictor with a new one
+    model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask, hidden_layer, num_classes)
+    return model
+
+def create_mask(animal):
+
+    modelpath = os.path.join(HOME, 'programming/brains/mask.model.pth')
+    loaded_model = get_model_instance_segmentation(num_classes=2)
+    if os.path.exists(modelpath):
+        loaded_model.load_state_dict(torch.load(modelpath,map_location=torch.device('cpu')))
+    else:
+        print('no model to load')
+
+    transform = torchvision.transforms.ToTensor()
+
+    DIR = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{animal}/preps'
+    INPUT = os.path.join(DIR, 'CH1/normalized')
+    MASKS = os.path.join(DIR, 'thumbnail_masked')
+    TESTS = os.path.join(DIR, 'thumbnail_green')
+
+    os.makedirs(TESTS, exist_ok=True)
+
+    files = sorted(os.listdir(INPUT))
+
+    for file in tqdm(files):
+        filepath = os.path.join(INPUT, file)
+        outpath = os.path.join(MASKS, file)
+        green_mask_path = os.path.join(TESTS, file)
+
+        if os.path.exists(outpath) and os.path.exists(green_mask_path):
+            continue
+
+        img = Image.open(filepath)
+        input = transform(img)
+        input = input.unsqueeze(0)
+        loaded_model.eval()
+        with torch.no_grad():
+            pred = loaded_model(input)
+        pred_score = list(pred[0]['scores'].detach().numpy())
+        masks = [(pred[0]['masks']>0.5).squeeze().detach().cpu().numpy()]
+        mask = masks[0]
+        dims = mask.ndim
+        if dims > 2:
+            mask = combine_dims(mask)
+
+        del img
+        img = cv2.imread(filepath)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        green_mask = greenify_mask(mask)
+        mask = mask.astype(np.uint8)
+        mask[mask>0] = 255
+        
+        cv2.imwrite(outpath, mask)
+
+        masked_img = cv2.addWeighted(img, 1, green_mask, 0.5, 0)
+        cv2.imwrite(green_mask_path, masked_img)
+
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
-    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
 
     args = parser.parse_args()
     animal = args.animal
-    downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
-    njobs = int(args.njobs)
 
-    create_mask(animal, downsample, njobs)
+    create_mask(animal)
+
+

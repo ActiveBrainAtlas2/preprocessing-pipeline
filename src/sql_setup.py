@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 #import datajoint as dj
 import os
 
-dirname = os.path.dirname(__file__)
+dirname = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 file_path = os.path.join(dirname, 'parameters.yaml')
 with open(file_path) as file:
     parameters = yaml.load(file, Loader=yaml.FullLoader)
