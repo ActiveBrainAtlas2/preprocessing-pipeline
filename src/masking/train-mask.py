@@ -84,15 +84,16 @@ class MaskDataset(torch.utils.data.Dataset):
         # load images and bounding boxes
         img_path = os.path.join(self.root, 'programming/brains/normalized', self.imgs[idx])
         img = Image.open(img_path).convert("L")
-        box_list = parse_one_annot(self.path_to_data_file, 
-        self.imgs[idx])
-        boxes = torch.as_tensor(box_list, dtype=torch.float32)
+        
+        #box_list = parse_one_annot(self.path_to_data_file, 
+        #self.imgs[idx])
+        #boxes = torch.as_tensor(box_list, dtype=torch.float32)
 
         num_objs = len(box_list)
         # there is only one class
         labels = torch.ones((num_objs,), dtype=torch.int64)
         image_id = torch.tensor([idx])
-        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:,0])
+        #area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:,0])
         ## masks
         mask_path = os.path.join(self.root, 'programming/brains/thumbnail_masked', self.masks[idx])
         mask = Image.open(mask_path) # 
@@ -107,10 +108,10 @@ class MaskDataset(torch.utils.data.Dataset):
         # suppose all instances are not crowd
         iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
         target = {}
-        target["boxes"] = boxes
+        #target["boxes"] = boxes
         target["labels"] = labels
         target["image_id"] = image_id
-        target["area"] = area
+        #target["area"] = area
         target["iscrowd"] = iscrowd
         target["masks"] = masks
 
@@ -192,8 +193,8 @@ if __name__ == '__main__':
     else:
         device = torch.device('cpu')
         print('Using CPU')
-    # our dataset has two classes only - raccoon and not racoon
-    num_classes = 2
+    # our dataset has three classs, brain, tissue, nothing
+    num_classes = 3
     modelpath = os.path.join(HOME, 'programming/brains/mask.model.pth')
     if create:
         # get the model using our helper function
