@@ -66,18 +66,33 @@ def list_contours():
         cv2.imwrite(outfile, img)
 
 
+def get_objects(imgpath):
+    img = cv2.imread(imgpath, -1)
+    #boxes_array = np.array() #data["filename"] == filename][["xmin", "ymin", "xmax", "ymax"]].values
+    img[img > 0] = 255
+    ret, thresh = cv2.threshold(img, 127, 255, 0)
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    rectangles = []
+    for i, contour in enumerate(contours):
+        x,y,w,h = cv2.boundingRect(contour)
+        #box = cv2.boxPoints(rect)
+        #x,y,w,h = rect
+        if w > 5 and h > 5:
+            xmin = int(round(x))
+            ymin = int(round(y))
+            xmax = int(round(x+w))
+            ymax = int(round(y+h))
+            print(imgpath, xmin, ymin, xmax, ymax)
+            rectangles.append([xmin, ymin, xmax, ymax])
+
+    rectangles = np.array(rectangles)
+    return rectangles, len(rectangles)
+
+
 def parse_one_annot(dfpath, filename):
    data = pd.read_csv(dfpath)
    boxes_array = data[data["filename"] == filename][["xmin", "ymin", "xmax", "ymax"]].values
    return boxes_array
-
-def get_num_objects(imgpath):
-    img = cv2.imread(imgpath, -1)
-    img[img > 0] = 255
-    ret, thresh = cv2.threshold(img, 127, 255, 0)
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    return len(contours)
-
 
 class MaskDataset(torch.utils.data.Dataset):
     def __init__(self, root, data_file, transforms=None):
@@ -90,20 +105,19 @@ class MaskDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         # load images and bounding boxes
         img_path = os.path.join(self.root, 'programming/brains/normalized', self.imgs[idx])
+        mask_path = os.path.join(self.root, 'programming/brains/thumbnail_masked', self.masks[idx])
         img = Image.open(img_path).convert("L")
         
-        #box_list = parse_one_annot(self.path_to_data_file, 
-        #self.imgs[idx])
-        #boxes = torch.as_tensor(box_list, dtype=torch.float32)
+        boxes, num_objs = get_objects(imgpath=mask_path)
+        #box_list = parse_one_annot(self.path_to_data_file, self.imgs[idx])
+        boxes = torch.as_tensor(boxes, dtype=torch.float32)
 
         #num_objs = len(box_list)
-        num_objs = get_num_objects(imgpath=img_path)
         # there is only one class
         labels = torch.ones((num_objs,), dtype=torch.int64)
         image_id = torch.tensor([idx])
-        #area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:,0])
+        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:,0])
         ## masks
-        mask_path = os.path.join(self.root, 'programming/brains/thumbnail_masked', self.masks[idx])
         mask = Image.open(mask_path) # 
         mask = np.array(mask)
         mask[mask > 0] = 255
@@ -116,10 +130,10 @@ class MaskDataset(torch.utils.data.Dataset):
         # suppose all instances are not crowd
         iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
         target = {}
-        #target["boxes"] = boxes
+        target["boxes"] = boxes
         target["labels"] = labels
         target["image_id"] = image_id
-        #target["area"] = area
+        target["area"] = area
         target["iscrowd"] = iscrowd
         target["masks"] = masks
 
@@ -217,7 +231,7 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # 1 epoch takes 8 minutes on muralis
-        epochs = 10
+        epochs = 2
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
