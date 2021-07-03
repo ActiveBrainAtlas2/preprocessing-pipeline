@@ -75,14 +75,11 @@ def get_objects(imgpath):
     rectangles = []
     for i, contour in enumerate(contours):
         x,y,w,h = cv2.boundingRect(contour)
-        #box = cv2.boxPoints(rect)
-        #x,y,w,h = rect
         if w > 5 and h > 5:
             xmin = int(round(x))
             ymin = int(round(y))
             xmax = int(round(x+w))
             ymax = int(round(y+h))
-            print(imgpath, xmin, ymin, xmax, ymax)
             rectangles.append([xmin, ymin, xmax, ymax])
 
     rectangles = np.array(rectangles)
