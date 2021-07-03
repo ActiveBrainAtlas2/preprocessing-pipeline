@@ -71,6 +71,13 @@ def parse_one_annot(dfpath, filename):
    boxes_array = data[data["filename"] == filename][["xmin", "ymin", "xmax", "ymax"]].values
    return boxes_array
 
+def get_num_objects(imgpath):
+    img = cv2.imread(imgpath, -1)
+    img[img > 0] = 255
+    ret, thresh = cv2.threshold(img, 127, 255, 0)
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    return len(contours)
+
 
 class MaskDataset(torch.utils.data.Dataset):
     def __init__(self, root, data_file, transforms=None):
@@ -89,7 +96,8 @@ class MaskDataset(torch.utils.data.Dataset):
         #self.imgs[idx])
         #boxes = torch.as_tensor(box_list, dtype=torch.float32)
 
-        num_objs = len(box_list)
+        #num_objs = len(box_list)
+        num_objs = get_num_objects(imgpath=img_path)
         # there is only one class
         labels = torch.ones((num_objs,), dtype=torch.int64)
         image_id = torch.tensor([idx])
