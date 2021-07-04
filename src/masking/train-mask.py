@@ -84,13 +84,17 @@ class MaskDataset(torch.utils.data.Dataset):
         # get bounding box coordinates for each mask
         num_objs = len(obj_ids)
         boxes = []
+        test_limit = 5
         for i in range(num_objs):
             pos = np.where(masks[i])
             xmin = np.min(pos[1])
             xmax = np.max(pos[1])
             ymin = np.min(pos[0])
             ymax = np.max(pos[0])
-            boxes.append([xmin, ymin, xmax, ymax])
+            if (xmax - xmin) < test_limit or (ymax - ymin) < test_limit:
+                print(mask_path, 'bad box', xmin, xmax, ymax, ymin)
+            else: 
+                boxes.append([xmin, ymin, xmax, ymax])
 
         # convert everything into a torch.Tensor
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
@@ -205,7 +209,7 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # 1 epoch takes 8 minutes on muralis
-        epochs = 2
+        epochs = 10
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
