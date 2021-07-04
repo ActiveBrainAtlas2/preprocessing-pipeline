@@ -13,25 +13,44 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from engine import train_one_epoch, evaluate
 import utils
 import transforms as T
-HOME = os.path.expanduser("~")
 import cv2
 
-def create_box_df(dfpath):
-    data = []
-    INPUT = os.path.join(HOME, 'programming/brains/thumbnail_masked')
-    masks = sorted(os.listdir(INPUT))
-    for file in masks:
-        maskfile = os.path.join(INPUT, file)
-        mask = Image.open(maskfile)
-        mask = np.expand_dims(mask, axis=0)
+ROOT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks'
 
-        pos = np.where(np.array(mask)[0, :, :])
-        limit = 2
-        xmin = np.min(pos[1]) - limit
-        xmax = np.max(pos[1]) + limit
-        ymin = np.min(pos[0]) - limit
-        ymax = np.max(pos[0]) + limit
-        data.append([file, xmin, ymin, xmax, ymax])
+
+def createcontours(dfpath):
+    data = []
+    MASKS = os.path.join(ROOT, 'thumbnail_masked')
+    CONTOURS = os.path.join(ROOT, 'thumbnail_contours')
+    os.makedirs(CONTOURS, exist_ok=True)
+    files = sorted(os.listdir(MASKS))
+    for file in files:
+        infile = os.path.join(MASKS, file)
+        outfile = os.path.join(CONTOURS, file)
+        img = cv2.imread(infile, -1)
+        img[img > 0] = 255
+        ret, thresh = cv2.threshold(img, 127, 255, 0)
+        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        for contour in contours:
+            x,y,w,h = cv2.boundingRect(contour)
+            xmin = int(round(x))
+            ymin = int(round(y))
+            xmax = int(round(x+w))
+            ymax = int(round(y+h))
+            #cv2.rectangle(img,(x,y),(x+w,y+h),255,3)
+            data.append([file, xmin, ymin, xmax, ymax])
+
+        if len(contours) != 1:
+            # Find the index of the largest contour
+            areas = [cv2.contourArea(c) for c in contours]
+            max_index = np.argmax(areas)
+            del contours[max_index]
+            for i, contour in enumerate(contours):
+                color = (i+10) * 10
+                print(f'{outfile} filling contour {i} with color {color}')
+                cv2.fillPoly(img, [contour], color);
+        cv2.imwrite(outfile, img)
 
     df = pd.DataFrame(data, columns = ['filename', 'xmin', 'ymin', 'xmax', 'ymax'])
     df['xmin'] = pd.to_numeric(df['xmin'])
@@ -40,89 +59,47 @@ def create_box_df(dfpath):
     df['ymax'] = pd.to_numeric(df['ymax'])
     df.to_csv(dfpath, index=False, header=True)
 
-
-def list_contours():
-    INPUT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK41/preps/thumbnail_masked'
-    OUTPUT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK41/preps/thumbnail_contour'
-    os.makedirs(OUTPUT, exist_ok=True)
-    files = sorted(os.listdir(INPUT))
-    for file in files:
-        infile = os.path.join(INPUT, file)
-        outfile = os.path.join(OUTPUT, file)
-        img = cv2.imread(infile, -1)
-        img[img > 0] = 255
-        ret, thresh = cv2.threshold(img, 127, 255, 0)
-        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        if len(contours) != 1:
-            print('unique values', np.unique(img))
-            # Find the index of the largest contour
-            areas = [cv2.contourArea(c) for c in contours]
-            max_index = np.argmax(areas)
-            print(f'{file} biggest contour is {max_index}', end="\t")
-            del contours[max_index]
-            cv2.fillPoly(img, contours, 100);
-            print('unique values', np.unique(img))
-            print()
-        cv2.imwrite(outfile, img)
-
-
-def get_objects(imgpath):
-    img = cv2.imread(imgpath, -1)
-    #boxes_array = np.array() #data["filename"] == filename][["xmin", "ymin", "xmax", "ymax"]].values
-    img[img > 0] = 255
-    ret, thresh = cv2.threshold(img, 127, 255, 0)
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    rectangles = []
-    for i, contour in enumerate(contours):
-        x,y,w,h = cv2.boundingRect(contour)
-        if w > 5 and h > 5:
-            xmin = int(round(x))
-            ymin = int(round(y))
-            xmax = int(round(x+w))
-            ymax = int(round(y+h))
-            rectangles.append([xmin, ymin, xmax, ymax])
-
-    rectangles = np.array(rectangles)
-    return rectangles, len(rectangles)
-
-
-def parse_one_annot(dfpath, filename):
-   data = pd.read_csv(dfpath)
-   boxes_array = data[data["filename"] == filename][["xmin", "ymin", "xmax", "ymax"]].values
-   return boxes_array
-
 class MaskDataset(torch.utils.data.Dataset):
     def __init__(self, root, data_file, transforms=None):
         self.root = root
         self.transforms = transforms
-        self.imgs = sorted(os.listdir(os.path.join(root, 'programming/brains/normalized')))
-        self.masks = sorted(os.listdir(os.path.join(root, 'programming/brains/thumbnail_masked')))
+        self.imgs = sorted(os.listdir(os.path.join(root, 'normalized')))
+        self.masks = sorted(os.listdir(os.path.join(root, 'thumbnail_contours')))
         self.path_to_data_file = data_file
 
     def __getitem__(self, idx):
         # load images and bounding boxes
-        img_path = os.path.join(self.root, 'programming/brains/normalized', self.imgs[idx])
-        mask_path = os.path.join(self.root, 'programming/brains/thumbnail_masked', self.masks[idx])
+        img_path = os.path.join(self.root, 'normalized', self.imgs[idx])
+        mask_path = os.path.join(self.root, 'thumbnail_contours', self.masks[idx])
         img = Image.open(img_path).convert("L")
-        
-        boxes, num_objs = get_objects(imgpath=mask_path)
-        #box_list = parse_one_annot(self.path_to_data_file, self.imgs[idx])
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
-
-        #num_objs = len(box_list)
-        # there is only one class
-        labels = torch.ones((num_objs,), dtype=torch.int64)
-        image_id = torch.tensor([idx])
-        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:,0])
-        ## masks
         mask = Image.open(mask_path) # 
         mask = np.array(mask)
-        mask[mask > 0] = 255
+        # instances are encoded as different colors
         obj_ids = np.unique(mask)
-        # print('1',obj_ids) = 0 or 255
-        obj_ids = obj_ids[1:] 
+        # first id is the background, so remove it
+        obj_ids = obj_ids[1:]
+        # split the color-encoded mask into a set
+        # of binary masks
         masks = mask == obj_ids[:, None, None]
+        # get bounding box coordinates for each mask
+        num_objs = len(obj_ids)
+        boxes = []
+        for i in range(num_objs):
+            pos = np.where(masks[i])
+            xmin = np.min(pos[1])
+            xmax = np.max(pos[1])
+            ymin = np.min(pos[0])
+            ymax = np.max(pos[0])
+            boxes.append([xmin, ymin, xmax, ymax])
+
+        # convert everything into a torch.Tensor
+        boxes = torch.as_tensor(boxes, dtype=torch.float32)
+        # there is only one class
+        labels = torch.ones((num_objs,), dtype=torch.int64)
         masks = torch.as_tensor(masks, dtype=torch.uint8)
+
+        image_id = torch.tensor([idx])
+        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])        
 
         # suppose all instances are not crowd
         iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
@@ -179,17 +156,17 @@ def get_transform(train):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--create', help='create volume', required=False, default='false')
+    parser.add_argument('--runmodel', help='run model', required=True)
     
     args = parser.parse_args()
-    create = bool({'true': True, 'false': False}[args.create.lower()])
-    dfpath = os.path.join(HOME, 'programming/brains/boxes.csv')
+    runmodel = bool({'true': True, 'false': False}[args.runmodel.lower()])
+    dfpath = os.path.join(ROOT, 'boxes.csv')
     if not os.path.exists(dfpath):
-        print(f'Creating bounding box csv file {dfpath}')
-        data = create_box_df(dfpath)
+        print(f'{dfpath} does not exist, creating ...')
+        createcontours(dfpath)
 
-    dataset = MaskDataset(HOME, data_file= dfpath, transforms = get_transform(train=True))
-    dataset_test = MaskDataset(HOME, data_file= dfpath, transforms = get_transform(train=False))
+    dataset = MaskDataset(ROOT, data_file= dfpath, transforms = get_transform(train=True))
+    dataset_test = MaskDataset(ROOT, data_file= dfpath, transforms = get_transform(train=False))
 
     # split the dataset in train and test set
     torch.manual_seed(1)
@@ -202,7 +179,7 @@ if __name__ == '__main__':
                 dataset, batch_size=2, shuffle=True, num_workers=4,
                 collate_fn=utils.collate_fn)
     data_loader_test = torch.utils.data.DataLoader(
-            dataset_test, batch_size=1, shuffle=False, num_workers=4,
+            dataset_test, batch_size=1, shuffle=False, num_workers=1,
             collate_fn=utils.collate_fn)
     print("We have: {} examples, {} are training and {} testing".format(len(indices), len(dataset), len(dataset_test)))
 
@@ -212,10 +189,10 @@ if __name__ == '__main__':
     else:
         device = torch.device('cpu')
         print('Using CPU')
-    # our dataset has three classs, brain, tissue, nothing
-    num_classes = 3
-    modelpath = os.path.join(HOME, 'programming/brains/mask.model.pth')
-    if create:
+    # our dataset has two classs, tissue or 'not tissue'
+    num_classes = 2
+    modelpath = os.path.join(ROOT, 'mask.model.pth')
+    if runmodel:
         # get the model using our helper function
         model = get_model_instance_segmentation(num_classes)
         # move model to the right device
@@ -240,5 +217,3 @@ if __name__ == '__main__':
 
         torch.save(model.state_dict(), modelpath)
         print('Finished with masks')
-    else:
-        list_contours()

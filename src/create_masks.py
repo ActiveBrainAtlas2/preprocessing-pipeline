@@ -47,7 +47,7 @@ def get_model_instance_segmentation(num_classes):
 
 def create_mask(animal):
 
-    modelpath = os.path.join(HOME, 'programming/brains/mask.model.pth')
+    modelpath = os.path.join(HOME, '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth')
     loaded_model = get_model_instance_segmentation(num_classes=2)
     if os.path.exists(modelpath):
         loaded_model.load_state_dict(torch.load(modelpath,map_location=torch.device('cpu')))
