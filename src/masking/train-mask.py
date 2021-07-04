@@ -74,27 +74,27 @@ class MaskDataset(torch.utils.data.Dataset):
         img = Image.open(img_path).convert("L")
         mask = Image.open(mask_path) # 
         mask = np.array(mask)
-        # instances are encoded as different colors
-        obj_ids = np.unique(mask)
-        # first id is the background, so remove it
-        obj_ids = obj_ids[1:]
-        # split the color-encoded mask into a set
-        # of binary masks
-        masks = mask == obj_ids[:, None, None]
-        # get bounding box coordinates for each mask
-        num_objs = len(obj_ids)
+        mask[mask > 0] = 255
+        ret, thresh = cv2.threshold(mask, 200, 255, 0)
+        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         boxes = []
-        test_limit = 5
-        for i in range(num_objs):
-            pos = np.where(masks[i])
-            xmin = np.min(pos[1])
-            xmax = np.max(pos[1])
-            ymin = np.min(pos[0])
-            ymax = np.max(pos[0])
-            if (xmax - xmin) < test_limit or (ymax - ymin) < test_limit:
-                print(mask_path, 'bad box', xmin, xmax, ymax, ymin)
-            else: 
+        for i, contour in enumerate(contours):
+            x,y,w,h = cv2.boundingRect(contour)
+            area = cv2.contourArea(contour)
+            if area > 100:
+                xmin = int(round(x))
+                ymin = int(round(y))
+                xmax = int(round(x+w))
+                ymax = int(round(y+h))
+                color = (i+10) * 10
+                cv2.fillPoly(mask, [contour], color);
                 boxes.append([xmin, ymin, xmax, ymax])
+        obj_ids = np.unique(mask)
+        obj_ids = obj_ids[1:]
+        masks = mask == obj_ids[:, None, None]
+        num_objs = len(obj_ids)
+
+
 
         # convert everything into a torch.Tensor
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
