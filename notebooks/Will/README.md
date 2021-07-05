@@ -1,13 +1,20 @@
 # This directory contains code created by Zhongkai Wu (William) to accomplish the following:
-* Calculate image to image Affine and Demons transfomation from DK52 to DKXX.
-* Load and apply the transformation to images or com.
-* Visualize differences between center of mass.
+* **Calculate** image to image Affine and Demons transfomation from DK52 to DKXX.
+* **Load and apply** the transformation to images or com.
+* **Visualize** differences between center of mass.
 
 ## Folder organization:
 * **showcase**  contains examples and main scripts
 * **toolbox** contains libries used in the examples
 * **old** contains depricated files
 * **experimental**  contains functions that are not fully polished
+
+## running the functions from notebook or script
+if the folder is not on the default search path of python you can mannually add it by including this code in the start of your notebook or script.
+```python
+import sys
+sys.path.append('/path_to_github_folder/pipeline_utility')
+```
 
 ## Calculate image to image Affine and Demons transfomation from DK52 to DKXX.
 * To find the image to image affine transformation:
@@ -25,7 +32,7 @@ Examples for finding the image to image Affine and Demons transformation can be 
 The image to image transformations are stored at: 
 
 ```
-/net/birdstore/Active_Atlas_Data/data_root/tfm//affine/DKXX_affine.tfm
+/net/birdstore/Active_Atlas_Data/data_root/tfm/affine/DKXX_affine.tfm
 ```
 and
 ```
@@ -41,7 +48,8 @@ affine_transform = get_affine_transform('DKXX')
 from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_demons_transform
 demons_transform = get_demons_transform('DKXX')
 ```
-* To apply the computed transformation to an image:
+These utility function handles the save path and loading the transformation files
+* To apply the computed transformation to an image stack:
 ```python
 import Simpleitk as sitk
 from notebooks.Will.toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
@@ -54,18 +62,18 @@ transformed_image = sitk.Resample(
 * To apply the computed Affine transformation to a list or array of coms:
 ```python
 from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transform_point_affine
-transformed_com = transform_point_affine(com)
+transformed_com = transform_point_affine(com_list)
 ```
 * To apply the computed Demons transformation to a list or array of coms:
 ```python
 from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_point_demons
-transformed_com = transform_point_demons(com)
+transformed_com = transform_point_demons(com_list)
 ```
 These two functions calls
 ```
 transform.TransformPoint(com)
 ```
-from different transform objects in Simple itk.  Whether these behave as expected is **still being tested**.
+where `transform` is any transform object in Simple itk.  Whether these behave as expected is **still being tested**.
 ## Visualize differences between center of mass.
 functions to create box plots for difference between coms in the x,y,z direction and the overall distance can be found in 
 `
@@ -76,8 +84,7 @@ to plot offset between two set of coms:
 ```python
 from notebooks.Will.toolbox.plotting.plot_com_offset import *
 from notebooks.Will.toolbox.IOs.get_landmark_lists import get_all_landmarks_in_specimens
-from notebooks.Will.toolbox.brain_lists import 
-get_prep_list_for_rough_alignment_test
+from notebooks.Will.toolbox.brain_lists import get_prep_list_for_rough_alignment_test
 
 prep_list_function = get_prep_list_for_rough_alignment_test
 landmark_list_function = get_all_landmarks_in_specimens
@@ -85,7 +92,7 @@ landmark_list_function = get_all_landmarks_in_specimens
 * *preps* or preparations refer to the brain specimens eg: DKXX
 * *prep_list_function* is a function that returns a list of preps to examine.  This could be a function that queries the database or simply returns a list of strings.
 * *landmark_list_function* is a function to determine the list of structures to include. 
-eg:get_all_landmarks_in_specimens finds the union of all structures in each prep
+eg:get_all_landmarks_in_specimens finds the union of all structures in each prep.  This deals with the case when the comparing brains with differented annotated list of landmark structures.
 
 ```python
 plot_offset_between_two_com_sets(com_list_1,com_list_2,prep_list_function,landmark_list_function,plot_title)
