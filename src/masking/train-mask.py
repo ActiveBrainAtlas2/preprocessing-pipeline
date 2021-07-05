@@ -18,59 +18,18 @@ import cv2
 ROOT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks'
 
 
-def createcontours(dfpath):
-    data = []
-    MASKS = os.path.join(ROOT, 'thumbnail_masked')
-    CONTOURS = os.path.join(ROOT, 'thumbnail_contours')
-    os.makedirs(CONTOURS, exist_ok=True)
-    files = sorted(os.listdir(MASKS))
-    for file in files:
-        infile = os.path.join(MASKS, file)
-        outfile = os.path.join(CONTOURS, file)
-        img = cv2.imread(infile, -1)
-        img[img > 0] = 255
-        ret, thresh = cv2.threshold(img, 127, 255, 0)
-        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        for contour in contours:
-            x,y,w,h = cv2.boundingRect(contour)
-            xmin = int(round(x))
-            ymin = int(round(y))
-            xmax = int(round(x+w))
-            ymax = int(round(y+h))
-            #cv2.rectangle(img,(x,y),(x+w,y+h),255,3)
-            data.append([file, xmin, ymin, xmax, ymax])
-
-        if len(contours) != 1:
-            # Find the index of the largest contour
-            areas = [cv2.contourArea(c) for c in contours]
-            max_index = np.argmax(areas)
-            del contours[max_index]
-            for i, contour in enumerate(contours):
-                color = (i+10) * 10
-                print(f'{outfile} filling contour {i} with color {color}')
-                cv2.fillPoly(img, [contour], color);
-        cv2.imwrite(outfile, img)
-
-    df = pd.DataFrame(data, columns = ['filename', 'xmin', 'ymin', 'xmax', 'ymax'])
-    df['xmin'] = pd.to_numeric(df['xmin'])
-    df['ymin'] = pd.to_numeric(df['ymin'])
-    df['xmax'] = pd.to_numeric(df['xmax'])
-    df['ymax'] = pd.to_numeric(df['ymax'])
-    df.to_csv(dfpath, index=False, header=True)
 
 class MaskDataset(torch.utils.data.Dataset):
-    def __init__(self, root, data_file, transforms=None):
+    def __init__(self, root, transforms=None):
         self.root = root
         self.transforms = transforms
         self.imgs = sorted(os.listdir(os.path.join(root, 'normalized')))
-        self.masks = sorted(os.listdir(os.path.join(root, 'thumbnail_contours')))
-        self.path_to_data_file = data_file
+        self.masks = sorted(os.listdir(os.path.join(root, 'thumbnail_masked')))
 
     def __getitem__(self, idx):
         # load images and bounding boxes
         img_path = os.path.join(self.root, 'normalized', self.imgs[idx])
-        mask_path = os.path.join(self.root, 'thumbnail_contours', self.masks[idx])
+        mask_path = os.path.join(self.root, 'thumbnail_masked', self.masks[idx])
         img = Image.open(img_path).convert("L")
         mask = Image.open(mask_path) # 
         mask = np.array(mask)
@@ -164,13 +123,9 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     runmodel = bool({'true': True, 'false': False}[args.runmodel.lower()])
-    dfpath = os.path.join(ROOT, 'boxes.csv')
-    if not os.path.exists(dfpath):
-        print(f'{dfpath} does not exist, creating ...')
-        createcontours(dfpath)
 
-    dataset = MaskDataset(ROOT, data_file= dfpath, transforms = get_transform(train=True))
-    dataset_test = MaskDataset(ROOT, data_file= dfpath, transforms = get_transform(train=False))
+    dataset = MaskDataset(ROOT, transforms = get_transform(train=True))
+    dataset_test = MaskDataset(ROOT, transforms = get_transform(train=False))
 
     # split the dataset in train and test set
     torch.manual_seed(1)
@@ -209,7 +164,7 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # 1 epoch takes 8 minutes on muralis
-        epochs = 10
+        epochs = 30
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
