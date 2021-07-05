@@ -108,7 +108,7 @@ plot_offset_from_coms_to_a_reference(com_list,reference,prep_list_function,landm
 figure = get_fig_offset_between_two_com_sets(com_list_1,com_list_2,prep_list_function,landmark_list_function,plot_title)
 ```
 or
-```
+```python
 figure = get_fig_offset_from_coms_to_a_reference(com_list,reference,prep_list_function,landmark_list_function,plot_title)
 ```
 and then:
