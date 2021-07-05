@@ -80,7 +80,7 @@ functions to create box plots for difference between coms in the x,y,z direction
 toolbox\plotting\plot_com_offset.py
 `
 
-to plot offset between two set of coms:
+To plot offset between two set of coms:
 ```python
 from notebooks.Will.toolbox.plotting.plot_com_offset import *
 from notebooks.Will.toolbox.IOs.get_landmark_lists import get_all_landmarks_in_specimens
