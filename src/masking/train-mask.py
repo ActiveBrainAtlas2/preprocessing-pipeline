@@ -130,7 +130,8 @@ if __name__ == '__main__':
     # split the dataset in train and test set
     torch.manual_seed(1)
     indices = torch.randperm(len(dataset)).tolist()
-    test_cases = int(len(indices) * 0.05)
+    test_cases = int(len(indices) * 0.01)
+    test_cases = max(test_cases, 10)
     dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
     dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
     # define training and validation data loaders
@@ -138,7 +139,7 @@ if __name__ == '__main__':
                 dataset, batch_size=2, shuffle=True, num_workers=4,
                 collate_fn=utils.collate_fn)
     data_loader_test = torch.utils.data.DataLoader(
-            dataset_test, batch_size=1, shuffle=False, num_workers=1,
+            dataset_test, batch_size=1, shuffle=False, num_workers=0,
             collate_fn=utils.collate_fn)
     print("We have: {} examples, {} are training and {} testing".format(len(indices), len(dataset), len(dataset_test)))
 
@@ -170,8 +171,8 @@ if __name__ == '__main__':
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
             # update the learning rate
             lr_scheduler.step()
-        # evaluate on the test dataset
-        evaluate(model, data_loader_test, device=device)
+            # evaluate on the test dataset
+            evaluate(model, data_loader_test, device=device)
 
 
         torch.save(model.state_dict(), modelpath)
