@@ -1,15 +1,15 @@
-## This directory contains code created by Zhongkai Wu (William) to accomplish the following:
+# This directory contains code created by Zhongkai Wu (William) to accomplish the following:
 * Calculate image to image Affine and Demons transfomation from DK52 to DKXX.
 * Load and apply the transformation to images or com.
 * Visualize differences between center of mass.
 
-### Folder organization:
+## Folder organization:
 * **showcase**  contains examples and main scripts
 * **toolbox** contains libries used in the examples
 * **old** contains depricated files
 * **experimental**  contains functions that are not fully polished
 
-### Calculate image to image Affine and Demons transfomation from DK52 to DKXX.
+## Calculate image to image Affine and Demons transfomation from DK52 to DKXX.
 * To find the image to image affine transformation:
 ``` python
 from notebooks.Will.toolbox.rough_alignment.rough_alignment_affine import get_rough_alignment_affine_transform
@@ -21,7 +21,7 @@ from notebooks.Will.toolbox.rough_alignment.rough_alignment_demons import get_ro
 transformi = get_rough_alignment_demons_transform(moving_brain ='DK52',fixed_brain = 'DKXX')
 ```
 Examples for finding the image to image Affine and Demons transformation can be found in the showcase
-### Load and apply the transformation to images or com.
+## Load and apply the transformation to images or com.
 The image to image transformations are stored at: 
 
 ```
@@ -66,7 +66,7 @@ These two functions calls
 transform.TransformPoint(com)
 ```
 from different transform objects in Simple itk.  Whether these behave as expected is **still being tested**.
-### Visualize differences between center of mass.
+## Visualize differences between center of mass.
 functions to create box plots for difference between coms in the x,y,z direction and the overall distance can be found in 
 `
 toolbox\plotting\plot_com_offset.py
@@ -95,7 +95,7 @@ plot_offset_between_two_com_sets(com_list_1,com_list_2,prep_list_function,landma
 plot_offset_from_coms_to_a_reference(com_list,reference,prep_list_function,landmark_list_function,plot_title)
 ```
 *plot_offset_from_coms_to_a_reference* plots the boxplot of difference between one set of center of mass to a single com dictionary called the reference.  The reference could be the atlas coms or a reference brain.  com_list is a list of com dictionaries and eacg element of the list is compared to the reference com. 
-#### to return matplotlib figures for producing a high resolution pdf document:
+### to return matplotlib figures for producing a high resolution pdf document:
 
 ```python
 figure = get_fig_offset_between_two_com_sets(com_list_1,com_list_2,prep_list_function,landmark_list_function,plot_title)
