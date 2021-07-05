@@ -20,11 +20,15 @@ ROOT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks'
 
 
 class MaskDataset(torch.utils.data.Dataset):
-    def __init__(self, root, transforms=None):
+    def __init__(self, root, animal=None, transforms=None):
         self.root = root
+        self.animal = animal
         self.transforms = transforms
         self.imgs = sorted(os.listdir(os.path.join(root, 'normalized')))
         self.masks = sorted(os.listdir(os.path.join(root, 'thumbnail_masked')))
+        if self.animal is not None:
+            self.imgs = sorted([img for img in self.imgs if img.startswith(animal)])
+            self.masks = sorted([img for img in self.masks if img.startswith(animal)])
 
     def __getitem__(self, idx):
         # load images and bounding boxes
@@ -119,13 +123,15 @@ def get_transform(train):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
+    parser.add_argument('--animal', help='specify animal', required=False)
     parser.add_argument('--runmodel', help='run model', required=True)
     
     args = parser.parse_args()
     runmodel = bool({'true': True, 'false': False}[args.runmodel.lower()])
+    animal = args.animal
 
-    dataset = MaskDataset(ROOT, transforms = get_transform(train=True))
-    dataset_test = MaskDataset(ROOT, transforms = get_transform(train=False))
+    dataset = MaskDataset(ROOT, animal, transforms = get_transform(train=True))
+    dataset_test = MaskDataset(ROOT, animal, transforms = get_transform(train=False))
 
     # split the dataset in train and test set
     torch.manual_seed(1)
