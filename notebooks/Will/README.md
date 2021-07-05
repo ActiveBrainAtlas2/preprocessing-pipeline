@@ -117,3 +117,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 with PdfPages('../../...pdf') as pdf:
     pdf.savefig(figure)
 ```
+
+## Experimental functions:
+The experimental folder contains code to visualize the result of Affine and demons transformation in neuroglancer, as well as code to compare the different transformation.

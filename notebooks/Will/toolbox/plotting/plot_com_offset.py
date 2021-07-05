@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from notebooks.Will.toolbox.IOs.get_plot_save_path import get_plot_save_path
 import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -97,17 +96,3 @@ def get_fig_offset_box(offsets_table, title = ''):
 def plot_offset_box(offsets_table, title = ''):
     fig = get_fig_offset_box(offsets_table, title = '')
     plt.show()
-
-def get_fig(offsets,title = ''):
-    df_manual = get_offset_table_from_offset_array(offsets)
-    fig = px.scatter(df_manual, x="structure", y="value", color="type", hover_data=['brain'],title = title)
-    return fig
-
-def plot_offsets_scatter(offsets,title = ''):
-    fig = get_fig(offsets,title = title)
-    fig.show()
-
-def save_offsets_scatter(offsets,file_name,folder,title = ''):
-    fig = get_fig(offsets,title = title)
-    save_path = get_plot_save_path(folder = folder,file_name = file_name)
-    fig.write_html(save_path)

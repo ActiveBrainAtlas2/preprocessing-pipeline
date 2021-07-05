@@ -4,18 +4,21 @@ sys.path.append('/home/zhw272/programming/pipeline_utility')
 from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transform_point_affine
 from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_point_demons
 from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
-from notebooks.Will.toolbox.IOs.get_bilis_json_file import *
+# from notebooks.Will.toolbox.IOs.get_bilis_json_file import *
 from notebooks.Will.toolbox.plotting.plot_com_offset import *
 from notebooks.Will.toolbox.plotting.plot_coms import *
-from notebooks.Will.toolbox.IOs.pickle_io import load_pickle
+# from notebooks.Will.toolbox.IOs.pickle_io import load_pickle
 from notebooks.Will.toolbox.IOs.get_landmark_lists import get_all_landmarks_in_specimens
-from notebooks.Will.toolbox.brain_lists import get_prep_list_for_rough_alignment_test
 from notebooks.Will.toolbox.IOs.get_bilis_coms import *
 from utilities.alignment.align_point_sets import get_and_apply_transform
 from matplotlib.backends.backend_pdf import PdfPages
 import os
+import pickle
 
-save_dict = load_pickle(file_name='com_save_7-1-2021',folder='com_saves')
+def get_prep_list_for_rough_alignment_test():
+    return ['DK39', 'DK41', 'DK43', 'DK54', 'DK55']
+
+save_dict = pickle.load(open('../com_save_7-1-2021.p','rb'))
 #dict_keys(['atlas_com', 'beth_coms', 'beth_corrected_coms', 'bili_aligned_coms', 'bili_aligned_corrected_coms', 'kui_airlab_coms'])
 for key,value in save_dict.items():
     exec("%s = value" % (key))
