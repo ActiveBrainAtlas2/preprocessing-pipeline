@@ -10,10 +10,10 @@ from pathlib import Path
 from scipy.ndimage.interpolation import map_coordinates
 from skimage.exposure import rescale_intensity, adjust_gamma
 
-PIPELINE_ROOT = Path('.').absolute().parent
-sys.path.append(PIPELINE_ROOT.as_posix())
+#PIPELINE_ROOT = Path('.').absolute().parent
+#sys.path.append(PIPELINE_ROOT.as_posix())
 
-from utilities.utilities_process import get_last_2d
+from lib.utilities_process import get_last_2d
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 fontScale = 1

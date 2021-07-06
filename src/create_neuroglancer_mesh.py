@@ -3,12 +3,10 @@ Creates a 3D Mesh
 """
 import argparse
 import os
-import sys
 import json
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from timeit import default_timer as timer
-import numpy as np
 from taskqueue.taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
@@ -17,8 +15,6 @@ import shutil
 from tqdm import tqdm
 
 HOME = os.path.expanduser("~")
-#PATH = os.path.join(HOME, 'programming/pipeline_utility')
-#sys.path.append(PATH)
 from lib.file_location import FileLocationManager
 from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 from lib.utilities_process import get_cpus, get_hostname

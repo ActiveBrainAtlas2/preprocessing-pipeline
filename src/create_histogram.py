@@ -13,7 +13,6 @@ import cv2
 from lib.file_location import FileLocationManager
 from lib.logger import get_logger
 from lib.sqlcontroller import SqlController
-from sql_setup import CREATE_CHANNEL_1_HISTOGRAMS, CREATE_CHANNEL_2_HISTOGRAMS, CREATE_CHANNEL_3_HISTOGRAMS
 from lib.utilities_process import test_dir
 
 COLORS = {1: 'b', 2: 'r', 3: 'g'}

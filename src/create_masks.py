@@ -64,7 +64,7 @@ def create_mask(animal):
     os.makedirs(TESTS, exist_ok=True)
 
     files = sorted(os.listdir(INPUT))
-
+    debug = False
     for file in tqdm(files):
         filepath = os.path.join(INPUT, file)
         outpath = os.path.join(MASKS, file)
@@ -80,6 +80,8 @@ def create_mask(animal):
         with torch.no_grad():
             pred = loaded_model(input)
         pred_score = list(pred[0]['scores'].detach().numpy())
+        if debug:
+            print(file, pred_score[0])
         masks = [(pred[0]['masks']>0.5).squeeze().detach().cpu().numpy()]
         mask = masks[0]
         dims = mask.ndim
