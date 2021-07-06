@@ -2,7 +2,19 @@
 ## Creating a sandbox on your computer
 1. git clone this repository, create a virtual environment in your home dir and install the required packages
     ```bash
-    git clone git@github.com:eddyod/pipeline_utility.git
+    git clone git@github.com:eddyod/pipeline_utility.git```
+yfreund@muralis:~$ git clone git@github.com:eddyod/pipeline_utility.git
+Cloning into 'pipeline_utility'...
+The authenticity of host 'github.com (140.82.112.3)' can't be established.
+RSA key fingerprint is SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'github.com,140.82.112.3' (RSA) to the list of known hosts.
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+    ```bash
     python3 -m venv /usr/local/share/pipeline
     cd pipeline_utility
     source /usr/local/share/pipeline/bin/activate
