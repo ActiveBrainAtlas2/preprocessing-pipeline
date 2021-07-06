@@ -1,3 +1,8 @@
+"""
+THis script is the interface between the pipeline / database and the alignment software
+Ed, please comple and move to pipeline/src
+"""
+
 import argparse
 from sqlalchemy import func
 from tqdm import tqdm
@@ -85,7 +90,7 @@ def get_centers(animal, input_type_id):
             .filter(LayerData.prep_id == animal)\
             .filter(LayerData.person_id == beth)\
             .filter(LayerData.layer == 'COM')\
-            .filter(LayerData).input_type_id == input_type_id)\
+            .filter(LayerData.input_type_id == input_type_id)\
             .all()
     row_dict = {}
     for row in rows:
@@ -96,8 +101,8 @@ def get_centers(animal, input_type_id):
 
 def add_center_of_mass(animal, structure, x, y, section, person_id):
     com = LayerData(
-        prep_id=animal, structure=structure, x=x, y=y, section=section,
-        created=datetime.utcnow(), active=True, person_id=person_id, input_type_id=CORRECTED
+        prep_id=animal, structure=structure, x=x, y=y, section=section, layer='COM',
+        created=datetime.utcnow(), active=True, person_id=person_id, input_type_id=4
     )
     try:
         session.add(com)
@@ -124,34 +129,28 @@ def transform_and_add_dict(animal, person_id, row_dict, r=None, t=None):
             y = transformed[1]
             section = transformed[2]
 
+        print(animal, abbrev, x,y,section)
         add_center_of_mass(animal, structure, x, y, section, person_id)
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--jsonfile', help='Enter json file', required=False)
-    parser.add_argument('--transform', help='Enter true or false', required=True)
 
     args = parser.parse_args()
-    animal = args.animal
     jsonfile = args.jsonfile
-    person_id = 28 # bili
-    transform = bool({'true': True, 'false': False}[str(args.transform).lower()])
-    animals = ['DK39', 'DK41', 'DK43', 'DK52', 'DK54', 'DK55','MD589']
+    person_id = 1  # Edward
+    brains = ['DK39']
+
 
     if jsonfile is not None:
         with open(jsonfile) as f:
             row_dict = json.load(f)
-    else:
-        row_dict = get_centers(animal, CORRECTED)
 
-    r = None
-    t = None
-
-    if transform:
-        r, t = get_transformation_matrix(animal, 'corrected')
-    
-    transform_and_add_dict(animal, person_id, row_dict, r, t)
+    for brain in brains:
+        #row_dict = get_centers(brain, CORRECTED)
+        print(brain, len(row_dict))
+        r, t = get_transformation_matrix(brain, 'corrected')        
+        transform_and_add_dict(brain, person_id, row_dict, r, t)
 

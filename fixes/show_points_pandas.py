@@ -25,6 +25,7 @@ def create_points(animal, debug=False):
 
     csvpath = os.path.join(CSV_DIR_PATH, csvfile)
     print(csvpath)
+
     df = pd.read_csv(csvpath, header=None, names=['section', 'x', 'y'])   
 
     fileLocationManager = FileLocationManager(animal)
@@ -92,12 +93,25 @@ def create_points(animal, debug=False):
         else:
             proc = Popen(cmd, shell=True)
             proc.wait()
+        
+        sizex = int(max_distance + 500)
+        sizey = sizex
+        offsetx = int(mean_x - max_distance/2)
+        offsety = int(mean_y - max_distance/2)
+
+        #cmd = f'convert {outpath} -gravity West -chop {chop}x0 {outpath}' 
+        cmd = f'convert {outpath} -crop {sizex}x{sizey}+{offsetx}+{offsety} {outpath}' 
+        if debug:
+            print(cmd)
+        else:
+            proc = Popen(cmd, shell=True)
+            proc.wait()
 
         pngfile = str(section).zfill(3) + '.png'
-        pngpath = os.path.join(fileLocationManager.thumbnail_web, 'points', samik)
+        pngpath = os.path.join(fileLocationManager.thumbnail_web, 'points', 'samik')
         os.makedirs(pngpath, exist_ok=True)
         png = os.path.join(pngpath, pngfile)
-        cmd = f'convert {outpath} -resize 6% {png}' 
+        cmd = f'convert {outpath} -resize 12% {png}' 
         if debug:
             print(cmd)
         else:

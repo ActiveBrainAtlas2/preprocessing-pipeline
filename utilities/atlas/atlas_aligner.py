@@ -25,7 +25,7 @@ class Aligner(object):
     def __init__(self, volume_f_, volume_m_=None, nzvoxels_m_=None, centroid_f=None, centroid_m=None, \
                 labelIndexMap_m2f=None, label_weights=None, reg_weights=None, zrange=None, nz_thresh=0, init_T=None, init_transform_type='affine',
                 invalid_voxel_penalty=1., verbose=False):
-        """
+        """None
         Variant that takes in two probabilistic volumes.
 
         Args:
