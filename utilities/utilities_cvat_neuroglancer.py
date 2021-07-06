@@ -3,6 +3,7 @@ import sys
 from skimage import measure, io
 from skimage.color import rgb2gray
 from PIL import Image
+from torch.nn.functional import leaky_relu
 Image.MAX_IMAGE_PIXELS = None
 import cv2
 import json
@@ -151,10 +152,6 @@ class NumpyToNeuroglancer():
         self.starting_points = None
         self.animal = animal
         self.num_channels = num_channels
-
-    def add_annotation_point():
-        ...
-
 
     def init_precomputed(self, path, volume_size, starting_points=None, progress_id=None):
         info = CloudVolume.create_new_info(
@@ -336,39 +333,74 @@ class NumpyToNeuroglancer():
         set_file_completed(self.animal, self.progress_id, basefile)
         del img
         return
+
+    def get_dimensions(self):
+        return neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='nm', scales=self.scales)
+
+    def add_annotation_layer(self,layer_name,annotations):
+        dimensions = self.get_dimensions()
+        with self.viewer.txn() as s:
+            s.layers.append(name=layer_name,
+                    layer=neuroglancer.LocalAnnotationLayer(dimensions=dimensions,
+                    annotations=annotations))
+
+    def add_annotation_point_set(self,cooridnate_list,point_id_list = None,layer_name=None, clear_layer=False):
+        n_annotations = len(cooridnate_list)
+        if point_id_list == None:
+            point_id_list = [str(elementi) for elementi in list(range(n_annotations))]
+        self.init_layer(clear_layer)
+        annotations = []
+        for annotationi in range(n_annotations):
+            point_annotation = neuroglancer.PointAnnotation(id=point_id_list[annotationi],point=cooridnate_list[annotationi])
+            annotations.append(point_annotation)
+        self.add_annotation_layer(layer_name,annotations)
+        self.report_new_layer(layer_name)
+
+    def add_annotation_point(self,cooridnate,point_id='pointi',layer_name=None, clear_layer=False):
+        self.init_layer(clear_layer)
+        annotations=[neuroglancer.PointAnnotation(id=point_id,point=cooridnate)]
+        self.add_annotation_layer(layer_name,annotations)
+        self.report_new_layer(layer_name)
+
+    def clear_layer(self,clear_layer = False):
+        if clear_layer:
+            with self.viewer.txn() as s:
+                    s.layers.clear()
+
+    def add_layer(self,layer_name,layer):
+        with self.viewer.txn() as s:
+            s.layers[layer_name] = layer
     
-    def add_volume(self,volume,layer_name=None, clear_layer=False):
+    def init_layer(self,clear_layer):
         if self.viewer is None:
             self.viewer = neuroglancer.Viewer()
+        self.clear_layer(clear_layer)
 
+    def report_new_layer(self,layer_name):
+        print(f'A new layer named {layer_name} is added to:')
+        print(self.viewer)
+
+    def add_volume(self,volume,layer_name=None, clear_layer=False):
+        self.init_layer(clear_layer)
         if layer_name is None:
             layer_name = f'{self.layer_type}_{self.scales}'
-
         source = neuroglancer.LocalVolume(
             data=volume,
             dimensions=neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='nm', scales=self.scales),
-            voxel_offset=self.offset
-        )
-
+            voxel_offset=self.offset)
         if self.layer_type == 'segmentation':
             layer = neuroglancer.SegmentationLayer(source=source)
         else:
             layer = neuroglancer.ImageLayer(source=source)
-
-        with self.viewer.txn() as s:
-            if clear_layer:
-                s.layers.clear()
-            s.layers[layer_name] = layer
-
-        print(f'A new layer named {layer_name} is added to:')
-        print(self.viewer)
+        self.add_layer(layer_name,layer)
+        self.report_new_layer(layer_name)
+        
 
     def preview(self, layer_name=None, clear_layer=False):
         self.add_volume(self.volume,layer_name=layer_name, clear_layer=clear_layer)
 
 def mask_to_shell(mask):
     sub_contours = measure.find_contours(mask, 1)
-
     sub_shells = []
     for sub_contour in sub_contours:
         sub_contour.T[[0, 1]] = sub_contour.T[[1, 0]]
