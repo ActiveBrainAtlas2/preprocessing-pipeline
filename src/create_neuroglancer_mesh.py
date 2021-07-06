@@ -17,11 +17,11 @@ import shutil
 from tqdm import tqdm
 
 HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility')
-sys.path.append(PATH)
-from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer
-from utilities.utilities_process import get_cpus, get_hostname
+#PATH = os.path.join(HOME, 'programming/pipeline_utility')
+#sys.path.append(PATH)
+from lib.file_location import FileLocationManager
+from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from lib.utilities_process import get_cpus, get_hostname
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))

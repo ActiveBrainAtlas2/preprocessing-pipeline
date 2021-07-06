@@ -9,11 +9,12 @@ from skimage import io
 from tqdm import tqdm
 import numpy as np
 import cv2
-from utilities.file_location import FileLocationManager
-from utilities.logger import get_logger
-from utilities.sqlcontroller import SqlController
+
+from lib.file_location import FileLocationManager
+from lib.logger import get_logger
+from lib.sqlcontroller import SqlController
 from sql_setup import CREATE_CHANNEL_1_HISTOGRAMS, CREATE_CHANNEL_2_HISTOGRAMS, CREATE_CHANNEL_3_HISTOGRAMS
-from utilities.utilities_process import test_dir
+from lib.utilities_process import test_dir
 
 COLORS = {1: 'b', 2: 'r', 3: 'g'}
 

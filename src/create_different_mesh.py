@@ -11,10 +11,10 @@ import igneous.task_creation as tc
 
 
 HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility')
-sys.path.append(PATH)
-from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import get_cpus
+#PATH = os.path.join(HOME, 'programming/pipeline_utility')
+#sys.path.append(PATH)
+from lib.file_location import FileLocationManager
+from lib.utilities_cvat_neuroglancer import get_cpus
 
 def create_mesh(animal, mip, mse):
     fileLocationManager = FileLocationManager(animal)

@@ -13,9 +13,9 @@ from shutil import copyfile
 
 from sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
-from utilities.file_location import FileLocationManager
-from utilities.sqlcontroller import SqlController
-from utilities.utilities_process import workernoshell, test_dir, get_image_size
+from lib.file_location import FileLocationManager
+from lib.sqlcontroller import SqlController
+from lib.utilities_process import workernoshell, test_dir, get_image_size
 
 
 def make_full_resolution(animal, channel):

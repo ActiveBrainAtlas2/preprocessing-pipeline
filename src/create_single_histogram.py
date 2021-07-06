@@ -4,9 +4,9 @@ from matplotlib import pyplot as plt
 from skimage import io
 
 HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility')
-sys.path.append(PATH)
-from utilities.file_location import FileLocationManager
+#PATH = os.path.join(HOME, 'programming/pipeline_utility')
+#sys.path.append(PATH)
+from lib.file_location import FileLocationManager
 COLORS = {1: 'b', 2: 'r', 3: 'g'}
 
 

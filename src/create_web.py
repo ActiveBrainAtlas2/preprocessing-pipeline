@@ -7,9 +7,9 @@ import os, sys
 from PIL import Image
 from tqdm import tqdm
 
-from utilities.file_location import FileLocationManager
-from utilities.sqlcontroller import SqlController
-from utilities.utilities_process import test_dir
+from lib.file_location import FileLocationManager
+from lib.sqlcontroller import SqlController
+from lib.utilities_process import test_dir
 
 
 def make_web_thumbnails(animal):

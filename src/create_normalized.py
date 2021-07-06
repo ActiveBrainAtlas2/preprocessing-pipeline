@@ -10,9 +10,9 @@ import cv2
 import numpy as np
 from skimage import io
 from tqdm import tqdm
-from utilities.file_location import FileLocationManager
-from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import rotate_image, equalized
+from lib.file_location import FileLocationManager
+from lib.sqlcontroller import SqlController
+from lib.utilities_mask import rotate_image, equalized
 
 
 def fix_image(infile, rotation, flip):

@@ -9,7 +9,7 @@ This file does the following operations:
 """
 import argparse
 
-from utilities.utilities_process import make_tifs, make_scenes
+from lib.utilities_process import make_tifs, make_scenes
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')

@@ -2,11 +2,11 @@ import sys
 import logging
 from pathlib import Path
 
-PIPELINE_ROOT = Path('.').absolute().parent
-sys.path.append(PIPELINE_ROOT.as_posix())
+#PIPELINE_ROOT = Path('.').absolute().parent
+#sys.path.append(PIPELINE_ROOT.as_posix())
 
 from sql_setup import session
-from utilities.model.log import Log
+from model.log import Log
 
 
 

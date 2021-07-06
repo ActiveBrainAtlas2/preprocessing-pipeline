@@ -17,11 +17,11 @@ from timeit import default_timer as timer
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 
-from utilities.file_location import FileLocationManager
-from utilities.sqlcontroller import SqlController
-from utilities.utilities_alignment import (load_consecutive_section_transform,
+from lib.file_location import FileLocationManager
+from lib.sqlcontroller import SqlController
+from lib.utilities_alignment import (load_consecutive_section_transform,
                                          convert_resolution_string_to_um, process_image)
-from utilities.utilities_process import test_dir, get_cpus
+from lib.utilities_process import test_dir, get_cpus
 
 def parse_elastix(animal):
     """

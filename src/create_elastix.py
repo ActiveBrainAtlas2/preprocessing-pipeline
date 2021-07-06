@@ -11,8 +11,8 @@ import argparse
 import subprocess
 from multiprocessing.pool import Pool
 
-from utilities.file_location import FileLocationManager
-from utilities.utilities_process import workernoshell, test_dir
+from lib.file_location import FileLocationManager
+from lib.utilities_process import workernoshell, test_dir
 
 ELASTIX_BIN = '/usr/bin/elastix'
 

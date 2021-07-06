@@ -11,8 +11,8 @@ from pathlib import Path
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from utilities.sqlcontroller import SqlController
-from utilities.file_location import FileLocationManager
+from lib.sqlcontroller import SqlController
+from lib.file_location import FileLocationManager
 
 
 def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_filepath=None):

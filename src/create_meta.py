@@ -8,16 +8,14 @@ then validates the data with the ActiveAtlasAdmin database portal
 import argparse
 import os, sys, time
 from datetime import datetime
-from utilities.file_location import FileLocationManager
 from tqdm import tqdm
 import re
 
-from utilities.sqlcontroller import SqlController
-from utilities.model.slide import Slide
-from utilities.model.slide_czi_to_tif import SlideCziTif
-
-from utilities.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
-
+from lib.file_location import FileLocationManager
+from lib.sqlcontroller import SqlController
+from lib.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
+from model.slide import Slide
+from model.slide_czi_to_tif import SlideCziTif
 from sql_setup import session, SLIDES_ARE_SCANNED, CZI_FILES_ARE_PLACED_ON_BIRDSTORE, CZI_FILES_ARE_SCANNED_TO_GET_METADATA
 
 

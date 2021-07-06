@@ -9,9 +9,9 @@ import argparse
 
 from tqdm import tqdm
 
-from utilities.file_location import FileLocationManager
-from utilities.logger import get_logger
-from utilities.sqlcontroller import SqlController
+from lib.file_location import FileLocationManager
+from lib.logger import get_logger
+from lib.sqlcontroller import SqlController
 
 
 def update_tifs(animal, channel):

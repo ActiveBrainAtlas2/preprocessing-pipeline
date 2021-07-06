@@ -18,10 +18,10 @@ from matplotlib import colors
 from pylab import cm
 from collections import defaultdict
 
-PIPELINE_ROOT = Path('.').absolute().parent
-sys.path.append(PIPELINE_ROOT.as_posix())
-from utilities.sqlcontroller import SqlController, file_processed, set_file_completed
-from utilities.utilities_process import get_cpus
+#PIPELINE_ROOT = Path('.').absolute().parent
+#sys.path.append(PIPELINE_ROOT.as_posix())
+from lib.sqlcontroller import SqlController, file_processed, set_file_completed
+from lib.utilities_process import get_cpus
 
 def calculate_chunks(downsample, mip):
     """

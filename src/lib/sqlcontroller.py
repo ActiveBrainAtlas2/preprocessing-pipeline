@@ -9,17 +9,17 @@ filled out for each animal to use
 #import transaction
 ###from logger import Log
 from sql_setup import session, pooledengine, pooledsession
-from utilities.model.file_log import FileLog
-from utilities.model.urlModel import UrlModel
-from utilities.model.task import Task, ProgressLookup
-from utilities.model.layer_data import LayerData
-from utilities.model.structure import Structure
-from utilities.model.slide_czi_to_tif import SlideCziTif
-from utilities.model.slide import Slide
-from utilities.model.section import Section
-from utilities.model.scan_run import ScanRun
-from utilities.model.histology import Histology
-from utilities.model.animal import Animal
+from model.file_log import FileLog
+from model.urlModel import UrlModel
+from model.task import Task, ProgressLookup
+from model.layer_data import LayerData
+from model.structure import Structure
+from model.slide_czi_to_tif import SlideCziTif
+from model.slide import Slide
+from model.section import Section
+from model.scan_run import ScanRun
+from model.histology import Histology
+from model.animal import Animal
 import sys
 import json
 import pandas as pd

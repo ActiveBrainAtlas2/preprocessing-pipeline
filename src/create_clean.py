@@ -16,10 +16,10 @@ from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
 
 from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
-from utilities.file_location import FileLocationManager
-from utilities.sqlcontroller import SqlController
-from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
-from utilities.utilities_process import test_dir, SCALING_FACTOR
+from lib.file_location import FileLocationManager
+from lib.sqlcontroller import SqlController
+from lib.utilities_mask import rotate_image, place_image, scaled, equalized
+from lib.utilities_process import test_dir, SCALING_FACTOR
 
 
 def fix_ntb(file_keys):

@@ -11,12 +11,12 @@ from skimage import io
 from tqdm import tqdm
 
 HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility')
-sys.path.append(PATH)
-from utilities.sqlcontroller import SqlController
-from utilities.file_location import FileLocationManager
-from utilities.utilities_cvat_neuroglancer import mask_to_shell, NumpyToNeuroglancer
-from utilities.utilities_process import test_dir, SCALING_FACTOR
+#PATH = os.path.join(HOME, 'programming/pipeline_utility')
+#sys.path.append(PATH)
+from lib.sqlcontroller import SqlController
+from lib.file_location import FileLocationManager
+from lib.utilities_cvat_neuroglancer import mask_to_shell, NumpyToNeuroglancer
+from lib.utilities_process import test_dir, SCALING_FACTOR
 
 
 def create_shell(animal):
