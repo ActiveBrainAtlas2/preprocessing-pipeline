@@ -84,8 +84,10 @@ To plot offset between two set of coms:
 ```python
 from notebooks.Will.toolbox.plotting.plot_com_offset import *
 from notebooks.Will.toolbox.IOs.get_landmark_lists import get_all_landmarks_in_specimens
-from notebooks.Will.toolbox.brain_lists import get_prep_list_for_rough_alignment_test
 
+def get_prep_list_for_rough_alignment_test():
+    return ['DK39', 'DK41', 'DK43', 'DK54', 'DK55']
+    
 prep_list_function = get_prep_list_for_rough_alignment_test
 landmark_list_function = get_all_landmarks_in_specimens
 ```
