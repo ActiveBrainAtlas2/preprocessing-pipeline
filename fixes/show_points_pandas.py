@@ -25,12 +25,13 @@ def create_points(animal, debug=False):
 
     csvpath = os.path.join(CSV_DIR_PATH, csvfile)
     print(csvpath)
-    df = pd.read_csv(csvpath, header=None, names=['section', 'y', 'x'])   
+
+    df = pd.read_csv(csvpath, header=None, names=['section', 'x', 'y'])   
 
     fileLocationManager = FileLocationManager(animal)
-
+    samik = 'samik_xy'
     INPUT = os.path.join(fileLocationManager.prep, 'CH3', 'full')
-    OUTPUT = os.path.join(fileLocationManager.prep, 'CH3', 'points', 'samik')
+    OUTPUT = os.path.join(fileLocationManager.prep, 'CH3', 'points', samik)
     os.makedirs(OUTPUT, exist_ok=True)
     sections = defaultdict(list)
 
