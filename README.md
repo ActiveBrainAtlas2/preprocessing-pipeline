@@ -1,5 +1,5 @@
 # Utilities for the Active Atlas Pipeline
-## Creating a sandbox on your computer
+## Creating a sandbox on your computer. Only do this on your home computer. Our workstations already have the software installed.
 1. git clone this repository, create a virtual environment in your home dir and install the required packages
     ```bash
     # git clone git@github.com:eddyod/pipeline_utility.git
