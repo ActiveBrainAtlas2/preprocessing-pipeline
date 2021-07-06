@@ -171,10 +171,10 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # 1 epoch takes 8 minutes on muralis
-        epochs = 30
+        epochs = 20
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
-            train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
+            train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=100)
             # update the learning rate
             lr_scheduler.step()
             # evaluate on the test dataset
