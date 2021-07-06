@@ -18,7 +18,7 @@ git clone https://github.com/eddyod/pipeline_utility.git
 
 
     ```bash
-    python3 -m venv /usr/local/share/pipeline
+    sudo python3 -m venv /usr/local/share/pipeline
     cd pipeline_utility
     source /usr/local/share/pipeline/bin/activate
     pip install -r prerequirements.txt
