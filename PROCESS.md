@@ -31,6 +31,7 @@
     1. This will fill the directory of the full and low resolution files for channel 1.
     1. Repeat process for the other 2 channels when ready.
     1. View a couple thumbnails to determine how much rotation/flips to perform.
+1. Run: `python \src\create_normal.py --animal DKXX --channel CH1` only need to run for ch1.
 1. Run: `python create_masks.py --animal DKXX`
     1. This will read the thumbnail directory and create masks in the DKXX/preps/thumbnail_masked dir.
     1. No need to use channel 2 or 3. It works solely on channel 1.
