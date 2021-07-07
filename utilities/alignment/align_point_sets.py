@@ -34,9 +34,13 @@ def get_and_apply_transform(moving_com,still_com):
     transformed_coms = apply_affine_transform_to_points(moving_com,affine_transform)
     return transformed_coms,affine_transform
 
-def apply_affine_transform_to_points(coms,affine_transform):
+def apply_affine_transform_to_com(com,affine_transform):
     rotation,translation = affine_transform
-    transformed_coms = []
+    return rotation@com.reshape(3)+ translation.reshape(3)
+
+def apply_affine_transform_to_points(coms,affine_transform):
+    transformed_com_list = []
     for com in coms:
-        transformed_coms.append(rotation@com.reshape(3)+ translation.reshape(3))
-    return np.array(transformed_coms)
+        transformed_com = apply_affine_transform_to_com(com,affine_transform)
+        transformed_com_list.append(transformed_com)
+    return np.array(transformed_com_list)

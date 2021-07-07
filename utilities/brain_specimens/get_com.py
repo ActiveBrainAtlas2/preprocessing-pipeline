@@ -1,6 +1,6 @@
 import numpy as np
-from utilities.model.layer_data import LayerData 
-from sql_setup import session
+from src.model.layer_data import LayerData
+from src.sql_setup import session
 
 def pixel_to_physical_coord(com):
     return com*np.array([0.325,0.325,20])

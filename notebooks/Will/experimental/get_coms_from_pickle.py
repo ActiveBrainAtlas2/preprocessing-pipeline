@@ -2,12 +2,7 @@ from bdb import Breakpoint
 import sys
 import numpy as np
 sys.path.append('/home/zhw272/programming/pipeline_utility')
-from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transform_point_affine
-from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_point_demons
-from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
-from notebooks.Will.toolbox.IOs.get_bilis_json_file import *
-# from notebooks.Will.toolbox.IOs.get_bilis_coms import *
-from utilities.alignment.align_point_sets import get_and_apply_transform
+
 import os
 import pickle
 
@@ -65,75 +60,3 @@ def get_dk52_com():
 def get_prep_coms():
     prep_coms = [convert_com_dict_units(com_dict,image_to_physical) for name,com_dict in beth_coms.items() if name!='DK52']
     return prep_coms
-
-def get_shared_landmarks_between_dk52_and_atlas():
-    DK52_com = get_dk52_com()
-    atlas_com = get_atlas_com()
-    DK52_com_landmarks = set(DK52_com.keys())
-    atlas_landmarks = set(atlas_com.keys())
-    shared_landmarks = list(DK52_com_landmarks&atlas_landmarks)
-    return shared_landmarks
-
-def get_itk_affine_transformed_coms():
-    shared_landmarks = get_shared_landmarks_between_dk52_and_atlas()
-    atlas_com_dict = get_atlas_com()
-    DK52_com_dict = get_dk52_com()
-    atlas_com = np.array([atlas_com_dict[landmark] for landmark in shared_landmarks])
-    DK52_com = np.array([DK52_com_dict[landmark] for landmark in shared_landmarks])
-    prep_list = get_prep_list_for_rough_alignment_test()
-    itk_transformed_coms = []
-    itk_aligned_coms = []
-    for prepi in prep_list:
-        affine_transform = get_affine_transform(prepi)
-        DK52_com_transformed =  transform_point_affine(affine_transform,DK52_com)
-        DK52_com_aligned,_ = get_and_apply_transform(DK52_com_transformed,atlas_com)
-        DK52_com_transformed = dict(zip(shared_landmarks,DK52_com_transformed))
-        DK52_com_aligned = dict(zip(shared_landmarks,DK52_com_aligned))
-        itk_transformed_coms.append(DK52_com_transformed)
-        itk_aligned_coms.append(DK52_com_aligned)
-    return itk_transformed_coms,itk_aligned_coms
-
-def get_itk_demons_transformed_coms():
-    shared_landmarks = get_shared_landmarks_between_dk52_and_atlas()
-    atlas_com_dict = get_atlas_com()
-    DK52_com_dict = get_dk52_com()
-    atlas_com = np.array([atlas_com_dict[landmark] for landmark in shared_landmarks])
-    DK52_com = np.array([DK52_com_dict[landmark] for landmark in shared_landmarks])
-    prep_list = get_prep_list_for_rough_alignment_test()
-    itk_transformed_coms = []
-    itk_aligned_coms = []
-    for prepi in prep_list:
-        demons_transform = get_demons_transform(prepi)
-        DK52_com_transformed =  transform_point_demons(demons_transform,DK52_com)
-        DK52_com_aligned,_ = get_and_apply_transform(DK52_com_transformed,atlas_com)
-        DK52_com_transformed = dict(zip(shared_landmarks,DK52_com_transformed))
-        DK52_com_aligned = dict(zip(shared_landmarks,DK52_com_aligned))
-        itk_transformed_coms.append(DK52_com_transformed)
-        itk_aligned_coms.append(DK52_com_aligned)
-    return itk_transformed_coms,itk_aligned_coms
-
-def get_airlab_transformed_coms():
-    shared_landmarks = get_shared_landmarks_between_dk52_and_atlas()
-    atlas_com_dict = get_atlas_com()
-    DK52_com_dict = get_dk52_com()
-    atlas_com = np.array([atlas_com_dict[landmark] for landmark in shared_landmarks])
-    DK52_com_shared = {}
-    for landmark in shared_landmarks:
-        DK52_com_shared[landmark] = DK52_com_dict[landmark]
-    prep_list = get_prep_list_for_rough_alignment_test()
-    air_lab_transformed_list = []
-    air_lab_aligned_list = []
-    for prepi in prep_list:
-        airlab_aligned_coms = {}
-        transform = get_tranformation(prepi)
-        airlab_transformed_coms = {}
-        for name, com in DK52_com_shared.items():
-            com = np.array(com, dtype=float)/np.array([0.325,0.325,20])
-            airlab_transformed_coms[name] = (transform.forward_point(com)*np.array([0.325,0.325,20])).tolist()
-        aligned_com,_ = get_and_apply_transform(np.array(list(airlab_transformed_coms.values())),atlas_com)
-        for i in range(len(aligned_com)):
-            name = list(airlab_transformed_coms.keys())[i]
-            airlab_aligned_coms[name] = aligned_com[i]
-        air_lab_transformed_list.append(airlab_transformed_coms)
-        air_lab_aligned_list.append(airlab_aligned_coms)
-    return air_lab_transformed_list,air_lab_aligned_list

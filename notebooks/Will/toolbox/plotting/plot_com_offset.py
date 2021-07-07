@@ -93,6 +93,6 @@ def get_fig_offset_box(offsets_table, title = ''):
     ax.set_title(title)
     return fig
     
-def plot_offset_box(offsets_table, title = ''):
-    fig = get_fig_offset_box(offsets_table, title = '')
+def plot_offset_box(offset_table, title = ''):
+    fig = get_fig_offset_box(offset_table, title = '')
     plt.show()
