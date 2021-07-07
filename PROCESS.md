@@ -1,5 +1,6 @@
 ### New Brain
 ## Post CZI Creation Process
+1. Create a folder with brain id under /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/
 1. To install the software prerequisites, [look here.](README.md). Or just use the installed virtual environment on ratto, basalis and muralis: `source /usr/local/share/pipeline/bin/activate`
 1. Running any of these commands at high resolution, you will want to prefix each command with `nohup`
    and put a '&' at the end of the command. That will make it run in the background and you can log out.
