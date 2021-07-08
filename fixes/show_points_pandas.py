@@ -12,10 +12,9 @@ HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(DIR)
 
-from utilities.utilities_process import get_image_size
-from utilities.file_location import FileLocationManager
-from utilities.model.layer_data import LayerData
-from sql_setup import session
+from src.lib.file_location import FileLocationManager
+from src.model.layer_data import LayerData
+from src.sql_setup import session
 SCALE = 10000/325.0
 
 
