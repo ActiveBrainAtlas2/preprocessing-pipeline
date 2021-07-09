@@ -231,21 +231,58 @@ def parse_elastix(animal):
     return transformation_to_anchor_sec
 
 
-def create_warp_transforms(animal, transforms, transforms_resol, resolution):
-    def convert_2d_transform_forms(arr):
-        return np.vstack([arr, [0, 0, 1]])
 
-    # transforms_resol = op['resolution']
-    transforms_scale_factor = convert_resolution_string_to_um(animal,
-                                                              resolution=transforms_resol) / convert_resolution_string_to_um(
-        animal, resolution=resolution)
+def create_warp_transforms(animal, transforms, downsample):
+    """
+    Changes the dictionary of transforms to the correct resolution
+    :param animal: prep_id of animal we are working on
+    :param transforms: dictionary of filename:array of transforms
+    :param transforms_resol:
+    :param downsample; either true for thumbnails, false for full resolution images
+    :return: corrected dictionary of filename: array  of transforms
+    """
+    #transforms_scale_factor = \
+    #    convert_resolution_string_to_um(animal, downsample=transforms_resol) / \
+    #    convert_resolution_string_to_um(animal, downsample=downsample)
+    if downsample:
+        transforms_scale_factor = 1
+    else:
+        transforms_scale_factor = 32
+
+
     tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
-    transforms_to_anchor = {
-        img_name:
-            convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor) for
-        img_name, tf in transforms.items()}
+
+    transforms_to_anchor = {}
+    for img_name, tf in transforms.items():
+        transforms_to_anchor[img_name] = \
+            convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor) 
+    
 
     return transforms_to_anchor
+
+def convert_2d_transform_forms(arr):
+    return np.vstack([arr, [0, 0, 1]])
+
+
+def convert_resolution_string_to_um(animal, downsample):
+    """
+    Thionin brains are ususally 0.452 and NtB are usually 0.325
+    Args:
+        resolution (str):
+    Returns:
+        voxel/pixel size in micrometers.
+    """
+    try:
+        sqlController = SqlController(animal)
+        planar_resolution = sqlController.scan_run.resolution
+    except:
+        planar_resolution = 0.325
+
+    if downsample:
+        return planar_resolution * 32.
+    else:
+        return planar_resolution
+
 
 def transform_create_alignment(points, transform):
     a = np.hstack((points, np.ones((points.shape[0], 1))))
@@ -269,7 +306,7 @@ def csv_to_dict(fp):
     return d
 
 
-def convert_2d_transform_forms(transform, out_form):
+def convert_2d_transform_formsXXX(transform, out_form):
     if isinstance(transform, str):
         if out_form == (2,3):
             #return np.reshape(map(np.float, transform.split(',')), (2,3))
@@ -372,27 +409,6 @@ orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
     }
 
 
-def convert_resolution_string_to_um(stack, downsample):
-    """
-    Args:
-        resolution (str):
-    Returns:
-        voxel/pixel size in microns.
-    """
-    try:
-        sqlController = SqlController(stack)
-        planar_resolution = sqlController.scan_run.resolution
-    except:
-        planar_resolution = 0.452
-    #planar_resolution =  0.452
-    assert downsample is not None, 'Resolution argument cannot be None.'
-
-    if downsample:
-        assert stack is not None
-        return planar_resolution * 32.
-    else:
-        return planar_resolution
-
 
 
 def process_image(file_key):
@@ -403,3 +419,14 @@ def process_image(file_key):
 
     del im1, im2
     return
+
+
+def reverse_transform_create_alignment(points, transform):
+    """
+    This reverses the transformation process
+    """
+    c = np.hstack((points, np.ones((points.shape[0], 1))))
+    b = transform.copy()[:, 0:2] # Reverse rotation matrix by doing R^-1 = R^T
+    b[2:, 0:2] = -transform[0:2, 2] # Reverse translation matrix by doing -T
+    a = np.matmul(c, b)
+    return a

@@ -3,7 +3,7 @@ This file does the following operations:
     1. fetches the files needed to process.
     2. runs the files in sequence through elastix
     3. parses the results from the elastix output file
-    4. Sends those results to the Imagemagick convert program with the correct offsets and crop
+    4. Sends those results to the PIL affine with the rotation and translation matrix
     5. The location of elastix is hardcoded below which is a typical linux install location.
 """
 import os, sys
@@ -19,78 +19,8 @@ Image.MAX_IMAGE_PIXELS = None
 
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_alignment import (load_consecutive_section_transform,
-                                         convert_resolution_string_to_um, process_image)
+from lib.utilities_alignment import (create_warp_transforms,   parse_elastix, process_image)
 from lib.utilities_process import test_dir, get_cpus
-
-def parse_elastix(animal):
-    """
-    After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
-    Args:
-        animal: the animal
-    Returns: a dictionary of key=filename, value = coordinates
-    """
-    fileLocationManager = FileLocationManager(animal)
-    DIR = fileLocationManager.prep
-    INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
-    error = test_dir(animal, INPUT, downsample=True, same_size=True)
-    if len(error) > 0:
-        print(error)
-        sys.exit()
-
-    files = sorted(os.listdir(INPUT))
-    midpoint_index = len(files) // 2
-    transformation_to_previous_section = {}
-
-    for i in range(1, len(files)):
-        fixed_index = os.path.splitext(files[i - 1])[0]
-        moving_index = os.path.splitext(files[i])[0]
-        transformation_to_previous_section[i] = load_consecutive_section_transform(animal, moving_index, fixed_index)
-
-    transformation_to_anchor_section = {}
-    # Converts every transformation
-    for moving_index in range(len(files)):
-        if moving_index == midpoint_index:
-            transformation_to_anchor_section[files[moving_index]] = np.eye(3)
-        elif moving_index < midpoint_index:
-            T_composed = np.eye(3)
-            for i in range(midpoint_index, moving_index, -1):
-                T_composed = np.dot(np.linalg.inv(transformation_to_previous_section[i]), T_composed)
-            transformation_to_anchor_section[files[moving_index]] = T_composed
-        else:
-            T_composed = np.eye(3)
-            for i in range(midpoint_index + 1, moving_index + 1):
-                T_composed = np.dot(transformation_to_previous_section[i], T_composed)
-            transformation_to_anchor_section[files[moving_index]] = T_composed
-
-
-    return transformation_to_anchor_section
-
-def convert_2d_transform_forms(arr):
-    """
-    Puts array into correct dimensions
-    :param arr: array to transform
-    :return: corrected array
-    """
-    return np.vstack([arr, [0,0,1]])
-
-def create_warp_transforms(animal, transforms, transforms_resol, downsample):
-    """
-    Changes the dictionary of transforms to the correct resolution
-    :param animal: prep_id of animal we are working on
-    :param transforms: dictionary of filename:array of transforms
-    :param transforms_resol:
-    :param downsample; either true or false
-    :return: corrected dictionary of filename: array  of transforms
-    """
-    transforms_scale_factor = convert_resolution_string_to_um(animal, downsample=transforms_resol) / convert_resolution_string_to_um(animal, downsample=downsample)
-    tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
-    transforms_to_anchor = {
-        img_name:
-            convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor) for
-        img_name, tf in transforms.items()}
-
-    return transforms_to_anchor
 
 
 def run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen):
@@ -130,7 +60,7 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
     progress_id = sqlController.get_progress_id(downsample, channel, 'ALIGN')
     sqlController.set_task(animal, progress_id)
 
-    warp_transforms = create_warp_transforms(animal, transforms, 'thumbnail', downsample)
+    warp_transforms = create_warp_transforms(animal, transforms, downsample)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
     file_keys = []
     r90 = np.array([[0,-1,0],[1,0,0],[0,0,1]])
@@ -164,10 +94,12 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
 
         end = timer()
         print(f'Create cleaned files took {end - start} seconds total', end="\t")
-        print(f' { (end - start)/len(file_keys)} per file')
+        if len(file_keys) > 0:
+            print(f' { (end - start)/len(file_keys)} per file')
+        else:
+            print("No files were processed")
 
 
-    
     print('Finished')
         
 
