@@ -19,8 +19,7 @@ Image.MAX_IMAGE_PIXELS = None
 
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_alignment import (create_warp_transforms, load_consecutive_section_transform,
-                                         parse_elastix, process_image)
+from lib.utilities_alignment import (create_warp_transforms,   parse_elastix, process_image)
 from lib.utilities_process import test_dir, get_cpus
 
 
