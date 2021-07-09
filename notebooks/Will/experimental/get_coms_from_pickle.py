@@ -2,7 +2,6 @@ from bdb import Breakpoint
 import sys
 import numpy as np
 sys.path.append('/home/zhw272/programming/pipeline_utility')
-
 import os
 import pickle
 
@@ -35,17 +34,6 @@ def convert_com_dict_units(com_dict,conversion_function):
         com_dict_converted[landmark] = conversion_function(com)
     return com_dict_converted
 
-# def get_kui_transformed():
-#     prep_list = get_prep_list_for_rough_alignment_test()
-#     kui_transformed_com = []
-#     for prepi in prep_list:
-#         kui_transformed_com.append(get_transformed_com_dict(prepi))
-#     return kui_transformed_com
-
-# def get_kui_airlab():
-#     kui_airlab_com = [convert_com_dict_units(com_dict,neuroglancer_atlas_to_physical) for name,com_dict in kui_airlab_coms.items() if name!='DK52']
-#     return kui_airlab_com
-
 def get_atlas_com():
     atlas_com_phys = convert_com_dict_units(atlas_com,atlas_to_physical)
     return atlas_com_phys
@@ -54,8 +42,19 @@ def get_prepi_com(prepi):
     prepi_com = convert_com_dict_units(beth_coms[prepi],image_to_physical) 
     return prepi_com
 
+def get_corrected_prepi_com(prepi):
+    prepi_com = convert_com_dict_units(beth_corrected_coms[prepi],image_to_physical) 
+    return prepi_com
+
+def get_corrected_dk52_com():
+    return get_corrected_prepi_com('DK52')
+
 def get_dk52_com():
     return get_prepi_com('DK52')
+
+def get_corrected_prep_coms():
+    corrected_prep_coms = [convert_com_dict_units(com_dict,image_to_physical) for name,com_dict in beth_corrected_coms.items() if name!='DK52']
+    return corrected_prep_coms
     
 def get_prep_coms():
     prep_coms = [convert_com_dict_units(com_dict,image_to_physical) for name,com_dict in beth_coms.items() if name!='DK52']

@@ -5,8 +5,9 @@ sys.path.append('/home/zhw272/programming/pipeline_utility')
 from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
 from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transform_point_affine
 from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_point_demons
-from notebooks.Will.experimental.get_coms_from_pickle import *
+import notebooks.Will.experimental.get_coms_from_pickle as getcom
 from notebooks.Will.toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
+import notebooks.Will.experimental.get_transformed_coms as get_transformed
 import SimpleITK as sitk
 import neuroglancer
 import matplotlib.pyplot as plt
@@ -56,22 +57,11 @@ transformed_layer = neuroglancer.LocalVolume(volume_type='image',
             dimensions=dimensions, 
             voxel_offset=(0, 0, 0))
 # %% get original and transformed coms
-prepid = 'DK39'
-prep_list = get_prep_list_for_rough_alignment_test()
-prepi = prep_list.index(prepid)
-#['DK39', 'DK41', 'DK43', 'DK54', 'DK55']
-
-def physical_to_thumbnail(com):
-    return np.array(com)/np.array([10.4,10.4,20])
-atlas_com_dict = get_atlas_com()
-dk52_com = get_dk52_com()
-dk52_com_thumbnail = convert_com_dict_units(dk52_com,physical_to_thumbnail)
-prep_coms = get_prep_coms()
-prepi_com = convert_com_dict_units(prep_coms[prepi],physical_to_thumbnail)
-affine_transformed_coms_itk,affine_aligned_coms_itk = get_itk_affine_transformed_coms()
-affine_transformed_com_itk_prepi = convert_com_dict_units(
-    affine_transformed_coms_itk[prepi],physical_to_thumbnail)
-transformed_coms_airlab,aligned_coms_airlab = get_airlab_transformed_coms()
+prep_list = getcom.get_prep_list_for_rough_alignment_test()
+prepi = 'DK39'
+prepid = prep_list.index(prepi)
+itk_transformed_coms = get_transformed.get_itk_affine_transformed_coms()
+prepi_itk_transformed = itk_transformed_coms[prepid]
 #%% functions to add annotation layer
 def get_annotations(com_dict):
     n_annotations = len(com_dict)
@@ -89,7 +79,7 @@ with viewer1.txn() as s:
     s.layers.clear()
     s.layers.append(name = 'fixed', layer = fixed_layer)
     s.layers.append(name = 'transformed', layer = transformed_layer)
-    annotations = get_annotations(affine_transformed_com_itk_prepi)
+    annotations = get_annotations(prepi_itk_transformed)
     s.layers.append(name="com_transformed",
                 layer=neuroglancer.LocalAnnotationLayer(dimensions=dimensions,
                 annotations=annotations,

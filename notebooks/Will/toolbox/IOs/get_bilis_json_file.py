@@ -24,6 +24,12 @@ def get_kui_dk52_dict_com():
     return coms_dict
 
 def get_kui_dk52_com_dict_physical():
+    """get_kui_dk52_com_dict_physical [loads Kui's annotation for DK52 
+    the com coordinate is in the physical scale of (1um,1um,1um)]
+
+    :return: [description]
+    :rtype: [type]
+    """
     json_file_path = '/home/zhw272/programming/pipeline_utility/notebooks/Bili/data/DK52_coms_kui_detected.json'
     with open(json_file_path) as f:
         coms_dict = json.load(f)
@@ -32,6 +38,13 @@ def get_kui_dk52_com_dict_physical():
     return coms_dict
 
 def get_tranformation(prepi):
+    """get_tranformation [loads image to image affine transformation calculated by Bili using airlab]
+
+    :param prepi: [brain id]
+    :type prepi: [str]
+    :return: [transformation]
+    :rtype: [airlab transformation]
+    """
     data_path = '/home/zhw272/programming/pipeline_utility/notebooks/Bili/old/data/rough-alignment/'
     file_name = 'transform-affine-al.json'
     path_to_json_file = data_path+prepi+'/'+file_name

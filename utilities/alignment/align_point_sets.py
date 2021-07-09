@@ -31,16 +31,16 @@ def align_point_sets(moving_points, still_points, with_scaling=True):
 
 def get_and_apply_transform(moving_com,still_com):
     affine_transform = align_point_sets(moving_com.T,still_com.T)
-    transformed_coms = apply_affine_transform_to_points(moving_com,affine_transform)
+    transformed_coms = apply_rigid_transform_to_points(moving_com,affine_transform)
     return transformed_coms,affine_transform
 
-def apply_affine_transform_to_com(com,affine_transform):
-    rotation,translation = affine_transform
-    return rotation@com.reshape(3)+ translation.reshape(3)
+def apply_rigid_transformation_to_com(com,rigid_transformation):
+    rotation,translation = rigid_transformation
+    return rotation@np.array(com).reshape(3)+ translation.reshape(3)
 
-def apply_affine_transform_to_points(coms,affine_transform):
+def apply_rigid_transform_to_points(coms,rigid_transform):
     transformed_com_list = []
     for com in coms:
-        transformed_com = apply_affine_transform_to_com(com,affine_transform)
+        transformed_com = apply_rigid_transformation_to_com(com,rigid_transform)
         transformed_com_list.append(transformed_com)
     return np.array(transformed_com_list)
