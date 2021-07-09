@@ -95,7 +95,7 @@ def create_mask(animal):
         green_mask = greenify_mask(mask)
         mask = mask.astype(np.uint8)
         mask[mask>0] = 255
-        
+        print(outpath)
         cv2.imwrite(outpath, mask)
 
         masked_img = cv2.addWeighted(img, 1, green_mask, 0.5, 0)

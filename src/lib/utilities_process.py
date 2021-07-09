@@ -150,7 +150,6 @@ def make_tifs(animal, channel, njobs):
     OUTPUT = fileLocationManager.tif
     os.makedirs(OUTPUT, exist_ok=True)
     sections = sqlController.get_distinct_section_filenames(animal, channel)
-
     sqlController.set_task(animal, QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN)
     sqlController.set_task(animal, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1)
 
