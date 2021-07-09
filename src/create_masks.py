@@ -13,6 +13,9 @@ sys.path.append(PATH)
 import cv2
 from tqdm import tqdm
 
+import warnings
+warnings.filterwarnings("ignore")
+
 def combine_dims(a):
     if a.shape[0] > 0:
         a1 = a[0,:,:]

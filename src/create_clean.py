@@ -48,7 +48,14 @@ def fix_ntb(file_keys):
     except:
         print(f'Mask {maskfile} does not exist')
 
-    fixed = cv2.bitwise_and(img, img, mask=mask)
+    try:
+        fixed = cv2.bitwise_and(img, img, mask=mask)
+    except:
+        print(f'Error in masking {infile} with mask shape {mask.shape} img shape {img.shape}')
+        print('Are the shapes exactly the same?')
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
+        
     del img
     if channel == 1:
         fixed = scaled(fixed, mask, scale, epsilon=0.01)
@@ -70,7 +77,7 @@ def fix_ntb(file_keys):
 
 
 
-def masker(animal, channel, downsample, scale):
+def masker(animal, channel, downsample, scale, debug):
     """
     Main method that starts the cleaning/rotating process.
     :param animal:  prep_id of the animal we are working on.
@@ -132,8 +139,12 @@ def masker(animal, channel, downsample, scale):
     start = timer()
     workers = 4 # this is the upper limit. More than this and it crashes.
     print(f'Working on {len(file_keys)} files with {workers} cpus')
-    with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(fix_ntb, sorted(file_keys))
+    if debug:
+        for file_key in file_keys:
+            fix_ntb(file_key)
+    else:
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(fix_ntb, sorted(file_keys))
 
     end = timer()
     print(f'Create cleaned files took {end - start} seconds total', end="\t")
@@ -146,12 +157,14 @@ if __name__ == '__main__':
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--scale', help='Enter scaling', required=False, default=45000)
+    parser.add_argument('--debug', help='Enter true or false', required=False, default='false')
 
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
     scale = int(args.scale)
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
 
-    masker(animal, channel, downsample, scale)
+    masker(animal, channel, downsample, scale, debug)
 
