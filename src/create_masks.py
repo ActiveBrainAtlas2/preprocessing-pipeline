@@ -61,6 +61,7 @@ def create_mask(animal):
     MASKS = os.path.join(DIR, 'thumbnail_masked')
     TESTS = os.path.join(DIR, 'thumbnail_green')
 
+    os.makedirs(MASKS, exist_ok=True)
     os.makedirs(TESTS, exist_ok=True)
 
     files = sorted(os.listdir(INPUT))
