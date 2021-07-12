@@ -1,6 +1,6 @@
 # this directory contains plotting libraires to compare coms
 ## These plotting functions are of two kinds:
-1. `plot_com_offset_.py` Contains libraries for generating boxplots showing the difference between coms in the x, y, z direction and overall distance using matplotlib.
+1. `ComBoxPlot.py` Contains class for generating boxplots showing the difference between coms in the x, y, z direction and overall distance using matplotlib.
 2. `plot_coms.py` Contains libraires for generating interactive scatter plots that plots two sets of coms together in 3D space using plotly.
 
 All of these functions take com dictionaries or list of coms as input.

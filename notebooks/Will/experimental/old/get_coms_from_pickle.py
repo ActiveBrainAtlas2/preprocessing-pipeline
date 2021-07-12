@@ -13,6 +13,9 @@ for key,value in save_dict.items():
 def get_prep_list_for_rough_alignment_test():
     return ['DK39', 'DK41', 'DK43', 'DK54', 'DK55']
 
+def get_prep_list():
+    return ['DK39', 'DK41', 'DK43', 'DK54', 'DK55','DK52']
+
 def atlas_to_physical(com):
     com_physical = (np.array(com)*10/np.array([10,10,20])+np.array([500,500,150]))*np.array([10,10,20])
     return com_physical
@@ -43,7 +46,8 @@ def get_prepi_com(prepi):
     return prepi_com
 
 def get_corrected_prepi_com(prepi):
-    prepi_com = convert_com_dict_units(beth_corrected_coms[prepi],image_to_physical) 
+    com = combined_og_and_corrected_beth_annotation(beth_coms[prepi],beth_corrected_coms[prepi])
+    prepi_com = convert_com_dict_units(com,image_to_physical) 
     return prepi_com
 
 def get_corrected_dk52_com():
@@ -53,9 +57,21 @@ def get_dk52_com():
     return get_prepi_com('DK52')
 
 def get_corrected_prep_coms():
-    corrected_prep_coms = [convert_com_dict_units(com_dict,image_to_physical) for name,com_dict in beth_corrected_coms.items() if name!='DK52']
+    prep_list = get_prep_list_for_rough_alignment_test()
+    corrected_prep_coms = []
+    for prepi in prep_list:
+        corrected_com = combined_og_and_corrected_beth_annotation(beth_coms[prepi],beth_corrected_coms[prepi])
+        corrected_prep_coms.append(convert_com_dict_units(corrected_com,image_to_physical))
     return corrected_prep_coms
     
 def get_prep_coms():
-    prep_coms = [convert_com_dict_units(com_dict,image_to_physical) for name,com_dict in beth_coms.items() if name!='DK52']
+    prep_coms = [convert_com_dict_units(com_dict,image_to_physical) for name,com_dict in beth_coms.items()]
     return prep_coms
+
+def combined_og_and_corrected_beth_annotation(og,corrected):
+    og_landmarks = list(og.keys())
+    corrected_landmarks = list(corrected.keys())
+    for landmarki in og_landmarks:
+        if landmarki not in corrected_landmarks:
+            corrected[landmarki] = og[landmarki]
+    return corrected

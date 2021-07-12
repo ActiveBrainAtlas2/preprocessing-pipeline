@@ -17,9 +17,8 @@ def get_plot_save_path_pdf(file_name = '',folder=''):
     return file_path
 
 def save_figures_to_pdf(figures,file_name,folder):
-    """save_figures_to_pdf [generate a pdf from a list of plt figures]
-    save folder are defined in get_plot_save_path_root sub folders are created as specified
-
+    """save_figures_to_pdf [generate a pdf from a list of plt figures in ~/plots/foldername/filename.pdf
+    save folder are defined in get_plot_save_path_root sub folders are created as specified and are created if do not exist]
     :param figures: [list of plt figures]
     :type figures: [list]
     :param file_name: [name of save file]

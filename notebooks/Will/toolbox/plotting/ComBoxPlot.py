@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from notebooks.Will.toolbox.IOs.save_figures_to_pdf import save_figures_to_pdf
 
 class ComBoxPlot:
     """ [This class generate com offset boxplots in three ways:
@@ -21,6 +22,7 @@ class ComBoxPlot:
         """
         self.prep_list_function = prep_list_function
         self.landmark_list_function = landmark_list_function
+        self.figs = []
 
     def plot_offset_between_two_com_sets(self,com1,com2,title):
         """plot_offset_between_two_com_sets [plots the offset of corresponding elements in two list of com dictionaries]
@@ -63,19 +65,33 @@ class ComBoxPlot:
         """gets the plot of plot_offset_between_two_com_sets without plottting, good for saving pdfs"""
         offset_table = self._get_offset_table_from_two_com_sets(com1,com2)
         fig = self._get_fig_offset_box(offset_table, title = title)
+        self.figs.append(fig)
         return fig
 
     def get_fig_offset_from_offset_arrays(self,offsets,title):
         """gets the plot of plot_offset_from_offset_arrays without plottting, good for saving pdfs"""
         offset_table = self._get_offset_table_from_offset_array(offsets)
         fig = self._get_fig_offset_box(offset_table, title = title)
+        self.figs.append(fig)
         return fig
 
     def get_fig_offset_from_coms_to_a_reference(self,coms,reference,title):
         """gets the plot of plot_offset_from_coms_to_a_reference without plottting, good for saving pdfs"""
         offset_table = self._get_offset_table_from_coms_to_a_reference(coms,reference)
-        fig = self._get_fig_offset_box(offset_table, title = title)
+        fig = self._get_fig_offset_box(offsets_table = offset_table,title = title)
+        self.figs.append(fig)
         return fig
+    
+    def save_pdf(self,file_name, folder = ''):
+        """save_pdf [saves the figure in the current lists to pdf in ~/plots/foldername/filename.pdf,  
+        modify save_figures_to_pdf to save plots in other directories ]
+
+        :param file_name: [pdf save file name]
+        :type file_name: str, required
+        :param folder: [plot folder name,saves in plots/ if left as default], defaults to ''
+        :type folder: str, optional
+        """
+        save_figures_to_pdf(self.figs,file_name=file_name,folder=folder)
 
     def _get_offset_table_from_coms_to_a_reference(self,coms,reference):
         """Gets the offset table when comparing a list of coms to a reference"""
@@ -162,7 +178,7 @@ class ComBoxPlot:
             df_brain = df_brain.append(pd.DataFrame(data), ignore_index=True)
         return df_brain
 
-    def _get_fig_offset_box(offsets_table, title = ''):
+    def _get_fig_offset_box(self,offsets_table, title = ''):
         """_get_fig_offset_box [main function to create the box plot adopted from Bili]
 
         :param offsets_table: [pandas tables with columns   "structure":structure names, "value":offset values, 

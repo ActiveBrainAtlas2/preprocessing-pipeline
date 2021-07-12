@@ -1,16 +1,16 @@
 from pathlib import Path
 
 def get_data_save_folder():
-    return '/home/zhw272/data/'
+    return '~/data/'
 
 def get_plot_save_path_root():
-    return '/home/zhw272/plots/'
+    return '~/plots/'
 
 def get_path_to_prep_images():
     return Path('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data')
 
 def get_path_to_affine_transformed_images():
-    return Path('/home/zhw272/data/Affine_transformed_thumbnails/')
+    return Path('~/data/Affine_transformed_thumbnails/')
 
 def get_subpath_to_tif_files(brain_id):
     data_dir = get_path_to_prep_images()

@@ -9,6 +9,7 @@ def thumbnail_to_phys_coord(com):
     return np.array(com)-origin
 
 def transform_point_demons(demons_transform,all_com):
+    """apply sitk demons transform on a list of coms whether the origin conversion step still needs investigation"""
     all_transformed_com = []
     for com in all_com:
         com_thumbnail_coord = phys_to_thumbnail_coord(com)
@@ -18,6 +19,7 @@ def transform_point_demons(demons_transform,all_com):
     return np.array(all_transformed_com)
 
 def transform_dict_demons(demons_transform,com_dict):
+    """apply sitk demons transform on a com dictionary whether the origin conversion step still needs investigation"""
     for structure,com in com_dict.items():
         com_thumbnail_coord = phys_to_thumbnail_coord(com)
         transformed_com = np.array(demons_transform.TransformPoint(com_thumbnail_coord))

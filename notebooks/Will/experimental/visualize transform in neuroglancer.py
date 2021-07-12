@@ -2,17 +2,14 @@
 import sys
 import numpy as np
 sys.path.append('/home/zhw272/programming/pipeline_utility')
-from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
-from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transform_point_affine
-from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_point_demons
-import notebooks.Will.experimental.get_coms_from_pickle as getcom
+from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform
+from notebooks.Will.toolbox.IOs.LoadComPickle import LoadComPickle
+from notebooks.Will.toolbox.IOs.TransformCom import TransformCom
 from notebooks.Will.toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
-import notebooks.Will.experimental.get_transformed_coms as get_transformed
 import SimpleITK as sitk
 import neuroglancer
-import matplotlib.pyplot as plt
-# from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer
-# from notebooks.Will.IO.old
+getcom = LoadComPickle()
+gettc = TransformCom(getcom)
 def add_stack(vol,viewer,name):
     volume_layer = neuroglancer.LocalVolume(
             data=vol, 
@@ -56,13 +53,15 @@ transformed_layer = neuroglancer.LocalVolume(volume_type='image',
             data=affine_transformed_arr, 
             dimensions=dimensions, 
             voxel_offset=(0, 0, 0))
-# %% get original and transformed coms
+#%%get original and transformed coms
 prep_list = getcom.get_prep_list_for_rough_alignment_test()
 prepi = 'DK39'
+prepi_com = getcom.get_corrected_prepi_com()
+DK52_coms = getcom.get_dk52_com()
 prepid = prep_list.index(prepi)
-itk_transformed_coms = get_transformed.get_itk_affine_transformed_coms()
+itk_transformed_coms = gettc.get_itk_affine_transformed_coms()
 prepi_itk_transformed = itk_transformed_coms[prepid]
-#%% functions to add annotation layer
+#%%functions to add annotation layer
 def get_annotations(com_dict):
     n_annotations = len(com_dict)
     names = list(com_dict.keys())
@@ -98,7 +97,7 @@ with viewer2.txn() as s:
     s.layers.clear()
     s.layers.append(name = 'fixed', layer = fixed_layer)
     s.layers.append(name = 'moving', layer = moving_layer)
-    annotations = get_annotations(dk52_com_thumbnail)
+    annotations = get_annotations(DK52_coms)
     s.layers.append(name="com_moving",
                 layer=neuroglancer.LocalAnnotationLayer(dimensions=dimensions,
                 annotations=annotations,
@@ -122,7 +121,7 @@ with viewer3.txn() as s:
                 layer=neuroglancer.LocalAnnotationLayer(dimensions=dimensions,
                 annotations=annotations,
                 annotationColor = "#FB9F89"))
-    annotations = get_annotations(affine_transformed_com_itk_prepi)
+    annotations = get_annotations(prepi_itk_transformed)
     s.layers.append(name="com_transformed",
                 layer=neuroglancer.LocalAnnotationLayer(dimensions=dimensions,
                 annotations=annotations,

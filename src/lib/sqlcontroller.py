@@ -386,6 +386,25 @@ class SqlController(object):
             structure = row.structure.abbreviation
             row_dict[structure] = [row.x, row.y, row.section]
         return row_dict
+    
+    def get_com_dict(self, prep_id, input_type_id=1, person_id=2,active = True):
+        rows = self.session.query(LayerData)\
+            .filter(LayerData.active.is_(active))\
+            .filter(LayerData.prep_id == prep_id)\
+            .filter(LayerData.input_type_id == input_type_id)\
+            .filter(LayerData.person_id == person_id)\
+            .filter(LayerData.layer == 'COM')\
+            .all()
+        row_dict = {}
+        for row in rows:
+            structure = row.structure.abbreviation
+            row_dict[structure] = [row.x, row.y, row.section]
+        return row_dict
+    
+    def get_atlas_centers(self):
+        PERSON_ID_LAUREN = 16
+        INPUT_TYPE_MANUAL = 1
+        return self.get_com_dict('Atlas',INPUT_TYPE_MANUAL,PERSON_ID_LAUREN)
 
     def get_point_dataframe(self, id):
         """
