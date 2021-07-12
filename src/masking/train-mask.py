@@ -125,10 +125,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='specify animal', required=False)
     parser.add_argument('--runmodel', help='run model', required=True)
+    parser.add_argument('--epochs', help='# of epochs', required=False, default=2)
     
     args = parser.parse_args()
     runmodel = bool({'true': True, 'false': False}[args.runmodel.lower()])
     animal = args.animal
+    epochs = int(args.epochs)
 
     dataset = MaskDataset(ROOT, animal, transforms = get_transform(train=True))
     dataset_test = MaskDataset(ROOT, animal, transforms = get_transform(train=False))
@@ -171,7 +173,6 @@ if __name__ == '__main__':
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
         # 1 epoch takes 8 minutes on muralis
-        epochs = 20
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
             train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=100)
