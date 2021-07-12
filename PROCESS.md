@@ -1,11 +1,16 @@
 ## Preprocessing using pipeline_utility
 ## Setups
 1. To install the software prerequisites, [look here.](README.md) Or use the installed virtual environment on ratto, basalis and muralis by running: 
+
 ```source /usr/local/share/pipeline/bin/activate```
+
 1. To run any of these commands at high resolution, prefix each command with `nohup`and end the command with `&`. That will make it run in the background and you can log out.
+
 1. Many steps can be parallelized using the --njobs <ncore> option.  Those steps are marked by a capital '**P**' below.
+   
 ## Preprocessing New scans starting with czi files
 1. Create a folder with brain id under /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX create subfolder DKXX/czi and DKXX/tif.  Then copy the czi files to DKXX/czi.
+   
 1. Add entries in the animal, scan run and histology table in the database using the admin portal.  You can do this by using the corresponding app and clicking the button on the top right in the admin portal to create rows.
    
 1. Run: `python src/create_meta.py --animal DKXX`
