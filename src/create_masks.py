@@ -4,14 +4,21 @@ import numpy as np
 import torch
 import torch.utils.data
 from PIL import Image
+import cv2
+from tqdm import tqdm
+from multiprocessing.pool import Pool
+
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
-import cv2
-from tqdm import tqdm
+
+from src.sql_setup import CREATE_FULL_RES_MASKS
+from src.lib.sqlcontroller import SqlController
+from src.lib.file_location import FileLocationManager
+from src.lib.utilities_process import test_dir, workernoshell, get_image_size
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -48,8 +55,9 @@ def get_model_instance_segmentation(num_classes):
     model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask, hidden_layer, num_classes)
     return model
 
-def create_mask(animal):
+def create_mask(animal, downsample, njobs):
 
+    fileLocationManager = FileLocationManager(animal)
     modelpath = os.path.join(HOME, '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth')
     loaded_model = get_model_instance_segmentation(num_classes=2)
     if os.path.exists(modelpath):
@@ -57,62 +65,104 @@ def create_mask(animal):
     else:
         print('no model to load')
 
-    transform = torchvision.transforms.ToTensor()
 
-    DIR = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{animal}/preps'
-    INPUT = os.path.join(DIR, 'CH1/normalized')
-    MASKS = os.path.join(DIR, 'thumbnail_masked')
-    TESTS = os.path.join(DIR, 'thumbnail_green')
+    if not downsample:
+        sqlController = SqlController(animal)
+        sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
+        INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
+        ##### Check if files in dir are valid
+        error = test_dir(animal, INPUT, downsample, same_size=False)
+        if len(error) > 0:
+            print(error)
+            sys.exit()
 
-    os.makedirs(MASKS, exist_ok=True)
-    os.makedirs(TESTS, exist_ok=True)
+        THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+        ##### Check if files in dir are valid
+        ##error = test_dir(animal, THUMBNAIL, full=False, same_size=False)
+        MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
+        os.makedirs(MASKED, exist_ok=True)
+        files = sorted(os.listdir(INPUT))
+        commands = []
+        for i, file in enumerate(tqdm(files)):
+            infile = os.path.join(INPUT, file)
+            thumbfile = os.path.join(THUMBNAIL, file)
+            outpath = os.path.join(MASKED, file)
+            if os.path.exists(outpath):
+                continue
+            try:
+                width, height = get_image_size(infile)
+            except:
+                print(f'Could not open {infile}')
+            size = f'{width}x{height}!'
+            cmd = ['convert', thumbfile, '-resize', size, '-depth', '8', outpath]
+            commands.append(cmd)
 
-    files = sorted(os.listdir(INPUT))
-    debug = False
-    for file in tqdm(files):
-        filepath = os.path.join(INPUT, file)
-        outpath = os.path.join(MASKS, file)
-        green_mask_path = os.path.join(TESTS, file)
+        with Pool(njobs) as p:
+            p.map(workernoshell, commands)
+    else:
 
-        if os.path.exists(outpath) and os.path.exists(green_mask_path):
-            continue
+        transform = torchvision.transforms.ToTensor()
+        INPUT = os.path.join(fileLocationManager.prep, 'CH1/normalized')
+        MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+        TESTS = os.path.join(fileLocationManager.prep, 'thumbnail_green')
+        error = test_dir(animal, INPUT, downsample, same_size=False)
+        if len(error) > 0:
+            print(error)
+            sys.exit()
 
-        img = Image.open(filepath)
-        input = transform(img)
-        input = input.unsqueeze(0)
-        loaded_model.eval()
-        with torch.no_grad():
-            pred = loaded_model(input)
-        pred_score = list(pred[0]['scores'].detach().numpy())
-        if debug:
-            print(file, pred_score[0])
-        masks = [(pred[0]['masks']>0.5).squeeze().detach().cpu().numpy()]
-        mask = masks[0]
-        dims = mask.ndim
-        if dims > 2:
-            mask = combine_dims(mask)
+        os.makedirs(MASKS, exist_ok=True)
+        os.makedirs(TESTS, exist_ok=True)
 
-        del img
-        img = cv2.imread(filepath)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        files = sorted(os.listdir(INPUT))
+        debug = False
+        for file in tqdm(files):
+            filepath = os.path.join(INPUT, file)
+            outpath = os.path.join(MASKS, file)
+            green_mask_path = os.path.join(TESTS, file)
 
-        green_mask = greenify_mask(mask)
-        mask = mask.astype(np.uint8)
-        mask[mask>0] = 255
-        cv2.imwrite(outpath, mask)
+            if os.path.exists(outpath) and os.path.exists(green_mask_path):
+                continue
 
-        masked_img = cv2.addWeighted(img, 1, green_mask, 0.5, 0)
-        cv2.imwrite(green_mask_path, masked_img)
+            img = Image.open(filepath)
+            input = transform(img)
+            input = input.unsqueeze(0)
+            loaded_model.eval()
+            with torch.no_grad():
+                pred = loaded_model(input)
+            pred_score = list(pred[0]['scores'].detach().numpy())
+            if debug:
+                print(file, pred_score[0])
+            masks = [(pred[0]['masks']>0.5).squeeze().detach().cpu().numpy()]
+            mask = masks[0]
+            dims = mask.ndim
+            if dims > 2:
+                mask = combine_dims(mask)
+
+            del img
+            img = cv2.imread(filepath)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            green_mask = greenify_mask(mask)
+            mask = mask.astype(np.uint8)
+            mask[mask>0] = 255
+            cv2.imwrite(outpath, mask)
+
+            masked_img = cv2.addWeighted(img, 1, green_mask, 0.5, 0)
+            cv2.imwrite(green_mask_path, masked_img)
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
+    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
 
     args = parser.parse_args()
     animal = args.animal
+    downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    njobs = int(args.njobs)
 
-    create_mask(animal)
+    create_mask(animal, downsample, njobs)
 
 

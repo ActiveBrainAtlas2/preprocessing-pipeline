@@ -138,7 +138,7 @@ if __name__ == '__main__':
     # split the dataset in train and test set
     torch.manual_seed(1)
     indices = torch.randperm(len(dataset)).tolist()
-    test_cases = int(len(indices) * 0.01)
+    test_cases = int(len(indices) * 0.0175)
     test_cases = max(test_cases, 10)
     dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
     dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
