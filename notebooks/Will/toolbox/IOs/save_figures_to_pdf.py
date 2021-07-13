@@ -29,4 +29,5 @@ def save_figures_to_pdf(figures,file_name,folder):
     save_path = get_plot_save_path_pdf(folder = folder,file_name = file_name)
     with PdfPages(save_path) as pdf:
         for fig in figures:
-            pdf.savefig(fig)
+            fig.set_size_inches(16, 30)
+            pdf.savefig(fig, bbox_inches='tight')

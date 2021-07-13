@@ -8,21 +8,17 @@ to save files.
 """
 import argparse
 import os, sys
-
 import cv2
 import numpy as np
 from skimage import io
 from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
-
 from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
 from lib.utilities_mask import rotate_image, place_image, scaled, equalized
 from lib.utilities_process import test_dir, SCALING_FACTOR
-
-
-def fix_ntb(file_keys):
+def fix_ntb(file_keys,channel):
     """
     This method clean all NTB images in the specified channel. For channel one it also scales
     and does an adaptive histogram equalization.
@@ -73,9 +69,6 @@ def fix_ntb(file_keys):
     cv2.imwrite(outpath, fixed)
     del fixed
     return
-
-
-
 
 def masker(animal, channel, downsample, scale, debug):
     """
@@ -138,18 +131,18 @@ def masker(animal, channel, downsample, scale, debug):
 
     start = timer()
     workers = 4 # this is the upper limit. More than this and it crashes.
-    print(f'Working on {len(file_keys)} files with {workers} cpus')
     if debug:
+        print(f'debugging with single core')
         for file_key in file_keys:
-            fix_ntb(file_key)
+            fix_ntb(file_key,channel)
     else:
+        print(f'Working on {len(file_keys)} files with {workers} cpus')
         with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(fix_ntb, sorted(file_keys))
+            executor.map(fix_ntb, sorted(file_keys),np.ones(len(file_keys))*channel)
 
     end = timer()
     print(f'Create cleaned files took {end - start} seconds total', end="\t")
     print(f' { (end - start)/len(files)} per file')
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')

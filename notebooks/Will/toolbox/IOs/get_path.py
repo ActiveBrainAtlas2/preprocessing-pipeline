@@ -1,10 +1,10 @@
 from pathlib import Path
-
+import os
 def get_data_save_folder():
-    return '~/data/'
+    return os.path.join(Path.home(),'data')
 
 def get_plot_save_path_root():
-    return '~/plots/'
+    return os.path.join(Path.home(),'plots')
 
 def get_path_to_prep_images():
     return Path('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data')

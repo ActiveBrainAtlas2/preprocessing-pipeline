@@ -7,7 +7,7 @@ from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transf
 from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
 from utilities.alignment.align_point_sets import get_rigid_transformation_from_dicts,apply_rigid_transformation_to_com_dict
 
-import notebooks.Will.experimental.get_coms_from_pickle as getcom
+import notebooks.Will.experimental.old.get_coms_from_pickle as getcom
 # import notebooks.Will.experimental.get_coms_from_database as getcom
 
 from notebooks.Will.toolbox.IOs.get_bilis_json_file import get_tranformation

@@ -1,5 +1,6 @@
 __author__ = 'Zhongkai_Wu'
 __email__ = "zhw272@ucsd.edu"
+from posixpath import split
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -23,6 +24,34 @@ class ComBoxPlot:
         self.prep_list_function = prep_list_function
         self.landmark_list_function = landmark_list_function
         self.figs = []
+        self.column_types = ['dx','dy','dz','dist']
+        self.postfix = ''
+        self.custome_order = None
+        self.split = None
+
+    def get_fig_two_com_dict_list_against_reference(self,comlists,reference,title):
+        prep1,prep2,prep3 = comlists.keys()
+        comlist1,comlist2,comlist3 = comlists.values()
+        self.postfix = prep1
+        offset_table1 = self._get_offset_table_from_coms_to_a_reference(comlist1,reference)
+        self.postfix = prep2
+        offset_table2 = self._get_offset_table_from_coms_to_a_reference(comlist2,reference)
+        self.postfix = prep3
+        offset_table3 = self._get_offset_table_from_coms_to_a_reference(comlist3,reference)
+        offset_table = offset_table1.append(offset_table2,ignore_index = True)
+        offset_table = offset_table.append(offset_table3,ignore_index = True)
+        order1 = [type+prep1 for type in self.column_types]
+        order2 = [type+prep2 for type in self.column_types]
+        order3 = [type+prep3 for type in self.column_types]
+        self.custome_order = [val for pair in zip(order1, order2,order3) for val in pair]
+        self.split = 3
+        fig = self._get_fig_offset_box(offset_table, title = title)
+        self.figs.append(fig)
+        return fig
+
+    def plot_two_com_dict_list_against_reference(self,comlists,reference,title):
+        fig = self.get_fig_two_com_dict_list_against_reference(comlists,reference,title)
+        plt.show()
 
     def plot_offset_between_two_com_sets(self,com1,com2,title):
         """plot_offset_between_two_com_sets [plots the offset of corresponding elements in two list of com dictionaries]
@@ -109,12 +138,18 @@ class ComBoxPlot:
         offset_table = self._get_offset_table(offsets,None,offset_function)
         return offset_table
 
-    def _get_brain_count_per_structure(self,offset_table,landmark_list):
+    def _get_brain_count_per_structure(self,offset_table,landmark_list,min_brain_count = 3):
         """Adds the number of brain that have a specific landmark annotated  useful when using the union of landmarks of all brains examined"""
+        dropping = []
         for landmarki in landmark_list:
             row_is_structurei = np.array(offset_table.structure == landmarki)
             brain_count = sum(offset_table.iloc[np.array(offset_table.structure== landmarki ),1].notnull())/4
-            offset_table.iloc[row_is_structurei,0] = landmarki + f'_{int(brain_count)}_brains'
+            if brain_count < min_brain_count:
+                dropping.append(np.where(row_is_structurei)[0])
+            else:
+                offset_table.iloc[row_is_structurei,0] = landmarki + f'({int(brain_count)})'
+        if len(dropping)>0:
+            offset_table.drop(np.concatenate(dropping),axis = 0, inplace = True)
         return offset_table
 
     def _get_offset_table(self,com1,com2,offset_function):
@@ -140,6 +175,7 @@ class ComBoxPlot:
             offset_table = offset_table.append(offset_table_entry, ignore_index=True)
             prepi+=1
         offset_table = self._get_brain_count_per_structure(offset_table,landmarks)
+        offset_table.type = offset_table.type.astype(str) + self.postfix
         return offset_table
 
     def _get_offseti_from_com_list_and_reference(self,coms,reference,landmarks,comi):
@@ -170,7 +206,7 @@ class ComBoxPlot:
         dx, dy, dz = offset.T
         dist = np.sqrt(dx * dx + dy * dy + dz * dz)
         df_brain = pd.DataFrame()
-        for data_type in ['dx','dy','dz','dist']:
+        for data_type in self.column_types:
             data = {}
             data['structure'] = landmarks
             data['value'] = eval(data_type)
@@ -190,28 +226,52 @@ class ComBoxPlot:
         :return: [plt figure]
         :rtype: [figure object]
         """
-        ymin = -500
-        ymax = 500
-        ystep = 100
-        fig, ax = plt.subplots(2, 1, figsize=(16, 12), dpi=200,constrained_layout=True)
-        sns.boxplot(ax=ax[0], x="structure", y="value", hue="type", data=offsets_table)
-        ax[0].xaxis.grid(True)
-        ax[0].set_xlabel('Structure')
-        ax[0].set_ylabel('um')
-        ax[0].set_title(title)
-        sns.boxplot(ax=ax[1], x="structure", y="value", hue="type", data=offsets_table)
-        ax[1].xaxis.grid(True)
-        ax[1].set_ylim(ymin, ymax)
-        ax[1].yaxis.set_ticks(np.arange(ymin, ymax + 1, ystep))
-        ax[0].set_xlabel('Structure')
-        ax[1].set_ylabel('um')
-        ax[1].set_title(title+' zoomed in')
+        if self.split:
+            fig, ax = plt.subplots(2*self.split, 1, figsize=(16, 12), dpi=200,constrained_layout=True)
+            plit_len = len(offsets_table.structure.unique())//self.split
+            split_table = []
+            for spliti in range(self.split):
+                split_start = plit_len*spliti
+                split_end = plit_len*(spliti+1)
+                split_structures = offsets_table.structure[split_start:split_end]
+                is_in_split = [stri in split_structures.to_list() for stri in offsets_table.structure]
+                split_table.append(offsets_table[is_in_split])
+            for spliti in range(self.split):
+                self._populate_figure(ax[spliti*2:(spliti+1)*2],split_table[spliti],title)
+        else:
+            # fig, ax = plt.subplots(2, 1, figsize=(8, self.split), dpi=200,constrained_layout=True)
+            fig, ax = plt.subplots(2, 1, figsize=(16, 12*2*self.split))
+            self._populate_figure(ax,offsets_table,title)
         for axi in ax:
             axi.tick_params(axis='x', labelrotation=45)
             axi.grid()
+            axi.legend(loc='upper right')
         return fig
         
     def _plot_offset_box(self,offset_table, title = ''):
         """An alternative to plot the figure right away"""
         fig = self._get_fig_offset_box(offset_table, title = title)
         plt.show()
+    
+    def _populate_figure(self,ax,offsets_table,title):
+        ymin = -500
+        ymax = 500
+        ystep = 100
+        if self.custome_order:
+                sns.boxplot(ax=ax[0], x="structure", y="value", hue="type",hue_order = self.custome_order, data=offsets_table)
+        else:
+            sns.boxplot(ax=ax[0], x="structure", y="value", hue="type", data=offsets_table)
+        ax[0].xaxis.grid(True)
+        ax[0].set_xlabel('Structure')
+        ax[0].set_ylabel('um')
+        ax[0].set_title(title)
+        if self.custome_order:
+            sns.boxplot(ax=ax[1], x="structure", y="value", hue="type",hue_order = self.custome_order, data=offsets_table)
+        else:
+            sns.boxplot(ax=ax[1], x="structure", y="value", hue="type", data=offsets_table)
+        ax[1].xaxis.grid(True)
+        ax[1].set_ylim(ymin, ymax)
+        ax[1].yaxis.set_ticks(np.arange(ymin, ymax + 1, ystep))
+        ax[0].set_xlabel('Structure')
+        ax[1].set_ylabel('um')
+        ax[1].set_title(title+' zoomed in')

@@ -57,7 +57,6 @@ class TransformCom:
 
     def get_beth_coms_aligned_to_atlas(self):
         prep_list = self.getcom.get_prep_list_for_rough_alignment_test()
-        prep_list.append('DK52')
         transformed_com_list = []
         atlas_com = self.getcom.get_atlas_com()
         for prepi in prep_list:

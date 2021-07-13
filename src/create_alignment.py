@@ -133,6 +133,8 @@ if __name__ == '__main__':
     parser.add_argument('--masks', help='Enter True for running masks', required=False, default=False)
     parser.add_argument('--csv', help='Enter true or false', required=False, default='false')
     parser.add_argument('--allen', help='Enter true or false', required=False, default='false')
+    parser.add_argument('--scale', help='Enter scaling', required=False, default=45000)
+
 
     args = parser.parse_args()
     animal = args.animal
@@ -141,6 +143,7 @@ if __name__ == '__main__':
     create_csv = bool({'true': True, 'false': False}[str(args.csv).lower()])
     allen = bool({'true': True, 'false': False}[str(args.allen).lower()])
     masks = args.masks
+    scale = int(args.scale)
 
     transforms = parse_elastix(animal)
     run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen)

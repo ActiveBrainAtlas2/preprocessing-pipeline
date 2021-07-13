@@ -10,12 +10,9 @@ import os, sys
 import argparse
 import subprocess
 from multiprocessing.pool import Pool
-
 from lib.file_location import FileLocationManager
 from lib.utilities_process import workernoshell, test_dir
-
 ELASTIX_BIN = '/usr/bin/elastix'
-
 def run_elastix(animal, njobs):
     """
     Sets up the arguments for running elastix in a sequence. Each file pair
@@ -52,8 +49,6 @@ def run_elastix(animal, njobs):
 
         if os.path.exists(output_subdir) and 'TransformParameters.0.txt' in os.listdir(output_subdir):
             continue
-
-
         command = ['rm', '-rf', output_subdir]
         subprocess.run(command)
         os.makedirs(output_subdir, exist_ok=True)
@@ -62,8 +57,6 @@ def run_elastix(animal, njobs):
 
     with Pool(njobs) as p:
         p.map(workernoshell, commands)
-
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')

@@ -6,7 +6,8 @@ class LoadComPickle(LoadCom):
     def __init__(self):
         """__init__ [loads com from local save in pickles and set the coms in attributes]
         """
-        save_dict = pickle.load(open(os.path.join(sys.path[0], 'com_save_7-1-2021.p'),'rb'))
+        dir = os.path.join(os.getcwd(), os.path.dirname(__file__))
+        save_dict = pickle.load(open(os.path.join(dir,'com_save_7-1-2021.p'),'rb'))
         com_keys = ['atlas_com', 'beth_coms', 'beth_corrected_coms', 'bili_aligned_coms', 'bili_aligned_corrected_coms', 'kui_airlab_coms']
         for key in com_keys:
             exec("self.%s = save_dict[key]" % (key))

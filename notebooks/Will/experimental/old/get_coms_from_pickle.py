@@ -5,7 +5,7 @@ sys.path.append('/home/zhw272/programming/pipeline_utility')
 import os
 import pickle
 
-save_dict = pickle.load(open(os.path.join(sys.path[0], 'com_save_7-1-2021.p'),'rb'))
+save_dict = pickle.load(open('/home/zhw272/programming/pipeline_utility/notebooks/Will/toolbox/IOs/com_save_7-1-2021.p','rb'))
 #dict_keys(['atlas_com', 'beth_coms', 'beth_corrected_coms', 'bili_aligned_coms', 'bili_aligned_corrected_coms', 'kui_airlab_coms'])
 for key,value in save_dict.items():
     exec("%s = value" % (key))

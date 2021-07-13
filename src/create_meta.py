@@ -97,11 +97,6 @@ def make_meta(animal, remove):
                 section_number += 1
         session.commit()
 
-
-
-
-
-
 if __name__ == '__main__':
     # Parsing argument
     parser = argparse.ArgumentParser(description='Work on Animal')
