@@ -63,6 +63,7 @@
     1. View a few of the files in DKXX/preps/CH1/thumbnail_cleaned.
     1. full resolution on ratto one channel takes 863 minutes. When it is finished, check file count
    and make sure there are no small files, especially with high resolution.
+    1. running parallel: muralus can handle 20 cores while ratto can handle 4
    
 1. Run: `python src/create_elastix.py --animal DKXX` **P**
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair.
