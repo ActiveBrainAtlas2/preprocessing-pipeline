@@ -69,13 +69,13 @@
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair.
     1. The elastix dir will be used to align the other channels and the full resoltions.
    
-1. Run: `python src/create_alignment.py --animal DKXX --channel 1` **P** muralus 40
+1. Run: `python src/create_alignment.py --animal DKXX --channel 1` **P** muralus 60
     1. This will use the DKXX/preps/elastix directory for the transformation parameters. It will then use PIL to do an affine transformation to do section to section alignment.
    
 1. Run: `python src/create_web.py --animal DKXX`
     1. This will use the DKXX/preps/CH1/thumbnail_aligned directory for source images. It will then use PIL to do an create web viewable images.
    
-1. Run: `python src/create_neuroglancer_image.py --animal DKXX --channel 1 --downsample true` **P**
+1. Run: `python src/create_neuroglancer_image.py --animal DKXX --channel 1 --downsample true` **P** muralus 80
     1. This will create the data for neuroglancer for channel 1.
     1. View results in neuroglancer. Add the layer to the precompute with:
         https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C1T
