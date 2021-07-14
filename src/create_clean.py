@@ -70,7 +70,7 @@ def fix_ntb(file_keys,channel):
     del fixed
     return
 
-def masker(animal, channel, downsample, scale, debug):
+def masker(animal, channel, downsample, scale, debug,workers):
     """
     Main method that starts the cleaning/rotating process.
     :param animal:  prep_id of the animal we are working on.
@@ -130,7 +130,7 @@ def masker(animal, channel, downsample, scale, debug):
             file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, scale])
 
     start = timer()
-    workers = 4 # this is the upper limit. More than this and it crashes.
+    # workers = 20 # this is the upper limit. More than this and it crashes.
     if debug:
         print(f'debugging with single core')
         for file_key in file_keys:
@@ -151,6 +151,8 @@ if __name__ == '__main__':
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--scale', help='Enter scaling', required=False, default=45000)
     parser.add_argument('--debug', help='Enter true or false', required=False, default='false')
+    parser.add_argument('--njobs', help='number of core to use for parallel processing muralus can handle 20-25 ratto can handle 4', required=False, default=4)
+
 
     args = parser.parse_args()
     animal = args.animal
@@ -158,6 +160,6 @@ if __name__ == '__main__':
     scale = int(args.scale)
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-
-    masker(animal, channel, downsample, scale, debug)
+    workers = int(args.njobs)
+    masker(animal, channel, downsample, scale, debug,workers)
 

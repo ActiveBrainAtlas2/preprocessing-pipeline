@@ -23,7 +23,7 @@ from lib.utilities_alignment import (create_warp_transforms,   parse_elastix, pr
 from lib.utilities_process import test_dir, get_cpus
 
 
-def run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen):
+def run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen,njobs):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -87,9 +87,9 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
         create_csv_data(animal, file_keys)
     else:
         start = timer()
-        workers, _ = get_cpus()
-        print(f'Working on {len(file_keys)} files with {workers} cpus')
-        with ProcessPoolExecutor(max_workers=workers) as executor:
+        # workers, _ = get_cpus()
+        print(f'Working on {len(file_keys)} files with {njobs} cpus')
+        with ProcessPoolExecutor(max_workers=njobs) as executor:
             executor.map(process_image, sorted(file_keys))
 
         end = timer()
@@ -134,10 +134,12 @@ if __name__ == '__main__':
     parser.add_argument('--csv', help='Enter true or false', required=False, default='false')
     parser.add_argument('--allen', help='Enter true or false', required=False, default='false')
     parser.add_argument('--scale', help='Enter scaling', required=False, default=45000)
+    parser.add_argument('--njobs', help='number of core to use for parallel processing muralus can handle 20-25 ratto can handle 4', required=False, default=4)
 
 
     args = parser.parse_args()
     animal = args.animal
+    workers = int(args.njobs)
     channel = args.channel
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     create_csv = bool({'true': True, 'false': False}[str(args.csv).lower()])
@@ -146,4 +148,4 @@ if __name__ == '__main__':
     scale = int(args.scale)
 
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen)
+    run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen,workers)

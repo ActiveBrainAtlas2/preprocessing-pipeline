@@ -18,15 +18,17 @@ beth_aligned_coms = gettc.get_beth_coms_aligned_to_atlas()
 
 boxplot = ComBoxPlot(getcom.get_prep_list,get_all_landmarks_in_specimens)
 #first two plots uses a list of brains containing DK52
-boxplot.prep_list_function = lambda:['DK39', 'DK41', 'DK43', 'DK54', 'DK55','DK52']
+# boxplot.prep_list_function = lambda:['DK39', 'DK41', 'DK43', 'DK54', 'DK55','DK52']
 # boxplot.get_fig_offset_from_coms_to_a_reference(prep_coms,DK52_coms,title = 'difference between DKXX coms to DK52')
 #DK52 is not used in image to image alignment analysis
 boxplot.prep_list_function = lambda:['DK39', 'DK41', 'DK43', 'DK54', 'DK55']
 boxplot.postfix = '123'
 boxplot.column_types = ['dx','dy','dz']
 # boxplot.plot_offset_from_coms_to_a_reference(beth_aligned_coms,atlas_coms,'Beth Aligned to Atlas')
-comlists = {' itj:Demons':itk_deomons_rigid_transformed_coms,' itk:affine':itk_affine_rigid_transformed_coms,' Beth':beth_aligned_coms}
-boxplot.get_fig_two_com_dict_list_against_reference(comlists,atlas_coms,'2costume')
+
+comlists = {' itk:Demons':itk_deomons_rigid_transformed_coms,' itk:affine':itk_affine_rigid_transformed_coms,' Beth':beth_aligned_coms}
+# comlists = {' itk:Demons':itk_affine_rigid_transformed_coms,' itk:affine':itk_affine_rigid_transformed_coms,' Beth':beth_aligned_coms}
+boxplot.get_fig_two_com_dict_list_against_reference(comlists,atlas_coms,'Roungh Alignment Comparison')
 # boxplot.get_fig_offset_from_coms_to_a_reference(beth_aligned_coms,atlas_coms,'Beth Aligned to Atlas')
 # boxplot.get_fig_offset_from_coms_to_a_reference(itk_affine_transformed_coms,DK52_coms,title = 'difference between itk affine transformed DKXX coms to DK52')
 # boxplot.get_fig_offset_from_coms_to_a_reference(itk_affine_rigid_transformed_coms,atlas_coms,

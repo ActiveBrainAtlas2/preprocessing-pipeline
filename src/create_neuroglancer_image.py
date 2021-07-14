@@ -19,7 +19,7 @@ from lib.sqlcontroller import SqlController
 from sql_setup import RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
 from lib.utilities_process import get_cpus, SCALING_FACTOR, test_dir
 
-def create_neuroglancer(animal, channel, downsample, debug=False):
+def create_neuroglancer(animal, channel, downsample, workers,debug=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel_dir = f'CH{channel}'
@@ -27,7 +27,7 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     db_resolution = sqlController.scan_run.resolution
     resolution = int(db_resolution * 1000 / SCALING_FACTOR)
-    workers, _ = get_cpus()
+    # workers, _ = get_cpus()
     chunks = calculate_chunks(downsample, -1)
     progress_id = sqlController.get_progress_id(downsample, channel, 'NEUROGLANCER')
     sqlController.session.close()
@@ -91,11 +91,13 @@ if __name__ == '__main__':
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--debug', help='Enter debug True|False', required=False, default='false')
+    parser.add_argument('--njobs', help='number of core to use for parallel processing muralus can handle 20-25 ratto can handle 4', required=False, default=4)
 
     args = parser.parse_args()
     animal = args.animal
+    workers = int(args.njobs)
     channel = args.channel
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-    create_neuroglancer(animal, channel, downsample, debug)
+    create_neuroglancer(animal, channel, downsample, workers,debug)
 

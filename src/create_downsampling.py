@@ -13,7 +13,7 @@ HOME = os.path.expanduser("~")
 from lib.file_location import FileLocationManager
 from lib.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors
 from lib.utilities_process import get_cpus
-def create_downsamples(animal, channel, suffix, downsample):
+def create_downsamples(animal, channel, suffix, downsample,njobs):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = f'C{channel}'
     first_chunk = calculate_chunks(downsample, 0)
@@ -37,8 +37,8 @@ def create_downsamples(animal, channel, suffix, downsample):
         sys.exit()
 
     cloudpath = f"file://{INPUT_DIR}"
-    _, workers = get_cpus()
-    tq = LocalTaskQueue(parallel=workers)
+    # _, workers = get_cpus()
+    tq = LocalTaskQueue(parallel=njobs)
 
     tasks = tc.create_transfer_tasks(cloudpath, dest_layer_path=outpath, 
         chunk_size=first_chunk, mip=0, skip_downsamples=True)
@@ -63,11 +63,13 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--suffix', help='Enter suffix to add to the output dir', required=False)
+    parser.add_argument('--njobs', help='number of core to use for parallel processing muralus can handle 20-25 ratto can handle 4', required=False, default=4)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
+    workers = int(args.njobs)
     suffix = args.suffix
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
-    create_downsamples(animal, channel, suffix, downsample)
+    create_downsamples(animal, channel, suffix, downsample,workers)
 

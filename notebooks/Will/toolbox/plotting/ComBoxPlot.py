@@ -28,6 +28,7 @@ class ComBoxPlot:
         self.postfix = ''
         self.custome_order = None
         self.split = None
+        self.color_list = None
 
     def get_fig_two_com_dict_list_against_reference(self,comlists,reference,title):
         prep1,prep2,prep3 = comlists.keys()
@@ -45,6 +46,7 @@ class ComBoxPlot:
         order3 = [type+prep3 for type in self.column_types]
         self.custome_order = [val for pair in zip(order1, order2,order3) for val in pair]
         self.split = 3
+        sns.set_palette(sns.color_palette(['#60EFFF','#2EA5FF','#0061FF','#D7FCCA','#73D16F','#13A718','#CD76D6','#E54678','#FF0F0F']))
         fig = self._get_fig_offset_box(offset_table, title = title)
         self.figs.append(fig)
         return fig
@@ -258,20 +260,23 @@ class ComBoxPlot:
         ymax = 500
         ystep = 100
         if self.custome_order:
-                sns.boxplot(ax=ax[0], x="structure", y="value", hue="type",hue_order = self.custome_order, data=offsets_table)
+            sns.boxplot(ax=ax[0], x="structure", y="value", hue="type",hue_order = self.custome_order, data=offsets_table)
         else:
             sns.boxplot(ax=ax[0], x="structure", y="value", hue="type", data=offsets_table)
         ax[0].xaxis.grid(True)
         ax[0].set_xlabel('Structure')
         ax[0].set_ylabel('um')
         ax[0].set_title(title)
+        # sns.set_palette(self.color_list)
         if self.custome_order:
             sns.boxplot(ax=ax[1], x="structure", y="value", hue="type",hue_order = self.custome_order, data=offsets_table)
         else:
             sns.boxplot(ax=ax[1], x="structure", y="value", hue="type", data=offsets_table)
+        sns.set_palette(sns.color_palette((self.color_list)))
         ax[1].xaxis.grid(True)
         ax[1].set_ylim(ymin, ymax)
         ax[1].yaxis.set_ticks(np.arange(ymin, ymax + 1, ystep))
         ax[0].set_xlabel('Structure')
         ax[1].set_ylabel('um')
         ax[1].set_title(title+' zoomed in')
+        # sns.set_palette(self.color_list)

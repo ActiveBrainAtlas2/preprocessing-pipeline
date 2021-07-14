@@ -26,13 +26,17 @@ if __name__ == '__main__':
     # suffix = args.suffix
     # debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
     # scale = int(args.scale)
+    suffix = False
     animal = 'DK63'
-    channel = 2
+    channel = 1
     downsample = False
     debug = False
     scale  =45000
-    masker(animal, channel, downsample, scale, debug)
+    masks = False
+    create_csv = False
+    allen = False
+    # masker(animal, channel, downsample, scale, debug)
     # transforms = parse_elastix(animal)
     # run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen)
-    # create_neuroglancer(animal, channel, downsample, debug)
-    # create_downsamples(animal, channel, suffix, downsample)
+    create_neuroglancer(animal, channel, downsample, debug,16)
+    create_downsamples(animal, channel, suffix, downsample)
