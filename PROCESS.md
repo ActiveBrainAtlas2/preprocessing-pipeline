@@ -57,24 +57,25 @@
     1. Create histogram for each files for channel 1.
     1. Repeat process for the other 2 channels when ready.
    
-1. Run: `python src/create_clean.py --animal DKXX --channel 1`
+1. Run: `python src/create_clean.py --animal DKXX --channel 1` **P** muralus 40
     1. The necessary rotation and flip parameters must be in the scan run table..
     1. Be careful with the rotation and flip. To do a 90 degree right rotation requires rotation=1
     1. View a few of the files in DKXX/preps/CH1/thumbnail_cleaned.
     1. full resolution on ratto one channel takes 863 minutes. When it is finished, check file count
    and make sure there are no small files, especially with high resolution.
+    1. running parallel: muralus can handle 20 cores + while ratto can handle 4
    
 1. Run: `python src/create_elastix.py --animal DKXX` **P**
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair.
     1. The elastix dir will be used to align the other channels and the full resoltions.
    
-1. Run: `python src/create_alignment.py --animal DKXX --channel 1`
+1. Run: `python src/create_alignment.py --animal DKXX --channel 1` **P** muralus 60 (might be able to increase but 100 will result in overflow) 
     1. This will use the DKXX/preps/elastix directory for the transformation parameters. It will then use PIL to do an affine transformation to do section to section alignment.
    
 1. Run: `python src/create_web.py --animal DKXX`
     1. This will use the DKXX/preps/CH1/thumbnail_aligned directory for source images. It will then use PIL to do an create web viewable images.
    
-1. Run: `python src/create_neuroglancer_image.py --animal DKXX --channel 1 --downsample true`
+1. Run: `python src/create_neuroglancer_image.py --animal DKXX --channel 1 --downsample true` **P** muralus 100
     1. This will create the data for neuroglancer for channel 1.
     1. View results in neuroglancer. Add the layer to the precompute with:
         https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C1T
