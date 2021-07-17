@@ -9,7 +9,8 @@ from skimage import exposure, io
 from pathlib import Path
 from scipy.ndimage.interpolation import map_coordinates
 from skimage.exposure import rescale_intensity, adjust_gamma
-
+from lib.GimpInterface import GimpInterface
+import os
 #PIPELINE_ROOT = Path('.').absolute().parent
 #sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -19,6 +20,23 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 fontScale = 1
 thickness = 2
 
+def create_xcf(tif_path,mask_path,xcf_path):
+    interface = GimpInterface()
+    gimp_tool_path = os.path.join(os.getcwd(),'src','lib')
+    interface.import_custome_library(gimp_tool_path,'gimp_tools')
+    interface.create_xcf(tif_path,mask_path,xcf_path)
+    interface.add_batch_script()
+    report = interface.execute()
+    return report
+
+def save_mask_after_edit(modsav,xcf_path):
+    interface = GimpInterface()
+    gimp_tool_path = os.path.join(os.getcwd(),'src','lib')
+    interface.import_custome_library(gimp_tool_path,'gimp_tools')
+    interface.save_mask(modsav,xcf_path)
+    interface.add_batch_script()
+    report = interface.execute()
+    return report
 
 def rotate_image(img, file, rotation):
     """

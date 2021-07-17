@@ -7,7 +7,6 @@ from PIL import Image
 import cv2
 from tqdm import tqdm
 from multiprocessing.pool import Pool
-
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
@@ -19,7 +18,7 @@ from src.sql_setup import CREATE_FULL_RES_MASKS
 from src.lib.sqlcontroller import SqlController
 from src.lib.file_location import FileLocationManager
 from src.lib.utilities_process import test_dir, workernoshell, get_image_size
-
+from src.lib.utilities_mask import create_xcf
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -105,6 +104,7 @@ def create_mask(animal, downsample, njobs):
         INPUT = os.path.join(fileLocationManager.prep, 'CH1/normalized')
         MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
         TESTS = os.path.join(fileLocationManager.prep, 'thumbnail_green')
+        XCF = os.path.join(fileLocationManager.prep, 'XCF')
         error = test_dir(animal, INPUT, downsample, same_size=False)
         if len(error) > 0:
             print(error)
@@ -112,6 +112,7 @@ def create_mask(animal, downsample, njobs):
 
         os.makedirs(MASKS, exist_ok=True)
         os.makedirs(TESTS, exist_ok=True)
+        os.makedirs(XCF, exist_ok=True)
 
         files = sorted(os.listdir(INPUT))
         debug = False
@@ -119,8 +120,9 @@ def create_mask(animal, downsample, njobs):
             filepath = os.path.join(INPUT, file)
             outpath = os.path.join(MASKS, file)
             green_mask_path = os.path.join(TESTS, file)
+            xcf_path = os.path.join(XCF,file[:-4]+'.xcf')
 
-            if os.path.exists(outpath) and os.path.exists(green_mask_path):
+            if os.path.exists(outpath) and os.path.exists(green_mask_path) and os.path.exists(xcf_path):
                 continue
 
             img = Image.open(filepath)
@@ -149,6 +151,9 @@ def create_mask(animal, downsample, njobs):
 
             masked_img = cv2.addWeighted(img, 1, green_mask, 0.5, 0)
             cv2.imwrite(green_mask_path, masked_img)
+
+            report = create_xcf(filepath,outpath,xcf_path)
+
 
 
 

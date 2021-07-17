@@ -63,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--suffix', help='Enter suffix to add to the output dir', required=False)
-    parser.add_argument('--njobs', help='number of core to use for parallel processing muralus can handle 20-25 ratto can handle 4', required=False, default=4)
+    parser.add_argument('--njobs', help='number of core to use for parallel processing muralus can handle 100 ratto can handle 4', required=False, default=4)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     args = parser.parse_args()
     animal = args.animal
