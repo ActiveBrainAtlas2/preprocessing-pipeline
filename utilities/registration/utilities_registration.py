@@ -21,7 +21,6 @@ from matplotlib import pyplot as plt
 import SimpleITK as sitk
 from IPython.display import clear_output
 
-from utilities.alignment_utility import convert_resolution_string_to_um
 
 
 def create_matrix(final_transform):
@@ -102,26 +101,16 @@ def command_iteration(method):
 
 
 
-def register_test(MASKED, INPUT, fixed_index, moving_index):
+def register_test(INPUT, fixed_index, moving_index):
     pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
     moving_file = os.path.join(INPUT, f'{moving_index}.tif')
     fixed = sitk.ReadImage(fixed_file, pixelType);
     moving = sitk.ReadImage(moving_file, pixelType)
 
-    fixed_mask_file = os.path.join(MASKED, f'{fixed_index}.tif')
-    moving_mask_file = os.path.join(MASKED, f'{moving_index}.tif')
-
-    maskFixed = sitk.ReadImage(fixed_mask_file, sitk.sitkUInt8)
-    maskMoving= sitk.ReadImage(moving_mask_file, sitk.sitkUInt8)
-    # Handle optimizer
-    # Restrict the evaluation of the similarity metric thanks to masks
-    #R.SetMetricFixedMask(maskFixed)
-    #R.SetMetricMovingMask(maskMoving)
-
     initial_transform = sitk.CenteredTransformInitializer(
         fixed, moving,
-        sitk.Similarity2DTransform(),
+        sitk.Euler2DTransform(),
         sitk.CenteredTransformInitializerFilter.MOMENTS)
 
     R = sitk.ImageRegistrationMethod()
@@ -134,7 +123,7 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
     # Optimizer settings.
     R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
                                                minStep=1e-4,
-                                               numberOfIterations=80,
+                                               numberOfIterations=100,
                                                gradientMagnitudeTolerance=1e-8)
     R.SetOptimizerScalesFromPhysicalShift()
 
@@ -149,6 +138,52 @@ def register_test(MASKED, INPUT, fixed_index, moving_index):
                                                    sitk.Cast(moving, sitk.sitkFloat32))
 
     return final_transform, fixed, moving, R
+    
+
+def register(INPUT, fixed_index, moving_index):
+    pixelType = sitk.sitkFloat32
+    fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
+    moving_file = os.path.join(INPUT, f'{moving_index}.tif')
+    fixed = sitk.ReadImage(fixed_file, pixelType);
+    moving = sitk.ReadImage(moving_file, pixelType)
+    initial_transform = sitk.CenteredTransformInitializer(
+        fixed, moving,
+        sitk.Euler2DTransform(),
+        sitk.CenteredTransformInitializerFilter.MOMENTS)
+    R = sitk.ImageRegistrationMethod()
+    R.SetInitialTransform(initial_transform, inPlace=True) # -0.5923
+    R.SetMetricAsCorrelation()
+    R.SetMetricSamplingStrategy(R.REGULAR)
+    R.SetMetricSamplingPercentage(0.2)
+    R.SetInterpolator(sitk.sitkLinear)
+    # Optimizer settings.
+    R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
+                                               minStep=1e-4,
+                                               numberOfIterations=100,
+                                               gradientMagnitudeTolerance=1e-8)
+    R.SetOptimizerScalesFromPhysicalShift()
+    # Perform registration
+    return R.Execute(sitk.Cast(fixed, sitk.sitkFloat32),
+                                                   sitk.Cast(moving, sitk.sitkFloat32))
+
+
+
+def register_simple(INPUT, fixed_index, moving_index):
+    pixelType = sitk.sitkFloat32
+    fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
+    moving_file = os.path.join(INPUT, f'{moving_index}.tif')
+    fixed = sitk.ReadImage(fixed_file, pixelType)
+    moving = sitk.ReadImage(moving_file, pixelType)
+
+    elastixImageFilter = sitk.ElastixImageFilter()
+    elastixImageFilter.SetFixedImage(sitk.ReadImage(fixed_file))
+    elastixImageFilter.SetMovingImage(sitk.ReadImage(moving_file))
+    elastixImageFilter.SetParameterMap(sitk.GetDefaultParameterMap("rigid"))
+    final_transform = elastixImageFilter.Execute()
+    #sitk.WriteImage(elastixImageFilter.GetResultImage())
+    return final_transform
+
+
 
 
 def register_files(fixed, moving):
@@ -287,46 +322,6 @@ def register_rotation(fixed, moving):
 
 
 
-def register(INPUT, fixed_index, moving_index):
-    pixelType = sitk.sitkFloat32
-    fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
-    moving_file = os.path.join(INPUT, f'{moving_index}.tif')
-
-    fixed = sitk.ReadImage(fixed_file, pixelType);
-    moving = sitk.ReadImage(moving_file, pixelType)
-
-    initial_transform = sitk.CenteredTransformInitializer(
-        fixed, moving,
-        sitk.Euler2DTransform(),
-        sitk.CenteredTransformInitializerFilter.GEOMETRY)
-    R = sitk.ImageRegistrationMethod()
-    R.SetInitialTransform(initial_transform, inPlace=True) # -0.5923
-    R.SetMetricAsCorrelation()
-    #R.SetMetricAsMeanSquares()
-    R.SetMetricSamplingStrategy(R.REGULAR)
-    R.SetMetricSamplingPercentage(0.2)
-    R.SetInterpolator(sitk.sitkLinear)
-    # Optimizer settings.
-    R.SetOptimizerAsRegularStepGradientDescent(learningRate=1,
-                                               minStep=1e-4,
-                                               numberOfIterations=100,
-                                               gradientMagnitudeTolerance=1e-8)
-    R.SetOptimizerScalesFromPhysicalShift()
-
-    # Perform registration
-    final_transform = R.Execute(sitk.Cast(fixed, sitk.sitkFloat32),
-                                                   sitk.Cast(moving, sitk.sitkFloat32))
-
-    finalParameters = final_transform.GetParameters()
-    fixedParameters = final_transform.GetFixedParameters()
-    rot_rad, xshift, yshift = finalParameters
-    center = np.array(fixedParameters)
-
-    rotation = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
-                  [np.sin(rot_rad), np.cos(rot_rad)]])
-    t = center + (xshift, yshift) - np.dot(rotation, center)
-    #T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
-    return rotation, t, rot_rad, xshift, yshift, final_transform
 
 def register2d(INPUT, fixed_index, moving_index):
     pixelType = sitk.sitkFloat32
