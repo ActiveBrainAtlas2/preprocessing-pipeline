@@ -430,3 +430,9 @@ def reverse_transform_create_alignment(points, transform):
     b[2:, 0:2] = -transform[0:2, 2] # Reverse translation matrix by doing -T
     a = np.matmul(c, b)
     return a
+
+def transform_create_alignment(points, transform):
+    a = np.hstack((points, np.ones((points.shape[0], 1))))
+    b = transform.T[:, 0:2]
+    c = np.matmul(a, b)
+    return c

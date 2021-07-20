@@ -10,7 +10,6 @@ import sys
 from multiprocessing.pool import Pool
 from tqdm import tqdm
 from shutil import copyfile
-
 from sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from lib.file_location import FileLocationManager
@@ -80,8 +79,7 @@ def make_low_resolution(animal, channel):
     if len(error) > 0:
         print(error)
         sys.exit()
-    OUTPUT = os.path.join(fileLocationManager.prep,
-                          f'CH{channel}', 'thumbnail')
+    OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
     os.makedirs(OUTPUT, exist_ok=True)
     tifs = sorted(os.listdir(INPUT))
     for tif in tifs:
@@ -91,8 +89,7 @@ def make_low_resolution(animal, channel):
         if os.path.exists(output_path):
             continue
 
-        cmd = ['convert', input_path, '-resize',
-               '3.125%', '-compress', 'lzw', output_path]
+        cmd = ['convert', input_path, '-resize', '3.125%', '-compress', 'lzw', output_path]
         commands.append(cmd)
 
     with Pool(4) as p:
@@ -107,7 +104,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
-    make_full_resolution(animal, channel)
+    #make_full_resolution(animal, channel)
     make_low_resolution(animal, channel)
 
     sqlController = SqlController(animal)

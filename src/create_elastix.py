@@ -34,7 +34,11 @@ def run_elastix(animal, njobs):
     elastix_output_dir = fileLocationManager.elastix_dir
     os.makedirs(elastix_output_dir, exist_ok=True)
 
-    param_file = os.path.join(os.getcwd(), 'utilities/alignment', "Parameters_Rigid.txt")
+    param_file = os.path.join('utilities/alignment', "Parameters_Rigid.txt")
+    if not os.path.exists(param_file):
+        print(f'Could not find {param_file}')
+        sys.exit()
+
     commands = []
     # previous file is the fixed image
     # current file is the moving image
