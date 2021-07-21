@@ -9,12 +9,12 @@ from skimage import exposure, io
 from pathlib import Path
 from scipy.ndimage.interpolation import map_coordinates
 from skimage.exposure import rescale_intensity, adjust_gamma
-from lib.GimpInterface import GimpInterface
 import os
 #PIPELINE_ROOT = Path('.').absolute().parent
 #sys.path.append(PIPELINE_ROOT.as_posix())
 
 from lib.utilities_process import get_last_2d
+from lib.GimpInterface import GimpInterface
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 fontScale = 1

@@ -1,6 +1,6 @@
 __author__ = "Zhongkai Wu"
 import subprocess
-from src.lib.utilities_process import workershell
+from lib.utilities_process import workershell
 
 class GimpInterface():
     """GimpInterface [a class that runs gimp python scripts from command line]
