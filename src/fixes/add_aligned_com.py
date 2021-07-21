@@ -53,6 +53,10 @@ def atlas_to_brain_transformXXX(
 
 
 def atlas_to_brain_transform(atlas_coord, r, t):
+    """
+    The corresponding reverse transformation is:
+        brain_coord_phys = r_inv @ atlas_coord_phys - r_inv @ t_phys
+    """
     # Bring atlas coordinates to physical space
     atlas_coord = np.array(atlas_coord).reshape(3, 1) # Convert to a column vector
     # Apply affine transformation in physical space
@@ -64,11 +68,7 @@ def atlas_to_brain_transform(atlas_coord, r, t):
     return brain_coord_phys.T[0] # Convert back to a row vector
 
 
-def brain_to_atlas_transform(
-    brain_coord, r, t,
-    brain_scale=(1, 1, 1),
-    atlas_scale=(1, 1, 1)
-):
+def brain_to_atlas_transform(brain_coord, r, t):
     """
     Takes an x,y,z brain coordinates, and a rotation matrix and transform vector.
     Returns the point in atlas coordinates.
@@ -193,9 +193,7 @@ if __name__ == '__main__':
     data = get_centers(pointbrain, CORRECTED)
     for abbrev, coord in data.items():
         x0, y0 , section0 = coord
-        #x1, y1, section1 = brain_to_atlas_transform(coord, r0, t0, (1,1,1), (1,1,1))
-
-
+        x1, y1, section1 = brain_to_atlas_transform(coord, r0, t0)
         x2,y2,section2 = atlas_to_brain_transform((x1,y1,section1), r1, t1)
         structure = session.query(Structure).filter(Structure.abbreviation == func.binary(abbrev)).one()
         print(structure.abbreviation, end="\t")
