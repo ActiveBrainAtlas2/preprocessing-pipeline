@@ -11,7 +11,7 @@ COLORS = {1: 'b', 2: 'r', 3: 'g'}
 def create_histogram(animal, channel, section):
 
     fileLocationManager = FileLocationManager(animal)
-    channel_dir = f'CH{channel}/thumbnail_aligned'
+    channel_dir = f'CH{channel}/thumbnail_cleaned'
 
     filename = str(section).zfill(3) + '.tif'
     filepath = os.path.join(fileLocationManager.prep, channel_dir, filename)
