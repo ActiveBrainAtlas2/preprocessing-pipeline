@@ -1,19 +1,19 @@
 """
-THis script is the interface between the pipeline / database and the alignment software
-Ed, please comple and move to pipeline/src
+This script will take a source brain (where the data comes from) and an image brain 
+(the brain whose images you want to display unstriped) and align the data from the point brain
+to the image brain. It first aligns the point brain data to the atlas, then that data
+to the image brain. It prints out the data by default and also will insert
+into the database if given a layer name.
 """
 
 import argparse
 from sqlalchemy import func
 from tqdm import tqdm
-import json
 from pprint import pprint
 import numpy as np
 import os
 import sys
 from datetime import datetime
-import requests
-from requests.exceptions import HTTPError
 
 
 HOME = os.path.expanduser("~")
@@ -37,8 +37,12 @@ CORRECTED = 2
 
 def atlas_to_brain_transform(atlas_coord, r, t):
     """
-    The corresponding reverse transformation is:
-        brain_coord_phys = r_inv @ atlas_coord_phys - r_inv @ t_phys
+    Takes an x,y,z brain coordinates, and a rotation matrix and translation vector.
+    Returns the point in atlas coordinates in micrometers.
+    params:
+        atlas_coord: tuple of x,y,z coordinates of the atlas in micrometers
+        r: float of the rotation matrix
+        t: vector of the translation matrix
     """
     # Bring atlas coordinates to physical space
     atlas_coord = np.array(atlas_coord).reshape(3, 1) # Convert to a column vector
@@ -53,61 +57,21 @@ def atlas_to_brain_transform(atlas_coord, r, t):
 
 def brain_to_atlas_transform(brain_coord, r, t):
     """
-    Takes an x,y,z brain coordinates, and a rotation matrix and transform vector.
-    Returns the point in atlas coordinates.
-    
-    The recorded r, t is the transformation from brain to atlas such that:
-        t_phys = atlas_scale @ t
-        atlas_coord_phys = r @ brain_coord_phys + t_phys
-        
-    Currently we erraneously have:
-        t_phys = brain_scale @ t
-    This should be fixed in the future.
+    Takes an x,y,z brain coordinates, and a rotation matrix and translation vector.
+    params:
+        atlas_coord: tuple of x,y,z coordinates of the atlas in micrometers
+        r: float of the rotation matrix
+        t: vector of the translation matrix
+    Returns the point in atlas coordinates in micrometers.
     """
-    #####brain_scale = np.diag(brain_scale)
-    #####atlas_scale = np.diag(atlas_scale)
-
     # Transform brain coordinates to physical space
     brain_coord = np.array(brain_coord).reshape(3, 1) # Convert to a column vector
-    #####brain_coord_phys = brain_scale @ brain_coord
-    
-    # Apply affine transformation in physical space
-    # t_phys = atlas_scale @ t
-    # The following is wrong but it is what the rest of the code assumes
-    # We need to fix it in the future
-    # this gets flip flopped to above line
-    #####t_phys = brain_scale @ t
-    #####atlas_coord_phys = r @ brain_coord_phys + t_phys
     atlas_coord = r @ brain_coord + t
-
-    # Bring atlas coordinates back to atlas space
-    #atlas_coord = np.linalg.inv(atlas_scale) @ atlas_coord_phys
-
     #####return atlas_coord_phys.T[0] # Convert back to a row vector
     return atlas_coord.T[0] # Convert back to a row vector
 
 
-def get_transformation_matrix(animal, input_type):
-    try:
-        url = f'https://activebrainatlas.ucsd.edu/activebrainatlas/rotation/{animal}/{input_type}/2'
-        response = requests.get(url)
-        response.raise_for_status()
-        # access JSOn content
-        transformation_matrix = response.json()
-
-    except HTTPError as http_err:
-        print(f'HTTP error occurred: {http_err}')
-    except Exception as err:
-        print(f'Other error occurred: {err}')
-
-    r = np.array(transformation_matrix['rotation'])
-    t = np.array(transformation_matrix['translation'])
-    return r,t
-
-
-
 def get_centers(animal, input_type_id, person_id=2):
-
     beth = 2
     rows = session.query(LayerData).filter(
         LayerData.active.is_(True))\
@@ -204,15 +168,15 @@ def align_point_sets(src, dst, with_scaling=True):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--jsonfile', help='Enter json file', required=False)
     parser.add_argument('--pointbrain', help='Enter point animal', required=True)
     parser.add_argument('--imagebrain', help='Enter image animal', required=True)
+    parser.add_argument('--layer', help='Enter layer name', required=False)
     
 
     args = parser.parse_args()
-    jsonfile = args.jsonfile
     pointbrain = args.pointbrain
     imagebrain = args.imagebrain
+    layer = args.layer
 
 
     pointdata = get_centers(pointbrain, CORRECTED)
@@ -242,7 +206,7 @@ if __name__ == '__main__':
         print( round(x1), round(y1),round(section1), end="\t")
         print( round(x2), round(y2),round(section2))
 
-        
-        add_layer(pointbrain, structure, x2, y2, section2, 1, 'CCCCCC')
+        if layer is not None:
+            add_layer(pointbrain, structure, x2, y2, section2, 1, layer)
     # transform to atlas space        
 
