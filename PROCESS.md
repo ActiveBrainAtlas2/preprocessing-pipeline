@@ -46,6 +46,7 @@
     1. Repeat process for the other 2 channels when ready.
     1. View a couple thumbnails to determine how much rotation/flips to perform.
    
+1. Input the correct rotation in the scan run table.
 1. Run: `python src/create_normalized.py --animal DKXX` channels option available, default is ch1.
    
 1. Run: `python src/create_masks.py --animal DKXX` **P**
