@@ -54,7 +54,7 @@ def get_model_instance_segmentation(num_classes):
     model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask, hidden_layer, num_classes)
     return model
 
-def create_mask(animal, downsample, njobs):
+def create_mask(animal, downsample, njobs, gimp):
 
     fileLocationManager = FileLocationManager(animal)
     modelpath = os.path.join(HOME, '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth')
@@ -152,7 +152,8 @@ def create_mask(animal, downsample, njobs):
             masked_img = cv2.addWeighted(img, 1, green_mask, 0.5, 0)
             cv2.imwrite(green_mask_path, masked_img)
 
-            report = create_xcf(filepath,outpath,xcf_path)
+            if gimp:
+                report = create_xcf(filepath,outpath,xcf_path)
 
 
 
@@ -161,13 +162,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
+    parser.add_argument('--gimp', help='Enter true or false', required=False, default='true')
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
 
     args = parser.parse_args()
     animal = args.animal
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    gimp = bool({'true': True, 'false': False}[str(args.gimp).lower()])
     njobs = int(args.njobs)
 
-    create_mask(animal, downsample, njobs)
+    create_mask(animal, downsample, njobs, gimp)
 
 
