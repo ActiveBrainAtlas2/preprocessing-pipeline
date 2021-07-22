@@ -18,10 +18,13 @@ from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
 from lib.utilities_mask import rotate_image, place_image, scaled, equalized
 from lib.utilities_process import test_dir, SCALING_FACTOR
+
 def fix_ntb(file_keys,channel):
     """
     This method clean all NTB images in the specified channel. For channel one it also scales
     and does an adaptive histogram equalization.
+    The masks have 3 dimenions since we are using the torch process.
+    The 3rd channel has what we want for the mask.
     file_keys is a tuple of the following:
         :param infile: file path of image to read
         :param outpath: file path of image to write
@@ -40,10 +43,11 @@ def fix_ntb(file_keys,channel):
         print(f'Could not open {infile}')
         
     try:
-        mask = io.imread(maskfile)
+        mask = cv2.imread(maskfile, -1)
     except:
         print(f'Mask {maskfile} does not exist')
-
+    mask = mask[:,:,2]
+    mask = mask[mask>0] = 255
     try:
         fixed = cv2.bitwise_and(img, img, mask=mask)
     except:
