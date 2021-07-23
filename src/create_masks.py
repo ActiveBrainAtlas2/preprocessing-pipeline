@@ -120,9 +120,9 @@ def create_mask(animal, downsample, njobs):
         debug = False
         for file in tqdm(files):
             filepath = os.path.join(INPUT, file)
-            outpath = os.path.join(MASKS, file)
+            maskpath = os.path.join(MASKS, file)
 
-            if os.path.exists(outpath):
+            if os.path.exists(maskpath):
                 continue
 
             img = Image.open(filepath)
@@ -140,15 +140,13 @@ def create_mask(animal, downsample, njobs):
             if dims > 2:
                 mask = combine_dims(mask)
 
-            #raw_img = cv2.imread(filepath, -1)
             raw_img = np.array(img)
             mask = mask.astype(np.uint8)
             mask[mask>0] = 255
-            #cv2.imwrite(outpath, mask)
 
             merged_img = merge_mask(raw_img, mask)
             del mask
-            cv2.imwrite(outpath, merged_img)
+            cv2.imwrite(maskpath, merged_img)
 
 
 

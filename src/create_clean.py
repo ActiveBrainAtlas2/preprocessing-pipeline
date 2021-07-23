@@ -11,6 +11,7 @@ import os, sys
 import cv2
 import numpy as np
 from skimage import io
+from tqdm import tqdm
 from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
 from sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
@@ -46,8 +47,10 @@ def fix_ntb(file_keys,channel):
         mask = cv2.imread(maskfile, -1)
     except:
         print(f'Mask {maskfile} does not exist')
+
     mask = mask[:,:,2]
-    mask = mask[mask>0] = 255
+    mask[mask>0] = 255
+    #print('debuging', mask.dtype, mask.shape, img.dtype, img.shape)
     try:
         fixed = cv2.bitwise_and(img, img, mask=mask)
     except:
@@ -55,6 +58,7 @@ def fix_ntb(file_keys,channel):
         print('Are the shapes exactly the same?')
         print("Unexpected error:", sys.exc_info()[0])
         raise
+        sys.exit()
         
     del img
     if channel == 1:
@@ -137,7 +141,7 @@ def masker(animal, channel, downsample, scale, debug,workers):
     # workers = 20 # this is the upper limit. More than this and it crashes.
     if debug:
         print(f'debugging with single core')
-        for file_key in file_keys:
+        for file_key in tqdm(file_keys):
             fix_ntb(file_key,channel)
     else:
         print(f'Working on {len(file_keys)} files with {workers} cpus')
