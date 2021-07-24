@@ -1,21 +1,25 @@
-import os, sys
+import argparse
+import os
+import sys
 #import pandas as pd
 from collections import defaultdict
 from subprocess import Popen
-import argparse
+
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
+
 HOME = os.path.expanduser("~")
 
 HOME = os.path.expanduser("~")
-DIR = os.path.join(HOME, 'programming/pipeline_utility')
+DIR = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(DIR)
 
-from utilities.utilities_process import get_image_size
-from utilities.file_location import FileLocationManager
-from utilities.model.layer_data import LayerData
+from lib.file_location import FileLocationManager
+from lib.utilities_process import get_image_size
+from model.layer_data import LayerData
 from sql_setup import session
-SCALE = 10000/325.0
+
+RESOLUTION = 0.325
 
 
 def create_points(animal, section, layer, debug=False):
@@ -31,20 +35,18 @@ def create_points(animal, section, layer, debug=False):
         .filter(LayerData.layer == layer).filter(LayerData.prep_id == animal)
 
     for annotation in annotations:
-        x = annotation.x
-        y = annotation.y
+        x = annotation.x / RESOLUTION
+        y = annotation.y / RESOLUTION
         pts = [x,y]
-        section = int(annotation.section)
+        section = int(round(annotation.section/20))
         sections[section].append(pts)
-        if debug:
-            print(annotation.layer, x, y, section)
 
     for section, points in sections.items():
         if debug:
             print(section, len(points))
             continue
-        if len(points) < 2:
-            print(f'Section {section} has less than 2 points')
+        if len(points) < 100:
+            print(f'Section {section} has less than 100 points')
             continue
         pts = np.array(points)
         means = np.mean(pts, axis=0)
@@ -67,9 +69,6 @@ def create_points(animal, section, layer, debug=False):
 
         outpath =  os.path.join(OUTPUT, f'{section}.tif')
 
-        if os.path.exists(outpath):
-            print(outpath, 'exists')
-            continue
 
         cmd = f'convert {infile} -normalize -auto-level {outpath}' 
         if debug:
@@ -115,7 +114,7 @@ def create_points(animal, section, layer, debug=False):
             proc.wait()
     if debug:
         print()
-        print(sections)
+        #print(sections)
 
 
 if __name__ == '__main__':
