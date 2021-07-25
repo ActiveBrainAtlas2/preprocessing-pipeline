@@ -45,6 +45,30 @@ def greenify_mask(image):
     coloured_mask = np.stack([r, g, b], axis=2)
     return coloured_mask
 
+def create_final(animal):
+    fileLocationManager = FileLocationManager(animal)
+    COLORED = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_colored')
+    MASKS = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_masked')
+    error = test_dir(animal, COLORED, True, same_size=False)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
+
+    os.makedirs(MASKS, exist_ok=True)
+
+    files = sorted(os.listdir(COLORED))
+    for file in tqdm(files):
+        filepath = os.path.join(COLORED, file)
+        maskpath = os.path.join(MASKS, file)
+
+        if os.path.exists(maskpath):
+            continue
+
+        mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
+        mask = mask[:,:,2]
+        mask[mask>0] = 255
+        cv2.imwrite(maskpath, mask.astype(np.uint8))
+
 
 def get_model_instance_segmentation(num_classes):
     # load an instance segmentation model pre-trained pre-trained on COCO
@@ -70,27 +94,31 @@ def create_mask(animal, downsample, njobs):
     else:
         print('no model to load')
 
+    ##### Create directories
+
 
     if not downsample:
         sqlController = SqlController(animal)
         sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         ##### Check if files in dir are valid
-        error = test_dir(animal, INPUT, downsample, same_size=False)
+        #error = test_dir(animal, INPUT, downsample, same_size=False)
+        error = ""
         if len(error) > 0:
             print(error)
             sys.exit()
 
-        THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+        THUMBNAIL = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_masked')
         ##### Check if files in dir are valid
         ##error = test_dir(animal, THUMBNAIL, full=False, same_size=False)
-        MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
+        MASKED = os.path.join(fileLocationManager.prep, 'masks', 'full_masked')
         os.makedirs(MASKED, exist_ok=True)
         files = sorted(os.listdir(INPUT))
         commands = []
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
             thumbfile = os.path.join(THUMBNAIL, file)
+
             outpath = os.path.join(MASKED, file)
             if os.path.exists(outpath):
                 continue
@@ -108,19 +136,19 @@ def create_mask(animal, downsample, njobs):
 
         transform = torchvision.transforms.ToTensor()
         INPUT = os.path.join(fileLocationManager.prep, 'CH1/normalized')
-        MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+        COLORED = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_colored')
         error = test_dir(animal, INPUT, downsample, same_size=False)
         if len(error) > 0:
             print(error)
             sys.exit()
 
-        os.makedirs(MASKS, exist_ok=True)
+        os.makedirs(COLORED, exist_ok=True)
 
         files = sorted(os.listdir(INPUT))
         debug = False
         for file in tqdm(files):
             filepath = os.path.join(INPUT, file)
-            maskpath = os.path.join(MASKS, file)
+            maskpath = os.path.join(COLORED, file)
 
             if os.path.exists(maskpath):
                 continue
@@ -149,20 +177,24 @@ def create_mask(animal, downsample, njobs):
             cv2.imwrite(maskpath, merged_img)
 
 
-
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
+    parser.add_argument('--final', help='Enter true or false', required=False, default='false')
 
     args = parser.parse_args()
     animal = args.animal
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    final = bool({'true': True, 'false': False}[str(args.final).lower()])
     njobs = int(args.njobs)
 
-    create_mask(animal, downsample, njobs)
+    if final:
+         create_final(animal)
+    else:
+         create_mask(animal, downsample, njobs)
+       
+
 
 

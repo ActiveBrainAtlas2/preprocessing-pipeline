@@ -20,7 +20,7 @@ from lib.sqlcontroller import SqlController
 from lib.utilities_mask import rotate_image, place_image, scaled, equalized
 from lib.utilities_process import test_dir, SCALING_FACTOR
 
-def fix_ntb(file_keys,channel):
+def fix_ntb(file_keys):
     """
     This method clean all NTB images in the specified channel. For channel one it also scales
     and does an adaptive histogram equalization.
@@ -37,20 +37,18 @@ def fix_ntb(file_keys,channel):
         :param scale: used in scaling. Gotten from the histogram
     :return: nothing. we write the image to disk
     """
-    infile, outpath, maskfile, rotation, flip, max_width, max_height, scale = file_keys
+    infile, outpath, maskfile, rotation, flip, max_width, max_height, scale, channel = file_keys
     try:
         img = io.imread(infile)
     except:
         print(f'Could not open {infile}')
         
     try:
-        mask = cv2.imread(maskfile, -1)
+        mask = cv2.imread(maskfile, cv2.IMREAD_GRAYSCALE)
     except:
         print(f'Mask {maskfile} does not exist')
+        sys.exit()
 
-    mask = mask[:,:,2]
-    mask[mask>0] = 255
-    #print('debuging', mask.dtype, mask.shape, img.dtype, img.shape)
     try:
         fixed = cv2.bitwise_and(img, img, mask=mask)
     except:
@@ -94,7 +92,7 @@ def masker(animal, channel, downsample, scale, debug,workers):
     CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
 
-    MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+    MASKS = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_masked')
     os.makedirs(CLEANED, exist_ok=True)
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
@@ -110,7 +108,7 @@ def masker(animal, channel, downsample, scale, debug,workers):
         CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         os.makedirs(CLEANED, exist_ok=True)
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full')
-        MASKS = os.path.join(fileLocationManager.prep, 'full_masked')
+        MASKS = os.path.join(fileLocationManager.prep, 'masks', 'full_masked')
         max_width = width
         max_height = height
 
@@ -135,18 +133,19 @@ def masker(animal, channel, downsample, scale, debug,workers):
             print('Not implemented.')
             #fixed = fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height)
         else:
-            file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, scale])
+            file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, scale, channel])
 
     start = timer()
     # workers = 20 # this is the upper limit. More than this and it crashes.
     if debug:
         print(f'debugging with single core')
         for file_key in tqdm(file_keys):
-            fix_ntb(file_key,channel)
+            fix_ntb(file_key)
     else:
         print(f'Working on {len(file_keys)} files with {workers} cpus')
         with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(fix_ntb, sorted(file_keys),np.ones(len(file_keys))*channel)
+            #executor.map(fix_ntb, sorted(file_keys),np.ones(len(file_keys))*channel)
+            executor.map(fix_ntb, sorted(file_keys))
 
     end = timer()
     print(f'Create cleaned files took {end - start} seconds total', end="\t")
