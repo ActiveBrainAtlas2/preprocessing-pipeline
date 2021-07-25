@@ -1,14 +1,13 @@
 import argparse
 import os
 import sys
-#import pandas as pd
+import pandas as pd
 from collections import defaultdict
 from subprocess import Popen
 
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
 
-HOME = os.path.expanduser("~")
 
 HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility/src')
@@ -22,7 +21,7 @@ from sql_setup import session
 RESOLUTION = 0.325
 
 
-def create_points(animal, section, layer, debug=False):
+def create_points(animal, section, layer, debug=False, csv=False):
 
     fileLocationManager = FileLocationManager(animal)
 
@@ -38,8 +37,15 @@ def create_points(animal, section, layer, debug=False):
         x = annotation.x / RESOLUTION
         y = annotation.y / RESOLUTION
         pts = [x,y]
-        section = int(round(annotation.section/20))
-        sections[section].append(pts)
+        section_num = int(round(annotation.section/20))
+        sections[section_num].append(pts)
+
+    if csv:
+        df = pd.DataFrame(data=sections[section], columns=['x','y'])
+        df['section'] = section
+        outpath = os.path.join(HOME, f'programming/brains/{animal}/{section}/{section}.csv')
+        df.to_csv(outpath, index=False)
+        sys.exit()
 
     for section, points in sections.items():
         if debug:
@@ -123,6 +129,7 @@ if __name__ == '__main__':
     parser.add_argument('--section', help='Enter section', required=False, default=0)
     parser.add_argument('--layer', help='Enter layer', required=True)
     parser.add_argument('--debug', help='Enter true or false', required=False, default='true')
+    parser.add_argument('--csv', help='Enter true or false', required=False, default='false')
     
  
     args = parser.parse_args()
@@ -130,4 +137,5 @@ if __name__ == '__main__':
     section = int(args.section)
     layer = str(args.layer).lower()
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-    create_points(animal, section, layer, debug)
+    csv = bool({'true': True, 'false': False}[str(args.csv).lower()])
+    create_points(animal, section, layer, debug, csv)
