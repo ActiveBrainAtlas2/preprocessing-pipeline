@@ -18,6 +18,11 @@ class LoadCom:
         """convets the pixel units to physical(1um,1um,1um) this is necessary as the save is before all units in database is turn into physical"""
         com_physical = np.array(com)*imaging_resolution
         return com_physical
+    
+    def _physical_to_image(self,com,imaging_resolution = np.array([0.325,0.325,20])):
+        """convets the pixel units to physical(1um,1um,1um) this is necessary as the save is before all units in database is turn into physical"""
+        com_image = np.array(com)/imaging_resolution
+        return com_image
 
     def _neuroglancer_atlas_to_physical(self,com):
         """convets the neuroglancer units(10,10,20)um to physical(1um,1um,1um) this is necessary as the save is before all units in database is turn into physical"""

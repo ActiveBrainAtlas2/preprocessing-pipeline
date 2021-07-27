@@ -5,11 +5,12 @@ sys.path.append('/home/zhw272/programming/pipeline_utility/')
 from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transform_dict_affine
 from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_dict_demons
 from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
+from notebooks.Will.toolbox.IOs.LoadCom import LoadCom
 from utilities.alignment.align_point_sets import get_rigid_transformation_from_dicts,apply_rigid_transformation_to_com_dict
 from notebooks.Will.toolbox.IOs.get_bilis_json_file import get_tranformation
 from utilities.alignment.align_point_sets import apply_rigid_transformation_to_com_dict_list
 class TransformCom:
-    def __init__(self,load_com_class):
+    def __init__(self,load_com_class:LoadCom):
         self.getcom = load_com_class
 
     def get_itk_rough_alignment(self):
@@ -18,9 +19,12 @@ class TransformCom:
         transformed_com_list = []
         for prepi in prep_list:
             affine_transform = get_affine_transform(prepi)
-            affine_transform = affine_transform.GetInverse()
-            transformed_com = transform_dict_affine(affine_transform,DK52_com)
-            transformed_com_list.append(transformed_com)
+            affine_transform_inv = affine_transform.GetInverse()
+            # transformed_com = transform_dict_affine(affine_transform_inv,DK52_com)
+            com_dict = {}
+            for structure,com in DK52_com.items():
+                com_dict[structure] = affine_transform_inv.TransformPoint(com)
+            transformed_com_list.append(com_dict)
         return transformed_com_list
 
     def get_airlab_rough_alignment(self):
@@ -71,10 +75,11 @@ class TransformCom:
         return transformed_com_list
 
     def apply_airlab_transformation_to_com_dict(self,com_dict,transform,imaging_resolution = np.array([0.325,0.325,20])):
+        transformed_com = {}
         for landmark,com in com_dict.items():
             com = np.array(com, dtype=float)/imaging_resolution
-            com_dict[landmark] = transform.forward_point(com)*imaging_resolution
-        return com_dict
+            transformed_com[landmark] = transform.forward_point(com)*imaging_resolution
+        return transformed_com
 
     def get_beth_coms_aligned_to_atlas(self):
         prep_list = self.getcom.get_prep_list_for_rough_alignment_test()

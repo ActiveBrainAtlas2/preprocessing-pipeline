@@ -182,14 +182,14 @@ class ComBoxPlot:
 
     def _get_offseti_from_com_list_and_reference(self,coms,reference,landmarks,comi):
         """coms correspond to com1 and reference correspond to com2.  Handles the case when a list of com dictionaries are compares to a single reference com"""
-        offset = [coms[comi][s] - reference[s]
+        offset = [np.array(coms[comi][s]) - np.array(reference[s])
                     if s in coms[comi] and s in reference  else [np.nan, np.nan, np.nan]
                     for s in landmarks]
         return offset
 
     def _get_offseti_from_two_com_lists(self,com1,com2,landmarks,comi):
         """handles the case when comparing corresponding elements of two com lists"""
-        offset = [com1[comi][s] - com2[comi][s]
+        offset = [np.array(com1[comi][s]) - np.array(com2[comi][s])
                     if s in com1[comi] and s in com2[comi] else [np.nan, np.nan, np.nan]
                     for s in landmarks]
         return offset
