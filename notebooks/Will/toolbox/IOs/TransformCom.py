@@ -12,6 +12,27 @@ class TransformCom:
     def __init__(self,load_com_class):
         self.getcom = load_com_class
 
+    def get_itk_rough_alignment(self):
+        prep_list = self.getcom.get_prep_list_for_rough_alignment_test()
+        DK52_com = self.getcom.get_dk52_com()
+        transformed_com_list = []
+        for prepi in prep_list:
+            affine_transform = get_affine_transform(prepi)
+            affine_transform = affine_transform.GetInverse()
+            transformed_com = transform_dict_affine(affine_transform,DK52_com)
+            transformed_com_list.append(transformed_com)
+        return transformed_com_list
+
+    def get_airlab_rough_alignment(self):
+        prep_list = self.getcom.get_prep_list_for_rough_alignment_test()
+        DK52_com = self.getcom.get_dk52_com()
+        transformed_com_list = []
+        for prepi in prep_list:
+            affine_transform = get_tranformation(prepi)
+            transformed_com = self.apply_airlab_transformation_to_com_dict(DK52_com,affine_transform)
+            transformed_com_list.append(transformed_com)
+        return transformed_com_list
+
     def get_DK52_rigid_transformation(self):
         DK52_com = self.getcom.get_dk52_com()
         atlas_com = self.getcom.get_atlas_com()
@@ -48,7 +69,7 @@ class TransformCom:
             transformed_com = self.apply_airlab_transformation_to_com_dict(prepicom,affine_transform)
             transformed_com_list.append(transformed_com)
         return transformed_com_list
-    
+
     def apply_airlab_transformation_to_com_dict(self,com_dict,transform,imaging_resolution = np.array([0.325,0.325,20])):
         for landmark,com in com_dict.items():
             com = np.array(com, dtype=float)/imaging_resolution

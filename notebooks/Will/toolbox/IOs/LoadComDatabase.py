@@ -13,9 +13,8 @@ class LoadComDatabase(LoadCom):
         return controller.get_atlas_centers()
 
     def get_prepi_com(self,prepi):
-        com = controller.get_com_dict(prepi,input_type_id=1,person_id=2,active=False)
-        prepi_com = self._convert_com_dict_units(com,self._image_to_physical) 
-        return prepi_com
+        com = controller.get_com_dict(prepi,input_type_id=1,person_id=2,active=True)
+        return com
 
     def get_corrected_prepi_com(self,prepi):
         return controller.get_com_dict(prepi,input_type_id=2,person_id=2,active=True)
@@ -31,12 +30,12 @@ class LoadComDatabase(LoadCom):
         corrected_prep_coms = []
         for prepi in prep_list:
             corrected_com = self.combined_og_and_corrected_beth_annotation(self.get_prepi_com(prepi),self.get_corrected_prepi_com(prepi))
-            corrected_prep_coms.append(self._convert_com_dict_units(corrected_com,self._image_to_physical))
+            corrected_prep_coms.append(corrected_com)
         return corrected_prep_coms
-        
+
     def get_prep_coms(self):
         prep_list = self.get_prep_list_for_rough_alignment_test()
-        prep_coms = [self._convert_com_dict_units(self.get_prepi_com(prepi),self._image_to_physical) for prepi in prep_list]
+        prep_coms = [self.get_prepi_com(prepi) for prepi in prep_list]
         return prep_coms
 
     def combined_og_and_corrected_beth_annotation(self,og,corrected):

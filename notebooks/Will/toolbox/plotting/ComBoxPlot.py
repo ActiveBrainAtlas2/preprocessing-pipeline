@@ -18,7 +18,7 @@ class ComBoxPlot:
         """__init__ [creates the ComBoxPlot object]
 
         :param prep_list_function: [A function that returns a list of brain ids in com lists or corresponding to the offsets], defaults to None
-        :param landmark_list_function: [A function that returns a list of shared structures given a list of brain ids use one of the functions in 
+        :param landmark_list_function: [A function that returns a list of shared structures given a list of brain ids use one of the functions in
         IOs/get_landmark_lists.py], defaults to None
         """
         self.prep_list_function = prep_list_function
@@ -27,7 +27,7 @@ class ComBoxPlot:
         self.column_types = ['dx','dy','dz','dist']
         self.postfix = ''
         self.custome_order = None
-        self.split = None
+        self.split = 1
         self.color_list = None
 
     def get_fig_two_com_dict_list_against_reference(self,comlists,reference,title):
@@ -112,9 +112,9 @@ class ComBoxPlot:
         fig = self._get_fig_offset_box(offsets_table = offset_table,title = title)
         self.figs.append(fig)
         return fig
-    
+
     def save_pdf(self,file_name, folder = ''):
-        """save_pdf [saves the figure in the current lists to pdf in ~/plots/foldername/filename.pdf,  
+        """save_pdf [saves the figure in the current lists to pdf in ~/plots/foldername/filename.pdf,
         modify save_figures_to_pdf to save plots in other directories ]
 
         :param file_name: [pdf save file name]
@@ -133,7 +133,7 @@ class ComBoxPlot:
         """Gets the offset table when comparing two lists of coms"""
         offset_table = self._get_offset_table(com1,com2,self._get_offseti_from_two_com_lists)
         return offset_table
-        
+
     def _get_offset_table_from_offset_array(self,offsets):
         """Gets the offset table when offsets are precalculated"""
         offset_function = lambda offsets,no_comparison_needed,no_landmark_list_needed,comi : offsets[comi]
@@ -219,7 +219,7 @@ class ComBoxPlot:
     def _get_fig_offset_box(self,offsets_table, title = ''):
         """_get_fig_offset_box [main function to create the box plot adopted from Bili]
 
-        :param offsets_table: [pandas tables with columns   "structure":structure names, "value":offset values, 
+        :param offsets_table: [pandas tables with columns   "structure":structure names, "value":offset values,
                                                             "type":offset type(x,y,z direction or total distance)
                                                             "brain":the brain where coms comes from]
         :type offsets_table: [pandas.DataFrame]
@@ -249,12 +249,12 @@ class ComBoxPlot:
             axi.grid()
             axi.legend(loc='upper right')
         return fig
-        
+
     def _plot_offset_box(self,offset_table, title = ''):
         """An alternative to plot the figure right away"""
         fig = self._get_fig_offset_box(offset_table, title = title)
         plt.show()
-    
+
     def _populate_figure(self,ax,offsets_table,title):
         ymin = -500
         ymax = 500
