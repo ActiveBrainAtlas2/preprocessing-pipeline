@@ -117,6 +117,7 @@ def register_test(INPUT, fixed_index, moving_index):
     R.SetInitialTransform(initial_transform, inPlace=True)
     R.SetMetricAsCorrelation() # -0439
     #R.SetMetricAsMeanSquares()
+    #R.SetMetricAsMattesMutualInformation()
     R.SetMetricSamplingStrategy(R.REGULAR) # random = 0.442 # regular -0.439
     R.SetMetricSamplingPercentage(0.2)
     R.SetInterpolator(sitk.sitkLinear)

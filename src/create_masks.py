@@ -18,9 +18,15 @@ from src.sql_setup import CREATE_FULL_RES_MASKS
 from src.lib.sqlcontroller import SqlController
 from src.lib.file_location import FileLocationManager
 from src.lib.utilities_process import test_dir, workernoshell, get_image_size
-from src.lib.utilities_mask import create_xcf
 import warnings
 warnings.filterwarnings("ignore")
+
+def merge_mask(image, mask):
+    b = mask
+    g = image
+    r = np.zeros_like(image).astype(np.uint8)
+    merged = np.stack([r, g, b], axis=2)
+    return merged
 
 def combine_dims(a):
     if a.shape[0] > 0:
@@ -38,6 +44,30 @@ def greenify_mask(image):
     r[image == 1], g[image == 1], b[image == 1] = [0,255,0]
     coloured_mask = np.stack([r, g, b], axis=2)
     return coloured_mask
+
+def create_final(animal):
+    fileLocationManager = FileLocationManager(animal)
+    COLORED = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_colored')
+    MASKS = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_masked')
+    error = test_dir(animal, COLORED, True, same_size=False)
+    if len(error) > 0:
+        print(error)
+        sys.exit()
+
+    os.makedirs(MASKS, exist_ok=True)
+
+    files = sorted(os.listdir(COLORED))
+    for file in tqdm(files):
+        filepath = os.path.join(COLORED, file)
+        maskpath = os.path.join(MASKS, file)
+
+        if os.path.exists(maskpath):
+            continue
+
+        mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
+        mask = mask[:,:,2]
+        mask[mask>0] = 255
+        cv2.imwrite(maskpath, mask.astype(np.uint8))
 
 
 def get_model_instance_segmentation(num_classes):
@@ -64,27 +94,31 @@ def create_mask(animal, downsample, njobs):
     else:
         print('no model to load')
 
+    ##### Create directories
+
 
     if not downsample:
         sqlController = SqlController(animal)
         sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         ##### Check if files in dir are valid
-        error = test_dir(animal, INPUT, downsample, same_size=False)
+        #error = test_dir(animal, INPUT, downsample, same_size=False)
+        error = ""
         if len(error) > 0:
             print(error)
             sys.exit()
 
-        THUMBNAIL = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
+        THUMBNAIL = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_masked')
         ##### Check if files in dir are valid
         ##error = test_dir(animal, THUMBNAIL, full=False, same_size=False)
-        MASKED = os.path.join(fileLocationManager.prep, 'full_masked')
+        MASKED = os.path.join(fileLocationManager.prep, 'masks', 'full_masked')
         os.makedirs(MASKED, exist_ok=True)
         files = sorted(os.listdir(INPUT))
         commands = []
         for i, file in enumerate(tqdm(files)):
             infile = os.path.join(INPUT, file)
             thumbfile = os.path.join(THUMBNAIL, file)
+
             outpath = os.path.join(MASKED, file)
             if os.path.exists(outpath):
                 continue
@@ -102,27 +136,21 @@ def create_mask(animal, downsample, njobs):
 
         transform = torchvision.transforms.ToTensor()
         INPUT = os.path.join(fileLocationManager.prep, 'CH1/normalized')
-        MASKS = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
-        TESTS = os.path.join(fileLocationManager.prep, 'thumbnail_green')
-        XCF = os.path.join(fileLocationManager.prep, 'XCF')
+        COLORED = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_colored')
         error = test_dir(animal, INPUT, downsample, same_size=False)
         if len(error) > 0:
             print(error)
             sys.exit()
 
-        os.makedirs(MASKS, exist_ok=True)
-        os.makedirs(TESTS, exist_ok=True)
-        os.makedirs(XCF, exist_ok=True)
+        os.makedirs(COLORED, exist_ok=True)
 
         files = sorted(os.listdir(INPUT))
         debug = False
         for file in tqdm(files):
             filepath = os.path.join(INPUT, file)
-            outpath = os.path.join(MASKS, file)
-            green_mask_path = os.path.join(TESTS, file)
-            xcf_path = os.path.join(XCF,file[:-4]+'.xcf')
+            maskpath = os.path.join(COLORED, file)
 
-            if os.path.exists(outpath) and os.path.exists(green_mask_path) and os.path.exists(xcf_path):
+            if os.path.exists(maskpath):
                 continue
 
             img = Image.open(filepath)
@@ -140,21 +168,13 @@ def create_mask(animal, downsample, njobs):
             if dims > 2:
                 mask = combine_dims(mask)
 
-            del img
-            img = cv2.imread(filepath)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-            green_mask = greenify_mask(mask)
+            raw_img = np.array(img)
             mask = mask.astype(np.uint8)
             mask[mask>0] = 255
-            cv2.imwrite(outpath, mask)
 
-            masked_img = cv2.addWeighted(img, 1, green_mask, 0.5, 0)
-            cv2.imwrite(green_mask_path, masked_img)
-
-            report = create_xcf(filepath,outpath,xcf_path)
-
-
+            merged_img = merge_mask(raw_img, mask)
+            del mask
+            cv2.imwrite(maskpath, merged_img)
 
 
 if __name__ == '__main__':
@@ -162,12 +182,19 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
+    parser.add_argument('--final', help='Enter true or false', required=False, default='false')
 
     args = parser.parse_args()
     animal = args.animal
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    final = bool({'true': True, 'false': False}[str(args.final).lower()])
     njobs = int(args.njobs)
 
-    create_mask(animal, downsample, njobs)
+    if final:
+         create_final(animal)
+    else:
+         create_mask(animal, downsample, njobs)
+       
+
 
 
