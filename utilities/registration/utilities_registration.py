@@ -177,11 +177,33 @@ def register_simple(INPUT, fixed_index, moving_index):
     moving = sitk.ReadImage(moving_file, pixelType)
 
     elastixImageFilter = sitk.ElastixImageFilter()
-    elastixImageFilter.SetFixedImage(sitk.ReadImage(fixed_file))
-    elastixImageFilter.SetMovingImage(sitk.ReadImage(moving_file))
+    elastixImageFilter.SetFixedImage(fixed)
+    elastixImageFilter.SetMovingImage(moving)
     elastixImageFilter.SetParameterMap(sitk.GetDefaultParameterMap("rigid"))
     translation_params = elastixImageFilter.GetDefaultParameterMap('translation')
     translation_params['MaximumNumberOfIterations']=['100']
+    translation_params['AutomaticTransformInitializationMethod']=['GeometricalCenter']
+    translation_params['ShowExactMetricValue']=['false']
+    translation_params['CheckNumberOfSamples']=['true']
+    translation_params['NumberOfSpatialSamples']=['5000']
+    translation_params['SubtractMean']=['true']
+    translation_params['MaximumNumberOfSamplingAttempts']=['0']
+    translation_params['SigmoidInitialTime']=['0']
+    translation_params['MaxBandCovSize']=['192']
+    translation_params['NumberOfBandStructureSamples']=['10']
+    translation_params['UseAdaptiveStepSizes']=['true']
+    translation_params['AutomaticParameterEstimation']=['true']
+    translation_params['MaximumStepLength']=['1']
+    translation_params['NumberOfGradientMeasurements']=['0']
+    translation_params['NumberOfJacobianMeasurements']=['1000']
+    translation_params['NumberOfSamplesForExactGradient']=['100000']
+    translation_params['SigmoidScaleFactor']=['0.1']
+    translation_params['ASGDParameterEstimationMethod']=['Original']
+    translation_params['UseMultiThreadingForMetrics']=['true']
+    translation_params['SP_A']=['20']
+    translation_params['UseConstantStep']=['false']
+    translation_params['Metric']=['AdvancedNormalizedCorrelation']
+    
     elastixImageFilter.AddParameterMap(translation_params)
 
 
