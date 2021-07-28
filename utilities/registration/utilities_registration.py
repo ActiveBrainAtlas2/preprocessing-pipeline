@@ -180,9 +180,14 @@ def register_simple(INPUT, fixed_index, moving_index):
     elastixImageFilter.SetFixedImage(sitk.ReadImage(fixed_file))
     elastixImageFilter.SetMovingImage(sitk.ReadImage(moving_file))
     elastixImageFilter.SetParameterMap(sitk.GetDefaultParameterMap("rigid"))
-    final_transform = elastixImageFilter.Execute()
-    #sitk.WriteImage(elastixImageFilter.GetResultImage())
-    return final_transform
+    translation_params = elastixImageFilter.GetDefaultParameterMap('translation')
+    translation_params['MaximumNumberOfIterations']=['100']
+    elastixImageFilter.AddParameterMap(translation_params)
+
+
+    elastixImageFilter.Execute()
+    return elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"]
+
 
 
 
