@@ -10,40 +10,15 @@ from multiprocessing.pool import Pool
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility')
-sys.path.append(PATH)
+from abakit.utilities.file_location import FileLocationManager 
+from abakit.utilities.shell_tools import workernoshell, get_image_size
+from abakit.utilities.masking import combine_dims, merge_mask
 
-from src.sql_setup import CREATE_FULL_RES_MASKS
-from src.lib.sqlcontroller import SqlController
-from src.lib.file_location import FileLocationManager
-from src.lib.utilities_process import test_dir, workernoshell, get_image_size
+from sql_setup import CREATE_FULL_RES_MASKS
+from lib.sqlcontroller import SqlController
+from lib.utilities_process import test_dir
 import warnings
 warnings.filterwarnings("ignore")
-
-def merge_mask(image, mask):
-    b = mask
-    g = image
-    r = np.zeros_like(image).astype(np.uint8)
-    merged = np.stack([r, g, b], axis=2)
-    return merged
-
-def combine_dims(a):
-    if a.shape[0] > 0:
-        a1 = a[0,:,:]
-        a2 = a[1,:,:]
-        a3 = np.add(a1,a2)
-    else:
-        a3 = np.zeros([a.shape[1], a.shape[2]]) + 255
-    return a3
-
-def greenify_mask(image):
-    r = np.zeros_like(image).astype(np.uint8)
-    g = np.zeros_like(image).astype(np.uint8)
-    b = np.zeros_like(image).astype(np.uint8)
-    r[image == 1], g[image == 1], b[image == 1] = [0,255,0]
-    coloured_mask = np.stack([r, g, b], axis=2)
-    return coloured_mask
 
 def create_final(animal):
     fileLocationManager = FileLocationManager(animal)
@@ -87,7 +62,7 @@ def get_model_instance_segmentation(num_classes):
 def create_mask(animal, downsample, njobs):
 
     fileLocationManager = FileLocationManager(animal)
-    modelpath = os.path.join(HOME, '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth')
+    modelpath = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth')
     loaded_model = get_model_instance_segmentation(num_classes=2)
     if os.path.exists(modelpath):
         loaded_model.load_state_dict(torch.load(modelpath,map_location=torch.device('cpu')))
@@ -102,8 +77,7 @@ def create_mask(animal, downsample, njobs):
         sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
         ##### Check if files in dir are valid
-        #error = test_dir(animal, INPUT, downsample, same_size=False)
-        error = ""
+        error = test_dir(animal, INPUT, downsample, same_size=False)
         if len(error) > 0:
             print(error)
             sys.exit()
