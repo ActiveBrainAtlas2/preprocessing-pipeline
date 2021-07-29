@@ -398,24 +398,23 @@ def register_simple(INPUT, fixed_index, moving_index):
     rigid_params['FixedImagePyramid']=['FixedSmoothingImagePyramid']
     rigid_params['MovingImagePyramid']=['MovingSmoothingImagePyramid']
     rigid_params['NumberOfResolutions']=['6']
-
     rigid_params['MaximumNumberOfSamplingAttempts']=['0']
-
-
-    translation_params = elastixImageFilter.GetDefaultParameterMap('translation')
- 
-    translation_params['AutomaticParameterEstimation']=['true']
-    translation_params['CheckNumberOfSamples']=['true']
-    translation_params['MaximumNumberOfIterations']=['120']
-    translation_params['NumberOfGradientMeasurements']=['0']
-    translation_params['NumberOfJacobianMeasurements']=['1000']
-    translation_params['NumberOfSamplesForExactGradient']=['100000']
-    translation_params['NumberOfSpatialSamples']=['5000']
     rigid_params['UseDirectionCosines']=['true']
 
+
+    #translation_params = elastixImageFilter.GetDefaultParameterMap('translation')
+ 
+    rigid_params['AutomaticParameterEstimation']=['true']
+    rigid_params['CheckNumberOfSamples']=['true']
+    rigid_params['MaximumNumberOfIterations']=['120']
+    rigid_params['NumberOfGradientMeasurements']=['0']
+    rigid_params['NumberOfJacobianMeasurements']=['1000']
+    rigid_params['NumberOfSamplesForExactGradient']=['100000']
+    rigid_params['NumberOfSpatialSamples']=['5000']
+
     elastixImageFilter.SetParameterMap(rigid_params)
-    elastixImageFilter.AddParameterMap(translation_params)
-    elastixImageFilter.LogToConsoleOff()
+    #elastixImageFilter.AddParameterMap(translation_params)
+    #elastixImageFilter.LogToConsoleOff()
 
     elastixImageFilter.Execute()
     return elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"]
