@@ -168,52 +168,6 @@ def register(INPUT, fixed_index, moving_index):
                                                    sitk.Cast(moving, sitk.sitkFloat32))
 
 
-
-def register_simple(INPUT, fixed_index, moving_index):
-    pixelType = sitk.sitkFloat32
-    fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
-    moving_file = os.path.join(INPUT, f'{moving_index}.tif')
-    fixed = sitk.ReadImage(fixed_file, pixelType)
-    moving = sitk.ReadImage(moving_file, pixelType)
-
-    elastixImageFilter = sitk.ElastixImageFilter()
-    elastixImageFilter.SetFixedImage(fixed)
-    elastixImageFilter.SetMovingImage(moving)
-    elastixImageFilter.SetParameterMap(sitk.GetDefaultParameterMap("rigid"))
-    translation_params = elastixImageFilter.GetDefaultParameterMap('translation')
-    translation_params['MaximumNumberOfIterations']=['100']
-    translation_params['AutomaticTransformInitializationMethod']=['GeometricalCenter']
-    translation_params['ShowExactMetricValue']=['false']
-    translation_params['CheckNumberOfSamples']=['true']
-    translation_params['NumberOfSpatialSamples']=['5000']
-    translation_params['SubtractMean']=['true']
-    translation_params['MaximumNumberOfSamplingAttempts']=['0']
-    translation_params['SigmoidInitialTime']=['0']
-    translation_params['MaxBandCovSize']=['192']
-    translation_params['NumberOfBandStructureSamples']=['10']
-    translation_params['UseAdaptiveStepSizes']=['true']
-    translation_params['AutomaticParameterEstimation']=['true']
-    translation_params['MaximumStepLength']=['1']
-    translation_params['NumberOfGradientMeasurements']=['0']
-    translation_params['NumberOfJacobianMeasurements']=['1000']
-    translation_params['NumberOfSamplesForExactGradient']=['100000']
-    translation_params['SigmoidScaleFactor']=['0.1']
-    translation_params['ASGDParameterEstimationMethod']=['Original']
-    translation_params['UseMultiThreadingForMetrics']=['true']
-    translation_params['SP_A']=['20']
-    translation_params['UseConstantStep']=['false']
-    translation_params['Metric']=['AdvancedNormalizedCorrelation']
-    
-    elastixImageFilter.AddParameterMap(translation_params)
-
-
-    elastixImageFilter.Execute()
-    return elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"]
-
-
-
-
-
 def register_files(fixed, moving):
 
     # now translation
@@ -390,3 +344,79 @@ def register2d(INPUT, fixed_index, moving_index):
     t = center + (xshift, yshift) - np.dot(rotation, center)
     #T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
     return rotation, t, rot_rad, xshift, yshift, final_transform
+
+def register_simple(INPUT, fixed_index, moving_index):
+    pixelType = sitk.sitkFloat32
+    fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
+    moving_file = os.path.join(INPUT, f'{moving_index}.tif')
+    fixed = sitk.ReadImage(fixed_file, pixelType)
+    moving = sitk.ReadImage(moving_file, pixelType)
+
+    elastixImageFilter = sitk.ElastixImageFilter()
+    elastixImageFilter.SetFixedImage(fixed)
+    elastixImageFilter.SetMovingImage(moving)
+    #elastixImageFilter.SetParameterMap(sitk.GetDefaultParameterMap("rigid"))
+    rigid_params = elastixImageFilter.GetDefaultParameterMap("rigid")
+
+
+    rigid_params['ASGDParameterEstimationMethod']=['Original']
+    rigid_params['AutomaticTransformInitialization']=['false']
+    rigid_params['AutomaticTransformInitializationMethod']=['GeometricalCenter']
+    rigid_params['FiniteDifferenceDerivative']=['false']
+    rigid_params['FixedImageBSplineInterpolationOrder']=['1']
+    rigid_params['FixedKernelBSplineOrder']=['0']
+    rigid_params['FixedLimitRangeRatio']=['0.01']
+    rigid_params['MaxBandCovSize']=['192']
+    rigid_params['MaximumStepLength']=['1']
+    rigid_params['MaximumStepLengthRatio']=['1']
+    rigid_params['MovingKernelBSplineOrder']=['3']
+    rigid_params['MovingLimitRangeRatio']=['0.01']
+    rigid_params['NumberOfBandStructureSamples']=['10']
+    rigid_params['NumberOfFixedHistogramBins']=['32']
+    rigid_params['NumberOfGradientMeasurements']=['0']
+    rigid_params['NumberOfHistogramBins']=['32']
+    rigid_params['NumberOfJacobianMeasurements']=['1000']
+    rigid_params['NumberOfMovingHistogramBins']=['32']
+    rigid_params['ShowExactMetricValue']=['false']
+    rigid_params['SigmoidInitialTime']=['0']
+    rigid_params['SigmoidScaleFactor']=['0.1']
+    rigid_params['SP_A']=['20']
+    rigid_params['UseAdaptiveStepSizes']=['true']
+    rigid_params['UseConstantStep']=['false']
+    rigid_params['UseFastAndLowMemoryVersion']=['true']
+    rigid_params['UseJacobianPreconditioning']=['false']
+    rigid_params['UseMultiThreadingForMetrics']=['true']
+    rigid_params['UseRandomSampleRegion']=['false']
+
+    rigid_params['Metric']=['AdvancedNormalizedCorrelation']
+    rigid_params['SubtractMean']=['true']   
+
+    rigid_params['FixedInternalImagePixelType']=['float']
+    rigid_params['MovingInternalImagePixelType']=['float']
+    rigid_params['FixedImageDimension']=['2']
+    rigid_params['MovingImageDimension']=['2']
+    rigid_params['FixedImagePyramid']=['FixedSmoothingImagePyramid']
+    rigid_params['MovingImagePyramid']=['MovingSmoothingImagePyramid']
+    rigid_params['NumberOfResolutions']=['6']
+
+    rigid_params['MaximumNumberOfSamplingAttempts']=['0']
+
+
+    translation_params = elastixImageFilter.GetDefaultParameterMap('translation')
+ 
+    translation_params['AutomaticParameterEstimation']=['true']
+    translation_params['CheckNumberOfSamples']=['true']
+    translation_params['MaximumNumberOfIterations']=['120']
+    translation_params['NumberOfGradientMeasurements']=['0']
+    translation_params['NumberOfJacobianMeasurements']=['1000']
+    translation_params['NumberOfSamplesForExactGradient']=['100000']
+    translation_params['NumberOfSpatialSamples']=['5000']
+    rigid_params['UseDirectionCosines']=['true']
+
+    elastixImageFilter.SetParameterMap(rigid_params)
+    elastixImageFilter.AddParameterMap(translation_params)
+    elastixImageFilter.LogToConsoleOff()
+
+    elastixImageFilter.Execute()
+    return elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"]
+
