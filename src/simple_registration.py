@@ -3,6 +3,11 @@ import argparse
 from tqdm import tqdm
 import os
 import cv2
+from datetime import datetime
+
+from model.elastix_transformation import ElastixTransformation
+from sql_setup import session
+
 
 from lib.utilities_registration import register_simple
 
@@ -29,11 +34,25 @@ def create_elastix(animal):
         
         R, xshift, yshift = register_simple(INPUT, fixed_index, moving_index)
 
-        f = open(outfile, "a")
-        f.write(f"(TransformParameters {R} {xshift} {yshift})\n")
-        f.write(f"(CenterOfRotationPoint {midx} {midy})\n")
-        f.write("(Spacing 1.0 1.0)\n")
-        f.close()
+        #f = open(outfile, "a")
+        #f.write(f"(TransformParameters {R} {xshift} {yshift})\n")
+        #f.write(f"(CenterOfRotationPoint {midx} {midy})\n")
+        #f.write("(Spacing 1.0 1.0)\n")
+        #f.close()
+
+        add_transformation(animal, moving_index, R, xshift, yshift)
+
+
+def add_transformation(animal, moving_index, R, xshift, yshift):
+    transformation = ElastixTransformation(
+        prep_id=animal, rotation=R, xshift=xshift, yshift=yshift, section=moving_index,
+        created=datetime.utcnow(), active=True)
+    try:
+        session.add(transformation)
+        session.commit()
+    except Exception as e:
+        print(f'No merge {e}')
+        session.rollback()
 
 
 

@@ -191,6 +191,20 @@ def parameter_elastix_parameter_file_to_dict(filename):
                 d[key] = value
         return d
 
+
+def load_elastix_transformation(animal, moving_index):
+    return 1,2,3
+
+def create_elastix_transformation(rotation, xshift, yshift, center):
+    R = np.array([[np.cos(rotation), -np.sin(rotation)],
+                    [np.sin(rotation), np.cos(rotation)]])
+    shift = center + (xshift, yshift) - np.dot(R, center)
+    T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
+    return T
+
+
+
+
 def parse_elastix(animal):
     """
     After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
@@ -202,15 +216,25 @@ def parse_elastix(animal):
     DIR = fileLocationManager.prep
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
 
-    image_name_list = sorted(os.listdir(INPUT))
-    anchor_idx = len(image_name_list) // 2
+    files = sorted(os.listdir(INPUT))
+    anchor_idx = len(files) // 2
     # anchor_idx = len(image_name_list) - 1
     transformation_to_previous_sec = {}
+    
 
-    for i in range(1, len(image_name_list)):
-        fixed_filepath = os.path.splitext(image_name_list[i - 1])[0]
-        moving_filepath = os.path.splitext(image_name_list[i])[0]
+    
+    for i in range(1, len(files)):
+        fixed_filepath = os.path.splitext(files[i - 1])[0]
+        moving_filepath = os.path.splitext(files[i])[0]
         transformation_to_previous_sec[i] = load_consecutive_section_transform(animal, moving_filepath, fixed_filepath)
+    
+
+    for f in range(len(files) - 1):
+        moving_index = str(f+1).zfill(3)
+        rotation, xshift, yshift = load_elastix_transformation(animal, moving_index)
+        T = create_elastix_transformation(rotation, xshift, yshift, center)
+        transformation_to_previous_sec[f] = T
+
 
     transformation_to_anchor_sec = {}
     # Converts every transformation
