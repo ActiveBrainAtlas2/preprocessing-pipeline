@@ -1,4 +1,5 @@
 import os, sys
+from src.model.elastix_transformation import ElastixTransformation
 import numpy as np
 import pandas as pd
 from skimage import io
@@ -193,6 +194,9 @@ def parameter_elastix_parameter_file_to_dict(filename):
 
 
 def load_elastix_transformation(animal, moving_index):
+    session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
+        .filter(ElastixTransformation.section == moving_index).one()
+
     return 1,2,3
 
 def create_elastix_transformation(rotation, xshift, yshift, center):
@@ -217,20 +221,24 @@ def parse_elastix(animal):
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
 
     files = sorted(os.listdir(INPUT))
-    anchor_idx = len(files) // 2
-    # anchor_idx = len(image_name_list) - 1
+    midpoint = len(files) // 2
     transformation_to_previous_sec = {}
-    
+    midfilepath = os.path.join(INPUT, files[midpoint])
+    midfile = io.imread(midfilepath, img_num=0)
+    height = midfile.shape[0]
+    width = midfile.shape[1]
+    center = np.array([width, height])
+  
 
-    
+    """
     for i in range(1, len(files)):
         fixed_filepath = os.path.splitext(files[i - 1])[0]
         moving_filepath = os.path.splitext(files[i])[0]
         transformation_to_previous_sec[i] = load_consecutive_section_transform(animal, moving_filepath, fixed_filepath)
-    
+    """
 
-    for f in range(len(files) - 1):
-        moving_index = str(f+1).zfill(3)
+    for f in range(1, len(files)):
+        moving_index = str(f).zfill(3)
         rotation, xshift, yshift = load_elastix_transformation(animal, moving_index)
         T = create_elastix_transformation(rotation, xshift, yshift, center)
         transformation_to_previous_sec[f] = T
@@ -238,19 +246,19 @@ def parse_elastix(animal):
 
     transformation_to_anchor_sec = {}
     # Converts every transformation
-    for moving_idx in range(len(image_name_list)):
-        if moving_idx == anchor_idx:
-            transformation_to_anchor_sec[image_name_list[moving_idx]] = np.eye(3)
-        elif moving_idx < anchor_idx:
+    for moving_idx in range(len(files)):
+        if moving_idx == midpoint:
+            transformation_to_anchor_sec[files[moving_idx]] = np.eye(3)
+        elif moving_idx < midpoint:
             T_composed = np.eye(3)
-            for i in range(anchor_idx, moving_idx, -1):
+            for i in range(midpoint, moving_idx, -1):
                 T_composed = np.dot(np.linalg.inv(transformation_to_previous_sec[i]), T_composed)
-            transformation_to_anchor_sec[image_name_list[moving_idx]] = T_composed
+            transformation_to_anchor_sec[files[moving_idx]] = T_composed
         else:
             T_composed = np.eye(3)
-            for i in range(anchor_idx + 1, moving_idx + 1):
+            for i in range(midpoint + 1, moving_idx + 1):
                 T_composed = np.dot(transformation_to_previous_sec[i], T_composed)
-            transformation_to_anchor_sec[image_name_list[moving_idx]] = T_composed
+            transformation_to_anchor_sec[files[moving_idx]] = T_composed
 
     return transformation_to_anchor_sec
 
