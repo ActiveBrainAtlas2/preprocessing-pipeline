@@ -7,11 +7,13 @@ Image.MAX_IMAGE_PIXELS = None
 import pickle
 import re
 from pathlib import Path
+from sqlalchemy.orm.exc import NoResultFound
 
 
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
 from model.elastix_transformation import ElastixTransformation
+from sql_setup import session
 
 
 def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_filepath=None):
@@ -192,10 +194,17 @@ def parameter_elastix_parameter_file_to_dict(filename):
 
 
 def load_elastix_transformation(animal, moving_index):
-    session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
-        .filter(ElastixTransformation.section == moving_index).one()
+    try:
+        elastixTransformation = session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
+            .filter(ElastixTransformation.section == moving_index).one()
+    except NoResultFound as nrf:
+        print('No value for {} {} error: {}'.format(animal, moving_index, nrf))
+        return 0,0,0
 
-    return 1,2,3
+    R = elastixTransformation.rotation
+    xshift = elastixTransformation.xshift
+    yshift = elastixTransformation.yshift
+    return R, xshift, yshift
 
 def create_elastix_transformation(rotation, xshift, yshift, center):
     R = np.array([[np.cos(rotation), -np.sin(rotation)],
@@ -203,9 +212,6 @@ def create_elastix_transformation(rotation, xshift, yshift, center):
     shift = center + (xshift, yshift) - np.dot(R, center)
     T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
     return T
-
-
-
 
 def parse_elastix(animal):
     """
@@ -225,38 +231,30 @@ def parse_elastix(animal):
     midfile = io.imread(midfilepath, img_num=0)
     height = midfile.shape[0]
     width = midfile.shape[1]
-    center = np.array([width, height])
-  
-
-    """
+    center = np.array([width, height]) / 2
+    
     for i in range(1, len(files)):
-        fixed_filepath = os.path.splitext(files[i - 1])[0]
-        moving_filepath = os.path.splitext(files[i])[0]
-        transformation_to_previous_sec[i] = load_consecutive_section_transform(animal, moving_filepath, fixed_filepath)
-    """
-
-    for f in range(1, len(files)):
-        moving_index = str(f).zfill(3)
+        moving_index = os.path.splitext(files[i])[0]
         rotation, xshift, yshift = load_elastix_transformation(animal, moving_index)
         T = create_elastix_transformation(rotation, xshift, yshift, center)
-        transformation_to_previous_sec[f] = T
-
-
+        transformation_to_previous_sec[i] = T
+    
+    
     transformation_to_anchor_sec = {}
     # Converts every transformation
-    for moving_idx in range(len(files)):
-        if moving_idx == midpoint:
-            transformation_to_anchor_sec[files[moving_idx]] = np.eye(3)
-        elif moving_idx < midpoint:
+    for moving_index in range(len(files)):
+        if moving_index == midpoint:
+            transformation_to_anchor_sec[files[moving_index]] = np.eye(3)
+        elif moving_index < midpoint:
             T_composed = np.eye(3)
-            for i in range(midpoint, moving_idx, -1):
+            for i in range(midpoint, moving_index, -1):
                 T_composed = np.dot(np.linalg.inv(transformation_to_previous_sec[i]), T_composed)
-            transformation_to_anchor_sec[files[moving_idx]] = T_composed
+            transformation_to_anchor_sec[files[moving_index]] = T_composed
         else:
             T_composed = np.eye(3)
-            for i in range(midpoint + 1, moving_idx + 1):
+            for i in range(midpoint + 1, moving_index + 1):
                 T_composed = np.dot(transformation_to_previous_sec[i], T_composed)
-            transformation_to_anchor_sec[files[moving_idx]] = T_composed
+            transformation_to_anchor_sec[files[moving_index]] = T_composed
 
     return transformation_to_anchor_sec
 

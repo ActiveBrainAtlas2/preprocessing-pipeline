@@ -20,6 +20,7 @@ from model.section import Section
 from model.scan_run import ScanRun
 from model.histology import Histology
 from model.animal import Animal
+from model.elastix_transformation import ElastixTransformation
 import sys
 import json
 import pandas as pd
@@ -463,6 +464,20 @@ class SqlController(object):
 
         return lookup.id
 
+    def add_elastix_row(self, animal, section, rotation, xshift, yshift):
+        data = ElastixTransformation(
+            prep_id=animal, section=section, rotation=rotation, xshift=xshift, yshift=yshift,
+            created=datetime.utcnow(), active=True)
+        try:
+            session.add(data)
+            session.commit()
+        except Exception as e:
+            print(f'No merge {e}')
+            session.rollback()
+
+
+
+
 
 def file_processed(animal, progress_id, filename):
     """
@@ -507,6 +522,8 @@ def set_file_completed(animal, progress_id, filename):
         pooledsession.rollback()
     finally:
         pooledsession.close()
+
+    
 
 
 """
