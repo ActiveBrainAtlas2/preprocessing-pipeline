@@ -12,6 +12,7 @@ def create_elastix(animal):
     INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
     sqlController = SqlController(animal)
     files = sorted(os.listdir(INPUT))
+    sqlController.clear_elastix(animal)
 
     for i in tqdm(range(1, len(files))):
         fixed_index = os.path.splitext(files[i-1])[0]

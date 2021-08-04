@@ -469,13 +469,15 @@ class SqlController(object):
             prep_id=animal, section=section, rotation=rotation, xshift=xshift, yshift=yshift,
             created=datetime.utcnow(), active=True)
         try:
-            session.add(data)
-            session.commit()
+            self.session.add(data)
+            self.session.commit()
         except Exception as e:
             print(f'No merge {e}')
-            session.rollback()
+            self.session.rollback()
 
-
+    def clear_elastix(self, animal):
+        self.session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
+            .delete()
 
 
 
