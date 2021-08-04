@@ -39,13 +39,12 @@ CORRECTED = 2
 
 
 
-def get_centers(animal, input_type_id, person_id=2):
-    beth = 2
+def get_centers(animal, input_type_id, person_id=2, layer='COM'):
     rows = session.query(LayerData).filter(
         LayerData.active.is_(True))\
             .filter(LayerData.prep_id == animal)\
             .filter(LayerData.person_id == person_id)\
-            .filter(LayerData.layer == 'COM')\
+            .filter(LayerData.layer == layer)\
             .filter(LayerData.input_type_id == input_type_id)\
             .all()
     row_dict = {}
@@ -100,16 +99,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--pointbrain', help='Enter point animal', required=True)
     parser.add_argument('--imagebrain', help='Enter image animal', required=True)
-    parser.add_argument('--layer', help='Enter layer name', required=False)
+    parser.add_argument('--inputlayer', help='Enter input layer name', required=False, default='COM')
+    parser.add_argument('--outputlayer', help='Enter output layer name', required=False)
     
 
     args = parser.parse_args()
     pointbrain = args.pointbrain
     imagebrain = args.imagebrain
-    layer = args.layer
+    inputlayer = args.inputlayer
+    outputlayer = args.outputlayer
 
 
-    pointdata = get_centers(pointbrain, CORRECTED)
+    pointdata = get_centers(pointbrain, CORRECTED, layer=inputlayer)
     atlas_centers = get_centers('atlas', input_type_id=1, person_id=16)
     common_structures = get_common_structure([pointbrain, imagebrain])
 
@@ -136,7 +137,7 @@ if __name__ == '__main__':
         print( round(x1), round(y1),round(section1), end="\t")
         print( round(x2), round(y2),round(section2))
 
-        if layer is not None:
-            add_layer(pointbrain, structure, x2, y2, section2, 1, layer)
+        if outputlayer is not None:
+            add_layer(pointbrain, structure, x2, y2, section2, 1, outputlayer)
     # transform to atlas space        
 

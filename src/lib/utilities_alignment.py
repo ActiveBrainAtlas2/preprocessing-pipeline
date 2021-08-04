@@ -1,5 +1,4 @@
 import os, sys
-from src.model.elastix_transformation import ElastixTransformation
 import numpy as np
 import pandas as pd
 from skimage import io
@@ -9,11 +8,10 @@ import pickle
 import re
 from pathlib import Path
 
-PIPELINE_ROOT = Path('.').absolute().parent
-sys.path.append(PIPELINE_ROOT.as_posix())
 
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
+from model.elastix_transformation import ElastixTransformation
 
 
 def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_filepath=None):
