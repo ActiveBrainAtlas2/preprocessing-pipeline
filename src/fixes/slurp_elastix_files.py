@@ -23,6 +23,8 @@ from lib.utilities_alignment import parameter_elastix_parameter_file_to_dict
 def slurp(animal):
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
+    sqlController.clear_elastix(animal)
+
 
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
     if not os.path.exists(INPUT):

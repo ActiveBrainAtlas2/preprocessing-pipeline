@@ -20,7 +20,7 @@ sys.path.append(PATH)
 from lib.utilities_contour import get_contours_from_annotations, create_volume
 from lib.sqlcontroller import SqlController
 from lib.file_location import DATA_PATH, FileLocationManager
-from lib.utilities_alignment import parse_elastix, transform_create_alignment
+from lib.utilities_alignment import parse_elastix, transform_create_alignment, create_warp_transforms
 from lib.utilities_atlas import ATLAS
 from abakit.utilities.shell_tools import get_image_size
 
@@ -35,15 +35,15 @@ def create_clean_transform(animal):
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
     files = sorted(os.listdir(INPUT))
     section_offset = {}
-    for file_name in tqdm(files):
-        filepath = os.path.join(INPUT, file_name)
-
-        # Use imread is too slow for full res images
+    for file in tqdm(files):
+        filepath = os.path.join(INPUT, file)
         width, height = get_image_size(filepath)
-        xshift = (int(fixed_width) - int(height)) / 2 
-        yshift = (int(fixed_height) - int(width)) / 2
+        width = int(width) * 32
+        height = int(height) * 32
+        xshift = (int(fixed_width) - width) / 2 
+        yshift = (int(fixed_height) - height) / 2
         shifts = np.array([xshift, yshift])
-        section = int(file_name.split('.')[0])
+        section = int(file.split('.')[0])
         section_offset[section] = shifts
     return section_offset
 
@@ -64,19 +64,6 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     origin_filepath = os.path.join(OUTPUT_DIR, 'origin', f'{structure}.txt')
     os.makedirs(os.path.join(OUTPUT_DIR, 'origin'), exist_ok=True)
     np.savetxt(origin_filepath, origin)
-
-
-def create_warp_transforms(transforms, downsample_factor=32):
-    def convert_2d_transform_forms(arr):
-        return np.vstack([arr, [0, 0, 1]])
-
-    transforms_scale_factor = 32 / downsample_factor
-    tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
-    transforms_to_anchor = {}
-    for img_name, tf in transforms.items():
-        transforms_to_anchor[img_name] = convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor)
-
-    return transforms_to_anchor
 
 
 def create_volumes(animal, create):
@@ -104,7 +91,7 @@ def create_volumes(animal, create):
     section_offset = create_clean_transform(animal)
 
     transforms = parse_elastix(animal)
-    warp_transforms = create_warp_transforms(transforms, DOWNSAMPLE_FACTOR)
+    warp_transforms = create_warp_transforms(animal, transforms, downsample=False)
     ordered_transforms = sorted(warp_transforms.items())
 
     section_transform = {}
