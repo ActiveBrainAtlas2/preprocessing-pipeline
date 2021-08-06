@@ -565,10 +565,8 @@ def create_volume(str_contour, structure, color):
     parameters that dictate how it is rendered.
     Returns the binary structure volume.
     """
-    xy_ng_resolution_um = 10
-    color_radius = 3
-    xy_ng_resolution_um = xy_ng_resolution_um  # X and Y voxel length in microns
-    color_radius = color_radius * (10.0 / xy_ng_resolution_um) ** 0.5
+    xy_ng_resolution_um = 10 # X and Y voxel length in microns
+    color_radius = 1.5
     ng_section_min = 92
     ng_section_max = 370
     first_sec = min(str_contour.keys())
@@ -579,7 +577,8 @@ def create_volume(str_contour, structure, color):
     max_y = 0
     min_x = 9999999
     min_y = 9999999
-    # 'min_z' is the relative starting section (if the prep2 sections start at slice 100, and the structure starts at slice 110, min_z is 10 )
+    # 'min_z' is the relative starting section (if the prep2 sections start at slice 100, 
+    #  and the structure starts at slice 110, min_z is 10 )
     # Z resolution is 20um for simple 1-1 correspondance with section thickness
     max_z = (last_sec - ng_section_min)
     min_z = (first_sec - ng_section_min)
@@ -587,8 +586,10 @@ def create_volume(str_contour, structure, color):
         max_z = ng_section_min
     if min_z < 0:
         min_z = 0
-    # Scaling factor is (0.46/X). Scaling from resolution of 0.46 microns to X microns. x is 10um for neuroglancer in x,y space.
-    scale_xy = 0.46 / xy_ng_resolution_um
+    # Scaling factor is (0.452/X). Scaling from resolution of 0.452 microns to X microns. 
+    # x is 10um for neuroglancer in x,y space.
+    scale_xy = 0.452 / xy_ng_resolution_um
+    scale_xy = 1
 
     # X,Y are 10um voxels. Z is 20um voxels.
     # str_contour_ng_resolution is the previous contour data rescaled

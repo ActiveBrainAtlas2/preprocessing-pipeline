@@ -242,7 +242,7 @@ class SqlController(object):
         return self.session.query(Structure).filter(Structure.active.is_(True)).all()
 
     def get_structures_dict(self):
-        rows = self.session.query(Structure).filter(
+        rows = self.session.query(Structure).filter(Structure.abbreviation != 'R').filter(Structure.id < 52).filter(
             Structure.active.is_(True)).all()
         structures_dict = {}
         for structure in rows:
