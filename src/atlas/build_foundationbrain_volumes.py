@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 
 HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
+PATH = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(PATH)
 
 from lib.utilities_contour import get_contours_from_annotations, create_volume
