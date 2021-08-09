@@ -242,7 +242,10 @@ class SqlController(object):
         return self.session.query(Structure).filter(Structure.active.is_(True)).all()
 
     def get_structures_dict(self):
-        rows = self.session.query(Structure).filter(Structure.abbreviation != 'R').filter(Structure.id < 52).filter(
+        rows = self.session.query(Structure)\
+            .filter(Structure.abbreviation != 'R')\
+            .filter(Structure.abbreviation == 'SC')\
+            .filter(Structure.id < 52).filter(
             Structure.active.is_(True)).all()
         structures_dict = {}
         for structure in rows:
@@ -356,7 +359,7 @@ class SqlController(object):
         id = structure.id
 
         com = LayerData(prep_id=animal, structure_id=id, x=x, y=y, section=section,
-                           created=datetime.utcnow(), active=True, person_id=person_id, 
+                           created=datetime.utcnow(), active=True, person_id=person_id,
                            input_type=input_type)
 
         try:
@@ -387,7 +390,7 @@ class SqlController(object):
             structure = row.structure.abbreviation
             row_dict[structure] = [row.x, row.y, row.section]
         return row_dict
-    
+
     def get_com_dict(self, prep_id, input_type_id=1, person_id=2,active = True):
         rows = self.session.query(LayerData)\
             .filter(LayerData.active.is_(active))\
@@ -401,7 +404,7 @@ class SqlController(object):
             structure = row.structure.abbreviation
             row_dict[structure] = [row.x, row.y, row.section]
         return row_dict
-    
+
     def get_atlas_centers(self):
         PERSON_ID_LAUREN = 16
         INPUT_TYPE_MANUAL = 1
@@ -525,7 +528,7 @@ def set_file_completed(animal, progress_id, filename):
     finally:
         pooledsession.close()
 
-    
+
 
 
 """

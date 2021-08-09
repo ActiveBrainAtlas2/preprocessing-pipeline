@@ -406,7 +406,7 @@ def create_volumeXXX(str_contour, structure, first_sec, last_sec, color=1):
             min_y = min(scale_xy * y, min_y)
             max_x = max(scale_xy * x, max_x)
             max_y = max(scale_xy * y, max_y)
-    return np.zeros((3,3,3)), [1,2,3]
+    # return np.zeros((3,3,3)), [1,2,3]
     # Cast max and min values to int as they are used to build 3D numpy matrix
     max_x = int(np.ceil(max_x))
     max_y = int(np.ceil(max_y))
@@ -561,23 +561,27 @@ def min_max_sections(target_structure, hand_annotations):
 
 def create_volume(str_contour, structure, color):
     """
-    Takes in the contours of a structure as well as the name, sections spanned by the structure, and a list of
+    Takes in the contours of a structure as well as the name,
+    sections spanned by the structure, and a list of
     parameters that dictate how it is rendered.
     Returns the binary structure volume.
     """
-    xy_ng_resolution_um = 10 # X and Y voxel length in microns
+    xy_ng_resolution_um = 5 # X and Y voxel length in microns
     color_radius = 1.5
     ng_section_min = 92
     ng_section_max = 370
+    ng_section_min = 0
+    ng_section_max = 445
     first_sec = min(str_contour.keys())
     last_sec = max(str_contour.keys())
+    print('first and last sec', first_sec, last_sec)
     # Max and Min X/Y Values given random initial values that will be replaced
     # X and Y resolution will be specified by the user in microns (xy_ng_resolution_umx by y_ng_resolution_um)
     max_x = 0
     max_y = 0
     min_x = 9999999
     min_y = 9999999
-    # 'min_z' is the relative starting section (if the prep2 sections start at slice 100, 
+    # 'min_z' is the relative starting section (if the prep2 sections start at slice 100,
     #  and the structure starts at slice 110, min_z is 10 )
     # Z resolution is 20um for simple 1-1 correspondance with section thickness
     max_z = (last_sec - ng_section_min)
@@ -586,9 +590,10 @@ def create_volume(str_contour, structure, color):
         max_z = ng_section_min
     if min_z < 0:
         min_z = 0
-    # Scaling factor is (0.452/X). Scaling from resolution of 0.452 microns to X microns. 
+    # orig is 0.46
+    # Scaling factor is (0.452/X). Scaling from resolution of 0.452 microns to X microns.
     # x is 10um for neuroglancer in x,y space.
-    scale_xy = 0.452 / xy_ng_resolution_um
+    scale_xy = 0.46 / xy_ng_resolution_um
     scale_xy = 1
 
     # X,Y are 10um voxels. Z is 20um voxels.
@@ -597,7 +602,7 @@ def create_volume(str_contour, structure, color):
     str_contour_ng_resolution = {}
     for section, vertices in str_contour.items():
         # Load (X,Y) coordinates on this contour
-        #section_contours = str_contour[section][structure]
+        # section_contours = str_contour[section][structure]
         # (X,Y) coordinates will be rescaled to the new resolution and placed here
         # str_contour_ng_resolution starts at z=0 for simplicity, must provide section offset later on
         str_contour_ng_resolution[section - first_sec] = []
@@ -621,8 +626,14 @@ def create_volume(str_contour, structure, color):
     min_x = int(np.floor(min_x))
     min_y = int(np.floor(min_y))
 
-    # Create empty 'structure_volume' using min and max values found earlier. Acts as a bounding box for now
-    structure_volume = np.zeros((max_z - min_z, max_y - min_y, max_x - min_x), dtype=np.uint8)
+    # Create empty 'structure_volume' using min and max values found earlier.
+    # Acts as a bounding box for now
+    # e.g. Shape of SC for atlasV7 is 176,238,377
+    print('x range', min_x, max_x, 'diff', max_x-min_x)
+    print('y range', min_y, max_y, 'diff',  max_y-min_y)
+    print('z range', min_z, max_z, 'diff',  max_z-min_z)
+    structure_volume = np.zeros((max_z - min_z, max_y - min_y, max_x - min_x),
+                                dtype=np.uint8)
     z_voxels, y_voxels, x_voxels = np.shape(structure_volume)
 
     # Go through every slice. For every slice color in the voxels corrosponding to the contour's coordinate pair
