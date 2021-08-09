@@ -99,6 +99,7 @@ def create_volumes(animal, create):
         transform = np.linalg.inv(transform)
         section_transform[section_num] = transform
 
+    data = []
     aligned_structures = defaultdict(dict)
     for section in section_structure_vertices:
         for structure in section_structure_vertices[section]:
@@ -106,6 +107,15 @@ def create_volumes(animal, create):
             points = points + section_offset[section]  # create_clean offset
             points = transform_create_alignment(points, section_transform[section])  # create_alignment transform
             aligned_structures[structure][section] = points
+            data.append([structure, section, points])
+                            
+    df = pd.DataFrame(data=data, columns=['structure', 'section', 'vertices'])
+    OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    outpath = os.path.join(OUTPUT_DIR,  f'{animal}_corrected_vertices.csv')
+    df = df.sort_values(by=['structure', 'section'])
+    df.to_csv(outpath, index=False)
+    print(df.head())
 
     points = aligned_structures['SC'][136]
     print('aligned structures SC At 136', points.shape, np.min(points, axis=0), np.max(points, axis=0))
