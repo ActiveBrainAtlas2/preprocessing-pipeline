@@ -16,8 +16,7 @@ from abakit.utilities.shell_tools import get_image_size
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
-from lib.utilities_contour import get_contours_from_annotations, create_volume, \
-    create_volumeXXX
+from lib.utilities_contour import get_contours_from_annotations, create_volume
 from lib.sqlcontroller import SqlController
 from lib.file_location import DATA_PATH, FileLocationManager
 from lib.utilities_alignment import parse_elastix, \
@@ -26,26 +25,26 @@ from lib.utilities_atlas import ATLAS
 
 DOWNSAMPLE_FACTOR = 1
 
+def draw_numpy(section_structure_polygons, section_start, section_end):
+    volume = np.zeros((downsampled_aligned_shape[1], downsampled_aligned_shape[0], section_end - section_start), dtype=np.uint8)
+    for section in tqdm(range(section_start, section_end)):
+        if section in section_structure_polygons:
+            template = np.zeros((downsampled_aligned_shape[1], downsampled_aligned_shape[0]), dtype=np.uint8)
+            for structure in section_structure_polygons[section]:
+                polygons = section_structure_polygons[section][structure]
+                for polygon in polygons:
+                    #color = get_structure_number(structure)
+                    color = 10
+#                     cv2.polylines(template, [polygon.astype(np.int32)], True, color, 1)
+                    for point in polygon:
+                        cv2.circle(template, tuple(point.astype(np.int32)), 0, color, -1)
 
-def create_clean_transform(animal):
-    sqlController = SqlController(animal)
-    fileLocationManager = FileLocationManager(animal)
-    resolution = sqlController.scan_run.resolution
-    aligned_shape = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
-    downsampled_aligned_shape = np.round(aligned_shape / DOWNSAMPLE_FACTOR).astype(int)
-    scales = np.array([resolution * DOWNSAMPLE_FACTOR, resolution * DOWNSAMPLE_FACTOR, 20]) * 1000
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
-    files = sorted(os.listdir(INPUT))
-    section_offset = {}
-    for file in tqdm(files):
-        filepath = os.path.join(INPUT, file)
-        width, height = get_image_size(filepath)
-        width = int(width)
-        height = int(height)
-        downsampled_shape = np.array((width, height))
-        section = int(file.split('.')[0])
-        section_offset[section] = (downsampled_aligned_shape - downsampled_shape) / 2
-    return section_offset
+            volume[:, :, section - section_start - 1] = template
+        
+    volume = np.swapaxes(volume, 0, 1)
+    return volume
+
+
 
 
 def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
@@ -69,22 +68,8 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
 def create_volumes(animal, create):
 
     sqlController = SqlController(animal)
-    section_offset = create_clean_transform(animal)
-    transforms = parse_elastix(animal)
-    warp_transforms = create_warp_transforms(animal, transforms, downsample=True)
-    ordered_transforms = sorted(warp_transforms.items())
-    section_structure_vertices = defaultdict(dict)
-    csvfile = os.path.join(DATA_PATH, 'atlas_data/foundation_brain_annotations',\
-        f'{animal}_annotation.csv')
-    hand_annotations = pd.read_csv(csvfile)
+    aligned_annotations = pd.read_csv(csvfile)
 
-    hand_annotations['vertices'] = hand_annotations['vertices'] \
-        .apply(lambda x: x.replace(' ', ',')) \
-        .apply(lambda x: x.replace('\n', ',')) \
-        .apply(lambda x: x.replace(',]', ']')) \
-        .apply(lambda x: x.replace(',,', ',')) \
-        .apply(lambda x: x.replace(',,', ',')) \
-        .apply(lambda x: x.replace(',,', ',')).apply(lambda x: x.replace(',,', ','))
 
     hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
     structures = sqlController.get_structures_dict()
@@ -92,46 +77,6 @@ def create_volumes(animal, create):
         contour_annotations, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=0)
         for section in contour_annotations:
             section_structure_vertices[section][structure] = contour_annotations[section][structure]
-
-    section_transform = {}
-    for section, transform in ordered_transforms:
-        section_num = int(section.split('.')[0])
-        transform = np.linalg.inv(transform)
-        section_transform[section_num] = transform
-
-    data = []
-    aligned_structures = defaultdict(dict)
-    for section in section_structure_vertices:
-        for structure in section_structure_vertices[section]:
-            points = np.array(section_structure_vertices[section][structure]) / DOWNSAMPLE_FACTOR
-            points = points + section_offset[section]  # create_clean offset
-            points = transform_create_alignment(points, section_transform[section])  # create_alignment transform
-            aligned_structures[structure][section] = points
-            data.append([structure, section, points])
-                            
-    df = pd.DataFrame(data=data, columns=['structure', 'section', 'vertices'])
-    OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    outpath = os.path.join(OUTPUT_DIR,  f'{animal}_corrected_vertices.csv')
-    df = df.sort_values(by=['structure', 'section'])
-    df.to_csv(outpath, index=False)
-    print(df.head())
-
-    points = aligned_structures['SC'][136]
-    print('aligned structures SC At 136', points.shape, np.min(points, axis=0), np.max(points, axis=0))
-    # Shape of SC for atlasV7 is 176,238,377
-    for structure, values in structures.items():
-        color = values[1]
-        volume, xyz_offsets = \
-            create_volume(aligned_structures[structure], structure,
-                color)
-        x, y, z = xyz_offsets
-        #x = xy_neuroglancer2atlas(x)
-        #y = xy_neuroglancer2atlas(y)
-        #z = section_neuroglancer2atlas(z)
-        print(animal, structure, volume.shape, x,y,z)
-        if create:
-            save_volume_origin(ATLAS, animal, structure, volume, xyz_offsets)
 
 
 def create_numpy_volume(contour_annotations, structure):
