@@ -5,47 +5,19 @@ These annotations were done by Lauren, Beth, Yuncong and Harvey
 The annotations are full scale vertices.
 """
 import argparse
-from collections import defaultdict
+import json
 import os
 import sys
+import cv2
 import numpy as np
-import pandas as pd
-import ast
 from tqdm import tqdm
-from abakit.utilities.shell_tools import get_image_size
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
-from lib.utilities_contour import get_contours_from_annotations, create_volume
-from lib.sqlcontroller import SqlController
-from lib.file_location import DATA_PATH, FileLocationManager
-from lib.utilities_alignment import parse_elastix, \
-    transform_create_alignment, create_warp_transforms
+from lib.file_location import DATA_PATH
 from lib.utilities_atlas import ATLAS
 
 DOWNSAMPLE_FACTOR = 1
-
-def draw_numpy(section_structure_polygons, section_start, section_end):
-    volume = np.zeros((downsampled_aligned_shape[1], downsampled_aligned_shape[0], section_end - section_start), dtype=np.uint8)
-    for section in tqdm(range(section_start, section_end)):
-        if section in section_structure_polygons:
-            template = np.zeros((downsampled_aligned_shape[1], downsampled_aligned_shape[0]), dtype=np.uint8)
-            for structure in section_structure_polygons[section]:
-                polygons = section_structure_polygons[section][structure]
-                for polygon in polygons:
-                    #color = get_structure_number(structure)
-                    color = 10
-#                     cv2.polylines(template, [polygon.astype(np.int32)], True, color, 1)
-                    for point in polygon:
-                        cv2.circle(template, tuple(point.astype(np.int32)), 0, color, -1)
-
-            volume[:, :, section - section_start - 1] = template
-        
-    volume = np.swapaxes(volume, 0, 1)
-    return volume
-
-
-
 
 def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     x, y, z = xyz_offsets
@@ -53,9 +25,9 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     y = xy_neuroglancer2atlas(y)
     z = section_neuroglancer2atlas(z)
     origin = [x, y, z]
-    volume = np.swapaxes(volume, 0, 2)
-    volume = np.rot90(volume, axes=(0, 1))
-    volume = np.flip(volume, axis=0)
+    #volume = np.swapaxes(volume, 0, 2)
+    #volume = np.rot90(volume, axes=(0, 1))
+    #volume = np.flip(volume, axis=0)
     OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', atlas_name, animal)
     volume_filepath = os.path.join(OUTPUT_DIR, 'structure', f'{structure}.npy')
     os.makedirs(os.path.join(OUTPUT_DIR, 'structure'), exist_ok=True)
@@ -65,35 +37,54 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     np.savetxt(origin_filepath, origin)
 
 
-def create_volumes(animal, create):
+def create_volumes(animal):
+    CSVPATH = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
+    jsonpath = os.path.join(CSVPATH,  'aligned_structure_sections.json')
+    with open(jsonpath) as f:
+        aligned_dict = json.load(f)
+    structures = list(aligned_dict.keys())                      
+    for structure in tqdm(structures):
+        onestructure = aligned_dict[structure]
+        mins = []
+        maxs = []
 
-    sqlController = SqlController(animal)
-    aligned_annotations = pd.read_csv(csvfile)
+        for index, points in onestructure.items():
+            arr_tmp = np.array(points)
+            min_tmp = np.min(arr_tmp, axis=0)
+            max_tmp = np.max(arr_tmp, axis=0)
+            mins.append(min_tmp)
+            maxs.append(max_tmp)
+            
+        min_xy = np.min(mins, axis=0)
+        min_x = min_xy[0]
+        min_y = min_xy[1]
+        max_xy = np.max(maxs, axis=0)
+        max_x = max_xy[0]
+        max_y = max_xy[1]
+        xlength = max_x - min_x
+        ylength = max_y - min_y
+        sections = [int(i) for i in onestructure.keys()]
+        zlength = (max(sections) - min(sections))        
+        padding = 1.1
+        PADDED_SIZE = (int(ylength*padding), int(xlength*padding))
+        volume = []
+        for section, points in sorted(onestructure.items()):
+            vertices = np.array(points) - np.array((min_x, min_y))
+            volume_slice = np.zeros(PADDED_SIZE, dtype=np.uint8)
+            points = (vertices).astype(np.int32)
+            color = 10
+            volume_slice = cv2.polylines(volume_slice, [points], isClosed=True, color=color, thickness=1)
+            volume.append(volume_slice)
 
+        volume = np.array(volume)
+        avg_x = (max_x - min_x) // 2
+        avg_y = (max_y - min_y) // 2
+        avg_z = zlength // 2
+        xyz_offsets = (avg_x, avg_y, avg_z)
+        save_volume_origin(ATLAS, animal, structure, volume, xyz_offsets)
 
-    hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
-    structures = sqlController.get_structures_dict()
-    for structure, values in structures.items():
-        contour_annotations, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=0)
-        for section in contour_annotations:
-            section_structure_vertices[section][structure] = contour_annotations[section][structure]
-
-
-def create_numpy_volume(contour_annotations, structure):
-    volume = []
-    for section in list(contour_annotations.keys())[:2]:
-        print(section)
-        vertices = np.array(contour_annotations[section][structure])
-        print(vertices.shape)
-        vertices = (vertices * 460) / 452
-
-        volume_slice = np.zeros(PADDED_SIZE, dtype=np.uint8)
-        points = (vertices + np.array(original_offsets[section])).astype(np.int32)
-        volume_slice = cv2.polylines(volume_slice, [points], True, 1, 10, lineType=cv2.LINE_AA)
-        volume.append(volume_slice)
-
-    volume = np.array(volume).sum(axis=0)
-    return volume
+                      
+                      
 
 
 def xy_neuroglancer2atlas(xy_neuroglancer):
@@ -104,12 +95,11 @@ def xy_neuroglancer2atlas(xy_neuroglancer):
     :param x: x or y coordinate
     :return: rounded xy integer that is in atlas scale
     """
-    COL_LENGTH = 1000
-    ATLAS_RAW_SCALE = 10
-
-    atlas_box_center = COL_LENGTH / 2
-    xy_atlas = (xy_neuroglancer - atlas_box_center) / (ATLAS_RAW_SCALE / 0.452)
-    return xy_atlas
+    # COL_LENGTH = 1000
+    # ATLAS_RAW_SCALE = 10
+    # atlas_box_center = COL_LENGTH / 2
+    # xy_atlas = (xy_neuroglancer - atlas_box_center) / (ATLAS_RAW_SCALE / 0.452)
+    return xy_neuroglancer
 
 def section_neuroglancer2atlas(section):
     """
@@ -118,25 +108,23 @@ def section_neuroglancer2atlas(section):
     :param section:
     :return: rounded integer of section in atlas coordinates
     """
-    Z_LENGTH = 300
-    ATLAS_Z_BOX_SCALE = 20
-    ATLAS_RAW_SCALE = 10
-    atlas_box_center = Z_LENGTH / 2
-    result = atlas_box_center + section * ATLAS_RAW_SCALE/ATLAS_Z_BOX_SCALE
-    return result
+    # Z_LENGTH = 300
+    # ATLAS_Z_BOX_SCALE = 20
+    # ATLAS_RAW_SCALE = 10
+    # atlas_box_center = Z_LENGTH / 2
+    # result = atlas_box_center + section * ATLAS_RAW_SCALE/ATLAS_Z_BOX_SCALE
+    return section
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=False)
-    parser.add_argument('--create', help='create volume', required=False, default='false')
     args = parser.parse_args()
     animal = args.animal
-    create = bool({'true': True, 'false': False}[args.create.lower()])
     if animal is None:
         animals = ['MD585', 'MD589', 'MD594']
     else:
         animals = [animal]
 
     for animal in animals:
-        create_volumes(animal, create)
+        create_volumes(animal)
