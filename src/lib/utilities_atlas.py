@@ -29,7 +29,7 @@ from lib.file_location import FileLocationManager, DATA_PATH
 from lib.coordinates_converter import CoordinatesConverter
 SECTION_THICKNESS = 20. # in um
 
-REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL_registration_parameters'
+REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL/CSHL_registration_parameters'
 
 MESH_DIR = os.path.join(DATA_PATH, 'CSHL_meshes')
 VOL_DIR = os.path.join(DATA_PATH, 'CSHL_volumes')

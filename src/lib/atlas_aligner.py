@@ -10,7 +10,7 @@ from lib.utilities_atlas import parallel_where_binary, convert_transform_forms, 
     compute_bspline_cp_contribution_to_test_pts, convert_volume_forms, transform_points_affine, compute_gradient_v2, \
     transform_points_bspline, rotate_transform_vector, affine_components_to_vector, compose_alignment_parameters, \
     rotationMatrixToEulerAngles, eulerAnglesToRotationMatrix
-from atlas.lie import matrix_exp_v
+from lib.lie import matrix_exp_v
 
 volume_f = None
 volume_m = None
