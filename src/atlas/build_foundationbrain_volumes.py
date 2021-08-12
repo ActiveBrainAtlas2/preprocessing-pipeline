@@ -11,19 +11,18 @@ import sys
 import cv2
 import numpy as np
 from tqdm import tqdm
+from scipy.ndimage.measurements import center_of_mass
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
 from lib.file_location import DATA_PATH
 from lib.utilities_atlas import ATLAS
+from lib.sqlcontroller import SqlController
 
 DOWNSAMPLE_FACTOR = 1
 
 def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     x, y, z = xyz_offsets
-    x = xy_neuroglancer2atlas(x)
-    y = xy_neuroglancer2atlas(y)
-    z = section_neuroglancer2atlas(z)
     origin = [x, y, z]
     #volume = np.swapaxes(volume, 0, 2)
     #volume = np.rot90(volume, axes=(0, 1))
@@ -38,6 +37,7 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
 
 
 def create_volumes(animal):
+    sqlController = SqlController(animal)
     CSVPATH = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
     jsonpath = os.path.join(CSVPATH,  'aligned_structure_sections.json')
     with open(jsonpath) as f:
@@ -77,44 +77,24 @@ def create_volumes(animal):
             volume.append(volume_slice)
 
         volume = np.array(volume)
-        avg_x = (max_x - min_x) // 2
-        avg_y = (max_y - min_y) // 2
-        avg_z = zlength // 2
-        xyz_offsets = (avg_x, avg_y, avg_z)
-        save_volume_origin(ATLAS, animal, structure, volume, xyz_offsets)
+        com = center_of_mass(volume)
+        midx = (max_x - min_x) / 2
+        midy = (max_y - min_y) / 2
+        midz = (zlength) / 2
+        
+        to_um = 0.452 * 32
+        #xyz_offsets = (mid_x+min_x, mid_y+min_y, mid_z+min(sections))
+        x,y,z = ((min_x+com[0])*to_um, (min_y+com[1])*to_um, (min(sections) + com[2])*20)
+        #x,y,z = ((min_x+midx)*to_um, (min_y+midy)*to_um, (min(sections) + midz)*20)
+        sqlController.add_layer_data(abbreviation=structure, animal=animal, 
+                                     layer='COM', x=x, y=y, section=z, 
+                                     person_id=1, input_type_id=1)
+        #print(animal, structure, xyz_offsets)
+        # print(animal, structure, min_y*32, max_y*32)
+        save_volume_origin(ATLAS, animal, structure, volume, (x,y,z))
 
                       
                       
-
-
-def xy_neuroglancer2atlas(xy_neuroglancer):
-    """
-    TODO
-    0.325 is the scale for Neurotrace brains
-    This converts the atlas coordinates to neuroglancer XY coordinates
-    :param x: x or y coordinate
-    :return: rounded xy integer that is in atlas scale
-    """
-    # COL_LENGTH = 1000
-    # ATLAS_RAW_SCALE = 10
-    # atlas_box_center = COL_LENGTH / 2
-    # xy_atlas = (xy_neuroglancer - atlas_box_center) / (ATLAS_RAW_SCALE / 0.452)
-    return xy_neuroglancer
-
-def section_neuroglancer2atlas(section):
-    """
-    TODO
-    scales the z (section) to atlas coordinates
-    :param section:
-    :return: rounded integer of section in atlas coordinates
-    """
-    # Z_LENGTH = 300
-    # ATLAS_Z_BOX_SCALE = 20
-    # ATLAS_RAW_SCALE = 10
-    # atlas_box_center = Z_LENGTH / 2
-    # result = atlas_box_center + section * ATLAS_RAW_SCALE/ATLAS_Z_BOX_SCALE
-    return section
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')

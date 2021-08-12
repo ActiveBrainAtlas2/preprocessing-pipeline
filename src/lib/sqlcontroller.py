@@ -332,7 +332,8 @@ class SqlController(object):
             print('Bad lookup code for {}'.format(lookup.id))
             self.session.rollback()
 
-    def add_layer_data(self, abbreviation, animal, x, y, section, person_id, input_type):
+    def add_layer_data(self, abbreviation, animal, layer, x, y, section, 
+                       person_id, input_type_id):
         """
         Look up the structure id from the structure.
         Args:
@@ -357,9 +358,10 @@ class SqlController(object):
 
         id = structure.id
 
-        com = LayerData(prep_id=animal, structure_id=id, x=x, y=y, section=section,
-                           created=datetime.utcnow(), active=True, person_id=person_id,
-                           input_type=input_type)
+        com = LayerData(prep_id=animal, structure_id=id, layer=layer, 
+                        x=x, y=y, section=section,
+                        created=datetime.utcnow(), active=True, person_id=person_id,
+                        input_type_id=input_type_id)
 
         try:
             self.session.add(com)
