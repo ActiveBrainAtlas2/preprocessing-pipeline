@@ -3,8 +3,8 @@ This gets the CSV data of the 3 foundation brains' annotations.
 These annotations were done by Lauren, Beth, Yuncong and Harvey
 (i'm not positive about this)
 The annotations are full scale vertices.
-MD585 section 160,181,222,230,252 annotations are too far south
-MD589 section 296 too far north
+MD585 section 161,182,223,231,253 annotations are too far south
+MD589 section 297 too far north
 MD594 all good
 """
 import argparse
@@ -17,6 +17,8 @@ import ast
 import json
 from tqdm import tqdm
 from abakit.utilities.shell_tools import get_image_size
+from scipy.interpolate import splprep, splev
+
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
@@ -48,6 +50,22 @@ def create_clean_transform(animal):
         section = int(file.split('.')[0])
         section_offsets[section] = (downsampled_aligned_shape - downsampled_shape) / 2
     return section_offsets
+
+
+
+def interpolate(points, new_len):
+    points = np.array(points)
+    pu = points.astype(int)
+    indexes = np.unique(pu, axis=0, return_index=True)[1]
+    points = np.array([points[index] for index in sorted(indexes)])
+    addme = points[0].reshape(1, 2)
+    points = np.concatenate((points, addme), axis=0)
+
+    tck, u = splprep(points.T, u=None, s=3, per=1)
+    u_new = np.linspace(u.min(), u.max(), new_len)
+    x_array, y_array = splev(u_new, tck, der=0)
+    arr_2d = np.concatenate([x_array[:, None], y_array[:, None]], axis=1)
+    return list(map(tuple, arr_2d))
 
 
 def create_volumes(animal):
@@ -82,21 +100,36 @@ def create_volumes(animal):
         transform = np.linalg.inv(transform)
         section_transform[section_num] = transform
 
-    aligned_structures = defaultdict(dict)
+    original_structures = defaultdict(dict)
+    unaligned_padded_structures = defaultdict(dict)
+    aligned_padded_structures = defaultdict(dict)
     for section in section_structure_vertices:
         section = int(section)
         for structure in section_structure_vertices[section]:
+
             points = np.array(section_structure_vertices[section][structure]) / DOWNSAMPLE_FACTOR
-            points = points + section_offsets[section]  # create_clean offset
+            points = interpolate(points, 1000)
+            original_structures[structure][section] = points
+
+            points = np.array(points) + section_offsets[section]  # create_clean offset
+            unaligned_padded_structures[structure][section] = points.tolist()
+
             points = transform_create_alignment(points, section_transform[section])  # create_alignment transform
-            aligned_structures[structure][section] = points.tolist()
-            
-                            
+            aligned_padded_structures[structure][section] = points.tolist()
+
     OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    jsonpath = os.path.join(OUTPUT_DIR,  'aligned_structure_sections.json')
-    with open(jsonpath, 'w') as f:
-        json.dump(aligned_structures, f, sort_keys=True)
+    jsonpath1 = os.path.join(OUTPUT_DIR,  'original_structures.json')
+    with open(jsonpath1, 'w') as f:
+        json.dump(original_structures, f, sort_keys=True)
+        
+    jsonpath2 = os.path.join(OUTPUT_DIR,  'unaligned_padded_structures.json')
+    with open(jsonpath2, 'w') as f:
+        json.dump(unaligned_padded_structures, f, sort_keys=True)
+        
+    jsonpath3 = os.path.join(OUTPUT_DIR,  'aligned_padded_structures.json')
+    with open(jsonpath3, 'w') as f:
+        json.dump(aligned_padded_structures, f, sort_keys=True)
 
 
 if __name__ == '__main__':
