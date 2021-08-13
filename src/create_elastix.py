@@ -33,8 +33,8 @@ def run_elastix(animal, njobs):
     files = sorted(os.listdir(INPUT))
     elastix_output_dir = fileLocationManager.elastix_dir
     os.makedirs(elastix_output_dir, exist_ok=True)
-
-    param_file = os.path.join('utilities/alignment', "Parameters_Rigid.txt")
+    HOME = os.path.expanduser("~")
+    param_file = os.path.join(HOME, 'programming/pipeline_utility/src/lib', 'Parameters_Rigid.txt')
     if not os.path.exists(param_file):
         print(f'Could not find {param_file}')
         sys.exit()

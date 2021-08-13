@@ -36,7 +36,7 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     np.savetxt(origin_filepath, origin)
 
 
-def create_volumes(animal):
+def create_volumes(animal, debug):
     sqlController = SqlController(animal)
     CSVPATH = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
     jsonpath = os.path.join(CSVPATH,  'aligned_structure_sections.json')
@@ -82,16 +82,24 @@ def create_volumes(animal):
         midy = (max_y - min_y) / 2
         midz = (zlength) / 2
         
+        
+        
         to_um = 0.452 * 32
         #xyz_offsets = (mid_x+min_x, mid_y+min_y, mid_z+min(sections))
         x,y,z = ((min_x+com[0])*to_um, (min_y+com[1])*to_um, (min(sections) + com[2])*20)
         #x,y,z = ((min_x+midx)*to_um, (min_y+midy)*to_um, (min(sections) + midz)*20)
-        sqlController.add_layer_data(abbreviation=structure, animal=animal, 
+        if debug:
+            print(animal, structure,'\tx range', 
+                  round(min_x*32), round(max_x*32),
+                  '\ty range',
+                  round(min_y*32), round(max_y*32)
+                  )
+        else:
+            sqlController.add_layer_data(abbreviation=structure, animal=animal, 
                                      layer='COM', x=x, y=y, section=z, 
                                      person_id=1, input_type_id=1)
-        #print(animal, structure, xyz_offsets)
-        # print(animal, structure, min_y*32, max_y*32)
-        save_volume_origin(ATLAS, animal, structure, volume, (x,y,z))
+            #print(animal, structure, xyz_offsets)
+            save_volume_origin(ATLAS, animal, structure, volume, (x,y,z))
 
                       
                       
@@ -99,12 +107,14 @@ def create_volumes(animal):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=False)
+    parser.add_argument('--debug', help='Enter debug True|False', required=False, default='true')
     args = parser.parse_args()
     animal = args.animal
+    debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
     if animal is None:
         animals = ['MD585', 'MD589', 'MD594']
     else:
         animals = [animal]
 
     for animal in animals:
-        create_volumes(animal)
+        create_volumes(animal, debug)

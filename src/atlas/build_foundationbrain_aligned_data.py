@@ -3,6 +3,9 @@ This gets the CSV data of the 3 foundation brains' annotations.
 These annotations were done by Lauren, Beth, Yuncong and Harvey
 (i'm not positive about this)
 The annotations are full scale vertices.
+MD585 section 160,181,222,230,252 annotations are too far south
+MD589 section 296 too far north
+MD594 all good
 """
 import argparse
 from collections import defaultdict
