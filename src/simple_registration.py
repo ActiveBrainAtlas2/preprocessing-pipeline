@@ -17,8 +17,9 @@ def create_elastix(animal):
     for i in tqdm(range(1, len(files))):
         fixed_index = os.path.splitext(files[i-1])[0]
         moving_index = os.path.splitext(files[i])[0]        
-        rotation, xshift, yshift = register_simple(INPUT, fixed_index, moving_index)
-        sqlController.add_elastix_row(animal, moving_index, rotation, xshift, yshift)
+        if not sqlController.check_elastix_row(animal,moving_index):
+            rotation, xshift, yshift = register_simple(INPUT, fixed_index, moving_index)
+            sqlController.add_elastix_row(animal, moving_index, rotation, xshift, yshift)
 
 
 if __name__ == '__main__':

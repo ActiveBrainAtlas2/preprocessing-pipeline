@@ -104,7 +104,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
-    #make_full_resolution(animal, channel)
+    make_full_resolution(animal, channel)
     make_low_resolution(animal, channel)
 
     sqlController = SqlController(animal)

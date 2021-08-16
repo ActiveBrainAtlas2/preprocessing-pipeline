@@ -13,15 +13,12 @@ import pandas as pd
 from collections import OrderedDict
 from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
-
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
 from lib.utilities_alignment import (create_warp_transforms,   parse_elastix, process_image)
 from lib.utilities_process import test_dir, get_cpus
-
 
 def run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen,njobs):
     """
@@ -102,8 +99,6 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
 
     print('Finished')
         
-
-
 def create_csv_data(animal, file_keys):
     data = []
     for index, infile, outfile, T in file_keys:
@@ -123,8 +118,6 @@ def create_csv_data(animal, file_keys):
     df = pd.DataFrame(data)
     df.to_csv(f'/tmp/{animal}.section2sectionalignments.csv', index=False)
 
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
@@ -136,7 +129,6 @@ if __name__ == '__main__':
     parser.add_argument('--scale', help='Enter scaling', required=False, default=45000)
     parser.add_argument('--njobs', help='number of core to use for parallel processing muralus can handle 20-25 ratto can handle 4', required=False, default=4)
 
-
     args = parser.parse_args()
     animal = args.animal
     workers = int(args.njobs)
@@ -146,6 +138,5 @@ if __name__ == '__main__':
     allen = bool({'true': True, 'false': False}[str(args.allen).lower()])
     masks = args.masks
     scale = int(args.scale)
-
     transforms = parse_elastix(animal)
     run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen,workers)
