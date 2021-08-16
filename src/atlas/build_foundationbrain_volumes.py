@@ -60,23 +60,19 @@ def create_volumes(animal, debug):
             avgarr = np.column_stack((arr_tmp, ss))
             com = np.mean(avgarr, axis=0)
             avgs.append(com)
-            
+
         avgarr = np.array(avgs)
-        com = np.mean(avgarr, axis=0)   
-            
+        com = np.mean(avgarr, axis=0)
         min_xy = np.min(mins, axis=0)
         min_x = min_xy[0]
         min_y = min_xy[1]
         max_xy = np.max(maxs, axis=0)
         max_x = max_xy[0]
         max_y = max_xy[1]
-        avg_com = np.average(avgs, axis=0)
-        avg_x = avg_com[0]
-        avg_y = avg_com[1]
         xlength = max_x - min_x
         ylength = max_y - min_y
         sections = [int(i) for i in onestructure.keys()]
-        zlength = (max(sections) - min(sections))        
+        zlength = (max(sections) - min(sections))
         padding = 1.01
         PADDED_SIZE = (int(ylength*padding), int(xlength*padding))
         volume = []
@@ -85,23 +81,17 @@ def create_volumes(animal, debug):
             volume_slice = np.zeros(PADDED_SIZE, dtype=np.uint8)
             points = (vertices).astype(np.int32)
             color = sqlController.get_structure_color_rgb(structure)
-            volume_slice = cv2.polylines(volume_slice, [points], isClosed=True, color=color, thickness=1)
-            cv2.fillPoly(volume_slice, pts = [points], color = color)
+            volume_slice = cv2.polylines(volume_slice, [points], isClosed=True, 
+                                         color=color, thickness=1)
+            cv2.fillPoly(volume_slice, pts=[points], color=color)
 
             volume.append(volume_slice)
 
         volume = np.array(volume)
-        #com = center_of_mass(volume)
-        midx = (max_x - min_x) / 2
-        midy = (max_y - min_y) / 2
-        midz = (zlength) / 2
-
         to_um = 1
-        #xyz_offsets = (mid_x+min_x, mid_y+min_y, mid_z+min(sections))
-        # x,y,z = ((min_x+com[0])*to_um, (min_y+com[1])*to_um, (min(sections) + com[2])*20)
-        # x,y,z = ((min_x+midx)*to_um, (min_y+midy)*to_um, (min(sections) + midz)*20)
-        x = round(com[0] * to_um)
-        y = round(com[1] * to_um)
+        ndcom = center_of_mass(volume)
+        x = round(ndcom[0] + min_x)
+        y = round(ndcom[1] + min_y)
         z = round(com[2] * 1)
         if debug:
             print(animal, structure,'\tcom', '\tcom x y z', x, y, z)
@@ -109,14 +99,14 @@ def create_volumes(animal, debug):
             #sqlController.add_layer_data(abbreviation=structure, animal=animal, 
             #                         layer='COM', x=x, y=y, section=z, 
             #                         person_id=1, input_type_id=3)
-            #print(animal, structure, xyz_offsets)
-            save_volume_origin(ATLAS, animal, structure, volume, (x,y,z))
+            save_volume_origin(ATLAS, animal, structure, volume, (x, y, z))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=False)
-    parser.add_argument('--debug', help='Enter debug True|False', required=False, default='true')
+    parser.add_argument('--debug', help='Enter debug True|False', required=False,
+                         default='true')
     args = parser.parse_args()
     animal = args.animal
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])

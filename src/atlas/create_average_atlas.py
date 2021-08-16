@@ -135,8 +135,7 @@ for structure in structures:
         iters = 100
         _, _ = aligner.optimize(tf_type='rigid',
                                 history_len=100,
-                                #max_iter_num=100 if structure in ['SC', 'IC'] else 100,
-                                max_iter_num=iters,
+                                max_iter_num=100 if structure in ['SC', 'IC'] else 100,
                                 grad_computation_sample_number=None,
                                 full_lr=np.array([lr, lr, lr, 0.1, 0.1, 0.1]),
                                 terminate_thresh_trans=.01)
