@@ -132,9 +132,11 @@ for structure in structures:
         aligner.compute_gradient(smooth_first=True)
         lr = 1.
         ### max_iter_num was originally 100 and 1000
+        iters = 100
         _, _ = aligner.optimize(tf_type='rigid',
                                 history_len=100,
-                                max_iter_num=100 if structure in ['SC', 'IC'] else 100,
+                                #max_iter_num=100 if structure in ['SC', 'IC'] else 100,
+                                max_iter_num=iters,
                                 grad_computation_sample_number=None,
                                 full_lr=np.array([lr, lr, lr, 0.1, 0.1, 0.1]),
                                 terminate_thresh_trans=.01)
@@ -198,6 +200,14 @@ for structure in structures:
                         mean_shapes[structure][1] + nominal_centroids_10um[structure])
         
     volume = mean_shape[0]
+    threshold = 0.015
+    volume[volume >= threshold] = 100
+    volume[volume < threshold] = 0
+    volume = volume.astype(np.uint8)
+    volume = np.swapaxes(volume, 0, 2)
+    volume = np.rot90(volume, axes=(1, 2))
+    volume = np.flip(volume, axis=1)
+
     origin = mean_shape[1]
     
     # save origin, this is also the important one

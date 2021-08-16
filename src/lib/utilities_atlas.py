@@ -704,12 +704,14 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
     if resolution is None:
         resolution = stack_spec['resolution']
     animal = stack_spec['name']
-    volume_filename = get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure, resolution=resolution)
-    #volume_filename = '{}.npy'.format(structure)
-    volume_filepath = os.path.join(VOL_DIR, animal,
-                                   '{}_annotationAsScoreVolume'.format(resolution), volume_filename)
+    data_dir = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/atlas_data/atlasV8', animal)
+    
+    # volume_filename = get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure, resolution=resolution)
+    volume_filename = '{}.npy'.format(structure)
+    #volume_filepath = os.path.join(VOL_DIR, animal, '{}_annotationAsScoreVolume'.format(resolution), volume_filename)
 
     #volume = load_data(volume_filepath, filetype='npy')
+    volume_filepath = os.path.join(data_dir, 'structure', f'{structure}.npy')
     volume = np.load(volume_filepath)
 
     # bbox_fp = DataManager.get_original_volume_bbox_filepath_v2(stack_spec=stack_spec, structure=structure,
@@ -718,9 +720,8 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
     # volume_bbox = DataManager.load_data(bbox_fp, filetype='bbox')
     #filename = '{}_origin_wrt_{}.txt'.format(structure, bbox_wrt)
     #filepath = os.path.join(VOL_DIR, stack, '{}_annotationAsScoreVolume'.format(resolution), filename)
-    origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
-    data_dir = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/atlas_data/atlasV8', animal, 'origin')
-    #origin_filename = os.path.join(data_dir, f'{structure}.txt')
+    #origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
+    origin_filename = os.path.join(data_dir, 'origin', f'{structure}.txt')
     origin = np.loadtxt(origin_filename)
     if crop_to_minimal:
         print('ln 726 in crop_to_minimal')
@@ -1022,17 +1023,19 @@ def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox
     
     animal = stack_spec['name']
     atlas = 'atlasV8'
-    #VOL_DIR = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/atlas_data', atlas, animal)
-    DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL/CSHL_volumes'
+    DIR = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/atlas_data', atlas, animal)
+    #DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL/CSHL_volumes'
     for structure in structures:
         try:
             if loaded:
                 index = structure_to_label[structure]
 
-            #v, o = load_original_volume_v2(stack_spec, structure=structure, bbox_wrt=in_bbox_wrt,
+            # v, o = load_original_volume_v2(stack_spec, structure=structure, bbox_wrt=in_bbox_wrt,
             #                                           resolution=stack_spec['resolution'])
-            volume_filepath = os.path.join(DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}.npy')
-            origin_filepath = os.path.join(DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}_origin_wrt_wholebrain.txt')
+            #volume_filepath = os.path.join(DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}.npy')
+            #origin_filepath = os.path.join(DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}_origin_wrt_wholebrain.txt')
+            volume_filepath = os.path.join(DIR, 'structure', f'{structure}.npy')
+            origin_filepath = os.path.join(DIR, 'origin', f'{structure}.txt')
             #volume_filepath = os.path.join(LOADPATH, f'{structure}.npy')
             v = np.load(volume_filepath)
             #origin_filepath = os.path.join(LOADPATH, f'{structure}_origin_wrt_{in_bbox_wrt}.txt')
@@ -1040,13 +1043,14 @@ def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox
 
             
             
-            in_bbox_origin_wrt_wholebrain = get_domain_origin(animal=stack_spec['name'],
-                                                                          domain=in_bbox_wrt,
-                                                                          resolution=stack_spec['resolution'],
-                                                                          loaded_cropbox_resolution=stack_spec['resolution'])
+            # this is always 0,0,0
+            # in_bbox_origin_wrt_wholebrain = get_domain_origin(animal=stack_spec['name'],
+            #                                                              domain=in_bbox_wrt,
+            #                                                              resolution=stack_spec['resolution'],
+            #                                                              loaded_cropbox_resolution=stack_spec['resolution'])
       
-            print(o, in_bbox_origin_wrt_wholebrain)      
-            o = o + in_bbox_origin_wrt_wholebrain
+            # print(o, in_bbox_origin_wrt_wholebrain)      
+            # o = o + in_bbox_origin_wrt_wholebrain
             if name_or_index_as_key == 'name':
                 volumes[structure] = (v,o)
             else:

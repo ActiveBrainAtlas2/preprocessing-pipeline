@@ -24,7 +24,7 @@ DOWNSAMPLE_FACTOR = 1
 def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     x, y, z = xyz_offsets
     origin = [x, y, z]
-    #volume = np.swapaxes(volume, 0, 2)
+    volume = np.swapaxes(volume, 0, 2)
     #volume = np.rot90(volume, axes=(0, 1))
     #volume = np.flip(volume, axis=0)
     OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', atlas_name, animal)
@@ -77,15 +77,17 @@ def create_volumes(animal, debug):
         ylength = max_y - min_y
         sections = [int(i) for i in onestructure.keys()]
         zlength = (max(sections) - min(sections))        
-        padding = 1.1
+        padding = 1.01
         PADDED_SIZE = (int(ylength*padding), int(xlength*padding))
         volume = []
         for section, points in sorted(onestructure.items()):
             vertices = np.array(points) - np.array((min_x, min_y))
             volume_slice = np.zeros(PADDED_SIZE, dtype=np.uint8)
             points = (vertices).astype(np.int32)
-            color = 10
+            color = sqlController.get_structure_color_rgb(structure)
             volume_slice = cv2.polylines(volume_slice, [points], isClosed=True, color=color, thickness=1)
+            cv2.fillPoly(volume_slice, pts = [points], color = color)
+
             volume.append(volume_slice)
 
         volume = np.array(volume)
@@ -94,29 +96,22 @@ def create_volumes(animal, debug):
         midy = (max_y - min_y) / 2
         midz = (zlength) / 2
 
-        to_um = 0.452 * 32
+        to_um = 1
         #xyz_offsets = (mid_x+min_x, mid_y+min_y, mid_z+min(sections))
         # x,y,z = ((min_x+com[0])*to_um, (min_y+com[1])*to_um, (min(sections) + com[2])*20)
         # x,y,z = ((min_x+midx)*to_um, (min_y+midy)*to_um, (min(sections) + midz)*20)
-        x = com[0] * to_um
-        y = com[1] * to_um
-        z = com[2] * 20
+        x = round(com[0] * to_um)
+        y = round(com[1] * to_um)
+        z = round(com[2] * 1)
         if debug:
-            print(animal, structure,'\tx range', 
-                  round(min_x*32), round(max_x*32),
-                  '\ty range',
-                  round(min_y*32), round(max_y*32),
-                  '\tcom x y z',x,y,z
-                  )
+            print(animal, structure,'\tcom', '\tcom x y z', x, y, z)
         else:
-            sqlController.add_layer_data(abbreviation=structure, animal=animal, 
-                                     layer='COM', x=x, y=y, section=z, 
-                                     person_id=1, input_type_id=3)
+            #sqlController.add_layer_data(abbreviation=structure, animal=animal, 
+            #                         layer='COM', x=x, y=y, section=z, 
+            #                         person_id=1, input_type_id=3)
             #print(animal, structure, xyz_offsets)
             save_volume_origin(ATLAS, animal, structure, volume, (x,y,z))
 
-                      
-                      
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
