@@ -468,6 +468,12 @@ class SqlController(object):
 
         return lookup.id
 
+    def check_elastix_row(self, animal, section):
+        row_exists = bool(self.session.query(ElastixTransformation).filter(
+            ElastixTransformation.prep_id == animal,
+            ElastixTransformation.section == section).first())
+        return row_exists
+
     def add_elastix_row(self, animal, section, rotation, xshift, yshift):
         data = ElastixTransformation(
             prep_id=animal, section=section, rotation=rotation, xshift=xshift, yshift=yshift,
