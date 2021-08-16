@@ -32,7 +32,7 @@ SECTION_THICKNESS = 20. # in um
 REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL/CSHL_registration_parameters'
 
 MESH_DIR = os.path.join(DATA_PATH, 'CSHL_meshes')
-VOL_DIR = os.path.join(DATA_PATH, 'CSHL_volumes')
+VOL_DIR = os.path.join(DATA_PATH, 'CSHL', 'CSHL_volumes')
 ATLAS = 'atlasV8'
 paired_structures = ['5N', '6N', '7N', '7n', 'Amb',
                      'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC',
@@ -1023,20 +1023,20 @@ def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox
     animal = stack_spec['name']
     atlas = 'atlasV8'
     #VOL_DIR = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/atlas_data', atlas, animal)
-
+    DIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL/CSHL_volumes'
     for structure in structures:
         try:
             if loaded:
                 index = structure_to_label[structure]
 
-            v, o = load_original_volume_v2(stack_spec, structure=structure, bbox_wrt=in_bbox_wrt,
-                                                       resolution=stack_spec['resolution'])
-            #volume_filepath = os.path.join(VOL_DIR, 'structure', f'{structure}.npy')
-            #origin_filepath = os.path.join(VOL_DIR, 'origin', f'{structure}.txt')
+            #v, o = load_original_volume_v2(stack_spec, structure=structure, bbox_wrt=in_bbox_wrt,
+            #                                           resolution=stack_spec['resolution'])
+            volume_filepath = os.path.join(DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}.npy')
+            origin_filepath = os.path.join(DIR, animal, '10.0um_annotationAsScoreVolume', f'{structure}_origin_wrt_wholebrain.txt')
             #volume_filepath = os.path.join(LOADPATH, f'{structure}.npy')
-            #v = np.load(volume_filepath)
+            v = np.load(volume_filepath)
             #origin_filepath = os.path.join(LOADPATH, f'{structure}_origin_wrt_{in_bbox_wrt}.txt')
-            #o = np.loadtxt(origin_filepath)
+            o = np.loadtxt(origin_filepath)
 
             
             
