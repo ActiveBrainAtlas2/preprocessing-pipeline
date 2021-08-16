@@ -4,6 +4,7 @@ These annotations were done by Lauren, Beth, Yuncong and Harvey
 (i'm not positive about this)
 The annotations are full scale vertices.
 MD585 section 161,182,223,231,253 annotations are too far south
+MD585 off by 100,60,60,80,60
 MD589 section 297 too far north
 MD594 all good
 """
@@ -100,6 +101,7 @@ def create_volumes(animal):
         transform = np.linalg.inv(transform)
         section_transform[section_num] = transform
 
+    md585_fixes = {161: 100, 182: 60, 223: 60, 231: 80, 253: 60}
     original_structures = defaultdict(dict)
     unaligned_padded_structures = defaultdict(dict)
     aligned_padded_structures = defaultdict(dict)
@@ -108,10 +110,15 @@ def create_volumes(animal):
         for structure in section_structure_vertices[section]:
 
             points = np.array(section_structure_vertices[section][structure]) / DOWNSAMPLE_FACTOR
-            points = interpolate(points, 1000)
+            points = interpolate(points, max(250, len(points)))
             original_structures[structure][section] = points
+            offset = section_offsets[section]
+            if animal == 'MD585' and section in md585_fixes.keys():
+                offset = offset - np.array([0, md585_fixes[section]])
+            if animal == 'MD589' and section == 297:
+                offset = offset + np.array([0, 35])
 
-            points = np.array(points) + section_offsets[section]  # create_clean offset
+            points = np.array(points) +  offset
             unaligned_padded_structures[structure][section] = points.tolist()
 
             points = transform_create_alignment(points, section_transform[section])  # create_alignment transform

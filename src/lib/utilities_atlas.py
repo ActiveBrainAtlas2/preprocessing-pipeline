@@ -703,10 +703,10 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
     """
     if resolution is None:
         resolution = stack_spec['resolution']
-    stack = stack_spec['name']
+    animal = stack_spec['name']
     volume_filename = get_original_volume_filepath_v2(stack_spec=stack_spec, structure=structure, resolution=resolution)
     #volume_filename = '{}.npy'.format(structure)
-    volume_filepath = os.path.join(VOL_DIR, stack,
+    volume_filepath = os.path.join(VOL_DIR, animal,
                                    '{}_annotationAsScoreVolume'.format(resolution), volume_filename)
 
     #volume = load_data(volume_filepath, filetype='npy')
@@ -719,8 +719,11 @@ def load_original_volume_v2(stack_spec, structure=None, resolution=None, bbox_wr
     #filename = '{}_origin_wrt_{}.txt'.format(structure, bbox_wrt)
     #filepath = os.path.join(VOL_DIR, stack, '{}_annotationAsScoreVolume'.format(resolution), filename)
     origin_filename = get_original_volume_origin_filepath_v3(stack_spec=stack_spec, structure=structure, wrt=bbox_wrt, resolution=resolution)
+    data_dir = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/atlas_data/atlasV8', animal, 'origin')
+    #origin_filename = os.path.join(data_dir, f'{structure}.txt')
     origin = np.loadtxt(origin_filename)
     if crop_to_minimal:
+        print('ln 726 in crop_to_minimal')
         volume, origin = crop_volume_to_minimal(vol=volume, origin=origin, return_origin_instead_of_bbox=True)
 
     # if return_origin_instead_of_bbox:
@@ -1016,20 +1019,33 @@ def load_original_volume_all_known_structures_v3(stack_spec, structures, in_bbox
         structure_to_label = {}
         label_to_structure = {}
         index = 1
+    
+    animal = stack_spec['name']
+    atlas = 'atlasV8'
+    #VOL_DIR = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/atlas_data', atlas, animal)
 
     for structure in structures:
         try:
             if loaded:
                 index = structure_to_label[structure]
 
-            v, o = load_original_volume_v2(stack_spec, structure=structure,
-                                                       bbox_wrt=in_bbox_wrt,
+            v, o = load_original_volume_v2(stack_spec, structure=structure, bbox_wrt=in_bbox_wrt,
                                                        resolution=stack_spec['resolution'])
+            #volume_filepath = os.path.join(VOL_DIR, 'structure', f'{structure}.npy')
+            #origin_filepath = os.path.join(VOL_DIR, 'origin', f'{structure}.txt')
+            #volume_filepath = os.path.join(LOADPATH, f'{structure}.npy')
+            #v = np.load(volume_filepath)
+            #origin_filepath = os.path.join(LOADPATH, f'{structure}_origin_wrt_{in_bbox_wrt}.txt')
+            #o = np.loadtxt(origin_filepath)
 
-            in_bbox_origin_wrt_wholebrain = get_domain_origin(stack=stack_spec['name'],
+            
+            
+            in_bbox_origin_wrt_wholebrain = get_domain_origin(animal=stack_spec['name'],
                                                                           domain=in_bbox_wrt,
                                                                           resolution=stack_spec['resolution'],
                                                                           loaded_cropbox_resolution=stack_spec['resolution'])
+      
+            print(o, in_bbox_origin_wrt_wholebrain)      
             o = o + in_bbox_origin_wrt_wholebrain
             if name_or_index_as_key == 'name':
                 volumes[structure] = (v,o)
@@ -1083,7 +1099,7 @@ def load_all_structures_and_originsXXX(stack_spec, structures, in_bbox_wrt='cano
             origin_filepath = os.path.join(LOADPATH, f'{structure}_origin_wrt_{in_bbox_wrt}.txt')
             origin = np.loadtxt(origin_filepath)
 
-            in_bbox_origin_wrt_wholebrain = get_domain_origin(stack=stack_spec['name'],
+            in_bbox_origin_wrt_wholebrain = get_domain_origin(animal=stack_spec['name'],
                                                                           domain=in_bbox_wrt,
                                                                           resolution=stack_spec['resolution'],
                                                                           loaded_cropbox_resolution=stack_spec['resolution'])

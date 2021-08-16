@@ -39,7 +39,7 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
 def create_volumes(animal, debug):
     sqlController = SqlController(animal)
     CSVPATH = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
-    jsonpath = os.path.join(CSVPATH,  'aligned_structure_sections.json')
+    jsonpath = os.path.join(CSVPATH,  'aligned_padded_structures.json')
     with open(jsonpath) as f:
         aligned_dict = json.load(f)
     structures = list(aligned_dict.keys())                      
@@ -47,13 +47,22 @@ def create_volumes(animal, debug):
         onestructure = aligned_dict[structure]
         mins = []
         maxs = []
+        avgs = []
 
-        for index, points in onestructure.items():
+        for section_num, points in onestructure.items():
+            lpoints = len(points)
             arr_tmp = np.array(points)
             min_tmp = np.min(arr_tmp, axis=0)
             max_tmp = np.max(arr_tmp, axis=0)
             mins.append(min_tmp)
             maxs.append(max_tmp)
+            ss = [int(section_num) for s in range(lpoints)]
+            avgarr = np.column_stack((arr_tmp, ss))
+            com = np.mean(avgarr, axis=0)
+            avgs.append(com)
+            
+        avgarr = np.array(avgs)
+        com = np.mean(avgarr, axis=0)   
             
         min_xy = np.min(mins, axis=0)
         min_x = min_xy[0]
@@ -61,6 +70,9 @@ def create_volumes(animal, debug):
         max_xy = np.max(maxs, axis=0)
         max_x = max_xy[0]
         max_y = max_xy[1]
+        avg_com = np.average(avgs, axis=0)
+        avg_x = avg_com[0]
+        avg_y = avg_com[1]
         xlength = max_x - min_x
         ylength = max_y - min_y
         sections = [int(i) for i in onestructure.keys()]
@@ -77,27 +89,29 @@ def create_volumes(animal, debug):
             volume.append(volume_slice)
 
         volume = np.array(volume)
-        com = center_of_mass(volume)
+        #com = center_of_mass(volume)
         midx = (max_x - min_x) / 2
         midy = (max_y - min_y) / 2
         midz = (zlength) / 2
-        
-        
-        
+
         to_um = 0.452 * 32
         #xyz_offsets = (mid_x+min_x, mid_y+min_y, mid_z+min(sections))
-        x,y,z = ((min_x+com[0])*to_um, (min_y+com[1])*to_um, (min(sections) + com[2])*20)
-        #x,y,z = ((min_x+midx)*to_um, (min_y+midy)*to_um, (min(sections) + midz)*20)
+        # x,y,z = ((min_x+com[0])*to_um, (min_y+com[1])*to_um, (min(sections) + com[2])*20)
+        # x,y,z = ((min_x+midx)*to_um, (min_y+midy)*to_um, (min(sections) + midz)*20)
+        x = com[0] * to_um
+        y = com[1] * to_um
+        z = com[2] * 20
         if debug:
             print(animal, structure,'\tx range', 
                   round(min_x*32), round(max_x*32),
                   '\ty range',
-                  round(min_y*32), round(max_y*32)
+                  round(min_y*32), round(max_y*32),
+                  '\tcom x y z',x,y,z
                   )
         else:
             sqlController.add_layer_data(abbreviation=structure, animal=animal, 
                                      layer='COM', x=x, y=y, section=z, 
-                                     person_id=1, input_type_id=1)
+                                     person_id=1, input_type_id=3)
             #print(animal, structure, xyz_offsets)
             save_volume_origin(ATLAS, animal, structure, volume, (x,y,z))
 
