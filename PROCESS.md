@@ -66,7 +66,7 @@
    and make sure there are no small files, especially with high resolution.
     1. running parallel: muralus can handle 20 cores + while ratto can handle 4
    
-1. Run: `python src/create_elastix.py --animal DKXX` **P**
+1. Run: `python src/simple_registration.py --animal DKXX` **P**
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair.
     1. The elastix dir will be used to align the other channels and the full resoltions.
    
