@@ -32,7 +32,8 @@ from lib.atlas_aligner import Aligner
 fixed_brain_name = 'MD589'
 sqlController = SqlController(fixed_brain_name)
 structures = sqlController.get_structures_list()
-structures.remove("R")
+structures = ['SC']
+
 moving_brain_names = ['MD585', 'MD594']
 resolution = '10.0um'
 resolution_um = 10.0
@@ -197,30 +198,32 @@ for structure in structures:
     else:
         mean_shape = (mean_shapes[structure][0], 
                         mean_shapes[structure][1] + nominal_centroids_10um[structure])
-        
+
     volume = mean_shape[0]
-    threshold = 0.015
-    volume[volume >= threshold] = 100
-    volume[volume < threshold] = 0
-    volume = volume.astype(np.uint8)
+    #volume = np.rot90(volume, axes=(0, 1))
+    #volume = np.flip(volume, axis=0)
+
+    #volume[volume >= threshold] = color
+    #volume = volume.astype(np.uint8)
+
+    #volume[volume >= threshold] = 100
+    #volume[volume < threshold] = 0
+    #volume = volume.astype(np.uint8)
     #volume = np.swapaxes(volume, 0, 2)
     #volume = np.rot90(volume, axes=(1, 2))
     #volume = np.flip(volume, axis=1)
 
     origin = mean_shape[1]
-    
     # save origin, this is also the important one
     filename = f'{structure}.txt'
     filepath = os.path.join(ATLAS_PATH, 'origin', filename)
     np.savetxt(filepath, origin)
-
     # Save volume with stated level. This is the important one
     filename = f'{structure}.npy'
     filepath = os.path.join(ATLAS_PATH, 'structure', filename)
     np.save(filepath, volume)
-    
     # mesh
-    aligned_volume = (mean_shape[0] >= 0.9, mean_shape[1])
+    aligned_volume = (mean_shape[0] >= 0.8, mean_shape[1])
     aligned_structure = volume_to_polydata(volume=aligned_volume,
                            num_simplify_iter=3, smooth=False,
                            return_vertex_face_list=False)

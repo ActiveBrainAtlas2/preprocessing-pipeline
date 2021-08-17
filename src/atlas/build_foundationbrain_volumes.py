@@ -27,8 +27,9 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     yy = (y * DOWNSAMPLE_FACTOR) / (10/0.452)
 
     volume = np.swapaxes(volume, 0, 2)
-    #volume = np.rot90(volume, axes=(0, 1))
-    #volume = np.flip(volume, axis=0)
+    volume = np.rot90(volume, axes=(0,1))
+    volume = np.flip(volume, axis=0)
+
     OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', atlas_name, animal)
     volume_filepath = os.path.join(OUTPUT_DIR, 'structure', f'{structure}.npy')
     os.makedirs(os.path.join(OUTPUT_DIR, 'structure'), exist_ok=True)
@@ -75,21 +76,21 @@ def create_volumes(animal, debug):
         ylength = max_y - min_y
         sections = [int(i) for i in onestructure.keys()]
         zlength = (max(sections) - min(sections))
-        padding = 1.01
-        PADDED_SIZE = (int(ylength*padding), int(xlength*padding))
+        padding = 1.0
+        PADDED_SIZE = (int(ylength), int(xlength))
         volume = []
         for section, points in sorted(onestructure.items()):
             vertices = np.array(points) - np.array((min_x, min_y))
             volume_slice = np.zeros(PADDED_SIZE, dtype=np.uint8)
             points = (vertices).astype(np.int32)
-            color = sqlController.get_structure_color_rgb(structure)
+            #color = sqlController.get_structure_color_rgb(structure)
             volume_slice = cv2.polylines(volume_slice, [points], isClosed=True, 
-                                         color=color, thickness=1)
-            cv2.fillPoly(volume_slice, pts=[points], color=color)
+                                         color=1, thickness=1)
+            cv2.fillPoly(volume_slice, pts=[points], color=1)
 
             volume.append(volume_slice)
 
-        volume = np.array(volume)
+        volume = np.array(volume).astype(np.bool8)
         to_um = 32 * 0.452
         ndcom = center_of_mass(volume)
         #x = round(ndcom[0] + min_x)

@@ -265,7 +265,8 @@ class SqlController(object):
         return structures_dict
 
     def get_structures_list(self):
-        rows = self.session.query(Structure).filter(Structure.id<52).filter(Structure.active.is_(
+        rows = self.session.query(Structure).filter(Structure.id<52)\
+                .filter(Structure.abbreviation != 'R').filter(Structure.active.is_(
             True)).order_by(Structure.abbreviation.asc()).all()
         structures = []
         for structure in rows:
