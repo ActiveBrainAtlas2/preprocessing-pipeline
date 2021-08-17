@@ -203,9 +203,9 @@ for structure in structures:
     volume[volume >= threshold] = 100
     volume[volume < threshold] = 0
     volume = volume.astype(np.uint8)
-    volume = np.swapaxes(volume, 0, 2)
-    volume = np.rot90(volume, axes=(1, 2))
-    volume = np.flip(volume, axis=1)
+    #volume = np.swapaxes(volume, 0, 2)
+    #volume = np.rot90(volume, axes=(1, 2))
+    #volume = np.flip(volume, axis=1)
 
     origin = mean_shape[1]
     

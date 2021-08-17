@@ -225,6 +225,17 @@ class SqlController(object):
         """
         return self.session.query(Structure).filter(Structure.abbreviation == func.binary(abbrv)).one()
 
+    def get_structure_color(self, abbrv):
+        """
+        Returns a color code as int
+        This search has to be case sensitive!
+        :param abbrv: the abbreviation of the structure
+        :return: tuple of rgb
+        """
+        row = self.session.query(Structure).filter(
+            Structure.abbreviation == func.binary(abbrv)).one()
+        return int(row.color)
+
     def get_structure_color_rgb(self, abbrv):
         """
         Returns a color code in RGB format like (1,2,3)

@@ -19,12 +19,12 @@ from lib.file_location import DATA_PATH
 from lib.utilities_atlas import ATLAS
 from lib.sqlcontroller import SqlController
 
-DOWNSAMPLE_FACTOR = 1
+DOWNSAMPLE_FACTOR = 32
 
 def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     x, y, z = xyz_offsets
-    xx = (x * 32) / (10/0.452)
-    yy = (y * 32) / (10/0.452)
+    xx = (x * DOWNSAMPLE_FACTOR) / (10/0.452)
+    yy = (y * DOWNSAMPLE_FACTOR) / (10/0.452)
 
     volume = np.swapaxes(volume, 0, 2)
     #volume = np.rot90(volume, axes=(0, 1))
@@ -44,7 +44,7 @@ def create_volumes(animal, debug):
     jsonpath = os.path.join(CSVPATH,  'aligned_padded_structures.json')
     with open(jsonpath) as f:
         aligned_dict = json.load(f)
-    structures = list(aligned_dict.keys())                      
+    structures = list(aligned_dict.keys())
     for structure in tqdm(structures):
         onestructure = aligned_dict[structure]
         mins = []
@@ -90,17 +90,22 @@ def create_volumes(animal, debug):
             volume.append(volume_slice)
 
         volume = np.array(volume)
-        to_um = 1
+        to_um = 32 * 0.452
         ndcom = center_of_mass(volume)
-        x = round(ndcom[0] + min_x)
-        y = round(ndcom[1] + min_y)
+        #x = round(ndcom[0] + min_x)
+        #y = round(ndcom[1] + min_y)
+        x = com[0]
+        y = com[1]
         z = round(com[2])
+        x_um  = x * to_um
+        y_um = y * to_um
+        z_um = z * 20
         if debug:
-            print(animal, structure,'\tcom', '\tcom x y z', x, y, z)
+            print(animal, structure,'\tcom', '\tcom x y z', x_um, y_um, z_um)
         else:
-            #sqlController.add_layer_data(abbreviation=structure, animal=animal, 
-            #                         layer='COM', x=x, y=y, section=z, 
-            #                         person_id=1, input_type_id=3)
+            sqlController.add_layer_data(abbreviation=structure, animal=animal, 
+                                     layer='COM', x=x_um, y=y_um, section=z_um, 
+                                     person_id=1, input_type_id=3)
             save_volume_origin(ATLAS, animal, structure, volume, (x, y, z))
 
 
