@@ -23,7 +23,9 @@ DOWNSAMPLE_FACTOR = 1
 
 def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     x, y, z = xyz_offsets
-    origin = [x, y, z]
+    xx = (x * 32) / (10/0.452)
+    yy = (y * 32) / (10/0.452)
+
     volume = np.swapaxes(volume, 0, 2)
     #volume = np.rot90(volume, axes=(0, 1))
     #volume = np.flip(volume, axis=0)
@@ -33,7 +35,7 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     np.save(volume_filepath, volume)
     origin_filepath = os.path.join(OUTPUT_DIR, 'origin', f'{structure}.txt')
     os.makedirs(os.path.join(OUTPUT_DIR, 'origin'), exist_ok=True)
-    np.savetxt(origin_filepath, origin)
+    np.savetxt(origin_filepath, (xx,yy,z))
 
 
 def create_volumes(animal, debug):
@@ -92,7 +94,7 @@ def create_volumes(animal, debug):
         ndcom = center_of_mass(volume)
         x = round(ndcom[0] + min_x)
         y = round(ndcom[1] + min_y)
-        z = round(com[2] * 1)
+        z = round(com[2])
         if debug:
             print(animal, structure,'\tcom', '\tcom x y z', x, y, z)
         else:
