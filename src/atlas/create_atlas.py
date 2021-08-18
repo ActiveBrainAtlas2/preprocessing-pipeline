@@ -188,10 +188,11 @@ def create_atlas(create, atlas_name):
         origin = np.loadtxt(os.path.join(ORIGIN_PATH, origin_filename))
         volume = np.load(os.path.join(VOLUME_PATH, volume_filename))
 
-        #volume = np.rot90(volume, axes=(0, 1))
-        #volume = np.flip(volume, axis=0)
-        volume[volume > surface_threshold] = color
+        volume = np.rot90(volume, axes=(0, 1))
+        volume = np.flip(volume, axis=0)
+        volume[volume > 0] = color
         volume = volume.astype(np.uint8)
+        print(volume.dtype, np.amax(volume), np.mean(volume), np.median(volume))
 
         structure_volume_origin[structure] = (volume, origin)
 
