@@ -32,7 +32,6 @@ from lib.atlas_aligner import Aligner
 fixed_brain_name = 'MD589'
 sqlController = SqlController(fixed_brain_name)
 structures = sqlController.get_structures_list()
-structures = ['SC']
 
 moving_brain_names = ['MD585', 'MD594']
 resolution = '10.0um'
@@ -223,7 +222,7 @@ for structure in structures:
     filepath = os.path.join(ATLAS_PATH, 'structure', filename)
     np.save(filepath, volume)
     # mesh
-    aligned_volume = (mean_shape[0] >= 0.8, mean_shape[1])
+    aligned_volume = (mean_shape[0] >= 0.8, origin)
     aligned_structure = volume_to_polydata(volume=aligned_volume,
                            num_simplify_iter=3, smooth=False,
                            return_vertex_face_list=False)
