@@ -29,7 +29,7 @@ def add_layer(animal, abbreviation, x, y, section, person_id, layer='COM'):
     structure = session.query(Structure).filter(Structure.abbreviation == func.binary(abbreviation)).one()
     com = LayerData(
         prep_id=animal, structure=structure, x=x, y=y, section=section, layer=layer,
-        created=datetime.utcnow(), active=True, person_id=person_id, input_type_id=1
+        created=datetime.utcnow(), active=True, person_id=person_id, input_type_id=3
     )
     try:
         session.add(com)

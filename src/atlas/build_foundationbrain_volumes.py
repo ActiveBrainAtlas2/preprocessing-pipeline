@@ -61,6 +61,7 @@ def create_volumes(animal, debug):
             maxs.append(max_tmp)
             ss = [int(section_num) for s in range(lpoints)]
             avgarr = np.column_stack((arr_tmp, ss))
+            # TODO check this code
             com = np.mean(avgarr, axis=0)
             avgs.append(com)
 

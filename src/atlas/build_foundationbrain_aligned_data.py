@@ -91,7 +91,7 @@ def create_volumes(animal):
     hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
     structures = sqlController.get_structures_dict()
     for structure, values in structures.items():
-        contour_annotations, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=0)
+        contour_annotations, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=4)
         for section in contour_annotations:
             section_structure_vertices[section][structure] = contour_annotations[section][structure]
 
