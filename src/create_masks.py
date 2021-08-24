@@ -91,7 +91,7 @@ def create_mask(animal, downsample):
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_masked')
         ##### Check if files in dir are valid
         ##error = test_dir(animal, THUMBNAIL, full=False, same_size=False)
-        MASKED = os.path.join(fileLocationManager.prep, 'masks', 'full_masked_test')
+        MASKED = os.path.join(fileLocationManager.prep, 'masks', 'full_masked')
         os.makedirs(MASKED, exist_ok=True)
         files = sorted(os.listdir(INPUT))
         file_keys = []
