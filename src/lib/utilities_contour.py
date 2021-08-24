@@ -507,7 +507,7 @@ def get_contours_from_annotations(stack, target_structure, hand_annotations, den
         if structure == target_structure:
             vertices = hand_annotations['vertices'][i]
 
-            for i in range(densify):
+            for _ in range(densify):
                 vertices = get_dense_coordinates(vertices)
 
             # Skip sections before the 22nd prep2 section for MD585 as there are clear errors

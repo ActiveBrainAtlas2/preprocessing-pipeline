@@ -139,7 +139,7 @@ def masker(animal, channel, downsample, scale, debug,workers):
     # workers = 20 # this is the upper limit. More than this and it crashes.
     if debug:
         print(f'debugging with single core')
-        for file_key in tqdm(file_keys):
+        for file_key in file_keys:
             fix_ntb(file_key)
     else:
         print(f'Working on {len(file_keys)} files with {workers} cpus')

@@ -260,7 +260,7 @@ def parse_elastix(animal):
 
 
 
-def create_warp_transforms(animal, transforms, downsample):
+def create_downsampled_transforms(animal, transforms, downsample):
     """
     Changes the dictionary of transforms to the correct resolution
     :param animal: prep_id of animal we are working on
