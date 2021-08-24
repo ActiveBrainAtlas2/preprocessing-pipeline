@@ -4,21 +4,27 @@ import numpy as np
 import torch
 import torch.utils.data
 from PIL import Image
-import cv2
+Image.MAX_IMAGE_PIXELS = None
 from tqdm import tqdm
-from multiprocessing.pool import Pool
+import cv2
+from concurrent.futures.process import ProcessPoolExecutor
+from timeit import default_timer as timer
+
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from abakit.utilities.file_location import FileLocationManager 
-from abakit.utilities.shell_tools import workernoshell, get_image_size
+from abakit.utilities.shell_tools import get_image_size
 from abakit.utilities.masking import combine_dims, merge_mask
+
+
 
 from sql_setup import CREATE_FULL_RES_MASKS
 from lib.sqlcontroller import SqlController
-from lib.utilities_process import test_dir
+from lib.utilities_process import get_cpus, test_dir
 import warnings
 warnings.filterwarnings("ignore")
+
 
 def create_final(animal):
     fileLocationManager = FileLocationManager(animal)
@@ -59,7 +65,7 @@ def get_model_instance_segmentation(num_classes):
     model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask, hidden_layer, num_classes)
     return model
 
-def create_mask(animal, downsample, njobs):
+def create_mask(animal, downsample):
 
     fileLocationManager = FileLocationManager(animal)
     modelpath = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth')
@@ -85,11 +91,11 @@ def create_mask(animal, downsample, njobs):
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_masked')
         ##### Check if files in dir are valid
         ##error = test_dir(animal, THUMBNAIL, full=False, same_size=False)
-        MASKED = os.path.join(fileLocationManager.prep, 'masks', 'full_masked')
+        MASKED = os.path.join(fileLocationManager.prep, 'masks', 'full_masked_test')
         os.makedirs(MASKED, exist_ok=True)
         files = sorted(os.listdir(INPUT))
-        commands = []
-        for i, file in enumerate(tqdm(files)):
+        file_keys = []
+        for i, file in enumerate(files):
             infile = os.path.join(INPUT, file)
             thumbfile = os.path.join(THUMBNAIL, file)
 
@@ -100,12 +106,19 @@ def create_mask(animal, downsample, njobs):
                 width, height = get_image_size(infile)
             except:
                 print(f'Could not open {infile}')
-            size = f'{width}x{height}!'
-            cmd = ['convert', thumbfile, '-resize', size, '-depth', '8', outpath]
-            commands.append(cmd)
+            size = int(width), int(height)
+            file_keys.append([thumbfile, outpath, size])
 
-        with Pool(njobs) as p:
-            p.map(workernoshell, commands)
+        start = timer()        
+        workers, _ = get_cpus()
+        print(f'Working on {len(file_keys)} files with {workers} cpus')
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(resize_tif, file_keys)
+        #for file_key in tqdm(file_keys):
+        #    resize_tif(file_key)
+        end = timer()
+        print(f'Create full res masks took {end - start} seconds')
+
     else:
 
         transform = torchvision.transforms.ToTensor()
@@ -151,23 +164,31 @@ def create_mask(animal, downsample, njobs):
             cv2.imwrite(maskpath, merged_img)
 
 
+def resize_tif(file_key):
+    thumbfile, outpath, size = file_key
+    try:
+        im = Image.open(thumbfile)
+        im = im.resize(size, Image.LANCZOS)
+        im.save(outpath)
+    except IOError:
+        print("cannot resize", thumbfile)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
-    parser.add_argument('--njobs', help='How many processes to spawn', default=4, required=False)
     parser.add_argument('--final', help='Enter true or false', required=False, default='false')
 
     args = parser.parse_args()
     animal = args.animal
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     final = bool({'true': True, 'false': False}[str(args.final).lower()])
-    njobs = int(args.njobs)
 
     if final:
          create_final(animal)
     else:
-         create_mask(animal, downsample, njobs)
+         create_mask(animal, downsample)
        
 
 

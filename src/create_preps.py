@@ -7,14 +7,18 @@ This file does the following operations:
 import argparse
 import os
 import sys
-from multiprocessing.pool import Pool
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
+from concurrent.futures.process import ProcessPoolExecutor
+from timeit import default_timer as timer
+
 from tqdm import tqdm
 from shutil import copyfile
 from sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_process import workernoshell, test_dir, get_image_size
+from lib.utilities_process import workernoshell, get_cpus, test_dir, get_image_size, SCALING_FACTOR
 
 
 def make_full_resolution(animal, channel):
@@ -72,7 +76,7 @@ def make_low_resolution(animal, channel):
         sqlController.set_task(animal, CREATE_CHANNEL_2_THUMBNAILS)
         sqlController.set_task(animal, CREATE_CHANNEL_3_THUMBNAILS)
     fileLocationManager = FileLocationManager(animal)
-    commands = []
+    file_keys = []
     INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
     ##### Check if files in dir are valid
     error = test_dir(animal, INPUT, downsample=False, same_size=False)
@@ -83,17 +87,40 @@ def make_low_resolution(animal, channel):
     os.makedirs(OUTPUT, exist_ok=True)
     tifs = sorted(os.listdir(INPUT))
     for tif in tifs:
-        input_path = os.path.join(INPUT, tif)
-        output_path = os.path.join(OUTPUT, tif)
+        infile = os.path.join(INPUT, tif)
+        outpath = os.path.join(OUTPUT, tif)
 
-        if os.path.exists(output_path):
+        if os.path.exists(outpath):
             continue
 
-        cmd = ['convert', input_path, '-resize', '3.125%', '-compress', 'lzw', output_path]
-        commands.append(cmd)
+        try:
+            width, height = get_image_size(infile)
+        except:
+            print(f'Could not open {infile}')
+        size = int(int(width)*SCALING_FACTOR), int(int(height)*SCALING_FACTOR)
+        file_keys.append([infile, outpath, size])
 
-    with Pool(4) as p:
-        p.map(workernoshell, commands)
+        start = timer()        
+        workers, _ = get_cpus()
+        print(f'Working on {len(file_keys)} files with {workers} cpus')
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(resize_tif, file_keys)
+        #for file_key in tqdm(file_keys):
+        #    resize_tif(file_key)
+        end = timer()
+        print(f'Create thumbnails took {end - start} seconds')
+
+
+
+def resize_tif(file_key):
+    thumbfile, outpath, size = file_key
+    try:
+        im = Image.open(thumbfile)
+        im = im.resize(size, Image.LANCZOS)
+        im.save(outpath)
+    except IOError:
+        print("cannot resize", thumbfile)
+
 
 
 if __name__ == '__main__':

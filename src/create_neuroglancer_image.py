@@ -27,7 +27,7 @@ def create_neuroglancer(animal, channel, downsample, workers,debug=False):
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_aligned')
     db_resolution = sqlController.scan_run.resolution
     resolution = int(db_resolution * 1000 / SCALING_FACTOR)
-    # workers, _ = get_cpus()
+    workers, _ = get_cpus()
     chunks = calculate_chunks(downsample, -1)
     progress_id = sqlController.get_progress_id(downsample, channel, 'NEUROGLANCER')
     sqlController.session.close()

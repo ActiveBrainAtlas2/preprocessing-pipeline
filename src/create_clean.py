@@ -97,7 +97,7 @@ def masker(animal, channel, downsample, scale, debug,workers):
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     rotation = sqlController.scan_run.rotation
-    flip = sqlController.scan_run.flip
+    flip = sqlController.scan_run.flipnpm run build-min
     max_width = int(width * SCALING_FACTOR)
     max_height = int(height * SCALING_FACTOR)
     stain = sqlController.histology.counterstain
