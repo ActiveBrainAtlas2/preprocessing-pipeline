@@ -109,12 +109,12 @@ def create_mask(animal, downsample):
             size = int(width), int(height)
             file_keys.append([thumbfile, outpath, size])
 
-        start = timer()        
+        start = timer()
         workers, _ = get_cpus()
         print(f'Working on {len(file_keys)} files with {workers} cpus')
         with ProcessPoolExecutor(max_workers=workers) as executor:
             executor.map(resize_tif, file_keys)
-        #for file_key in tqdm(file_keys):
+        # for file_key in tqdm(file_keys):
         #    resize_tif(file_key)
         end = timer()
         print(f'Create full res masks took {end - start} seconds')

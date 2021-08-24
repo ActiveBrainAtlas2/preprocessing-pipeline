@@ -27,7 +27,7 @@ from lib.utilities_contour import get_contours_from_annotations
 from lib.sqlcontroller import SqlController
 from lib.file_location import DATA_PATH, FileLocationManager
 from lib.utilities_alignment import parse_elastix, \
-    transform_create_alignment, create_warp_transforms
+    transform_create_alignment, create_downsampled_transforms
 from lib.utilities_atlas import ATLAS
 
 DOWNSAMPLE_FACTOR = 32
@@ -74,8 +74,8 @@ def create_volumes(animal):
     sqlController = SqlController(animal)
     section_offsets = create_clean_transform(animal)
     transforms = parse_elastix(animal)
-    warp_transforms = create_warp_transforms(animal, transforms, downsample=True)
-    ordered_transforms = sorted(warp_transforms.items())
+    warp_transforms = create_downsampled_transforms(animal, transforms, downsample=True)
+    ordered_downsampled_transforms = sorted(warp_transforms.items())
     section_structure_vertices = defaultdict(dict)
     csvfile = os.path.join(DATA_PATH, 'atlas_data/foundation_brain_annotations',\
         f'{animal}_annotation.csv')
@@ -96,7 +96,7 @@ def create_volumes(animal):
             section_structure_vertices[section][structure] = contour_annotations[section][structure]
 
     section_transform = {}
-    for section, transform in ordered_transforms:
+    for section, transform in ordered_downsampled_transforms:
         section_num = int(section.split('.')[0])
         transform = np.linalg.inv(transform)
         section_transform[section_num] = transform

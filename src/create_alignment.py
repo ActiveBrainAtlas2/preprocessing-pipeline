@@ -17,7 +17,7 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_alignment import (create_warp_transforms,   parse_elastix, process_image)
+from lib.utilities_alignment import (create_downsampled_transforms,   parse_elastix, process_image)
 from lib.utilities_process import test_dir, get_cpus
 
 def run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen,njobs):
@@ -57,7 +57,7 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
     progress_id = sqlController.get_progress_id(downsample, channel, 'ALIGN')
     sqlController.set_task(animal, progress_id)
 
-    warp_transforms = create_warp_transforms(animal, transforms, downsample)
+    warp_transforms = create_downsampled_transforms(animal, transforms, downsample)
     ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
     file_keys = []
     r90 = np.array([[0,-1,0],[1,0,0],[0,0,1]])
