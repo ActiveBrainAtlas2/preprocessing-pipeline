@@ -39,13 +39,13 @@ def fix_ntb(file_keys):
     """
     infile, outpath, maskfile, rotation, flip, max_width, max_height, scale, channel = file_keys
     try:
-        img = cv2.imread(infile, cv2.IMREAD_GRAYSCALE)
+        img = io.imread(infile)
     except IOError as e:
         errno, strerror = e.args
         print(f'Could not open {infile} {errno} {strerror}')
 
     try:
-        mask = cv2.imread(maskfile, cv2.IMREAD_GRAYSCALE)
+        mask = io.imread(maskfile)
     except IOError as e:
         errno, strerror = e.args
         print(f'Could not open {infile} {errno} {strerror}')
