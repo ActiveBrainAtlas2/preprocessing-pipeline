@@ -58,7 +58,7 @@ def fix_ntb(file_keys):
         print("Unexpected error:", sys.exc_info()[0])
         raise
         sys.exit()
-        
+
     del img
     if channel == 1:
         fixed = scaled(fixed, mask, scale, epsilon=0.01)
@@ -77,7 +77,8 @@ def fix_ntb(file_keys):
     del fixed
     return
 
-def masker(animal, channel, downsample, scale, debug,workers):
+
+def masker(animal, channel, downsample, scale, debug, workers):
     """
     Main method that starts the cleaning/rotating process.
     :param animal:  prep_id of the animal we are working on.
@@ -169,5 +170,5 @@ if __name__ == '__main__':
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
     workers = int(args.njobs)
-    masker(animal, channel, downsample, scale, debug,workers)
+    masker(animal, channel, downsample, scale, debug, workers)
 
