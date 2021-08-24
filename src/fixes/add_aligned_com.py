@@ -25,8 +25,9 @@ from model.scan_run import ScanRun
 from sql_setup import session
 
 
-
+MANUAL = 1
 CORRECTED = 2
+DETECTED = 3
 
 """
     The provided r, t is the affine transformation from brain to atlas such that:
@@ -40,6 +41,8 @@ CORRECTED = 2
 
 
 def get_centers(animal, input_type_id, person_id=2, layer='COM'):
+    if input_type_id == 3:
+        person_id = 23
     rows = session.query(LayerData).filter(
         LayerData.active.is_(True))\
             .filter(LayerData.prep_id == animal)\
@@ -57,7 +60,7 @@ def get_centers(animal, input_type_id, person_id=2, layer='COM'):
 def add_layer(animal, structure, x, y, section, person_id, layer='COM'):
     com = LayerData(
         prep_id=animal, structure=structure, x=x, y=y, section=section, layer=layer,
-        created=datetime.utcnow(), active=True, person_id=person_id, input_type_id=CORRECTED
+        created=datetime.utcnow(), active=True, person_id=person_id, input_type_id=MANUAL
     )
     try:
         session.add(com)
@@ -90,7 +93,7 @@ def transform_and_add_dict(animal, person_id, row_dict, r=None, t=None):
 def get_common_structure(brains):
     common_structures = set()
     for brain in brains:
-        common_structures = common_structures | set(get_centers(brain, input_type_id=CORRECTED).keys())
+        common_structures = common_structures | set(get_centers(brain, input_type_id=MANUAL).keys())
     common_structures = list(sorted(common_structures))
     return common_structures
 
@@ -100,6 +103,7 @@ if __name__ == '__main__':
     parser.add_argument('--pointbrain', help='Enter point animal', required=True)
     parser.add_argument('--imagebrain', help='Enter image animal', required=True)
     parser.add_argument('--inputlayer', help='Enter input layer name', required=False, default='COM')
+    parser.add_argument('--input_type_id', help='Enter input type id', required=False, default=1)
     parser.add_argument('--outputlayer', help='Enter output layer name', required=False)
     
 
@@ -108,22 +112,33 @@ if __name__ == '__main__':
     imagebrain = args.imagebrain
     inputlayer = args.inputlayer
     outputlayer = args.outputlayer
+    input_type_id = int(args.input_type_id)
 
 
-    pointdata = get_centers(pointbrain, CORRECTED, layer=inputlayer)
+    pointdata = get_centers(pointbrain, input_type_id, layer=inputlayer)
     atlas_centers = get_centers('atlas', input_type_id=1, person_id=16)
     common_structures = get_common_structure([pointbrain, imagebrain])
 
     point_structures = sorted(pointdata.keys())
     dst_point_set = np.array([atlas_centers[s] for s in point_structures if s in common_structures]).T
     point_set = np.array([pointdata[s] for s in point_structures if s in common_structures]).T
+
+    if len(common_structures) < 3 or dst_point_set.size == 0 or point_set.size == 0:
+        print(f'len common structures {len(common_structures)}')
+        print(f'Size of dst_point_set {dst_point_set.size} point_set {point_set.size}')
+        print('No point data to work with.')
+        sys.exit()
+
     r0, t0 = umeyama(point_set, dst_point_set)
 
 
-    imagedata = get_centers(imagebrain, CORRECTED)
+    imagedata = get_centers(imagebrain, input_type_id)
     image_structures = sorted(imagedata.keys())
     image_set = np.array([imagedata[s] for s in image_structures if s in common_structures]).T
     dst_point_set = np.array([atlas_centers[s] for s in image_structures if s in common_structures]).T
+    if dst_point_set.size == 0 or image_set.size == 0:
+        print(f'No image data to work with. size of dst,image {dst_point_set.size} {image_set.size}')
+        sys.exit()
     r1, t1 = umeyama(image_set, dst_point_set)
 
     # get some COM data from DK55
@@ -134,7 +149,7 @@ if __name__ == '__main__':
         structure = session.query(Structure).filter(Structure.abbreviation == func.binary(abbrev)).one()
         print(structure.abbreviation, end="\t")
         print( round(x0), round(y0),round(section0), end="\t\t")
-        print( round(x1), round(y1),round(section1), end="\t")
+        print( round(x1), round(y1),round(section1), end="\t\t")
         print( round(x2), round(y2),round(section2))
 
         if outputlayer is not None:
