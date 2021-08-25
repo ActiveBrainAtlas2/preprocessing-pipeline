@@ -5,8 +5,10 @@ import socket
 from pathlib import Path
 from skimage import io
 from PIL import Image
-Image.MAX_IMAGE_PIXELS = None
 import cv2
+import numpy as np
+from skimage import io
+from skimage.transform import rescale
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -17,6 +19,8 @@ from lib.logger import get_logger
 SCALING_FACTOR = 0.03125
 from PIL import Image
 from concurrent.futures.process import ProcessPoolExecutor
+
+Image.MAX_IMAGE_PIXELS = None
 
 
 def get_hostname():
@@ -231,14 +235,25 @@ def make_tif(animal, tif_id, file_id, testing=False):
     return 1
 
 
-def resize_tif(file_key):
+def create_downsample(file_key):
+    """
+    takes a big tif and scales it down to a manageable size.
+    takes 45000 as the number to spread the values to.
+    For 16bit images, this is a good number near the high end.
+    """
     infile, outpath, size = file_key
     try:
-        im = io.imread(infile)
-        im = Image.fromarray(im, 'I')
-        im = im.resize(im, size, Image.LANCZOS)
-        im.save(outpath)
+        img = io.imread(infile)
+        image_rescaled = rescale(img, SCALING_FACTOR, anti_aliasing=True)
+        _max = np.quantile(image_rescaled, 1 - 0.01)
+        scaled = image_rescaled * (45000 / _max) 
     except IOError as e:
         print(f'Could not open {infile} {e}')
+    try:
+        cv2.imwrite(outpath, scaled.astype(np.uint16))        
+    except IOError as e:
+        print(f'Could not write {outpath} {e}')
+
+    
 
 

@@ -11,7 +11,7 @@ from lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_process import resize_tif, get_cpus, test_dir, get_image_size, SCALING_FACTOR
+from lib.utilities_process import create_downsample, get_cpus, test_dir, get_image_size, SCALING_FACTOR
 
 def set_task_preps(animal,channel):
     sqlController = SqlController(animal)
@@ -93,12 +93,7 @@ def make_low_resolution(animal, channel, debug):
         if os.path.exists(outpath):
             continue
 
-        try:
-            width, height = get_image_size(infile)
-        except:
-            print(f'Could not open {infile}')
-        size = int(int(width)*SCALING_FACTOR), int(int(height)*SCALING_FACTOR)
-        file_keys.append([infile, outpath, size])
+        file_keys.append([infile, outpath])
 
     start = timer()        
     workers, _ = get_cpus()
@@ -108,6 +103,6 @@ def make_low_resolution(animal, channel, debug):
             resize_tif(file_key)
     else:
         with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(resize_tif, file_keys)
+            executor.map(create_downsample, file_keys)
     end = timer()
     print(f'Create thumbnails took {end - start} seconds')
