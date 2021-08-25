@@ -100,15 +100,15 @@ def make_low_resolution(animal, channel):
         size = int(int(width)*SCALING_FACTOR), int(int(height)*SCALING_FACTOR)
         file_keys.append([infile, outpath, size])
 
-        start = timer()        
-        workers, _ = get_cpus()
-        print(f'Working on {len(file_keys)} files with {workers} cpus')
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(resize_tif, file_keys)
-        #for file_key in tqdm(file_keys):
-        #    resize_tif(file_key)
-        end = timer()
-        print(f'Create thumbnails took {end - start} seconds')
+    start = timer()        
+    workers, _ = get_cpus()
+    print(f'Working on {len(file_keys)} files with {workers} cpus')
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        executor.map(resize_tif, file_keys)
+    #for file_key in tqdm(file_keys):
+    #    resize_tif(file_key)
+    end = timer()
+    print(f'Create thumbnails took {end - start} seconds')
 
 
 
