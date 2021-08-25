@@ -241,7 +241,7 @@ def create_downsample(file_key):
     takes 45000 as the number to spread the values to.
     For 16bit images, this is a good number near the high end.
     """
-    infile, outpath, size = file_key
+    infile, outpath = file_key
     try:
         img = io.imread(infile)
         image_rescaled = rescale(img, SCALING_FACTOR, anti_aliasing=True)
