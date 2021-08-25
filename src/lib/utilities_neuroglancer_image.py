@@ -12,7 +12,7 @@ HOME = os.path.expanduser("~")
 from lib.file_location import FileLocationManager
 from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
 from lib.sqlcontroller import SqlController
-from sql_setup import RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
+from src.lib.sql_setup import RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
 from lib.utilities_process import get_cpus, SCALING_FACTOR, test_dir
 
 def create_neuroglancer(animal, channel, downsample, workers,debug=False):

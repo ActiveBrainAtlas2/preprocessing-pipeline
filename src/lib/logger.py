@@ -5,7 +5,7 @@ from pathlib import Path
 #PIPELINE_ROOT = Path('.').absolute().parent
 #sys.path.append(PIPELINE_ROOT.as_posix())
 
-from sql_setup import session
+from src.lib.sql_setup import session
 from model.log import Log
 
 
