@@ -62,7 +62,7 @@ def make_full_resolution(animal, channel):
         width, height = get_image_size(input_path)
         sqlController.update_tif(section.id, width, height)
 
-def make_low_resolution(animal, channel):
+def make_low_resolution(animal, channel, debug):
     """
     Args:
         takes the full resolution tifs and downsamples them.
@@ -104,7 +104,11 @@ def make_low_resolution(animal, channel):
     start = timer()        
     workers, _ = get_cpus()
     print(f'Working on {len(file_keys)} files with {workers} cpus')
-    with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(resize_tif, file_keys)
+    if debug:
+        for file_key in file_keys:
+            resize_tif(file_key)
+    else:
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(resize_tif, file_keys)
     end = timer()
     print(f'Create thumbnails took {end - start} seconds')
