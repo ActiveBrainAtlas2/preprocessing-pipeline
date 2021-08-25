@@ -8,7 +8,7 @@ filled out for each animal to use
 #import traceback
 #import transaction
 ###from logger import Log
-from sql_setup import session, pooledengine, pooledsession
+from lib.sql_setup import session, pooledengine, pooledsession
 from model.file_log import FileLog
 from model.urlModel import UrlModel
 from model.task import Task, ProgressLookup

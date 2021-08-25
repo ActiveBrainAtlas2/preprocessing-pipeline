@@ -11,9 +11,11 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
+from lib.sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
 from lib.logger import get_logger
 SCALING_FACTOR = 0.03125
+from PIL import Image
+from concurrent.futures.process import ProcessPoolExecutor
 
 
 def get_hostname():
@@ -38,7 +40,6 @@ def get_image_size(filepath):
     results = result_parts.split()
     width, height = results[2].split('x')
     return width, height
-
 
 def workershell(cmd):
     """
@@ -67,7 +68,6 @@ def workernoshell(cmd):
     stderr_f = open(stderr_template, "w")
     proc = Popen(cmd, shell=False, stderr=stderr_f, stdout=stdout_f)
     proc.wait()
-
 
 def test_dir(animal, dir, downsample=True, same_size=False):
     error = ""
@@ -118,15 +118,11 @@ def test_dir(animal, dir, downsample=True, same_size=False):
         error += f"Heights are not of equal size, min is {min_height} and max is {max_height}.\n"
     return error
 
-
-
 def get_last_2d(data):
     if data.ndim <= 2:
         return data
     m,n = data.shape[-2:]
     return data.flat[:m*n].reshape(m,n)
-
-
 
 def make_tifs(animal, channel, njobs):
     """
@@ -161,7 +157,6 @@ def make_tifs(animal, channel, njobs):
         output_path = os.path.join(OUTPUT, section.file_name)
         cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate', '-series', str(section.scene_index),
                 '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
-
         if not os.path.exists(input_path):
             continue
 
@@ -173,6 +168,13 @@ def make_tifs(animal, channel, njobs):
     with Pool(njobs) as p:
         p.map(workernoshell, commands)
 
+def resize_and_save_tif(tif_path,png_path):
+    image = Image.open(tif_path)
+    width,height = image.size
+    width = round(width*0.03125)
+    height = round(width*0.03125)
+    image.resize((width,height),Image.LANCZOS)
+    image.save(png_path,format = 'png')
 
 def make_scenes(animal):
     fileLocationManager = FileLocationManager(animal)
@@ -180,26 +182,20 @@ def make_scenes(animal):
     OUTPUT = os.path.join(fileLocationManager.thumbnail_web, 'scene')
     os.makedirs(OUTPUT, exist_ok=True)
 
-    convert_commands = []
+    file_keys = []
     tifs = os.listdir(INPUT)
     for tif in tifs:
         tif_path = os.path.join(INPUT, tif)
         if not tif.endswith('_C1.tif'):
             continue
-
         png = tif.replace('tif', 'png')
         png_path = os.path.join(OUTPUT, png)
         if os.path.exists(png_path):
             continue
-
-        # convert tif to png
-        cmd = ['convert', tif_path, '-resize', '3.125%', '-normalize', png_path]
-        convert_commands.append(cmd)
-
-
-    with Pool(4) as p:
-        p.map(workernoshell, convert_commands)
-
+        file_keys.append(tif_path,png_path)
+        
+    with ProcessPoolExecutor(max_workers=4) as executor:
+            executor.map(resize_and_save_tif, sorted(file_keys))
 
 def make_tif(animal, tif_id, file_id, testing=False):
     fileLocationManager = FileLocationManager(animal)

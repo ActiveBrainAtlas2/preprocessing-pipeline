@@ -13,7 +13,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
 from model.elastix_transformation import ElastixTransformation
-from sql_setup import session
+from lib.sql_setup import session
 
 
 def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_filepath=None):
