@@ -235,7 +235,7 @@ def resize_tif(file_key):
     try:
         image = io.imread(infile)
         image = rescale(image, SCALING_FACTOR, anti_aliasing=False)
-        cv2.imwrite(oufile, image)
+        cv2.imwrite(outpath, image)
     except IOError as e:
         print(f'Could not open {infile} {e}')
 
