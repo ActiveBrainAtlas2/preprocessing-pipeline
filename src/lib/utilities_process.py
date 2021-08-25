@@ -4,6 +4,9 @@ from multiprocessing.pool import Pool
 from tqdm import tqdm
 import socket
 from pathlib import Path
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
+
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -230,4 +233,16 @@ def make_tif(animal, tif_id, file_id, testing=False):
     sqlController.update_row(tif)
 
     return 1
+
+
+def resize_tif(file_key):
+    thumbfile, outpath, size = file_key
+    try:
+        im = Image.open(thumbfile)
+        im = im.resize(size, Image.LANCZOS)
+        im.save(outpath)
+    except IOError as e:
+        errno, strerror = e.args
+        print(f'Could not open {infile} {errno} {strerror}')
+
 
