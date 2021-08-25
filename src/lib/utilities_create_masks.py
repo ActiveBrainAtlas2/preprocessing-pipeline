@@ -18,7 +18,7 @@ from abakit.utilities.masking import combine_dims, merge_mask
 
 
 
-from src.lib.sql_setup import CREATE_FULL_RES_MASKS
+from lib.sql_setup import CREATE_FULL_RES_MASKS
 from lib.sqlcontroller import SqlController
 from lib.utilities_process import get_cpus, test_dir
 import warnings

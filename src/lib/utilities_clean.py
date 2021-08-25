@@ -5,7 +5,7 @@ from skimage import io
 from tqdm import tqdm
 from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
-from src.lib.sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
+from lib.sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
 from lib.utilities_mask import rotate_image, place_image, scaled, equalized

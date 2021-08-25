@@ -7,7 +7,7 @@ from timeit import default_timer as timer
 
 from tqdm import tqdm
 from shutil import copyfile
-from src.lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
+from lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
