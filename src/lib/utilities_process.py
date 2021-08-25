@@ -1,12 +1,11 @@
 import os, sys, time
 from subprocess import Popen, run, check_output
 from multiprocessing.pool import Pool
-from tqdm import tqdm
 import socket
 from pathlib import Path
-from PIL import Image
-Image.MAX_IMAGE_PIXELS = None
-
+from skimage import io
+from skimage.transform import rescale, resize
+import cv2
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -236,13 +235,12 @@ def make_tif(animal, tif_id, file_id, testing=False):
 
 
 def resize_tif(file_key):
-    thumbfile, outpath, size = file_key
+    infile, outpath, size = file_key
     try:
-        im = Image.open(thumbfile)
-        im = im.resize(size, Image.LANCZOS)
-        im.save(outpath)
+        image = io.imread(infile)
+        image = rescale(image, SCALING_FACTOR, anti_aliasing=False)
+        cv2.imwrite(oufile, image)
     except IOError as e:
-        errno, strerror = e.args
-        print(f'Could not open {infile} {errno} {strerror}')
+        print(f'Could not open {infile} {e}')
 
 
