@@ -61,7 +61,7 @@ def make_full_resolution(animal, channel):
         sqlController.update_tif(section.id, width, height)
 
 
-def make_low_resolution(animal, channel):
+def make_low_resolution(animal, channel, debug):
     """
     Args:
         takes the full resolution tifs and downsamples them.
@@ -103,10 +103,12 @@ def make_low_resolution(animal, channel):
     start = timer()        
     workers, _ = get_cpus()
     print(f'Working on {len(file_keys)} files with {workers} cpus')
-    with ProcessPoolExecutor(max_workers=workers) as executor:
-        executor.map(resize_tif, file_keys)
-    #for file_key in tqdm(file_keys):
-    #    resize_tif(file_key)
+    if debug:
+        for file_key in tqdm(file_keys):
+            resize_tif(file_key)
+    else:
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(resize_tif, file_keys)
     end = timer()
     print(f'Create thumbnails took {end - start} seconds')
 
@@ -118,12 +120,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-
+    parser.add_argument('--debug', help='Enter debug True|False', required=False, default='false')
+    
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
+    debug = bool({'true': True, 'false': False}[str(args.debug).lower()])    
+    
     make_full_resolution(animal, channel)
-    make_low_resolution(animal, channel)
+    make_low_resolution(animal, channel, debug)
 
     sqlController = SqlController(animal)
     if channel == 1:
