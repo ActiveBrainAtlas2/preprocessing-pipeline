@@ -20,6 +20,6 @@ if __name__ == '__main__':
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])    
     
     make_full_resolution(animal, channel)
-    make_low_resolution(animal, channel)
-    set_task_preps(animal,channel)
+    make_low_resolution(animal, channel, debug)
+    set_task_preps(animal, channel)
     
