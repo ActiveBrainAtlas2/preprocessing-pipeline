@@ -14,7 +14,7 @@ sys.path.append(DIR)
 
 from src.lib.file_location import FileLocationManager
 from src.model.layer_data import LayerData
-from src.sql_setup import session
+from lib.sql_setup import session
 SCALE = 10000/325.0
 
 

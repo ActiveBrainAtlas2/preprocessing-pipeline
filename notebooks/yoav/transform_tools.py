@@ -31,7 +31,6 @@ def errors(fixed,moving):
     plt.hist(diff.flatten(),bins=100);
     plt.grid()
     
-
 def find_and_eval_transform(transform,fixed,moving):
     transform = sitk.LandmarkBasedTransformInitializer(transform,
                                                        list(fixed.flatten()),
