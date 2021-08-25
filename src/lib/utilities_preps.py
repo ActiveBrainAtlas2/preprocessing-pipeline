@@ -86,7 +86,6 @@ def make_low_resolution(animal, channel, debug):
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
     os.makedirs(OUTPUT, exist_ok=True)
     tifs = sorted(os.listdir(INPUT))
-    print(tifs)
     for tif in tifs:
         infile = os.path.join(INPUT, tif)
         outpath = os.path.join(OUTPUT, tif)
