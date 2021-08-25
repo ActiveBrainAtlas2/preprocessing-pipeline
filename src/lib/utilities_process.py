@@ -234,6 +234,15 @@ def make_tif(animal, tif_id, file_id, testing=False):
 
     return 1
 
+def convert(img, target_type_min, target_type_max, target_type):
+    imin = img.min()
+    imax = img.max()
+
+    a = (target_type_max - target_type_min) / (imax - imin)
+    b = target_type_max - a * imax
+    new_img = (a * img + b).astype(target_type)
+    del img
+    return new_img
 
 def create_downsample(file_key):
     """
@@ -244,13 +253,12 @@ def create_downsample(file_key):
     infile, outpath = file_key
     try:
         img = io.imread(infile)
-        image_rescaled = rescale(img, SCALING_FACTOR, anti_aliasing=True)
-        _max = np.quantile(image_rescaled, 1 - 0.01)
-        scaled = image_rescaled * (45000 / _max) 
+        img = rescale(img, SCALING_FACTOR, anti_aliasing=True)
+        img = convert(img, 0, 2**16-1, np.uint16)
     except IOError as e:
         print(f'Could not open {infile} {e}')
     try:
-        cv2.imwrite(outpath, scaled.astype(np.uint16))        
+        cv2.imwrite(outpath, img)        
     except IOError as e:
         print(f'Could not write {outpath} {e}')
 
