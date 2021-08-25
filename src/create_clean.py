@@ -26,5 +26,5 @@ if __name__ == '__main__':
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
     workers = int(args.njobs)
-    masker(animal, channel, downsample, scale, debug,workers)
+    masker(animal, channel, downsample, scale, debug, workers)
 
