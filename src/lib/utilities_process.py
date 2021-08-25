@@ -4,7 +4,8 @@ from multiprocessing.pool import Pool
 import socket
 from pathlib import Path
 from skimage import io
-from skimage.transform import rescale, resize
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 import cv2
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -233,10 +234,10 @@ def make_tif(animal, tif_id, file_id, testing=False):
 def resize_tif(file_key):
     infile, outpath, size = file_key
     try:
-        image = io.imread(infile)
-        dtype = image.dtype
-        image = resize(image, size, anti_aliasing=True, preserve_range=True)
-        cv2.imwrite(outpath, image.astype(dtype))
+        im = io.imread(infile)
+        im = Image.fromarray(im, 'I')
+        im = im.resize(im, size, Image.LANCZOS)
+        im.save(outpath)
     except IOError as e:
         print(f'Could not open {infile} {e}')
 
