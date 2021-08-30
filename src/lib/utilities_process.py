@@ -10,10 +10,10 @@ Image.MAX_IMAGE_PIXELS = None
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from lib.file_location import FileLocationManager
-from lib.sqlcontroller import SqlController
-from lib.sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
-from lib.logger import get_logger
+from src.lib.file_location import FileLocationManager
+from src.lib.sqlcontroller import SqlController
+from src.lib.sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
+from src.lib.logger import get_logger
 SCALING_FACTOR = 0.03125
 from PIL import Image
 from concurrent.futures.process import ProcessPoolExecutor
