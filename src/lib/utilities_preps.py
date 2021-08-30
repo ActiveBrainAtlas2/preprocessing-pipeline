@@ -11,7 +11,7 @@ from lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_process import  get_cpus, test_dir, get_image_size, SCALING_FACTOR
+from lib.utilities_process import create_downsample, get_cpus, test_dir, get_image_size, SCALING_FACTOR
 
 def set_task_preps(animal,channel):
     sqlController = SqlController(animal)
@@ -62,7 +62,7 @@ def make_full_resolution(animal, channel):
         width, height = get_image_size(input_path)
         sqlController.update_tif(section.id, width, height)
 
-def make_low_resolution(animal, channel):
+def make_low_resolution(animal, channel, debug):
     """
     Args:
         takes the full resolution tifs and downsamples them.
@@ -86,7 +86,6 @@ def make_low_resolution(animal, channel):
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
     os.makedirs(OUTPUT, exist_ok=True)
     tifs = sorted(os.listdir(INPUT))
-    print(tifs)
     for tif in tifs:
         infile = os.path.join(INPUT, tif)
         outpath = os.path.join(OUTPUT, tif)
@@ -94,27 +93,16 @@ def make_low_resolution(animal, channel):
         if os.path.exists(outpath):
             continue
 
-        try:
-            width, height = get_image_size(infile)
-        except:
-            print(f'Could not open {infile}')
-        size = int(int(width)*SCALING_FACTOR), int(int(height)*SCALING_FACTOR)
-        file_keys.append([infile, outpath, size])
+        file_keys.append([infile, outpath])
 
-        start = timer()        
-        workers, _ = get_cpus()
-        print(f'Working on {len(file_keys)} files with {workers} cpus')
+    start = timer()        
+    workers, _ = get_cpus()
+    print(f'Working on {len(file_keys)} files with {workers} cpus')
+    if debug:
+        for file_key in file_keys:
+            resize_tif(file_key)
+    else:
         with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(resize_tif, file_keys)
-        end = timer()
-        print(f'Create thumbnails took {end - start} seconds')
-
-def resize_tif(file_key):
-    thumbfile, outpath, size = file_key
-    try:
-        im = Image.open(thumbfile)
-        print(size)
-        im = im.resize(size, Image.LANCZOS)
-        im.save(outpath)
-    except IOError:
-        print("cannot resize", thumbfile)
+            executor.map(create_downsample, file_keys)
+    end = timer()
+    print(f'Create thumbnails took {end - start} seconds')

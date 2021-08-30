@@ -373,7 +373,7 @@ class SqlController(object):
         com = LayerData(prep_id=animal, structure_id=id, layer=layer, 
                         x=x, y=y, section=section,
                         created=datetime.utcnow(), active=True, person_id=person_id,
-                        input_type_id=input_type_id)
+                        input_type_id=input_type_id, updated=datetime.utcnow())
 
         try:
             self.session.add(com)
