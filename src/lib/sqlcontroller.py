@@ -72,7 +72,7 @@ class SqlController(object):
         query_result = [entryi[0] for entryi in query_result]
         return query_result
 
-    def get_section(self, id):
+    def get_section(self, ID):
         """
         The sections table is a view and it is already filtered by active and file_status = 'good'
         This qeury returns a single section by id.
@@ -81,25 +81,34 @@ class SqlController(object):
 
         Returns: one section
         """
-        return self.session.query(Section).filter(Section.id == id).one()
+        return self.session.query(Section).filter(Section.id == ID).one()
 
-    def get_slide(self, id):
+    def get_slide(self, ID):
         """
         Args:
             id: integer primary key
 
         Returns: one slide
         """
-        return self.session.query(Slide).filter(Slide.id == id).one()
+        return self.session.query(Slide).filter(Slide.id == ID).one()
 
-    def get_tif(self, id):
+    def get_tif(self, ID):
         """
         Args:
             id: integer primary key
 
         Returns: one tif
         """
-        return self.session.query(SlideCziTif).filter(SlideCziTif.id == id).one()
+        return self.session.query(SlideCziTif).filter(SlideCziTif.id == ID).one()
+
+    def get_urlModel(self, ID):
+        """
+        Args:
+            id: integer primary key
+
+        Returns: one neuroglancer json object
+        """
+        return self.session.query(UrlModel).filter(UrlModel.id == ID).one()
 
     def get_sections(self, animal, channel):
         """
