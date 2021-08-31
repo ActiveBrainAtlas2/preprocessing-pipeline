@@ -51,52 +51,17 @@ def create_task(animal, filepath, debug):
             else:
                 sqlController.add_layer_data(abbreviation, animal, layer, x, y, section, person_id, input_type)
 
-
-def parse_layer(animal, id):
-    """
-    Get the id from https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/urlmodel/
-    When you hover over the animal link, you can see the ID in the url, or just click on it.
-    """
-    sqlController = SqlController(animal)
-    try:
-        data = sqlController.get_urlModel(id)
-    except NoResultFound as nrf:
-        print('No results for {} error: {}'.format(animal, nrf))
-        return
- 
-    json_txt = json.loads(data.url)
-    layers = json_txt['layers']
-    data = []
-    for layer in layers:
-        if 'annotations' in layer:
-            name = layer['name']
-            annotation = layer['annotations']
-            # d = [row['point'] for row in annotation if 'point' in row]
-            d = {row['description']:row['point'] for row in annotation if 'point' in row and 'description' in row}
-            for row in annotation:
-                if 'point' in row and 'description' in row:
-                    description = str(row['description']).strip()
-                    x,y,z = row['point']
-                    data.append([description, x, y, int(round(z))])
-            
-            df = pd.DataFrame(data, columns=['description','x','y','section'])
-            print(df.head())
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter animal', required=True)
     parser.add_argument('--filepath', help='Enter file path', required=True)
-    parser.add_argument('--id', help='Enter primary key of URL JSON', required=False, default=0)
     parser.add_argument('--debug', help='Enter true or false', required=False, default='true')
     args = parser.parse_args()
     animal = args.animal
     filepath = args.filepath
-    id = int(args.id) 
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
     
     create_task(animal, filepath, debug)
-    #parse_layer(animal, id)
     
    
     
