@@ -12,7 +12,6 @@ from .structure import Structure
 class LayerData(Base, AtlasModel):
     __tablename__ = 'layer_data'
     id =  Column(Integer, primary_key=True, nullable=False)
-    url_id = Column(Integer, nullable=False)
     prep_id = Column(String, nullable=False)
     input_type_id = Column(Integer)
     person_id = Column(Integer)
@@ -21,7 +20,6 @@ class LayerData(Base, AtlasModel):
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
     section = Column(Float, nullable=False)
-    segment_id = Column(Integer)
     updated = Column(TIMESTAMP)
 
     structure = relationship('Structure', lazy=True)
