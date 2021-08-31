@@ -39,7 +39,7 @@ Step-by-step guide:
     ```SQL
     CREATE USER 'dklab'@'localhost' IDENTIFIED BY '<your_password_here>';
     GRANT ALL ON active_atlas_development.* TO 'dklab'@'localhost';
-
+    
     CREATE DATABASE active_atlas_development;
     ```
 1. Disconnect the database.
@@ -120,3 +120,22 @@ done
 ```
 
 Now you should be able to SSH into the servers without password.
+
+### Set up PYTHONPATH environmental variable
+
+the pythonpath environmental variable allows you to add folder to the search path of python automatically.  This is useful for adding project folder to python path so that they work like normal packages in terms of imports.
+
+to do this, edit the activate file in virtual environment and the following lines to the end:
+
+```
+unset PYTHONPATH
+export PYTHONPATH=~/first_location:${PYTHONPATH}
+export PYTHONPATH=~/second_location:${PYTHONPATH}
+...
+```
+
+### Set up virtual environment
+
+1. install list of packages in requirements.txt
+2. install elastics
+

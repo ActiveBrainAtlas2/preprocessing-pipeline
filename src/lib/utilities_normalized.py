@@ -5,7 +5,6 @@ import numpy as np
 from skimage import io
 from tqdm import tqdm
 from lib.file_location import FileLocationManager
-from lib.sqlcontroller import SqlController
 from lib.utilities_mask import equalized
 
 
@@ -14,9 +13,7 @@ def create_normalization(animal, channel):
     INPUT = fileLocationManager.thumbnail
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'normalized')
     os.makedirs(OUTPUT, exist_ok=True)
-    sqlController = SqlController(animal)
     files = sorted(os.listdir(INPUT))
-    print(files)
     for file in tqdm(files):
         infile = os.path.join(INPUT, file)
         outpath = os.path.join(OUTPUT, file)

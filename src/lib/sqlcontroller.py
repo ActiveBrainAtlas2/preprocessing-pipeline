@@ -8,19 +8,19 @@ filled out for each animal to use
 #import traceback
 #import transaction
 ###from logger import Log
-from lib.sql_setup import session, pooledengine, pooledsession
-from model.file_log import FileLog
-from model.urlModel import UrlModel
-from model.task import Task, ProgressLookup
-from model.layer_data import LayerData
-from model.structure import Structure
-from model.slide_czi_to_tif import SlideCziTif
-from model.slide import Slide
-from model.section import Section
-from model.scan_run import ScanRun
-from model.histology import Histology
-from model.animal import Animal
-from model.elastix_transformation import ElastixTransformation
+from src.lib.sql_setup import session, pooledengine, pooledsession
+from src.model.file_log import FileLog
+from src.model.urlModel import UrlModel
+from src.model.task import Task, ProgressLookup
+from src.model.layer_data import LayerData
+from src.model.structure import Structure
+from src.model.slide_czi_to_tif import SlideCziTif
+from src.model.slide import Slide
+from src.model.section import Section
+from src.model.scan_run import ScanRun
+from src.model.histology import Histology
+from src.model.animal import Animal
+from src.model.elastix_transformation import ElastixTransformation
 import sys
 import json
 import pandas as pd
@@ -72,7 +72,7 @@ class SqlController(object):
         query_result = [entryi[0] for entryi in query_result]
         return query_result
 
-    def get_section(self, id):
+    def get_section(self, ID):
         """
         The sections table is a view and it is already filtered by active and file_status = 'good'
         This qeury returns a single section by id.
@@ -81,25 +81,34 @@ class SqlController(object):
 
         Returns: one section
         """
-        return self.session.query(Section).filter(Section.id == id).one()
+        return self.session.query(Section).filter(Section.id == ID).one()
 
-    def get_slide(self, id):
+    def get_slide(self, ID):
         """
         Args:
             id: integer primary key
 
         Returns: one slide
         """
-        return self.session.query(Slide).filter(Slide.id == id).one()
+        return self.session.query(Slide).filter(Slide.id == ID).one()
 
-    def get_tif(self, id):
+    def get_tif(self, ID):
         """
         Args:
             id: integer primary key
 
         Returns: one tif
         """
-        return self.session.query(SlideCziTif).filter(SlideCziTif.id == id).one()
+        return self.session.query(SlideCziTif).filter(SlideCziTif.id == ID).one()
+
+    def get_urlModel(self, ID):
+        """
+        Args:
+            id: integer primary key
+
+        Returns: one neuroglancer json object
+        """
+        return self.session.query(UrlModel).filter(UrlModel.id == ID).one()
 
     def get_sections(self, animal, channel):
         """
@@ -373,7 +382,7 @@ class SqlController(object):
         com = LayerData(prep_id=animal, structure_id=id, layer=layer, 
                         x=x, y=y, section=section,
                         created=datetime.utcnow(), active=True, person_id=person_id,
-                        input_type_id=input_type_id)
+                        input_type_id=input_type_id, updated=datetime.utcnow())
 
         try:
             self.session.add(com)
