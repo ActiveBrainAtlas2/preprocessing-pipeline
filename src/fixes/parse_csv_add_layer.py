@@ -24,13 +24,14 @@ from lib.sqlcontroller import SqlController
 def create_task(animal, filepath, layer, debug):
     df = pd.read_csv(filepath)
     if debug:
-        print(df.head())
+        print(df.head(25))
         sys.exit()
     person_id = 99999 # change this!
+    SURE = 6
+    UNSURE = 7
     sqlController = SqlController(animal)
     resolution = sqlController.scan_run.resolution
     for index, row in df.iterrows():
-        coords = row['Coordinate 1']
         x = int(coords[0]) * resolution
         y = int(coords[1]) * resolution
         section = int(coords[2]) * 20
@@ -40,7 +41,7 @@ def create_task(animal, filepath, layer, debug):
             print('Add layer', animal, abbreviation, x, y, section, person_id, layer)
         else:
             sqlController.add_layer(animal, abbreviation, x, y, section, person_id, layer=layer)
- 
+
 
 def parse_layer(animal, id):
     """
@@ -87,8 +88,8 @@ if __name__ == '__main__':
     id = int(args.id)
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
     
-    # create_task(animal, filepath, layer, debug)
-    parse_layer(animal, id)
+    create_task(animal, filepath, layer, debug)
+    #parse_layer(animal, id)
     
    
     
