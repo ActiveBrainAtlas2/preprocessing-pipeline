@@ -39,7 +39,7 @@ def fix_ntb(file_keys):
         mask = io.imread(maskfile)
     except IOError as e:
         errno, strerror = e.args
-        print(f'Could not open {infile} {errno} {strerror}')
+        print(f'Could not open {maskfile} {errno} {strerror}')
 
     try:
         fixed = cv2.bitwise_and(img, img, mask=mask)
