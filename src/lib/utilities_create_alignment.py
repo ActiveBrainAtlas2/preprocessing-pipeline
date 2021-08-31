@@ -10,6 +10,7 @@ from lib.sqlcontroller import SqlController
 from lib.utilities_alignment import (create_downsampled_transforms,   parse_elastix, process_image)
 from lib.utilities_process import test_dir, get_cpus
 import os 
+import sys
 
 def run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen,njobs):
     """
