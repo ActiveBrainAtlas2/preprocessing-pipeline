@@ -28,11 +28,11 @@ for i in range(len(Examples)):
         continue
 
     features={}
-    for key in ['animal','section','index','label','area','height2','width2']:
+    for key in ['animal','section','index','label','area','height','width']:
         features[key]=e[key]
 
-    features['row']=e['row_center']+e['origin'][0]
-    features['col']=e['col_center']+e['origin'][0]
+    features['row']=e['row']+e['origin'][0]
+    features['col']=e['col']+e['origin'][1]
 
     #calc gradient based features
     corr,energy=compute_image_features.calc_img_features(img)

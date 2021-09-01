@@ -13,42 +13,24 @@ def collect_examples(labels,pos_locations,Stats,img,min_size=int(100/2),origin=[
     global cell_index
     Examples=[]
     for j in range(len(labels)):
-        col_min,row_min,width,height,area = Stats[2][j,:]
+        _,_,width,height,area = Stats[2][j,:]
         if area>100000:  # ignore the background segment
             continue
-        width2=int(width/2)
-        height2=int(height/2)
-        col_center=col_min+width2
-        row_center=row_min+height2
-        height2*=2; height2=max(height2,min_size)
-        width2*=2; width2=max(width2,min_size)
+        col,row= Stats[3][j,:] #get coordinates of center points
+        height2=max(2*height,min_size)  # calculates size of image to extract
+        width2=max(2*width,min_size)
         example={'animal':animal,
                  'section':section,
                  'index':cell_index,
                  'label':int(labels[j]),
                  'area':area,
-                 'row_center':row_center,
+                 'row':row,
+                 'col':col,
                  'origin':origin,
-                 'height2':height2,
-                 'col_center':col_center,
-                 'width2':width2,
-                 'image':img[row_center-height2:row_center+height2,col_center-width2:col_center+width2]
+                 'height':height,
+                 'width':width,
+                 'image':img[int(row-height2):int(row+height2),int(col-width2):int(col+width2)]
                 }
-        if (example['label']==1): #add cross-hairs
-            imgc=np.copy(example['image'])
-            if imgc.shape[0]==0 or img.shape[1]==0:
-                print('positive but empty',j)
-                print(example)
-                continue
-            pos_row,pos_col=list(pos_locations[j,:])
-            pos_row = int(pos_row-(row_center-height2))
-            pos_col = int(pos_col-(col_center-width2))
-            _mean=np.mean(imgc.flatten())
-            _std=np.std(imgc.flatten())
-            bright=_mean+3*_std
-            imgc[pos_row,:]=bright
-            imgc[:,pos_col]=bright
-            example['imageWithCrossHairs']=imgc
         cell_index+=1
         Examples.append(example)
     return Examples
@@ -63,7 +45,7 @@ if __name__=='__main__':
     print('section=%d, DATA_DIR=%s'%(section,DATA_DIR))
 
 
-    dfpath = os.path.join(DATA_DIR, '%d.csv'%section)
+    dfpath = os.path.join(DATA_DIR, '%d.csv'%section)  # read manual COMs (=training data)
     df = pd.read_csv(dfpath)
 
     # in_row_min=5400; in_row_max=6800; in_col_min=8000; in_col_max=13000
@@ -117,7 +99,7 @@ if __name__=='__main__':
             continue
 
         origin= np.array(origins[tile],dtype=np.int32)
-        pos_coor=np.int32(df[['y','x']])-origin
+        pos_coor=np.int32(df[['y','x']])-origin   #order if y then x (or row then col)
 
         L_pos_coor=[]
         for i in range(pos_coor.shape[0]):
@@ -132,7 +114,7 @@ if __name__=='__main__':
         if len(L_pos_coor) >0:   #if there are detections, associate them with segments to generate 1 labels
             pos_coor_tile=np.stack(L_pos_coor)  
 
-            candid_coor=np.int32(Stats[3])
+            candid_coor=np.int32(Stats[3])   # Stats[3] gives the location of the center of each component in x,y order
             dummy=np.copy(candid_coor[:,0])
             candid_coor[:,0]=candid_coor[:,1]
             candid_coor[:,1]=dummy
@@ -142,8 +124,8 @@ if __name__=='__main__':
             for i in range(len(pos_coor_tile)):
                 c=norm(candid_coor-pos_coor_tile[i],axis=1)
                 row,col=pos_coor_tile[i]
-                index1=np.argmin(c)
-                index2=Stats[1][row,col]
+                index1=np.argmin(c)  #the index of the closest manual COM
+                index2=Stats[1][row,col] # the index of the connected component at row,col location
                 labels[index2]=1
                 pos_locations[index2,:]=[row,col]
                 if index1 !=index2 :
