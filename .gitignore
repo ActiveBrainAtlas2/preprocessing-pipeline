@@ -137,3 +137,5 @@ dmypy.json
 *.png
 *.jpg
 *.tif
+
+tests/

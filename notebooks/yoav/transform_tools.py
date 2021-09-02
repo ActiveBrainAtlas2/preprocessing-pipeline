@@ -2,17 +2,17 @@ import SimpleITK as sitk
 import matplotlib.pyplot as plt
 import numpy as np
 def create_neighborhood(Dict2d,N):
-    nbrs=[]  # each element is a segment we would like to draw, points to the relevant row in fixed/moving/moved.
+    neighborhoods=[]  # each element is a segment we would like to draw, points to the relevant row in fixed/moving/moved.
     for i in range(N):
         for j in range(N):
             for k in range(N):
                 if(i<N-1):
-                    nbrs.append((Dict2d[(i,j,k)],Dict2d[(i+1,j,k)],'green'))
+                    neighborhoods.append((Dict2d[(i,j,k)],Dict2d[(i+1,j,k)],'green'))
                 if(j<N-1):
-                    nbrs.append((Dict2d[(i,j,k)],Dict2d[(i,j+1,k)],'red'))
+                    neighborhoods.append((Dict2d[(i,j,k)],Dict2d[(i,j+1,k)],'red'))
                 if(k<N-1):
-                    nbrs.append((Dict2d[(i,j,k)],Dict2d[(i,j,k+1)],'blue'))
-    return nbrs
+                    neighborhoods.append((Dict2d[(i,j,k)],Dict2d[(i,j,k+1)],'blue'))
+    return neighborhoods
 
 def transformPoints(transform,points):
     """Transform a set of points according to a given transformation

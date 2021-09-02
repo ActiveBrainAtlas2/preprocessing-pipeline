@@ -510,7 +510,14 @@ class SqlController(object):
         self.session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
             .delete()
 
-
+    def convert_coordinate_pixel_to_microns(self,coordiates):
+        resolution = self.scan_run.resolution
+        self.session.close()
+        x,y,z = coordiates
+        x*=resolution
+        y*=resolution
+        z*=20
+        return x,y,z
 
 def file_processed(animal, progress_id, filename):
     """
@@ -532,7 +539,6 @@ def file_processed(animal, progress_id, filename):
         pooledsession.close()
 
     return True
-
 
 def set_file_completed(animal, progress_id, filename):
     """
@@ -557,21 +563,5 @@ def set_file_completed(animal, progress_id, filename):
         pooledsession.close()
 
 
+    
 
-
-"""
-    class SQLAlchemyHandler(logging.Handler):
-        # A very basic logger that commits a LogRecord to the SQL Db
-        def emit(self, record):
-            trace = None
-            exc = record.__dict__['exc_info']
-            if exc:
-                trace = traceback.format_exc()
-            log = Log(
-                logger=record.__dict__['name'],
-                level=record.__dict__['levelname'],
-                trace=trace,
-                msg=record.__dict__['msg'],)
-            self.session.add(log)
-            transaction.commit()
-"""
