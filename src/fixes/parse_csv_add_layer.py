@@ -5,7 +5,6 @@ to the image brain. It first aligns the point brain data to the atlas, then that
 to the image brain. It prints out the data by default and also will insert
 into the database if given a layer name.
 """
-
 import argparse
 from sqlalchemy import func
 import json
@@ -13,20 +12,17 @@ import os
 import sys
 import pandas as pd
 from sqlalchemy.orm.exc import NoResultFound
-
 HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(DIR)
 from model.urlModel import UrlModel
 from lib.sqlcontroller import SqlController
 
-
 def create_task(animal, filepath, debug):
     layer = 'detected_soma'
     df = pd.read_csv(filepath)
     if debug:
         print(df.head(25))
-        # sys.exit()
     person_id = 26 # change this!
     SURE = 6
     UNSURE = 7

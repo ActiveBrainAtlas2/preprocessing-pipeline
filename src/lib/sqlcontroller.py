@@ -26,7 +26,7 @@ import json
 import pandas as pd
 from collections import OrderedDict
 from datetime import datetime
-
+import numpy as np
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 from pathlib import Path
@@ -233,6 +233,18 @@ class SqlController(object):
         :return: structure object
         """
         return self.session.query(Structure).filter(Structure.abbreviation == func.binary(abbrv)).one()
+    
+    def get_layer_data(self,search_dictionary):
+        query_start = self.session.query(LayerData)
+        for key,value in search_dictionary.items():
+            query_start = eval(f'query_start.filter(LayerData.{key}==value)')
+        return query_start.all()
+
+    def get_coordinates_from_query_result(query_result):
+        coord = []
+        for resulti in query_result:
+            coord.append([resulti.x,resulti.y,resulti.section])
+        return(np.array(coord))
 
     def get_structure_color(self, abbrv):
         """
