@@ -7,6 +7,7 @@ from src.lib.utilities_process import workernoshell
 from src.lib.sqlcontroller import SqlController
 class TiffSegmentor:
     def __init__(self,animal):
+        self.animal = animal
         self.controller = SqlController(animal)
     
     def create_directories_for_channeli(self,channel):
@@ -28,17 +29,21 @@ class TiffSegmentor:
         for filei in files:
             file_name = filei[:-4]
             save_folder = self.save_directory+file_name
-            if len(os.listdir(save_folder)) == 10:
+            if create_csv:
+                self.create_sectioni_csv(save_folder,int(file_name))
+            if len(os.listdir(save_folder)) == 11:
                 continue
             cmd = [f'convert', self.tif_directory + filei, '-compress', 'None', '-crop', '2x5-0-0@', 
-            '+repage', '+adjoin', f'{self.save_directory}{file_name}/{file_name}tile-%d.tif']
+            '+repage', '+adjoin', f'{save_folder}/{file_name}tile-%d.tif']
+            print(f'creating segments for  {file_name}')
             workernoshell(cmd)
-            if create_csv:
-                self.create_sectioni_csv(self.save_directory+file_name,int(file_name))
     
     def create_sectioni_csv(self,save_path,sectioni):
-        search_dictionary = {'prep_id':self.animal,'input_type_id':1,'person_id':2,'layer':'Premotor','section':sectioni}
-        premotor = self.controller.get_layer_data_flex(search_dictionary)
         time_stamp = datetime.today().strftime('%Y-%m-%d')
-        premotor = self.controller.get_coordinates_from_query_result(premotor)
-        np.savetxt(save_path+f'{self.animal}_premotor_{sectioni}_{time_stamp}.csv',premotor,delimiter=',')
+        csv_path = save_path+f'/{self.animal}_premotor_{sectioni}_{time_stamp}.csv'
+        if not os.path.isfile(csv_path):
+            print('creating '+ csv_path)
+            search_dictionary = {'prep_id':self.animal,'input_type_id':1,'person_id':2,'layer':'Premotor','section':sectioni}
+            premotor = self.controller.get_layer_data(search_dictionary)
+            premotor = self.controller.get_coordinates_from_query_result(premotor)
+            np.savetxt(csv_path,premotor,delimiter=',')

@@ -240,7 +240,7 @@ class SqlController(object):
             query_start = eval(f'query_start.filter(LayerData.{key}==value)')
         return query_start.all()
 
-    def get_coordinates_from_query_result(query_result):
+    def get_coordinates_from_query_result(self,query_result):
         coord = []
         for resulti in query_result:
             coord.append([resulti.x,resulti.y,resulti.section])
