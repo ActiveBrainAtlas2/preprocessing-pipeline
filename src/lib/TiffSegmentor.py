@@ -12,10 +12,13 @@ class TiffSegmentor:
     
     def create_directories_for_channeli(self,channel):
         self.channel = channel
-        self.tif_directory = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK55/preps/CH{self.channel}/full_cleaned/'
-        self.save_directory = f'/data/cell_segmentation/DK55/CH{self.channel}/'
+        self.tif_directory = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{self.animal}/preps/CH{self.channel}/full_aligned/'
+        self.animal_directory = f'/data/cell_segmentation/{self.animal}'
+        self.save_directory = self.animal_directory + f'/CH{self.channel}/'
+        if not os.path.exists(self.animal_directory):
+            os.mkdir(self.animal_directory)
         if not os.path.exists(self.save_directory):
-                os.mkdir(self.save_directory)
+            os.mkdir(self.save_directory)
         files = os.listdir(self.tif_directory)
         for filei in files:
             file_name = filei[:-4]
