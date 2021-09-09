@@ -20,8 +20,8 @@ from collections import defaultdict
 
 #PIPELINE_ROOT = Path('.').absolute().parent
 #sys.path.append(PIPELINE_ROOT.as_posix())
-from lib.sqlcontroller import SqlController, file_processed, set_file_completed
-from lib.utilities_process import get_cpus
+from src.lib.sqlcontroller import SqlController, file_processed, set_file_completed
+from src.lib.utilities_process import get_cpus
 
 def calculate_chunks(downsample, mip):
     """
@@ -80,7 +80,6 @@ def calculate_factors(downsample, mip):
     except:
         result = [2,2,1]
     return result
-
 
 def get_db_structure_infos():
     sqlController = SqlController('MD589')
@@ -305,8 +304,6 @@ class NumpyToNeuroglancer():
 
     def process_image(self, file_key):
         index, infile = file_key
-        basefile = os.path.basename(infile)
-        #completed = file_processed(self.animal, self.progress_id, basefile)
         completed = False
         if completed:
             print(f"Section {index} already processed, skipping ")
@@ -314,7 +311,6 @@ class NumpyToNeuroglancer():
         img = io.imread(infile, img_num=0)
         img = img.reshape(self.num_channels, img.shape[0], img.shape[1]).T
         self.precomputed_vol[:, :, index] = img
-        #set_file_completed(self.animal, self.progress_id, basefile)
         del img
         return
 

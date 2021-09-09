@@ -10,6 +10,7 @@ import SimpleITK as sitk
 import neuroglancer
 getcom = LoadComPickle()
 gettc = TransformCom(getcom)
+
 def add_stack(vol,viewer,name):
     volume_layer = neuroglancer.LocalVolume(
             data=vol, 

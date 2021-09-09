@@ -38,7 +38,6 @@ class TiffSegmentor:
                 continue
             cmd = [f'convert', self.tif_directory + filei, '-compress', 'None', '-crop', '2x5-0-0@', 
             '+repage', '+adjoin', f'{save_folder}/{file_name}tile-%d.tif']
-            print(f'creating segments for  {file_name}')
             workernoshell(cmd)
     
     def create_sectioni_csv(self,save_path,sectioni):

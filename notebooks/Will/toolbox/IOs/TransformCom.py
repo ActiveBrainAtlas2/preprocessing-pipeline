@@ -6,9 +6,8 @@ from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transf
 from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_dict_demons
 from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
 from notebooks.Will.toolbox.IOs.LoadCom import LoadCom
-from utilities.alignment.align_point_sets import get_rigid_transformation_from_dicts,apply_rigid_transformation_to_com_dict
+from abakit.registration.utilities import get_rigid_transformation_from_dicts,apply_rigid_transformation_to_com_dict,apply_rigid_transformation_to_com_dict_list
 from notebooks.Will.toolbox.IOs.get_bilis_json_file import get_tranformation
-from utilities.alignment.align_point_sets import apply_rigid_transformation_to_com_dict_list
 class TransformCom:
     def __init__(self,load_com_class:LoadCom):
         self.getcom = load_com_class
@@ -48,7 +47,7 @@ class TransformCom:
         transformed_com_list = []
         for prepi in prep_list:
             affine_transform = get_affine_transform(prepi)
-            prepicom = self.getcom.get_corrected_prepi_com(prepi)
+            prepicom = self.getcom.get_prepi_com(prepi)
             transformed_com = transform_dict_affine(affine_transform,prepicom)
             transformed_com_list.append(transformed_com)
         return transformed_com_list
@@ -59,7 +58,7 @@ class TransformCom:
         for prepi in prep_list:
             print('loading demons '+prepi)
             demons_transform = get_demons_transform(prepi)
-            prepicom = self.getcom.get_corrected_prepi_com(prepi)
+            prepicom = self.getcom.get_prepi_com(prepi)
             transformed_com = transform_dict_demons(demons_transform,prepicom)
             transformed_com_list.append(transformed_com)
         return transformed_com_list
