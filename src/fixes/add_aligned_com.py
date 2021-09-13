@@ -56,7 +56,6 @@ def get_centers(animal, input_type_id, person_id=2, layer='COM'):
         row_dict[structure] = [row.x, row.y, row.section]
     return row_dict
 
-
 def add_layer(animal, structure, x, y, section, person_id, layer='COM'):
     com = LayerData(
         prep_id=animal, structure=structure, x=x, y=y, section=section, layer=layer,
@@ -68,8 +67,6 @@ def add_layer(animal, structure, x, y, section, person_id, layer='COM'):
     except Exception as e:
         print(f'No merge {e}')
         session.rollback()
-
-
 
 def transform_and_add_dict(animal, person_id, row_dict, r=None, t=None):
 
@@ -97,7 +94,6 @@ def get_common_structure(brains):
     common_structures = list(sorted(common_structures))
     return common_structures
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--pointbrain', help='Enter point animal', required=True)
@@ -105,33 +101,24 @@ if __name__ == '__main__':
     parser.add_argument('--inputlayer', help='Enter input layer name', required=False, default='COM')
     parser.add_argument('--input_type_id', help='Enter input type id', required=False, default=1)
     parser.add_argument('--outputlayer', help='Enter output layer name', required=False)
-    
-
     args = parser.parse_args()
     pointbrain = args.pointbrain
     imagebrain = args.imagebrain
     inputlayer = args.inputlayer
     outputlayer = args.outputlayer
     input_type_id = int(args.input_type_id)
-
-
     pointdata = get_centers(pointbrain, input_type_id, layer=inputlayer)
     atlas_centers = get_centers('atlas', input_type_id=1, person_id=16)
     common_structures = get_common_structure([pointbrain, imagebrain])
-
     point_structures = sorted(pointdata.keys())
     dst_point_set = np.array([atlas_centers[s] for s in point_structures if s in common_structures]).T
     point_set = np.array([pointdata[s] for s in point_structures if s in common_structures]).T
-
     if len(common_structures) < 3 or dst_point_set.size == 0 or point_set.size == 0:
         print(f'len common structures {len(common_structures)}')
         print(f'Size of dst_point_set {dst_point_set.size} point_set {point_set.size}')
         print('No point data to work with.')
         sys.exit()
-
     r0, t0 = umeyama(point_set, dst_point_set)
-
-
     imagedata = get_centers(imagebrain, input_type_id)
     image_structures = sorted(imagedata.keys())
     image_set = np.array([imagedata[s] for s in image_structures if s in common_structures]).T
@@ -140,8 +127,6 @@ if __name__ == '__main__':
         print(f'No image data to work with. size of dst,image {dst_point_set.size} {image_set.size}')
         sys.exit()
     r1, t1 = umeyama(image_set, dst_point_set)
-
-    # get some COM data from DK55
     for abbrev, coord in pointdata.items():
         x0, y0 , section0 = coord
         x1, y1, section1 = brain_to_atlas_transform(coord, r0, t0)
@@ -151,8 +136,5 @@ if __name__ == '__main__':
         print( round(x0), round(y0),round(section0), end="\t\t")
         print( round(x1), round(y1),round(section1), end="\t\t")
         print( round(x2), round(y2),round(section2))
-
         if outputlayer is not None:
             add_layer(pointbrain, structure, x2, y2, section2, 1, outputlayer)
-    # transform to atlas space        
-

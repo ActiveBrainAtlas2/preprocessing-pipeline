@@ -507,16 +507,24 @@ class SqlController(object):
             ElastixTransformation.section == section).first())
         return row_exists
 
-    def add_elastix_row(self, animal, section, rotation, xshift, yshift):
-        data = ElastixTransformation(
-            prep_id=animal, section=section, rotation=rotation, xshift=xshift, yshift=yshift,
-            created=datetime.utcnow(), active=True)
+    def add_row(self,data):
         try:
             self.session.add(data)
             self.session.commit()
         except Exception as e:
             print(f'No merge {e}')
             self.session.rollback()
+
+    def add_elastix_row(self, animal, section, rotation, xshift, yshift):
+        data = ElastixTransformation(
+            prep_id=animal, section=section, rotation=rotation, xshift=xshift, yshift=yshift,
+            created=datetime.utcnow(), active=True)
+        self.add_row(data)
+
+    def add_layer_data_row(self,animal,person_id,input_type_id,coordinates,structure_id,layer):
+        x,y,z = coordinates
+        data = LayerData(prep_id = animal, person_id = person_id, input_type_id = input_type_id, x=x, y=y, section=z,structure_id=structure_id,layer=layer)
+        self.add_row(data)
 
     def clear_elastix(self, animal):
         self.session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
