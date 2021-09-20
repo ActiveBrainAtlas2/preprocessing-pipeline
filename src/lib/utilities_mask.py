@@ -1,25 +1,16 @@
-import sys
 import cv2
 import numpy as np
 import pandas as pd
-import matplotlib
 import matplotlib.figure
-from nipy.labs.mask import compute_mask
 from skimage import exposure, io
-from pathlib import Path
-from scipy.ndimage.interpolation import map_coordinates
-from skimage.exposure import rescale_intensity, adjust_gamma
-import os
-#PIPELINE_ROOT = Path('.').absolute().parent
-#sys.path.append(PIPELINE_ROOT.as_posix())
 
 from lib.utilities_process import get_last_2d
-from lib.GimpInterface import GimpInterface
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 fontScale = 1
 thickness = 2
 
+"""
 def create_xcf(tif_path,mask_path,xcf_path):
     interface = GimpInterface()
     gimp_tool_path = os.path.join(os.getcwd(),'src','lib')
@@ -37,6 +28,7 @@ def save_mask_after_edit(modsav,xcf_path):
     interface.add_batch_script()
     report = interface.execute()
     return report
+"""
 
 def rotate_image(img, file, rotation):
     """
@@ -362,6 +354,8 @@ def create_mask_pass1(img):
     :param img: the raw image
     :return:  the 1st pass of the image
     """
+    pass
+    """
     img = exposure.adjust_log(img, 1)
     img = exposure.adjust_gamma(img, 2)
 
@@ -373,7 +367,7 @@ def create_mask_pass1(img):
     mask = cv2.dilate(mask.astype(np.uint8), kernel, iterations=2)
     mask = mask.astype(np.uint8)
     return mask
-
+    """
 
 
 def fix_with_fill(img, debug=False):

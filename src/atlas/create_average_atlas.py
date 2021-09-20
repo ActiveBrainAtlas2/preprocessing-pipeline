@@ -12,10 +12,10 @@ from collections import defaultdict
 import numpy as np
 from tqdm import tqdm
 import pickle
+from pathlib import Path
 
-HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
-sys.path.append(PATH)
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
 
 surface_level = 0.9
 from lib.sqlcontroller import SqlController
@@ -32,6 +32,7 @@ from lib.atlas_aligner import Aligner
 fixed_brain_name = 'MD589'
 sqlController = SqlController(fixed_brain_name)
 structures = sqlController.get_structures_list()
+structures = ['SC']
 
 moving_brain_names = ['MD585', 'MD594']
 resolution = '10.0um'
@@ -188,6 +189,8 @@ nominal_centroids_10um = {s: c / atlas_resolution_um for s, c in nominal_centroi
 mean_shapes = {name_u: load_mean_shape(atlas_name=atlas_name, structure=name_u, resolution=atlas_resolution) 
                     for name_u in structures}
 
+print()
+print('mirror and add centroid')
 for structure in structures:
 
     if '_L' in structure:
@@ -195,9 +198,9 @@ for structure in structures:
                                       centroid_wrt_origin=-mean_shapes[structure][1],
                                       new_centroid=nominal_centroids_10um[structure])
     else:
-        mean_shape = (mean_shapes[structure][0], 
-                        mean_shapes[structure][1] + nominal_centroids_10um[structure])
-
+        mean_shape = (mean_shapes[structure][0], mean_shapes[structure][1] + nominal_centroids_10um[structure])
+    print(structure, mean_shapes[structure][1], nominal_centroids_10um[structure])
+    
     volume = mean_shape[0]
     #volume = np.rot90(volume, axes=(0, 1))
     #volume = np.flip(volume, axis=0)

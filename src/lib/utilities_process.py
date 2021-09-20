@@ -7,18 +7,16 @@ from skimage import io
 from PIL import Image
 import cv2
 import numpy as np
-from skimage import io
 from skimage.transform import rescale
+from concurrent.futures.process import ProcessPoolExecutor
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from src.lib.file_location import FileLocationManager
-from src.lib.sqlcontroller import SqlController
-from src.lib.sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
-from src.lib.logger import get_logger
+from lib.file_location import FileLocationManager
+from lib.sqlcontroller import SqlController
+from lib.sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
+from lib.logger import get_logger
 SCALING_FACTOR = 0.03125
-from PIL import Image
-from concurrent.futures.process import ProcessPoolExecutor
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -29,7 +27,7 @@ def get_hostname():
     return hostname
 
 def get_cpus():
-    nmax = 4
+    nmax = 1
     usecpus = (nmax,nmax)
     cpus = {}
     cpus['muralis'] = (16,40)

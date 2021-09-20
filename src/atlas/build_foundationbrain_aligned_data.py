@@ -110,7 +110,7 @@ def create_volumes(animal):
         for structure in section_structure_vertices[section]:
 
             points = np.array(section_structure_vertices[section][structure]) / DOWNSAMPLE_FACTOR
-            points = interpolate(points, max(250, len(points)))
+            points = interpolate(points, max(3000, len(points)))
             original_structures[structure][section] = points
             offset = section_offsets[section]
             if animal == 'MD585' and section in md585_fixes.keys():

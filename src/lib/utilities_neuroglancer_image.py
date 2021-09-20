@@ -6,14 +6,11 @@ from skimage import io
 from timeit import default_timer as timer
 
 
-HOME = os.path.expanduser("~")
-#PATH = os.path.join(HOME, 'programming/pipeline_utility')
-#sys.path.append(PATH)
-from src.lib.file_location import FileLocationManager
-from src.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
-from src.lib.sqlcontroller import SqlController
-from src.lib.sql_setup import RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
-from src.lib.utilities_process import get_cpus, SCALING_FACTOR, test_dir
+from lib.file_location import FileLocationManager
+from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
+from lib.sqlcontroller import SqlController
+from lib.sql_setup import RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
+from lib.utilities_process import get_cpus, SCALING_FACTOR, test_dir
 
 def get_scales(animal,downsample):
     sqlController = SqlController(animal)

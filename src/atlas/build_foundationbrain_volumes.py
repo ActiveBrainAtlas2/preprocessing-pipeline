@@ -36,7 +36,7 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     np.save(volume_filepath, volume)
     origin_filepath = os.path.join(OUTPUT_DIR, 'origin', f'{structure}.txt')
     os.makedirs(os.path.join(OUTPUT_DIR, 'origin'), exist_ok=True)
-    np.savetxt(origin_filepath, (xx,yy,z))
+    np.savetxt(origin_filepath, (x,y,z))
 
 
 def create_volumes(animal, debug):
@@ -68,14 +68,15 @@ def create_volumes(animal, debug):
         avgarr = np.array(avgs)
         com = np.mean(avgarr, axis=0)
         min_xy = np.min(mins, axis=0)
-        min_x = min_xy[0]
-        min_y = min_xy[1]
         max_xy = np.max(maxs, axis=0)
         max_x = max_xy[0]
         max_y = max_xy[1]
+        sections = [int(i) for i in onestructure.keys()]
+        min_x = min_xy[0]
+        min_y = min_xy[1]
+        min_z = min(sections)
         xlength = max_x - min_x
         ylength = max_y - min_y
-        sections = [int(i) for i in onestructure.keys()]
         zlength = (max(sections) - min(sections))
         padding = 1.0
         PADDED_SIZE = (int(ylength), int(xlength))
@@ -87,28 +88,28 @@ def create_volumes(animal, debug):
             #color = sqlController.get_structure_color_rgb(structure)
             volume_slice = cv2.polylines(volume_slice, [points], isClosed=True, 
                                          color=1, thickness=1)
-            cv2.fillPoly(volume_slice, pts=[points], color=1)
+            volume_slice = cv2.fillPoly(volume_slice, pts=[points], color=1)
 
             volume.append(volume_slice)
 
         volume = np.array(volume).astype(np.bool8)
         to_um = 32 * 0.452
-        ndcom = center_of_mass(volume)
+        # ndcom = center_of_mass(volume)
         #x = round(ndcom[0] + min_x)
         #y = round(ndcom[1] + min_y)
-        x = com[0]
-        y = com[1]
-        z = round(com[2])
-        x_um  = x * to_um
-        y_um = y * to_um
-        z_um = z * 20
+        #x = com[0]
+        #y = com[1]
+        #z = round(com[2])
+        x_um  = min_x * to_um
+        y_um = min_y * to_um
+        z_um = min_z * 20
         if debug:
-            print(animal, structure,'\tcom', '\tcom x y z', x_um, y_um, z_um)
+            print(animal, structure,'\tcom', '\tcom x y z', min_x, min_y, min_z)
         else:
             sqlController.add_layer_data(abbreviation=structure, animal=animal, 
                                      layer='COM', x=x_um, y=y_um, section=z_um, 
                                      person_id=1, input_type_id=3)
-            save_volume_origin(ATLAS, animal, structure, volume, (x, y, z))
+            save_volume_origin(ATLAS, animal, structure, volume, (min_x, min_y, min_z))
 
 
 if __name__ == '__main__':

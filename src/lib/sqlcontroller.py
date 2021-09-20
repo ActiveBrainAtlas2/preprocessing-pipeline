@@ -8,20 +8,27 @@ filled out for each animal to use
 #import traceback
 #import transaction
 ###from logger import Log
-from src.lib.sql_setup import session, pooledengine, pooledsession
-from src.model.file_log import FileLog
-from src.model.urlModel import UrlModel
-from src.model.task import Task, ProgressLookup
-from src.model.layer_data import LayerData
-from src.model.structure import Structure
-from src.model.slide_czi_to_tif import SlideCziTif
-from src.model.slide import Slide
-from src.model.section import Section
-from src.model.scan_run import ScanRun
-from src.model.histology import Histology
-from src.model.animal import Animal
-from src.model.elastix_transformation import ElastixTransformation
+import os
 import sys
+
+HOME = os.path.expanduser("~")
+PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
+sys.path.append(PATH)
+
+
+from lib.sql_setup import session, pooledsession
+from model.file_log import FileLog
+from model.urlModel import UrlModel
+from model.task import Task, ProgressLookup
+from model.layer_data import LayerData
+from model.structure import Structure
+from model.slide_czi_to_tif import SlideCziTif
+from model.slide import Slide
+from model.section import Section
+from model.scan_run import ScanRun
+from model.histology import Histology
+from model.animal import Animal
+from model.elastix_transformation import ElastixTransformation
 import json
 import pandas as pd
 from collections import OrderedDict
@@ -29,10 +36,6 @@ from datetime import datetime
 import numpy as np
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
-from pathlib import Path
-
-PIPELINE_ROOT = Path('.').absolute().parent
-sys.path.append(PIPELINE_ROOT.as_posix())
 
 
 class SqlController(object):

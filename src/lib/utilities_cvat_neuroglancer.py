@@ -1,9 +1,6 @@
 import os
-import sys
 from skimage import measure, io
-from skimage.color import rgb2gray
 from PIL import Image
-from torch.nn.functional import leaky_relu
 Image.MAX_IMAGE_PIXELS = None
 import cv2
 import json
@@ -13,15 +10,12 @@ from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 from cloudvolume.lib import touch
-from pathlib import Path
 from matplotlib import colors
 from pylab import cm
 from collections import defaultdict
 
-#PIPELINE_ROOT = Path('.').absolute().parent
-#sys.path.append(PIPELINE_ROOT.as_posix())
-from src.lib.sqlcontroller import SqlController, file_processed, set_file_completed
-from src.lib.utilities_process import get_cpus
+from lib.sqlcontroller import SqlController, file_processed, set_file_completed
+from lib.utilities_process import get_cpus
 
 def calculate_chunks(downsample, mip):
     """

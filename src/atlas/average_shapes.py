@@ -71,11 +71,11 @@ print(type(spa), spa.dtype, spa.shape, type(sgt))
 thresh = 0.5  # median
 pm = np.zeros(spa.shape, 'B')
 pm[spa > thresh] = 1
-print('pm', type(pm), pm.dtype, pm.shape)
+print(structure, type(pm), pm.dtype, pm.shape)
 
 fig=plt.figure(figsize=(26,18), dpi= 100, facecolor='w', edgecolor='k')
 plt.imshow(pm, cmap="gray")
-plt.title('pm', fontsize=30)
+plt.title(structure, fontsize=30)
 plt.tick_params(axis='x', labelsize=30)
 plt.tick_params(axis='y', labelsize=30)
 plt.show()
