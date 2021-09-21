@@ -6,9 +6,8 @@ This file does the following operations:
     4. Sends those results to the PIL affine with the rotation and translation matrix
     5. The location of elastix is hardcoded below which is a typical linux install location.
 """
-import os, sys
 import argparse
-from lib.utilities_create_alignment import parse_elastix,run_offsets
+from lib.utilities_create_alignment import parse_elastix, run_offsets
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
