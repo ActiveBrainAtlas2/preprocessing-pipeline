@@ -9,7 +9,7 @@ HOME = os.path.expanduser("~")
 from lib.file_location import FileLocationManager
 from lib.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors
 from lib.utilities_process import get_cpus
-def create_downsamples(animal, channel, suffix, downsample,njobs):
+def create_downsamples(animal, channel, suffix, downsample):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = f'C{channel}'
     first_chunk = calculate_chunks(downsample, 0)
@@ -33,8 +33,8 @@ def create_downsamples(animal, channel, suffix, downsample,njobs):
         sys.exit()
 
     cloudpath = f"file://{INPUT_DIR}"
-    # _, workers = get_cpus()
-    tq = LocalTaskQueue(parallel=njobs)
+    _, workers = get_cpus()
+    tq = LocalTaskQueue(parallel=workers)
 
     tasks = tc.create_transfer_tasks(cloudpath, dest_layer_path=outpath, 
         chunk_size=first_chunk, mip=0, skip_downsamples=True)

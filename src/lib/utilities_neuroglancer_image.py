@@ -37,7 +37,7 @@ def get_file_information(INPUT):
         file_keys.append([i,filepath])
     return midfile,file_keys,volume_size,num_channels
 
-def create_neuroglancer(animal, channel, downsample, workers,debug=False):
+def create_neuroglancer(animal, channel, downsample, debug=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel_dir = f'CH{channel}'

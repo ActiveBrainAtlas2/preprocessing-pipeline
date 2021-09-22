@@ -18,11 +18,9 @@ if __name__ == '__main__':
     parser.add_argument('--csv', help='Enter true or false', required=False, default='false')
     parser.add_argument('--allen', help='Enter true or false', required=False, default='false')
     parser.add_argument('--scale', help='Enter scaling', required=False, default=45000)
-    parser.add_argument('--njobs', help='number of core to use for parallel processing muralus can handle 20-25 ratto can handle 4', required=False, default=4)
 
     args = parser.parse_args()
     animal = args.animal
-    workers = int(args.njobs)
     channel = args.channel
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     create_csv = bool({'true': True, 'false': False}[str(args.csv).lower()])
@@ -30,4 +28,4 @@ if __name__ == '__main__':
     masks = args.masks
     scale = int(args.scale)
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen,workers)
+    run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen)

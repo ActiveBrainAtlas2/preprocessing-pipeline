@@ -27,7 +27,7 @@ def get_hostname():
     return hostname
 
 def get_cpus():
-    nmax = 1
+    nmax = 2
     usecpus = (nmax,nmax)
     cpus = {}
     cpus['muralis'] = (16,40)

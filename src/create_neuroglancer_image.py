@@ -10,13 +10,11 @@ if __name__ == '__main__':
     parser.add_argument('--channel', help='Enter channel', required=True)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--debug', help='Enter debug True|False', required=False, default='false')
-    parser.add_argument('--njobs', help='number of core to use for parallel processing muralus can handle 20-25 ratto can handle 4', required=False, default=4)
 
     args = parser.parse_args()
     animal = args.animal
-    workers = int(args.njobs)
     channel = args.channel
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-    create_neuroglancer(animal, channel, downsample, workers,debug)
+    create_neuroglancer(animal, channel, downsample, debug)
 

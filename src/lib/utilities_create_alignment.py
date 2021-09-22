@@ -12,7 +12,7 @@ from lib.utilities_process import test_dir, get_cpus
 import os 
 import sys
 
-def run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen,njobs):
+def run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen):
     """
     This gets the dictionary from the above method, and uses the coordinates
     to feed into the Imagemagick convert program. This method also uses a Pool to spawn multiple processes.
@@ -76,9 +76,9 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
         create_csv_data(animal, file_keys)
     else:
         start = timer()
-        # workers, _ = get_cpus()
-        print(f'Working on {len(file_keys)} files with {njobs} cpus')
-        with ProcessPoolExecutor(max_workers=njobs) as executor:
+        workers, _ = get_cpus()
+        print(f'Working on {len(file_keys)} files with {workers} cpus')
+        with ProcessPoolExecutor(max_workers=workers) as executor:
             executor.map(process_image, sorted(file_keys))
 
         end = timer()

@@ -16,7 +16,6 @@ if __name__ == '__main__':
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--scale', help='Enter scaling', required=False, default=45000)
     parser.add_argument('--debug', help='Enter true or false', required=False, default='false')
-    parser.add_argument('--njobs', help='number of core to use for parallel processing muralus can handle 20-25 ratto can handle 4', required=False, default=4)
 
 
     args = parser.parse_args()
@@ -25,6 +24,5 @@ if __name__ == '__main__':
     scale = int(args.scale)
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-    workers = int(args.njobs)
-    masker(animal, channel, downsample, scale, debug, workers)
+    masker(animal, channel, downsample, scale, debug)
 

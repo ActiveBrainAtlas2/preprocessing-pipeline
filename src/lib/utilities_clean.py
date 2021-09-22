@@ -9,7 +9,7 @@ from lib.sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
 from lib.utilities_mask import rotate_image, place_image, scaled, equalized
-from lib.utilities_process import test_dir, SCALING_FACTOR
+from lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
 
 def fix_ntb(file_keys):
     """
@@ -68,7 +68,7 @@ def fix_ntb(file_keys):
     del fixed
     return
 
-def masker(animal, channel, downsample, scale, debug,workers):
+def masker(animal, channel, downsample, scale, debug):
     """
     Main method that starts the cleaning/rotating process.
     :param animal:  prep_id of the animal we are working on.
@@ -128,7 +128,7 @@ def masker(animal, channel, downsample, scale, debug,workers):
             file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, scale, channel])
 
     start = timer()
-    # workers = 20 # this is the upper limit. More than this and it crashes.
+    workers, _ = get_cpus() 
     if debug:
         print('debugging with single core')
         for file_key in file_keys:
