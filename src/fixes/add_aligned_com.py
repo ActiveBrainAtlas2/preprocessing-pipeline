@@ -8,21 +8,20 @@ into the database if given a layer name.
 
 import argparse
 from sqlalchemy import func
-from tqdm import tqdm
-from pprint import pprint
 import numpy as np
-import os
 import sys
 from datetime import datetime
+from pathlib import Path
 from abakit.registration.algorithm import brain_to_atlas_transform, atlas_to_brain_transform, umeyama
 
-HOME = os.path.expanduser("~")
-DIR = os.path.join(HOME, 'programming/pipeline_utility/src')
-sys.path.append(DIR)
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
+
+
 from model.structure import Structure
 from model.layer_data import LayerData
 from model.scan_run import ScanRun
-from sql_setup import session
+from lib.sql_setup import session
 
 
 MANUAL = 1

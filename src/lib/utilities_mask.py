@@ -265,17 +265,19 @@ def check_contour(contours, area, lc):
         return contours, lc
 
 
-def scaled(img, mask, scale=45000, epsilon=0.01):
+def scaled(img, mask, epsilon=0.01):
     """
     This scales the image to the limit specified. You can get this value
     by looking at the combined histogram of the image stack. It is quite
     often less than 30000 for channel 1
+    The scale is hardcoded to 45000 which was a good value from Yoav
     :param img: image we are working on.
     :param mask: binary mask file
     :param epsilon:
     :param limit: max value we wish to scale to
     :return: scaled image in 16bit format
     """
+    scale = 45000
     _max = np.quantile(img[mask > 10], 1 - epsilon) # gets almost the max value of img
     # print('thr=%d, index=%d'%(vals[ind],index))
     if scale > 255:

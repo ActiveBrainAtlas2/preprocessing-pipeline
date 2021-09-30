@@ -11,7 +11,8 @@ from lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_process import create_downsample, get_cpus, test_dir, get_image_size, SCALING_FACTOR
+from lib.utilities_process import create_downsample, get_cpus, test_dir, \
+    get_image_size, resize_and_save_tif
 
 def set_task_preps(animal,channel):
     sqlController = SqlController(animal)
@@ -28,7 +29,6 @@ def make_full_resolution(animal, channel):
     Args:
         animal: the prep id of the animal
         channel: the channel of the stack to process
-        compress: Use the default LZW compression, otherwise just copy the file with the correct name
     Returns:
         list of commands
     """
@@ -100,7 +100,7 @@ def make_low_resolution(animal, channel, debug):
     print(f'Working on {len(file_keys)} files with {workers} cpus')
     if debug:
         for file_key in file_keys:
-            resize_tif(file_key)
+            resize_and_save_tif(file_key)
     else:
         with ProcessPoolExecutor(max_workers=workers) as executor:
             executor.map(create_downsample, file_keys)

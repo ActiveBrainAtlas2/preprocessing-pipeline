@@ -2,8 +2,7 @@
 ## Creating a sandbox on your computer. Only do this on your home computer. Our workstations already have the software installed.
 1. git clone this repository, create a virtual environment in your home dir and install the required packages
     ```bash
-    # git clone git@github.com:eddyod/pipeline_utility.git
-    git clone https://github.com/eddyod/pipeline_utility.git
+    git clone git@github.com:ActiveBrainAtlas2/pipeline.git
     sudo python3 -m venv /usr/local/share/pipeline
     cd pipeline_utility
     source /usr/local/share/pipeline/bin/activate

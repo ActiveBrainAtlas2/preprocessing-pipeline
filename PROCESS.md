@@ -6,9 +6,9 @@
 
 1. To run any of these commands at high resolution, prefix each command with `nohup`and end the command with `&`. That will make it run in the background and you can log out.
 
-1. Many steps can be parallelized using the --njobs <ncore> option.  Those steps are marked by a capital '**P**' below.
+1. All scripts that can be parallelized are done in the script with the get_cpus method.
    
-## Preprocessing New scans starting with czi files
+## Preprocessing new scans starting with czi files.
 1. Create a folder with brain id under /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX create subfolder DKXX/czi and DKXX/tif.  Then copy the czi files to DKXX/czi.
    
 1. Add entries in the animal, scan run and histology table in the database using the admin portal.  You can do this by using the corresponding app and clicking the button on the top right in the admin portal to create rows.
@@ -20,15 +20,13 @@
     1. On muralis: 513m50.446s for 147 czi files.
     1. On ratto: 527m9.581s for 147 czi files.
    
-1. Run: `python src/create_tifs.py --animal DKXX --channel 1` **P**
+1. Run: `python src/create_tifs.py --animal DKXX --channel 1`
     1. This will read the sections view in the database. This can be run before the QC section
        below. Doing that will create some extra unused tifs, but that is not a problem.
     1. Create tif files for channel 1.
     1. Create png files for channel 1.
     1. Repeat process for the other 2 channels when ready.
-   
-1. Run `tif2jp2.sh DKXX` in programming/pipeline_utility/registration. This script runs Matlab so you must have a license.
-   
+      
 1. Have someone confirm the status of each slide in: https://activebrainatlas.ucsd.edu/activebrainatlas/admin
     1. After logging in, go to the Slides link in the Brain category.
     1. Enter the animal name in the search box.
@@ -49,15 +47,17 @@
 1. Input the correct rotation in the scan run table.
 1. Run: `python src/create_normalized.py --animal DKXX` channels option available, default is ch1.
    
-1. Run: `python src/create_masks.py --animal DKXX` **P**
-    1. This will read the thumbnail directory and create masks in the DKXX/preps/thumbnail_masked dir.
+1. Run: `python src/create_masks.py --animal DKXX`
+    1. This will read the thumbnail directory and create masks in the DKXX/preps/masks/thumbnail_colored dir.
     1. No need to use channel 2 or 3. It works solely on channel 1.
-   
-1. Run: `python src/create_histogram.py --animal DKXX --channel 1 --single single`
-    1. This will read the directory of the thumbnail resolution files for channel 1.
-    1. Create histogram for each files for channel 1.
-    1. Repeat process for the other 2 channels when ready.
-   
+    1. You need to go into this dir and check the masks and edit the bad ones with Gimp. 
+    If the mask needs to be dilated, expand the area with a white marker.
+    If the mask needs to be trimmed, fill in the excess area with a black marker. 
+    Overwrite the existing tif. 
+1. Run: `python src/create_masks.py --animal DKXX --final true`
+    1. This will read the thumbnail directory and create masks in the DKXX/preps/masks/thumbnail_masked dir.
+    1. No need to use channel 2 or 3. It works solely on channel 1.
+      
 1. Run: `python src/create_clean.py --animal DKXX --channel 1` **P** muralus 40
     1. The necessary rotation and flip parameters must be in the scan run table..
     1. Be careful with the rotation and flip. To do a 90 degree right rotation requires rotation=1
@@ -65,7 +65,12 @@
     1. full resolution on ratto one channel takes 863 minutes. When it is finished, check file count
    and make sure there are no small files, especially with high resolution.
     1. running parallel: muralus can handle 20 cores + while ratto can handle 4
-   
+
+1. Run: `python src/create_histogram.py --animal DKXX --channel 1 --single single`
+    1. This will read the directory of the thumbnail resolution files for channel 1.
+    1. Create histogram for each files for channel 1.
+    1. Repeat process for the other 2 channels when ready.
+
 1. Run: `python src/simple_registration.py --animal DKXX` **P**
     1. This will create the DKXX/preps/elastix directory and a subdirectory for each file pair.
     1. The elastix dir will be used to align the other channels and the full resoltions.

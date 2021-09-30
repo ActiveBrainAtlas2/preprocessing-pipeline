@@ -70,7 +70,7 @@ class SqlController(object):
         # fill up the metadata_cache variable
         # self.session.close()
 
-    def get_values_from_column(query_result):
+    def get_values_from_column(self, query_result):
         query_result = query_result.all()
         query_result = [entryi[0] for entryi in query_result]
         return query_result
@@ -239,8 +239,8 @@ class SqlController(object):
     
     def get_layer_data(self,search_dictionary):
         query_start = self.session.query(LayerData)
-        for key,value in search_dictionary.items():
-            query_start = eval(f'query_start.filter(LayerData.{key}==value)')
+        for key, value in search_dictionary.items():
+            query_start = eval(f'query_start.filter(LayerData.{key}=={value})')
         return query_start.all()
 
     def get_coordinates_from_query_result(self,query_result):
@@ -541,6 +541,7 @@ class SqlController(object):
         y*=resolution
         z*=20
         return x,y,z
+
 
 def file_processed(animal, progress_id, filename):
     """

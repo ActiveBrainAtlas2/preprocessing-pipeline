@@ -9,7 +9,7 @@ from model.slide import Slide
 from model.slide_czi_to_tif import SlideCziTif
 from lib.sql_setup import session, SLIDES_ARE_SCANNED, CZI_FILES_ARE_PLACED_ON_BIRDSTORE, CZI_FILES_ARE_SCANNED_TO_GET_METADATA
 
-def make_meta(animal, remove):
+def make_meta(animal):
     """
     Scans the czi dir to extract the meta information for each tif file
     Args:
@@ -22,13 +22,11 @@ def make_meta(animal, remove):
     scan_id = sqlController.scan_run.id
     slides = session.query(Slide).filter(Slide.scan_run_id == scan_id).count()
 
-    if slides > 0 and not remove:
-        print(f'There are {slides} existing slides. You must manually delete the slides first.')
-        print('Rerun this script as create_meta.py --animal DKXX --remove true')
-        sys.exit()
+    if slides > 0:
+        return
 
-    session.query(Slide).filter(Slide.scan_run_id == scan_id).delete(synchronize_session=False)
-    session.commit()
+    # session.query(Slide).filter(Slide.scan_run_id == scan_id).delete(synchronize_session=False)
+    # session.commit()
 
     try:
         czi_files = sorted(os.listdir(fileLocationManager.czi))

@@ -7,8 +7,10 @@ from skimage import io
 from PIL import Image
 import cv2
 import numpy as np
+import gc
 from skimage.transform import rescale
 from concurrent.futures.process import ProcessPoolExecutor
+# from fixes.split_save import img
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -27,9 +29,10 @@ def get_hostname():
     return hostname
 
 def get_cpus():
-    nmax = 2
+    nmax = 4
     usecpus = (nmax,nmax)
     cpus = {}
+    cpus['mothra'] = (1,1)
     cpus['muralis'] = (16,40)
     cpus['basalis'] = (10,12)
     cpus['ratto'] = (10,10)
@@ -72,7 +75,7 @@ def workernoshell(cmd):
     proc = Popen(cmd, shell=False, stderr=stderr_f, stdout=stdout_f)
     proc.wait()
 
-def test_dir(animal, dir, downsample=True, same_size=False):
+def test_dir(animal, directory, downsample=True, same_size=False):
     error = ""
     #thumbnail resolution ntb is 10400 and min size of DK52 is 16074
     #thumbnail resolution thion is 14464 and min size for MD585 is 21954
@@ -86,16 +89,16 @@ def test_dir(animal, dir, downsample=True, same_size=False):
     sqlController = SqlController(animal)
     section_count = sqlController.get_section_count(animal)
     try:
-        files = sorted(os.listdir(dir))
+        files = sorted(os.listdir(directory))
     except:
-        return f'{dir} does not exist'
+        return f'{directory} does not exist'
         
     if section_count == 0:
         section_count = len(files)
     widths = set()
     heights = set()
     for f in files:
-        filepath = os.path.join(dir, f)
+        filepath = os.path.join(directory, f)
         width, height = get_image_size(filepath)
         widths.add(int(width))
         heights.add(int(height))
@@ -114,9 +117,9 @@ def test_dir(animal, dir, downsample=True, same_size=False):
         min_height = 0
         max_height = 0
     if section_count != len(files):
-        error += f"Number of files in {dir} is incorrect.\n"
+        error += f"Number of files in {directory} is incorrect.\n"
     if min_width != max_width and min_width > 0 and same_size:
-       error += f"Widths are not of equal size, min is {min_width} and max is {max_width}.\n"
+        error += f"Widths are not of equal size, min is {min_width} and max is {max_width}.\n"
     if min_height != max_height and min_height > 0 and same_size:
         error += f"Heights are not of equal size, min is {min_height} and max is {max_height}.\n"
     return error
@@ -127,7 +130,7 @@ def get_last_2d(data):
     m,n = data.shape[-2:]
     return data.flat[:m*n].reshape(m,n)
 
-def make_tifs(animal, channel, njobs):
+def make_tifs(animal, channel):
     """
     This method will:
         1. Fetch the sections from the database
@@ -136,9 +139,7 @@ def make_tifs(animal, channel, njobs):
     Args:
         animal: the prep id of the animal
         channel: the channel of the stack to process
-        njobs: number of jobs for parallel computing
-        compression: default is no compression so we can create jp2 files for CSHL. The files get
-        compressed using LZW when running create_preps.py
+        compression: default is LZW compression
 
     Returns:
         nothing
@@ -159,7 +160,7 @@ def make_tifs(animal, channel, njobs):
         input_path = os.path.join(INPUT, section.czi_file)
         output_path = os.path.join(OUTPUT, section.file_name)
         cmd = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate', '-series', str(section.scene_index),
-                '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
+                '-compression', 'LZW', '-channel', str(section.channel_index),  '-nooverwrite', input_path, output_path]
         if not os.path.exists(input_path):
             continue
 
@@ -168,15 +169,17 @@ def make_tifs(animal, channel, njobs):
 
         commands.append(cmd)
 
-    with Pool(njobs) as p:
+    _, workers = get_cpus()
+    with Pool(workers) as p:
         p.map(workernoshell, commands)
 
-def resize_and_save_tif(tif_path,png_path):
+def resize_and_save_tif(file_key):
+    tif_path, png_path = file_key
     image = Image.open(tif_path)
-    width,height = image.size
-    width = round(width*0.03125)
-    height = round(width*0.03125)
-    image.resize((width,height),Image.LANCZOS)
+    width, height = image.size
+    width = int(round(width*SCALING_FACTOR))
+    height = int(round(height*SCALING_FACTOR))
+    image.resize((width, height),Image.LANCZOS)
     image.save(png_path,format = 'png')
 
 def make_scenes(animal):
@@ -195,7 +198,7 @@ def make_scenes(animal):
         png_path = os.path.join(OUTPUT, png)
         if os.path.exists(png_path):
             continue
-        file_keys.append(tif_path,png_path)
+        file_keys.append((tif_path,png_path))
         
     with ProcessPoolExecutor(max_workers=4) as executor:
             executor.map(resize_and_save_tif, sorted(file_keys))
@@ -219,7 +222,7 @@ def make_tif(animal, tif_id, file_id, testing=False):
     if testing:
         command = ['touch', tif_file]
     else:
-        command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate',
+        command = ['/usr/local/share/bftools/bfconvert', '-bigtiff', '-separate', '-compression', 'LZW',
                                   '-series', str(tif.scene_index), '-channel', str(tif.channel-1), '-nooverwrite', czi_file, tif_file]
     run(command)
 
@@ -245,7 +248,6 @@ def convert(img, target_type_min, target_type_max, target_type):
 def create_downsample(file_key):
     """
     takes a big tif and scales it down to a manageable size.
-    takes 45000 as the number to spread the values to.
     For 16bit images, this is a good number near the high end.
     """
     infile, outpath = file_key
@@ -259,6 +261,9 @@ def create_downsample(file_key):
         cv2.imwrite(outpath, img)        
     except IOError as e:
         print(f'Could not write {outpath} {e}')
+    del img
+    gc.collect()
+    return
 
     
 

@@ -1,15 +1,11 @@
 import numpy as np
-import os, sys
+import os
 from tqdm import tqdm
 import cv2
-from nipy.labs.mask import compute_mask
 from skimage import io
-from pathlib import Path
 
-PIPELINE_ROOT = Path('.').absolute().parent
-sys.path.append(PIPELINE_ROOT.as_posix())
 
-from utilities.utilities_mask import rotate_image, place_image, scaled, equalized, remove_strip
+from lib.utilities_mask import place_image, equalized, remove_strip
 
 BASEINPUT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/CHATM2/preps'
 

@@ -28,7 +28,7 @@ def fix_ntb(file_keys):
         :param scale: used in scaling. Gotten from the histogram
     :return: nothing. we write the image to disk
     """
-    infile, outpath, maskfile, rotation, flip, max_width, max_height, scale, channel = file_keys
+    infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_keys
     try:
         img = io.imread(infile)
     except IOError as e:
@@ -52,7 +52,7 @@ def fix_ntb(file_keys):
         
     del img
     if channel == 1:
-        fixed = scaled(fixed, mask, scale, epsilon=0.01)
+        fixed = scaled(fixed, mask, epsilon=0.01)
         fixed = equalized(fixed)
     del mask
     if rotation > 0:
@@ -68,7 +68,7 @@ def fix_ntb(file_keys):
     del fixed
     return
 
-def masker(animal, channel, downsample, scale, debug):
+def masker(animal, channel, downsample, debug):
     """
     Main method that starts the cleaning/rotating process.
     :param animal:  prep_id of the animal we are working on.
@@ -125,7 +125,7 @@ def masker(animal, channel, downsample, scale, debug):
             print('Not implemented.')
             #fixed = fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height)
         else:
-            file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, scale, channel])
+            file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
 
     start = timer()
     workers, _ = get_cpus() 

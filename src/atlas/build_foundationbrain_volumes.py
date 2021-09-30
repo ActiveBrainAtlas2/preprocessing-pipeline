@@ -94,22 +94,23 @@ def create_volumes(animal, debug):
 
         volume = np.array(volume).astype(np.bool8)
         to_um = 32 * 0.452
-        # ndcom = center_of_mass(volume)
-        #x = round(ndcom[0] + min_x)
-        #y = round(ndcom[1] + min_y)
+        ndcom = center_of_mass(volume)
+        comx = (ndcom[0] + min_x) * to_um
+        comy = (ndcom[1] + min_y) * to_um
         #x = com[0]
         #y = com[1]
-        #z = round(com[2])
+        comz = (ndcom[2] + min_z) * 20
         x_um  = min_x * to_um
         y_um = min_y * to_um
         z_um = min_z * 20
         if debug:
             print(animal, structure,'\tcom', '\tcom x y z', min_x, min_y, min_z)
         else:
+            # we want the real center of mass in the DB
             sqlController.add_layer_data(abbreviation=structure, animal=animal, 
-                                     layer='COM', x=x_um, y=y_um, section=z_um, 
-                                     person_id=1, input_type_id=3)
-            save_volume_origin(ATLAS, animal, structure, volume, (min_x, min_y, min_z))
+                                     layer='COM', x=comx, y=comy, section=comz, 
+                                     person_id=2, input_type_id=1)
+            save_volume_origin(ATLAS, animal, structure, volume, (comx, comy, comz))
 
 
 if __name__ == '__main__':

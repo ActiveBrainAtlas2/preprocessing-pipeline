@@ -63,8 +63,7 @@ def average_shape(volume_origin_list, force_symmetric=False, sigma=2.0):
         vol_bbox_tuples=list(zip(volume_list, bbox_list)))
     common_volume_list = list([(v > 0).astype(np.int32) for v in common_volume_list])
     average_volume = np.sum(common_volume_list, axis=0)
-    # average_volume_prob = average_volume / float(np.max(average_volume))
-    average_volume_prob = average_volume / float(3)
+    average_volume_prob = average_volume / float(np.max(average_volume))
 
     if force_symmetric:
         average_volume_prob = symmetricalize_volume(average_volume_prob)
@@ -81,9 +80,9 @@ def get_centers(animal):
     rows = session.query(LayerData).filter(
         LayerData.active.is_(True))\
             .filter(LayerData.prep_id == animal)\
-            .filter(LayerData.person_id == 1)\
+            .filter(LayerData.person_id == 2)\
             .filter(LayerData.layer == 'COM')\
-            .filter(LayerData.input_type_id == DETECTED)\
+            .filter(LayerData.input_type_id == MANUAL)\
             .order_by(LayerData.structure_id)\
             .all()
     data = []
@@ -97,13 +96,13 @@ def add_layer_data_row(abbrev, origin):
     
     to_um = 32 * 0.452
     scales = np.array([to_um, to_um, 20])
-    x,y,z = origin * scales
-
+    #x,y,z = origin * scales
+    x,y,z = origin
 
     com = LayerData(
         prep_id='Atlas', structure=structure, x=x, y=y, section=z
         , layer='COM',
-        created=datetime.utcnow(), active=True, person_id=1, input_type_id=MANUAL
+        created=datetime.utcnow(), active=True, person_id=16, input_type_id=MANUAL
     )
     try:
         session.add(com)
@@ -116,7 +115,7 @@ def add_layer_data_row(abbrev, origin):
 
 def merge_brains():
     ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', 'atlasV8')
-    fixed_brain = 'MD594'
+    fixed_brain = 'MD589'
     sqlController = SqlController(fixed_brain)
     width = sqlController.scan_run.width // 32
     height = sqlController.scan_run.height // 32
@@ -149,11 +148,12 @@ def merge_brains():
             structure = os.path.splitext(origin_filename)[0]    
             origin = np.loadtxt(os.path.join(ORIGIN_PATH, origin_filename))
             volume = np.load(os.path.join(VOLUME_PATH, volume_filename))
-            origin_um = origin * scales
-            aligned_origin = brain_to_atlas_transform(origin_um, r, t)                
-            volume_origin[structure].append((volume, aligned_origin/scales))
+            # origin_um = origin * scales
+            aligned_origin = brain_to_atlas_transform(origin, r, t)                
+            # volume_origin[structure].append((volume, aligned_origin/scales))
+            volume_origin[structure].append((volume, aligned_origin))
 
-    threshold = 0.05
+    threshold = 0.6
     for structure, volume_origin_list in volume_origin.items():
         if 'SC' in structure or 'IC' in structure:
             sigma = 5.0
@@ -168,34 +168,30 @@ def merge_brains():
         
         # mesh
         centered_origin = origin - adjustment
-        aligned_volume = (volume >= threshold, centered_origin)
+        threshold_volume = volume >= threshold
+        aligned_volume = (threshold_volume, centered_origin)
         aligned_structure = volume_to_polydata(volume=aligned_volume,
                                num_simplify_iter=3, smooth=False,
                                return_vertex_face_list=False)
         filepath = os.path.join(ATLAS_PATH, 'mesh', f'{structure}.stl')
         save_mesh_stl(aligned_structure, filepath)
         
-        volume[volume >= threshold] = color
-        volume[volume < color] = 0
-        volume = volume.astype(np.uint8)
+        #volume[volume >= threshold] = color
+        #volume[volume < color] = 0
+        #volume = volume.astype(np.uint8)
         
-        #volume = volume >= 0.5
-        #volume = volume * color
+        #volume = volume >= 0.25
+        #volume = threshold_volume * color
         #volume = volume.astype(np.uint8)
 
-        
         volume_outpath = os.path.join(ATLAS_PATH, 'structure', f'{structure}.npy')
         origin_outpath = os.path.join(ATLAS_PATH, 'origin', f'{structure}.txt')
         np.save(volume_outpath, volume)
         np.savetxt(origin_outpath, origin)
+        print(structure, volume.shape, volume.dtype, np.mean(volume), np.amax(volume), origin)
+        # continue
+        add_layer_data_row(structure, origin)
         
-        try:
-            ndcom = center_of_mass(volume)
-        except:
-            print(structure, 'bad ndcome')
-            continue
-        print(structure, origin, ndcom, volume.shape)   
-        add_layer_data_row(structure, origin + ndcom)
         
 
         
