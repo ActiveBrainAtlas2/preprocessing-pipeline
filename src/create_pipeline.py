@@ -11,7 +11,7 @@ import argparse
 from lib.pipeline import Pipeline
 
 if __name__ == '__main__':
-    steps = "start=1, prep=2, mask=3, final mask=4, align=5"
+    steps = "start=1, prep=2, mask=3, final mask=4, align=5, neuroglancer=6"
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=False, default=1)
@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     animal = args.animal
-    channel = args.channel
+    channel = int(args.channel)
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     step = int(args.step)
     
@@ -54,6 +54,7 @@ if __name__ == '__main__':
     if step > 4:
         print('create alignment')
         pipeline.create_alignment()
+    if step > 5:
         print('create neuroglancer image')
         pipeline.create_neuroglancer_image()
         print('create downsampling')
