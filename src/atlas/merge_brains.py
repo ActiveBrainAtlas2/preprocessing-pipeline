@@ -1,4 +1,6 @@
 """
+William this is the 3rd script.
+
 This script will take a source brain (where the data comes from) and an image brain 
 (the brain whose images you want to display unstriped) and align the data from the point brain
 to the image brain. It first aligns the point brain data to the atlas, then that data

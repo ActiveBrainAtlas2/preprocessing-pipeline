@@ -1,4 +1,6 @@
 """
+William, this is the first program to look at.
+
 This gets the CSV data of the 3 foundation brains' annotations.
 These annotations were done by Lauren, Beth, Yuncong and Harvey
 (i'm not positive about this)

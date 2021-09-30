@@ -1,4 +1,5 @@
 """
+This is a rewritten script from Yuncong
 Takes the volume and origin data from here:
 /net/birdstore/Active_Atlas_Data/data_root/CSHL_volumes/MDXXX/10.0um_annotationAsScoreVolume/
 for each brain and then aligns it into a new averaged set of arrays, origins
