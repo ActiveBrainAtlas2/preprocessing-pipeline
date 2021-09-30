@@ -1,7 +1,6 @@
 import os, sys
 import numpy as np
 import torch
-import torch.utils.data
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from tqdm import tqdm
@@ -94,7 +93,7 @@ def create_mask(animal, downsample):
         os.makedirs(MASKED, exist_ok=True)
         files = sorted(os.listdir(INPUT))
         file_keys = []
-        for i, file in enumerate(files):
+        for file in files:
             infile = os.path.join(INPUT, file)
             thumbfile = os.path.join(THUMBNAIL, file)
 
@@ -140,11 +139,11 @@ def create_mask(animal, downsample):
                 continue
 
             img = Image.open(filepath)
-            input = transform(img)
-            input = input.unsqueeze(0)
+            torch_input = transform(img)
+            torch_input = torch_input.unsqueeze(0)
             loaded_model.eval()
             with torch.no_grad():
-                pred = loaded_model(input)
+                pred = loaded_model(torch_input)
             pred_score = list(pred[0]['scores'].detach().numpy())
             if debug:
                 print(file, pred_score[0])
