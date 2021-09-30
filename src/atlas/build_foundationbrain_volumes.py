@@ -91,7 +91,8 @@ def create_volumes(animal, debug):
             volume_slice = cv2.fillPoly(volume_slice, pts=[points], color=1)
 
             volume.append(volume_slice)
-
+        
+        # should this be a boolean?
         volume = np.array(volume).astype(np.bool8)
         to_um = 32 * 0.452
         ndcom = center_of_mass(volume)
@@ -109,7 +110,7 @@ def create_volumes(animal, debug):
             # we want the real center of mass in the DB
             sqlController.add_layer_data(abbreviation=structure, animal=animal, 
                                      layer='COM', x=comx, y=comy, section=comz, 
-                                     person_id=2, input_type_id=1)
+                                     person_id=222222, input_type_id=1)
             save_volume_origin(ATLAS, animal, structure, volume, (comx, comy, comz))
 
 

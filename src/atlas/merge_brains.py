@@ -18,6 +18,7 @@ from datetime import datetime
 from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
 from scipy.ndimage.measurements import center_of_mass
 from skimage.filters import gaussian
+from pandas.core.window.ewm import get_center_of_mass
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -114,13 +115,17 @@ def add_layer_data_row(abbrev, origin):
 
 
 def merge_brains():
+    """
+    Note! the origin is the x,y,z offset from the top left corner, 1st section
+    of the image stack.
+    """
     ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', 'atlasV8')
     fixed_brain = 'MD589'
     sqlController = SqlController(fixed_brain)
     width = sqlController.scan_run.width // 32
     height = sqlController.scan_run.height // 32
     adjustment = np.array([width//2, height//2, 440//2])
-    moving_brains = ['MD589', 'MD585']
+    moving_brains = ['MD585', 'MD594']
     fixed_data = get_centers(fixed_brain)
     to_um = 32 * 0.452
     scales = np.array([to_um, to_um, 20])
@@ -159,6 +164,7 @@ def merge_brains():
             sigma = 5.0
         else:
             sigma = 2.0
+        ## look at the average_shape method
         volume, origin = average_shape(volume_origin_list=volume_origin_list, 
                                        force_symmetric=(structure in singular_structures), sigma=sigma)
         try:
@@ -166,7 +172,7 @@ def merge_brains():
         except:
             color = 100
         
-        # mesh
+        # mesh for 3D Slicer
         centered_origin = origin - adjustment
         threshold_volume = volume >= threshold
         aligned_volume = (threshold_volume, centered_origin)
@@ -176,9 +182,10 @@ def merge_brains():
         filepath = os.path.join(ATLAS_PATH, 'mesh', f'{structure}.stl')
         save_mesh_stl(aligned_structure, filepath)
         
-        #volume[volume >= threshold] = color
-        #volume[volume < color] = 0
-        #volume = volume.astype(np.uint8)
+        # look at the threshold number
+        volume[volume >= threshold] = color
+        volume[volume < color] = 0
+        volume = volume.astype(np.uint8)
         
         #volume = volume >= 0.25
         #volume = threshold_volume * color
@@ -190,7 +197,9 @@ def merge_brains():
         np.savetxt(origin_outpath, origin)
         print(structure, volume.shape, volume.dtype, np.mean(volume), np.amax(volume), origin)
         # continue
-        add_layer_data_row(structure, origin)
+        """ We need to add the center of mass to the origin """
+        ndcom = center_of_mass(volume)
+        add_layer_data_row(structure, origin + ndcom)
         
         
 
