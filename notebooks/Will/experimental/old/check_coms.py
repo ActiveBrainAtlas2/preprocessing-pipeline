@@ -5,13 +5,13 @@ import sys
 sys.path.append('/home/zhw272/programming/pipeline_utility')
 sys.path.append('/home/zhw272/programming/pipeline_utility/src')
 from lib.sql_setup import session
-from src.model.center_of_mass import CenterOfMass
+from model.center_of_mass import CenterOfMass
 from notebooks.Will.toolbox.IOs.LoadComPickle import LoadComPickle
 from notebooks.Will.toolbox.IOs.LoadComDatabase import LoadComDatabase
 from notebooks.Will.toolbox.IOs.TransformCom import TransformCom
 from notebooks.Will.toolbox.plotting import com_scatter_plot
 import numpy as np
-from src.lib.comparison_tools import compare_lists
+from lib.comparison_tools import compare_lists
 getcomp = LoadComPickle()
 gettc = TransformCom(getcomp)
 getcomd = LoadComDatabase()

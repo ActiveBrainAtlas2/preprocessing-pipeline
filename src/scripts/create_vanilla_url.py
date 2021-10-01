@@ -2,8 +2,8 @@ import sys
 import os
 path = os.path.abspath(os.path.join( os.path.dirname( __file__ ), '..' ,'..'))
 sys.path.append(path)
-from src.lib.UrlGenerator import UrlGenerator
-from src.lib.sqlcontroller import SqlController
+from lib.UrlGenerator import UrlGenerator
+from lib.sqlcontroller import SqlController
 animal = 'DK55'
 urlGen = UrlGenerator()
 sqlController = SqlController(animal)

@@ -3,8 +3,8 @@ from multiprocessing.pool import Pool
 import sys
 import numpy as np
 from datetime import datetime
-from src.lib.utilities_process import workernoshell
-from src.lib.sqlcontroller import SqlController
+from lib.utilities_process import workernoshell
+from lib.sqlcontroller import SqlController
 class TiffSegmentor:
     def __init__(self,animal):
         self.animal = animal

@@ -1,15 +1,15 @@
 import sys
 import numpy as np
 sys.path.append('/data/programming/pipeline')
-from src.lib.utilities_neuroglancer_image import create_neuroglancer_lite
+from lib.utilities_neuroglancer_image import create_neuroglancer_lite
 from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform
 from notebooks.Will.toolbox.IOs.LoadComDatabase import LoadComDatabase
 from notebooks.Will.toolbox.IOs.TransformCom import TransformCom
-from src.lib.sqlcontroller import SqlController
+from lib.sqlcontroller import SqlController
 from notebooks.Will.toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
 import SimpleITK as sitk
 import neuroglancer
-
+print(neuroglancer.PointAnnotation)
 def get_annotations(com_dict):
     n_annotations = len(com_dict)
     names = list(com_dict.keys())
@@ -17,14 +17,14 @@ def get_annotations(com_dict):
     annotations = []
     for annotationi in range(n_annotations):
         point = np.array(coordinates[annotationi])/np.array([10.4,10.4,20])
-        point_annotation = neuroglancer.PointAnnotation(id=names[annotationi],point=point)
+        point_annotation = neuroglancer.PointAnnotation(id=names[annotationi],point=point,description=names[annotationi])
         annotations.append(point_annotation)
     return annotations
 
 getcom = LoadComDatabase()
 gettc = TransformCom(getcom)
 mov_brain = 'DK52'
-fix_brain = 'DK39'
+fix_brain = 'DK41'
 controller = SqlController(fix_brain)
 moving_image = load_stack_from_prepi(mov_brain)
 fixed_image = load_stack_from_prepi(fix_brain)

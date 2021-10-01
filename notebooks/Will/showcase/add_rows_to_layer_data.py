@@ -1,4 +1,4 @@
-from src.lib.sqlcontroller import SqlController
+from lib.sqlcontroller import SqlController
 animal = 'DK39'
 controller = SqlController(animal)
 abbreviation = ''

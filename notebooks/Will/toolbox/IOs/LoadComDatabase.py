@@ -4,7 +4,7 @@ import os
 import pickle
 import sys
 import numpy as np
-from src.lib.sqlcontroller import SqlController
+from lib.sqlcontroller import SqlController
 controller = SqlController('DK52')
 
 class LoadComDatabase(LoadCom):

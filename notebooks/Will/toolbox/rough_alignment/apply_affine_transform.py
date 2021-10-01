@@ -18,6 +18,7 @@ def transform_dict_affine(affine_transform,com_dict):
     :return: [description]
     :rtype: [type]
     """
+    transformed_com = {}
     for structure,com in com_dict.items():
         com_dict[structure] = affine_transform.TransformPoint(com)
     return com_dict

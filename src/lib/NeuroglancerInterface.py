@@ -1,10 +1,10 @@
 import neuroglancer
-from src.lib.sqlcontroller import SqlController
-from src.lib.file_location import FileLocationManager
+from lib.sqlcontroller import SqlController
+from lib.file_location import FileLocationManager
 from pathlib import Path
 import SimpleITK as sitk
 import numpy as np
-from src.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 class NeuroglancerInterface:
     def __init__(self,dimensions):
         self.viewer = neuroglancer.Viewer()

@@ -1,4 +1,4 @@
-from src.lib.sqlcontroller import SqlController
+from lib.sqlcontroller import SqlController
 import numpy as np
 from datetime import datetime
 animal = 'DK55'
