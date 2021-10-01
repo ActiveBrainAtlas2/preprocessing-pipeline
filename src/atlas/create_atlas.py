@@ -11,15 +11,15 @@ import json
 import numpy as np
 from timeit import default_timer as timer
 import shutil
-import neuroglancer
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
-HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
-sys.path.append(PATH)
+from pathlib import Path
 
-# from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_properties
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
+
+
 from lib.sqlcontroller import SqlController
 
 RESOLUTION = 0.325
@@ -68,32 +68,6 @@ class NumpyToNeuroglancer():
         self.layer_type = layer_type
 
         self.precomputed_vol = None
-
-    def preview(self, layer_name=None, clear_layer=False):
-        if self.viewer is None:
-            self.viewer = neuroglancer.Viewer()
-
-        if layer_name is None:
-            layer_name = f'{self.layer_type}_{self.scales}'
-
-        source = neuroglancer.LocalVolume(
-            data=self.volume,
-            dimensions=neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='nm', scales=self.scales),
-            voxel_offset=self.offset
-        )
-
-        if self.layer_type == 'segmentation':
-            layer = neuroglancer.SegmentationLayer(source=source)
-        else:
-            layer = neuroglancer.ImageLayer(source=source)
-
-        with self.viewer.txn() as s:
-            if clear_layer:
-                s.layers.clear()
-            s.layers[layer_name] = layer
-
-        print(f'A new layer named {layer_name} is added to:')
-        print(self.viewer)
 
     def init_precomputed(self, path):
         info = CloudVolume.create_new_info(
@@ -209,6 +183,8 @@ def create_atlas(create, atlas_name):
     atlas_volume = np.zeros(( int(height), int(width), z_length), dtype=np.uint8)
     print(f'{atlas_name} volume shape', atlas_volume.shape)
     print()
+    to_um = 32 * 0.452
+    scales = np.array([to_um, to_um, 20])
 
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         mincol, minrow, z = origin

@@ -25,8 +25,6 @@ DOWNSAMPLE_FACTOR = 32
 
 def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
     x, y, z = xyz_offsets
-    xx = (x * DOWNSAMPLE_FACTOR) / (10/0.452)
-    yy = (y * DOWNSAMPLE_FACTOR) / (10/0.452)
 
     volume = np.swapaxes(volume, 0, 2)
     volume = np.rot90(volume, axes=(0,1))
@@ -107,13 +105,13 @@ def create_volumes(animal, debug):
         y_um = min_y * to_um
         z_um = min_z * 20
         if debug:
-            print(animal, structure,'\tcom', '\tcom x y z', min_x, min_y, min_z)
+            print(animal, structure,'\tcom', '\tcom x y z', min_x, min_y, min_z, volume.shape)
         else:
             # we want the real center of mass in the DB
-            sqlController.add_layer_data(abbreviation=structure, animal=animal, 
-                                     layer='COM', x=comx, y=comy, section=comz, 
-                                     person_id=222222, input_type_id=1)
-            save_volume_origin(ATLAS, animal, structure, volume, (comx, comy, comz))
+            #sqlController.add_layer_data(abbreviation=structure, animal=animal, 
+            #                         layer='COM', x=comx, y=comy, section=comz, 
+            #                         person_id=222222, input_type_id=1)
+            save_volume_origin(ATLAS, animal, structure, volume, (min_x, min_y, min_z))
 
 
 if __name__ == '__main__':

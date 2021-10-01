@@ -20,7 +20,7 @@ from datetime import datetime
 from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
 from scipy.ndimage.measurements import center_of_mass
 from skimage.filters import gaussian
-from pandas.core.window.ewm import get_center_of_mass
+from math import isnan
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -60,21 +60,18 @@ def average_shape(volume_origin_list, force_symmetric=False, sigma=2.0):
         common_mins ((3,)-ndarray): coordinate of the volume's origin
     """
     volume_list, origin_list = list(map(list, list(zip(*volume_origin_list))))
-
     bbox_list = [(xm, xm+v.shape[1]-1, ym, ym+v.shape[0]-1, zm, zm+v.shape[2]-1) for v,(xm,ym,zm) in zip(volume_list, origin_list)]
     common_volume_list, common_volume_bbox = convert_vol_bbox_dict_to_overall_vol(
         vol_bbox_tuples=list(zip(volume_list, bbox_list)))
     common_volume_list = list([(v > 0).astype(np.int32) for v in common_volume_list])
     average_volume = np.sum(common_volume_list, axis=0)
     average_volume_prob = average_volume / float(np.max(average_volume))
-
     if force_symmetric:
         average_volume_prob = symmetricalize_volume(average_volume_prob)
 
     average_volume_prob = gaussian(average_volume_prob, sigma) # Smooth the probability
     # print('1',type(average_volume_prob), average_volume_prob.dtype, average_volume_prob.shape, np.mean(average_volume_prob), np.amax(average_volume_prob))
     common_origin = np.array(common_volume_bbox)[[0,2,4]]
-
     return average_volume_prob, common_origin
 
 
@@ -101,6 +98,10 @@ def add_layer_data_row(abbrev, origin):
     scales = np.array([to_um, to_um, 20])
     #x,y,z = origin * scales
     x,y,z = origin
+    
+    if isnan(x) or isnan(y) or isnan(z):
+        print(structure.abbreviation, 'has nan values')
+        return
 
     com = LayerData(
         prep_id='Atlas', structure=structure, x=x, y=y, section=z
@@ -130,6 +131,7 @@ def merge_brains():
     moving_brains = ['MD585', 'MD594']
     fixed_data = get_centers(fixed_brain)
     to_um = 32 * 0.452
+    threshold = 0.25
     scales = np.array([to_um, to_um, 20])
     volume_origin = defaultdict(list)
     
@@ -142,8 +144,10 @@ def merge_brains():
         structure = os.path.splitext(origin_filename)[0]    
         origin = np.loadtxt(os.path.join(ORIGIN_PATH, origin_filename))
         volume = np.load(os.path.join(VOLUME_PATH, volume_filename))
-        volume_origin[structure].append((volume, origin))
-    
+        ndcom = center_of_mass(volume)
+        origin_um_with_ndcom = (origin + ndcom) * scales
+        volume_origin[structure].append((volume, origin_um_with_ndcom/scales))
+        
     for brain in moving_brains:
         moving_data = get_centers(brain)
         r, t = umeyama(moving_data.T, fixed_data.T)
@@ -155,53 +159,59 @@ def merge_brains():
             structure = os.path.splitext(origin_filename)[0]    
             origin = np.loadtxt(os.path.join(ORIGIN_PATH, origin_filename))
             volume = np.load(os.path.join(VOLUME_PATH, volume_filename))
-            # origin_um = origin * scales
-            aligned_origin = brain_to_atlas_transform(origin, r, t)                
-            # volume_origin[structure].append((volume, aligned_origin/scales))
-            volume_origin[structure].append((volume, aligned_origin))
-
-    threshold = 0.6
+            ndcom = center_of_mass(volume)
+            origin_um_with_ndcom = (origin + ndcom) * scales
+            aligned_origin = brain_to_atlas_transform(origin_um_with_ndcom, r, t)                
+            volume_origin[structure].append((volume, aligned_origin/scales))
+            #volume_origin[structure].append((volume, aligned_origin))
+            
+    # the origins are now in neuroglancer coordinates
     for structure, volume_origin_list in volume_origin.items():
         if 'SC' in structure or 'IC' in structure:
             sigma = 5.0
         else:
             sigma = 2.0
         ## look at the average_shape method
-        volume, origin = average_shape(volume_origin_list=volume_origin_list, 
+        volume, com = average_shape(volume_origin_list=volume_origin_list, 
                                        force_symmetric=(structure in singular_structures), sigma=sigma)
         try:
             color = sqlController.get_structure_color(structure)
         except:
             color = 100
+
+        threshold = np.quantile(volume[volume > 0], 0.6)
+        # print(structure, threshold)
+        # continue
+        # volume = volume >= threshold
+        # volume = volume * color
+        # volume = volume.astype(np.uint8)
+        volume[volume >= threshold] = color
+        volume[volume < color] = 0
+        volume = volume.astype(np.uint8)        
+        # we need the com again to subtract it from the origin
+        # the script that builds the neuroglancer mesh needs the xyz
+        # offsets, not the com
+        ndcom = center_of_mass(volume)
+        origin = ((com*scales) - ndcom) / scales
         
         # mesh for 3D Slicer
-        centered_origin = origin - adjustment
-        threshold_volume = volume >= threshold
-        aligned_volume = (threshold_volume, centered_origin)
+        centered_origin = com - ndcom
+        aligned_volume = (volume, centered_origin - adjustment)
         aligned_structure = volume_to_polydata(volume=aligned_volume,
                                num_simplify_iter=3, smooth=False,
                                return_vertex_face_list=False)
         filepath = os.path.join(ATLAS_PATH, 'mesh', f'{structure}.stl')
         save_mesh_stl(aligned_structure, filepath)
-        
-        # look at the threshold number
-        volume[volume >= threshold] = color
-        volume[volume < color] = 0
-        volume = volume.astype(np.uint8)
-        
-        #volume = volume >= 0.25
-        #volume = threshold_volume * color
-        #volume = volume.astype(np.uint8)
 
         volume_outpath = os.path.join(ATLAS_PATH, 'structure', f'{structure}.npy')
         origin_outpath = os.path.join(ATLAS_PATH, 'origin', f'{structure}.txt')
-        np.save(volume_outpath, volume)
-        np.savetxt(origin_outpath, origin)
-        print(structure, volume.shape, volume.dtype, np.mean(volume), np.amax(volume), origin)
-        # continue
-        """ We need to add the center of mass to the origin """
-        ndcom = center_of_mass(volume)
-        add_layer_data_row(structure, origin + ndcom)
+        if not isnan(centered_origin[0]):
+            np.save(volume_outpath, volume)
+            np.savetxt(origin_outpath, centered_origin)
+            print(structure, volume.shape, volume.dtype, np.mean(volume), np.amax(volume), com*scales, centered_origin)
+            # add_layer_data_row(structure, com*scales)
+        else:
+            print(structure, 'has no origin')
         
         
 
