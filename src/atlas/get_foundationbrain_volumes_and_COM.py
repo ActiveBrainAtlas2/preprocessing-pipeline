@@ -52,26 +52,26 @@ class VolumnMaker:
             self.contours_per_structure = json.load(f)
         self.structures = list(self.contours_per_structure.keys())        
 
-    def get_COM_and_volumn(self,structurei):
+    def get_COM_and_volume(self,structurei):
         section_mins = []
         section_maxs = []
-        for _, points in structurei.items():
-            points = np.array(points)
-            section_mins.append(np.min(points, axis=0))
-            section_maxs.append(np.max(points, axis=0))
+        for _, contour_points in structurei.items():
+            contour_points = np.array(contour_points)
+            section_mins.append(np.min(contour_points, axis=0))
+            section_maxs.append(np.max(contour_points, axis=0))
         min_z = min([int(i) for i in structurei.keys()])
         min_x,min_y = np.min(section_mins, axis=0)
         max_x,max_y = np.max(section_maxs, axis=0)
-        xlength = max_x - min_x
-        ylength = max_y - min_y
-        PADDED_SIZE = (int(ylength), int(xlength))
+        xspan = max_x - min_x
+        yspan = max_y - min_y
+        PADDED_SIZE = (int(yspan), int(xspan))
         volume = []
-        for _, points in sorted(structurei.items()):
-            vertices = np.array(points) - np.array((min_x, min_y))
-            points = (vertices).astype(np.int32)
+        for _, contour_points in sorted(structurei.items()):
+            vertices = np.array(contour_points) - np.array((min_x, min_y))
+            contour_points = (vertices).astype(np.int32)
             volume_slice = np.zeros(PADDED_SIZE, dtype=np.uint8)
-            volume_slice = cv2.polylines(volume_slice, [points], isClosed=True, color=1, thickness=1)
-            volume_slice = cv2.fillPoly(volume_slice, pts=[points], color=1)
+            volume_slice = cv2.polylines(volume_slice, [contour_points], isClosed=True, color=1, thickness=1)
+            volume_slice = cv2.fillPoly(volume_slice, pts=[contour_points], color=1)
             volume.append(volume_slice)
         volume = np.array(volume).astype(np.bool8)
         to_um = 32 * 0.452
@@ -91,12 +91,11 @@ class VolumnMaker:
                                     person_id=2, input_type_id=1)
             # self.save_volume_and_COMs(ATLAS, structure, volume, (comx, comy, comz))
 
-    def get_and_save_COMs(self):
+    def compute_and_save_COMs_and_volumes(self):
         self.load_contour()
-        print(self.animal,len(self.structures))
         for structure in tqdm(self.structures):
             structurei = self.contours_per_structure[structure]
-            com,volume = self.get_COM_and_volumn(structurei)
+            com,volume = self.get_COM_and_volume(structurei)
             self.save_or_print_COM_and_volumn(com,structure,volume)
             
 
@@ -120,4 +119,4 @@ if __name__ == '__main__':
     animals = ['MD585', 'MD589', 'MD594']
     for animal in animals:
         Volumnmaker = VolumnMaker(animal,debug)
-        Volumnmaker.get_and_save_COMs()
+        Volumnmaker.compute_and_save_COMs_and_volumes()

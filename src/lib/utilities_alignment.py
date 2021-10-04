@@ -312,7 +312,7 @@ def convert_resolution_string_to_um(animal, downsample):
         return planar_resolution
 
 
-def transform_create_alignment(points, transform):
+def transform_points(points, transform):
     a = np.hstack((points, np.ones((points.shape[0], 1))))
     b = transform.T[:, 0:2]
     c = np.matmul(a, b)
@@ -459,7 +459,7 @@ def reverse_transform_create_alignment(points, transform):
     a = np.matmul(c, b)
     return a
 
-def transform_create_alignment(points, transform):
+def transform_points(points, transform):
     a = np.hstack((points, np.ones((points.shape[0], 1))))
     b = transform.T[:, 0:2]
     c = np.matmul(a, b)

@@ -158,7 +158,8 @@ class BrainMerger:
                 sigma = 5.0
             else:
                 sigma = 2.0
-            volume, origin = self.get_merged_landmark_probability(volume_and_com=volumn_and_com,force_symmetry=(structure in singular_structures), sigma=sigma)
+            volume, origin = self.get_merged_landmark_probability(volume_and_com=volumn_and_com,
+            force_symmetry=(structure in singular_structures), sigma=sigma)
             # self.save_mesh_file(self,origin,volume,structure)
             # self.save_origin_and_volume(self,origin,volume,structure)
             
