@@ -117,8 +117,8 @@ class Pipeline:
         create_neuroglancer(self.animal, self.channel, self.downsample, self.debug)
 
     
-    def create_downsampling(self, suffix=None):
-        create_downsamples(self.animal, self.channel, suffix, self.downsample)
+    def create_downsampling(self):
+        create_downsamples(self.animal, self.channel, self.downsample)
         
     @staticmethod
     def check_programs():
