@@ -8,6 +8,7 @@ Human intervention is required at several points in the process:
 1. After the final neuroglancer downsampling
 """
 import argparse
+from timeit import default_timer as timer
 from lib.pipeline import Pipeline
 
 if __name__ == '__main__':
@@ -25,39 +26,52 @@ if __name__ == '__main__':
     step = int(args.step)
     
     pipeline = Pipeline(animal, channel, downsample)
-    print('check programs')
+    start = timer()
     pipeline.check_programs()
-    print('create meta')
+    end = timer()
+    print(f'Create thumbnails took {end - start} seconds')    
+    start = timer()
     pipeline.create_meta()
-    print('create tifs')
+    end = timer()
+    print(f'Create thumbnails took {end - start} seconds')    
+    start = timer()
     pipeline.create_tifs()
+    end = timer()
+    print(f'Create thumbnails took {end - start} seconds')    
     if step > 0:
-        print('create preps')
+        start = timer()
         pipeline.create_preps()
+        end = timer()
+        print(f'Create preps took {end - start} seconds')    
     if step > 1:
-        print('create normalized')
+        start = timer()
         pipeline.create_normalized()
-        print('create masks')
         pipeline.create_masks()
+        end = timer()
+        print(f'Creating normalized and masks took {end - start} seconds')    
     if step > 2:
-        print('create masks final')
+        start = timer()
         pipeline.create_masks_final()
-        print('create clean')
         pipeline.create_clean()
-        print('create histogram true')
         pipeline.create_histograms(single=True)
-        print('create histogram false')
         pipeline.create_histograms(single=False)
+        end = timer()
+        print(f'Creating masks, cleaning and histograms took {end - start} seconds')    
     if step > 3:
-        print('create elastix')
+        start = timer()
         pipeline.create_elastix()
+        end = timer()
+        print(f'Creating elastix took {end - start} seconds')    
     if step > 4:
-        print('create alignment')
+        start = timer()
         pipeline.create_alignment()
+        end = timer()
+        print(f'Creating alignment took {end - start} seconds')    
     if step > 5:
-        print('create neuroglancer image')
+        start = timer()
         pipeline.create_neuroglancer_image()
-        print('create downsampling')
         pipeline.create_downsampling()
+        end = timer()
+        print(f'Last step: creating neuroglancer images took {end - start} seconds')    
     
     
