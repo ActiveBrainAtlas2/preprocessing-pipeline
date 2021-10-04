@@ -20,3 +20,4 @@ class Cell(Base):
     DMVec8 = Column(Float)
     DMVec9 = Column(Float)
     DMVec10 = Column(Float)
+    image_width = Column(Integer)
