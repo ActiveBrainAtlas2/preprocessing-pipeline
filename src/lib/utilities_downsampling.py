@@ -9,7 +9,7 @@ HOME = os.path.expanduser("~")
 from lib.file_location import FileLocationManager
 from lib.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors
 from lib.utilities_process import get_cpus
-def create_downsamples(animal, channel, suffix, downsample):
+def create_downsamples(animal, channel, downsample):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = f'C{channel}'
     first_chunk = calculate_chunks(downsample, 0)
@@ -20,10 +20,12 @@ def create_downsamples(animal, channel, suffix, downsample):
         mips = [0,1]
  
 
-    outpath = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
-    outpath = f'file://{outpath}'
-    if suffix is not None:
-        outpath += suffix
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
+    if os.path.exists(OUTPUT_DIR):
+        print(f'DIR {OUTPUT_DIR} already exists and not performing any downsampling.')
+        return
+    
+    outpath = f'file://{OUTPUT_DIR}'
 
     channel_outdir += "_rechunkme"
     INPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
