@@ -23,17 +23,20 @@ sys.path.append(PATH)
 from lib.file_location import DATA_PATH
 from lib.utilities_atlas import ATLAS
 from lib.sqlcontroller import SqlController
-
+import plotly.graph_objects as go
 DOWNSAMPLE_FACTOR = 32
-
+from plotly.subplots import make_subplots
 class VolumnMaker:
     def __init__(self,animal,debug):
         self.animal = animal
         self.debug = debug
         self.sqlController = SqlController(self.animal)
+        self.COM = {}
+        self.origins = {}
+        self.volumes = {}
 
-    def save_volume_and_COMs(self,atlas_name, structure, volume, xyz_offsets):
-        x, y, z = xyz_offsets
+    def save_volume_and_origins(self,atlas_name, structure, volume, origin):
+        x, y, z = origin
         volume = np.swapaxes(volume, 0, 2)
         volume = np.rot90(volume, axes=(0,1))
         volume = np.flip(volume, axis=0)
@@ -52,21 +55,21 @@ class VolumnMaker:
             self.contours_per_structure = json.load(f)
         self.structures = list(self.contours_per_structure.keys())        
 
-    def get_COM_and_volume(self,structurei):
+    def calculate_origin_COM_and_volume(self,contour_for_structurei,structurei):
         section_mins = []
         section_maxs = []
-        for _, contour_points in structurei.items():
+        for _, contour_points in contour_for_structurei.items():
             contour_points = np.array(contour_points)
             section_mins.append(np.min(contour_points, axis=0))
             section_maxs.append(np.max(contour_points, axis=0))
-        min_z = min([int(i) for i in structurei.keys()])
+        min_z = min([int(i) for i in contour_for_structurei.keys()])
         min_x,min_y = np.min(section_mins, axis=0)
         max_x,max_y = np.max(section_maxs, axis=0)
         xspan = max_x - min_x
         yspan = max_y - min_y
         PADDED_SIZE = (int(yspan), int(xspan))
         volume = []
-        for _, contour_points in sorted(structurei.items()):
+        for _, contour_points in sorted(contour_for_structurei.items()):
             vertices = np.array(contour_points) - np.array((min_x, min_y))
             contour_points = (vertices).astype(np.int32)
             volume_slice = np.zeros(PADDED_SIZE, dtype=np.uint8)
@@ -75,29 +78,41 @@ class VolumnMaker:
             volume.append(volume_slice)
         volume = np.array(volume).astype(np.bool8)
         to_um = 32 * 0.452
-        com = center_of_mass(volume)
-        comx = (com[0] + min_x) * to_um
-        comy = (com[1] + min_y) * to_um
-        comz = (com[2] + min_z) * 20
-        return (comx,comy,comz),volume
+        com = np.array(center_of_mass(volume))
+        self.COM[structurei] = com+np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
+        self.origins[structurei] = np.array((min_x,min_y,min_z))
+        self.volumes[structurei] = volume
     
-    def save_or_print_COM_and_volumn(self,com,structure,volume):
-        comx, comy, comz = com
-        if self.debug:
-            print(animal, structure,'\tcom', '\tcom x y z', comx, comy, comz)
-        else:
-            self.sqlController.add_layer_data(abbreviation=structure, animal=animal, 
-                                    layer='COM', x=comx, y=comy, section=comz, 
-                                    person_id=2, input_type_id=1)
-            # self.save_volume_and_COMs(ATLAS, structure, volume, (comx, comy, comz))
+    def save_or_print_COM_and_volumn(self):
+        structures = self.COM.keys()
+        for structurei in structures:
+            origin = self.origins[structurei]
+            volume = self.volumes[structurei]
+            comx, comy, comz = self.COM[structurei]
+            if self.debug:
+                print(animal, structurei,'\tcom', '\tcom x y z', comx, comy, comz)
+            else:
+                self.sqlController.add_layer_data(abbreviation=structurei, animal=animal, 
+                                        layer='COM', x=comx, y=comy, section=comz, 
+                                        person_id=2, input_type_id=1)
+                self.save_volume_and_origins(ATLAS, structurei, volume, origin)
 
-    def compute_and_save_COMs_and_volumes(self):
+    def compute_COMs_and_volumes(self):
         self.load_contour()
-        for structure in tqdm(self.structures):
-            structurei = self.contours_per_structure[structure]
-            com,volume = self.get_COM_and_volume(structurei)
-            # self.save_or_print_COM_and_volumn(com,structure,volume)
-            
+        for structurei in tqdm(self.structures):
+            contours_of_structurei = self.contours_per_structure[structurei]
+            self.calculate_origin_COM_and_volume(contours_of_structurei,structurei)
+        
+    def show_results(self):
+        self.compare_point_dictionaries([self.COM,self.origins])
+    
+    def compare_point_dictionaries(self,point_dicts):
+        fig = make_subplots(rows = 1, cols = 1,specs=[[{'type':'scatter3d'}]])
+        for point_dict in point_dicts:
+            values = np.array(list(point_dict.values()))
+            fig.add_trace(go.Scatter3d(x=values[:,0], y=values[:,1], z=values[:,2],
+                                    mode='markers'),row = 1,col = 1)
+        fig.show()
 
 
 if __name__ == '__main__':
@@ -119,4 +134,6 @@ if __name__ == '__main__':
     animals = ['MD585', 'MD589', 'MD594']
     for animal in animals:
         Volumnmaker = VolumnMaker(animal,debug)
-        Volumnmaker.compute_and_save_COMs_and_volumes()
+        Volumnmaker.compute_COMs_and_volumes()
+        Volumnmaker.show_results()
+        Volumnmaker.save_or_print_COM_and_volumn()
