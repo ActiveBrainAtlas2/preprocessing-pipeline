@@ -489,33 +489,44 @@ def fill_in_structure(voxel_sheet, color):
     return voxel_sheet
 
 
-def get_contours_from_annotations(contour_stack, target_structure, hand_annotations, densify=0):
+def get_contours_from_annotations(stack, target_structure, hand_annotations, densify=0):
     MD585_ng_section_min = 83
     num_annotations = len(hand_annotations)
     str_contours_annotation = {}
+
     for i in range(num_annotations):
         structure = hand_annotations['name'][i]
         side = hand_annotations['side'][i]
         section = hand_annotations['section'][i]
         first_sec = 0
         last_sec = 0
+
         if side == 'R' or side == 'L':
             structure = structure + '_' + side
+
         if structure == target_structure:
             vertices = hand_annotations['vertices'][i]
+
             for _ in range(densify):
                 vertices = get_dense_coordinates(vertices)
+
             # Skip sections before the 22nd prep2 section for MD585 as there are clear errors
-            if contour_stack == 'MD585XXX' and section < MD585_ng_section_min + 22:
+            if stack == 'MD585XXX' and section < MD585_ng_section_min + 22:
+                # vertices = vertices - np.array(MD585_abberation_correction)
                 continue
             str_contours_annotation[section] = {}
             str_contours_annotation[section][structure] = {}
+            #str_contours_annotation[section][structure][1] = vertices
             str_contours_annotation[section][structure] = vertices
+
     try:
         first_sec = np.min(list(str_contours_annotation.keys()))
         last_sec = np.max(list(str_contours_annotation.keys()))
     except:
         pass
+        #print('keys:', target_structure, len(str_contours_annotation.keys()), end="\n")
+
+
     return str_contours_annotation, first_sec, last_sec
 
 
