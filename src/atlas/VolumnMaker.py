@@ -80,7 +80,7 @@ class VolumnMaker:
         to_um = 32 * 0.452
         com = np.array(center_of_mass(volume))
         self.COM[structurei] = com+np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
-        self.origins[structurei] = np.array((min_x,min_y,min_z))
+        self.origins[structurei] = np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
         self.volumes[structurei] = volume
     
     def save_or_print_COM_and_volumn(self):
@@ -136,4 +136,4 @@ if __name__ == '__main__':
         Volumnmaker = VolumnMaker(animal,debug)
         Volumnmaker.compute_COMs_and_volumes()
         Volumnmaker.show_results()
-        Volumnmaker.save_or_print_COM_and_volumn()
+        # Volumnmaker.save_or_print_COM_and_volumn()
