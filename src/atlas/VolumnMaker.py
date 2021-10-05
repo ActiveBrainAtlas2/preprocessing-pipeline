@@ -96,7 +96,7 @@ class VolumnMaker:
         for structure in tqdm(self.structures):
             structurei = self.contours_per_structure[structure]
             com,volume = self.get_COM_and_volume(structurei)
-            self.save_or_print_COM_and_volumn(com,structure,volume)
+            # self.save_or_print_COM_and_volumn(com,structure,volume)
             
 
 
