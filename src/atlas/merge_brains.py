@@ -15,7 +15,6 @@ import os
 import sys
 from collections import defaultdict
 from pathlib import Path
-from tqdm import tqdm
 from datetime import datetime
 from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
 from scipy.ndimage.measurements import center_of_mass
@@ -71,7 +70,7 @@ def average_shape(volume_xyz_offset_list, force_symmetric=False, sigma=2.0):
 
     average_volume_prob = gaussian(average_volume_prob, sigma) # Smooth the probability
     # print('1',type(average_volume_prob), average_volume_prob.dtype, average_volume_prob.shape, np.mean(average_volume_prob), np.amax(average_volume_prob))
-    common_xyz_offset = np.array(common_volume_bbox)[[0,2,4]]
+    # common_xyz_offset = np.array(common_volume_bbox)[[0,2,4]]
     # print(common_xyz_offset, np.mean(xyz_offset_list, axis=0))
     # return average_volume_prob, common_xyz_offset
     return average_volume_prob, np.mean(xyz_offset_list, axis=0)
@@ -96,9 +95,6 @@ def get_centers(animal):
 def add_layer_data_row(abbrev, com):
     structure = session.query(Structure).filter(Structure.abbreviation == func.binary(abbrev)).one()
     
-    to_um = 32 * 0.452
-    scales = np.array([to_um, to_um, 20])
-    #x,y,z = origin * scales
     x,y,z = com
     
     if isnan(x) or isnan(y) or isnan(z):

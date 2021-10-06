@@ -28,12 +28,13 @@ from scipy.interpolate import splprep, splev
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
-from lib.utilities_contour import get_contours_from_annotations
+from lib.utilities_contour_lite import get_contours_from_annotations
 from lib.sqlcontroller import SqlController
 from lib.file_location import DATA_PATH, FileLocationManager
 from lib.utilities_alignment import parse_elastix, \
     transform_points, create_downsampled_transforms
 from lib.utilities_atlas import ATLAS
+import plotly.graph_objects as go
 DOWNSAMPLE_FACTOR = 32
 
 class ContourAligner:
@@ -44,8 +45,7 @@ class ContourAligner:
     def create_clean_transform(self):
         sqlController = SqlController(self.animal)
         fileLocationManager = FileLocationManager(self.animal)
-        section_size = np.array((sqlController.scan_run.width, 
-                                sqlController.scan_run.height))
+        section_size = np.array((sqlController.scan_run.width, sqlController.scan_run.height))
         downsampled_section_size = np.round(section_size / DOWNSAMPLE_FACTOR).astype(int)
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
         files = sorted(os.listdir(INPUT))
@@ -94,23 +94,22 @@ class ContourAligner:
             .apply(lambda x: x.replace(',,', ',')) \
             .apply(lambda x: x.replace(',,', ',')).apply(lambda x: x.replace(',,', ','))
         hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
-        section_structure_vertices = defaultdict(dict)
+        self.contour_per_section_per_structure = defaultdict(dict)
         structures = sqlController.get_structures_dict()
-        for structure, _ in structures.items():
-            contour_annotations, _, _ = get_contours_from_annotations(self.animal, structure, hand_annotations, densify=4)
-            for section in contour_annotations:
-                section_structure_vertices[section][structure] = contour_annotations[section][structure]
-        self.contour_per_section_per_structure = section_structure_vertices
+        for structurei, _ in structures.items():
+            contour_for_structurei, _, _ = get_contours_from_annotations(self.animal, structurei, hand_annotations, densify=4)
+            for section in contour_for_structurei:
+                self.contour_per_section_per_structure[structurei][section] = contour_for_structurei[section]
 
     def aligned_contours(self):
         md585_fixes = {161: 100, 182: 60, 223: 60, 231: 80, 253: 60}
         self.original_structures = defaultdict(dict)
         self.unaligned_centered_structures = defaultdict(dict)
         self.aligned_centered_structures = defaultdict(dict)
-        for section in self.contour_per_section_per_structure:
-            section = int(section)
-            for structure in self.contour_per_section_per_structure[section]:
-                points = np.array(self.contour_per_section_per_structure[section][structure]) / DOWNSAMPLE_FACTOR
+        for structure in self.contour_per_section_per_structure:
+            for section in self.contour_per_section_per_structure[structure]:
+                section = int(section)
+                points = np.array(self.contour_per_section_per_structure[structure][section]) / DOWNSAMPLE_FACTOR
                 points = self.interpolate(points, max(3000, len(points)))
                 self.original_structures[structure][section] = points
                 offset = self.section_offsets[section]
@@ -120,7 +119,7 @@ class ContourAligner:
                     offset = offset + np.array([0, 35])
                 points = np.array(points) +  offset
                 self.unaligned_centered_structures[structure][section] = points.tolist()
-                points = transform_points(points, self.transform_per_section[section])  # create_alignment transform
+                points = transform_points(points, self.transform_per_section[section]) 
                 self.aligned_centered_structures[structure][section] = points.tolist()
 
     def save_contours(self):
@@ -136,11 +135,25 @@ class ContourAligner:
         with open(jsonpath3, 'w') as f:
             json.dump(self.aligned_centered_structures, f, sort_keys=True)
 
-    def create_and_save_aligned_contours(self):
+    def plot_contour_of_structurei(self,contours):
+        data = []
+        for sectioni in contours:
+            datai = np.array(contours[sectioni])
+            npoints = datai.shape[0]
+            datai = np.hstack((datai,np.ones(npoints).reshape(npoints,1)*sectioni))
+            data.append(datai)
+        data = np.vstack(data)
+        fig = go.Figure(data=[go.Scatter3d(x=data[:,0], y=data[:,1], z=data[:,2],mode='markers')])
+        fig.show()
+
+    def create_aligned_contours(self):
         self.load_contours_for_fundation_brains()
         self.load_transformation_to_align_contours()
         self.aligned_contours()
-        self.save_contours()
+
+    def show_steps(self,structurei='10N_L'):
+        self.plot_contour_of_structurei(self.original_structures[structurei])
+        self.plot_contour_of_structurei(self.aligned_centered_structures[structurei])
 
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='Work on Animal')
@@ -155,4 +168,6 @@ if __name__ == '__main__':
     animals = ['MD585', 'MD589', 'MD594']
     for animal in animals:
         aligner = ContourAligner(animal)
-        aligner.create_and_save_aligned_contours()
+        aligner.create_aligned_contours()
+        # aligner.save_contours()
+        aligner.show_steps()
