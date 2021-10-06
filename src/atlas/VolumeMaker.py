@@ -82,19 +82,6 @@ class VolumnMaker:
     def save_or_print_COM_and_volumn(self, xyz_offset, structure, volume):
         min_x, min_y, min_z = xyz_offset
         to_um = 32 * 0.452
-<<<<<<< HEAD:src/atlas/get_foundationbrain_volumes_and_COM.py
-        com = center_of_mass(volume)
-        comx = (com[1] + min_x) * to_um
-        comy = (com[0] + min_y) * to_um
-        comz = (com[2] + min_z) * 20
-        if self.debug:
-            print(animal, structure,'\tcom', '\tcom x y z', comx, comy, comz)
-        else:
-            self.sqlController.add_layer_data(abbreviation=structure, animal=animal, 
-                                    layer='COM', x=comx, y=comy, section=comz, 
-                                    person_id=2, input_type_id=1)
-            self.save_volume_and_COMs(ATLAS, structure, volume, (min_x, min_y, min_z))
-=======
         com = np.array(center_of_mass(volume))
         self.COM[structurei] = com+np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
         self.origins[structurei] = np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
@@ -113,7 +100,6 @@ class VolumnMaker:
                                         layer='COM', x=comx, y=comy, section=comz, 
                                         person_id=2, input_type_id=1)
                 self.save_volume_and_origins(ATLAS, structurei, volume, origin)
->>>>>>> b2b97aaecc55c4b8b35ad4c5aa6a8858f645f9db:src/atlas/VolumnMaker.py
 
     def compute_COMs_and_volumes(self):
         self.load_contour()
