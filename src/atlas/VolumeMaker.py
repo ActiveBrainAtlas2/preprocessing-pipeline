@@ -44,9 +44,9 @@ class VolumnMaker:
         volume_filepath = os.path.join(OUTPUT_DIR, 'structure', f'{structure}.npy')
         os.makedirs(os.path.join(OUTPUT_DIR, 'structure'), exist_ok=True)
         np.save(volume_filepath, volume)
-        com_filepath = os.path.join(OUTPUT_DIR, 'origin', f'{structure}.txt')
+        origin_filepath = os.path.join(OUTPUT_DIR, 'origin', f'{structure}.txt')
         os.makedirs(os.path.join(OUTPUT_DIR, 'origin'), exist_ok=True)
-        np.savetxt(com_filepath, (x,y,z))
+        np.savetxt(origin_filepath, (x,y,z))
     
     def load_contour(self):
         CSVPATH = os.path.join(DATA_PATH, 'atlas_data', ATLAS, self.animal)

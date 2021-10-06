@@ -66,7 +66,6 @@ class NumpyToNeuroglancer():
         self.scales = scales
         self.offset = offset
         self.layer_type = layer_type
-
         self.precomputed_vol = None
 
     def init_precomputed(self, path):
@@ -130,18 +129,15 @@ class NumpyToNeuroglancer():
         tq.insert(tasks)
         tq.execute()
 
-
 def create_atlas(atlas_name, debug):
     start = timer()
     DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
     fixed_brain = 'MD589'
     INPUT = os.path.join(f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{fixed_brain}/preps/CH1/thumbnail')
     ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
-    # ORIGIN_PATH = os.path.join(ATLAS_PATH, fixed_brain, 'origin')
-    # VOLUME_PATH = os.path.join(ATLAS_PATH, fixed_brain, 'structure')
     ORIGIN_PATH = os.path.join(ATLAS_PATH, 'origin')
     VOLUME_PATH = os.path.join(ATLAS_PATH, 'structure')
-    OUTPUT_DIR = os.path.join('/home/httpd/html', 'data', 'atlas')
+    OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/atlas_data/atlas_test'
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -149,34 +145,18 @@ def create_atlas(atlas_name, debug):
     volume_files = sorted(os.listdir(VOLUME_PATH))
     sqlController = SqlController(fixed_brain)
     resolution = sqlController.scan_run.resolution
-    # SCALE = (10 / resolution)
     SCALE = 32
     resolution = int(resolution * SCALE * 1000)
-    
     structure_volume_origin = {}
     for volume_filename, origin_filename in zip(volume_files, origin_files):
         structure = os.path.splitext(volume_filename)[0]
         if structure not in origin_filename:
             print(structure, origin_filename)
             break
-
-        """
-        try:
-            color = sqlController.get_structure_color(structure)
-        except:
-            color = 100
-        """
         origin = np.loadtxt(os.path.join(ORIGIN_PATH, origin_filename))
-        volume = np.load(os.path.join(VOLUME_PATH, volume_filename))
-
-        # volume = np.rot90(volume, axes=(0, 1))
-        # volume = np.flip(volume, axis=00)
-        # volume = volume * color
-        # volume = volume.astype(np.uint8)
+        volume = np.load(os.path.join(VOLUME_PATH, volume_filename)).astype(np.uint8)
         print(structure, volume.dtype, volume.shape, np.amin(volume), np.amax(volume), np.mean(volume), np.median(volume))
-
         structure_volume_origin[structure] = (volume, origin)
-
     width = sqlController.scan_run.width / SCALE
     height = sqlController.scan_run.height / SCALE
     z_length = len(os.listdir(INPUT))
@@ -185,22 +165,14 @@ def create_atlas(atlas_name, debug):
     print()
     to_um = 32 * 0.452
     scales = np.array([to_um, to_um, 20])
-
     for structure, (volume, origin) in sorted(structure_volume_origin.items()):
         mincol, minrow, z = origin
-        #continue
-        #x_start = int( round(x + col_length / 2))
-        #y_start = int( round(y + row_length / 2))
-        #z_start = int( round(z / 2 + z_length / 2))
         row_start = int( round(minrow))
         col_start = int( round(mincol))
         z_start = int( round(z))
-        
         row_end = row_start + volume.shape[0]
         col_end = col_start + volume.shape[1]
-        # z_end = z_start + (volume.shape[2] + 1) // 2
         z_end = z_start + volume.shape[2]
-
         if debug and 'SC' in structure:
             print(str(structure).ljust(7),end=": ")
             print('Start',
@@ -211,43 +183,26 @@ def create_atlas(atlas_name, debug):
                   str(row_end).rjust(4),
                   str(col_end).rjust(4),
                   str(z_end).rjust(4))
-
-
-        # z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
-        # volume = volume[:, :, z_indices]
-        # volume = np.swapaxes(volume, 0, 1)
-
         try:
             atlas_volume[row_start:row_end, col_start:col_end, z_start:z_end] += volume
         except ValueError as ve:
             print(structure, ve, volume.shape)
-
-
     print('Shape of downsampled atlas volume', atlas_volume.shape)
     print('Resolution at', resolution)
-
     if not debug:
-        #offset =  [21959.308659539533, 6238.690939678455, 66.74432595997823]
         atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
         atlas_volume = np.fliplr(atlas_volume)
         atlas_volume = np.flipud(atlas_volume)
         atlas_volume = np.fliplr(atlas_volume)
-        
         offset = [0,0,0]
-        
         ng = NumpyToNeuroglancer(atlas_volume, [resolution, resolution, 20000], offset=offset)
         ng.init_precomputed(OUTPUT_DIR)
         ng.add_segment_properties(get_segment_properties())
         ng.add_downsampled_volumes()
         ng.add_segmentation_mesh()
-
-    # outpath = os.path.join(ATLAS_PATH, f'{atlas_name}.npz')
-    # np.savez(outpath, atlas_volume.astype(np.uint8))
-
     print()
     end = timer()
     print(f'Finito! Program took {end - start} seconds')
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Atlas')
@@ -257,8 +212,3 @@ if __name__ == '__main__':
     debug = bool({'true': True, 'false': False}[args.debug.lower()])    
     atlas = args.atlas
     create_atlas(atlas, debug)
-    
-
-
-
-    

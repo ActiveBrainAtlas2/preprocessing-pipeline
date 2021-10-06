@@ -36,8 +36,9 @@ class TiffSegmentor:
                 self.create_sectioni_csv(save_folder,int(file_name))
             if len(os.listdir(save_folder)) == 11:
                 continue
-            cmd = [f'convert', self.tif_directory + filei, '-compress', 'None', '-crop', '2x5-0-0@', 
+            cmd = [f'convert', self.tif_directory + filei, '-compress', 'LZW', '-crop', '2x5-0-0@', 
             '+repage', '+adjoin', f'{save_folder}/{file_name}tile-%d.tif']
+            print(' '.join(cmd))
             workernoshell(cmd)
     
     def create_sectioni_csv(self,save_path,sectioni):
