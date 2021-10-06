@@ -131,7 +131,7 @@ class NumpyToNeuroglancer():
         tq.execute()
 
 
-def create_atlas(create, atlas_name):
+def create_atlas(atlas_name, debug):
     start = timer()
     DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
     fixed_brain = 'MD589'
@@ -201,7 +201,7 @@ def create_atlas(create, atlas_name):
         # z_end = z_start + (volume.shape[2] + 1) // 2
         z_end = z_start + volume.shape[2]
 
-        if not create and 'SC' in structure:
+        if debug and 'SC' in structure:
             print(str(structure).ljust(7),end=": ")
             print('Start',
                   str(row_start).rjust(4),
@@ -226,7 +226,7 @@ def create_atlas(create, atlas_name):
     print('Shape of downsampled atlas volume', atlas_volume.shape)
     print('Resolution at', resolution)
 
-    if create:
+    if not debug:
         #offset =  [21959.308659539533, 6238.690939678455, 66.74432595997823]
         atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
         atlas_volume = np.fliplr(atlas_volume)
@@ -251,12 +251,12 @@ def create_atlas(create, atlas_name):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Atlas')
-    parser.add_argument('--atlas', required=True)
-    parser.add_argument('--create', required=False, default='false')
+    parser.add_argument('--atlas', required=False, default='atlasV8')
+    parser.add_argument('--debug', required=False, default='true')
     args = parser.parse_args()
-    create = bool({'true': True, 'false': False}[args.create.lower()])    
+    debug = bool({'true': True, 'false': False}[args.debug.lower()])    
     atlas = args.atlas
-    create_atlas(create, atlas)
+    create_atlas(atlas, debug)
     
 
 

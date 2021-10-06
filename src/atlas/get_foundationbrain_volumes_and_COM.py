@@ -74,22 +74,22 @@ class VolumnMaker:
             volume_slice = cv2.fillPoly(volume_slice, pts=[contour_points], color=1)
             volume.append(volume_slice)
         volume = np.array(volume).astype(np.bool8)
+        return (min_x, min_y, min_z),volume
+    
+    def save_or_print_COM_and_volumn(self, xyz_offset, structure, volume):
+        min_x, min_y, min_z = xyz_offset
         to_um = 32 * 0.452
         com = center_of_mass(volume)
-        comx = (com[0] + min_x) * to_um
-        comy = (com[1] + min_y) * to_um
+        comx = (com[1] + min_x) * to_um
+        comy = (com[0] + min_y) * to_um
         comz = (com[2] + min_z) * 20
-        return (comx,comy,comz),volume
-    
-    def save_or_print_COM_and_volumn(self,com,structure,volume):
-        comx, comy, comz = com
         if self.debug:
             print(animal, structure,'\tcom', '\tcom x y z', comx, comy, comz)
         else:
             self.sqlController.add_layer_data(abbreviation=structure, animal=animal, 
                                     layer='COM', x=comx, y=comy, section=comz, 
                                     person_id=2, input_type_id=1)
-            # self.save_volume_and_COMs(ATLAS, structure, volume, (comx, comy, comz))
+            self.save_volume_and_COMs(ATLAS, structure, volume, (min_x, min_y, min_z))
 
     def compute_and_save_COMs_and_volumes(self):
         self.load_contour()
