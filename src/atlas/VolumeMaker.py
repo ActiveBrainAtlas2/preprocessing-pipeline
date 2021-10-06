@@ -83,9 +83,9 @@ class VolumnMaker:
         min_x, min_y, min_z = xyz_offset
         to_um = 32 * 0.452
         com = np.array(center_of_mass(volume))
-        self.COM[structurei] = com+np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
-        self.origins[structurei] = np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
-        self.volumes[structurei] = volume
+        self.COM[structure] = com+np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
+        self.origins[structure] = np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
+        self.volumes[structure] = volume
     
     def save_or_print_COM_and_volumn(self):
         structures = self.COM.keys()
