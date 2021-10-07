@@ -26,6 +26,8 @@ from lib.sqlcontroller import SqlController
 import plotly.graph_objects as go
 DOWNSAMPLE_FACTOR = 32
 from plotly.subplots import make_subplots
+import matplotlib.pyplot as plt
+
 class VolumnMaker:
     def __init__(self,animal,debug):
         self.animal = animal
@@ -77,17 +79,13 @@ class VolumnMaker:
             volume_slice = cv2.fillPoly(volume_slice, pts=[contour_points], color=1)
             volume.append(volume_slice)
         volume = np.array(volume).astype(np.bool8)
-        return (min_x, min_y, min_z),volume
-    
-    def save_or_print_COM_and_volumn(self, xyz_offset, structure, volume):
-        min_x, min_y, min_z = xyz_offset
         to_um = 32 * 0.452
         com = np.array(center_of_mass(volume))
-        self.COM[structure] = com+np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
-        self.origins[structure] = np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
-        self.volumes[structure] = volume
+        self.COM[structurei] = com+np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
+        self.origins[structurei] = np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
+        self.volumes[structurei] = volume
     
-    def save_or_print_COM_and_volumn(self):
+    def save_or_print_COM_and_volume(self):
         structures = self.COM.keys()
         for structurei in structures:
             origin = self.origins[structurei]
@@ -109,6 +107,7 @@ class VolumnMaker:
         
     def show_results(self):
         self.compare_point_dictionaries([self.COM,self.origins])
+        self.plot_volume()
     
     def compare_point_dictionaries(self,point_dicts):
         fig = make_subplots(rows = 1, cols = 1,specs=[[{'type':'scatter3d'}]])
@@ -117,7 +116,13 @@ class VolumnMaker:
             fig.add_trace(go.Scatter3d(x=values[:,0], y=values[:,1], z=values[:,2],
                                     mode='markers'),row = 1,col = 1)
         fig.show()
+    
+    def plot_volume(self,structure='10N_L'):
+        volume = self.volumes[structure]
+        ax = plt.figure().add_subplot(projection='3d')
+        ax.voxels(volume,edgecolor='k')
 
+plt.show()
 
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='Work on Animal')
@@ -137,7 +142,7 @@ if __name__ == '__main__':
     debug = False
     animals = ['MD585', 'MD589', 'MD594']
     for animal in animals:
-        Volumemaker = VolumnMaker(animal,debug)
-        Volumemaker.compute_COMs_and_volumes()
-        Volumemaker.show_results()
-        # Volumnmaker.save_or_print_COM_and_volumn()
+        volumemaker = VolumnMaker(animal,debug)
+        volumemaker.compute_COMs_and_volumes()
+        # Volumemaker.show_results()
+        volumemaker.save_or_print_COM_and_volume()

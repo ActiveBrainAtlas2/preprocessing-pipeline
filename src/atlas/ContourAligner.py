@@ -169,5 +169,5 @@ if __name__ == '__main__':
     for animal in animals:
         aligner = ContourAligner(animal)
         aligner.create_aligned_contours()
-        # aligner.save_contours()
-        aligner.show_steps()
+        aligner.save_contours()
+        # aligner.show_steps()
