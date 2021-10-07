@@ -54,7 +54,7 @@ class BrainMerger:
         self.fixed_brain_center = np.array([width//2, height//2, 440//2])
         self.moving_brains = ['MD589', 'MD585']
         self.threshold = threshold
-        self.volume = {}
+        self.volumes = {}
         self.origin = {}
 
     def get_merged_landmark_probability(self,volume_and_com, force_symmetry=False, sigma=2.0):
@@ -142,7 +142,7 @@ class BrainMerger:
     def iterate_through_structure(self,function):
         for structure in self.origin.keys():
             origin = self.origin[structure]
-            volume = self.volume[structure]
+            volume = self.volumes[structure]
             function(structure,origin,volume)
 
     def save_mesh_file(self):
@@ -174,11 +174,18 @@ class BrainMerger:
                 sigma = 5.0
             else:
                 sigma = 2.0
-            self.volume[structure], self.origin[structure] = self.get_merged_landmark_probability(volume_and_com=volumn_and_com,
+            self.volumes[structure], self.origin[structure] = self.get_merged_landmark_probability(volume_and_com=volumn_and_com,
             force_symmetry=(structure in singular_structures), sigma=sigma)
+    
+    def plot_volume(self,structure='10N_L'):
+        volume = self.volumes[structure]>self.threshold
+        ax = plt.figure().add_subplot(projection='3d')
+        ax.voxels(volume,edgecolor='k')
+        plt.show()
             
 if __name__ == '__main__':
     merger = BrainMerger()
     merger.create_average_com_and_volume()
+    merger.plot_volume()
     merger.save_mesh_file()
     merger.save_origin_and_volume()

@@ -121,8 +121,7 @@ class VolumnMaker:
         volume = self.volumes[structure]
         ax = plt.figure().add_subplot(projection='3d')
         ax.voxels(volume,edgecolor='k')
-
-plt.show()
+        plt.show()
 
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='Work on Animal')
