@@ -32,6 +32,8 @@ from lib.utilities_atlas import singular_structures
 from lib.sqlcontroller import SqlController
 from lib.utilities_atlas import convert_vol_bbox_dict_to_overall_vol, symmetricalize_volume, \
     volume_to_polydata, save_mesh_stl
+from lib.utilities_atlas_lite import  symmetricalize_volume, volume_to_polygon, save_mesh, \
+    find_merged_bounding_box,crop_and_pad_volumes
 
 MANUAL = 1
 CORRECTED = 2
@@ -46,7 +48,7 @@ DETECTED = 3
         brain_coord_phys = r_inv @ atlas_coord_phys - r_inv @ t_phys
 """
 
-def average_shape(volume_xyz_offset_list, force_symmetric=False, sigma=2.0):
+def average_shapeXXX(volume_xyz_offset_list, force_symmetric=False, sigma=2.0):
     """
     Compute the mean shape based on many co-registered volumes.
 
@@ -74,6 +76,33 @@ def average_shape(volume_xyz_offset_list, force_symmetric=False, sigma=2.0):
     # print(common_xyz_offset, np.mean(xyz_offset_list, axis=0))
     # return average_volume_prob, common_xyz_offset
     return average_volume_prob, np.mean(xyz_offset_list, axis=0)
+
+
+def get_merged_landmark_probability(volume_and_com, force_symmetry=False, sigma=2.0):
+    """
+    Compute the mean shape based on many co-registered volumes.
+
+    Args:
+        force_symmetric (bool): If True, force the resulting volume and mesh to be symmetric wrt z.
+        sigma (float): sigma of gaussian kernel used to smooth the probability values.
+
+    Returns:
+        average_volume_prob (3D ndarray):
+        common_mins ((3,)-ndarray): coordinate of the volume's origin
+    """
+    volumes, origins = list(map(list, list(zip(*volume_and_com))))
+    bounding_boxes = [(x, x+volume.shape[1]-1, y, y+volume.shape[0]-1, z, z+volume.shape[2]-1) 
+        for volume,(x,y,z) in zip(volumes, origins)]
+    merged_bounding_box = np.round(find_merged_bounding_box(bounding_boxes)).astype(np.int32)
+    volumes = crop_and_pad_volumes(merged_bounding_box, bounding_box_volume=list(zip(volumes, bounding_boxes)))
+    volumes = list([(v > 0).astype(np.int32) for v in volumes])
+    merged_volume = np.sum(volumes, axis=0)
+    merged_volume_prob = merged_volume / float(np.max(merged_volume))
+    if force_symmetry:
+        merged_volume_prob = symmetricalize_volume(merged_volume_prob)
+    merged_volume_prob = gaussian(merged_volume_prob, sigma) # Smooth the probability
+    merged_origin = np.array(merged_bounding_box)[[0,2,4]]
+    return merged_volume_prob, merged_origin
 
 
 
@@ -163,8 +192,10 @@ def merge_brains():
         else:
             sigma = 2.0
         ## look at the average_shape method
-        volume, com = average_shape(volume_xyz_offset_list=volume_xyz_offset_list, 
-                                       force_symmetric=(structure in singular_structures), sigma=sigma)
+        # volume, com = average_shape(volume_xyz_offset_list=volume_xyz_offset_list, 
+        #                               force_symmetric=(structure in singular_structures), sigma=sigma)
+        
+        volume, com = get_merged_landmark_probability(volume_xyz_offset_list, force_symmetry=False, sigma=sigma)
         try:
             color = sqlController.get_structure_color(structure)
         except:
