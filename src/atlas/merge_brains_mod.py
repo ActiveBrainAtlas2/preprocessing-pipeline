@@ -15,6 +15,8 @@ from pathlib import Path
 from datetime import datetime
 from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
 from skimage.filters import gaussian
+import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -52,6 +54,8 @@ class BrainMerger:
         self.fixed_brain_center = np.array([width//2, height//2, 440//2])
         self.moving_brains = ['MD589', 'MD585']
         self.threshold = threshold
+        self.volume = {}
+        self.origin = {}
 
     def get_merged_landmark_probability(self,volume_and_com, force_symmetry=False, sigma=2.0):
         """
@@ -108,7 +112,7 @@ class BrainMerger:
             print(f'No merge {e}')
             session.rollback()
 
-    def get_volumn_and_com_per_structure(self):
+    def get_volume_and_com_per_structure(self):
         volume_and_com = defaultdict(list)
         fixed_data = self.get_centers_from_data_base(self.fixed_brain)
         ORIGIN_PATH = os.path.join(self.ATLAS_PATH, self.fixed_brain, 'origin')
@@ -135,15 +139,19 @@ class BrainMerger:
                 volume_and_com[structure].append((volume, aligned_origin))
         return volume_and_com
 
-    def save_mesh_file(self,origin,volume,structure):
-        centered_origin = origin - self.fixed_brain_center
-        threshold_volume = volume >= self.threshold
-        aligned_volume = (threshold_volume, centered_origin)
-        aligned_structure = volume_to_polygon(volume=aligned_volume,num_simplify_iter=3, smooth=False,return_vertex_face_list=False)
-        filepath = os.path.join(self.ATLAS_PATH, 'mesh', f'{structure}.stl')
-        save_mesh(aligned_structure, filepath)
+    def iterate_through_structure(self,function):
+        for structure in self.origin.keys():
+            origin = self.origin[structure]
+            volume = self.volume[structure]
+            function(structure,origin,volume)
 
-    def save_origin_and_volume(self,origin,volume,structure):
+    def save_mesh_file(self):
+        self.iterate_through_structure(self.save_single_mesh_file)
+
+    def save_origin_and_volume(self):
+        self.iterate_through_structure(self.save_single_origin_and_volume)
+
+    def save_single_origin_and_volume(self,origin,volume,structure):
         volume_outpath = os.path.join(self.ATLAS_PATH, 'structure', f'{structure}.npy')
         com_outpath = os.path.join(self.ATLAS_PATH, 'origin', f'{structure}.txt')
         np.save(volume_outpath, volume)
@@ -151,18 +159,26 @@ class BrainMerger:
         print(structure, volume.shape, volume.dtype, np.mean(volume), np.amax(volume), origin)
         self.add_layer_data_row(structure, origin)
 
-    def create_average_com_and_volumn(self):
-        volume_and_com_per_structure = self.get_volumn_and_com_per_structure()
+    def save_single_mesh_file(self,origin,volume,structure):
+        centered_origin = origin - self.fixed_brain_center
+        threshold_volume = volume >= self.threshold
+        aligned_volume = (threshold_volume, centered_origin)
+        aligned_structure = volume_to_polygon(volume=aligned_volume,num_simplify_iter=3, smooth=False,return_vertex_face_list=False)
+        filepath = os.path.join(self.ATLAS_PATH, 'mesh', f'{structure}.stl')
+        save_mesh(aligned_structure, filepath)
+
+    def create_average_com_and_volume(self):
+        volume_and_com_per_structure = self.get_volume_and_com_per_structure()
         for structure, volumn_and_com in volume_and_com_per_structure.items():
             if 'SC' in structure or 'IC' in structure:
                 sigma = 5.0
             else:
                 sigma = 2.0
-            volume, origin = self.get_merged_landmark_probability(volume_and_com=volumn_and_com,
+            self.volume[structure], self.origin[structure] = self.get_merged_landmark_probability(volume_and_com=volumn_and_com,
             force_symmetry=(structure in singular_structures), sigma=sigma)
-            self.save_mesh_file(origin,volume,structure)
-            self.save_origin_and_volume(origin,volume,structure)
             
 if __name__ == '__main__':
     merger = BrainMerger()
-    merger.create_average_com_and_volumn()
+    merger.create_average_com_and_volume()
+    merger.save_mesh_file()
+    merger.save_origin_and_volume()

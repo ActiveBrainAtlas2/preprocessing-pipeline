@@ -23,9 +23,9 @@ sys.path.append(PATH)
 from lib.file_location import DATA_PATH
 from lib.utilities_atlas import ATLAS
 from lib.sqlcontroller import SqlController
-import plotly.graph_objects as go
 DOWNSAMPLE_FACTOR = 32
 from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
 class VolumnMaker:
