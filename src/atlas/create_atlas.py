@@ -86,13 +86,10 @@ class NumpyToNeuroglancer():
     def add_segment_properties(self, segment_properties):
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
-
         self.precomputed_vol.info['segment_properties'] = 'names'
         self.precomputed_vol.commit_info()
-
         segment_properties_path = os.path.join(self.precomputed_vol.layer_cloudpath.replace('file://', ''), 'names')
         os.makedirs(segment_properties_path, exist_ok=True)
-
         info = {
             "@type": "neuroglancer_segment_properties",
             "inline": {
@@ -137,7 +134,7 @@ def create_atlas(atlas_name, debug):
     ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
     ORIGIN_PATH = os.path.join(ATLAS_PATH, 'origin')
     VOLUME_PATH = os.path.join(ATLAS_PATH, 'structure')
-    OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/atlas_data/atlas_test'
+    OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/atlas_test'
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -205,10 +202,12 @@ def create_atlas(atlas_name, debug):
     print(f'Finito! Program took {end - start} seconds')
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Work on Atlas')
-    parser.add_argument('--atlas', required=False, default='atlasV8')
-    parser.add_argument('--debug', required=False, default='true')
-    args = parser.parse_args()
-    debug = bool({'true': True, 'false': False}[args.debug.lower()])    
-    atlas = args.atlas
+    # parser = argparse.ArgumentParser(description='Work on Atlas')
+    # parser.add_argument('--atlas', required=False, default='atlasV8')
+    # parser.add_argument('--debug', required=False, default='true')
+    # args = parser.parse_args()
+    # debug = bool({'true': True, 'false': False}[args.debug.lower()])    
+    # atlas = args.atlas
+    atlas = 'atlasV8'
+    debug = False
     create_atlas(atlas, debug)
