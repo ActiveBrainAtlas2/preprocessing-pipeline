@@ -5,11 +5,13 @@ from skimage import io
 from tqdm import tqdm
 import numpy as np
 import cv2
+from concurrent.futures.process import ProcessPoolExecutor
+from timeit import default_timer as timer
 
 from lib.file_location import FileLocationManager
 from lib.logger import get_logger
 from lib.sqlcontroller import SqlController
-from lib.utilities_process import test_dir
+from lib.utilities_process import test_dir, get_cpus
 
 COLORS = {1: 'b', 2: 'r', 3: 'g'}
 
@@ -29,9 +31,9 @@ def make_histogram(animal, channel):
     sqlController = SqlController(animal)
     INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
     MASK_INPUT = fileLocationManager.thumbnail_masked
-    tifs = sqlController.get_sections(animal, channel)
+    files = sqlController.get_sections(animal, channel)
     error = test_dir(animal, INPUT, downsample=True, same_size=False)
-    if len(tifs) == 0:
+    if len(files) == 0:
         error += " No sections in the database"
     if len(error) > 0:
         print(error)
@@ -42,55 +44,76 @@ def make_histogram(animal, channel):
     progress_id = sqlController.get_progress_id(True, channel, 'HISTOGRAM')
     sqlController.set_task(animal, progress_id)
 
-    for i, tif in enumerate(tqdm(tifs)):
+    file_keys = []
+    for i, file in enumerate(files):
         filename = str(i).zfill(3) + '.tif'
         input_path = os.path.join(INPUT, filename)
         mask_path = os.path.join(MASK_INPUT, filename)
-        output_path = os.path.join(OUTPUT, os.path.splitext(tif.file_name)[0] + '.png')
+        output_path = os.path.join(OUTPUT, os.path.splitext(file.file_name)[0] + '.png')
         if not os.path.exists(input_path):
             print('Input tif does not exist', input_path)
             continue
 
         if os.path.exists(output_path):
             continue
+        
+        file_keys.append([input_path, logger, mask_path, channel, file, output_path])
 
-        try:
-            img = io.imread(input_path)
-        except:
-            logger.warning(f'Could not open {input_path}')
-            continue
-        try:
-            mask = io.imread(mask_path)
-        except:
-            logger.warning(f'Could not open {mask_path}')
-            continue
+    start = timer()
+    workers, _ = get_cpus() 
+    print(f'Working on {len(file_keys)} files with {workers} cpus')
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        #executor.map(fix_ntb, sorted(file_keys),np.ones(len(file_keys))*channel)
+        executor.map(make_single, sorted(file_keys))
 
-        img = cv2.bitwise_and(img, img, mask=mask)
+    end = timer()
+    print(f'Create cleaned files took {end - start} seconds total', end="\t")
+    print(f' { (end - start)/len(files)} per file')
+        
+        
+
+def make_single(file_key):
+    
+    input_path, logger, mask_path, channel, file, output_path = file_key
+        
+    try:
+        img = io.imread(input_path)
+    except:
+        logger.warning(f'Could not open {input_path}')
+        return
+    try:
+        mask = io.imread(mask_path)
+    except:
+        logger.warning(f'Could not open {mask_path}')
+        return
+
+    img = cv2.bitwise_and(img, img, mask=mask)
 
 
-        if img.shape[0] * img.shape[1] > 1000000000:
-            scale = 1 / float(2)
-            img = img[::int(1. / scale), ::int(1. / scale)]
+    if img.shape[0] * img.shape[1] > 1000000000:
+        scale = 1 / float(2)
+        img = img[::int(1. / scale), ::int(1. / scale)]
 
+    try:
+        flat = img.flatten()
+    except:
+        logger.warning(f'Could not flatten {input_path}')
+        return
 
+    del img
+    fig = plt.figure()
+    plt.rcParams['figure.figsize'] = [10, 6]
+    plt.hist(flat, flat.max(), [0, 10000], color=COLORS[channel])
+    plt.style.use('ggplot')
+    plt.yscale('log')
+    plt.grid(axis='y', alpha=0.75)
+    plt.xlabel('Value')
+    plt.ylabel('Frequency')
+    plt.title(f'{file.file_name} @16bit')
+    plt.close()
+    fig.savefig(output_path, bbox_inches='tight')
+    return
 
-        try:
-            flat = img.flatten()
-        except:
-            logger.warning(f'Could not flat {input_path}')
-            continue
-
-        fig = plt.figure()
-        plt.rcParams['figure.figsize'] = [10, 6]
-        plt.hist(flat, flat.max(), [0, 10000], color=COLORS[channel])
-        plt.style.use('ggplot')
-        plt.yscale('log')
-        plt.grid(axis='y', alpha=0.75)
-        plt.xlabel('Value')
-        plt.ylabel('Frequency')
-        plt.title(f'{tif.file_name} @16bit')
-        plt.close()
-        fig.savefig(output_path, bbox_inches='tight')
 
 
 def make_combined(animal, channel):

@@ -41,7 +41,6 @@ def calculate_chunks(downsample, mip):
     d[True][1] = [64,64,64]
     d[True][2] = [64,64,32]
     d[True][3] = [32,32,16]
-    d[True][3] = [32,32,8]
     try:
         result = d[downsample][mip]
     except:
