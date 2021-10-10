@@ -24,5 +24,5 @@ if __name__ == '__main__':
     scale = int(args.scale)
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-    masker(animal, channel, downsample, scale, debug)
+    masker(animal, channel, downsample, debug)
 
