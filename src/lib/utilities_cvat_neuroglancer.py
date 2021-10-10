@@ -36,8 +36,8 @@ def calculate_chunks(downsample, mip):
     d[False][8] = [64,64,64]
     d[False][9] = [64,64,64]
 
-    d[True][-1] = [128,128,1]
-    d[True][0] = [128,128,64]
+    d[True][-1] = [64,64, 1]
+    d[True][0] = [64, 64,64]
     d[True][1] = [64,64,64]
     d[True][2] = [64,64,32]
     d[True][3] = [32,32,16]
