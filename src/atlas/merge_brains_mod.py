@@ -72,7 +72,7 @@ class BrainMerger:
         volumes, origins = list(map(list, list(zip(*volume_and_com))))
         bounding_boxes = [(x, x+volume.shape[1]-1, y, y+volume.shape[0]-1, z, z+volume.shape[2]-1) 
             for volume,(x,y,z) in zip(volumes, origins)]
-        merged_bounding_box = np.round(find_merged_bounding_box(bounding_boxes)).astype(np.int)
+        merged_bounding_box = np.round(find_merged_bounding_box(bounding_boxes)).astype(np.int32)
         volumes = crop_and_pad_volumes(merged_bounding_box, bounding_box_volume=list(zip(volumes, bounding_boxes)))
         volumes = list([(v > 0).astype(np.int32) for v in volumes])
         merged_volume = np.sum(volumes, axis=0)
@@ -152,6 +152,7 @@ class BrainMerger:
         self.iterate_through_structure(self.save_single_origin_and_volume)
 
     def save_single_origin_and_volume(self,origin,volume,structure):
+        print(structure)
         volume_outpath = os.path.join(self.ATLAS_PATH, 'structure', f'{structure}.npy')
         com_outpath = os.path.join(self.ATLAS_PATH, 'origin', f'{structure}.txt')
         np.save(volume_outpath, volume)
@@ -186,6 +187,6 @@ class BrainMerger:
 if __name__ == '__main__':
     merger = BrainMerger()
     merger.create_average_com_and_volume()
-    merger.plot_volume()
-    merger.save_mesh_file()
+    # merger.plot_volume()
+    # merger.save_mesh_file()
     merger.save_origin_and_volume()
