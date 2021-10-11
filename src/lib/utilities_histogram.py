@@ -101,6 +101,7 @@ def make_single(file_key):
         return
 
     del img
+    del mask
     fig = plt.figure()
     plt.rcParams['figure.figsize'] = [10, 6]
     plt.hist(flat, flat.max(), [0, 10000], color=COLORS[channel])
@@ -129,11 +130,16 @@ def make_combined(animal, channel):
     MASK_INPUT = fileLocationManager.thumbnail_masked
     OUTPUT = os.path.join(fileLocationManager.histogram, f'CH{channel}')
     os.makedirs(OUTPUT, exist_ok=True)
-    tifs = os.listdir(INPUT)
-    lfiles = len(tifs)
+    files = os.listdir(INPUT)
+    lfiles = len(files)
     hist_dict = Counter({})
+    outfile = f'{animal}.png'
+    outpath = os.path.join(OUTPUT, outfile)
+    if os.path.exists(outpath):
+        return
 
-    for i, tif in enumerate(tqdm(tifs)):
+
+    for i, file in enumerate(tqdm(files)):
         filename = str(i).zfill(3) + '.tif'
         input_path = os.path.join(INPUT, filename)
         mask_path = os.path.join(MASK_INPUT, filename)
@@ -194,7 +200,5 @@ def make_combined(animal, channel):
     plt.xlabel('Value')
     plt.ylabel('Frequency')
     plt.title(f'{animal} channel {channel} @16bit with {lfiles} tif files')
-    outfile = f'{animal}.png'
-    outpath = os.path.join(OUTPUT, outfile)
     fig.savefig(outpath, bbox_inches='tight')
     print('Finished')
