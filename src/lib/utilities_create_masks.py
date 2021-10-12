@@ -188,6 +188,7 @@ def mask_tif(file_key):
         mask = combine_dims(mask)
 
     raw_img = np.array(img)
+    del img
     mask = mask.astype(np.uint8)
     mask[mask>0] = 255
 
