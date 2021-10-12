@@ -64,11 +64,11 @@
     1. View results in neuroglancer. Add the layer to the precompute with:
         https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C1T
 1. After you have completed the downampled version for channel 1, you can repeat
-this entire process by running `python src/create_pipeline.py --animal DKXX --channel 2 --step4`
+this entire process by running `python src/create_pipeline.py --animal DKXX --channel 2 --step 4`
 This will run the entire process for channel 2. Most the steps will be automatically skipped.
 1. Repeat the process again for channel 3. Once you are happy with all the results run
 the process again but 
-with `python src/create_pipeline.py --animal DKXX --channel 1 downsample false --step4`
+with `python src/create_pipeline.py --animal DKXX --channel 1 downsample false --step 4`
    ## Helper functions:
    1. To report number of files in each subdirectory:
    ```
