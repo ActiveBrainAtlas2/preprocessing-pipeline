@@ -138,65 +138,26 @@ def create_mask(animal, downsample):
 
             if os.path.exists(maskpath):
                 continue
-            file_keys.append([filepath, loaded_model, maskpath])
             
-        start = timer()
-        workers, _ = get_cpus()
-        print(f'Working on {len(file_keys)} files with {workers} cpus')
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(mask_tif, file_keys)
-        # for file_key in tqdm(file_keys):
-        #    resize_tif(file_key)
-        end = timer()
-        print(f'Create full res masks took {end - start} seconds')
-            
-        """
-        img = Image.open(filepath)
-        torch_input = transform(img)
-        torch_input = torch_input.unsqueeze(0)
-        loaded_model.eval()
-        with torch.no_grad():
-            pred = loaded_model(torch_input)
-        masks = [(pred[0]['masks']>0.5).squeeze().detach().cpu().numpy()]
-        mask = masks[0]
-        dims = mask.ndim
-        if dims > 2:
-            mask = combine_dims(mask)
-
-        raw_img = np.array(img)
-        mask = mask.astype(np.uint8)
-        mask[mask>0] = 255
-
-        merged_img = merge_mask(raw_img, mask)
-        del mask
-        cv2.imwrite(maskpath, merged_img)
-        """
-            
-def mask_tif(file_key):
-    filepath, loaded_model, maskpath = file_key
-    transform = torchvision.transforms.ToTensor()
-    img = Image.open(filepath)
-    torch_input = transform(img)
-    torch_input = torch_input.unsqueeze(0)
-    loaded_model.eval()
-    with torch.no_grad():
-        pred = loaded_model(torch_input)
-    masks = [(pred[0]['masks']>0.5).squeeze().detach().cpu().numpy()]
-    mask = masks[0]
-    dims = mask.ndim
-    if dims > 2:
-        mask = combine_dims(mask)
-
-    raw_img = np.array(img)
-    del img
-    mask = mask.astype(np.uint8)
-    mask[mask>0] = 255
-
-    merged_img = merge_mask(raw_img, mask)
-    del mask
-    del raw_img
-    del loaded_model
-    cv2.imwrite(maskpath, merged_img)
+            img = Image.open(filepath)
+            torch_input = transform(img)
+            torch_input = torch_input.unsqueeze(0)
+            loaded_model.eval()
+            with torch.no_grad():
+                pred = loaded_model(torch_input)
+            masks = [(pred[0]['masks']>0.5).squeeze().detach().cpu().numpy()]
+            mask = masks[0]
+            dims = mask.ndim
+            if dims > 2:
+                mask = combine_dims(mask)
+    
+            raw_img = np.array(img)
+            mask = mask.astype(np.uint8)
+            mask[mask>0] = 255
+    
+            merged_img = merge_mask(raw_img, mask)
+            del mask
+            cv2.imwrite(maskpath, merged_img)
 
 
 
