@@ -36,12 +36,11 @@ def calculate_chunks(downsample, mip):
     d[False][8] = [64,64,64]
     d[False][9] = [64,64,64]
 
-    d[True][-1] = [128,128,1]
-    d[True][0] = [128,128,64]
+    d[True][-1] = [64,64, 1]
+    d[True][0] = [64, 64,64]
     d[True][1] = [64,64,64]
     d[True][2] = [64,64,32]
     d[True][3] = [32,32,16]
-    d[True][3] = [32,32,8]
     try:
         result = d[downsample][mip]
     except:
@@ -303,9 +302,21 @@ class NumpyToNeuroglancer():
         if completed:
             print(f"Section {index} already processed, skipping ")
             return
-        img = io.imread(infile, img_num=0)
-        img = img.reshape(self.num_channels, img.shape[0], img.shape[1]).T
-        self.precomputed_vol[:, :, index] = img
+        try:
+            img = io.imread(infile, img_num=0)
+        except IOError as ioe:
+            print(f'could not open {infile} {ioe}')
+            return
+        try:
+            img = img.reshape(self.num_channels, img.shape[0], img.shape[1]).T
+        except:
+            print(f'could not reshape {infile}')
+            return
+        try:
+            self.precomputed_vol[:, :, index] = img
+        except:
+            print(f'could not set {infile} to precomputed')
+            return
         set_file_completed(self.animal, self.progress_id, basefile)
         del img
         return

@@ -72,6 +72,7 @@ def create_mask(animal, downsample):
         loaded_model.load_state_dict(torch.load(modelpath,map_location=torch.device('cpu')))
     else:
         print('no model to load')
+        return
 
     ##### Create directories
 
@@ -130,36 +131,34 @@ def create_mask(animal, downsample):
         os.makedirs(COLORED, exist_ok=True)
 
         files = sorted(os.listdir(INPUT))
-        debug = False
+        file_keys = []
         for file in tqdm(files):
             filepath = os.path.join(INPUT, file)
             maskpath = os.path.join(COLORED, file)
 
             if os.path.exists(maskpath):
                 continue
-
+            
             img = Image.open(filepath)
             torch_input = transform(img)
             torch_input = torch_input.unsqueeze(0)
             loaded_model.eval()
             with torch.no_grad():
                 pred = loaded_model(torch_input)
-            pred_score = list(pred[0]['scores'].detach().numpy())
-            if debug:
-                print(file, pred_score[0])
             masks = [(pred[0]['masks']>0.5).squeeze().detach().cpu().numpy()]
             mask = masks[0]
             dims = mask.ndim
             if dims > 2:
                 mask = combine_dims(mask)
-
+    
             raw_img = np.array(img)
             mask = mask.astype(np.uint8)
             mask[mask>0] = 255
-
+    
             merged_img = merge_mask(raw_img, mask)
             del mask
             cv2.imwrite(maskpath, merged_img)
+
 
 
 def resize_tif(file_key):

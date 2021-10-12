@@ -2,7 +2,6 @@ import os, sys
 import cv2
 import numpy as np
 from skimage import io
-from tqdm import tqdm
 from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
 from lib.sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
