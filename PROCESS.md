@@ -27,7 +27,8 @@
     1. Under the PREP ID column, click the link of the slide you want to edit.
     1. If the entire slide is bad, mark it as Bad under Slide Status.
     1. If a scene needs to be marked as Bad, Out of Focus or the End slide, select the appropriate Scene QC.
-    If you mark it as Bad or Out of Focus, the nearest neighbor will be inserted.
+    If you mark it as Bad or Out of Focus, the nearest neighbor will NOT be inserted. If you need to replicate
+    a scene, you use replicate scene functionality in the appropriate scene in the form.
     1. If you want to replicate a scene, choose the Replicate field and add an amount to replicate.
     1. The list of scenes are listed near the bottom of the page.
     1. When you are done, click one of the Save buttons at the bottom of the page.
@@ -47,8 +48,6 @@
     1. This will finalize the masks
     1. Creates the cleaned files from the masks
     1. Creates all the necessary histograms
-    1. View results in neuroglancer. Add the layer to the precompute with:
-        https://activebrainatlas.ucsd.edu/data/DKXX/neuroglancer_data/C1T
 
 1. Run: `python src/create_pipeline.py --animal DKXX --step 3`
     1. This will run elastix and create the rigid transformation for consecutive pair of files.
