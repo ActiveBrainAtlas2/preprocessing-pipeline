@@ -20,42 +20,12 @@ from scipy.ndimage.measurements import center_of_mass
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
-from lib.file_location import DATA_PATH
-from lib.utilities_atlas import ATLAS
-from lib.sqlcontroller import SqlController
 DOWNSAMPLE_FACTOR = 32
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
-import matplotlib.pyplot as plt
+from atlas.Brain import Brain
 
-class VolumnMaker:
-    def __init__(self,animal,debug):
-        self.animal = animal
-        self.debug = debug
-        self.sqlController = SqlController(self.animal)
-        self.COM = {}
-        self.origins = {}
-        self.volumes = {}
-
-    def save_volume_and_origins(self,atlas_name, structure, volume, origin):
-        x, y, z = origin
-        volume = np.swapaxes(volume, 0, 2)
-        volume = np.rot90(volume, axes=(0,1))
-        volume = np.flip(volume, axis=0)
-        OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', atlas_name, self.animal)
-        volume_filepath = os.path.join(OUTPUT_DIR, 'structure', f'{structure}.npy')
-        os.makedirs(os.path.join(OUTPUT_DIR, 'structure'), exist_ok=True)
-        np.save(volume_filepath, volume)
-        origin_filepath = os.path.join(OUTPUT_DIR, 'origin', f'{structure}.txt')
-        os.makedirs(os.path.join(OUTPUT_DIR, 'origin'), exist_ok=True)
-        np.savetxt(origin_filepath, (x,y,z))
-    
-    def load_contour(self):
-        CSVPATH = os.path.join(DATA_PATH, 'atlas_data', ATLAS, self.animal)
-        jsonpath = os.path.join(CSVPATH,  'aligned_padded_structures.json')
-        with open(jsonpath) as f:
-            self.contours_per_structure = json.load(f)
-        self.structures = list(self.contours_per_structure.keys())        
+class VolumeMaker(Brain):
+    def __init__(self,animal):
+        super().__init__(animal)
 
     def calculate_origin_COM_and_volume(self,contour_for_structurei,structurei):
         section_mins = []
@@ -81,67 +51,28 @@ class VolumnMaker:
         volume = np.array(volume).astype(np.bool8)
         to_um = 32 * 0.452
         com = np.array(center_of_mass(volume))
-        self.COM[structurei] = com+np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
-        self.origins[structurei] = np.array((min_x,min_y,min_z))*np.array([to_um,to_um,20])
+        self.COM[structurei] = (com+np.array((min_x,min_y,min_z)))*np.array([to_um,to_um,20])
+        self.origins[structurei] = np.array((min_x,min_y,min_z))
         self.volumes[structurei] = volume
-    
-    def save_or_print_COM_and_volume(self):
-        structures = self.COM.keys()
-        for structurei in structures:
-            origin = self.origins[structurei]
-            volume = self.volumes[structurei]
-            comx, comy, comz = self.COM[structurei]
-            if self.debug:
-                print(animal, structurei,'\tcom', '\tcom x y z', comx, comy, comz)
-            else:
-                self.sqlController.add_layer_data(abbreviation=structurei, animal=animal, 
-                                        layer='COM', x=comx, y=comy, section=comz, 
-                                        person_id=2, input_type_id=1)
-                self.save_volume_and_origins(ATLAS, structurei, volume, origin)
 
-    def compute_COMs_and_volumes(self):
-        self.load_contour()
+    def compute_COMs_origins_and_volumes(self):
+        self.load_aligned_contours()
         for structurei in tqdm(self.structures):
-            contours_of_structurei = self.contours_per_structure[structurei]
+            contours_of_structurei = self.aligned_contours[structurei]
             self.calculate_origin_COM_and_volume(contours_of_structurei,structurei)
         
-    def show_results(self):
+    def show_steps(self):
         self.compare_point_dictionaries([self.COM,self.origins])
         self.plot_volume()
     
-    def compare_point_dictionaries(self,point_dicts):
-        fig = make_subplots(rows = 1, cols = 1,specs=[[{'type':'scatter3d'}]])
-        for point_dict in point_dicts:
-            values = np.array(list(point_dict.values()))
-            fig.add_trace(go.Scatter3d(x=values[:,0], y=values[:,1], z=values[:,2],
-                                    mode='markers'),row = 1,col = 1)
-        fig.show()
-    
-    def plot_volume(self,structure='10N_L'):
-        volume = self.volumes[structure]
-        ax = plt.figure().add_subplot(projection='3d')
-        ax.voxels(volume,edgecolor='k')
-        plt.show()
+
 
 if __name__ == '__main__':
-    # parser = argparse.ArgumentParser(description='Work on Animal')
-    # parser.add_argument('--animal', help='Enter the animal', required=False)
-    # parser.add_argument('--debug', help='Enter debug True|False', required=False,
-    #                      default='true')
-    # args = parser.parse_args()
-    # animal = args.animal
-    # debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-    # if animal is None:
-    #     animals = ['MD585', 'MD589', 'MD594']
-    # else:
-    #     animals = [animal]
-
-    # for animal in animals:
-    #     create_volumes(animal, debug)
-    debug = False
     animals = ['MD585', 'MD589', 'MD594']
     for animal in animals:
-        volumemaker = VolumnMaker(animal,debug)
-        volumemaker.compute_COMs_and_volumes()
-        # Volumemaker.show_results()
-        volumemaker.save_or_print_COM_and_volume()
+        volumemaker = VolumeMaker(animal)
+        volumemaker.compute_COMs_origins_and_volumes()
+        # volumemaker.show_steps()
+        volumemaker.save_coms()
+        volumemaker.save_origins()
+        volumemaker.save_volumes()

@@ -34,17 +34,24 @@ class TiffSegmentor:
             save_folder = self.save_directory+file_name
             if create_csv:
                 self.create_sectioni_csv(save_folder,int(file_name))
-            if len(os.listdir(save_folder)) == 11:
-                continue
+                if len(os.listdir(save_folder)) >= 11:
+                    continue
+            else:
+                if len(os.listdir(save_folder)) == 10:
+                    continue
             cmd = [f'convert', self.tif_directory + filei, '-compress', 'LZW', '-crop', '2x5-0-0@', 
             '+repage', '+adjoin', f'{save_folder}/{file_name}tile-%d.tif']
             print(' '.join(cmd))
             workernoshell(cmd)
     
+    def have_csv_in_path(self,path):
+        files = os.listdir(path)
+        return np.any(['.csv' in filei for filei in files]) 
+    
     def create_sectioni_csv(self,save_path,sectioni):
         time_stamp = datetime.today().strftime('%Y-%m-%d')
         csv_path = save_path+f'/{self.animal}_premotor_{sectioni}_{time_stamp}.csv'
-        if not os.path.isfile(csv_path):
+        if not self.have_csv_in_path(save_path):
             print('creating '+ csv_path)
             search_dictionary = {'prep_id':self.animal,'input_type_id':1,'person_id':2,'layer':'Premotor','section':sectioni}
             premotor = self.controller.get_layer_data(search_dictionary)
