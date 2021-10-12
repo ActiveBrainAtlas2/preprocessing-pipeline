@@ -46,17 +46,12 @@ if __name__ == '__main__':
     if step > 0:
         start = timer()
         pipeline.create_preps()
-        end = timer()
-        print(f'Create preps took {end - start} seconds')    
-        logger.info(f'Create preps took {end - start} seconds')
-    if step > 1:
-        start = timer()
         pipeline.create_normalized()
         pipeline.create_masks()
         end = timer()
         print(f'Creating normalized and masks took {end - start} seconds')    
         logger.info(f'Create normalized and masks took {end - start} seconds')
-    if step > 2:
+    if step > 1:
         start = timer()
         pipeline.create_masks_final()
         pipeline.create_clean()
@@ -65,19 +60,19 @@ if __name__ == '__main__':
         end = timer()
         print(f'Creating masks, cleaning and histograms took {end - start} seconds')    
         logger.info(f'Creating masks, cleaning and histograms took {end - start} seconds')
-    if step > 3:
+    if step > 2:
         start = timer()
         pipeline.create_elastix()
         end = timer()
         print(f'Creating elastix took {end - start} seconds')    
         logger.info(f'Creating elastix took {end - start} seconds')
-    if step > 4:
+    if step > 3:
         start = timer()
         pipeline.create_alignment()
         end = timer()
         print(f'Creating alignment took {end - start} seconds')    
         logger.info(f'Create alignment took {end - start} seconds')
-    if step > 5:
+    if step > 4:
         start = timer()
         pipeline.create_neuroglancer_image()
         pipeline.create_downsampling()
