@@ -13,7 +13,13 @@ from lib.pipeline import Pipeline
 from lib.logger import get_logger
 
 if __name__ == '__main__':
-    steps = "start=1, prep=2, mask=3, final mask=4, align=5, neuroglancer=6"
+    steps = """
+    start=0, prep, 
+    normalized and masks=1, 
+    mask, clean and histograms=2, 
+    elastix and alignment=3, 
+    neuroglancer=4
+    """
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=False, default=1)
