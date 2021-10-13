@@ -34,12 +34,12 @@ from lib.file_location import DATA_PATH, FileLocationManager
 from lib.utilities_alignment import parse_elastix, \
     transform_points, create_downsampled_transforms
 from lib.utilities_atlas import ATLAS
-import plotly.graph_objects as go
 DOWNSAMPLE_FACTOR = 32
+from atlas.Brain import Brain
 
-class ContourAligner:
+class FundationContourAligner(Brain):
     def __init__(self,animal):
-        self.animal = animal
+        super().__init__(animal)
         self.contour_path = os.path.join(DATA_PATH, 'atlas_data','foundation_brain_annotations',f'{self.animal}_annotation.csv')
     
     def create_clean_transform(self):
@@ -101,11 +101,11 @@ class ContourAligner:
             for section in contour_for_structurei:
                 self.contour_per_section_per_structure[structurei][section] = contour_for_structurei[section]
 
-    def aligned_contours(self):
+    def align_contours(self):
         md585_fixes = {161: 100, 182: 60, 223: 60, 231: 80, 253: 60}
         self.original_structures = defaultdict(dict)
-        self.unaligned_centered_structures = defaultdict(dict)
-        self.aligned_centered_structures = defaultdict(dict)
+        self.centered_structures = defaultdict(dict)
+        self.aligned_structures = defaultdict(dict)
         for structure in self.contour_per_section_per_structure:
             for section in self.contour_per_section_per_structure[structure]:
                 section = int(section)
@@ -118,56 +118,23 @@ class ContourAligner:
                 if animal == 'MD589' and section == 297:
                     offset = offset + np.array([0, 35])
                 points = np.array(points) +  offset
-                self.unaligned_centered_structures[structure][section] = points.tolist()
+                self.centered_structures[structure][section] = points.tolist()
                 points = transform_points(points, self.transform_per_section[section]) 
-                self.aligned_centered_structures[structure][section] = points.tolist()
-
-    def save_contours(self):
-        OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        jsonpath1 = os.path.join(OUTPUT_DIR,  'original_structures.json')
-        with open(jsonpath1, 'w') as f:
-            json.dump(self.original_structures, f, sort_keys=True)
-        jsonpath2 = os.path.join(OUTPUT_DIR,  'unaligned_padded_structures.json')
-        with open(jsonpath2, 'w') as f:
-            json.dump(self.unaligned_centered_structures, f, sort_keys=True)
-        jsonpath3 = os.path.join(OUTPUT_DIR,  'aligned_padded_structures.json')
-        with open(jsonpath3, 'w') as f:
-            json.dump(self.aligned_centered_structures, f, sort_keys=True)
-
-    def plot_contour_of_structurei(self,contours):
-        data = []
-        for sectioni in contours:
-            datai = np.array(contours[sectioni])
-            npoints = datai.shape[0]
-            datai = np.hstack((datai,np.ones(npoints).reshape(npoints,1)*sectioni))
-            data.append(datai)
-        data = np.vstack(data)
-        fig = go.Figure(data=[go.Scatter3d(x=data[:,0], y=data[:,1], z=data[:,2],mode='markers')])
-        fig.show()
+                self.aligned_structures[structure][section] = points.tolist()
 
     def create_aligned_contours(self):
         self.load_contours_for_fundation_brains()
         self.load_transformation_to_align_contours()
-        self.aligned_contours()
+        self.align_contours()
 
     def show_steps(self,structurei='10N_L'):
-        self.plot_contour_of_structurei(self.original_structures[structurei])
-        self.plot_contour_of_structurei(self.aligned_centered_structures[structurei])
+        self.plot_contours(self.original_structures[structurei])
+        self.plot_contours(self.aligned_structures[structurei])
 
 if __name__ == '__main__':
-    # parser = argparse.ArgumentParser(description='Work on Animal')
-    # parser.add_argument('--animal', help='Enter the animal', required=False)
-    # args = parser.parse_args()
-    # animal = args.animal
-    # if animal is None:
-    #     animals = ['MD585', 'MD589', 'MD594']
-    # else:
-    #     animals = [animal]
-    
     animals = ['MD585', 'MD589', 'MD594']
     for animal in animals:
-        aligner = ContourAligner(animal)
+        aligner = FundationContourAligner(animal)
         aligner.create_aligned_contours()
-        aligner.save_contours()
         # aligner.show_steps()
+        aligner.save_contours()
