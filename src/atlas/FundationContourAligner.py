@@ -94,28 +94,28 @@ class FundationContourAligner(Brain):
             .apply(lambda x: x.replace(',,', ',')) \
             .apply(lambda x: x.replace(',,', ',')).apply(lambda x: x.replace(',,', ','))
         hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
-        self.contour_per_section_per_structure = defaultdict(dict)
+        self.contour_per_structure_per_section = defaultdict(dict)
         structures = sqlController.get_structures_dict()
         for structurei, _ in structures.items():
             contour_for_structurei, _, _ = get_contours_from_annotations(self.animal, structurei, hand_annotations, densify=4)
             for section in contour_for_structurei:
-                self.contour_per_section_per_structure[structurei][section] = contour_for_structurei[section]
+                self.contour_per_structure_per_section[structurei][section] = contour_for_structurei[section]
 
     def align_contours(self):
         md585_fixes = {161: 100, 182: 60, 223: 60, 231: 80, 253: 60}
         self.original_structures = defaultdict(dict)
         self.centered_structures = defaultdict(dict)
         self.aligned_structures = defaultdict(dict)
-        for structure in self.contour_per_section_per_structure:
-            for section in self.contour_per_section_per_structure[structure]:
+        for structure in self.contour_per_structure_per_section:
+            for section in self.contour_per_structure_per_section[structure]:
                 section = int(section)
-                points = np.array(self.contour_per_section_per_structure[structure][section]) / DOWNSAMPLE_FACTOR
+                points = np.array(self.contour_per_structure_per_section[structure][section]) / DOWNSAMPLE_FACTOR
                 points = self.interpolate(points, max(3000, len(points)))
                 self.original_structures[structure][section] = points
                 offset = self.section_offsets[section]
-                if animal == 'MD585' and section in md585_fixes.keys():
+                if self.animal == 'MD585' and section in md585_fixes.keys():
                     offset = offset - np.array([0, md585_fixes[section]])
-                if animal == 'MD589' and section == 297:
+                if self.animal == 'MD589' and section == 297:
                     offset = offset + np.array([0, 35])
                 points = np.array(points) +  offset
                 self.centered_structures[structure][section] = points.tolist()

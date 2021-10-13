@@ -1,5 +1,5 @@
 import numpy as np
-def get_contours_from_annotations(stack, target_structure, hand_annotations, densify=0):
+def get_contours_from_annotations(prep_id, target_structure, hand_annotations, densify=0):
     num_annotations = len(hand_annotations)
     contours_for_structurei = {}
     for i in range(num_annotations):
@@ -14,7 +14,7 @@ def get_contours_from_annotations(stack, target_structure, hand_annotations, den
             vertices = hand_annotations['vertices'][i]
             for _ in range(densify):
                 vertices = get_dense_coordinates(vertices)
-            if is_bad_section_for_MD585(stack,section):
+            if is_bad_section_for_MD585(prep_id,section):
                 continue
             contours_for_structurei[section] = vertices
     try:
