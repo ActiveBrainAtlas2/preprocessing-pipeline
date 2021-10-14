@@ -117,12 +117,15 @@ class Brain:
         data = np.vstack(data)
         fig = go.Figure(data=[go.Scatter3d(x=data[:,0], y=data[:,1], z=data[:,2],mode='markers')])
         fig.show()
+    
+    def plot_3d_boolean_array(self,boolean_array):
+        ax = plt.figure().add_subplot(projection='3d')
+        ax.voxels(boolean_array,edgecolor='k')
+        plt.show()
 
     def plot_volume(self,structure='10N_L'):
         volume = self.volumes[structure]
-        ax = plt.figure().add_subplot(projection='3d')
-        ax.voxels(volume,edgecolor='k')
-        plt.show()
+        self.plot_3d_boolean_array(volume)
     
     def compare_point_dictionaries(self,point_dicts):
         fig = make_subplots(rows = 1, cols = 1,specs=[[{'type':'scatter3d'}]])

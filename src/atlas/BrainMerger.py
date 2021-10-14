@@ -37,6 +37,8 @@ class BrainMerger(Atlas):
         self.origins_to_merge = defaultdict(list)
 
     def get_merged_landmark_probability(self, structure, sigma=2.0):
+        if structure == 'SC' or structure == 'IC':
+            breakpoint()
         force_symmetry=(structure in singular_structures)
         volumes = self.volumes_to_merge[structure]
         origins = self.origins_to_merge[structure]
