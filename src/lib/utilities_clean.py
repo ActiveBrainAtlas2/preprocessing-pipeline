@@ -126,7 +126,6 @@ def masker(animal, channel, downsample, debug):
         else:
             file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
 
-    start = timer()
     workers, _ = get_cpus() 
     if debug:
         print('debugging with single core')
@@ -138,6 +137,3 @@ def masker(animal, channel, downsample, debug):
             #executor.map(fix_ntb, sorted(file_keys),np.ones(len(file_keys))*channel)
             executor.map(fix_ntb, sorted(file_keys))
 
-    end = timer()
-    print(f'Create cleaned files took {end - start} seconds total', end="\t")
-    print(f' { (end - start)/len(files)} per file')

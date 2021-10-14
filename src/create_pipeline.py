@@ -14,8 +14,8 @@ from lib.logger import get_logger
 
 if __name__ == '__main__':
     steps = """
-    start=0, prep, 
-    normalized and masks=1, 
+    start=0, 
+    prep, normalized and masks=1, 
     mask, clean and histograms=2, 
     elastix and alignment=3, 
     neuroglancer=4
