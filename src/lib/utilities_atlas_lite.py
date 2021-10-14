@@ -112,7 +112,7 @@ def crop_and_pad_volumes(merged_bounding_box=None, bounding_box_volume=None):
     vols = [crop_and_pad_volume(volume, bounding_box, merged_bounding_box=merged_bounding_box) for (volume, bounding_box) in bounding_box_volume]
     return vols
 
-def volume_to_polygon(volume, num_simplify_iter=0, smooth=False, level=0., min_vertices=200, return_vertex_face_list=False):
+def volume_to_polygon(volume,origin, times_to_simplify=0,min_vertices=200):
     """
     Convert a volume to a mesh, either as vertices/faces tuple or a vtk.Polydata.
 
@@ -122,41 +122,21 @@ def volume_to_polygon(volume, num_simplify_iter=0, smooth=False, level=0., min_v
         return_vertex_face_list (bool): If True, return only (vertices, faces); otherwise, return polydata.
     """
 
-    volume, origin = convert_volume_forms(volume=volume, out_form=("volume", "origin"))
-    volume = volume > level
-    # vol_padded = np.zeros(vol.shape+(10,10,10), np.bool)
-    # vol_padded[5:-5, 5:-5, 5:-5] = vol
     vol_padded = np.pad(volume, ((5,5),(5,5),(5,5)), 'constant') # need this otherwise the sides of volume will not close and expose the hollow inside of structures
     vertices, faces = mcubes.marching_cubes(vol_padded, 0) # more than 5 times faster than skimage.marching_cube + correct_orientation
-    vertices = vertices[:, [1,0,2]] + origin - (5,5,5)
+    vertices = vertices + origin - (5,5,5)
     polydata = mesh_to_polydata(vertices, faces)
 
-    for simplify_iter in range(num_simplify_iter):
+    for _ in range(times_to_simplify):
         deci = vtk.vtkQuadricDecimation()
         deci.SetInputData(polydata)
         deci.SetTargetReduction(0.8)
-        # 0.8 means each iteration causes the point number to drop to 20% the original
         deci.Update()
         polydata = deci.GetOutput()
 
-
-        if smooth:
-            smoother = vtk.vtkWindowedSincPolyDataFilter()
-    #         smoother.NormalizeCoordinatesOn()
-            smoother.SetPassBand(.1)
-            smoother.SetNumberOfIterations(20)
-            smoother.SetInputData(polydata)
-            smoother.Update()
-            polydata = smoother.GetOutput()
-
         if polydata.GetNumberOfPoints() < min_vertices:
             break
-
-
-    if return_vertex_face_list:
-        return polydata_to_mesh(polydata)
-    else:
-        return polydata
+    return polydata
 
 def symmetricalize_volume(prob_vol):
     """
@@ -177,34 +157,6 @@ def save_mesh(polydata, filename):
     stlWriter.SetInputData(polydata)
     stlWriter.Write()
 
-def convert_volume_forms(volume, out_form):
-    """
-    Convert a (volume, origin) tuple into a bounding box.
-    """
-    if isinstance(volume, np.ndarray):
-        vol = volume
-        ori = np.zeros((3,))
-    elif isinstance(volume, tuple):
-        assert len(volume) == 2
-        vol = volume[0]
-        if len(volume[1]) == 3:
-            ori = volume[1]
-        elif len(volume[1]) == 6:
-            ori = volume[1][[0,2,4]]
-        else:
-            raise
-
-    bbox = np.array([ori[0], ori[0] + vol.shape[1]-1, ori[1], ori[1] + vol.shape[0]-1, ori[2], ori[2] + vol.shape[2]-1])
-
-    if out_form == ("volume", 'origin'):
-        return (vol, ori)
-    elif out_form == ("volume", 'bbox'):
-        return (vol, bbox)
-    elif out_form == "volume":
-        return vol
-    else:
-        raise Exception("out_form %s is not recognized.")
-
 def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
     """
     Args:
@@ -213,14 +165,13 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
     """
     polydata = vtk.vtkPolyData()
     points = vtk.vtkPoints()
-
     colors = vtk.vtkUnsignedCharArray()
     colors.SetNumberOfComponents(3)
     colors.SetName("Colors")
     colors.SetNumberOfTuples(len(faces))
 
-    for pt_ind, (x,y,z) in enumerate(vertices):
-        points.InsertPoint(pt_ind, x, y, z)
+    for pointi, (x,y,z) in enumerate(vertices):
+        points.InsertPoint(pointi, x, y, z)
 
     if len(faces) > 0:
         cells = vtk.vtkCellArray()
