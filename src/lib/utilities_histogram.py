@@ -57,7 +57,7 @@ def make_histogram(animal, channel):
         if os.path.exists(output_path):
             continue
         
-        file_keys.append([input_path, logger, mask_path, channel, file, output_path])
+        file_keys.append([input_path, mask_path, channel, file, output_path])
 
     start = timer()
     workers, _ = get_cpus() 
@@ -74,17 +74,17 @@ def make_histogram(animal, channel):
 
 def make_single(file_key):
     
-    input_path, logger, mask_path, channel, file, output_path = file_key
+    input_path, mask_path, channel, file, output_path = file_key
         
     try:
         img = io.imread(input_path)
     except:
-        logger.warning(f'Could not open {input_path}')
+        print(f'Could not open {input_path}')
         return
     try:
         mask = io.imread(mask_path)
     except:
-        logger.warning(f'Could not open {mask_path}')
+        print(f'Could not open {mask_path}')
         return
 
     img = cv2.bitwise_and(img, img, mask=mask)
@@ -97,7 +97,7 @@ def make_single(file_key):
     try:
         flat = img.flatten()
     except:
-        logger.warning(f'Could not flatten {input_path}')
+        print(f'Could not flatten {input_path}')
         return
 
     del img
