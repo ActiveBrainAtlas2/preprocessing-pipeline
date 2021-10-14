@@ -14,8 +14,8 @@ from lib.logger import get_logger
 
 if __name__ == '__main__':
     steps = """
-    start=0, prep, 
-    normalized and masks=1, 
+    start=0, 
+    prep, normalized and masks=1, 
     mask, clean and histograms=2, 
     elastix and alignment=3, 
     neuroglancer=4
@@ -60,9 +60,13 @@ if __name__ == '__main__':
     if step > 1:
         start = timer()
         pipeline.create_masks_final()
+        print(f'Finished create_masks final')    
         pipeline.create_clean()
+        print(f'Finished clean')    
         pipeline.create_histograms(single=True)
+        print(f'Finished histogram single')    
         pipeline.create_histograms(single=False)
+        print(f'Finished histograms combined')    
         end = timer()
         print(f'Creating masks, cleaning and histograms took {end - start} seconds')    
         logger.info(f'Creating masks, cleaning and histograms took {end - start} seconds')
