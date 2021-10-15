@@ -31,8 +31,7 @@ sys.path.append(PATH)
 from lib.utilities_contour_lite import get_contours_from_annotations
 from lib.sqlcontroller import SqlController
 from lib.file_location import DATA_PATH, FileLocationManager
-from lib.utilities_alignment import parse_elastix, \
-    transform_points, create_downsampled_transforms
+from lib.utilities_alignment import parse_elastix_parameter_file, transform_points, create_downsampled_transforms
 from lib.utilities_atlas import ATLAS
 DOWNSAMPLE_FACTOR = 32
 from atlas.Brain import Brain
@@ -74,7 +73,7 @@ class FundationContourAligner(Brain):
 
     def load_transformation_to_align_contours(self):
         self.create_clean_transform()
-        transforms = parse_elastix(self.animal)
+        transforms = parse_elastix_parameter_file(self.animal)
         downsampled_transforms = create_downsampled_transforms(self.animal, transforms, downsample=True)
         downsampled_transforms = sorted(downsampled_transforms.items())
         self.transform_per_section = {}

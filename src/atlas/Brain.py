@@ -19,6 +19,20 @@ class Brain:
         self.set_path_and_create_folders()
         self.plotter = Plotter()
     
+    def set_structure(self):
+        possible_attributes_with_structure_list = ['origins','COM','volumes','thresholded_volumes']
+        loaded_attributes = []
+        for attributei in possible_attributes_with_structure_list:
+            if hasattr(self,attributei) and getattr(self,attributei) != {}:
+                if not hasattr(self,'structures'):
+                    self.set_structures_from_attribute(attributei)
+                loaded_attributes.append(attributei)
+        for attributei in loaded_attributes:
+            assert(self.structures==getattr(self,attributei).keys())
+        if loaded_attributes == []:
+            self.load_aligned_contours()
+            self.structures = self.aligned_contours.keys()
+    
     def set_path_and_create_folders(self):
         self.animal_directory = os.path.join(DATA_PATH, 'atlas_data', ATLAS, self.animal)
         self.original_contour_path = os.path.join(self.animal_directory,  'original_structures.json')

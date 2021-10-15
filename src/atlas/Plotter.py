@@ -69,7 +69,6 @@ class Plotter:
         slider = Slider(ax, 'index', 0, stack.shape[0]-1, valinit=mid_point, valfmt='%d')
         slider.on_changed(_update_image)
         self.show_according_to_setting()
-
     
     def imshow(self,img):
         plt.imshow(img)
