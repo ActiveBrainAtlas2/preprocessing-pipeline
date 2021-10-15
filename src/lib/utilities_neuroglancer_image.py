@@ -1,11 +1,7 @@
 import os
 import sys
 from concurrent.futures.process import ProcessPoolExecutor
-
 from skimage import io
-from timeit import default_timer as timer
-
-
 from lib.file_location import FileLocationManager
 from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
 from lib.sqlcontroller import SqlController
@@ -64,15 +60,11 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
     midfile,file_keys,volume_size,num_channels = get_file_information(INPUT)
     ng = NumpyToNeuroglancer(animal, None, scales, 'image', midfile.dtype, num_channels=num_channels, chunk_size=chunks)
     ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=progress_id)
-    start = timer()
-    print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
         if num_channels == 1:
             executor.map(ng.process_image, sorted(file_keys))
         else:
             executor.map(ng.process_3channel, sorted(file_keys))
-    end = timer()
-    print(f'Create volume method took {end - start} seconds')
     ng.precomputed_vol.cache.flush()
 
 def create_neuroglancer_lite(downsample,INPUT,OUTPUT_DIR):

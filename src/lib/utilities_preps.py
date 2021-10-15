@@ -5,7 +5,6 @@ Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
 from timeit import default_timer as timer
 
-from tqdm import tqdm
 from shutil import copyfile
 from lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
@@ -46,7 +45,7 @@ def make_full_resolution(animal, channel):
     os.makedirs(OUTPUT, exist_ok=True)
 
     sections = sqlController.get_sections(animal, channel)
-    for section_number, section in enumerate(tqdm(sections)):
+    for section_number, section in enumerate(sections):
         input_path = os.path.join(INPUT, section.file_name)
         output_path = os.path.join(OUTPUT, str(
             section_number).zfill(3) + '.tif')
@@ -95,14 +94,10 @@ def make_low_resolution(animal, channel, debug):
 
         file_keys.append([infile, outpath])
 
-    start = timer()        
     workers, _ = get_cpus()
-    print(f'Working on {len(file_keys)} files with {workers} cpus')
     if debug:
         for file_key in file_keys:
             resize_and_save_tif(file_key)
     else:
         with ProcessPoolExecutor(max_workers=workers) as executor:
             executor.map(create_downsample, file_keys)
-    end = timer()
-    print(f'Create thumbnails took {end - start} seconds')

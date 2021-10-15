@@ -3,10 +3,8 @@ import numpy as np
 import torch
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-from tqdm import tqdm
 import cv2
 from concurrent.futures.process import ProcessPoolExecutor
-from timeit import default_timer as timer
 
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
@@ -36,7 +34,7 @@ def create_final(animal):
     os.makedirs(MASKS, exist_ok=True)
 
     files = sorted(os.listdir(COLORED))
-    for file in tqdm(files):
+    for file in files:
         filepath = os.path.join(COLORED, file)
         maskpath = os.path.join(MASKS, file)
 
@@ -108,15 +106,9 @@ def create_mask(animal, downsample):
             size = int(width), int(height)
             file_keys.append([thumbfile, outpath, size])
 
-        start = timer()
         workers, _ = get_cpus()
-        print(f'Working on {len(file_keys)} files with {workers} cpus')
         with ProcessPoolExecutor(max_workers=workers) as executor:
             executor.map(resize_tif, file_keys)
-        # for file_key in tqdm(file_keys):
-        #    resize_tif(file_key)
-        end = timer()
-        print(f'Create full res masks took {end - start} seconds')
 
     else:
 
@@ -132,7 +124,7 @@ def create_mask(animal, downsample):
 
         files = sorted(os.listdir(INPUT))
         file_keys = []
-        for file in tqdm(files):
+        for file in files:
             filepath = os.path.join(INPUT, file)
             maskpath = os.path.join(COLORED, file)
 

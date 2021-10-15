@@ -1,16 +1,90 @@
+import os 
+import sys
 import numpy as np
 import pandas as pd
+from skimage import io
 from collections import OrderedDict
 from concurrent.futures.process import ProcessPoolExecutor
-from timeit import default_timer as timer
+from sqlalchemy.orm.exc import NoResultFound
+
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_alignment import (create_downsampled_transforms,   parse_elastix, process_image)
+from lib.utilities_alignment import (create_downsampled_transforms, process_image)
 from lib.utilities_process import test_dir, get_cpus
-import os 
-import sys
+from model.elastix_transformation import ElastixTransformation
+from lib.sql_setup import session
+
+
+def create_elastix_transformation(rotation, xshift, yshift, center):
+    R = np.array([[np.cos(rotation), -np.sin(rotation)],
+                    [np.sin(rotation), np.cos(rotation)]])
+    shift = center + (xshift, yshift) - np.dot(R, center)
+    T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
+    return T
+
+
+def load_elastix_transformation(animal, moving_index):
+    try:
+        elastixTransformation = session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
+            .filter(ElastixTransformation.section == moving_index).one()
+    except NoResultFound as nrf:
+        print('No value for {} {} error: {}'.format(animal, moving_index, nrf))
+        return 0,0,0
+
+    R = elastixTransformation.rotation
+    xshift = elastixTransformation.xshift
+    yshift = elastixTransformation.yshift
+    return R, xshift, yshift
+
+def parse_elastix(animal):
+    """
+    After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
+    Args:
+        animal: the animal
+    Returns: a dictionary of key=filename, value = coordinates
+    """
+    fileLocationManager = FileLocationManager(animal)
+    DIR = fileLocationManager.prep
+    INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
+
+    files = sorted(os.listdir(INPUT))
+    midpoint = len(files) // 2
+    transformation_to_previous_sec = {}
+    midfilepath = os.path.join(INPUT, files[midpoint])
+    midfile = io.imread(midfilepath, img_num=0)
+    height = midfile.shape[0]
+    width = midfile.shape[1]
+    center = np.array([width, height]) / 2
+    
+    for i in range(1, len(files)):
+        moving_index = os.path.splitext(files[i])[0]
+        rotation, xshift, yshift = load_elastix_transformation(animal, moving_index)
+        T = create_elastix_transformation(rotation, xshift, yshift, center)
+        transformation_to_previous_sec[i] = T
+    
+    
+    transformation_to_anchor_sec = {}
+    # Converts every transformation
+    for moving_index in range(len(files)):
+        if moving_index == midpoint:
+            transformation_to_anchor_sec[files[moving_index]] = np.eye(3)
+        elif moving_index < midpoint:
+            T_composed = np.eye(3)
+            for i in range(midpoint, moving_index, -1):
+                T_composed = np.dot(np.linalg.inv(transformation_to_previous_sec[i]), T_composed)
+            transformation_to_anchor_sec[files[moving_index]] = T_composed
+        else:
+            T_composed = np.eye(3)
+            for i in range(midpoint + 1, moving_index + 1):
+                T_composed = np.dot(transformation_to_previous_sec[i], T_composed)
+            transformation_to_anchor_sec[files[moving_index]] = T_composed
+
+    return transformation_to_anchor_sec
+
+
+
 
 def run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen):
     """
@@ -75,21 +149,9 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
     if create_csv:
         create_csv_data(animal, file_keys)
     else:
-        start = timer()
         workers, _ = get_cpus()
-        print(f'Working on {len(file_keys)} files with {workers} cpus')
         with ProcessPoolExecutor(max_workers=workers) as executor:
             executor.map(process_image, sorted(file_keys))
-
-        end = timer()
-        print(f'Create cleaned files took {end - start} seconds total', end="\t")
-        if len(file_keys) > 0:
-            print(f' { (end - start)/len(file_keys)} per file')
-        else:
-            print("No files were processed")
-
-
-    print('Finished')
         
 def create_csv_data(animal, file_keys):
     data = []

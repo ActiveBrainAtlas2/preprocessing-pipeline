@@ -3,12 +3,10 @@ import sys
 from cloudvolume import CloudVolume
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
-HOME = os.path.expanduser("~")
-#PATH = os.path.join(HOME, 'programming/pipeline_utility')
-#sys.path.append(PATH)
 from lib.file_location import FileLocationManager
 from lib.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors
 from lib.utilities_process import get_cpus
+
 def create_downsamples(animal, channel, downsample):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = f'C{channel}'
@@ -52,6 +50,3 @@ def create_downsamples(animal, channel, downsample):
             compress=True, chunk_size=chunks)
         tq.insert(tasks)
         tq.execute()
-
-    
-    print("Done!")

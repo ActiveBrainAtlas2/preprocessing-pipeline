@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 from skimage import io
 from concurrent.futures.process import ProcessPoolExecutor
-from timeit import default_timer as timer
 from lib.sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
@@ -132,7 +131,6 @@ def masker(animal, channel, downsample, debug):
         for file_key in file_keys:
             fix_ntb(file_key)
     else:
-        print(f'Working on {len(file_keys)} files with {workers} cpus')
         with ProcessPoolExecutor(max_workers=workers) as executor:
             #executor.map(fix_ntb, sorted(file_keys),np.ones(len(file_keys))*channel)
             executor.map(fix_ntb, sorted(file_keys))
