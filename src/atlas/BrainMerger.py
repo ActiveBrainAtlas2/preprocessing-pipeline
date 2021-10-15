@@ -24,7 +24,7 @@ DETECTED = 3
 
 class BrainMerger(Atlas):
 
-    def __init__(self,threshold = 0.6,moving_brains = ['MD589', 'MD585']):
+    def __init__(self,threshold = 0.9,moving_brains = ['MD594', 'MD585']):
         super().__init__()
         self.fixed_brain = Brain('MD589')
         self.moving_brains = [Brain(braini) for braini in moving_brains]
@@ -37,8 +37,6 @@ class BrainMerger(Atlas):
         self.origins_to_merge = defaultdict(list)
 
     def get_merged_landmark_probability(self, structure, sigma=2.0):
-        if structure == 'SC' or structure == 'IC':
-            breakpoint()
         force_symmetry=(structure in singular_structures)
         volumes = self.volumes_to_merge[structure]
         origins = self.origins_to_merge[structure]
@@ -58,19 +56,18 @@ class BrainMerger(Atlas):
     
     def load_data(self,brains):
         for braini in brains:
-            braini.load_com()
             braini.load_origins()
             braini.load_volumes()
 
     def load_data_from_fixed_and_moving_brains(self):
         self.load_data([self.fixed_brain]+self.moving_brains)
-        for structure in self.fixed_brain.COM:
+        for structure in self.fixed_brain.origins:
             origin,volume = self.fixed_brain.origins[structure],self.fixed_brain.volumes[structure]
             self.volumes_to_merge[structure].append(volume)
             self.origins_to_merge[structure].append(origin)
         for brain in self.moving_brains:
-            r, t = umeyama(self.fixed_brain.get_com_array().T, brain.get_com_array().T)
-            for structure in brain.COM:
+            r, t = umeyama(brain.get_origin_array().T,self.fixed_brain.get_origin_array().T)
+            for structure in brain.origins:
                 origin,volume = brain.origins[structure],brain.volumes[structure]
                 aligned_origin = brain_to_atlas_transform(origin, r, t)                
                 self.volumes_to_merge[structure].append(volume)

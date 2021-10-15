@@ -49,9 +49,9 @@ class VolumeMaker(Brain):
             volume_slice = cv2.fillPoly(volume_slice, pts=[contour_points], color=1)
             volume.append(volume_slice)
         volume = np.array(volume).astype(np.bool8)
+        volume = np.swapaxes(volume,0,1)
         to_um = 32 * 0.452
         com = np.array(center_of_mass(volume))
-        com = np.array([com[2],com[1],com[0]])
         self.COM[structurei] = (com+np.array((min_x,min_y,min_z)))*np.array([to_um,to_um,20])
         self.origins[structurei] = np.array((min_x,min_y,min_z))
         self.volumes[structurei] = volume
@@ -59,8 +59,6 @@ class VolumeMaker(Brain):
     def compute_COMs_origins_and_volumes(self):
         self.load_aligned_contours()
         for structurei in tqdm(self.structures):
-            # if structurei =='Sp5C_L':
-            #     breakpoint()
             contours_of_structurei = self.aligned_contours[structurei]
             self.calculate_origin_COM_and_volume(contours_of_structurei,structurei)
         
@@ -76,6 +74,6 @@ if __name__ == '__main__':
         volumemaker = VolumeMaker(animal)
         volumemaker.compute_COMs_origins_and_volumes()
         # volumemaker.show_steps()
-        volumemaker.save_coms()
+        # volumemaker.save_coms()
         volumemaker.save_origins()
         volumemaker.save_volumes()

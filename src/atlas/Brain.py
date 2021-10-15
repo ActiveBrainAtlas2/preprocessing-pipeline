@@ -4,11 +4,9 @@ from lib.file_location import DATA_PATH
 from lib.utilities_atlas import ATLAS
 from lib.sqlcontroller import SqlController
 import numpy as np
-import plotly.graph_objects as go
-import matplotlib.pyplot as plt
-from plotly.subplots import make_subplots
 from lib.utilities_atlas_lite import volume_to_polygon, save_mesh
 from lib.file_location import FileLocationManager
+from Plotter import Plotter
 class Brain:
     def __init__(self,animal):
         self.animal = animal
@@ -17,7 +15,9 @@ class Brain:
         self.COM = {}
         self.volumes = {}
         self.aligned_contours = {}
+        self.thresholded_volumes = {}
         self.set_path_and_create_folders()
+        self.plotter = Plotter()
     
     def set_path_and_create_folders(self):
         self.animal_directory = os.path.join(DATA_PATH, 'atlas_data', ATLAS, self.animal)
@@ -65,8 +65,7 @@ class Brain:
 
     def save_volumes(self):
         assert(hasattr(self,'volumes'))
-        if not hasattr(self,'structures'):
-            self.structures = list(self.volumes.keys())
+        self.set_structures_from_attribute('volumes')
         for structurei in self.structures:
             volume = self.volumes[structurei]
             volume = np.swapaxes(volume, 0, 2)
@@ -78,66 +77,57 @@ class Brain:
     def save_mesh_files(self):
         assert(hasattr(self,'volumes'))
         assert(hasattr(self,'origins'))
-        if not hasattr(self,'structures'):
-            self.structures = list(self.volumes.keys())
+        self.set_structures_from_attribute('volumes')
+        self.threshold_volumes()
         for structurei in self.structures:
-            origin,volume = self.origins[structurei],self.volumes[structurei]
+            origin,volume = self.origins[structurei],self.thresholded_volumes[structurei]
             centered_origin = origin - self.fixed_brain_center
-            threshold_volume = volume >= self.threshold
-            aligned_volume = (threshold_volume, centered_origin)
-            aligned_structure = volume_to_polygon(volume=aligned_volume,num_simplify_iter=3, smooth=False,return_vertex_face_list=False)
-            filepath = os.path.join(self.ATLAS_PATH, 'mesh', f'{structurei}.stl')
+            aligned_structure = volume_to_polygon(volume=volume,origin = centered_origin ,times_to_simplify=3)
+            filepath = os.path.join(self.animal_directory, 'mesh', f'{structurei}.stl')
             save_mesh(aligned_structure, filepath)
 
     def save_origins(self):
         assert(hasattr(self,'origins'))
-        if not hasattr(self,'structures'):
-            self.structures = list(self.origins.keys())
+        self.set_structures_from_attribute('origins')
         for structurei in self.structures:
             x, y, z = self.origins[structurei]
             origin_filepath = os.path.join(self.origin_path, f'{structurei}.txt')
             np.savetxt(origin_filepath, (x,y,z))
     
+    def set_structures_from_attribute(self,attribute):
+        if not hasattr(self,'structures'):
+            self.structures = getattr(self,attribute).keys()
+    
     def save_coms(self):
         assert(hasattr(self,'COM'))
-        if not hasattr(self,'structures'):
-            self.structures = self.COM.keys()
+        self.set_structures_from_attribute('COM')
         for structurei in self.structures:
-            comx, comy, comz = self.COM[structurei]
-            self.sqlController.add_layer_data(abbreviation=structurei, animal=self.animal, 
-                layer='COM', x=comx, y=comy, section=comz, person_id=2, input_type_id=1)
-
-    def plot_contours(self,contours):
-        data = []
-        for sectioni in contours:
-            datai = np.array(contours[sectioni])
-            npoints = datai.shape[0]
-            datai = np.hstack((datai,np.ones(npoints).reshape(npoints,1)*sectioni))
-            data.append(datai)
-        data = np.vstack(data)
-        fig = go.Figure(data=[go.Scatter3d(x=data[:,0], y=data[:,1], z=data[:,2],mode='markers')])
-        fig.show()
-    
-    def plot_3d_boolean_array(self,boolean_array):
-        ax = plt.figure().add_subplot(projection='3d')
-        ax.voxels(boolean_array,edgecolor='k')
-        plt.show()
-
-    def plot_volume(self,structure='10N_L'):
-        volume = self.volumes[structure]
-        self.plot_3d_boolean_array(volume)
-    
-    def compare_point_dictionaries(self,point_dicts):
-        fig = make_subplots(rows = 1, cols = 1,specs=[[{'type':'scatter3d'}]])
-        for point_dict in point_dicts:
-            values = np.array(list(point_dict.values()))
-            fig.add_trace(go.Scatter3d(x=values[:,0], y=values[:,1], z=values[:,2],
-                                    mode='markers'),row = 1,col = 1)
-        fig.show()
+            coordinates = self.COM[structurei]
+            self.sqlController.add_com(self,prep_id = self.animal,abbreviation = structurei,coordinates= coordinates)
 
     def get_com_array(self):
         assert(hasattr(self,'COM'))
         return np.array(list(self.COM.values()))
+    
+    def get_origin_array(self):
+        assert(hasattr(self,'origins'))
+        return np.array(list(self.origins.values()))
+    
+    def get_resolution(self):
+        return self.sqlController.scan_run.resolution
+    
+    def get_image_dimension(self):
+        width = self.sqlController.scan_run.width
+        height = self.sqlController.scan_run.height
+        return np.array([width,height])
+    
+    def get_volume_list(self):
+        assert(hasattr(self,'volumes'))
+        return np.array(list(self.volumes.values()))
+
+    def plot_volume(self,structure='10N_L'):
+        volume = self.volumes[structure]
+        self.plotter.plot_3d_boolean_array(volume)
 
 class Atlas(Brain):
     def __init__(self,atlas = ATLAS):
@@ -162,3 +152,15 @@ class Atlas(Brain):
     def load_atlas(self):
         self.load_origins()
         self.load_volumes()
+    
+    def threshold_volumes(self):
+        assert(hasattr(self,'volumes'))
+        assert(hasattr(self,'threshold'))
+        self.set_structures_from_attribute('volumes')
+        for structurei in self.structures:
+            volume = self.volumes[structurei]
+            if not volume[volume > 0].size == 0:
+                threshold = np.quantile(volume[volume > 0], self.threshold)
+            else:
+                threshold = 0.5
+            self.thresholded_volumes[structurei] = volume > threshold

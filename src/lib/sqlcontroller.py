@@ -367,6 +367,14 @@ class SqlController(object):
         except:
             print('Bad lookup code for {}'.format(lookup.id))
             self.session.rollback()
+    
+    def structure_abbreviation_to_id(self,abbreviation):
+        try:
+            structure = self.get_structure(str(abbreviation).strip())
+        except NoResultFound as nrf:
+            print(f'No structure found for {abbreviation} {nrf}')
+            return
+        return structure.id
 
     def add_layer_data(self, abbreviation, animal, layer, x, y, section, 
                        person_id, input_type_id):
@@ -386,34 +394,10 @@ class SqlController(object):
         except NoResultFound:
             print(f'No structure for {abbreviation}')
         """
-        try:
-            structure = self.get_structure(str(abbreviation).strip())
-        except NoResultFound as nrf:
-            print(f'No structure found for {abbreviation} {nrf}')
-            return
 
-        id = structure.id
-
-        com = LayerData(prep_id=animal, structure_id=id, layer=layer, 
-                        x=x, y=y, section=section,
-                        created=datetime.utcnow(), active=True, person_id=person_id,
-                        input_type_id=input_type_id, updated=datetime.utcnow())
-
-        try:
-            self.session.add(com)
-            self.session.commit()
-        except Exception as e:
-            print(f'No merge for {abbreviation} {e}')
-            self.session.rollback()
-        finally:
-            # close the Session.  This will expunge any remaining
-            # objects as well as reset any existing SessionTransaction
-            # state.  Neither of these steps are usually essential.
-            # However, if the commit() or rollback() itself experienced
-            # an unanticipated internal failure (such as due to a mis-behaved
-            # user-defined event handler), .close() will ensure that
-            # invalid state is removed.
-            self.session.close()
+        structure_id = self.structure_abbreviation_to_id(abbreviation)
+        coordinates = (x,y,section)
+        self.add_layer_data_row(animal,person_id,input_type_id,coordinates,structure_id,layer)
 
     def get_centers_dict(self, prep_id, input_type_id=1, person_id=2):
         rows = self.session.query(LayerData)\
@@ -449,7 +433,6 @@ class SqlController(object):
 
     def get_point_dataframe(self, id):
         """
-
         :param id: primary key from the url. Look at:
          https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/points/164/change/
          for example use 164 for the primary key
@@ -517,6 +500,8 @@ class SqlController(object):
         except Exception as e:
             print(f'No merge {e}')
             self.session.rollback()
+        finally:
+            self.session.close()
 
     def add_elastix_row(self, animal, section, rotation, xshift, yshift):
         data = ElastixTransformation(
@@ -526,8 +511,27 @@ class SqlController(object):
 
     def add_layer_data_row(self,animal,person_id,input_type_id,coordinates,structure_id,layer):
         x,y,z = coordinates
-        data = LayerData(prep_id = animal, person_id = person_id, input_type_id = input_type_id, x=x, y=y, section=z,structure_id=structure_id,layer=layer)
+        data = LayerData(prep_id = animal, person_id = person_id, input_type_id = input_type_id, x=x, y=y, \
+            section=z,structure_id=structure_id,layer=layer)
         self.add_row(data)
+    
+    def add_com(self,prep_id,abbreviation,coordinates):
+        structure_id = self.structure_abbreviation_to_id(abbreviation)
+        if self.layer_data_row_exists(animal=prep_id,person_id = 2,input_type_id = 1,\
+            structure_id = structure_id,layer = 'COM'):
+            self.delete_layer_data_row(animal=prep_id,person_id = 2,input_type_id = 1,\
+                structure_id = structure_id,layer = 'COM')
+        self.add_layer_data_row(animal = prep_id,person_id = 2,input_type_id = 1,\
+            coordinates = coordinates,structure_id = structure_id,layer = 'COM')
+    
+    def layer_data_row_exists(self,animal,person_id,input_type_id,structure_id,layer):
+        exists = LayerData.query.filter_by(prep_id = animal, person_id = person_id, input_type_id = input_type_id, \
+            structure_id=structure_id,layer=layer).first() is not None
+        return exists
+    
+    def delete_layer_data_row(self,animal,person_id,input_type_id,structure_id,layer):
+        LayerData.query.filter_by(prep_id = animal, person_id = person_id, input_type_id = input_type_id, \
+            structure_id=structure_id,layer=layer).delete()
 
     def clear_elastix(self, animal):
         self.session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
