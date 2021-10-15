@@ -72,7 +72,8 @@ class Pipeline:
 
     
     def create_normalized(self):
-        create_normalization(self.animal, self.channel)
+        if self.channel == 1:
+            create_normalization(self.animal, self.channel)
 
     
     def create_masks(self):
@@ -80,11 +81,13 @@ class Pipeline:
         After running this step, the masks need to manually checked and if 
         needed, edited with GIMP, see the Process.md file for instructions.
         """
-        create_mask(self.animal, self.downsample)
+        if self.channel == 1:
+            create_mask(self.animal, self.downsample)
 
     
     def create_masks_final(self):
-        create_final(self.animal)
+        if self.channel == 1:
+            create_final(self.animal)
     
     def create_histograms(self, single):
         if self.channel == 1:
@@ -99,7 +102,8 @@ class Pipeline:
 
     
     def create_elastix(self):
-        create_elastix(self.animal)
+        if self.channel == 1:
+            create_elastix(self.animal)
 
     
     def create_alignment(self):
