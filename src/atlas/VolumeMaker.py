@@ -39,7 +39,7 @@ class VolumeMaker(Brain):
         max_x,max_y = np.max(section_maxs, axis=0)
         xspan = max_x - min_x
         yspan = max_y - min_y
-        PADDED_SIZE = (int(yspan), int(xspan))
+        PADDED_SIZE = (int(yspan+5), int(xspan+5))
         volume = []
         for _, contour_points in sorted(contour_for_structurei.items()):
             vertices = np.array(contour_points) - np.array((min_x, min_y))
@@ -49,8 +49,8 @@ class VolumeMaker(Brain):
             volume_slice = cv2.fillPoly(volume_slice, pts=[contour_points], color=1)
             volume.append(volume_slice)
         volume = np.array(volume).astype(np.bool8)
-        volume = np.swapaxes(volume,0,1)
-        to_um = 32 * 0.452
+        volume = np.swapaxes(volume,0,2)
+        to_um = 32 * self.get_resolution()
         com = np.array(center_of_mass(volume))
         self.COM[structurei] = (com+np.array((min_x,min_y,min_z)))*np.array([to_um,to_um,20])
         self.origins[structurei] = np.array((min_x,min_y,min_z))
@@ -74,6 +74,6 @@ if __name__ == '__main__':
         volumemaker = VolumeMaker(animal)
         volumemaker.compute_COMs_origins_and_volumes()
         # volumemaker.show_steps()
-        # volumemaker.save_coms()
+        volumemaker.save_coms()
         volumemaker.save_origins()
         volumemaker.save_volumes()

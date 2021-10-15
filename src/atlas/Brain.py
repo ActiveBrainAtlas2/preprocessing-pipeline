@@ -68,9 +68,6 @@ class Brain:
         self.set_structures_from_attribute('volumes')
         for structurei in self.structures:
             volume = self.volumes[structurei]
-            volume = np.swapaxes(volume, 0, 2)
-            volume = np.rot90(volume, axes=(0,1))
-            volume = np.flip(volume, axis=0)
             volume_filepath = os.path.join(self.volume_path, f'{structurei}.npy')
             np.save(volume_filepath, volume)
     
@@ -103,7 +100,10 @@ class Brain:
         self.set_structures_from_attribute('COM')
         for structurei in self.structures:
             coordinates = self.COM[structurei]
-            self.sqlController.add_com(self,prep_id = self.animal,abbreviation = structurei,coordinates= coordinates)
+            self.sqlController.add_com(prep_id = self.animal,abbreviation = structurei,coordinates= coordinates)
+
+    def get_contour_list(self,structurei):
+        return list(self.aligned_contours[structurei].values())
 
     def get_com_array(self):
         assert(hasattr(self,'COM'))
@@ -125,9 +125,21 @@ class Brain:
         assert(hasattr(self,'volumes'))
         return np.array(list(self.volumes.values()))
 
-    def plot_volume(self,structure='10N_L'):
+    def plot_volume_3d(self,structure='10N_L'):
         volume = self.volumes[structure]
         self.plotter.plot_3d_boolean_array(volume)
+
+    def plot_volume_stack(self,structure='10N_L'):
+        volume = self.volumes[structure]
+        self.plotter.plot_3d_image_stack(volume,2)
+    
+    def compare_structure_vs_contour(self,structure='10N_L'):
+        self.plotter.set_show_as_false()
+        volume = self.volumes[structure]
+        contour = self.get_contour_list(structure)
+        self.plotter.compare_contour_and_stack(contour,volume)
+        self.plotter.show()
+        self.plotter.set_show_as_true()
 
 class Atlas(Brain):
     def __init__(self,atlas = ATLAS):

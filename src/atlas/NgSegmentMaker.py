@@ -195,11 +195,7 @@ def create_atlas(atlas_name, debug):
     print('Shape of downsampled atlas volume', atlas_volume.shape)
     print('Resolution at', resolution)
     if not debug:
-        # atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
-        # atlas_volume = np.fliplr(atlas_volume)
-        # atlas_volume = np.flipud(atlas_volume)
-        # atlas_volume = np.fliplr(atlas_volume)
-        offset = [0,0,0]
+        offset = (size/2).astype(int)
         ng = NumpyToNeuroglancer(atlas_volume, [resolution, resolution, 20000], offset=offset)
         ng.init_precomputed(OUTPUT_DIR)
         # ng.add_segment_properties(get_segment_properties())

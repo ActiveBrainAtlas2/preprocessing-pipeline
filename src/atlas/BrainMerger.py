@@ -40,9 +40,9 @@ class BrainMerger(Atlas):
         force_symmetry=(structure in singular_structures)
         volumes = self.volumes_to_merge[structure]
         origins = self.origins_to_merge[structure]
-        bounding_boxes = [(x, x+volume.shape[1]-1, y, y+volume.shape[0]-1, z, z+volume.shape[2]-1) 
+        bounding_boxes = [(x, x+volume.shape[0]-1, y, y+volume.shape[1]-1, z, z+volume.shape[2]-1) 
             for volume,(x,y,z) in zip(volumes, origins)]
-        merged_bounding_box = np.round(find_merged_bounding_box(bounding_boxes)).astype(int)
+        merged_bounding_box = np.floor(find_merged_bounding_box(bounding_boxes)).astype(int)
         volumes = crop_and_pad_volumes(merged_bounding_box, bounding_box_volume=list(zip(volumes, bounding_boxes)))
         volumes = list([(v > 0).astype(np.int32) for v in volumes])
         merged_volume = np.sum(volumes, axis=0)
@@ -58,6 +58,10 @@ class BrainMerger(Atlas):
         for braini in brains:
             braini.load_origins()
             braini.load_volumes()
+            braini.load_com()
+
+    def align_brain_to_fixed_brain(self,brain):
+        r, t = umeyama(brain.get_com_array().T,self.fixed_brain.get_com_array().T)
 
     def load_data_from_fixed_and_moving_brains(self):
         self.load_data([self.fixed_brain]+self.moving_brains)
@@ -66,10 +70,16 @@ class BrainMerger(Atlas):
             self.volumes_to_merge[structure].append(volume)
             self.origins_to_merge[structure].append(origin)
         for brain in self.moving_brains:
-            r, t = umeyama(brain.get_origin_array().T,self.fixed_brain.get_origin_array().T)
+            brain.transformed_origins = {}
+            resolution = brain.get_resolution()*32
+            um_to_pixel = np.array([resolution,resolution,20])
+            moving_com = (brain.get_com_array()/um_to_pixel).T
+            fixed_com = (self.fixed_brain.get_com_array()/um_to_pixel).T
+            r, t = umeyama(moving_com,fixed_com)
             for structure in brain.origins:
                 origin,volume = brain.origins[structure],brain.volumes[structure]
-                aligned_origin = brain_to_atlas_transform(origin, r, t)                
+                aligned_origin = brain_to_atlas_transform(origin, r, t)   
+                brain.transformed_origins[structure] =  aligned_origin            
                 self.volumes_to_merge[structure].append(volume)
                 self.origins_to_merge[structure].append(aligned_origin)
 

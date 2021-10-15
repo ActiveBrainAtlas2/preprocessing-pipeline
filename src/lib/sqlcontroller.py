@@ -525,13 +525,25 @@ class SqlController(object):
             coordinates = coordinates,structure_id = structure_id,layer = 'COM')
     
     def layer_data_row_exists(self,animal,person_id,input_type_id,structure_id,layer):
-        exists = LayerData.query.filter_by(prep_id = animal, person_id = person_id, input_type_id = input_type_id, \
-            structure_id=structure_id,layer=layer).first() is not None
+        exists = self.session.query(LayerData)\
+            .filter(LayerData.active.is_(True))\
+            .filter(LayerData.prep_id == animal)\
+            .filter(LayerData.input_type_id == input_type_id)\
+            .filter(LayerData.person_id == person_id)\
+            .filter(LayerData.structure_id == structure_id)\
+            .filter(LayerData.layer == layer)\
+            .first() is not None
         return exists
     
     def delete_layer_data_row(self,animal,person_id,input_type_id,structure_id,layer):
-        LayerData.query.filter_by(prep_id = animal, person_id = person_id, input_type_id = input_type_id, \
-            structure_id=structure_id,layer=layer).delete()
+        self.session.query(LayerData)\
+            .filter(LayerData.active.is_(True))\
+            .filter(LayerData.prep_id == animal)\
+            .filter(LayerData.input_type_id == input_type_id)\
+            .filter(LayerData.person_id == person_id)\
+            .filter(LayerData.structure_id == structure_id)\
+            .filter(LayerData.layer == layer).delete()
+        self.session.commit()
 
     def clear_elastix(self, animal):
         self.session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\

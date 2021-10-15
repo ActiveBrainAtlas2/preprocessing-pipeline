@@ -50,7 +50,7 @@ def find_merged_bounding_box(bounding_box=None):
     bbox = xmin, xmax, ymin, ymax, zmin, zmax
     return bbox
 
-def crop_and_pad_volume(volumes, bounding_box=None, merged_bounding_box=None):
+def crop_and_pad_volume(volumes, bounding_box, merged_bounding_box):
     """
     Crop and pad an volume.
     in_vol and in_bbox together define the input volume in a underlying space.
@@ -64,38 +64,26 @@ def crop_and_pad_volume(volumes, bounding_box=None, merged_bounding_box=None):
     """
     bounding_box = np.array(bounding_box).astype(np.int)
     xmin, xmax, ymin, ymax, zmin, zmax = bounding_box
-    if merged_bounding_box is None:
-        merged_xmin = 0
-        merged_ymin = 0
-        merged_zmin = 0
-        merged_xmax = xmax
-        merged_ymax = ymax
-        merged_zmax = zmax
     merged_bounding_box = np.array(merged_bounding_box).astype(np.int)
     merged_xmin, merged_xmax, merged_ymin, merged_ymax, merged_zmin, merged_zmax = merged_bounding_box
     merged_xdim = merged_xmax - merged_xmin + 1
     merged_ydim = merged_ymax - merged_ymin + 1
     merged_zdim = merged_zmax - merged_zmin + 1
     if merged_xmin > xmax or merged_xmax < xmin or merged_ymin > ymax or merged_ymax < ymin or merged_zmin > zmax or merged_zmax < zmin:
-        return np.zeros((merged_ydim, merged_xdim, merged_zdim), np.int)
+        return np.zeros((merged_xdim,merged_ydim, merged_zdim), np.int)
     if merged_xmax > xmax:
-        volumes = np.pad(volumes, pad_width=[(0,0),(0, merged_xmax-xmax),(0,0)], mode='constant', constant_values=0)
+        volumes = np.pad(volumes, pad_width=[(0,merged_xmax-xmax),(0,0),(0,0)], mode='constant', constant_values=0)
     if merged_ymax > ymax:
-        volumes = np.pad(volumes, pad_width=[(0, merged_ymax-ymax),(0,0),(0,0)], mode='constant', constant_values=0)
+        volumes = np.pad(volumes, pad_width=[(0,0),(0,merged_ymax-ymax),(0,0)], mode='constant', constant_values=0)
     if merged_zmax > zmax:
         volumes = np.pad(volumes, pad_width=[(0,0),(0,0),(0, merged_zmax-zmax)], mode='constant', constant_values=0)
-    out_vol = np.zeros((merged_ydim, merged_xdim, merged_zdim), volumes.dtype)
-    ymin = max(ymin, merged_ymin)
-    xmin = max(xmin, merged_xmin)
-    zmin = max(zmin, merged_zmin)
-    ymax = merged_ymax
-    xmax = merged_xmax
-    zmax = merged_zmax
-    out_vol[ymin-merged_ymin:ymax+1-merged_ymin,
-            xmin-merged_xmin:xmax+1-merged_xmin,
-            zmin-merged_zmin:zmax+1-merged_zmin] = volumes[ymin-ymin:ymax+1-ymin, xmin-xmin:xmax+1-xmin, zmin-zmin:zmax+1-zmin]
-    assert out_vol.shape[1] == merged_xdim
-    assert out_vol.shape[0] == merged_ydim
+    out_vol = np.zeros((merged_xdim , merged_ydim, merged_zdim), volumes.dtype)
+    
+    out_vol[xmin-merged_xmin:merged_xmax+1-merged_xmin,
+            ymin-merged_ymin:merged_ymax+1-merged_ymin,
+            zmin-merged_zmin:merged_zmax+1-merged_zmin] = volumes
+    assert out_vol.shape[0] == merged_xdim
+    assert out_vol.shape[1] == merged_ydim
     assert out_vol.shape[2] == merged_zdim
     return out_vol
 
