@@ -515,19 +515,24 @@ class SqlController(object):
             section=z,structure_id=structure_id,layer=layer)
         self.add_row(data)
     
-    def add_com(self,prep_id,abbreviation,coordinates):
+    def add_com(self, prep_id, abbreviation, coordinates, person_id=2):
         structure_id = self.structure_abbreviation_to_id(abbreviation)
-        if self.layer_data_row_exists(animal=prep_id,person_id = 2,input_type_id = 1,\
+        if self.layer_data_row_exists(animal=prep_id,person_id = person_id,input_type_id = 1,\
             structure_id = structure_id,layer = 'COM'):
-            self.delete_layer_data_row(animal=prep_id,person_id = 2,input_type_id = 1,\
+            self.delete_layer_data_row(animal=prep_id,person_id = person_id,input_type_id = 1,\
                 structure_id = structure_id,layer = 'COM')
-        self.add_layer_data_row(animal = prep_id,person_id = 2,input_type_id = 1,\
+        self.add_layer_data_row(animal = prep_id,person_id = person_id,input_type_id = 1,\
             coordinates = coordinates,structure_id = structure_id,layer = 'COM')
     
-    def layer_data_row_exists(self,animal,person_id,input_type_id,structure_id,layer):
-        exists = LayerData.query.filter_by(prep_id = animal, person_id = person_id, input_type_id = input_type_id, \
-            structure_id=structure_id,layer=layer).first() is not None
-        return exists
+    def layer_data_row_exists(self,animal, person_id, input_type_id, structure_id, layer):
+        row_exists = bool(self.session.query(LayerData).filter(
+            LayerData.prep_id == animal, 
+            LayerData.person_id == person_id, 
+            LayerData.input_type_id == input_type_id, 
+            LayerData.structure_id == structure_id,
+            LayerData.layer == layer).first())
+        return row_exists
+
     
     def delete_layer_data_row(self,animal,person_id,input_type_id,structure_id,layer):
         LayerData.query.filter_by(prep_id = animal, person_id = person_id, input_type_id = input_type_id, \
