@@ -11,11 +11,11 @@ from taskqueue.taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 import shutil
-
+import numpy as np
 from tqdm import tqdm
 
-HOME = os.path.expanduser("~")
 from lib.file_location import FileLocationManager
+from lib.sqlcontroller import SqlController
 from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 from lib.utilities_process import get_cpus, get_hostname
 
@@ -26,9 +26,13 @@ def chunker(seq, size):
 def create_mesh(animal, limit, mse):
     #chunks = calculate_chunks('full', -1)
     chunks = [64,64,1]
-    scales = (10400, 10400, 20000)
+    scales = (20000, 20000, 20000)
     fileLocationManager = FileLocationManager(animal)
-    INPUT = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK52/preps/CH3/shapes"
+    sqlController = SqlController(animal)
+    channel = 1
+    downsample = True
+
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
     OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
     OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     if 'ultraman' in get_hostname():
@@ -48,15 +52,17 @@ def create_mesh(animal, limit, mse):
     midfile = io.imread(midfilepath)
     data_type = midfile.dtype
     #image = np.load('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/allen/allen.npy')
-    #ids = np.unique(image)
-    ids = {'infrahypoglossal': 200, 'perifacial': 210, 'suprahypoglossal': 220}
+    ids = np.unique(midfile)
+    #ids = {'infrahypoglossal': 200, 'perifacial': 210, 'suprahypoglossal': 220}
 
     height, width = midfile.shape
     volume_size = (width, height, len(files)) # neuroglancer is width, height
     print('volume size', volume_size)
     ng = NumpyToNeuroglancer(animal, None, scales, layer_type='segmentation', 
         data_type=data_type, chunk_size=chunks)
-    ng.init_precomputed(OUTPUT1_DIR, volume_size, progress_id=1)
+    progress_id = sqlController.get_progress_id(downsample, channel, 'NEUROGLANCER')
+
+    ng.init_precomputed(OUTPUT1_DIR, volume_size, progress_id=progress_id)
 
     file_keys = []
     for i,f in enumerate(tqdm(files)):
@@ -102,11 +108,11 @@ def create_mesh(animal, limit, mse):
     info = {
         "@type": "neuroglancer_segment_properties",
         "inline": {
-            "ids": [str(value) for key, value in ids.items()],
+            "ids": [str(value) for value in ids.tolist()],
             "properties": [{
                 "id": "label",
                 "type": "label",
-                "values": [str(key) for key, value in ids.items()]
+                "values": [str(value) for value in ids.tolist()]
             }]
         }
     }
