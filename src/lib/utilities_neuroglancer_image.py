@@ -27,7 +27,6 @@ def get_file_information(INPUT):
     num_channels = midfile.shape[2] if len(midfile.shape) > 2 else 1
     file_keys = []
     volume_size = (width, height, len(files))
-    print('Volume shape:', volume_size)
     for i, f in enumerate(files):
         filepath = os.path.join(INPUT, f)
         file_keys.append([i,filepath])
