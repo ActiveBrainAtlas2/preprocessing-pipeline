@@ -176,7 +176,7 @@ def make_tifs(animal, channel):
 def resize_and_save_tif(file_key):
     filepath, png_path = file_key
     skimage = io.imread(filepath)
-    image = Image.fromarray(skimage)
+    image = Image.fromarray(skimage, "I")
     del skimage
     width, height = image.size
     width = int(round(width*SCALING_FACTOR))
