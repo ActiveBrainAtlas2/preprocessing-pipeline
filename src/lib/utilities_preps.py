@@ -83,10 +83,10 @@ def make_low_resolution(animal, channel, debug):
         sys.exit()
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
     os.makedirs(OUTPUT, exist_ok=True)
-    tifs = sorted(os.listdir(INPUT))
-    for tif in tifs:
-        infile = os.path.join(INPUT, tif)
-        outpath = os.path.join(OUTPUT, tif)
+    files = sorted(os.listdir(INPUT))
+    for file in files:
+        infile = os.path.join(INPUT, file)
+        outpath = os.path.join(OUTPUT, file)
 
         if os.path.exists(outpath):
             continue

@@ -90,7 +90,7 @@ class Pipeline:
             create_final(self.animal)
     
     def create_histograms(self, single):
-        if self.channel == 1 and self.downsample:
+        if self.downsample:
             if single:
                 make_histogram(self.animal, self.channel)
             else:
