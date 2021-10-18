@@ -128,11 +128,16 @@ def make_combined(animal, channel):
     if os.path.exists(outpath):
         return
 
+    midindex = lfiles // 2
+    midfilepath = os.path.join(OUTPUT, files[midindex] )
+    img = io.imread(midfilepath)
+    bits = img.dtype
+    del img
 
-    for i, file in enumerate(files):
-        filename = str(i).zfill(3) + '.tif'
-        input_path = os.path.join(INPUT, filename)
-        mask_path = os.path.join(MASK_INPUT, filename)
+    
+    for file in files:
+        input_path = os.path.join(INPUT, file)
+        mask_path = os.path.join(MASK_INPUT, file)
 
         try:
             img = io.imread(input_path)
@@ -144,7 +149,7 @@ def make_combined(animal, channel):
         try:
             mask = io.imread(mask_path)
         except:
-            logger.warning(f'Could not open {mask_path}')
+            logger.error(f'Could not open {mask_path}')
             continue
 
         # mask image
@@ -189,5 +194,5 @@ def make_combined(animal, channel):
     plt.grid(axis='y', alpha=0.75)
     plt.xlabel('Value')
     plt.ylabel('Frequency')
-    plt.title(f'{animal} channel {channel} @16bit with {lfiles} tif files')
+    plt.title(f'{animal} channel {channel} @{bits}bit with {lfiles} tif files')
     fig.savefig(outpath, bbox_inches='tight')
