@@ -10,6 +10,16 @@ class TiffSegmentor:
         self.animal = animal
         self.controller = SqlController(animal)
     
+    def detect_annotator_person_id(self):
+        Beth = 2
+        Hannah = 3
+        for person_id in [Beth,Hannah]:
+            search_dictionary = {'prep_id':self.animal,'input_type_id':1,'person_id':person_id,'layer':'Premotor'}
+            has_annotation = self.controller.get_layer_data(search_dictionary)
+            if has_annotation != []:
+                self.person_id = person_id
+
+    
     def create_directories_for_channeli(self,channel):
         self.channel = channel
         self.tif_directory = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{self.animal}/preps/CH{self.channel}/full_aligned/'
@@ -53,7 +63,8 @@ class TiffSegmentor:
         csv_path = save_path+f'/{self.animal}_premotor_{sectioni}_{time_stamp}.csv'
         if not self.have_csv_in_path(save_path):
             print('creating '+ csv_path)
-            search_dictionary = {'prep_id':self.animal,'input_type_id':1,'person_id':2,'layer':'Premotor','section':sectioni}
+            search_dictionary = {'prep_id':self.animal,'input_type_id':1,\
+                'person_id':self.person_id,'layer':'Premotor','section':int(sectioni*20)}
             premotor = self.controller.get_layer_data(search_dictionary)
             premotor = self.controller.get_coordinates_from_query_result(premotor)
             np.savetxt(csv_path,premotor,delimiter=',')

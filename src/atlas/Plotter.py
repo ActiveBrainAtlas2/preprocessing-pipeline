@@ -12,16 +12,25 @@ class Plotter:
     def set_show_as_false(self):
         self.show = False
 
-    def plot_contours(self,contours):
+    def get_contour_data(self,contours,down_sample_factor = 10):
         data = []
         for sectioni in contours:
             datai = np.array(contours[sectioni])
+            datai = datai[::down_sample_factor,:]
             npoints = datai.shape[0]
-            datai = np.hstack((datai,np.ones(npoints).reshape(npoints,1)*sectioni))
+            datai = np.hstack((datai,np.ones(npoints).reshape(npoints,1)*int(sectioni)))
             data.append(datai)
         data = np.vstack(data)
-        fig = go.Figure(data=[go.Scatter3d(x=data[:,0], y=data[:,1], z=data[:,2],mode='markers')])
-        self.show_according_to_setting()
+        return data
+    
+    def plot_3d_scatter(self,data,marker={},title = ''):
+        fig = go.Figure(data=[go.Scatter3d(x=data[:,0], y=data[:,1], z=data[:,2],mode='markers',marker=marker)])
+        fig.update_layout(title=title)
+        fig.show()
+
+    def plot_contours(self,contours):
+        data = self.get_contour_data(contours)
+        self.plot_3d_scatter(data)
     
     def plot_3d_boolean_array(self,boolean_array):
         ax = plt.figure().add_subplot(projection='3d')

@@ -74,9 +74,8 @@ class NgSegmentMaker(Atlas):
         SCALE = 32
         return int(resolution * SCALE * 1000)
 
-    def get_db_structure_infos(self):
-        sqlController = SqlController('MD589')
-        db_structures = sqlController.get_structures_dict()
+    def get_structure_infos(self):
+        db_structures = self.sqlController.get_structures_dict()
         structures = {}
         for structure, v in db_structures.items():
             if '_' in structure:
@@ -85,29 +84,25 @@ class NgSegmentMaker(Atlas):
         return structures
 
     def get_structure_dictionary(self):
-        db_structure_infos = self.get_db_structure_infos()
+        db_structure_infos = self.get_structure_infos()
         structure_to_id = {}
         for structure, (_, number) in db_structure_infos.items():
             structure_to_id[structure] = number
         return structure_to_id
 
     def get_segment_properties(self):
-        db_structure_infos = self.get_db_structure_infos()
+        db_structure_infos = self.get_structure_infos()
         segment_properties = [(number, f'{structure}: {label}') for structure, (label, number) in db_structure_infos.items()]
         return segment_properties
 
-    def get_bounding_box(self,origins,volumes):
-        shapes = np.array([str.shape for str in volumes])
-        max_bonds = origins + shapes
+    def get_bounding_box(self):
+        shapes = np.array([str.shape for str in self.volumes])
+        max_bonds = self.origins + shapes
         size_max = np.round(np.max(max_bonds,axis=0))+np.array([1,1,1])
-        size_min = origins.min(0)
+        size_min = self.origins.min(0)
         size = size_max-size_min
         size = size.astype(int)
         return size
-
-    def center_origins(self,structure_volume_origin):
-        coms = np.array([ str[1] for _,str in structure_volume_origin.items()])
-        return coms - coms.min(0)
 
     def get_structure_boundary(self,structure,structure_id):
         origin = self.origins[structure_id]
@@ -132,11 +127,11 @@ class NgSegmentMaker(Atlas):
         return row_start,col_start,z_start,row_end,col_end,z_end
 
 
-    def create_atlas_volume(self,atlas_name, debug):
+    def create_atlas_volume(self):
         structure_to_id = self.get_structure_dictionary()
-        size = self.get_bounding_box(self.origins,self.volumes)
+        size = self.get_bounding_box()
         self.atlas_volume = np.zeros(size, dtype=np.uint8)
-        print(f'{atlas_name} volume shape', self.atlas_volume.shape)
+        print(f'{self.atlas} volume shape', self.atlas_volume.shape)
         print()
         for i in range(len(self.structures)):
             structure = self.structures[i]
@@ -153,7 +148,7 @@ class NgSegmentMaker(Atlas):
     def create_neuroglancer_files(self):
         segment_properties = self.get_segment_properties()
         if not self.debug:
-            offset = (self.atlas_volume.shape/2).astype(int)
+            offset = (np.array(self.atlas_volume.shape)/2).astype(int)
             ng = NgConverter(self.atlas_volume, [self.resolution, self.resolution, 20000], offset=offset)
             ng.init_precomputed(self.OUTPUT_DIR)
             ng.add_segment_properties(segment_properties)

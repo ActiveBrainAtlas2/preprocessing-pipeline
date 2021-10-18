@@ -6,7 +6,7 @@ from lib.sqlcontroller import SqlController
 import numpy as np
 from lib.utilities_atlas_lite import volume_to_polygon, save_mesh
 from lib.file_location import FileLocationManager
-from Plotter import Plotter
+from atlas.Plotter import Plotter
 class Brain:
     def __init__(self,animal):
         self.animal = animal
@@ -20,15 +20,16 @@ class Brain:
         self.plotter = Plotter()
     
     def set_structure(self):
-        possible_attributes_with_structure_list = ['origins','COM','volumes','thresholded_volumes']
+        possible_attributes_with_structure_list = ['origins','COM','volumes','thresholded_volumes','aligned_contours']
         loaded_attributes = []
         for attributei in possible_attributes_with_structure_list:
             if hasattr(self,attributei) and getattr(self,attributei) != {}:
                 if not hasattr(self,'structures'):
-                    self.set_structures_from_attribute(attributei)
+                    structures = self.get_structures_from_attribute(attributei)
+                    self.structures = structures
                 loaded_attributes.append(attributei)
         for attributei in loaded_attributes:
-            assert(self.structures==getattr(self,attributei).keys())
+            assert(self.structures==self.get_structures_from_attribute(attributei))
         if loaded_attributes == []:
             self.load_aligned_contours()
             self.structures = self.aligned_contours.keys()
@@ -78,17 +79,14 @@ class Brain:
             json.dump(self.aligned_structures, f, sort_keys=True)
 
     def save_volumes(self):
-        assert(hasattr(self,'volumes'))
-        self.set_structures_from_attribute('volumes')
+        self.check_attributes(['volumes','structures'])
         for structurei in self.structures:
             volume = self.volumes[structurei]
             volume_filepath = os.path.join(self.volume_path, f'{structurei}.npy')
             np.save(volume_filepath, volume)
     
     def save_mesh_files(self):
-        assert(hasattr(self,'volumes'))
-        assert(hasattr(self,'origins'))
-        self.set_structures_from_attribute('volumes')
+        self.check_attributes(['volumes','origins','structures'])
         self.threshold_volumes()
         for structurei in self.structures:
             origin,volume = self.origins[structurei],self.thresholded_volumes[structurei]
@@ -98,20 +96,17 @@ class Brain:
             save_mesh(aligned_structure, filepath)
 
     def save_origins(self):
-        assert(hasattr(self,'origins'))
-        self.set_structures_from_attribute('origins')
+        self.check_attributes(['origins','structures'])
         for structurei in self.structures:
             x, y, z = self.origins[structurei]
             origin_filepath = os.path.join(self.origin_path, f'{structurei}.txt')
             np.savetxt(origin_filepath, (x,y,z))
     
-    def set_structures_from_attribute(self,attribute):
-        if not hasattr(self,'structures'):
-            self.structures = getattr(self,attribute).keys()
+    def get_structures_from_attribute(self,attribute):
+        return list(getattr(self,attribute).keys())
     
     def save_coms(self):
-        assert(hasattr(self,'COM'))
-        self.set_structures_from_attribute('COM')
+        self.check_attributes(['COM','structure'])
         for structurei in self.structures:
             coordinates = self.COM[structurei]
             self.sqlController.add_com(prep_id = self.animal,abbreviation = structurei,coordinates= coordinates)
@@ -120,11 +115,11 @@ class Brain:
         return list(self.aligned_contours[structurei].values())
 
     def get_com_array(self):
-        assert(hasattr(self,'COM'))
+        self.check_attributes(['COM'])
         return np.array(list(self.COM.values()))
     
     def get_origin_array(self):
-        assert(hasattr(self,'origins'))
+        self.check_attributes(['origins'])
         return np.array(list(self.origins.values()))
     
     def get_resolution(self):
@@ -136,7 +131,7 @@ class Brain:
         return np.array([width,height])
     
     def get_volume_list(self):
-        assert(hasattr(self,'volumes'))
+        self.check_attributes(['volumes'])
         return np.array(list(self.volumes.values()))
 
     def plot_volume_3d(self,structure='10N_L'):
@@ -154,6 +149,31 @@ class Brain:
         self.plotter.compare_contour_and_stack(contour,volume)
         self.plotter.show()
         self.plotter.set_show_as_true()
+
+    def plot_contours_for_all_structures(self):
+        self.check_attributes(['aligned_contours'])
+        self.set_structure()
+        all_structures = []
+        for structurei in self.structures:
+            contour = self.aligned_contours[structurei]
+            data = self.plotter.get_contour_data(contour,down_sample_factor=100)
+            all_structures.append(data)
+        all_structures = np.vstack(all_structures)
+        self.plotter.plot_3d_scatter(all_structures,marker=dict(size=3,opacity=0.5),title = self.animal)
+    
+    def check_attributes(self,attribute_list):
+        attribute_functions = dict(
+            origins = self.load_origins,
+            COM = self.load_com,
+            volumes = self.load_volumes,
+            aligned_contours = self.load_aligned_contours,
+            structures = self.set_structure)
+        for attribute in attribute_list:
+            if not hasattr(self,attribute) or getattr(self,attribute) == {}:
+                if attribute in attribute_functions:
+                    attribute_functions[attribute]()
+                else:
+                    raise NotImplementedError
 
 class Atlas(Brain):
     def __init__(self,atlas = ATLAS):
@@ -180,9 +200,9 @@ class Atlas(Brain):
         self.load_volumes()
     
     def threshold_volumes(self):
-        assert(hasattr(self,'volumes'))
+        self.check_attributes(['volumes'])
         assert(hasattr(self,'threshold'))
-        self.set_structures_from_attribute('volumes')
+        self.get_structures_from_attribute('volumes')
         for structurei in self.structures:
             volume = self.volumes[structurei]
             if not volume[volume > 0].size == 0:
