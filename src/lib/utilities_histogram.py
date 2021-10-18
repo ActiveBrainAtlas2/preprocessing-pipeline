@@ -129,7 +129,7 @@ def make_combined(animal, channel):
         return
 
     midindex = lfiles // 2
-    midfilepath = os.path.join(OUTPUT, files[midindex] )
+    midfilepath = os.path.join(INPUT, files[midindex] )
     img = io.imread(midfilepath)
     bits = img.dtype
     del img
