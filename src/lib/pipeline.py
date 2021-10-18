@@ -60,6 +60,7 @@ class Pipeline:
         print('channel', self.channel, type(self.channel))
         print('downsamle', self.downsample, type(self.downsample))
         if self.channel == 1 and self.downsample:
+            print('making scenese')
             make_scenes(self.animal)
 
 
