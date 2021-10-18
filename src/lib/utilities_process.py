@@ -202,16 +202,12 @@ def make_scenes(animal):
         png_path = os.path.join(OUTPUT, png)
         if os.path.exists(png_path):
             continue
-        #file_keys.append((filepath,png_path))
-        #resize_and_save_tif((filepath,png_path))
-        file_key = ['convert', filepath, '-resize', '3.125%', '-normalize', png_path]
+        file_key = ['convert', filepath, '-resize', '3.125%', '-depth', '8', '-normalize', '-auto-level', png_path]
         file_keys.append(file_key)
         
     workers, _ = get_cpus()
     with Pool(workers) as p:
         p.map(workernoshell, file_keys)
-    #with ProcessPoolExecutor(max_workers=workers) as executor:
-    #    executor.map(create_downsample, file_keys)
 
 def make_tif(animal, tif_id, file_id, testing=False):
     fileLocationManager = FileLocationManager(animal)
