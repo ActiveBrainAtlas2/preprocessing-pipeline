@@ -205,10 +205,9 @@ def make_scenes(animal):
             continue
         file_keys.append((filepath,png_path))
         
-        #cmd = ['convert', filepath, '-resize', '3.125%', png_path]
-
-    with Pool(4) as p:
-        p.map(create_downsample(file_keys))
+    workers, _ = get_cpus()
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        executor.map(create_downsample, file_keys)
 
 def make_tif(animal, tif_id, file_id, testing=False):
     fileLocationManager = FileLocationManager(animal)
