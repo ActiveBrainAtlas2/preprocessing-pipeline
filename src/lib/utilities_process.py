@@ -179,7 +179,7 @@ def resize_and_save_tif(file_key):
     """
     filepath, png_path = file_key
     image = io.imread(filepath)
-    image = Image.fromarray(image, "I")
+    image = Image.fromarray(image, "I;16L")
     width, height = image.size
     width = int(round(width*SCALING_FACTOR))
     height = int(round(height*SCALING_FACTOR))
@@ -203,9 +203,13 @@ def make_scenes(animal):
         if os.path.exists(png_path):
             continue
         #file_keys.append((filepath,png_path))
-        resize_and_save_tif((filepath,png_path))
+        #resize_and_save_tif((filepath,png_path))
+        file_key = ['convert', filepath, '-resize', '3.125%', '-normalize', png_path]
+        file_keys.append(file_key)
         
     workers, _ = get_cpus()
+    with Pool(workers) as p:
+        p.map(workernoshell, file_keys)
     #with ProcessPoolExecutor(max_workers=workers) as executor:
     #    executor.map(create_downsample, file_keys)
 
