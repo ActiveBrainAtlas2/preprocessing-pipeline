@@ -57,6 +57,8 @@ class Pipeline:
                 
     def create_tifs(self):
         make_tifs(self.animal, self.channel)
+        print('channel', self.channel, type(channel))
+        print('downsamle', self.downsample, type(downsample))
         if self.channel == 1 and self.downsample:
             make_scenes(self.animal)
 
