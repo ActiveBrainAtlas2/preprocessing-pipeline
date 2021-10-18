@@ -30,6 +30,7 @@ def collect_examples(labels,pos_locations,Stats,img,min_size=int(100/2),origin=[
                  'height':height,
                  'width':width,
                  'image':img[int(row-height2):int(row+height2),int(col-width2):int(col+width2)]
+                 ## Add 'cell_image' by extracting the same location in the corresponding tile.
                 }
         cell_index+=1
         Examples.append(example)
@@ -46,8 +47,11 @@ if __name__=='__main__':
 
 
     dfpath = os.path.join(DATA_DIR, '%d.csv'%section)  # read manual COMs (=training data)
-    df = pd.read_csv(dfpath)
-
+    try:
+        df = pd.read_csv(dfpath)
+    except:
+        df = pd.DataFrame()
+    print('df shape = ',df.shape)
     # in_row_min=5400; in_row_max=6800; in_col_min=8000; in_col_max=13000
     # parameters
     # the original images are width=60000, height=34000.
@@ -78,10 +82,11 @@ if __name__=='__main__':
     
     for tile in range(10):
 
-        file = 'tile-%d.tif'%tile
+        file = '%dtile-%d.tif'%(section,tile)
         infile = os.path.join(DATA_DIR, file)
-        img = np.float32(cv2.imread(infile, -1))
-        print('tile=',tile,end=',')
+        print('infile=',infile)
+        img = cv2.imread(infile, -1)
+        print('img shape=',img.shape,'tile=',tile,end=',')
 
         small=cv2.resize(img,(0,0),fx=0.05,fy=0.05, interpolation=cv2.INTER_AREA)
         blur=cv2.GaussianBlur(small,ksize=(21,21),sigmaX=10)
