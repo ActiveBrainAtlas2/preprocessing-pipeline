@@ -199,9 +199,9 @@ def make_scenes(animal):
         if os.path.exists(png_path):
             continue
         file_keys.append((filepath,png_path))
-        #resize_and_save_tif((filepath,png_path))
-    with ProcessPoolExecutor(max_workers=4) as executor:
-            executor.map(resize_and_save_tif, sorted(file_keys))
+        resize_and_save_tif((filepath,png_path))
+    #with ProcessPoolExecutor(max_workers=4) as executor:
+    #        executor.map(resize_and_save_tif, sorted(file_keys))
 
 def make_tif(animal, tif_id, file_id, testing=False):
     fileLocationManager = FileLocationManager(animal)
