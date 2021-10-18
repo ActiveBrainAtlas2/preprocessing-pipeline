@@ -5,6 +5,7 @@ import socket
 from pathlib import Path
 from skimage import io
 from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 import cv2
 import numpy as np
 import gc
@@ -197,10 +198,10 @@ def make_scenes(animal):
         png_path = os.path.join(OUTPUT, png)
         if os.path.exists(png_path):
             continue
-        #file_keys.append((filepath,png_path))
-        resize_and_save_tif((filepath,png_path))
-    #with ProcessPoolExecutor(max_workers=4) as executor:
-    #        executor.map(resize_and_save_tif, sorted(file_keys))
+        file_keys.append((filepath,png_path))
+        #resize_and_save_tif((filepath,png_path))
+    with ProcessPoolExecutor(max_workers=4) as executor:
+            executor.map(resize_and_save_tif, sorted(file_keys))
 
 def make_tif(animal, tif_id, file_id, testing=False):
     fileLocationManager = FileLocationManager(animal)
