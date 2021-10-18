@@ -206,7 +206,6 @@ def make_scenes(animal):
         file_keys.append((filepath,png_path))
         
         #cmd = ['convert', filepath, '-resize', '3.125%', png_path]
-        file_keys.append(cmd)
 
     with Pool(4) as p:
         p.map(create_downsample(file_keys))
