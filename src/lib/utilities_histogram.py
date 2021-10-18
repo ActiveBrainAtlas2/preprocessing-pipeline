@@ -139,7 +139,7 @@ def make_combined(animal, channel):
         except:
             logger.error(f'Could not read {input_path}')
             lfiles -= 1
-            break
+            continue
 
         try:
             mask = io.imread(mask_path)
@@ -157,26 +157,26 @@ def make_combined(animal, channel):
         except:
             logger.error(f'Could not flatten file {input_path}')
             lfiles -= 1
-            break
+            continue
         try:
             #hist,bins = np.histogram(flat, bins=nbins)
             img_counts = np.bincount(flat)
         except:
             logger.error(f'Could not create counts {input_path}')
             lfiles -= 1
-            break
+            continue
         try:
             img_dict = Counter(dict(zip(np.unique(flat), img_counts[img_counts.nonzero()])))
         except:
             logger.error(f'Could not create counter {input_path}')
             lfiles -= 1
-            break
+            continue
         try:
             hist_dict = hist_dict + img_dict
         except:
             logger.error(f'Could not add files {input_path}')
             lfiles -= 1
-            break
+            continue
 
 
     hist_dict = dict(hist_dict)
