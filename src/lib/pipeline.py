@@ -1,5 +1,6 @@
 """
-This class can be used to run an entire pipeline.
+This class used to run the entire preprocessing pipeline - from CZI files to a pyramid of tiles that can be viewed in neuroglancer.
+
 Args are animal, channel, and downsample. With animal being
 the only required argument.
 All imports are listed by the order in which they are used in the pipeline.
