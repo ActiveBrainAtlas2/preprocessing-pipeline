@@ -3,7 +3,6 @@ import sys
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
-from timeit import default_timer as timer
 
 from shutil import copyfile
 from lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
