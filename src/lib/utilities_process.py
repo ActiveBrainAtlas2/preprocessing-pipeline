@@ -173,8 +173,8 @@ def make_tifs(animal, channel):
         p.map(workernoshell, commands)
 
 def resize_and_save_tif(file_key):
-    tif_path, png_path = file_key
-    image = Image.open(tif_path)
+    filepath, png_path = file_key
+    image = Image.open(filepath)
     width, height = image.size
     width = int(round(width*SCALING_FACTOR))
     height = int(round(height*SCALING_FACTOR))
@@ -197,11 +197,10 @@ def make_scenes(animal):
         png_path = os.path.join(OUTPUT, png)
         if os.path.exists(png_path):
             continue
-        print('#', png_path)
-        file_keys.append((filepath,png_path))
-        
-    with ProcessPoolExecutor(max_workers=4) as executor:
-            executor.map(resize_and_save_tif, sorted(file_keys))
+        #file_keys.append((filepath,png_path))
+        resize_and_save_tif((filepath,png_path))
+    #with ProcessPoolExecutor(max_workers=4) as executor:
+    #        executor.map(resize_and_save_tif, sorted(file_keys))
 
 def make_tif(animal, tif_id, file_id, testing=False):
     fileLocationManager = FileLocationManager(animal)
