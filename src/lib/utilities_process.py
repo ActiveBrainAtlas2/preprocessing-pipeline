@@ -205,11 +205,11 @@ def make_scenes(animal):
             continue
         file_keys.append((filepath,png_path))
         
-        cmd = ['convert', filepath, '-resize', '3.125%', png_path]
+        #cmd = ['convert', filepath, '-resize', '3.125%', png_path]
         file_keys.append(cmd)
 
     with Pool(4) as p:
-        p.map(workernoshell, file_keys)
+        p.map(create_downsample(file_keys))
 
 def make_tif(animal, tif_id, file_id, testing=False):
     fileLocationManager = FileLocationManager(animal)
