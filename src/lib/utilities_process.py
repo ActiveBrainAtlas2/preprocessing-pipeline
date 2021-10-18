@@ -145,7 +145,6 @@ def make_tifs(animal, channel):
         nothing
     """
 
-    logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = fileLocationManager.czi
