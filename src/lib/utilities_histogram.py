@@ -128,23 +128,28 @@ def make_combined(animal, channel):
     if os.path.exists(outpath):
         return
 
+    midindex = lfiles // 2
+    midfilepath = os.path.join(INPUT, files[midindex] )
+    img = io.imread(midfilepath)
+    bits = img.dtype
+    del img
 
-    for i, file in enumerate(files):
-        filename = str(i).zfill(3) + '.tif'
-        input_path = os.path.join(INPUT, filename)
-        mask_path = os.path.join(MASK_INPUT, filename)
+    
+    for file in files:
+        input_path = os.path.join(INPUT, file)
+        mask_path = os.path.join(MASK_INPUT, file)
 
         try:
             img = io.imread(input_path)
         except:
             logger.error(f'Could not read {input_path}')
             lfiles -= 1
-            break
+            continue
 
         try:
             mask = io.imread(mask_path)
         except:
-            logger.warning(f'Could not open {mask_path}')
+            logger.error(f'Could not open {mask_path}')
             continue
 
         # mask image
@@ -157,37 +162,37 @@ def make_combined(animal, channel):
         except:
             logger.error(f'Could not flatten file {input_path}')
             lfiles -= 1
-            break
+            continue
         try:
             #hist,bins = np.histogram(flat, bins=nbins)
             img_counts = np.bincount(flat)
         except:
             logger.error(f'Could not create counts {input_path}')
             lfiles -= 1
-            break
+            continue
         try:
             img_dict = Counter(dict(zip(np.unique(flat), img_counts[img_counts.nonzero()])))
         except:
             logger.error(f'Could not create counter {input_path}')
             lfiles -= 1
-            break
+            continue
         try:
             hist_dict = hist_dict + img_dict
         except:
             logger.error(f'Could not add files {input_path}')
             lfiles -= 1
-            break
+            continue
 
-
-    hist_dict = dict(hist_dict)
-    hist_values = [i/lfiles for i in hist_dict.values()]
-
-    fig = plt.figure()
-    plt.rcParams['figure.figsize'] = [10, 6]
-    plt.bar(list(hist_dict.keys()), hist_values, color = COLORS[channel])
-    plt.yscale('log')
-    plt.grid(axis='y', alpha=0.75)
-    plt.xlabel('Value')
-    plt.ylabel('Frequency')
-    plt.title(f'{animal} channel {channel} @16bit with {lfiles} tif files')
-    fig.savefig(outpath, bbox_inches='tight')
+    if lfiles > 10:
+        hist_dict = dict(hist_dict)
+        hist_values = [i/lfiles for i in hist_dict.values()]
+    
+        fig = plt.figure()
+        plt.rcParams['figure.figsize'] = [10, 6]
+        plt.bar(list(hist_dict.keys()), hist_values, color = COLORS[channel])
+        plt.yscale('log')
+        plt.grid(axis='y', alpha=0.75)
+        plt.xlabel('Value')
+        plt.ylabel('Frequency')
+        plt.title(f'{animal} channel {channel} @{bits}bit with {lfiles} tif files')
+        fig.savefig(outpath, bbox_inches='tight')

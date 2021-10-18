@@ -3,7 +3,6 @@ import sys
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
-from timeit import default_timer as timer
 
 from shutil import copyfile
 from lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
@@ -84,10 +83,10 @@ def make_low_resolution(animal, channel, debug):
         sys.exit()
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
     os.makedirs(OUTPUT, exist_ok=True)
-    tifs = sorted(os.listdir(INPUT))
-    for tif in tifs:
-        infile = os.path.join(INPUT, tif)
-        outpath = os.path.join(OUTPUT, tif)
+    files = sorted(os.listdir(INPUT))
+    for file in files:
+        infile = os.path.join(INPUT, file)
+        outpath = os.path.join(OUTPUT, file)
 
         if os.path.exists(outpath):
             continue
