@@ -183,16 +183,16 @@ def make_combined(animal, channel):
             lfiles -= 1
             continue
 
-
-    hist_dict = dict(hist_dict)
-    hist_values = [i/lfiles for i in hist_dict.values()]
-
-    fig = plt.figure()
-    plt.rcParams['figure.figsize'] = [10, 6]
-    plt.bar(list(hist_dict.keys()), hist_values, color = COLORS[channel])
-    plt.yscale('log')
-    plt.grid(axis='y', alpha=0.75)
-    plt.xlabel('Value')
-    plt.ylabel('Frequency')
-    plt.title(f'{animal} channel {channel} @{bits}bit with {lfiles} tif files')
-    fig.savefig(outpath, bbox_inches='tight')
+    if lfiles > 10:
+        hist_dict = dict(hist_dict)
+        hist_values = [i/lfiles for i in hist_dict.values()]
+    
+        fig = plt.figure()
+        plt.rcParams['figure.figsize'] = [10, 6]
+        plt.bar(list(hist_dict.keys()), hist_values, color = COLORS[channel])
+        plt.yscale('log')
+        plt.grid(axis='y', alpha=0.75)
+        plt.xlabel('Value')
+        plt.ylabel('Frequency')
+        plt.title(f'{animal} channel {channel} @{bits}bit with {lfiles} tif files')
+        fig.savefig(outpath, bbox_inches='tight')
