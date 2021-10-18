@@ -188,16 +188,17 @@ def make_scenes(animal):
     os.makedirs(OUTPUT, exist_ok=True)
 
     file_keys = []
-    tifs = os.listdir(INPUT)
-    for tif in tifs:
-        tif_path = os.path.join(INPUT, tif)
-        if not tif.endswith('_C1.tif'):
+    files = os.listdir(INPUT)
+    for file in files:
+        filepath = os.path.join(INPUT, file)
+        if not file.endswith('_C1.tif'):
             continue
-        png = tif.replace('tif', 'png')
+        png = file.replace('tif', 'png')
         png_path = os.path.join(OUTPUT, png)
         if os.path.exists(png_path):
             continue
-        file_keys.append((tif_path,png_path))
+        print('#', png_path)
+        file_keys.append((filepath,png_path))
         
     with ProcessPoolExecutor(max_workers=4) as executor:
             executor.map(resize_and_save_tif, sorted(file_keys))
