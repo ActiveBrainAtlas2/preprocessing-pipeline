@@ -16,8 +16,7 @@ from src.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 from lib.sqlcontroller import SqlController
-
-
+from src.atlas.Assembler import AtlasAssembler
 
 class NgConverter(NumpyToNeuroglancer):
 
@@ -46,110 +45,34 @@ class NgConverter(NumpyToNeuroglancer):
 class NgSegmentMaker(Atlas):
     def __init__(self,atlas_name,debug):
         super().__init__(atlas_name)
+        self.assembler = AtlasAssembler(atlas_name)
         self.start = timer()
-        self.threshold = 0.9
         self.OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/atlas_test'
         self.reset_output_path()
-        self.load_origins()
-        self.load_volumes()
-        self.resolution = self.get_resolution()
-        self.set_structure()
-        self.center_origins()
-        self.threshold_volumes()
-        self.volumes = list(self.thresholded_volumes.values())
         self.debug = debug
+        self.resolution = self.get_atlas_resolution()
+    
+    def get_atlas_resolution(self):
+        self.fixed_brain = Brain('MD589')
+        resolution = self.fixed_brain.get_resolution()
+        SCALE = 32
+        return int(resolution * SCALE * 1000)
     
     def reset_output_path(self):
         if os.path.exists(self.OUTPUT_DIR):
             shutil.rmtree(self.OUTPUT_DIR)
         os.makedirs(self.OUTPUT_DIR, exist_ok=True)
 
-    def center_origins(self):
-        self.origins = self.get_origin_array()
-        self.origins = self.origins - self.origins.min(0)
-
-    def get_resolution(self):
-        self.fixed_brain = Brain('MD589')
-        resolution = self.fixed_brain.get_resolution()
-        SCALE = 32
-        return int(resolution * SCALE * 1000)
-
-    def get_structure_infos(self):
-        db_structures = self.sqlController.get_structures_dict()
-        structures = {}
-        for structure, v in db_structures.items():
-            if '_' in structure:
-                structure = structure[0:-2]
-            structures[structure] = v
-        return structures
-
-    def get_structure_dictionary(self):
-        db_structure_infos = self.get_structure_infos()
-        structure_to_id = {}
-        for structure, (_, number) in db_structure_infos.items():
-            structure_to_id[structure] = number
-        return structure_to_id
-
     def get_segment_properties(self):
-        db_structure_infos = self.get_structure_infos()
+        db_structure_infos = self.sqlController.get_structures_dict()
         segment_properties = [(number, f'{structure}: {label}') for structure, (label, number) in db_structure_infos.items()]
         return segment_properties
-
-    def get_bounding_box(self):
-        shapes = np.array([str.shape for str in self.volumes])
-        max_bonds = self.origins + shapes
-        size_max = np.round(np.max(max_bonds,axis=0))+np.array([1,1,1])
-        size_min = self.origins.min(0)
-        size = size_max-size_min
-        size = size.astype(int)
-        return size
-
-    def get_structure_boundary(self,structure,structure_id):
-        origin = self.origins[structure_id]
-        volume = self.volumes[structure_id]
-        minrow,mincol, z = origin
-        row_start = int( round(minrow))
-        col_start = int( round(mincol))
-        z_start = int( round(z))
-        row_end = row_start + volume.shape[0]
-        col_end = col_start + volume.shape[1]
-        z_end = z_start + volume.shape[2]
-        if self.debug and 'SC' in structure:
-            print(str(structure).ljust(7),end=": ")
-            print('Start',
-                str(row_start).rjust(4),
-                str(col_start).rjust(4),
-                str(z_start).rjust(4),
-                'End',
-                str(row_end).rjust(4),
-                str(col_end).rjust(4),
-                str(z_end).rjust(4))
-        return row_start,col_start,z_start,row_end,col_end,z_end
-
-
-    def create_atlas_volume(self):
-        structure_to_id = self.get_structure_dictionary()
-        size = self.get_bounding_box()
-        self.atlas_volume = np.zeros(size, dtype=np.uint8)
-        print(f'{self.atlas} volume shape', self.atlas_volume.shape)
-        print()
-        for i in range(len(self.structures)):
-            structure = self.structures[i]
-            volume = self.volumes[i]
-            row_start,col_start,z_start,row_end,col_end,z_end = self.get_structure_boundary(structure,i)
-            try:
-                structure_id = structure_to_id[structure.split('_')[0]]
-                self.atlas_volume[row_start:row_end, col_start:col_end, z_start:z_end] += volume.astype(np.uint8)*structure_id
-            except ValueError as ve:
-                print(structure, ve, volume.shape)
-        print('Shape of downsampled atlas volume', self.atlas_volume.shape)
-        print('Resolution at', self.resolution)
     
-    def create_neuroglancer_files(self):
+    def create_neuroglancer_files(self,atlas_volume):
         segment_properties = self.get_segment_properties()
         if not self.debug:
-            offset = (np.array(self.atlas_volume.shape)/2).astype(int)
-            ng = NgConverter(self.atlas_volume, [self.resolution, self.resolution, 20000], offset=offset)
+            offset = (np.array(atlas_volume.shape)/2).astype(int)
+            ng = NgConverter(atlas_volume, [self.resolution, self.resolution, 20000], offset=offset)
             ng.init_precomputed(self.OUTPUT_DIR)
             ng.add_segment_properties(segment_properties)
             ng.add_downsampled_volumes()
@@ -162,5 +85,6 @@ if __name__ == '__main__':
     atlas = 'atlasV8'
     debug = False
     maker = NgSegmentMaker(atlas,debug)
-    maker.create_atlas_volume()
-    maker.create_neuroglancer_files()
+    maker.assembler.assemble_all_structure_volume()
+    atlas_volume = maker.assembler.combined_volume
+    maker.create_neuroglancer_files(atlas_volume)

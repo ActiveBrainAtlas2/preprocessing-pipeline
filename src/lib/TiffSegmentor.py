@@ -9,6 +9,7 @@ class TiffSegmentor:
     def __init__(self,animal):
         self.animal = animal
         self.controller = SqlController(animal)
+        self.detect_annotator_person_id()
     
     def detect_annotator_person_id(self):
         Beth = 2
@@ -44,7 +45,7 @@ class TiffSegmentor:
             save_folder = self.save_directory+file_name
             if create_csv:
                 self.create_sectioni_csv(save_folder,int(file_name))
-                if len(os.listdir(save_folder)) >= 11:
+                if len(os.listdir(save_folder)) >= 10:
                     continue
             else:
                 if len(os.listdir(save_folder)) == 10:
@@ -62,9 +63,10 @@ class TiffSegmentor:
         time_stamp = datetime.today().strftime('%Y-%m-%d')
         csv_path = save_path+f'/{self.animal}_premotor_{sectioni}_{time_stamp}.csv'
         if not self.have_csv_in_path(save_path):
-            print('creating '+ csv_path)
             search_dictionary = {'prep_id':self.animal,'input_type_id':1,\
                 'person_id':self.person_id,'layer':'Premotor','section':int(sectioni*20)}
             premotor = self.controller.get_layer_data(search_dictionary)
             premotor = self.controller.get_coordinates_from_query_result(premotor)
-            np.savetxt(csv_path,premotor,delimiter=',')
+            if premotor != []:
+                print('creating '+ csv_path)
+                np.savetxt(csv_path,premotor,delimiter=',')

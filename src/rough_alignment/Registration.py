@@ -1,8 +1,7 @@
 import SimpleITK as sitk
 from math import floor
-from RegistrationStatusReport import RegistrationStatusReport
-from SitkIOs import SitkIOs
-
+from rough_alignment.RegistrationStatusReport import RegistrationStatusReport
+from rough_alignment.SitkIOs import SitkIOs
 class Registration:
 
     def __init__(self):
@@ -10,11 +9,19 @@ class Registration:
         """
         self.registration_method = sitk.ImageRegistrationMethod()
         self.registration_method.SetInterpolator(sitk.sitkLinear)
-        self.status_reporter = RegistrationStatusReport()
+        self.status_reporter = RegistrationStatusReport(self.registration_method)
         self.fixed_image = None
         self.moving_image = None
         self.transform = None
         self.io = SitkIOs()
+    
+    def load_fixed_image_from_np_array(self,np_array):
+        sitk_image = sitk.GetImageFromArray(np_array)
+        self.fixed_image = sitk.Cast(sitk_image, sitk.sitkFloat32)
+
+    def load_moving_image_from_np_array(self,np_array):
+        sitk_image = sitk.GetImageFromArray(np_array)
+        self.moving_image = sitk.Cast(sitk_image, sitk.sitkFloat32)
 
     def load_fixed_image_from_directory(self,fix_image_dir):
         self.fixed_image = self.io.load_image(fix_image_dir)
@@ -44,20 +51,20 @@ class Registration:
     def set_optimizer_as_gradient_descent(self):
         """set_optimizer [configure gradient descent as the optimizer of the registration process]
         """
-        self.SetOptimizerAsGradientDescent(
-            learningRate=1.0,
-            numberOfIterations=100,
-            convergenceMinimumValue=1e-6,
+        self.registration_method.SetOptimizerAsGradientDescent(
+            learningRate=0.2,
+            numberOfIterations=500,
+            convergenceMinimumValue=1e-8,
             convergenceWindowSize=10
         )
-        self.SetOptimizerScalesFromPhysicalShift()
+        self.registration_method.SetOptimizerScalesFromPhysicalShift()
 
     def set_mutual_information_as_similarity_metrics(self):
         """set_mutual_information_as_similarity_metic [configure mututal information as the similarity metric of the registration process]
         """
-        self.SetMetricAsMattesMutualInformation(numberOfHistogramBins=50)
-        self.SetMetricSamplingStrategy(self.RANDOM)
-        self.SetMetricSamplingPercentage(0.01)
+        self.registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=50)
+        self.registration_method.SetMetricSamplingStrategy(self.registration_method.RANDOM)
+        self.registration_method.SetMetricSamplingPercentage(0.01)
             
     def get_transform(self):
         return self.transform

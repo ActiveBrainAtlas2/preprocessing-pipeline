@@ -9,8 +9,6 @@ This code takes the contours and does the following:
 2. find the center of mass
 3. saving COMs in the database, saving COM and volumns in the file system
 """
-import argparse
-import json
 import os
 import sys
 import cv2

@@ -1,5 +1,5 @@
 import SimpleITK as sitk
-from Regerstration import Registration
+from rough_alignment.Registration import Registration
 
 class AffineRegistration(Registration):
 
@@ -24,11 +24,12 @@ class AffineRegistration(Registration):
         :return: [Affine transformation from fixed brain to the moving brain]
         :rtype: [sitk transform]
         """
-        self.set_mutual_information_as_similarity_metrics(self.registration_method)
-        self.set_optimizer_as_gradient_descent(self.registration_method)
-        self.set_initial_transformation(self.registration_method, self.transform)
-        self.set_multi_resolution_parameters(self.registration_method)
-        self.status_reporter.set_report_events(self.registration_method)
+        self.set_mutual_information_as_similarity_metrics()
+        self.set_optimizer_as_gradient_descent()
+        self.align_image_centers()
+        self.set_initial_transformation(self.transform)
+        self.set_multi_resolution_parameters()
+        self.status_reporter.set_report_events()
         self.registration_method.Execute(self.fixed_image, self.moving_image)
 
 

@@ -126,18 +126,18 @@ def volume_to_polygon(volume,origin, times_to_simplify=0,min_vertices=200):
             break
     return polydata
 
-def symmetricalize_volume(prob_vol):
+def symmetricalize_volume(volume):
     """
     Replace the volume with the average of its left half and right half.
     """
-    zc = prob_vol.shape[2] // 2
-    prob_vol_symmetric = prob_vol.copy()
-    left_half = prob_vol[..., :zc]
-    right_half = prob_vol[..., -zc:]
+    zcenter = volume.shape[2] // 2
+    symmetrical_volume = volume.copy()
+    left_half = volume[..., :zcenter]
+    right_half = volume[..., -zcenter:]
     left_half_averaged = (left_half + right_half[..., ::-1]) // 2.
-    prob_vol_symmetric[..., :zc] = left_half_averaged
-    prob_vol_symmetric[..., -zc:] = left_half_averaged[..., ::-1]
-    return prob_vol_symmetric
+    symmetrical_volume[..., :zcenter] = left_half_averaged
+    symmetrical_volume[..., -zcenter:] = left_half_averaged[..., ::-1]
+    return symmetrical_volume
 
 def save_mesh(polydata, filename):
     stlWriter = vtk.vtkSTLWriter()

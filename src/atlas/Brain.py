@@ -200,7 +200,7 @@ class Atlas(Brain):
         self.load_volumes()
     
     def threshold_volumes(self):
-        self.check_attributes(['volumes'])
+        self.check_attributes(['volumes','structures'])
         assert(hasattr(self,'threshold'))
         self.get_structures_from_attribute('volumes')
         for structurei in self.structures:

@@ -46,7 +46,10 @@ class Plotter:
             fig.canvas.draw_idle()
         fig, ax = plt.subplots()
         mid_point = int(len(stack)/2)
-        plot = ax.imshow(stack[mid_point])
+        if np.all(stack>=0):
+            plot = ax.imshow(stack[mid_point],vmin = 0,vmax = 50)
+        else:
+            plot = ax.imshow(stack[mid_point])
         ax = plt.axes([0.25, 0.15, 0.65, 0.03])
         slider = Slider(ax, 'index', 0, stack.shape[0], valinit=mid_point, valfmt='%d')
         slider.on_changed(_update_image)
