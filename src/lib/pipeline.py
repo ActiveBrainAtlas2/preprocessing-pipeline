@@ -1,5 +1,6 @@
 """
-This class used to run the entire preprocessing pipeline - from CZI files to a pyramid of tiles that can be viewed in neuroglancer.
+This class is used to run the entire preprocessing pipeline - 
+from CZI files to a pyramid of tiles that can be viewed in neuroglancer.
 
 Args are animal, channel, and downsample. With animal being
 the only required argument.
@@ -31,7 +32,17 @@ from lib.utilities_downsampling import create_downsamples
 
 
 class Pipeline:
+    '''
+    A class that sets the methods and attributes for the Active Brain Atlas
+    image processing pipeline
+    '''
     def __init__(self, animal, channel=1, downsample=True):
+        '''
+        Set i[ the pipeline. Only required parameter is animal
+        :param animal: string, usually something like DKXX
+        :param channel: integer defaults to 1, user enters 2 or 3 otherwise
+        :param downsample: boolean, default to true for creating the smaller images
+        '''
         self.animal = animal
         self.channel = channel
         self.downsample = downsample
@@ -41,7 +52,8 @@ class Pipeline:
         
     def create_meta(self):
         """
-        The CZI file need to be present
+        The CZI file need to be present. Test to make sure the dir exists
+        and there are some files there.
         """
         INPUT = self.fileLocationManager.czi
         if not os.path.exists(INPUT):
@@ -52,11 +64,15 @@ class Pipeline:
         if nfiles < 1:
             print('There are no CZI files to work with, we are exiting.')
             sys.exit()
-        print(f'Working with {nfiles} files.')
+        print(f'create meta is working with {nfiles} files.')
         make_meta(self.animal)
 
                 
     def create_tifs(self):
+        '''
+        This method creates the tifs from the czi files. The files are used for the create_preps method
+        It also creates the scenes under data/DKXX/www/scenes
+        '''
         make_tifs(self.animal, self.channel)
         if self.channel == 1 and self.downsample:
             make_scenes(self.animal)
@@ -73,6 +89,10 @@ class Pipeline:
 
     
     def create_normalized(self):
+        '''
+        This method creates the histogram equalized channel 1 downampled files.
+        These are used by the user to easily see the images.
+        '''
         if self.channel == 1 and self.downsample:
             create_normalization(self.animal, self.channel)
 
@@ -81,16 +101,33 @@ class Pipeline:
         """
         After running this step, the masks need to manually checked and if 
         needed, edited with GIMP, see the Process.md file for instructions.
+        This creates the masks in preps/masks/thumbnail_colored
+        If downsample is False and we are creating full scale masks,
+        the masks are created in preps/masks/full_masked
         """
-        if self.channel == 1 and self.downsample:
+        if self.channel == 1:
             create_mask(self.animal, self.downsample)
 
     
     def create_masks_final(self):
+        '''
+        This is the 2nd step in the masking process. It is performed
+        after the user verifies and possibly edits the colored masks
+        Creates the black/white masks in preps/masks/thumbnail_masked
+        Only run on the downsampled images
+        '''
         if self.channel == 1 and self.downsample:
             create_final(self.animal)
     
     def create_histograms(self, single):
+        '''
+        Creates histograms for each image (single=True)
+        Also creates a combined histogram with data from all downsampled
+        images (single=False)
+        :param single: boolean, single=True means a histogram is created for
+        every single image. Otherwise, single=False means all the images are
+        combined and the data is aggregated into one histogram.
+        '''
         if self.downsample:
             if single:
                 make_histogram(self.animal, self.channel)
@@ -99,15 +136,32 @@ class Pipeline:
 
     
     def create_clean(self):
+        '''
+        Uses the data from preps/masks/thumbnail_masked to mask 
+        for the downsampled and preps/masks/full_masked for the full resolution
+        images. Resulting images are in preps/CHX/thumbnail_cleaned
+        and preps/CHX/full_cleaned
+        '''
         masker(self.animal, self.channel, self.downsample, self.debug)
 
     
     def create_elastix(self):
+        '''
+        This runs the elastix section-section alignment process.
+        The resulting transformation rotation, xshift and yshift is
+        stored in the elastix_transformation table.
+        This method is only run when channel=1 and downsample=True
+        '''
         if self.channel == 1 and self.downsample:
             create_elastix(self.animal)
 
     
     def create_alignment(self):
+        '''
+        This gets run on all downsampled and full res and all 3 channels. It
+        fetches the data from the elastix_transformation table and then uses
+        PIL to rotate, shift the image.
+        '''
         transforms = parse_elastix(self.animal)
         masks = False 
         create_csv = False
@@ -116,18 +170,34 @@ class Pipeline:
 
     
     def create_web(self):
+        '''
+        Creates png files from the thumbnail_cleaned dir and puts them in the www/
+        directory.
+        '''
         make_web_thumbnails(self.animal)
-
     
     def create_neuroglancer_image(self):
+        '''
+        This the first step in the neuroglancer process. Data is created
+        in the DKXX/neuroglancer_data/CX_rechunkme directory
+        '''
         create_neuroglancer(self.animal, self.channel, self.downsample, self.debug)
 
     
     def create_downsampling(self):
+        '''
+        This the second step in the neuroglancer process. Data is pulled
+        from the previous step in the DKXX/neuroglancer_data/CX_rechunkme dir
+        and it then creates the appropriate chunks and pyramids in the 
+        DKXX/neuroglancer_data/CX directory
+        '''
         create_downsamples(self.animal, self.channel, self.downsample)
         
     @staticmethod
     def check_programs():
+        '''
+        Make sure the necessary tools are installed on the machine.
+        '''
         error = ""
         if not os.path.exists('/usr/local/share/bftools/showinf'):
             error += "showinf in bftools is not installed"
