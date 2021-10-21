@@ -9,10 +9,9 @@
 ### Description
 The pipeline process will take scanned images that are digitized into CZI files
 and make them available in Neuroglancer. The process involves the following steps:
-1. The user enters the [animal](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slideczitotif/)
-information into the database. The entire process depends on this initial step and will not
-proceed without this initial information. Throughout the process, the database is checked
-for information so it is vital for the correct information to be placed in these tables:
+1. The user enters the initial information into the database. The entire process depends on this initial step and will not
+proceed without this information. Throughout the process, the database is checked
+for variables so it is vital for the correct information to be placed in these tables:
     1. [animal](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slideczitotif/)
     1. [scan_run](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/scanrun/)
     1. [histology](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/histology/)
@@ -24,8 +23,8 @@ mounted at /net/birdstore on our 3 workstations:
     1. muralis
 1. The location of the CZI files is: */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/czi*
 1. CZI files are large compressed files containing around 20 images and a large amount of metadata that describes
-the scanner and the scanned images. The images and metadata contained in each CZI file is extraced with a set of 
-tools that are available on each workstation. The bioformat software is also available for download at: 
+the scanner and the scanned images. The images and metadata contained in each CZI file is extracted with a set of 
+tools that are available on each workstation. This bioformat software is also available for download at: 
 https://www.openmicroscopy.org/bio-formats/downloads/  
 1. The metadata is yanked out of the CZI file with this command line tool: */usr/local/share/bftools/showinf*
 1. The TIF images are yanked out with this tool: */usr/local/share/bftools/bfconvert*
@@ -38,20 +37,17 @@ in */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/tif*
     1. [scan_run](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/scanrun/)
 ### Setup
 1. To install the software prerequisites, [look here.](README.md) Or use the installed virtual environment on ratto, basalis and muralis by running: 
-
 ```source /usr/local/share/pipeline/bin/activate```
 
 1. To run any of these commands at high resolution, prefix each command with `nohup`and end the command with `&`. That will make it run in the background and you can log out.
-
 1. All scripts that can be parallelized are done in the script with the get_cpus method.
    
-## Preprocessing new scans starting with czi files.
-1. Create a folder with brain id under /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX create subfolder DKXX/czi and DKXX/tif.  Then copy the czi files to DKXX/czi.
-   
-1. Add entries in the animal, scan run and histology table in the database using the admin portal.  You can do this by using the corresponding app and clicking the button on the top right in the admin portal to create rows.
-1. All functionality for running the pipeline is found in src/create_pipeline.py
-
-   
+## Process
+1. Create a folder with brain id under /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX create subfolder DKXX/czi and DKXX/tif. 
+Then copy the czi files to DKXX/czi.   
+1. Add entries in the animal, scan run and histology table in the database using the admin portal.  
+You can do this by using the corresponding app and clicking the button on the top right in the admin portal to create rows.
+1. All functionality for running the pipeline is found in src/create_pipeline.py   
 1. Run: `python src/create_pipeline.py --animal DKXX`
     1. This will scan each czi file.
     1. Extracts the tif meta information and inserts into the slide_czi_to_tif.
@@ -106,11 +102,3 @@ This will run the entire process for channel 2. Most the steps will be automatic
 1. Repeat the process again for channel 3. Once you are happy with all the results run
 the process again but 
 with `python src/create_pipeline.py --animal DKXX --channel 1 downsample false --step 4`
-   ## Helper functions:
-   1. To report number of files in each subdirectory:
-   ```
-   find . -type d -print0 | while read -d '' -r dir; do
-       files=("$dir"/*)
-       printf "%5d files in directory %s\n" "${#files[@]}" "$dir"
-   done
-   ```
