@@ -10,12 +10,7 @@
 The pipeline process will take scanned images that are digitized into CZI files
 and make them available in Neuroglancer. The process involves the following steps:
 
-### Extracting scan images from the CZI files and store them for visualization and computation purposes
-### Manual Quality control of sections that allows bad sections to be replaced by normal ones
-### Automatic Creation and manual editing of masks around sections to exclude debres around the tissue.
-### Aligning the section images within the brain
-### Create files for viewing the 3D image in Neuroglancer.
-
+#### Extracting scan images from the CZI files and store them for visualization and computation purposes
 1. The user enters the initial information into the database. The entire process depends on this initial step and will not
 proceed without this information. Throughout the process, the database is checked
 for variables so it is vital for the correct information to be placed in these tables:
@@ -41,6 +36,7 @@ https://www.openmicroscopy.org/bio-formats/downloads/
     1. [slide](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slide/) 
     1. [slide_czi_to_tif](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slideczitotif/)
     1. [scan_run](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/scanrun/)
+#### Manual Quality control of sections that allows bad sections to be replaced by normal ones
 1. Once the TIF files are placed in the tif directory, the user can perform quality control on the 
 [slides](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slide/) in the
 database. There are around 150 slides per mouse with each slide usually containing 4 scenes(pictures).
@@ -53,6 +49,7 @@ from the database and the files are copied to:
     1. */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/thumbnail*
 1. We then normalize the TIF images intensities to a visiable range and store them 
 in */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/normalized*
+#### Automatic Creation and manual editing of masks around sections to exclude debres around the tissue.
 1. Masks are then created from the thumbnail images and are placed in:
 */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/masks/thumbnail_colored/*
 1. The masks are created with Pytorch and torchvision and the process is very similar to:
@@ -63,11 +60,13 @@ https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
 */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/masks/thumbnail_masked/* 
 are then used to create clean images in 
 */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/thumbnail_cleaned/*
+#### Aligning the section images within the brain
 1. The cleaned images are then aligned to each other using *Elastix* which is built into the SimpleITK library.
 Each image is aligned to the image before it in section order. This data is stored in the elastix_transformation table
 in the database. For each image, the rotation, xshift, and yshift data is stored. This is then used
 in the alignment process to create a stack of section to section aligned images. These images are then stored in:
 */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/thumbnail_aligned/*
+#### Create files for viewing the 3D image in Neuroglancer.
 1. The aligned images are now ready to be processed into Neuroglancer's default image type: 
 [precomputed](https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed)
 1. There are two steps to creating the precomputed format:
