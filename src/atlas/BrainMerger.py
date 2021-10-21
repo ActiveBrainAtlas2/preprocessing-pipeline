@@ -33,7 +33,8 @@ class BrainMerger(Atlas):
         self.sqlController = SqlController(self.fixed_brain.animal)
         width = self.sqlController.scan_run.width // 32
         height = self.sqlController.scan_run.height // 32
-        self.fixed_brain_center = np.array([width//2, height//2, 440//2])
+        depth = self.sqlController.get_section_count(self.fixed_brain.animal)
+        self.fixed_brain_center = np.array([width//2, height//2, depth//2])
         self.threshold = threshold
         self.volumes_to_merge = defaultdict(list)
         self.origins_to_merge = defaultdict(list)

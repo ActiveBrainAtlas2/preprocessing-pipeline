@@ -1,16 +1,20 @@
 import argparse
-import os, sys
+import os
+import sys
+from pathlib import Path
 import numpy as np
-from numpy.core.defchararray import translate
 import torch
 import torch.utils.data
 from PIL import Image
-import pandas as pd
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
-from engine import train_one_epoch, evaluate
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
+
+
+from masking.engine import train_one_epoch, evaluate
 import utils
 import transforms as T
 import cv2
@@ -87,7 +91,7 @@ class MaskDataset(torch.utils.data.Dataset):
 
 
 def get_model(num_classes):
-   # load an object detection model pre-trained on COCO
+    # load an object detection model pre-trained on COCO
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
     # get the number of input features for the classifier
     in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -112,14 +116,14 @@ def get_model_instance_segmentation(num_classes):
     return model
 
 def get_transform(train):
-   transforms = []
-   # converts the image, a PIL image, into a PyTorch Tensor
-   transforms.append(T.ToTensor())
-   if train:
-      # during training, randomly flip the training images
-      # and ground-truth for data augmentation
-      transforms.append(T.RandomHorizontalFlip(0.5))
-   return T.Compose(transforms)
+    transformeds = []
+    # converts the image, a PIL image, into a PyTorch Tensor
+    transformeds.append(T.ToTensor())
+    if train:
+        # during training, randomly flip the training images
+        # and ground-truth for data augmentation
+        transformeds.append(T.RandomHorizontalFlip(0.5))
+    return T.Compose(transformeds)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
@@ -143,8 +147,9 @@ if __name__ == '__main__':
     dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
     dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
     # define training and validation data loaders
+    workers = 4
     data_loader = torch.utils.data.DataLoader(
-                dataset, batch_size=2, shuffle=True, num_workers=4,
+                dataset, batch_size=2, shuffle=True, num_workers=workers,
                 collate_fn=utils.collate_fn)
     data_loader_test = torch.utils.data.DataLoader(
             dataset_test, batch_size=1, shuffle=False, num_workers=0,
@@ -153,7 +158,7 @@ if __name__ == '__main__':
 
     if torch.cuda.is_available(): 
         device = torch.device('cuda') 
-        print('Using GPU')
+        print('Using Nvidia graphics card GPU')
     else:
         device = torch.device('cpu')
         print('Using CPU')
