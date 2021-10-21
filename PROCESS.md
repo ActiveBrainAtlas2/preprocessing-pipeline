@@ -10,7 +10,7 @@
 The pipeline process will take scanned images that are digitized into CZI files
 and make them available in Neuroglancer. The process involves the following steps:
 
-#### Extracting scan images from the CZI files and store them for visualization and computation purposes
+#### Extracting scan images from the CZI files and storing in various formats for visualization and computation purposes
 1. The user enters the initial information into the database. The entire process depends on this initial step and will not
 proceed without this information. Throughout the process, the database is checked
 for variables so it is vital for the correct information to be placed in these tables:
@@ -36,7 +36,7 @@ https://www.openmicroscopy.org/bio-formats/downloads/
     1. [slide](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slide/) 
     1. [slide_czi_to_tif](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slideczitotif/)
     1. [scan_run](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/scanrun/)
-#### Manual Quality control of sections that allows bad sections to be replaced by normal ones
+#### Manual Quality control of sections that allows the replacing of bad sections with neighboring section.
 1. Once the TIF files are placed in the tif directory, the user can perform quality control on the 
 [slides](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slide/) in the
 database. There are around 150 slides per mouse with each slide usually containing 4 scenes(pictures).
