@@ -1,3 +1,10 @@
+### Table of contents for the pipeline process
+1. [Active Brain Atlas home page](https://github.com/ActiveBrainAtlas2)
+1. [Installing the pipeline software](SETUP.md)
+1. [A description of the pipeline process with detailed instructions](PROCESS.md)
+1. [The entire MySQL database schema for the pipeline and the Django portal](schema.sql)
+1. [Software design and organization](Design.md)
+
 # Organization of the code
 
 The goal of this document is to specify the design of the software used for alignment, excluding the structure detection software.
