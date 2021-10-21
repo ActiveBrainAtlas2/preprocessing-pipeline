@@ -36,7 +36,7 @@ https://www.openmicroscopy.org/bio-formats/downloads/
     1. [slide](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slide/) 
     1. [slide_czi_to_tif](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slideczitotif/)
     1. [scan_run](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/scanrun/)
-#### Manual Quality control of sections that allows the replacing of bad sections with neighboring section.
+#### Manual quality control of sections that allows the replacing of bad sections with neighboring section.
 1. Once the TIF files are placed in the tif directory, the user can perform quality control on the 
 [slides](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slide/) in the
 database. There are around 150 slides per mouse with each slide usually containing 4 scenes(pictures).
@@ -49,7 +49,7 @@ from the database and the files are copied to:
     1. */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/thumbnail*
 1. We then normalize the TIF images intensities to a visiable range and store them 
 in */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/normalized*
-#### Automatic Creation and manual editing of masks around sections to exclude debres around the tissue.
+#### Automatic creation and manual editing of masks around sections to exclude debres around the tissue.
 1. Masks are then created from the thumbnail images and are placed in:
 */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/masks/thumbnail_colored/*
 1. The masks are created with Pytorch and torchvision and the process is very similar to:
