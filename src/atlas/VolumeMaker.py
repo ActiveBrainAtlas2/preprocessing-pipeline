@@ -19,9 +19,9 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
 DOWNSAMPLE_FACTOR = 32
-from atlas.Brain import Brain
+from atlas.BrainStructureManager import BrainStructureManager
 
-class VolumeMaker(Brain):
+class VolumeMaker(BrainStructureManager):
     def __init__(self,animal):
         super().__init__(animal)
 

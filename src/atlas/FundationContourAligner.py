@@ -34,9 +34,9 @@ from lib.file_location import DATA_PATH, FileLocationManager
 from lib.utilities_alignment import load_transforms_of_prepi, transform_points, create_downsampled_transforms
 from lib.utilities_atlas import ATLAS
 DOWNSAMPLE_FACTOR = 32
-from atlas.Brain import Brain
+from atlas.BrainStructureManager import BrainStructureManager
 
-class FundationContourAligner(Brain):
+class FundationContourAligner(BrainStructureManager):
     def __init__(self,animal):
         super().__init__(animal)
         self.contour_path = os.path.join(DATA_PATH, 'atlas_data','foundation_brain_annotations',f'{self.animal}_annotation.csv')

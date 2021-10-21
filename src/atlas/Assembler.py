@@ -1,6 +1,6 @@
 import numpy as np
 
-from atlas.Brain import Brain,Atlas
+from atlas.BrainStructureManager import BrainStructureManager,Atlas
 
 class Assembler:
     def __init__(self):
@@ -56,9 +56,9 @@ class Assembler:
             self.assemble_all_structure_volume()
         self.plotter.plot_3d_image_stack(self.combined_volume,2)
 
-class BrainAssembler(Brain,Assembler):
+class BrainAssembler(BrainStructureManager,Assembler):
     def __init__(self,animal):
-        Brain.__init__(self,animal)
+        BrainStructureManager.__init__(self,animal)
         Assembler.__init__(self)
 
 

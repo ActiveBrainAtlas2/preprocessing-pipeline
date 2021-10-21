@@ -17,7 +17,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from lib.utilities_atlas import singular_structures
 from lib.sqlcontroller import SqlController
 from lib.utilities_atlas_lite import  symmetricalize_volume, find_merged_bounding_box,crop_and_pad_volumes
-from atlas.Brain import Atlas,Brain
+from atlas.BrainStructureManager import Atlas,BrainStructureManager
 from rough_alignment.RigidRegistration import RigidRegistration
 import SimpleITK as sitk
 MANUAL = 1
@@ -28,8 +28,8 @@ class BrainMerger(Atlas):
 
     def __init__(self,threshold = 0.9,moving_brains = ['MD594', 'MD585']):
         super().__init__()
-        self.fixed_brain = Brain('MD589')
-        self.moving_brains = [Brain(braini) for braini in moving_brains]
+        self.fixed_brain = BrainStructureManager('MD589')
+        self.moving_brains = [BrainStructureManager(braini) for braini in moving_brains]
         self.sqlController = SqlController(self.fixed_brain.animal)
         width = self.sqlController.scan_run.width // 32
         height = self.sqlController.scan_run.height // 32

@@ -11,7 +11,7 @@ from timeit import default_timer as timer
 import shutil
 from cloudvolume import CloudVolume
 from pathlib import Path
-from Brain import Atlas,Brain
+from BrainStructureManager import Atlas,BrainStructureManager
 from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -52,7 +52,7 @@ class NgSegmentMaker(Atlas):
         self.resolution = self.get_atlas_resolution()
     
     def get_atlas_resolution(self):
-        self.fixed_brain = Brain('MD589')
+        self.fixed_brain = BrainStructureManager('MD589')
         resolution = self.fixed_brain.get_resolution()
         SCALE = 32
         return int(resolution * SCALE * 1000)

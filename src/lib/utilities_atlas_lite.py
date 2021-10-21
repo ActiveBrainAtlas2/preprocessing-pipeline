@@ -98,7 +98,7 @@ def crop_and_pad_volumes(merged_bounding_box=None, bounding_box_volume=None):
     if isinstance(bounding_box_volume, dict):
         bounding_box_volume = list(bounding_box_volume.items())
     vols = [crop_and_pad_volume(volume, bounding_box, merged_bounding_box=merged_bounding_box) for (volume, bounding_box) in bounding_box_volume]
-    # from atlas.Brain import Brain
+    # from atlas.BrainStructureManager import Brain
     # brain = Brain('MD585')
     # id = 0
     # axis = 1
