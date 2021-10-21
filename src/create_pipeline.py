@@ -95,6 +95,5 @@ if __name__ == '__main__':
         pipeline.create_downsampling()
         end = timer()
         print(f'Last step: creating neuroglancer images took {end - start} seconds')    
-        logger.info(f'Last step: creating neuroglancer took {end - start} seconds')
 
     
