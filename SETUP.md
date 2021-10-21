@@ -1,12 +1,12 @@
-### Table of contents for the pipeline process
+## Table of contents for the pipeline process
 1. [Active Brain Atlas home page](https://github.com/ActiveBrainAtlas2)
 1. [Installing the pipeline software](SETUP.md)
 1. [A description of the pipeline process with detailed instructions](PROCESS.md)
 1. [The entire MySQL database schema for the pipeline and the Django portal](schema.sql)
 1. [Software design and organization](Design.md)
 
-# Utilities for the Active Atlas Pipeline
-## Creating a sandbox on your computer. Only do this on your home computer. Our workstations already have the software installed.
+### Utilities for the Active Atlas Pipeline
+#### Creating a sandbox on your computer. Only do this on your home computer. Our workstations already have the software installed.
 1. git clone this repository, create a virtual environment in your home dir and install the required packages
     ```bash
     git clone git@github.com:ActiveBrainAtlas2/pipeline.git
