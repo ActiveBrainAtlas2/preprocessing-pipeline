@@ -23,8 +23,6 @@ def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=
         downsample_factor (float): the downsample factor of images that the output transform will be applied to.
         resolution (str): resolution of the image that the output transform will be applied to.
     """
-    # set the animal info
-
     sqlController = SqlController(stack)
     planar_resolution = sqlController.scan_run.resolution
     string_to_voxel_size = convert_resolution_string_to_um(stack, resolution)
@@ -34,9 +32,8 @@ def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=
         resolution = 'down%d' % downsample_factor
 
     fp = get_transforms_filename(stack, anchor_filepath=anchor_filepath)
-    # download_from_s3(fp, local_root=THUMBNAIL_DATA_ROOTDIR)
     Ts_down32 = load_data(fp)
-    if isinstance(Ts_down32.values()[0], list): # csv, the returned result are dict of lists
+    if isinstance(Ts_down32.values()[0], list): 
         Ts_down32 = {k: np.reshape(v, (3,3)) for k, v in Ts_down32.items()}
 
     if use_inverse:
@@ -126,7 +123,6 @@ def load_hdf(fn, key='data'):
 
 
 def one_liner_to_arr(line, func):
-    #####UPGRADE 2 -> 3 return np.array(map(func, line.strip().split()))
     return np.array(list(map(func, line.strip().split())))
 
 
@@ -145,6 +141,15 @@ def load_consecutive_section_transform(animal, moving_filepath, fixed_filepath):
         raise Exception('Transform file does not exist: %s to %s, %s' % (moving_filepath, fixed_filepath, param_file))
     return parse_elastix_parameter_file(param_file)
 
+def load_transforms_of_prepi(prepi):
+    path = FileLocationManager(prepi)
+    transform_files = os.listdir(path.elastix_dir)
+    transforms = {}
+    for filei in transform_files:
+        file_path = os.path.join(path.elastix_dir,filei,'TransformParameters.0.txt')
+        section = int(filei.split('_')[2])
+        transforms[section] = parse_elastix_parameter_file(file_path)
+    return transforms
 
 def parse_elastix_parameter_file(filepath):
     """
@@ -152,10 +157,8 @@ def parse_elastix_parameter_file(filepath):
     """
 
     d = parameter_elastix_parameter_file_to_dict(filepath)
-    # For alignment composition script
     rot_rad, x_mm, y_mm = d['TransformParameters']
     center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
-    # center[1] = d['Size'][1] - center[1]
 
     xshift = x_mm / d['Spacing'][0]
     yshift = y_mm / d['Spacing'][1]
@@ -201,14 +204,11 @@ def create_downsampled_transforms(animal, transforms, downsample):
     :param downsample; either true for thumbnails, false for full resolution images
     :return: corrected dictionary of filename: array  of transforms
     """
-    #transforms_scale_factor = \
-    #    convert_resolution_string_to_um(animal, downsample=transforms_resol) / \
-    #    convert_resolution_string_to_um(animal, downsample=downsample)
+
     if downsample:
         transforms_scale_factor = 1
     else:
         transforms_scale_factor = 32
-
 
     tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
 
@@ -216,8 +216,6 @@ def create_downsampled_transforms(animal, transforms, downsample):
     for img_name, tf in transforms.items():
         transforms_to_anchor[img_name] = \
             convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor) 
-    
-
     return transforms_to_anchor
 
 def convert_2d_transform_forms(arr):
@@ -269,10 +267,8 @@ def csv_to_dict(fp):
 def convert_2d_transform_formsXXX(transform, out_form):
     if isinstance(transform, str):
         if out_form == (2,3):
-            #return np.reshape(map(np.float, transform.split(',')), (2,3))
             return np.reshape(list(map(np.float, transform.split(','))), (2, 3))
         elif out_form == (3,3):
-            #return np.vstack([np.reshape(map(np.float, transform.split(',')), (2,3)), [0,0,1]])
             return np.vstack([np.reshape(list(map(np.float, transform.split(','))), (2, 3)), [0, 0, 1]])
     else:
         transform = np.array(transform)
@@ -289,7 +285,6 @@ def convert_2d_transform_formsXXX(transform, out_form):
 
     return transform
 
-##### cropbox methods
 
 def convert_cropbox_from_arr_xywh_1um(data, out_fmt, out_resol, stack):
     sqlController = SqlController(stack)
@@ -308,7 +303,6 @@ def convert_cropbox_from_arr_xywh_1um(data, out_fmt, out_resol, stack):
         raise
 
 def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack):
-    #print('data', data, 'in_fmt', in_fmt)
     sqlController = SqlController(stack)
     if isinstance(data, dict):
         data['rostral_limit'] = float(data['rostral_limit'])
@@ -316,7 +310,6 @@ def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack):
         data['dorsal_limit'] = float(data['dorsal_limit'])
         data['ventral_limit'] = float(data['ventral_limit'])
         arr_xywh = np.array([data['rostral_limit'], data['dorsal_limit'], data['caudal_limit'] - data['rostral_limit'] + 1, data['ventral_limit'] - data['dorsal_limit'] + 1])
-        # Since this does not check for wrt, the user needs to make sure the cropbox is relative to the input prep (i.e. the wrt attribute is the same as input prep)
     elif isinstance(data, str):
         if in_fmt == 'str_xywh':
             d = re.sub('[!@#$cropwarp\]\[\']', '', data)
@@ -324,7 +317,6 @@ def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack):
             a = [float(v) for v in l]
             arr_xywh = np.array(a)
         elif in_fmt == 'str_xxyy':
-            #####UPGRADE from 2 to 3arr_xxyy = np.array(map(np.round, map(eval, data.split(','))))
             arr_xxyy = np.array(list(map(np.round, list(map(eval, data.split(','))))))
             arr_xywh = np.array([arr_xxyy[0], arr_xxyy[2], arr_xxyy[1] - arr_xxyy[0] + 1, arr_xxyy[3] - arr_xxyy[2] + 1])
         else:
@@ -332,7 +324,6 @@ def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack):
     else:
         if in_fmt == 'arr_xywh':
             arr_xywh = data
-            #arr_xywh = np.array(data)
         elif in_fmt == 'arr_xxyy':
             arr_xywh = np.array([data[0], data[2], data[1] - data[0] + 1, data[3] - data[2] + 1])
         else:
@@ -346,7 +337,7 @@ def convert_cropbox_to_arr_xywh_1um(data, in_fmt, in_resol, stack):
 
 
 def convert_cropbox_fmt(out_fmt, data, in_fmt=None, in_resol='1um', out_resol='1um', stack=None):
-    if in_resol == out_resol: # in this case, stack is not required/ Arbitrarily set both to 1um
+    if in_resol == out_resol: 
         in_resol = '1um'
         out_resol = '1um'
     arr_xywh_1um = convert_cropbox_to_arr_xywh_1um(data=data, in_fmt=in_fmt, in_resol=in_resol, stack=stack)

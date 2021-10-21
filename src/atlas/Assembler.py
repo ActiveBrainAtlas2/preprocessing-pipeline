@@ -67,5 +67,6 @@ class AtlasAssembler(Atlas,Assembler):
         Atlas.__init__(self,atlas)
         self.threshold = 0.9
         self.threshold_volumes()
+        self.volumes = self.thresholded_volumes
         Assembler.__init__(self)
     

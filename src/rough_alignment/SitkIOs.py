@@ -1,7 +1,11 @@
 import SimpleITK as sitk
 import os
 class SitkIOs:
-    def load_image(image_dir, spacing=None):
+    def array_to_image(self,array):
+        sitk_image = sitk.GetImageFromArray(array)
+        return  sitk.Cast(sitk_image, sitk.sitkFloat32)
+
+    def load_image_from_directory(self,image_dir, spacing=None):
         """load_image [load all image files in a directory to a sitk image object]
 
         :param image_dir: [direction of tif files]

@@ -69,4 +69,4 @@ class TiffSegmentor:
             premotor = self.controller.get_coordinates_from_query_result(premotor)
             if premotor != []:
                 print('creating '+ csv_path)
-                np.savetxt(csv_path,premotor,delimiter=',')
+                np.savetxt(csv_path,premotor,delimiter=',',header='x,y,Section',comments = '',fmt = '%f')

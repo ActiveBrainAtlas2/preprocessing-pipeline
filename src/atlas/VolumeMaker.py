@@ -61,8 +61,8 @@ class VolumeMaker(Brain):
             self.calculate_origin_COM_and_volume(contours_of_structurei,structurei)
         
     def show_steps(self):
-        self.compare_point_dictionaries([self.COM,self.origins])
-        self.plot_volume()
+        # self.compare_point_dictionaries([self.COM,self.origins])
+        self.plot_volume_stack()
     
 
 
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     for animal in animals:
         volumemaker = VolumeMaker(animal)
         volumemaker.compute_COMs_origins_and_volumes()
-        # volumemaker.show_steps()
+        volumemaker.show_steps()
         volumemaker.save_coms()
         volumemaker.save_origins()
         volumemaker.save_volumes()

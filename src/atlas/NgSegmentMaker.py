@@ -12,11 +12,10 @@ import shutil
 from cloudvolume import CloudVolume
 from pathlib import Path
 from Brain import Atlas,Brain
-from src.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
-from lib.sqlcontroller import SqlController
-from src.atlas.Assembler import AtlasAssembler
+from atlas.Assembler import AtlasAssembler
 
 class NgConverter(NumpyToNeuroglancer):
 

@@ -1,6 +1,6 @@
 import os
 import json
-from lib.file_location import DATA_PATH
+from lib.file_location import DATA_PATH,FileLocationManager
 from lib.utilities_atlas import ATLAS
 from lib.sqlcontroller import SqlController
 import numpy as np
@@ -18,7 +18,8 @@ class Brain:
         self.thresholded_volumes = {}
         self.set_path_and_create_folders()
         self.plotter = Plotter()
-    
+        self.path = FileLocationManager(animal)
+
     def set_structure(self):
         possible_attributes_with_structure_list = ['origins','COM','volumes','thresholded_volumes','aligned_contours']
         loaded_attributes = []
@@ -106,7 +107,7 @@ class Brain:
         return list(getattr(self,attribute).keys())
     
     def save_coms(self):
-        self.check_attributes(['COM','structure'])
+        self.check_attributes(['COM','structures'])
         for structurei in self.structures:
             coordinates = self.COM[structurei]
             self.sqlController.add_com(prep_id = self.animal,abbreviation = structurei,coordinates= coordinates)

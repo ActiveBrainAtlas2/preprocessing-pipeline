@@ -245,8 +245,9 @@ class SqlController(object):
 
     def get_coordinates_from_query_result(self,query_result):
         coord = []
+        resolution = self.scan_run.resolution
         for resulti in query_result:
-            coord.append([resulti.x,resulti.y,resulti.section])
+            coord.append([resulti.x/resolution,resulti.y/resolution,int(resulti.section/20)])
         return(np.array(coord))
 
     def get_structure_color(self, abbrv):
