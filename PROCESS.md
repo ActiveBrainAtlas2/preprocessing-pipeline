@@ -6,8 +6,7 @@
 1. [The entire MySQL database schema for the pipeline and the Django portal](schema.sql)
 1. [Software design and organization](Design.md)
 
-## Preprocessing using the pipeline utility
-### Description
+## Overview of the pipeline utility process
 The pipeline process will take scanned images that are digitized into CZI files
 and make them available in Neuroglancer. The process involves the following steps:
 1. The user enters the initial information into the database. The entire process depends on this initial step and will not
@@ -68,8 +67,8 @@ in the alignment process to create a stack of section to section aligned images.
 [precomputed](https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed)
 1. There are two steps to creating the precomputed format:
     1. Create the intial chunk size of (64,64,1). Neuroglancer serves data from the webserver in chunks. The initial chunk
-    only has a z lenght of 1. This is necessary for the initial creation. 
-    This size results in too many files and needs to be *transfered* by the next step in the process which creates
+    only has a z length of 1. This is necessary for the initial creation. 
+    However, this chunk size results in too many files and needs to be *transfered* by the next step in the process which creates
     a better chunk size and results in they *pyramid* scheme that is best for viewing in a web browser. This
     data is stored in */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/neuroglancer_data/CX_rechunkme*
     1. The 2nd phase in the precomputed creates a set of optimum chunks from the  directory created in the previous

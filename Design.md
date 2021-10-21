@@ -6,7 +6,7 @@
 1. [The entire MySQL database schema for the pipeline and the Django portal](schema.sql)
 1. [Software design and organization](Design.md)
 
-# Organization of the code
+## Organization of the code
 
 The goal of this document is to specify the design of the software used for alignment, excluding the structure detection software.
 
@@ -31,12 +31,12 @@ While these files are kept in the repository, there is no requirement to keep th
 ### Attribution
 At any time there must be only one version of each file in src (github automatically keeps all versions). Thus there should be no *John' version* and *Bill's version*, only a single version. The pydoc in the file should attribute the file to a pragrammer or a sequence of programmers.
 
-# Lucidchart diagrams
+## Lucidchart diagrams
 * [workflow](https://lucid.app/lucidchart/invitations/accept/inv_0534f70f-378d-4708-bbae-056f1aa7d3b3)
 * [Data Organization](https://lucid.app/lucidchart/invitations/accept/inv_9d5af939-c120-46a5-b6da-649119d54ffe)
 
 
-# Alignments
+## Alignments
 
 ### Coordinate systems:
 * **atlas coordinates**: coordinates units are in microns, origin is at the center of the brain. This is a rescaled version of the Yncong (10,10,20) coordinate system.
