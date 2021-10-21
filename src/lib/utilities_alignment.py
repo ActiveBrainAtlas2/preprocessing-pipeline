@@ -147,7 +147,7 @@ def load_transforms_of_prepi(prepi):
     transforms = {}
     for filei in transform_files:
         file_path = os.path.join(path.elastix_dir,filei,'TransformParameters.0.txt')
-        section = int(filei.split('_')[2])
+        section = int(filei.split('_')[0])
         transforms[section] = parse_elastix_parameter_file(file_path)
     return transforms
 
