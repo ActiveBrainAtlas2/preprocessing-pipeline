@@ -26,37 +26,35 @@ mounted at /net/birdstore on our 3 workstations:
 the scanner and the scanned images. The images and metadata contained in each CZI file are extracted with a set of 
 tools that are available on each workstation. This bioformat software is also available for download at: 
 https://www.openmicroscopy.org/bio-formats/downloads/  
-1. The metadata is yanked out of the CZI file with this command line tool: */usr/local/share/bftools/showinf*
-1. The TIF images are yanked out with this tool: */usr/local/share/bftools/bfconvert*
+1. The metadata is extracted from the CZI file using the command line tool: */usr/local/share/bftools/showinf*
+1. The TIF images are extracted with this tool: */usr/local/share/bftools/bfconvert*
 1. The bioformat tools use Java so this must also be installed on the workstation.
-1. The *bfconvert* tool pulls the TIF files out of the CZI files and puts them
-in */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/tif*
-1. The *showinf* tool takes the metadata and inserts/updates it into these tables in the database:
+1. The extracted tiff files are them stored in */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/tif*
+1. The *showinf* tool takes the metadata and stores it into the following tables in the database:
     1. [slide](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slide/) 
     1. [slide_czi_to_tif](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slideczitotif/)
     1. [scan_run](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/scanrun/)
 1. Once the TIF files are placed in the tif directory, the user can perform quality control on the 
 [slides](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slide/) in the
-database. There are around 150 slides per mouse with each slide usually containing 4 scenes.
-During QA on the slides and scenes, the user will mark bad slides and replicate existing scenes to fill out
-the correct amount. Entire slides can also be removed by marking the slide appropriately in the portal.
+database. There are around 150 slides per mouse with each slide usually containing 4 scenes(pictures).
+During QA on the slides and scenes, the user will replace bad scenes with adjacent good scenes. 
+Entire slides can also be removed by marking the slide appropriately in the portal.
 Once QA is finished, the user will continue with the pipeline process.
 1. The user then creates the sections and web images. The correct order of slides/scenes is fetched
 from the database and the files are copied to:
     1. */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/full*
     1. */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/thumbnail*
-1. Since the TIF images are very often too dark to see, histogram equalization is done on images 
+1. We then normalize the TIF images intensities to a visiable range and store them 
 in */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/normalized*
 1. Masks are then created from the thumbnail images and are placed in:
 */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/masks/thumbnail_colored/*
 1. The masks are created with Pytorch and torchvision and the process is very similar to:
 https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
-1. The users should go through all the masks and dilate the images with a *white* paintbrush or
-remove shmutz with a *black* paintbrush.
-1. When the user is done, the pipeline is run again and the colored masks are turned into black and white masks.
-1. The black and white masks in  
-*/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/masks/thumbnail_masked/* then used
-to create clean images in 
+1. The users can then add to the mask with a *white* paintbrush or remove mask sections with a *black* paintbrush.
+1. When the user is done, the pipeline is run again and the edited masks are extracted.
+1. masks in  
+*/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/masks/thumbnail_masked/* 
+are then used to create clean images in 
 */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/thumbnail_cleaned/*
 1. The cleaned images are then aligned to each other using *Elastix* which is built into the SimpleITK library.
 Each image is aligned to the image before it in section order. This data is stored in the elastix_transformation table
