@@ -10,7 +10,7 @@
 
 The goal of this document is to specify the design of the software used for alignment, excluding the structure detection software.
 
-The description here is for production code, therefor **only** for executable python (`.py`) files and shell (`.sh`) files.
+The description here is for production code, therefore **only** for executable python (`.py`) files and shell (`.sh`) files.
 
 The parameters for each of these files should be documented using the `argparse`
 library. 
