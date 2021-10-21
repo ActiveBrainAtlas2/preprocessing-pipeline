@@ -6,7 +6,37 @@
 1. [Software design and organization](Design.md)
 
 ## Preprocessing using pipeline_utility
-## Setups
+### Description
+The pipeline process will take scanned images that are digitized into CZI files
+and make them available in Neuroglancer. The process involves the following steps:
+1. The user enters the [animal](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slideczitotif/)
+information into the database. The entire process depends on this initial step and will not
+proceed without this initial information. Throughout the process, the database is checked
+for information so it is vital for the correct information to be placed in these tables:
+    1. [animal](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slideczitotif/)
+    1. [scan_run](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/scanrun/)
+    1. [histology](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/histology/)
+
+1. CZI files are placed on a network file system (NFS) which is named birdstore and is 
+mounted at /net/birdstore on our 3 workstations:
+    1. ratto
+    1. basalis
+    1. muralis
+1. The location of the CZI files is: */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/czi*
+1. CZI files are large compressed files containing around 20 images and a large amount of metadata that describes
+the scanner and the scanned images. The images and metadata contained in each CZI file is extraced with a set of 
+tools that are available on each workstation. The bioformat software is also available for download at: 
+https://www.openmicroscopy.org/bio-formats/downloads/  
+1. The metadata is yanked out of the CZI file with this command line tool: */usr/local/share/bftools/showinf*
+1. The TIF images are yanked out with this tool: */usr/local/share/bftools/bfconvert*
+1. The bioformat tools use Java so this must also be installed on the workstation.
+1. The *bfconvert* tool pulls the TIF files out of the CZI files and puts them
+in */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/tif*
+1. The *showinf* tool takes the metadata and inserts/updates it into these tables in the database:
+    1. [slide](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slide/) 
+    1. [slide_czi_to_tif](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slideczitotif/)
+    1. [scan_run](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/scanrun/)
+### Setup
 1. To install the software prerequisites, [look here.](README.md) Or use the installed virtual environment on ratto, basalis and muralis by running: 
 
 ```source /usr/local/share/pipeline/bin/activate```
