@@ -9,6 +9,13 @@
 ## Overview of the pipeline utility process
 The pipeline process will take scanned images that are digitized into CZI files
 and make them available in Neuroglancer. The process involves the following steps:
+
+### Extracting scan images from the CZI files and store them for visualization and computation purposes
+### Manual Quality control of sections that allows bad sections to be replaced by normal ones
+### Automatic Creation and manual editing of masks around sections to exclude debres around the tissue.
+### Aligning the section images within the brain
+### Create files for viewing the 3D image in Neuroglancer.
+
 1. The user enters the initial information into the database. The entire process depends on this initial step and will not
 proceed without this information. Throughout the process, the database is checked
 for variables so it is vital for the correct information to be placed in these tables:
