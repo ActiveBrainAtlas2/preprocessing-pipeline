@@ -39,7 +39,7 @@ https://www.openmicroscopy.org/bio-formats/downloads/
 #### Manual quality control of sections that allows the replacing of bad sections with neighboring section.
 1. Once the TIF files are placed in the tif directory, the user can perform quality control on the 
 [slides](https://activebrainatlas.ucsd.edu/activebrainatlas/admin/brain/slide/) in the
-database. There are around 150 slides per mouse with each slide usually containing 4 scenes(pictures).
+database. There are around 116 to 166 slides (CZI files) per mouse with each slide usually containing 4 scenes(pictures).
 During QA on the slides and scenes, the user will replace bad scenes with adjacent good scenes. 
 Entire slides can also be removed by marking the slide appropriately in the portal.
 Once QA is finished, the user will continue with the pipeline process.
@@ -73,12 +73,15 @@ in the alignment process to create a stack of section to section aligned images.
     1. Create the intial chunk size of (64,64,1). Neuroglancer serves data from the webserver in chunks. The initial chunk
     only has a z length of 1. This is necessary for the initial creation. 
     However, this chunk size results in too many files and needs to be *transfered* by the next step in the process which creates
-    a better chunk size and results in they *pyramid* scheme that is best for viewing in a web browser. This
+    a better chunk size and results in the *pyramid* scheme that is best for viewing in a web browser. This
     data is stored in */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/neuroglancer_data/CX_rechunkme*
-    1. The 2nd phase in the precomputed creates a set of optimum chunks from the  directory created in the previous
+    1. The 2nd phase in the precomputed process creates a set of optimum chunks from the  directory created in the previous
     step and places the new pyramid files in 
     */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/neuroglancer_data/CX*
-    This data is now ready to be served by the Apache web server.
+    This data is now ready to be served by the Apache web server. Note that all the chunks 
+    (and there can be millions of files) are compressed with *gzip* and so the Apache web server
+    must be configured to serve compressed files. This is done in one of the configuration files
+    under the Apache configuration directory on the web server.
 1. All data in */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/* is available to Neuroglancer. When
 the user opens up Neuroglancer and enters a URL path in the precomputed field, the URL will actually be
 pointing to the data on birdstore. For example, typing this URL in Neuroglancer: 
