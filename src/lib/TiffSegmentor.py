@@ -5,10 +5,10 @@ import numpy as np
 from datetime import datetime
 from lib.utilities_process import workernoshell
 from lib.sqlcontroller import SqlController
-class TiffSegmentor:
+from cell_extractor.CellDetectorBase import CellDetectorBase
+class TiffSegmentor(CellDetectorBase):
     def __init__(self,animal):
-        self.animal = animal
-        self.controller = SqlController(animal)
+        super.__init__(animal,0)
         self.detect_annotator_person_id()
     
     def detect_annotator_person_id(self):
@@ -19,30 +19,31 @@ class TiffSegmentor:
             has_annotation = self.controller.get_layer_data(search_dictionary)
             if has_annotation != []:
                 self.person_id = person_id
-
     
-    def create_directories_for_channeli(self,channel):
-        self.channel = channel
-        self.tif_directory = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{self.animal}/preps/CH{self.channel}/full_aligned/'
-        self.animal_directory = f'/data/cell_segmentation/{self.animal}'
-        self.save_directory = self.animal_directory + f'/CH{self.channel}/'
-        if not os.path.exists(self.animal_directory):
-            os.mkdir(self.animal_directory)
-        if not os.path.exists(self.save_directory):
-            os.mkdir(self.save_directory)
+    def get_save_folders(self,save_directory):
+        tif_directory = self.path.get_full_aligned()
         files = os.listdir(self.tif_directory)
+        self.save_folders = []
         for filei in files:
             file_name = filei[:-4]
-            save_folder = self.save_directory+file_name
+            save_folder = os.path.join(save_directory,file_name)
+            self.save_folders.append(save_folder)
+
+    def create_directories_for_channeli(self,channel):
+        self.channel = channel
+        os.path.join(self.path.prep)
+        self.tif_directory = self.path.get_full_aligned(self.channel)
+        self.save_directory = self.DATA_DIR + f'/CH{self.channel}/'
+        if not os.path.exists(self.save_directory):
+            os.mkdir(self.save_directory)
+        self.get_save_folders(self.save_directory)
+        for save_folder in self.save_folders:
             if not os.path.exists(save_folder):
                 os.mkdir(save_folder)
 
     def generate_tiff_segments(self,channel,create_csv=False):
         self.create_directories_for_channeli(channel)
-        files = os.listdir(self.tif_directory)
-        for filei in files:
-            file_name = filei[:-4]
-            save_folder = self.save_directory+file_name
+        for save_folder in self.save_folders:
             if create_csv:
                 self.create_sectioni_csv(save_folder,int(file_name))
                 if len(os.listdir(save_folder)) >= 10:
@@ -50,8 +51,9 @@ class TiffSegmentor:
             else:
                 if len(os.listdir(save_folder)) == 10:
                     continue
-            cmd = [f'convert', self.tif_directory + filei, '-compress', 'LZW', '-crop', '2x5-0-0@', 
-            '+repage', '+adjoin', f'{save_folder}/{file_name}tile-%d.tif']
+            cmd = [f'convert', self.tif_directory + filei, '-compress', 'LZW', '-crop', 
+            f'{self.ncol}x{self.nrow}-0-0@', '+repage', '+adjoin', 
+            f'{save_folder}/{file_name}tile-%d.tif']
             print(' '.join(cmd))
             workernoshell(cmd)
     

@@ -15,7 +15,7 @@ class SampleExtractor(CellDetectorBase):
         super().__init__(animal,section)
         self.t0=time()
         self.section=section
-        self.SECTION_DIR=os.path.join(self.DATA_DIR,f"{self.section:03}")
+        self.SECTION_DIR=os.path.join(self.CH3,f"{self.section:03}")
         print('section=%d, SECTION_DIR=%s'%(self.section,self.SECTION_DIR))
         self.thresh=2000
         self.cell_index = 0
@@ -26,21 +26,6 @@ class SampleExtractor(CellDetectorBase):
     def load_manual_annotation(self):
         dfpath = glob.glob(os.path.join(self.SECTION_DIR, f'*{self.section}*.csv'))[0]
         self.manual_annotation = pd.read_csv(dfpath)
-        
-    def get_tile_and_image_dimensions(self):
-        self.width,self.height = self.get_image_dimension()
-        self.tile_height = int(self.height / 5)
-        self.tile_width=int(self.width/2)
-
-    def get_tile_origins(self):
-        print('width=%d, tile_width=%d ,height=%d, tile_height=%d'
-        %(self.width, self.tile_width,self.height,self.tile_height))
-        self.tile_origins={}
-        for i in range(10):
-            row=int(i/2)
-            col=i%2
-            self.tile_origins[i] = (row*self.tile_height,col*self.tile_width)
-        print('origins=',self.tile_origins)
 
     def collect_examples(self,labels,pos_locations,Stats,img,min_size=int(100/2),origin=[0,0]):
         Examples=[]
@@ -80,9 +65,6 @@ class SampleExtractor(CellDetectorBase):
         relarge=cv2.resize(blurred,(0,0),fx=20,fy=20) #,interpolation=cv2.INTER_AREA)
         difference=image-relarge
         return difference
-    
-    def get_tile_origin(self,tilei):
-        return np.array(self.tile_origins[tilei],dtype=np.int32)
     
     def get_manual_labels_in_tilei(self,tilei):
         tile_origin= self.get_tile_origin(tilei)

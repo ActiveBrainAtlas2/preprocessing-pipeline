@@ -9,7 +9,7 @@ from CellDetectorBase import CellDetectorBase
 class FeatureFinder(CellDetectorBase):
     def __init__(self,animal,section):
         super().__init__(animal,section)
-        print('DATA_DIR=%s'%(self.DATA_DIR))
+        print('DATA_DIR=%s'%(self.CH3))
 
     
     def main(self):

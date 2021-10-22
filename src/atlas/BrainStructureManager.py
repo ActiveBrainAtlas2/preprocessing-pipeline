@@ -15,6 +15,12 @@ class BrainStructureManager(Brain):
         self.aligned_contours = {}
         self.thresholded_volumes = {}
         self.set_path_and_create_folders()
+        self.attribute_functions = dict(
+            origins = self.load_origins,
+            COM = self.load_com,
+            volumes = self.load_volumes,
+            aligned_contours = self.load_aligned_contours,
+            structures = self.set_structure)
 
     def set_structure(self):
         possible_attributes_with_structure_list = ['origins','COM','volumes','thresholded_volumes','aligned_contours']
@@ -149,20 +155,6 @@ class BrainStructureManager(Brain):
             all_structures.append(data)
         all_structures = np.vstack(all_structures)
         self.plotter.plot_3d_scatter(all_structures,marker=dict(size=3,opacity=0.5),title = self.animal)
-    
-    def check_attributes(self,attribute_list):
-        attribute_functions = dict(
-            origins = self.load_origins,
-            COM = self.load_com,
-            volumes = self.load_volumes,
-            aligned_contours = self.load_aligned_contours,
-            structures = self.set_structure)
-        for attribute in attribute_list:
-            if not hasattr(self,attribute) or getattr(self,attribute) == {}:
-                if attribute in attribute_functions:
-                    attribute_functions[attribute]()
-                else:
-                    raise NotImplementedError
 
 class Atlas(BrainStructureManager):
     def __init__(self,atlas = ATLAS):
