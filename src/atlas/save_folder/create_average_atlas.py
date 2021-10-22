@@ -53,8 +53,7 @@ ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', atlas_name)
 for brain_m in moving_brain_names:
     moving_brain_spec = {'name': brain_m, 'vol_type': 'annotationAsScore', 'resolution': resolution}
     print('Brain', moving_brain_spec)
-    moving_brain = load_original_volume_all_known_structures_v3(stack_spec=moving_brain_spec, 
-                                                                structures=structures, in_bbox_wrt='wholebrain')
+    moving_brain = load_original_volume_all_known_structures_v3(stack_spec=moving_brain_spec, structures=structures, in_bbox_wrt='wholebrain')
     alignment_spec = dict(stack_m=moving_brain_spec, stack_f=fixed_brain_spec, warp_setting=109)
     moving_brain_structure_centroids_input_resol = get_centroid_3d(moving_brain)
     # Load registration.

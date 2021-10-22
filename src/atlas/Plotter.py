@@ -1,3 +1,4 @@
+from SimpleITK.SimpleITK import NormalizeToConstantImageFilter_swigregister
 import numpy as np
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
@@ -37,22 +38,27 @@ class Plotter:
         ax.voxels(boolean_array,edgecolor='k')
         self.show_according_to_setting()
     
-    def plot_3d_image_stack(self,stack,axis = 0):
+    def plot_3d_image_stack_on_axes(self,fig_and_axes,stack,axis = 0,vmin_and_max=None):
+        fig,ax = fig_and_axes
         if axis !=0:
             stack = np.swapaxes(stack,0,axis)
         def _update_image(val):
             current_section = slider.val
             plot.set_data(stack[int(current_section)])
             fig.canvas.draw_idle()
-        fig, ax = plt.subplots()
         mid_point = int(len(stack)/2)
-        if np.all(stack>=0):
-            plot = ax.imshow(stack[mid_point],vmin = 0,vmax = 50)
+        if vmin_and_max is not None:
+            vmin,vmax = vmin_and_max
+            plot = ax.imshow(stack[mid_point],vmin = vmin,vmax = vmax)
         else:
-            plot = ax.imshow(stack[mid_point])
+            plot = ax.imshow(stack[mid_point],vmin = stack.min(),vmax = stack.max())
         ax = plt.axes([0.25, 0.15, 0.65, 0.03])
-        slider = Slider(ax, 'index', 0, stack.shape[0], valinit=mid_point, valfmt='%d')
+        slider = Slider(ax, 'index',0, stack.shape[0]-1, valinit=mid_point, valfmt='%d')
         slider.on_changed(_update_image)
+    
+    def plot_3d_image_stack(self,stack,axis = 0,vmin_and_max=None):
+        fig_and_axes = plt.subplots()
+        self.plot_3d_image_stack_on_axes(fig_and_axes,stack,axis = axis,vmin_and_max=vmin_and_max)
         self.show_according_to_setting()
 
     def compare_contour_and_stack(self,contour,stack,axis = 2):
@@ -109,3 +115,24 @@ class Plotter:
             fig.add_trace(go.Scatter3d(x=values[:,0], y=values[:,1], z=values[:,2],
                                     mode='markers'),row = 1,col = 1)
         fig.show()
+    
+    def batch_plotter(self,plot_objects,plotting_function,**kwargs):
+        nplots = len(plot_objects)
+        if 'nrow' in kwargs:
+            nrow = kwargs['nrow']
+            ncol = nplots//nrow
+        if 'ncol' in kwargs:
+            ncol = kwargs['ncol']
+            nrow = nplots//ncol
+        fig,ax = plt.subplots(ncols=ncol,nrows=nrow)
+        for coli in range(ncol):
+            for rowi in range(nrow):
+                if ncol == 1:
+                    fig_and_axes = (fig,ax[rowi])
+                elif nrow == 1:
+                    fig_and_axes = (fig,ax[coli])
+                else:
+                    fig_and_axes = (fig,ax[rowi,coli])
+                plotting_function(fig_and_axes,plot_objects[int(coli*nrow+rowi)])
+        plt.show()
+            

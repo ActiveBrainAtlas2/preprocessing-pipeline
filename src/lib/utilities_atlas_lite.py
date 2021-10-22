@@ -98,6 +98,12 @@ def crop_and_pad_volumes(merged_bounding_box=None, bounding_box_volume=None):
     if isinstance(bounding_box_volume, dict):
         bounding_box_volume = list(bounding_box_volume.items())
     vols = [crop_and_pad_volume(volume, bounding_box, merged_bounding_box=merged_bounding_box) for (volume, bounding_box) in bounding_box_volume]
+    # from atlas.BrainStructureManager import Brain
+    # brain = Brain('MD585')
+    # id = 0
+    # axis = 1
+    # brain.plotter.plot_3d_image_stack(bounding_box_volume[id][0],axis)
+    # brain.plotter.plot_3d_image_stack(vols[id],axis)
     return vols
 
 def volume_to_polygon(volume,origin, times_to_simplify=0,min_vertices=200):
@@ -227,3 +233,67 @@ def polydata_to_mesh(polydata):
         faces = []
 
     return vertices, faces
+
+def get_original_volume_basename_v2(stack_spec):
+    """
+    Args:
+        stack_spec (dict):
+            - prep_id
+            - detector_id
+            - vol_type
+            - structure (str or list)
+            - name
+            - resolution
+    """
+
+    if 'prep_id' in stack_spec:
+        prep_id = stack_spec['prep_id']
+    else:
+        prep_id = None
+
+    if 'detector_id' in stack_spec:
+        detector_id = stack_spec['detector_id']
+    else:
+        detector_id = None
+
+    if 'vol_type' in stack_spec:
+        volume_type = stack_spec['vol_type']
+    else:
+        volume_type = None
+
+    if 'structure' in stack_spec:
+        structure = stack_spec['structure']
+    else:
+        structure = None
+
+    assert 'name' in stack_spec, stack_spec
+    stack = stack_spec['name']
+
+    if 'resolution' in stack_spec:
+        resolution = stack_spec['resolution']
+    else:
+        resolution = None
+
+    components = []
+    if prep_id is not None:
+        if isinstance(prep_id, str):
+            components.append(prep_id)
+        elif isinstance(prep_id, int):
+            components.append('prep%(prep)d' % {'prep': prep_id})
+    if detector_id is not None:
+        components.append('detector%(detector_id)d' % {'detector_id': int(detector_id)})
+    if resolution is not None:
+        components.append(resolution)
+
+    tmp_str = '_'.join(components)
+    basename = '%(stack)s_%(tmp_str)s%(volstr)s' % \
+               {'stack': stack, 'tmp_str': (tmp_str + '_') if tmp_str != '' else '',
+                'volstr': volume_type_to_str(volume_type)}
+    if structure is not None:
+        if isinstance(structure, str):
+            basename += '_' + structure
+        elif isinstance(structure, list):
+            basename += '_' + '_'.join(sorted(structure))
+        else:
+            raise ValueError('The following structure is not valid: ', structure)
+    return basename
