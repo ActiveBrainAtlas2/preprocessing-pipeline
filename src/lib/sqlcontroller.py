@@ -69,6 +69,16 @@ class SqlController(object):
         self.valid_sections = OrderedDict()
         # fill up the metadata_cache variable
         # self.session.close()
+    
+    def animal_exists(self,animal):
+        return bool(self.session.query(Animal).filter(Animal.prep_id == animal).first())
+
+    def get_animal_list(self):
+        results = self.session.query(Animal).all()
+        animals = []
+        for resulti in results:
+            animals.append(resulti.prep_id)
+        return animals
 
     def get_values_from_column(self, query_result):
         query_result = query_result.all()

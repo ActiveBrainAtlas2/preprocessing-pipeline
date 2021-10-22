@@ -7,15 +7,14 @@ import cv2
 from numpy.linalg import norm
 from time import time
 import glob
-from Brain import Brain
 import pickle as pkl
+from CellDetectorBase import CellDetectorBase
 
-class SampleExtractor(Brain):
+class SampleExtractor(CellDetectorBase):
     def __init__(self,animal,section):
-        super().__init__(animal)
+        super().__init__(animal,section)
         self.t0=time()
         self.section=section
-        self.DATA_DIR = f"/data/cell_segmentation/{self.animal}/CH3/"
         self.SECTION_DIR=os.path.join(self.DATA_DIR,f"{self.section:03}")
         print('section=%d, SECTION_DIR=%s'%(self.section,self.SECTION_DIR))
         self.thresh=2000
@@ -23,14 +22,6 @@ class SampleExtractor(Brain):
         self.Examples=[]
         self.Stats_list=[]
         self.diff_list=[]
-    
-    def get_sections_with_csv(self):
-        sections = os.listdir(self.DATA_DIR)
-        sections_with_csv = []
-        for sectioni in sections:
-            if glob.glob(os.path.join(self.DATA_DIR,sectioni,f'*.csv')):
-                sections_with_csv.append(int(sectioni))
-        return sections_with_csv
 
     def load_manual_annotation(self):
         dfpath = glob.glob(os.path.join(self.SECTION_DIR, f'*{self.section}*.csv'))[0]
@@ -158,7 +149,7 @@ class SampleExtractor(Brain):
         out={'Examples':self.Examples}
         print('about to write',time()-self.t0)
         t1=time()
-        with open(self.SECTION_DIR+f'/extracted_cells_{self.section}.pkl','bw') as pkl_file:
+        with open(self.get_example_save_path()) as pkl_file:
             pkl.dump(out,pkl_file)
         print('finished writing ',time()-t1)
 
