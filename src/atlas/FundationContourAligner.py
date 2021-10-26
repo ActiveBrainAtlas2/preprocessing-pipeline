@@ -31,7 +31,8 @@ sys.path.append(PATH)
 from lib.utilities_contour_lite import get_contours_from_annotations
 from lib.sqlcontroller import SqlController
 from lib.file_location import DATA_PATH, FileLocationManager
-from lib.utilities_alignment import load_transforms_of_prepi, transform_points, create_downsampled_transforms
+from lib.utilities_alignment import transform_points, create_downsampled_transforms
+from lib.utilities_create_alignment import parse_elastix
 from lib.utilities_atlas import ATLAS
 DOWNSAMPLE_FACTOR = 32
 from atlas.BrainStructureManager import BrainStructureManager
@@ -71,13 +72,13 @@ class FundationContourAligner(BrainStructureManager):
 
     def load_transformation_to_align_contours(self):
         self.create_clean_transform()
-        transforms = load_transforms_of_prepi(self.animal)
+        transforms = parse_elastix(self.animal)
         downsampled_transforms = create_downsampled_transforms(self.animal, transforms, downsample=True)
         downsampled_transforms = sorted(downsampled_transforms.items())
         self.transform_per_section = {}
         for section, transform in downsampled_transforms:
-            section_num = section
-            # transform = np.linalg.inv(transform)
+            section_num = int(section.split('.')[0])
+            transform = np.linalg.inv(transform)
             self.transform_per_section[section_num] = transform
 
     def load_contours_for_fundation_brains(self):
@@ -98,25 +99,27 @@ class FundationContourAligner(BrainStructureManager):
                 self.contour_per_structure_per_section[structurei][section] = contour_for_structurei[section]
 
     def align_contours(self):
-        md585_fixes = {161: 100, 182: 60, 223: 60, 231: 80, 253: 60, 229 :76,253 : 8}
+        md585_fixes = {161: 100, 182: 60, 223: 60, 231: 80, 229 :76,253 : 8,253:60}
         self.original_structures = defaultdict(dict)
         self.centered_structures = defaultdict(dict)
         self.aligned_structures = defaultdict(dict)
         for structure in self.contour_per_structure_per_section:
             for section in self.contour_per_structure_per_section[structure]:
+                section_str = str(section)
                 points = np.array(self.contour_per_structure_per_section[structure][section]) / DOWNSAMPLE_FACTOR
                 points = self.interpolate(points, max(3000, len(points)))
-                self.original_structures[structure][section] = points
+                self.original_structures[structure][section_str] = points
                 offset = self.section_offsets[section]
                 if self.animal == 'MD585' and section in md585_fixes.keys():
                     offset = offset - np.array([0, md585_fixes[section]])
                 if self.animal == 'MD589' and section == 297:
                     offset = offset + np.array([0, 35])
-                points = np.array(points)
+                if self.animal == 'MD589' and section == 295:
+                    offset = offset + np.array([7, 11])
                 points = np.array(points) +  offset
+                self.centered_structures[structure][section_str] = points.tolist()
                 points = transform_points(points, self.transform_per_section[section]) 
-                self.centered_structures[structure][section] = points.tolist()
-                self.aligned_structures[structure][section] = points.tolist()
+                self.aligned_structures[structure][section_str] = points.tolist()
 
     def create_aligned_contours(self):
         self.load_contours_for_fundation_brains()

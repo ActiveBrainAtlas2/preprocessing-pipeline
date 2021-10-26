@@ -34,8 +34,8 @@ class BrainStructureManager(Brain):
         for attributei in loaded_attributes:
             assert(self.structures==self.get_structures_from_attribute(attributei))
         if loaded_attributes == []:
-            self.load_aligned_contours()
-            self.structures = self.aligned_contours.keys()
+            self.load_origins()
+            self.structures = self.origins.keys()
     
     def set_path_and_create_folders(self):
         self.animal_directory = os.path.join(DATA_PATH, 'atlas_data', ATLAS, self.animal)

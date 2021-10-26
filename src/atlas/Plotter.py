@@ -29,9 +29,9 @@ class Plotter:
         fig.update_layout(title=title)
         fig.show()
 
-    def plot_contours(self,contours):
-        data = self.get_contour_data(contours)
-        self.plot_3d_scatter(data)
+    def plot_contours(self,contours,down_sample_factor=10,marker={}):
+        data = self.get_contour_data(contours,down_sample_factor)
+        self.plot_3d_scatter(data,marker=marker)
     
     def plot_3d_boolean_array(self,boolean_array):
         ax = plt.figure().add_subplot(projection='3d')

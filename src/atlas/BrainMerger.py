@@ -39,6 +39,9 @@ class BrainMerger(Atlas):
         self.volumes_to_merge = defaultdict(list)
         self.origins_to_merge = defaultdict(list)
         self.registrator = RigidRegistration()
+        self.sigma = 5.0
+        self.check_attributes(['structures'])
+        self.symmetry_list = self.structures
 
     def fine_tune_volume_position(self,fixed_volume,moving_volume,
         gradient_descent_setting,sampling_percentage):
@@ -47,7 +50,6 @@ class BrainMerger(Atlas):
         self.registrator.load_moving_image_from_np_array(moving_volume)
         self.registrator.set_least_squares_as_similarity_metrics(sampling_percentage)
         self.registrator.set_optimizer_as_gradient_descent(gradient_descent_setting)
-        self.registrator.status_reporter.set_report_events()
         self.registrator.set_initial_transformation()
         self.registrator.registration_method.Execute(self.registrator.fixed_image,
          self.registrator.moving_image)
@@ -65,16 +67,12 @@ class BrainMerger(Atlas):
         for volumei in volumes_to_align:
             transformed_volume = self.fine_tune_volume_position(volumes[0],volumes[volumei],gradient_descent_setting,
                 sampling_percentage = 1)
-            self.plotter.plot_3d_image_stack(transformed_volume-volumes[0],2)
-            self.plotter.plot_3d_image_stack(transformed_volume,2)
-            self.plotter.plot_3d_image_stack(volumes[0],2)
-            self.plotter.plot_3d_image_stack(volumes[1],2)
-            self.plotter.plot_3d_image_stack(volumes[2],2)
             volumes[volumei] = transformed_volume
         return volumes
 
     def get_merged_landmark_probability(self, structure, sigma=2.0):
-        force_symmetry=(structure in singular_structures)
+        print(f'aligning structure: {structure}')
+        force_symmetry=(structure in self.symmetry_list)
         volumes = self.volumes_to_merge[structure]
         origins = self.origins_to_merge[structure]
         bounding_boxes = [(x, x+volume.shape[0]-1, y, y+volume.shape[1]-1, z, z+volume.shape[2]-1) 
@@ -126,12 +124,7 @@ class BrainMerger(Atlas):
         self.load_data_from_fixed_and_moving_brains()
         self.get_merged_landmark_probability('6N_R', sigma=2.0)
         for structure in self.volumes_to_merge:
-            print(structure)
-            if 'SC' in structure or 'IC' in structure:
-                sigma = 5.0
-            else:
-                sigma = 2.0
-            self.volumes[structure], self.origins[structure] = self.get_merged_landmark_probability(structure, sigma=sigma)
+            self.volumes[structure], self.origins[structure] = self.get_merged_landmark_probability(structure, sigma=self.sigma)
             
 if __name__ == '__main__':
     merger = BrainMerger()

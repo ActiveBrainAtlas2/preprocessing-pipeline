@@ -11,14 +11,14 @@ from timeit import default_timer as timer
 import shutil
 from cloudvolume import CloudVolume
 from pathlib import Path
-from BrainStructureManager import Atlas,BrainStructureManager
+from atlas.BrainStructureManager import Atlas,BrainStructureManager
 from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
-from atlas.Assembler import AtlasAssembler
+from atlas.Assembler import AtlasAssembler, BrainAssembler
+from atlas.BrainStructureManager import BrainStructureManager
 
 class NgConverter(NumpyToNeuroglancer):
-
     def __init__(self, volume, scales, offset=[0, 0, 0], layer_type='segmentation'):
         self.volume = volume
         self.scales = scales
@@ -41,19 +41,15 @@ class NgConverter(NumpyToNeuroglancer):
         self.precomputed_vol.commit_info()
         self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
-class NgSegmentMaker(Atlas):
-    def __init__(self,atlas_name,debug):
-        super().__init__(atlas_name)
-        self.assembler = AtlasAssembler(atlas_name)
-        self.start = timer()
-        self.OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/atlas_test'
-        self.reset_output_path()
-        self.debug = debug
-        self.resolution = self.get_atlas_resolution()
-    
+class NgSegmentMaker:
     def get_atlas_resolution(self):
         self.fixed_brain = BrainStructureManager('MD589')
         resolution = self.fixed_brain.get_resolution()
+        SCALE = 32
+        return int(resolution * SCALE * 1000)
+    
+    def get_animal_resolution(self):
+        resolution = self.get_resolution()
         SCALE = 32
         return int(resolution * SCALE * 1000)
     
@@ -80,10 +76,30 @@ class NgSegmentMaker(Atlas):
         end = timer()
         print(f'Finito! Program took {end - self.start} seconds')
 
+class AtlasNgMaker(Atlas,NgSegmentMaker):
+    def __init__(self,atlas_name,debug,out_folder = 'atlas_test'):
+        Atlas.__init__(self,atlas_name)
+        self.assembler = AtlasAssembler(atlas_name)
+        self.start = timer()
+        self.OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/'+out_folder
+        self.reset_output_path()
+        self.debug = debug
+        self.resolution = self.get_atlas_resolution()
+
+class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
+    def __init__(self,animal,debug,out_folder = 'animal_folder'):
+        BrainStructureManager.__init__(self,animal)
+        self.assembler = BrainAssembler(animal)
+        self.start = timer()
+        self.OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/'+out_folder
+        self.reset_output_path()
+        self.debug = debug
+        self.resolution = self.get_animal_resolution()
+
 if __name__ == '__main__':
     atlas = 'atlasV8'
     debug = False
-    maker = NgSegmentMaker(atlas,debug)
+    maker = AtlasNgMaker(atlas,debug)
     maker.assembler.assemble_all_structure_volume()
     atlas_volume = maker.assembler.combined_volume
     maker.create_neuroglancer_files(atlas_volume)
