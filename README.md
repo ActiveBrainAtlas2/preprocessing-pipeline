@@ -47,6 +47,12 @@ preliminary image manipulations easier and quicker to perform.
 
 
 ### Masking and cleaning
+After the images are in the correct order and downsampled, the next is to 
+create masks of the images. These masks are black and white images that are used
+to clean the original full resolution and downsampled images. The images need
+to be cleaned to remove excess glue, dirt, hairs and other unwanted 'schmutz'.
+Cleaned images not only look better in the final viewing tool, but cleaned images
+also align much easier with the alignment tool.
 
 ### Section to section alignment
 
