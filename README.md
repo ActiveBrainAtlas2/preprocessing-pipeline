@@ -12,7 +12,7 @@ The ability to view and share high resolution microsopy data among different lab
 is an impending challenge of today's neuroscience research.  Our recent capacity to measure and store data on a 
 large scale has given rise to the need for a set of tools that enables seemless sharing of large data sets. 
 Going from biological samples to data that can be viewed, edited and shared is a nontrivial task. The challenges 
-presented by handling big data is clear as a set of complete section images with resonable resoltion could take
+presented by handling big data is clear as a set of complete section images with reasonable resolution could take
 around 5TB per mouse. On top of that, many copies of the data need to be created in order to visualize the image set
 at variable resolution through the internet. The processed data set also needs to be stored in an efficient and secure format 
 that is accessible by web servers. 
@@ -68,7 +68,7 @@ with the the appropriate scaling.
 ### Preparation of aligned data for use in Neuroglancer
 The aligned images are now ready to be processed into the 
 [precomputed](https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed) 
-format of neuroglancer.  To make the data available to a web browser over the internet, the data must
+format of Neuroglancer.  To make the data available to a web browser over the internet, the data must
 be broken up into 'chunks'. These chunks are created from the aligned images,
 then compressed and placed in a directory that is accessible by the web
 server. This data provides the different resolutions (pyramids) that allow
