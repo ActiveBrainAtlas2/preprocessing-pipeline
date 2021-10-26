@@ -55,5 +55,20 @@ Cleaned images not only look better in the final viewing tool, but cleaned image
 also align much easier with the alignment tool.
 
 ### Section to section alignment
+Tissue on the slides will always have different rotations, horizontal and 
+vertical shifts from scene to scene. These sections must be aligned for proper
+viewing in Neuroglancer. Neuroglancer creates virutal projects in the coronal
+and horizontal view and if the images are not aligned correctly, these virtual
+projects will look like noise. There are multiple ways to perform section to section
+alignment and our process uses Elastix. This opensource program is integrated
+into the pipeline process and is performed on the downsample files. Performing
+the alignment process on the full resolution images is untenable as the images
+are just too large. Elastix performs a correlation between the greyscale values
+of the adjoining images. It then stores the rotation, x-shift, and y-shift
+in the database. This data is then used to perform a rigid transformation
+between the adjoining images in the entire image stack. Once it is performed
+on the downsampled images, the process can be performed on the full resolution
+images with the adjusted parameters.
+
 
 ### Preparation of aligned data for use in Neuroglancer
