@@ -66,8 +66,8 @@ with the the appropriate scaling.
 
 
 ### Preparation of aligned data for use in Neuroglancer
-The aligned images are now ready to be processed into the [precomputed]
-(https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed) 
+The aligned images are now ready to be processed into the 
+[precomputed](https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed) 
 format of neuroglancer.  To make the data available to a web browser over the internet, the data must
 be broken up into 'chunks'. These chunks are created from the aligned images,
 then compressed and placed in a directory that is accessible by the web
