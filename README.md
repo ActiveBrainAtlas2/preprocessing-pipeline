@@ -60,7 +60,7 @@ section alignment is created on the downsample files using Elastix: an opensourc
 into the pipeline process. Performing the alignment process on the full resolution 
 images is untenable for the sheer size of these images. Elastix performs a correlation between the greyscale values
 of the adjoining images to assess alignment result. It then stores the rotation, x-shift, and y-shift
-in the database. This data is then uses rigid transformation to align adjoining images through the entire image stack. 
+in the database. Elastics then uses rigid transformation to align adjoining images through the entire image stack. 
 The transformations are calculated from downsampled images and then used to align the full resolution images 
 with the the appropriate scaling.
 
