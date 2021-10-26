@@ -60,14 +60,14 @@ section alignment is created on the downsample files using Elastix: an opensourc
 into the pipeline process. Performing the alignment process on the full resolution 
 images is untenable for the sheer size of these images. Elastix performs a correlation between the greyscale values
 of the adjoining images to assess alignment result. It then stores the rotation, x-shift, and y-shift
-in the database. Elastics then uses rigid transformation to align adjoining images through the entire image stack. 
+in the database. Elastix then uses rigid transformation to align adjoining images through the entire image stack. 
 The transformations are calculated from downsampled images and then used to align the full resolution images 
 with the the appropriate scaling.
 
 
 ### Preparation of aligned data for use in Neuroglancer
 The aligned images are now ready to be processed into the [precomputed]
-(https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed). 
+(https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed) 
 format of neuroglancer.  To make the data available to a web browser over the internet, the data must
 be broken up into 'chunks'. These chunks are created from the aligned images,
 then compressed and placed in a directory that is accessible by the web
