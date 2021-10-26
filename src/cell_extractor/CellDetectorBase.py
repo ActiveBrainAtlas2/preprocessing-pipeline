@@ -4,9 +4,16 @@ import glob
 from Brain import Brain
 import pickle as pkl
 import pandas as pd
+import numpy as np
 
 class CellDetectorBase(Brain):
     def __init__(self,animal,section = 0):
+        self.attribute_functions = dict(
+            width = self.get_image_dimension,
+            tile_width = self.get_image_dimension,
+            height = self.get_image_dimension,
+            tile_height = self.get_image_dimension,
+            tile_origins = self.get_tile_origins)
         super().__init__(animal)
         self.ncol = 2
         self.nrow = 5
@@ -21,16 +28,10 @@ class CellDetectorBase(Brain):
         self.get_tile_and_image_dimensions()
         self.get_tile_origins()
         self.check_tile_information()
-        self.attribute_functions = dict(
-            width = self.get_image_dimension,
-            tile_width = self.get_image_dimension,
-            height = self.get_image_dimension,
-            tile_height = self.get_image_dimension,
-            tile_origins = self.get_tile_origins)
     
     def get_tile_information(self):
         self.check_attributes(['tile_origins'])
-        ntiles = len(o)(self.tile_origins)
+        ntiles = len(self.tile_origins)
         tile_information = pd.DataFrame(columns = ['id','tile_origin','ncol','nrow','width','height'])
         for tilei in range(ntiles):
             tile_informationi = dict(
@@ -40,17 +41,18 @@ class CellDetectorBase(Brain):
                 nrow = self.nrow,
                 width = self.width,
                 height = self.height) 
-            tile_information.append(tile_informationi)
+            tile_information = tile_information.append(tile_informationi,ignore_index=True)
         return tile_information
     
     def save_tile_information(self):
         tile_information = self.get_tile_information()
-        tile_information.to_csv(self.TILE_INFO_DIR)
+        tile_information.to_csv(self.TILE_INFO_DIR,index = False)
     
     def check_tile_information(self):
         if os.path.exists(self.TILE_INFO_DIR):
-            tile_information = pf.load_csv(self.TILE_INFO_DIR)
-            assert tile_information.equals(self.get_tile_information())
+            tile_information = pd.read_csv(self.TILE_INFO_DIR)
+            tile_information.tile_origin = tile_information.tile_origin.apply(eval)
+            assert (tile_information == self.get_tile_information()).all().all()
         else:
             self.save_tile_information()
         
@@ -86,7 +88,7 @@ class CellDetectorBase(Brain):
         return self.CH3_SECTION_DIR+f'/extracted_cells_{self.section}.pkl'
     
     def get_feature_save_path(self):
-        return self.CH3+f'/puntas_{self.section}.csv'
+        return self.CH3_SECTION_DIR+f'/puntas_{self.section}.csv'
     
     def load_examples(self):
         save_path = self.get_example_save_path()

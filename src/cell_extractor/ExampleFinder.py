@@ -8,13 +8,12 @@ from numpy.linalg import norm
 from time import time
 import glob
 import pickle as pkl
-from CellDetectorBase import CellDetectorBase
+from cell_extractor.CellDetectorBase import CellDetectorBase
 
-class SampleExtractor(CellDetectorBase):
+class ExampleFinder(CellDetectorBase):
     def __init__(self,animal,section):
         super().__init__(animal,section)
         self.t0=time()
-        self.section=section
         print('section=%d, SECTION_DIR=%s'%(self.section,self.CH3_SECTION_DIR))
         self.thresh=2000
         self.min_example_size=int(100/2)
@@ -28,7 +27,7 @@ class SampleExtractor(CellDetectorBase):
         self.load_manual_annotation()
         for tile in range(10):
             self.load_and_preprocess_image(tile)
-            self.find_connected_segments(difference_ch3)
+            self.find_connected_segments(self.difference_ch3)
             if not self.found_connected_segments:
                 continue
             self.load_manual_labels_in_tilei(tile)
@@ -42,14 +41,14 @@ class SampleExtractor(CellDetectorBase):
                     self.positive_segment_locations[cloest_segment_id,:]=[labelx,labely]
                 print('tile=%d positives=%d, unmatched (size=%d):\n '%(tile,sum(self.is_possitive_segment),
                 len(self.labels_with_no_matching_segments)),self.labels_with_no_matching_segments)
-            tilei_examples=self.get_examples()
+            tilei_examples=self.get_examples(tile)
             self.Examples.append(tilei_examples)
 
     def save_examples(self):
         out={'Examples':self.Examples}
         print('about to write',time()-self.t0)
         t1=time()
-        with open(self.get_example_save_path()) as pkl_file:
+        with open(self.get_example_save_path(),'wb') as pkl_file:
             pkl.dump(out,pkl_file)
         print('finished writing ',time()-t1)
         
@@ -57,21 +56,29 @@ class SampleExtractor(CellDetectorBase):
         dfpath = glob.glob(os.path.join(self.CH3_SECTION_DIR, f'*{self.section}*.csv'))[0]
         self.manual_annotation = pd.read_csv(dfpath)
 
-    def get_examples(self):
+    def get_examples(self,tile):
         origin = self.get_tile_origin(tile)
         Examples=[]
         for labeli in range(len(self.is_possitive_segment)):
             _,_,width,height,area = self.connected_segment_info[2][labeli,:]
             if area>self.max_segment_size: 
                 continue
-            segment_col,segment_row= self.segment_location[labeli,:] 
+            segment_row,segment_col= self.segment_location[labeli,:] 
             example_half_height=max(2*height,self.min_example_size)  
             example_half_width=max(2*width,self.min_example_size)
             row_start = int(segment_row-example_half_height)
             col_start = int(segment_col-example_half_width)
+            if row_start < 0 :
+                row_start = 0
+            if col_start < 0:
+                col_start = 0
             row_end = int(segment_row+example_half_height)
-            row_end = int(segment_col+example_half_width)
-            example={'animal':animal,
+            col_end = int(segment_col+example_half_width)
+            if self.difference_ch3[row_start:row_end,col_start:col_end].size ==0:
+                breakpoint()
+            if self.difference_ch1[row_start:row_end,col_start:col_end].size == 0 :
+                breakpoint()
+            example={'animal':self.animal,
                     'section':self.section,
                     'index':self.cell_counter,
                     'label':int(self.is_possitive_segment[labeli]),
@@ -81,8 +88,8 @@ class SampleExtractor(CellDetectorBase):
                     'origin':origin,
                     'height':height,
                     'width':width,
-                    'image_CH3':self.difference_ch3[row_start:row_end,col_start:row_end],
-                    'image_CH1':self.difference_ch1[row_start:row_end,col_start:row_end]
+                    'image_CH3':self.difference_ch3[row_start:row_end,col_start:col_end],
+                    'image_CH1':self.difference_ch1[row_start:row_end,col_start:col_end]
                     }
             self.cell_counter+=1
             Examples.append(example)
@@ -123,7 +130,7 @@ class SampleExtractor(CellDetectorBase):
         self.connected_segment_info=cv2.connectedComponentsWithStats(np.int8(image>self.thresh))
         print('Computer Detections=',self.connected_segment_info[0],end=',')
         self.found_connected_segments = self.connected_segment_info[0]>2
-        if not segments_found:
+        if not self.found_connected_segments:
             print('skipping tile')
         else:
             self.Stats_list.append(self.connected_segment_info)
@@ -136,9 +143,9 @@ class SampleExtractor(CellDetectorBase):
     def load_and_preprocess_image(self,tile):
         self.ch3_image = self.get_tilei(tile,channel = 3)
         self.ch1_image = self.get_tilei(tile,channel = 1)
-        self.difference_ch3 = self.subtract_blurred_image(ch3_image)
-        self.difference_ch1 = self.subtract_blurred_image(ch1_image)
-        self.diff_list.append(difference_ch3)
+        self.difference_ch3 = self.subtract_blurred_image(self.ch3_image)
+        self.difference_ch1 = self.subtract_blurred_image(self.ch1_image)
+        self.diff_list.append(self.difference_ch3)
 
 
     def find_cloest_connected_segment_to_manual_labeli(self,labeli):
@@ -157,10 +164,10 @@ class SampleExtractor(CellDetectorBase):
 
 if __name__ == '__main__':
     animal = 'DK55'
-    extractor = SampleExtractor(animal,1)
+    extractor = ExampleFinder(animal,1)
     sections_with_csv = extractor.get_sections_with_csv()
     for sectioni in sections_with_csv:
         print(f'processing section {sectioni}')
-        extractor = SampleExtractor(animal,sectioni)
+        extractor = ExampleFinder(animal,sectioni)
         extractor.find_examples()
         extractor.save_examples()

@@ -17,10 +17,11 @@ class Brain:
         height = self.sqlController.scan_run.height
         return np.array([width,height])
     
-    def check_attributes(self,attribute_list,attribute_functions = self.attribute_functions):
+    def check_attributes(self,attribute_list):
+        assert(hasattr(self , 'attribute_functions'))
         for attribute in attribute_list:
             if not hasattr(self,attribute) or getattr(self,attribute) == {}:
-                if attribute in attribute_functions:
-                    attribute_functions[attribute]()
+                if attribute in self.attribute_functions:
+                    self.attribute_functions[attribute]()
                 else:
                     raise NotImplementedError
