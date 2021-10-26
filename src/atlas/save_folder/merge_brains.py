@@ -161,7 +161,7 @@ def merge_brains():
             
     for structure, volume_origin_list in volume_origin.items():
         if 'SC' in structure or 'IC' in structure:
-            sigma = 5
+            sigma = 5.0
         else:
             sigma = 2.0
         ## look at the average_shape method
@@ -198,8 +198,6 @@ def merge_brains():
 
         # add_layer_data_row(structure, com_ng*scales)
         
-        
-
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
