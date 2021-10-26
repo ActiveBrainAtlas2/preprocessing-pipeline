@@ -15,22 +15,25 @@ def sobel(img):
     sobel_x=(sobel_x - _mean)/_std
     sobel_y=(sobel_y - _mean)/_std
     return sobel_x, sobel_y
-def trim(a,s0,s1):
-    if(a.shape[0]>s0):
-        d=int((a.shape[0]-s0)/2)
-        a=a[d:d+s0,:]
-    if(a.shape[1]>s1):
-        d=int((a.shape[1]-s1)/2)
-        a=a[:,d:d+s1]
-    return a
-def equalize_size(a,b):
-    s0=min(a.shape[0],b.shape[0])
-    s1=min(a.shape[1],b.shape[1])
-    a=trim(a,s0,s1)
-    b=trim(b,s0,s1)
-    return a,b
-def calc_img_features(img):
-    img,mean=equalize_size(img,mean_s)
+
+def trim_array_to_size(array,size0,size2):
+    if(array.shape[0]>size0):
+        size_difference=int((array.shape[0]-size0)/2)
+        array=array[size_difference:size_difference+size0,:]
+    if(array.shape[1]>size2):
+        size_difference=int((array.shape[1]-size2)/2)
+        array=array[:,size_difference:size_difference+size2]
+    return array
+
+def equalize_array_size_by_trimming(array1,array2):
+    size0=min(array1.shape[0],array2.shape[0])
+    size1=min(array1.shape[1],array2.shape[1])
+    array1=trim_array_to_size(array1,size0,size1)
+    array2=trim_array_to_size(array2,size0,size1)
+    return array1,array2
+
+def calc_img_features(img,mean_s):
+    img,mean=equalize_array_size_by_trimming(img,mean_s)
     mean_x,mean_y=sobel(mean)
     img_x,img_y=sobel(img)
     
