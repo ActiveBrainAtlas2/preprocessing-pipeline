@@ -8,77 +8,70 @@
 
 ## A high level description of the Active Brain Atlas pipeline process
 
-The ability to view and share high resolution microsopy data among anatomists in
-different labs around the world has given rise for the need for a set of tools
-to perform this task. Going from tissue slides to data that can be viewed, edited
-and shared is an involved process. The popular phrase "big data" comes into play
-here quite visibly. Intermediary data can run around 5TB per mouse. The finished
-web data will take another 5TB. This finished data also needs to be stored in
-an efficient and secure format that is accessible by web servers. 
+The ability to view and share high resolution microsopy data among different laboratories across the continents 
+is an impending challenge of today's neuroscience research.  Our recent capacity to measure and store data on a 
+large scale has given rise to the need for a set of tools that enables seemless sharing of large data sets. 
+Going from biological samples to data that can be viewed, edited and shared is a nontrivial task. The challenges 
+presented by handling big data is clear as a set of complete section images with resonable resoltion could take
+around 5TB per mouse. On top of that, many copies of the data need to be created in order to visualize the image set
+at variable resolution through the internet. The processed data set also needs to be stored in an efficient and secure format 
+that is accessible by web servers. 
 
-While the image data is stored on the filesystem and served by the web server,
-the metadata describing the image data is stored in a database. This database
-is then accessible to the web server via the database portal in use by the entire
-process. Throughout the pipeline process, data is inserted, updated
-and retrieved with the database. The database provides a convenient and efficent
-way for multiple users anywhere in the world to create, retrieve, update, and 
-delete data.  
+The image data is stored on our filesystem and served by a web server while the image metadata is stored 
+in a database. A human user can then access information in the database and monitor each step of the 
+processing pipeline via a grapical interface. Throughout the pipeline, data is inserted, updated and retrieved to 
+and from the database to report the status of the processing steps. The database provides a convenient and 
+efficent way for multiple users to create, retrieve, update, and manage the shared data sets anywhere in the world.  
 
 The goal of this project is to allow labs to run this process on a cloud based or
-in house server setup with low human intervention. Users will be able to go
-into a web page and start, monitor and log the systems progress.
+in house server setup with low human intervention. Users will be able to start, monitor 
+and log systems progress entirely through a web page.
 
-The following steps are used to process this data, from slide scanning all the 
-way to web accessible data.
+The following steps describes the pipeline process, from slide scanning all the 
+way to the web accessible data.
 
 ### Raw data processing
 
 Each mouse brain has around 130-160 slides with 4 tissue samples on each slide.
-The slides are scanned and digitized into files that contain the images and also
-metadata. The images are extracted onto the filesystem and the metadata is 
-inserted into the relational database. Once the metadata is in the database
-and the image files have been extracted, the user(s) can perform quality control
-on the data and make sure all the scenes of data are in the correct order
-and any bad scenes are corrected and replaced if necessary. All this functionality
-is available in the database portal. Once the quality control has finished,
-the pipeline continues with the creation of images in the correct order with
-high quality images. Downsampled versions of the image are also created to make
-preliminary image manipulations easier and quicker to perform.
+The slides are scanned and digitized into files that contain both the images and the
+metadata. The images are extracted onto the filesystem and the metadata
+inserted into the relational database. The user(s) then use the web portal to perform 
+quality control on the data to make sure the sections are in the correct order and 
+to replace any bad sections if necessary. Once the quality control is finished,
+the pipeline continues to create the quality controlled images in full resolution. 
+Downsampled versions of the image are also created to make preliminary image manipulations
+easier and quicker to perform.
 
 
 ### Masking and cleaning
-After the images are in the correct order and downsampled, the next is to 
-create masks of the images. These masks are black and white images that are used
-to clean the original full resolution and downsampled images. The images need
-to be cleaned to remove excess glue, dirt, hairs and other unwanted 'schmutz'.
-Cleaned images not only look better in the final viewing tool, but cleaned images
-also align much easier with the alignment tool.
+After creating the quality controlled images, we then create masks that covers the 
+important biological tissue to remove signals from background and debres from the full resolution
+and downsampled images. This process remove excess glue, dirt, hairs and other unwanted signals.
+Cleaned images not only create better visualization, but also improves the accuracy of the subsequent
+section to section alignment.  Masks are created on downsamples images, quality controlled through a 
+manual step and scaled for the full resolution image.
 
 ### Section to section alignment
-Tissue on the slides will always have different rotations, horizontal and 
-vertical shifts from scene to scene. These sections must be aligned for proper
-viewing in Neuroglancer. Neuroglancer creates virutal projects in the coronal
-and horizontal view and if the images are not aligned correctly, these virtual
-projects will look like noise. There are multiple ways to perform section to section
-alignment and our process uses Elastix. This opensource program is integrated
-into the pipeline process and is performed on the downsample files. Performing
-the alignment process on the full resolution images is untenable as the images
-are just too large. Elastix performs a correlation between the greyscale values
-of the adjoining images. It then stores the rotation, x-shift, and y-shift
-in the database. This data is then used to perform a rigid transformation
-between the adjoining images in the entire image stack. Once it is performed
-on the downsampled images, the process can be performed on the full resolution
-images with the adjusted parameters.
+Brain tissue on the image have different rotations, horizontal and vertical shifts from section to section. 
+Therefore the sections must be aligned with each other for proper viewing in Neuroglancer. In the case 
+where a brain is sectioned sagittally, neuroglancer creates virutal images in the coronal and horizontal 
+view.  If the images are not aligned correctly, these virtual images will not be accurate. The section to 
+section alignment is created on the downsample files using Elastix: an opensource program that is integrated
+into the pipeline process. Performing the alignment process on the full resolution 
+images is untenable for the sheer size of these images. Elastix performs a correlation between the greyscale values
+of the adjoining images to assess alignment result. It then stores the rotation, x-shift, and y-shift
+in the database. This data is then uses rigid transformation to align adjoining images through the entire image stack. 
+The transformations are calculated from downsampled images and then used to align the full resolution images 
+with the the appropriate scaling.
 
 
 ### Preparation of aligned data for use in Neuroglancer
-The aligned images are now ready to be processed into a format known as 
-[precomputed](https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed).
-To make the data available to a web browser over the internet, the data must
+The aligned images are now ready to be processed into the [precomputed]
+(https://github.com/google/neuroglancer/tree/master/src/neuroglancer/datasource/precomputed). 
+format of neuroglancer.  To make the data available to a web browser over the internet, the data must
 be broken up into 'chunks'. These chunks are created from the aligned images,
 then compressed and placed in a directory that is accessible by the web
 server. This data provides the different resolutions (pyramids) that allow
 the user to zoom in and out. Once the data is viewable in a web browser,
-more metadata can be created by users and then this data is also stored
-in the database. All this data is then available to any person that has the
-appropriate access rights.
+more metadata and annotations can be created by users and stored in the database. 
+The images and the corresponding annotaions are then available to any personnel with the appropriate access.
