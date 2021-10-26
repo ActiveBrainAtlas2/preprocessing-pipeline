@@ -1,6 +1,6 @@
-from FundationContourAligner import FundationContourAligner
-from VolumeMaker import VolumeMaker
-from BrainMerger import BrainMerger
+from .FundationContourAligner import FundationContourAligner
+from .VolumeMaker import VolumeMaker
+from .BrainMerger import BrainMerger
 animals = ['MD585', 'MD589', 'MD594']
 for animal in animals:
     aligner = FundationContourAligner(animal)
