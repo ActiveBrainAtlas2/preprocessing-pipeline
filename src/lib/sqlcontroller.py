@@ -410,19 +410,6 @@ class SqlController(object):
         coordinates = (x,y,section)
         self.add_layer_data_row(animal,person_id,input_type_id,coordinates,structure_id,layer)
 
-    def get_centers_dict(self, prep_id, input_type_id=1, person_id=2):
-        rows = self.session.query(LayerData)\
-            .filter(LayerData.active.is_(True))\
-            .filter(LayerData.prep_id == prep_id)\
-            .filter(LayerData.input_type_id == input_type_id)\
-            .filter(LayerData.person_id == person_id)\
-            .all()
-        row_dict = {}
-        for row in rows:
-            structure = row.structure.abbreviation
-            row_dict[structure] = [row.x, row.y, row.section]
-        return row_dict
-
     def get_com_dict(self, prep_id, input_type_id=1, person_id=2,active = True):
         rows = self.session.query(LayerData)\
             .filter(LayerData.active.is_(active))\

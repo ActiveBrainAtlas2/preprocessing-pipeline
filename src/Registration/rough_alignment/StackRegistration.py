@@ -3,7 +3,15 @@ from math import floor
 from rough_alignment.RegistrationStatusReport import RegistrationStatusReport
 from rough_alignment.SitkIOs import SitkIOs
 from rough_alignment.ApplyTransform import ApplyTransform
+
 class Registration:
+    def __init__():
+        self.fixed = None
+        self.moving = None
+        self.transform = None
+        self.transformation_type = sitk.Transform(3, sitk.sitkIdentity)
+
+class StackRegistration(Registration):
 
     def __init__(self):
         """init_regerstration_method [creates the ImageRegistrationMethod object with default linear interpolator]
@@ -11,24 +19,21 @@ class Registration:
         self.registration_method = sitk.ImageRegistrationMethod()
         self.registration_method.SetInterpolator(sitk.sitkLinear)
         self.status_reporter = RegistrationStatusReport(self.registration_method)
-        self.fixed_image = None
-        self.moving_image = None
-        self.transform = None
+        
         self.io = SitkIOs()
         self.applier = ApplyTransform(sitk.Transform(3, sitk.sitkIdentity))
-        self.transformation_type = sitk.Transform(3, sitk.sitkIdentity)
     
     def load_fixed_image_from_np_array(self,np_array):
-        self.fixed_image = self.io.array_to_image(np_array)
+        self.fixed = self.io.array_to_image(np_array)
 
     def load_moving_image_from_np_array(self,np_array):
-        self.moving_image = self.io.array_to_image(np_array)
+        self.moving = self.io.array_to_image(np_array)
 
     def load_fixed_image_from_directory(self,fix_image_dir):
-        self.fixed_image = self.io.load_image_from_directory(fix_image_dir)
+        self.fixed = self.io.load_image_from_directory(fix_image_dir)
     
     def load_moving_image_from_directory(self,moving_image_dir):
-        self.moving_image = self.io.load_image_from_directory(moving_image_dir)
+        self.moving = self.io.load_image_from_directory(moving_image_dir)
 
     def set_initial_transformation(self):
         """set_centering_transform_as_initial_starting_point [alignes the center of two images stacks as an initial starting point for registeration]
@@ -36,7 +41,7 @@ class Registration:
         :type centering_transform: [sitk transformation object]
         """
         self.transform = sitk.CenteredTransformInitializer(
-            self.fixed_image, self.moving_image,
+            self.fixed, self.moving,
             self.transformation_type,
             sitk.CenteredTransformInitializerFilter.GEOMETRY)
         self.registration_method.SetInitialTransform(self.transform)
@@ -87,5 +92,5 @@ class Registration:
         self.set_multi_resolution_parameters()
         self.status_reporter.set_report_events()
         self.set_initial_transformation()
-        self.registration_method.Execute(self.fixed_image, self.moving_image)
+        self.registration_method.Execute(self.fixed, self.moving)
         self.applier.transform = self.transform

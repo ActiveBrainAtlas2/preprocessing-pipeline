@@ -109,11 +109,19 @@ class Plotter:
         plt.show()
 
     def compare_point_dictionaries(self,point_dicts):
-        fig = make_subplots(rows = 1, cols = 1,specs=[[{'type':'scatter3d'}]])
+        point_set_3d = []
         for point_dict in point_dicts:
             values = np.array(list(point_dict.values()))
-            fig.add_trace(go.Scatter3d(x=values[:,0], y=values[:,1], z=values[:,2],
-                                    mode='markers'),row = 1,col = 1)
+            point_set_3d.append(values)
+        self.compare_3d_point_sets(point_set_3d)
+    
+    def compare_3d_point_sets(self,point_sets_3d,names = None):
+        if names == None:
+            names = [f'scatter{i}' for i in range(len(point_sets_3d))]
+        fig = make_subplots(rows = 1, cols = 1,specs=[[{'type':'scatter3d'}]])
+        for point_set,name in zip(point_sets_3d,names):
+            fig.add_trace(go.Scatter3d(x=point_set[:,0], y=point_set[:,1], z=point_set[:,2],
+                                    mode='markers',name = name),row = 1,col = 1)
         fig.show()
     
     def batch_plotter(self,plot_objects,plotting_function,**kwargs):

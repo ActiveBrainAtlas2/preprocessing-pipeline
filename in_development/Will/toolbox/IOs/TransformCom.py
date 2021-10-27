@@ -8,6 +8,7 @@ from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_tran
 from notebooks.Will.toolbox.IOs.LoadCom import LoadCom
 from abakit.registration.utilities import get_rigid_transformation_from_dicts,apply_rigid_transformation_to_com_dict,apply_rigid_transformation_to_com_dict_list
 from notebooks.Will.toolbox.IOs.get_bilis_json_file import get_tranformation
+
 class TransformCom:
     def __init__(self,load_com_class:LoadCom):
         self.getcom = load_com_class
@@ -19,7 +20,6 @@ class TransformCom:
         for prepi in prep_list:
             affine_transform = get_affine_transform(prepi)
             affine_transform_inv = affine_transform.GetInverse()
-            # transformed_com = transform_dict_affine(affine_transform_inv,DK52_com)
             com_dict = {}
             for structure,com in DK52_com.items():
                 com_dict[structure] = affine_transform_inv.TransformPoint(com)
