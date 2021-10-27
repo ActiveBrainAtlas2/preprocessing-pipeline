@@ -4,7 +4,7 @@ from Registration.Registration import Registration
 class PointSetAlignment(Registration):
     def __init__(self,fixed,moving):
         super().__init__()
-        self.fixed = fixed,
+        self.fixed = fixed
         self.moving = moving
     
     def get_transfrom(self):

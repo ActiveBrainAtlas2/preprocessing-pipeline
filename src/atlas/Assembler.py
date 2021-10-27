@@ -7,11 +7,13 @@ class Assembler:
         self.check_attributes(['volumes','structures','origins'])
         self.origins = np.array(list(self.origins.values()))
         self.volumes = list(self.volumes.values())
+        margin = np.array([str.shape for str in self.volumes]).max()+100
+        self.origins = self.origins - self.origins.min() + margin
 
     def calculate_structure_boundary(self):
         shapes = np.array([str.shape for str in self.volumes])
-        self.max_bonds = np.round(self.origins + shapes-self.origins.min(0)).astype(int)
-        self.min_bonds = np.round(self.origins-self.origins.min(0)).astype(int)
+        self.max_bonds = np.floor(self.origins + shapes-self.origins.min(0)).astype(int)
+        self.min_bonds = np.floor(self.origins-self.origins.min(0)).astype(int)
 
     def get_bounding_box(self):
         self.calculate_structure_boundary()
@@ -40,8 +42,8 @@ class Assembler:
         self.combined_volume = np.zeros(size, dtype=np.uint8)
         for i in range(len(self.structures)):
             structure = self.structures[i]
-            if structure == "10N_R":
-                breakpoint()
+            # if structure == "10N_R":
+            #     breakpoint()
             volume = self.volumes[i]
             row_start,col_start,z_start,row_end,col_end,z_end = self.get_structure_boundary(i)
             try:
@@ -74,11 +76,10 @@ class AtlasAssembler(Atlas,Assembler):
         self.volumes = self.thresholded_volumes
         mid_point = self.find_mid_point()
         self.mirror_origins(mid_point)
+        self.center_mid_line_structures(mid_point)
         Assembler.__init__(self)
-        
-        self.origins
 
-    def find_mid_point(self):
+    def find_mid_point_from_paired_structures(self):
         self.check_attributes(['origins'])
         mid_points = []
         for structure,origin in self.origins.items():
@@ -87,6 +88,26 @@ class AtlasAssembler(Atlas,Assembler):
                 structure_width = self.volumes[right_structure].shape[2]
                 mid_point = (self.origins[structure][2] +self.origins[right_structure][2])/2
                 mid_points.append(mid_point+structure_width/2)
+        mid_point = np.mean(mid_points)
+        return mid_point
+
+    def center_mid_line_structures(self,mid_point):
+        self.check_attributes(['origins'])
+        for structure,origin in self.origins.items():
+            if not '_' in structure:
+                structure_width = self.volumes[structure].shape[2]
+                str_mid_point = self.origins[structure][2] +structure_width/2
+                off_set = mid_point - str_mid_point
+                self.origins[structure][2] += off_set
+
+    def find_mid_point(self):
+        self.check_attributes(['origins'])
+        mid_points = []
+        for structure,origin in self.origins.items():
+            if not '_' in structure:
+                structure_width = self.volumes[structure].shape[2]
+                mid_point = self.origins[structure][2] +structure_width/2
+                mid_points.append(mid_point)
         mid_point = np.mean(mid_points)
         return mid_point
     
@@ -103,4 +124,5 @@ class AtlasAssembler(Atlas,Assembler):
                 distance = origin_z_right - mid_point
                 origin_z_right = origin_z_right - distance *2
                 self.origins[structure][2] = origin_z_right - structure_width
+                self.origins[structure][:2] = origin_z_right = self.origins[right_structure][:2]
 
