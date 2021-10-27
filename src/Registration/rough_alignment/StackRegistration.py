@@ -1,25 +1,19 @@
 import SimpleITK as sitk
 from math import floor
-from rough_alignment.RegistrationStatusReport import RegistrationStatusReport
-from rough_alignment.SitkIOs import SitkIOs
-from rough_alignment.ApplyTransform import ApplyTransform
-
-class Registration:
-    def __init__():
-        self.fixed = None
-        self.moving = None
-        self.transform = None
-        self.transformation_type = sitk.Transform(3, sitk.sitkIdentity)
+from Registration.rough_alignment.RegistrationStatusReport import RegistrationStatusReport
+from Registration.rough_alignment.SitkIOs import SitkIOs
+from Registration.rough_alignment.ApplyTransform import ApplyTransform
+from Registration.Registration import Registration
 
 class StackRegistration(Registration):
 
     def __init__(self):
         """init_regerstration_method [creates the ImageRegistrationMethod object with default linear interpolator]
         """
+        super().__inti__()
         self.registration_method = sitk.ImageRegistrationMethod()
         self.registration_method.SetInterpolator(sitk.sitkLinear)
         self.status_reporter = RegistrationStatusReport(self.registration_method)
-        
         self.io = SitkIOs()
         self.applier = ApplyTransform(sitk.Transform(3, sitk.sitkIdentity))
     
@@ -76,9 +70,6 @@ class StackRegistration(Registration):
         self.registration_method.SetMetricAsMeanSquares()
         self.registration_method.SetMetricSamplingStrategy(self.registration_method.RANDOM)
         self.registration_method.SetMetricSamplingPercentage(samping_percentage)
-            
-    def get_transform(self):
-        return self.transform
     
     def register_with_defaults(self,gradient_descent_setting = None):
         if gradient_descent_setting == None:

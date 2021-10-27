@@ -28,30 +28,6 @@ class ApplyTransform:
         image = self.transform_image(image)
         return sitk.GetArrayFromImage(image)
     
-    def inverse_transform_points(self,points):
-        _ = self.get_inverse_transform()
-        transformed_points = self.transform_points(points,self.inverse_transform.TransformPoint)
-        return transformed_points
-    
-    def forward_transform_points(self,points):
-        _ = self.get_transform()
-        transformed_points = self.transform_points(points,self.transform.TransformPoint)
-        return transformed_points
-
-    def transform_points(self,points,transform_function):
-        """Transform a set of points according to a given transformation
-        transform: and instance of SimpleITK.SimpleITK.Transform
-        points: a numpy array of shape (number of points) X (number of dimensions)
-        return moved: a numpy array of the same shape as points"""
-        npoints,_=points.shape
-        transformed_points=np.zeros(points.shape)
-        for pointi in range(npoints):
-            transformed_points[pointi]=transform_function(points[pointi,:])
-        return transformed_points
-    
-    def get_transform(self):
-        return self.transform
-    
     def transform_boolean_array(self,boolean_array):
         postive_points = np.where(boolean_array)[0]
         transformed_points = []
@@ -60,9 +36,3 @@ class ApplyTransform:
             transformed_points.append(transformed)
         transformed_points = transformed_points - transformed_points.min(0)
         transformed_size = transformed 
-
-    
-    def get_inverse_transform(self):
-        if not hasattr(self,'inverse_transform'):
-            self.inverse_transform = self.transform.GetInverse()
-        return self.inverse_transform
