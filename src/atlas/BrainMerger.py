@@ -39,9 +39,10 @@ class BrainMerger(Atlas):
         self.volumes_to_merge = defaultdict(list)
         self.origins_to_merge = defaultdict(list)
         self.registrator = RigidRegistration()
-        self.sigma = 5.0
-        self.check_attributes(['structures'])
-        self.symmetry_list = self.structures
+        self.sigma = 3.0
+        # self.check_attributes(['structures'])
+        # self.symmetry_list = self.structures
+        self.symmetry_list = singular_structures
 
     def fine_tune_volume_position(self,fixed_volume,moving_volume,
         gradient_descent_setting,sampling_percentage):
@@ -107,7 +108,11 @@ class BrainMerger(Atlas):
     def load_data_from_fixed_and_moving_brains(self):
         self.load_data([self.fixed_brain]+self.moving_brains)
         for structure in self.fixed_brain.origins:
-            origin,volume = self.fixed_brain.origins[structure],self.fixed_brain.volumes[structure]
+            if structure == 'RtTg':
+                braini = self.moving_brains[0]
+                origin,volume = braini.origins[structure],braini.volumes[structure]
+            else:
+                origin,volume = self.fixed_brain.origins[structure],self.fixed_brain.volumes[structure]
             self.volumes_to_merge[structure].append(volume)
             self.origins_to_merge[structure].append(origin)
         for brain in self.moving_brains:
@@ -125,7 +130,11 @@ class BrainMerger(Atlas):
         self.get_merged_landmark_probability('6N_R', sigma=2.0)
         for structure in self.volumes_to_merge:
             self.volumes[structure], self.origins[structure] = self.get_merged_landmark_probability(structure, sigma=self.sigma)
-            
+        for structure in self.volumes_to_merge:
+            if '_L' in structure:
+                structure_right = structure.split('_')[0]+'_R'
+                self.volumes[structure] = self.volumes[structure_right][:,:,::-1]
+
 if __name__ == '__main__':
     merger = BrainMerger()
     merger.create_average_com_and_volume()

@@ -297,3 +297,27 @@ def get_original_volume_basename_v2(stack_spec):
         else:
             raise ValueError('The following structure is not valid: ', structure)
     return basename
+
+def mirror_volume_v2(volume, new_centroid, centroid_wrt_origin=None):
+    """
+    Use to get the mirror image of the volume.
+    `Volume` argument is the volume in right hemisphere.
+    Note: This assumes the mirror plane is vertical; Consider adding a mirror plane as argument
+    Args:
+        volume: any representation
+        new_centroid: the centroid of the resulting mirrored volume.
+        centroid_wrt_origin: if not specified, this uses the center of mass.
+    Returns:
+        (volume, origin): new origin is wrt the same coordinate frame as `new_centroid`.
+    """
+
+    vol, ori = convert_volume_forms(volume=volume, out_form=("volume", "origin"))
+    ydim, xdim, zdim = vol.shape
+    if centroid_wrt_origin is None:
+        centroid_wrt_origin = get_centroid_3d(vol)
+    centroid_x_wrt_origin, centroid_y_wrt_origin, centroid_z_wrt_origin = centroid_wrt_origin
+    new_origin_wrt_centroid = (-centroid_x_wrt_origin, -centroid_y_wrt_origin, - (zdim - 1 - centroid_z_wrt_origin))
+
+    new_origin = new_centroid + new_origin_wrt_centroid
+    new_vol = vol[:,:,::-1].copy()
+    return new_vol, new_origin

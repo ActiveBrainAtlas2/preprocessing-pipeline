@@ -36,9 +36,12 @@ class Assembler:
     def assemble_all_structure_volume(self):
         structure_to_id = self.get_structure_dictionary()
         size = self.get_bounding_box()
+        size = size +np.array([10,10,10])
         self.combined_volume = np.zeros(size, dtype=np.uint8)
         for i in range(len(self.structures)):
             structure = self.structures[i]
+            if structure == "10N_R":
+                breakpoint()
             volume = self.volumes[i]
             row_start,col_start,z_start,row_end,col_end,z_end = self.get_structure_boundary(i)
             try:
@@ -49,6 +52,7 @@ class Assembler:
                 self.combined_volume[row_start:row_end, col_start:col_end, z_start:z_end] += volume.astype(np.uint8)*structure_id
             except ValueError as ve:
                 print(structure, ve, volume.shape)
+                breakpoint()
         print('Shape of downsampled atlas volume', self.combined_volume.shape)
     
     def plot_combined_volume(self):
@@ -63,10 +67,40 @@ class BrainAssembler(BrainStructureManager,Assembler):
 
 
 class AtlasAssembler(Atlas,Assembler):
-    def __init__(self,atlas):
+    def __init__(self,atlas,threshold = 0.9):
         Atlas.__init__(self,atlas)
-        self.threshold = 0.9
+        self.threshold = threshold
         self.threshold_volumes()
         self.volumes = self.thresholded_volumes
+        mid_point = self.find_mid_point()
+        self.mirror_origins(mid_point)
         Assembler.__init__(self)
+        
+        self.origins
+
+    def find_mid_point(self):
+        self.check_attributes(['origins'])
+        mid_points = []
+        for structure,origin in self.origins.items():
+            if '_L' in structure:
+                right_structure = structure.split('_')[0]+'_R' 
+                structure_width = self.volumes[right_structure].shape[2]
+                mid_point = (self.origins[structure][2] +self.origins[right_structure][2])/2
+                mid_points.append(mid_point+structure_width/2)
+        mid_point = np.mean(mid_points)
+        return mid_point
     
+    def mirror_origins(self,mid_point):
+        self.check_attributes(['origins'])
+        left_structures = []
+        for structure,origin_z_right in self.origins.items():
+            if '_L' in structure:
+                right_structure = structure.split('_')[0]+'_R'
+                origin_z_right = self.origins[right_structure][2]
+                origin_z_left = self.origins[structure][2]
+                structure_width = self.volumes[right_structure].shape[2]
+                origin_z_right = origin_z_right
+                distance = origin_z_right - mid_point
+                origin_z_right = origin_z_right - distance *2
+                self.origins[structure][2] = origin_z_right - structure_width
+

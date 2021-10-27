@@ -1923,7 +1923,7 @@ name_unsided_to_color = {s: high_contrast_colors[i%len(high_contrast_colors)]
 paired_structures = ['5N', '6N', '7N', '7n', 'Amb', 'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC', \
                      'SNC', 'SNR', '3N', '4N', 'Sp5I', 'Sp5O', 'Sp5C', 'PBG', '10N', 'VCA', 'VCP', 'DC']
 # singular_structures = ['AP', '12N', 'RtTg', 'sp5', 'outerContour', 'SC', 'IC']
-singular_structures = ['AP', '12N', 'RtTG', 'SC', 'IC']
+singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
 
 # Make a list of all structures INCLUDING left and right variants
 all_structures_total = list(singular_structures)

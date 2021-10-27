@@ -77,9 +77,9 @@ class NgSegmentMaker:
         print(f'Finito! Program took {end - self.start} seconds')
 
 class AtlasNgMaker(Atlas,NgSegmentMaker):
-    def __init__(self,atlas_name,debug,out_folder = 'atlas_test'):
+    def __init__(self,atlas_name,debug,out_folder = 'atlas_test',threshold = 0.9):
         Atlas.__init__(self,atlas_name)
-        self.assembler = AtlasAssembler(atlas_name)
+        self.assembler = AtlasAssembler(atlas_name, threshold=threshold)
         self.start = timer()
         self.OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/'+out_folder
         self.reset_output_path()
@@ -99,7 +99,7 @@ class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
 if __name__ == '__main__':
     atlas = 'atlasV8'
     debug = False
-    maker = AtlasNgMaker(atlas,debug)
+    maker = AtlasNgMaker(atlas,debug,threshold=0.9)
     maker.assembler.assemble_all_structure_volume()
     atlas_volume = maker.assembler.combined_volume
     maker.create_neuroglancer_files(atlas_volume)
