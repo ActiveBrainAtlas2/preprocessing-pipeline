@@ -1,7 +1,15 @@
 ### Raw images processing
+The raw images that come of the scanning microscope are in a proprietary format called CZI.
+the script `create_tifs.py` transforms them to the standard format tiff for further processing.
+
+The next step is to align the sections to each other. This is done in two steps, first `create_elastix.py` generates the transformations that bring the sections into alignment. Second, `create_alignment` uses these transformations to bring the tiff images into alignment.
+
+The last step is to update the database with the meta information on the images. This is done by the scripts `create_meta` ...
+that inserts information in the tables ...,...,...
+
 1. create_alignment.py - Performs section to sectio alignment
-5. create_elastix.py - Creates the transformations for the section to section alignment
-6. create_tifs.py - Creates the tif files from the CZI files.
+5. create_elastix.py - Creates the transformations for the section to section alignment. Uses the elastix software package.
+6. create_tifs.py - Creates the tif files from the CZI files. Uses the XXXX software package.
 18. create_update_tifs.py - Updates size info from the tifs into the DB.
 19. create_meta.py - Yanks the meta info from the CZI files and inserts it into the DB.
 20. create_web.py - creates web viewable PNG files.
