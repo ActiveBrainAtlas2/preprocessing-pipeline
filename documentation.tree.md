@@ -13,8 +13,8 @@
 1. Neuroglancer documentation
     1. [Quality control for images in Neuroglancer](docs/programmer/NEUROGLANCER.QC.md)
     1. [Affine transformation](docs/programmer/affine.transformation.md)
-    1. [Neuroglancer enhancements](neuroglancer.enhancements.md)
-    1. [Neuroglancer technical documentation](neuroglancer.technical.documentation.md)
+    1. [Neuroglancer enhancements](docs/programmer/neuroglancer.enhancements.md)
+    1. [Neuroglancer technical documentation](docs/programmer/neuroglancer.technical.documentation.md)
 1. [Entire MySQL database schema](docs/programmer/schema.sql)
 1. [Database quality control for images](docs/programmer/QC.md)
 1. [Django database interface portal wiki](docs/programmer/releasing.new.database.portal.md)
