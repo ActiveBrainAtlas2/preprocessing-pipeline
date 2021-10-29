@@ -4,16 +4,8 @@ needs an animal passed to the constructor
 It also needs for the animal, histology and scan run tables to be
 filled out for each animal to use
 """
-#import logging
-#import traceback
-#import transaction
-###from logger import Log
-import os
 import sys
 
-HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
-sys.path.append(PATH)
 
 
 from lib.sql_setup import session, pooledsession
@@ -546,15 +538,14 @@ class SqlController(object):
         self.session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
             .delete()
 
-    def convert_coordinate_pixel_to_microns(self,coordiates):
+    def convert_coordinate_pixel_to_microns(self,coordinates):
         resolution = self.scan_run.resolution
         self.session.close()
-        x,y,z = coordiates
+        x,y,z = coordinates
         x*=resolution
         y*=resolution
         z*=20
         return x,y,z
-
 
 def file_processed(animal, progress_id, filename):
     """

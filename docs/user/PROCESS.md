@@ -1,11 +1,3 @@
-## Table of contents for the pipeline process
-1. [Active Brain Atlas home page](https://github.com/ActiveBrainAtlas2)
-1. [Installing the pipeline software](SETUP.md)
-1. [A description of the pipeline process with detailed instructions](PROCESS.md)
-1. [HOWTO run the entire pipeline process with step by step instructions](RUNNING.md)
-1. [The entire MySQL database schema for the pipeline and the Django portal](schema.sql)
-1. [Software design and organization](Design.md)
-
 ## Overview of the pipeline utility process
 The pipeline process will take scanned images that are digitized into CZI files
 and make them available in Neuroglancer. The process involves the following steps:

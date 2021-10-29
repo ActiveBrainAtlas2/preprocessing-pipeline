@@ -147,16 +147,12 @@ class AtlasCreater:
         # origin is in animal scan_run.resolution coordinates
         # volume is in 10um coo
         volume_files = sorted(os.listdir(self.VOLUME_PATH))
-        resolution = self.sqlController.scan_run.resolution
-        SCALE = 32
-        scales = np.array([self.to_um, self.to_um, 20])
-        res_origin = int(resolution * SCALE * 1000)
-        res_volume = 10000
-        res_adjusted = res_volume/res_origin
+        SCALE = 10
+        resolution = np.array([SCALE, SCALE, 20])
         
         com_dict_um = self.sqlController.get_centers_dict('Atlas', input_type_id=1, person_id=16)
-        width = self.sqlController.scan_run.width / SCALE
-        height = self.sqlController.scan_run.height / SCALE
+        width = (self.sqlController.scan_run.width * 0.452) / SCALE
+        height = (self.sqlController.scan_run.height * 0.452) / SCALE
         z_length = len(os.listdir(self.INPUT))
         atlas_volume = np.zeros(( int(height), int(width), z_length), dtype=np.uint8)
         
@@ -168,7 +164,7 @@ class AtlasCreater:
                 print(f'{structure} not in dictionary')
                 continue
             
-            com_ng = (com_um / scales)
+            com_ng = (com_um / resolution)
             volume = np.load(os.path.join(self.VOLUME_PATH, volume_filename))
             try:
                 color = self.sqlController.get_structure_color(structure)
@@ -188,6 +184,7 @@ class AtlasCreater:
             rowshift = ndcom[0]
             zshift = ndcom[2]
             com_shift = np.array([colshift, rowshift, zshift])
+            com_shift = np.array([0, 0, 0])
             mincol, minrow, minz = (com_ng - com_shift) 
             row_start = int( round(minrow) ) 
             col_start = int( round(mincol) )
@@ -215,13 +212,13 @@ class AtlasCreater:
                 print(structure, ve)
         print()
         print('Shape of downsampled atlas volume', atlas_volume.shape)
-        print('Resolution at', resolution)
+        print('Resolution', resolution)
         if not self.debug:
             atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
             atlas_volume = np.fliplr(atlas_volume)
             atlas_volume = np.flipud(atlas_volume)
             atlas_volume = np.fliplr(atlas_volume)
-            ng = NumpyToNeuroglancer(atlas_volume, [14464, 14464, 20000], offset=[0,0,0])
+            ng = NumpyToNeuroglancer(atlas_volume, [10000, 10000, 20000], offset=[0,0,0])
             ng.init_precomputed(self.OUTPUT_DIR)
             ng.add_segment_properties(get_segment_properties())
             ng.add_downsampled_volumes()
