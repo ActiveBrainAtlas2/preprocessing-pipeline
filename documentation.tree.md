@@ -8,6 +8,7 @@
     1. [Adding annotation layers](docs/user/adding.annotation.layers.md)
 
 ### Programmer documentation
+1. [A techical and high level overview of the preprocessing pipeline](docs/programmer/high.level.description.md)
 1. [Overall design of the preprocessing pipeline](docs/programmer/Design.md)
 1. [Setting up the software and installation](docs/programmer/SETUP.md)
 1. Neuroglancer documentation
