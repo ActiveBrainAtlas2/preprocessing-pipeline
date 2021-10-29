@@ -60,17 +60,17 @@ resolution in Neuroglancer. The following directory structure describes the avai
 resolutions with the first directory being the original resolution of the 
 images in nanometers.
 
-| Directory | Size |
-| ------- | ---- |
-| 325_325_20000/ |  381GB |
-| 650_650_20000/ |  97GB |
-| 1300_1300_20000/ |  25GB |
-| 2600_2600_20000/ |  6.2GB |
-| 5200_5200_20000/ |  1.6GB |
-| 10400_10400_20000/ |  405MB |
-| 20800_20800_20000/ |  111MB |
-| 41600_41600_20000/ |  29MB |
-| 83200_83200_40000/ |  4.2MB |
+| Directory | Size | Number of files |
+| ------- | ---- | ---- |
+| 325_325_20000/ |  381GB |1261029 |
+| 650_650_20000/ |  97GB | 316820 | 
+| 1300_1300_20000/ |  25GB | 79716 | 
+| 2600_2600_20000/ |  6.2GB | 19929 | 
+| 5200_5200_20000/ |  1.6GB | 5180 | 
+| 10400_10400_20000/ |  405MB | 1330 | 
+| 20800_20800_20000/ |  111MB | 1330 | 
+| 41600_41600_20000/ |  29MB | 350 |
+| 83200_83200_40000/ |  4.2MB | 60 |
 
 1. There are two steps to creating the precomputed format:
     1. Create the intial chunk size of (64,64,1). Neuroglancer serves data from 
