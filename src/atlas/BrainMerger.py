@@ -10,7 +10,7 @@ import numpy as np
 import sys
 from collections import defaultdict
 from pathlib import Path
-from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
+from abakit.registration.algorithm import brain_to_atlas_transform
 from skimage.filters import gaussian
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -77,7 +77,7 @@ class BrainMerger(Atlas):
         bounding_boxes = [(x, x+volume.shape[0]-1, y, y+volume.shape[1]-1, z, z+volume.shape[2]-1) 
             for volume,(x,y,z) in zip(volumes, origins)]
         merged_bounding_box = np.floor(find_merged_bounding_box(bounding_boxes)).astype(int)
-        margin = 20
+        margin = 10
         merged_bounding_box[[0,2,4]] = merged_bounding_box[[0,2,4]] - margin
         merged_bounding_box[[1,3,5]] = merged_bounding_box[[1,3,5]] + margin
         volumes = crop_and_pad_volumes(merged_bounding_box, bounding_box_volume=list(zip(volumes, bounding_boxes)))
@@ -97,12 +97,6 @@ class BrainMerger(Atlas):
             braini.load_origins()
             braini.load_volumes()
             braini.load_com()
-
-    def get_transform_to_align_brain(self,brain):
-        moving_com = (brain.get_com_array()*self.um_to_pixel).T
-        fixed_com = (self.fixed_brain.get_com_array()*self.um_to_pixel).T
-        r, t = umeyama(moving_com,fixed_com)
-        return r,t
 
     def load_data_from_fixed_and_moving_brains(self):
         self.load_data([self.fixed_brain]+self.moving_brains)
@@ -128,7 +122,6 @@ class BrainMerger(Atlas):
 
     def create_average_com_and_volume(self):
         self.load_data_from_fixed_and_moving_brains()
-        # self.get_merged_landmark_probability('RtTg', sigma=2.0)
         for structure in self.volumes_to_merge:
             self.volumes[structure], self.origins[structure] = self.get_merged_landmark_probability(structure, sigma=self.sigma)
         for structure in self.volumes_to_merge:

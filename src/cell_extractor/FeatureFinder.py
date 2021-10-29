@@ -11,7 +11,6 @@ class FeatureFinder(CellDetectorBase):
         super().__init__(animal,section)
         print('DATA_DIR=%s'%(self.CH3))
 
-    
     def main(self):
         self.load_examples()
         thresh=2000

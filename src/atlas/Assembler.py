@@ -78,7 +78,21 @@ class AtlasAssembler(Atlas,Assembler):
         Assembler.__init__(self)
     
     def get_origin_from_coms(self):
-        self.load_com()
+        for braini in self.brains:
+            braini.check_attributes(['structures'])
+            braini.load_com()
+            assert list(braini.structures) == self.structures
+        mean_com = {}
+        for structurei in self.structures:
+            points = []
+            points.append(self.brains[0].COM[structurei])
+            for braini in self.brains[1:]:
+                point = braini.COM[structurei]
+                point = self.align_point_from_braini(braini,point)
+                points.append(point)
+            points = np.mean(points,axis=1)
+            mean_com[structurei] = points
+        return mean_com
     
     def standardize_atlas(self):
         mid_point = self.find_mid_point()

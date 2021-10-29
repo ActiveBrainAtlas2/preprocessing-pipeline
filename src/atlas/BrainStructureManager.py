@@ -5,6 +5,7 @@ from lib.utilities_atlas import ATLAS
 import numpy as np
 from lib.utilities_atlas_lite import volume_to_polygon, save_mesh
 from Brain import Brain
+from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
 
 class BrainStructureManager(Brain):
     def __init__(self,animal):
@@ -161,7 +162,10 @@ class BrainStructureManager(Brain):
 class Atlas(BrainStructureManager):
     def __init__(self,atlas = ATLAS):
         self.atlas = atlas
-        self.fixed_brain = FileLocationManager('MD589')
+        self.fixed_brain = BrainStructureManager('MD589')
+        self.moving_brain = [BrainStructureManager(braini) for braini in ['MD594', 'MD585']]
+        self.brains = self.moving_brain
+        self.brains.append(self.fixed_brain)
         super().__init__('Atlas')
     
     def set_path_and_create_folders(self):
@@ -172,11 +176,15 @@ class Atlas(BrainStructureManager):
         os.makedirs(self.volume_path, exist_ok=True)
         os.makedirs(self.origin_path, exist_ok=True)
     
-    def create_atlas_contours(self):
-        ...
+    def get_transform_to_align_brain(self,brain):
+        moving_com = (brain.get_com_array()*self.um_to_pixel).T
+        fixed_com = (self.fixed_brain.get_com_array()*self.um_to_pixel).T
+        r, t = umeyama(moving_com,fixed_com)
+        return r,t
     
-    def display_atlas_contours(self):
-        ...
+    def align_point_from_braini(self,braini,point):
+        r,t = self.get_transform_to_align_brain(braini)
+        return brain_to_atlas_transform(point, r, t)
 
     def load_atlas(self):
         self.load_origins()

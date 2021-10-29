@@ -36,17 +36,17 @@ def get_shared_key_and_array(fixed_dictionary,moving_dictionary):
 def get_rigid_alignmented_points(fixed_dictionary,moving_dictionary):
     fixed,moving,shared_keys = get_shared_key_and_array(fixed_dictionary,moving_dictionary)
     rigid = RigidPointSetAlignment(fixed, moving)
-    transformed_point = rigid.get_transformed_point()
+    transformed_point = rigid.get_transformed_moving_point()
     return dict(zip(shared_keys,transformed_point))
 
 def get_affine_alignment_points(fixed_dictionary,moving_dictionary):
     fixed,moving,shared_keys = get_shared_key_and_array(fixed_dictionary,moving_dictionary)
     affine = AffinePointSetAlignment(fixed, moving)
-    transformed_point = affine.get_transformed_point()
+    transformed_point = affine.get_transformed_moving_point()
     return dict(zip(shared_keys,transformed_point))
     
 def get_similarity_alignment_points(fixed_dictionary,moving_dictionary):
     fixed,moving,shared_keys = get_shared_key_and_array(fixed_dictionary,moving_dictionary)
     affine = SimilarityPointSetAlignment(fixed, moving)
-    transformed_point = affine.get_transformed_point()
+    transformed_point = affine.get_transformed_moving_point()
     return dict(zip(shared_keys,transformed_point))
