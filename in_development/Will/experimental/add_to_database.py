@@ -11,6 +11,6 @@ for structure, coordinate in com.items():
     print(structure,coordinate)
     x,y,section = coordinate
     controller.add_layer_data( abbreviation = structure, animal = animal, 
-                        layer = 'affine_transformed', x = x, y = y, section = section, 
+                        layer = 'affine_transformed_COM', x = x, y = y, section = section, 
                        person_id = 2, input_type_id = 3)
 print()

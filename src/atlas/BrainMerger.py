@@ -77,6 +77,9 @@ class BrainMerger(Atlas):
         bounding_boxes = [(x, x+volume.shape[0]-1, y, y+volume.shape[1]-1, z, z+volume.shape[2]-1) 
             for volume,(x,y,z) in zip(volumes, origins)]
         merged_bounding_box = np.floor(find_merged_bounding_box(bounding_boxes)).astype(int)
+        margin = 20
+        merged_bounding_box[[0,2,4]] = merged_bounding_box[[0,2,4]] - margin
+        merged_bounding_box[[1,3,5]] = merged_bounding_box[[1,3,5]] + margin
         volumes = crop_and_pad_volumes(merged_bounding_box, bounding_box_volume=list(zip(volumes, bounding_boxes)))
         volumes = list([(v > 0).astype(np.int32) for v in volumes])
         self.refine_align_volumes(volumes)
@@ -88,7 +91,7 @@ class BrainMerger(Atlas):
         merged_origin = np.array(merged_bounding_box)[[0,2,4]]
         merged_origin = merged_origin - np.array(list(self.origins_to_merge.values())).min()+1
         return merged_volume_prob, merged_origin
-    
+
     def load_data(self,brains):
         for braini in brains:
             braini.load_origins()
@@ -96,10 +99,8 @@ class BrainMerger(Atlas):
             braini.load_com()
 
     def get_transform_to_align_brain(self,brain):
-        resolution = brain.get_resolution()*32
-        um_to_pixel = np.array([resolution,resolution,20])
-        moving_com = (brain.get_com_array()/um_to_pixel).T
-        fixed_com = (self.fixed_brain.get_com_array()/um_to_pixel).T
+        moving_com = (brain.get_com_array()*self.um_to_pixel).T
+        fixed_com = (self.fixed_brain.get_com_array()*self.um_to_pixel).T
         r, t = umeyama(moving_com,fixed_com)
         return r,t
 

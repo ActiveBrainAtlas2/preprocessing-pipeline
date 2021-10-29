@@ -16,7 +16,7 @@ class ExampleFinder(CellDetectorBase):
         self.t0=time()
         print('section=%d, SECTION_DIR=%s'%(self.section,self.CH3_SECTION_DIR))
         self.thresh=2000
-        self.min_example_size=int(100/2)
+        self.radius=400
         self.max_segment_size = 100000
         self.cell_counter = 0
         self.Examples=[]
@@ -53,7 +53,7 @@ class ExampleFinder(CellDetectorBase):
         print('finished writing ',time()-t1)
         
     def load_manual_annotation(self):
-        dfpath = glob.glob(os.path.join(self.CH3_SECTION_DIR, f'*{self.section}*.csv'))[0]
+        dfpath = glob.glob(os.path.join(self.CH3_SECTION_DIR, f'*premotor*{self.section}*.csv'))[0]
         self.manual_annotation = pd.read_csv(dfpath)
 
     def get_examples(self,tile):
@@ -64,16 +64,14 @@ class ExampleFinder(CellDetectorBase):
             if area>self.max_segment_size: 
                 continue
             segment_row,segment_col= self.segment_location[labeli,:] 
-            example_half_height=max(2*height,self.min_example_size)  
-            example_half_width=max(2*width,self.min_example_size)
-            row_start = int(segment_row-example_half_height)
-            col_start = int(segment_col-example_half_width)
+            row_start = int(segment_row-self.radius)
+            col_start = int(segment_col-self.radius)
             if row_start < 0 :
                 row_start = 0
             if col_start < 0:
                 col_start = 0
-            row_end = int(segment_row+example_half_height)
-            col_end = int(segment_col+example_half_width)
+            row_end = int(segment_row+self.radius)
+            col_end = int(segment_col+self.radius)
             if self.difference_ch3[row_start:row_end,col_start:col_end].size ==0:
                 breakpoint()
             if self.difference_ch1[row_start:row_end,col_start:col_end].size == 0 :

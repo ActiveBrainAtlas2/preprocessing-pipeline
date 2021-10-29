@@ -46,29 +46,12 @@ class FeatureFinder(CellDetectorBase):
                 # Calculate Hu Moments
                 huMoments = cv2.HuMoments(moments)
                 self.features.update({'h%d'%i:huMoments[i,0]  for i in range(7)})
-    
-    def pad_images(self,images):
-        size = np.array([i.shape for i in images])
-        size = size.max(0)
-        padded_images = []
-        for imagei in images:
-            sizex,sizey = imagei.shape
-            x_diff = size[0]-sizex
-            y_diff = size[1]-sizey
-            x_pad_length = int(x_diff/2)
-            y_pad_length = int(y_diff/2)
-            padded_image = np.pad(imagei,((x_pad_length,x_pad_length),(y_pad_length,y_pad_length)))
-            if not np.equal(padded_image.shape,size).all():
-                diff = size - imagei.shape
-                padded_image = np.pad(imagei,((0,diff[0]),(0,diff[1])))
-            padded_images.append(padded_image)
-        return padded_images
+
 
     def calculate_average_cell_images(self,examples):
         images = []
         for examplei in examples:
             images.append(examplei['image_CH3'])
-        images = self.pad_images(images)
         images = np.stack(images)
         average = np.average(images,axis=0)
         average = (average - average.mean())/average.std()
