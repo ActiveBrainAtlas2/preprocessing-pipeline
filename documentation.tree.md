@@ -5,7 +5,7 @@
 1. [HOWTO run the entire pipeline process with step by step instructions](docs/user/RUNNING.md)
 1. Neuroglancer
     1. [Neuroglancer help for end users](docs/user/neuroglancer.help.md)
-    1. [Adding annotation layers](docs/users/adding.annotation.layers.md)
+    1. [Adding annotation layers](docs/user/adding.annotation.layers.md)
 
 ### Programmer documentation
 1. [Overall design of the preprocessing pipeline](docs/programmer/Design.md)
