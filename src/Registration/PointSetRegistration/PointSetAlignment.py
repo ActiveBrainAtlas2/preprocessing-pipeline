@@ -7,11 +7,10 @@ class PointSetAlignment(Registration):
         self.fixed = fixed
         self.moving = moving
     
-    def get_transfrom(self):
+    def calculate_transform(self):
         if not hasattr(self, 'transform'):
             self.transform = sitk.LandmarkBasedTransformInitializer(self.transformation_type,
                 list(self.fixed.flatten()),list(self.moving.flatten()))
-        return self.transform
 
 class RigidPointSetAlignment(PointSetAlignment):
     def __init__(self, fixed, moving):

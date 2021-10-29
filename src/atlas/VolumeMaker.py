@@ -26,6 +26,7 @@ class VolumeMaker(BrainStructureManager):
         super().__init__(animal)
 
     def calculate_origin_COM_and_volume(self,contour_for_structurei,structurei):
+        contour_for_structurei = self.sort_contours(contour_for_structurei)
         section_mins = []
         section_maxs = []
         for _, contour_points in contour_for_structurei.items():
@@ -39,7 +40,7 @@ class VolumeMaker(BrainStructureManager):
         yspan = max_y - min_y
         PADDED_SIZE = (int(yspan+5), int(xspan+5))
         volume = []
-        for _, contour_points in sorted(contour_for_structurei.items()):
+        for _, contour_points in contour_for_structurei.items():
             vertices = np.array(contour_points) - np.array((min_x, min_y))
             contour_points = (vertices).astype(np.int32)
             volume_slice = np.zeros(PADDED_SIZE, dtype=np.uint8)
@@ -48,9 +49,8 @@ class VolumeMaker(BrainStructureManager):
             volume.append(volume_slice)
         volume = np.array(volume).astype(np.bool8)
         volume = np.swapaxes(volume,0,2)
-        to_um = 32 * self.get_resolution()
         com = np.array(center_of_mass(volume))
-        self.COM[structurei] = (com+np.array((min_x,min_y,min_z)))*np.array([to_um,to_um,20])
+        self.COM[structurei] = (com+np.array((min_x,min_y,min_z)))*self.pixel_to_um
         self.origins[structurei] = np.array((min_x,min_y,min_z))
         self.volumes[structurei] = volume
 
@@ -63,6 +63,14 @@ class VolumeMaker(BrainStructureManager):
     def show_steps(self):
         # self.compare_point_dictionaries([self.COM,self.origins])
         self.plot_volume_stack()
+    
+    def sort_contours(self,contour_for_structurei):
+        sections = [int(structure) for structure in contour_for_structurei]
+        section_order = np.argsort(sections)
+        keys = np.array(list(contour_for_structurei.keys()))[section_order]
+        values = np.array(list(contour_for_structurei.values()))[section_order]
+        return dict(zip(keys,values))
+
     
 
 

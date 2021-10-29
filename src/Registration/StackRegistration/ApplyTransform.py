@@ -1,6 +1,6 @@
 import SimpleITK as sitk
 import numpy as np
-from rough_alignment.SitkIOs import SitkIOs
+from Registration.StackRegistration.SitkIOs import SitkIOs
 class ApplyTransform:
 
     def __init__(self,transform):

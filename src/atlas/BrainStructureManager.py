@@ -15,6 +15,9 @@ class BrainStructureManager(Brain):
         self.aligned_contours = {}
         self.thresholded_volumes = {}
         self.set_path_and_create_folders()
+        to_um = 32 * self.get_resolution()
+        self.pixel_to_um = np.array([to_um,to_um,20])
+        self.um_to_pixel = 1/self.pixel_to_um
         self.attribute_functions = dict(
             origins = self.load_origins,
             COM = self.load_com,
@@ -49,7 +52,7 @@ class BrainStructureManager(Brain):
         os.makedirs(self.origin_path, exist_ok=True)
 
     def load_com(self):
-        self.COM = self.sqlController.get_centers_dict(self.animal)
+        self.COM = self.sqlController.get_com_dict(self.animal)
 
     def load_origins(self):
         assert(os.path.exists(self.origin_path))
@@ -178,6 +181,9 @@ class Atlas(BrainStructureManager):
     def load_atlas(self):
         self.load_origins()
         self.load_volumes()
+    
+    def load_com(self):
+        self.COM = self.sqlController.get_atlas_centers()
     
     def threshold_volumes(self):
         self.check_attributes(['volumes','structures'])

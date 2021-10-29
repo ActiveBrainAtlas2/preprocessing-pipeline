@@ -42,7 +42,7 @@ class Assembler:
         self.combined_volume = np.zeros(size, dtype=np.uint8)
         for i in range(len(self.structures)):
             structure = self.structures[i]
-            # if structure == "10N_R":
+            # if structure == "RtTg":
             #     breakpoint()
             volume = self.volumes[i]
             row_start,col_start,z_start,row_end,col_end,z_end = self.get_structure_boundary(i)
@@ -74,10 +74,16 @@ class AtlasAssembler(Atlas,Assembler):
         self.threshold = threshold
         self.threshold_volumes()
         self.volumes = self.thresholded_volumes
+        self.standardize_atlas()
+        Assembler.__init__(self)
+    
+    def get_origin_from_coms(self):
+        self.load_com()
+    
+    def standardize_atlas(self):
         mid_point = self.find_mid_point()
         self.mirror_origins(mid_point)
         self.center_mid_line_structures(mid_point)
-        Assembler.__init__(self)
 
     def find_mid_point_from_paired_structures(self):
         self.check_attributes(['origins'])

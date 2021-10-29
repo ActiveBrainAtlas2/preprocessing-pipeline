@@ -1,8 +1,8 @@
 import SimpleITK as sitk
 from math import floor
-from Registration.rough_alignment.RegistrationStatusReport import RegistrationStatusReport
-from Registration.rough_alignment.SitkIOs import SitkIOs
-from Registration.rough_alignment.ApplyTransform import ApplyTransform
+from Registration.StackRegistration.RegistrationStatusReport import RegistrationStatusReport
+from Registration.StackRegistration.SitkIOs import SitkIOs
+from Registration.StackRegistration.ApplyTransform import ApplyTransform
 from Registration.Registration import Registration
 
 class StackRegistration(Registration):
@@ -10,7 +10,7 @@ class StackRegistration(Registration):
     def __init__(self):
         """init_regerstration_method [creates the ImageRegistrationMethod object with default linear interpolator]
         """
-        super().__inti__()
+        super().__init__()
         self.registration_method = sitk.ImageRegistrationMethod()
         self.registration_method.SetInterpolator(sitk.sitkLinear)
         self.status_reporter = RegistrationStatusReport(self.registration_method)

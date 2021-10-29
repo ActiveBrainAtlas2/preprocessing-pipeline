@@ -7,25 +7,44 @@ class Registration:
         self.moving = None
         self.transformation_type = sitk.Transform(3, sitk.sitkIdentity)
     
-    def get_transfrom(self):
+    def calculate_transform(self):
+        raise NotADirectoryError()
+
+    def get_transform(self):
         if not hasattr(self, 'transform'):
-            raise NotImplementedError()
+            self.calculate_transform()
         return self.transform
 
     def get_inverse_transform(self):
-        self.get_transfrom()
+        self.get_transform()
         self.inverse_transform = self.transform.GetInverse()
         return self.inverse_transform
     
-    def get_transformed_point(self):
-        """Transform a set of points according to a given transformation
-            transform: and instance of SimpleITK.SimpleITK.Transform
-            points: a numpy array of shape (number of points) X (number of dimensions)
-            
-            return moved: a numpy array of the same shape as points"""
+    def transform_dictionary(self,point_dictionary):
+        keys = point_dictionary.keys()
+        values = np.array(list(point_dictionary.values()))
+        transformed = self.transform_points(values)
+        return dict(zip(keys,transformed))
+    
+    def inverse_transform_dictionary(self,point_dictionary):
+        keys = point_dictionary.keys()
+        values = np.array(list(point_dictionary.values()))
+        transformed = self.inverse_transform_points(values)
+        return dict(zip(keys,transformed))
+
+    def transform_points(self,points):
         self.get_inverse_transform()
-        n,m=self.moving.shape
-        moved=np.zeros(self.moving.shape)
-        for i in range(n):
-            moved[i]=self.inverse_transform.TransformPoint(self.moving[i,:])
-        return moved
+        transformed=np.zeros(points.shape)
+        for i in range(points.shape[0]):
+            transformed[i]=self.inverse_transform.TransformPoint(points[i,:])
+        return transformed
+    
+    def inverse_transform_points(self,points):
+        self.get_transform()
+        transformed=np.zeros(points.shape)
+        for i in range(points.shape[0]):
+            transformed[i]=self.transform.TransformPoint(points[i,:])
+        return transformed
+    
+    def get_transformed_moving_point(self):
+        return self.transform_points(self.moving)

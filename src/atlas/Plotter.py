@@ -33,9 +33,10 @@ class Plotter:
         data = self.get_contour_data(contours,down_sample_factor)
         self.plot_3d_scatter(data,marker=marker)
     
-    def plot_3d_boolean_array(self,boolean_array):
+    def plot_3d_boolean_array(self,boolean_array,down_sampling_factor = 10):
+        downsampled_array = boolean_array[::down_sampling_factor,::down_sampling_factor,::down_sampling_factor]
         ax = plt.figure().add_subplot(projection='3d')
-        ax.voxels(boolean_array,edgecolor='k')
+        ax.voxels(downsampled_array,edgecolor='k')
         self.show_according_to_setting()
     
     def plot_3d_image_stack_on_axes(self,fig_and_axes,stack,axis = 0,vmin_and_max=None):
@@ -108,12 +109,12 @@ class Plotter:
     def show():
         plt.show()
 
-    def compare_point_dictionaries(self,point_dicts):
+    def compare_point_dictionaries(self,point_dicts,names = None):
         point_set_3d = []
         for point_dict in point_dicts:
             values = np.array(list(point_dict.values()))
             point_set_3d.append(values)
-        self.compare_3d_point_sets(point_set_3d)
+        self.compare_3d_point_sets(point_set_3d,names = names)
     
     def compare_3d_point_sets(self,point_sets_3d,names = None):
         if names == None:
@@ -143,4 +144,37 @@ class Plotter:
                     fig_and_axes = (fig,ax[rowi,coli])
                 plotting_function(fig_and_axes,plot_objects[int(coli*nrow+rowi)])
         plt.show()
-            
+    
+    def plot_3d_volume(self,volume_3d):
+        raise NotImplementedError()
+        # X, Y, Z = np.mgrid[-8:8:40j, -8:8:40j, -8:8:40j]
+        # volume_3d = np.sin(X*Y*Z) / (X*Y*Z)
+        volume_3d = np.swapaxes(volume_3d,2,1)
+        shape = volume_3d.shape
+        x = np.linspace(-5,5,shape[0])
+        y = np.linspace(-5,5,shape[1])
+        z = np.linspace(-5,5,shape[2])
+        X, Y, Z  = np.meshgrid(x,y,z)
+
+        fig = go.Figure(data=go.Volume(
+            x=X.flatten(),
+            y=Y.flatten(),
+            z=Z.flatten(),
+            value=volume_3d.flatten(),
+            isomin=0.1,
+            isomax=0.8,
+            opacity=0.1, 
+            surface_count=17, 
+            ))
+        fig.show()
+
+        fig= go.Figure(data=go.Isosurface(
+            x=X.flatten(),
+            y=Y.flatten(),
+            z=Z.flatten(),
+            value=volume_3d.astype(int).flatten()*5,
+            isomin=0.5,
+            isomax=10,
+        ))
+
+        fig.show()

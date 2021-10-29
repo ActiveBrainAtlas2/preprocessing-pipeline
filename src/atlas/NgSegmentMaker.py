@@ -108,6 +108,6 @@ class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
 if __name__ == '__main__':
     atlas = 'atlasV8'
     debug = False
-    maker = AtlasNgMaker(atlas,debug,threshold=0.9)
+    maker = AtlasNgMaker(atlas,debug,threshold=0.9,out_folder = 'atlas_test')
     maker.assembler.assemble_all_structure_volume()
     maker.create_atlas_neuroglancer()
