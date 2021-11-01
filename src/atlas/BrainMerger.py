@@ -8,7 +8,7 @@ into the database if given a layer name.
 
 import numpy as np
 from collections import defaultdict
-from abakit.registration.algorithm import brain_to_atlas_transform
+from abakit.registration.algorithm import brain_to_atlas_transform,umeyama
 from skimage.filters import gaussian
 from lib.utilities_atlas import singular_structures
 from lib.sqlcontroller import SqlController
@@ -45,22 +45,26 @@ class BrainMerger(Atlas):
         self.registrator.set_least_squares_as_similarity_metrics(sampling_percentage)
         self.registrator.set_optimizer_as_gradient_descent(gradient_descent_setting)
         self.registrator.set_initial_transformation()
+        self.registrator.status_reporter.set_report_events()
         self.registrator.registration_method.Execute(self.registrator.fixed,
          self.registrator.moving)
         self.registrator.applier.transform = self.registrator.transform
-        transformed_volume = self.registrator.applier.transform_np_array(moving_volume)
+        transformed_volume = self.registrator.applier.transform_and_resample_np_array(fixed_volume,
+         moving_volume)
         return transformed_volume
     
     def refine_align_volumes(self,volumes):
         gradient_descent_setting = dict(
-                learningRate=5,
+                learningRate=1,
                 numberOfIterations=10000,
-                convergenceMinimumValue=1e-6,
+                convergenceMinimumValue=1e-5,
                 convergenceWindowSize=50)
         volumes_to_align = [1,2]
         for volumei in volumes_to_align:
-            transformed_volume = self.fine_tune_volume_position(volumes[0],volumes[volumei],gradient_descent_setting,
-                sampling_percentage = 1)
+            transformed_volume = self.fine_tune_volume_position(volumes[0],volumes[volumei],
+            gradient_descent_setting,sampling_percentage = 1)
+            self.plotter.plot_3d_image_stack(transformed_volume - volumes[1],2)
+            self.plotter.plot_3d_image_stack(volumes[1],2)
             volumes[volumei] = transformed_volume
         return volumes
 
@@ -99,8 +103,8 @@ class BrainMerger(Atlas):
             if structure == 'RtTg':
                 braini = self.moving_brains[0]
                 origin,volume = braini.origins[structure],braini.volumes[structure]
-                r,t = self.get_transform_to_align_brain(braini)
-                origin = brain_to_atlas_transform(origin, r, t)
+                # r,t = self.get_transform_to_align_brain(braini)
+                # origin = brain_to_atlas_transform(origin, r, t)
             else:
                 origin,volume = self.fixed_brain.origins[structure],self.fixed_brain.volumes[structure]
             self.volumes_to_merge[structure].append(volume)
@@ -110,13 +114,20 @@ class BrainMerger(Atlas):
             r,t = self.get_transform_to_align_brain(brain)
             for structure in brain.origins:
                 origin,volume = brain.origins[structure],brain.volumes[structure]
-                aligned_origin = brain_to_atlas_transform(origin, r, t)   
+                if structure == 'RtTg':
+                    moving_com = (brain.get_com_array()*self.um_to_pixel).T
+                    fixed_com = (self.moving_brains[0].get_com_array()*self.um_to_pixel).T
+                    rs, ts = umeyama(moving_com,fixed_com)
+                    aligned_origin = brain_to_atlas_transform(origin, rs, ts)  
+                else: 
+                    aligned_origin = brain_to_atlas_transform(origin, r, t)   
                 brain.transformed_origins[structure] =  aligned_origin            
                 self.volumes_to_merge[structure].append(volume)
                 self.origins_to_merge[structure].append(aligned_origin)
 
     def create_average_com_and_volume(self):
         self.load_data_from_fixed_and_moving_brains()
+        self.get_merged_landmark_probability('RtTg', sigma=self.sigma)
         for structure in self.volumes_to_merge:
             self.volumes[structure], self.origins[structure] = \
             self.get_merged_landmark_probability(structure, sigma=self.sigma)

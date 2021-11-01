@@ -1,5 +1,4 @@
 import numpy as np
-
 from atlas.BrainStructureManager import BrainStructureManager,Atlas
 
 class Assembler:
@@ -11,13 +10,8 @@ class Assembler:
         self.origins = self.origins - self.origins.min() + margin
 
     def calculate_structure_boundary(self):
-<<<<<<< HEAD
         shapes = np.array([str.shape for str in self.volumes])
         self.max_bonds = (np.floor(self.origins -self.origins.min(0))+ shapes).astype(int)
-=======
-        shapes = np.array([s.shape for s in self.volumes])
-        self.max_bonds = np.floor(self.origins + shapes-self.origins.min(0)).astype(int)
->>>>>>> e2185e9182102a1050632c4309b638cd1f6fee66
         self.min_bonds = np.floor(self.origins-self.origins.min(0)).astype(int)
 
     def get_bounding_box(self):
@@ -47,8 +41,6 @@ class Assembler:
         self.combined_volume = np.zeros(size, dtype=np.uint8)
         for i in range(len(self.structures)):
             structure = self.structures[i]
-            # if structure == "RtTg":
-            #     breakpoint()
             volume = self.volumes[i]
             row_start,col_start,z_start,row_end,col_end,z_end = self.get_structure_boundary(i)
             try:
@@ -79,8 +71,10 @@ class AtlasAssembler(Atlas,Assembler):
         self.threshold = threshold
         self.threshold_volumes()
         self.volumes = self.thresholded_volumes
-        self.load_com()
-        self.origins = self.COM
+        # self.load_com()
+        # com = [np.array(center)*self.um_to_pixel for center in self.COM.values()]
+        # com = dict(zip(self.COM.keys(),com))
+        # self.origins = com
         self.standardize_atlas()
         Assembler.__init__(self)
     

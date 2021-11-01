@@ -1,22 +1,9 @@
-<<<<<<< HEAD
-=======
-import sys
-from pathlib import Path
-PIPELINE_ROOT = Path('./src').absolute()
-sys.path.append(PIPELINE_ROOT.as_posix())
-
-
->>>>>>> e2185e9182102a1050632c4309b638cd1f6fee66
 from atlas.FoundationContourAligner import FoundationContourAligner
 from atlas.VolumeMaker import VolumeMaker
 from atlas.BrainMerger import BrainMerger
 from atlas.NgSegmentMaker import AtlasNgMaker
 
-<<<<<<< HEAD
-def align_contour(animali):
-=======
 def align_contour(animal):
->>>>>>> e2185e9182102a1050632c4309b638cd1f6fee66
     aligner = FoundationContourAligner(animal)
     aligner.create_aligned_contours()
     aligner.save_contours()
