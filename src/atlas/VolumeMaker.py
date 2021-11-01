@@ -9,15 +9,10 @@ This code takes the contours and does the following:
 2. find the center of mass
 3. saving COMs in the database, saving COM and volumns in the file system
 """
-import os
-import sys
 import cv2
 import numpy as np
 from tqdm import tqdm
 from scipy.ndimage.measurements import center_of_mass
-HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
-sys.path.append(PATH)
 DOWNSAMPLE_FACTOR = 32
 from atlas.BrainStructureManager import BrainStructureManager
 
@@ -68,10 +63,9 @@ class VolumeMaker(BrainStructureManager):
         sections = [int(structure) for structure in contour_for_structurei]
         section_order = np.argsort(sections)
         keys = np.array(list(contour_for_structurei.keys()))[section_order]
-        values = np.array(list(contour_for_structurei.values()))[section_order]
+        # this throws a warning
+        values = np.array(list(contour_for_structurei.values()), dtype=object)[section_order]
         return dict(zip(keys,values))
-
-    
 
 
 if __name__ == '__main__':

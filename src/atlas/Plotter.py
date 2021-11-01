@@ -1,4 +1,3 @@
-from SimpleITK.SimpleITK import NormalizeToConstantImageFilter_swigregister
 import numpy as np
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
@@ -67,9 +66,9 @@ class Plotter:
             stack = np.swapaxes(stack,0,axis)
 
         def get_contouri(sectioni):
-            min = np.min([np.min(contouri,0) for contouri in contour],axis=0)
+            _min = np.min([np.min(contouri,0) for contouri in contour],axis=0)
             contouri = np.array(contour[sectioni])
-            contouri = contouri - min
+            contouri = contouri - _min
             return contouri
 
         def _update_image(val):
@@ -106,7 +105,7 @@ class Plotter:
         else:
             plt.show()
     
-    def show():
+    def show(self):
         plt.show()
 
     def compare_point_dictionaries(self,point_dicts,names = None):

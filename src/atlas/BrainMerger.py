@@ -7,26 +7,21 @@ into the database if given a layer name.
 """
 
 import numpy as np
-import sys
 from collections import defaultdict
-from pathlib import Path
 from abakit.registration.algorithm import brain_to_atlas_transform
 from skimage.filters import gaussian
-PIPELINE_ROOT = Path('./src').absolute()
-sys.path.append(PIPELINE_ROOT.as_posix())
 from lib.utilities_atlas import singular_structures
 from lib.sqlcontroller import SqlController
 from lib.utilities_atlas_lite import  symmetricalize_volume, find_merged_bounding_box,crop_and_pad_volumes
 from atlas.BrainStructureManager import Atlas,BrainStructureManager
 from Registration.StackRegistration.RigidRegistration import RigidRegistration
-import SimpleITK as sitk
 MANUAL = 1
 CORRECTED = 2
 DETECTED = 3
 
 class BrainMerger(Atlas):
 
-    def __init__(self,threshold = 0.9,moving_brains = ['MD594', 'MD585']):
+    def __init__(self,threshold = 0.8, moving_brains = ['MD594', 'MD585']):
         super().__init__()
         self.fixed_brain = BrainStructureManager('MD589')
         self.moving_brains = [BrainStructureManager(braini) for braini in moving_brains]
@@ -89,7 +84,7 @@ class BrainMerger(Atlas):
             merged_volume_prob = symmetricalize_volume(merged_volume_prob)
         merged_volume_prob = gaussian(merged_volume_prob, sigma) 
         merged_origin = np.array(merged_bounding_box)[[0,2,4]]
-        merged_origin = merged_origin - np.array(list(self.origins_to_merge.values())).min()+1
+        merged_origin = merged_origin - np.array(list(self.origins_to_merge.values()), dtype=object).min()+1
         return merged_volume_prob, merged_origin
 
     def load_data(self,brains):
@@ -100,7 +95,7 @@ class BrainMerger(Atlas):
 
     def load_data_from_fixed_and_moving_brains(self):
         self.load_data([self.fixed_brain]+self.moving_brains)
-        for structure in self.fixed_brain.origins:
+        for structure in self.fixed_brain.origins:            
             if structure == 'RtTg':
                 braini = self.moving_brains[0]
                 origin,volume = braini.origins[structure],braini.volumes[structure]
@@ -123,7 +118,8 @@ class BrainMerger(Atlas):
     def create_average_com_and_volume(self):
         self.load_data_from_fixed_and_moving_brains()
         for structure in self.volumes_to_merge:
-            self.volumes[structure], self.origins[structure] = self.get_merged_landmark_probability(structure, sigma=self.sigma)
+            self.volumes[structure], self.origins[structure] = \
+            self.get_merged_landmark_probability(structure, sigma=self.sigma)
         for structure in self.volumes_to_merge:
             if '_L' in structure:
                 structure_right = structure.split('_')[0]+'_R'

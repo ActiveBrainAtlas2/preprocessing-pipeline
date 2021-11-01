@@ -5,16 +5,12 @@ This will create a precomputed volume of the Active Brain Atlas which
 you can import into neuroglancer
 """
 import os
-import sys
 import numpy as np
 from timeit import default_timer as timer
 import shutil
 from cloudvolume import CloudVolume
-from pathlib import Path
-from atlas.BrainStructureManager import Atlas,BrainStructureManager
+from atlas.BrainStructureManager import Atlas
 from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
-PIPELINE_ROOT = Path('./src').absolute()
-sys.path.append(PIPELINE_ROOT.as_posix())
 from atlas.Assembler import AtlasAssembler, BrainAssembler
 from atlas.BrainStructureManager import BrainStructureManager
 

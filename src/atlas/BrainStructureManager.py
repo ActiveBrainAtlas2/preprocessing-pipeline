@@ -1,6 +1,6 @@
 import os
 import json
-from lib.file_location import DATA_PATH,FileLocationManager
+from lib.file_location import DATA_PATH
 from lib.utilities_atlas import ATLAS
 import numpy as np
 from lib.utilities_atlas_lite import volume_to_polygon, save_mesh
@@ -114,8 +114,11 @@ class BrainStructureManager(Brain):
     def save_coms(self):
         self.check_attributes(['COM','structures'])
         for structurei in self.structures:
-            coordinates = self.COM[structurei]
-            self.sqlController.add_com(prep_id = self.animal,abbreviation = structurei,coordinates= coordinates)
+            if structurei in self.COM:
+                coordinates = self.COM[structurei]
+                self.sqlController.add_com(prep_id = self.animal,abbreviation = structurei,coordinates= coordinates)
+            else:
+                print(f'{structurei} not in self.COM')
 
     def get_contour_list(self,structurei):
         return list(self.aligned_contours[structurei].values())
