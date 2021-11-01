@@ -12,8 +12,6 @@ from collections import defaultdict
 from pathlib import Path
 from abakit.registration.algorithm import brain_to_atlas_transform
 from skimage.filters import gaussian
-PIPELINE_ROOT = Path('./src').absolute()
-sys.path.append(PIPELINE_ROOT.as_posix())
 from lib.utilities_atlas import singular_structures
 from lib.sqlcontroller import SqlController
 from lib.utilities_atlas_lite import  symmetricalize_volume, find_merged_bounding_box,crop_and_pad_volumes

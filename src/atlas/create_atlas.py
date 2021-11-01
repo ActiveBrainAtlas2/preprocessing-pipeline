@@ -1,10 +1,10 @@
-from atlas.FundationContourAligner import FundationContourAligner
+from atlas.FoundationContourAligner import FoundationContourAligner
 from atlas.VolumeMaker import VolumeMaker
 from atlas.BrainMerger import BrainMerger
 from atlas.NgSegmentMaker import AtlasNgMaker
 
 def align_contour(animali):
-    aligner = FundationContourAligner(animal)
+    aligner = FoundationContourAligner(animal)
     aligner.create_aligned_contours()
     aligner.save_contours()
 

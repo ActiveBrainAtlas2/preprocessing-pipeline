@@ -1,4 +1,3 @@
-from SimpleITK.SimpleITK import NormalizeToConstantImageFilter_swigregister
 import numpy as np
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
@@ -147,8 +146,6 @@ class Plotter:
     
     def plot_3d_volume(self,volume_3d):
         raise NotImplementedError()
-        # X, Y, Z = np.mgrid[-8:8:40j, -8:8:40j, -8:8:40j]
-        # volume_3d = np.sin(X*Y*Z) / (X*Y*Z)
         volume_3d = np.swapaxes(volume_3d,2,1)
         shape = volume_3d.shape
         x = np.linspace(-5,5,shape[0])

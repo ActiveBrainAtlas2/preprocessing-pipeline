@@ -12,12 +12,12 @@ class Assembler:
 
     def calculate_structure_boundary(self):
         shapes = np.array([str.shape for str in self.volumes])
-        self.max_bonds = np.floor(self.origins + shapes-self.origins.min(0)).astype(int)
+        self.max_bonds = (np.floor(self.origins -self.origins.min(0))+ shapes).astype(int)
         self.min_bonds = np.floor(self.origins-self.origins.min(0)).astype(int)
 
     def get_bounding_box(self):
         self.calculate_structure_boundary()
-        size = np.round(np.max(self.max_bonds,axis=0))+np.array([1,1,1])
+        size = np.floor(np.max(self.max_bonds,axis=0))+np.array([1,1,1])
         size = size.astype(int)
         return size
 
@@ -74,6 +74,8 @@ class AtlasAssembler(Atlas,Assembler):
         self.threshold = threshold
         self.threshold_volumes()
         self.volumes = self.thresholded_volumes
+        self.load_com()
+        self.origins = self.COM
         self.standardize_atlas()
         Assembler.__init__(self)
     

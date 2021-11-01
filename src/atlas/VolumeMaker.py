@@ -15,9 +15,6 @@ import cv2
 import numpy as np
 from tqdm import tqdm
 from scipy.ndimage.measurements import center_of_mass
-HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
-sys.path.append(PATH)
 DOWNSAMPLE_FACTOR = 32
 from atlas.BrainStructureManager import BrainStructureManager
 
