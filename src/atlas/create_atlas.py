@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
+
 from atlas.FoundationContourAligner import FoundationContourAligner
 from atlas.VolumeMaker import VolumeMaker
 from atlas.BrainMerger import BrainMerger
@@ -17,8 +22,8 @@ def create_volume(animal):
 
 def merge_brains():
     merger = BrainMerger()
-    merger.create_average_com_and_volume()
-    merger.save_mesh_files() #TODO these are too big
+    #merger.create_average_com_and_volume()
+    #merger.save_mesh_files() #TODO these are too big
     merger.save_origins() 
     merger.save_coms() #TODO, this fails as teh self.COM dictionary is empty
 
@@ -32,9 +37,10 @@ def make_ng_file():
 if __name__ == '__main__':
     animals = ['MD585', 'MD589', 'MD594']
     
+    """
     for animal in animals:
         align_contour(animal)
         create_volume(animal)
-    
+    """
     merge_brains()
     make_ng_file()
