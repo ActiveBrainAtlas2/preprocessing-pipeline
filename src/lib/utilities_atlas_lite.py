@@ -1,32 +1,12 @@
 import os
 import sys
-import time
-import matplotlib.pyplot as plt
 import numpy as np
-from pandas import read_hdf
-from skimage import io, img_as_ubyte
-import json
-from collections import defaultdict
-import re
-from skimage.measure import find_contours, regionprops
-from skimage.filters import gaussian
-from scipy.ndimage.morphology import distance_transform_edt
-from skimage.morphology import closing, disk
-from scipy.ndimage.morphology import binary_closing
-import pickle
 import vtk
 #from vtk.util import numpy_support
 import mcubes # https://github.com/pmneila/PyMCubes
-from skimage.transform import resize
 from vtkmodules.util import numpy_support
-from pathlib import Path
 
-#PIPELINE_ROOT = Path('.').absolute().parent
-#sys.path.append(PIPELINE_ROOT.as_posix())
-from lib.sqlcontroller import SqlController
-from lib.utilities_alignment import load_hdf, one_liner_to_arr, convert_resolution_string_to_um
-from lib.file_location import FileLocationManager, DATA_PATH
-from lib.coordinates_converter import CoordinatesConverter
+from lib.file_location import DATA_PATH
 SECTION_THICKNESS = 20. # in um
 
 REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL/CSHL_registration_parameters'

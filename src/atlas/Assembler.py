@@ -7,12 +7,17 @@ class Assembler:
         self.check_attributes(['volumes','structures','origins'])
         self.origins = np.array(list(self.origins.values()))
         self.volumes = list(self.volumes.values())
-        margin = np.array([str.shape for str in self.volumes]).max()+100
+        margin = np.array([s.shape for s in self.volumes]).max()+100
         self.origins = self.origins - self.origins.min() + margin
 
     def calculate_structure_boundary(self):
+<<<<<<< HEAD
         shapes = np.array([str.shape for str in self.volumes])
         self.max_bonds = (np.floor(self.origins -self.origins.min(0))+ shapes).astype(int)
+=======
+        shapes = np.array([s.shape for s in self.volumes])
+        self.max_bonds = np.floor(self.origins + shapes-self.origins.min(0)).astype(int)
+>>>>>>> e2185e9182102a1050632c4309b638cd1f6fee66
         self.min_bonds = np.floor(self.origins-self.origins.min(0)).astype(int)
 
     def get_bounding_box(self):
@@ -115,7 +120,7 @@ class AtlasAssembler(Atlas,Assembler):
 
     def center_mid_line_structures(self,mid_point):
         self.check_attributes(['origins'])
-        for structure,origin in self.origins.items():
+        for structure, origin in self.origins.items():
             if not '_' in structure:
                 structure_width = self.volumes[structure].shape[2]
                 str_mid_point = self.origins[structure][2] +structure_width/2
@@ -125,7 +130,7 @@ class AtlasAssembler(Atlas,Assembler):
     def find_mid_point(self):
         self.check_attributes(['origins'])
         mid_points = []
-        for structure,origin in self.origins.items():
+        for structure, origin in self.origins.items():
             if not '_' in structure:
                 structure_width = self.volumes[structure].shape[2]
                 mid_point = self.origins[structure][2] +structure_width/2
@@ -135,12 +140,10 @@ class AtlasAssembler(Atlas,Assembler):
     
     def mirror_origins(self,mid_point):
         self.check_attributes(['origins'])
-        left_structures = []
         for structure,origin_z_right in self.origins.items():
             if '_L' in structure:
                 right_structure = structure.split('_')[0]+'_R'
                 origin_z_right = self.origins[right_structure][2]
-                origin_z_left = self.origins[structure][2]
                 structure_width = self.volumes[right_structure].shape[2]
                 origin_z_right = origin_z_right
                 distance = origin_z_right - mid_point

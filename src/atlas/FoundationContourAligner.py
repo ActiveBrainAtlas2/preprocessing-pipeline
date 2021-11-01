@@ -14,23 +14,18 @@ this code does the following:
 2. applies them
 3. save the result
 """
-import argparse
 from collections import defaultdict
 import os
-import sys
 import numpy as np
 import pandas as pd
 import ast
-import json
 from tqdm import tqdm
 from abakit.utilities.shell_tools import get_image_size
 from scipy.interpolate import splprep, splev
 from lib.utilities_contour_lite import get_contours_from_annotations
-from lib.sqlcontroller import SqlController
-from lib.file_location import DATA_PATH, FileLocationManager
+from lib.file_location import DATA_PATH
 from lib.utilities_alignment import transform_points, create_downsampled_transforms
 from lib.utilities_create_alignment import parse_elastix
-from lib.utilities_atlas import ATLAS
 DOWNSAMPLE_FACTOR = 32
 from atlas.BrainStructureManager import BrainStructureManager
 
@@ -104,7 +99,7 @@ class FoundationContourAligner(BrainStructureManager):
             for section in self.contour_per_structure_per_section[structure]:
                 section_str = str(section)
                 points = np.array(self.contour_per_structure_per_section[structure][section]) / DOWNSAMPLE_FACTOR
-                points = self.interpolate(points, max(3000, len(points)))
+                points = self.interpolate(points, max(500, len(points)))
                 self.original_structures[structure][section_str] = points
                 offset = self.section_offsets[section]
                 if self.animal == 'MD585' and section in md585_fixes.keys():
