@@ -8,6 +8,7 @@ class Brain:
         self.sqlController = SqlController(self.animal)
         self.path = FileLocationManager(animal)
         self.plotter = Plotter()
+        self.attribute_functions = dict(COM = self.load_com)
     
     def get_resolution(self):
         return self.sqlController.scan_run.resolution
@@ -25,3 +26,10 @@ class Brain:
                     self.attribute_functions[attribute]()
                 else:
                     raise NotImplementedError
+    
+    def get_com_array(self):
+        self.check_attributes(['COM'])
+        return np.array(list(self.COM.values()))
+        
+    def load_com(self):
+        self.COM = self.sqlController.get_com_dict(self.animal)

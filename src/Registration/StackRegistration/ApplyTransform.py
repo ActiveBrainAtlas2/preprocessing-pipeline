@@ -8,7 +8,7 @@ class ApplyTransform:
         self.io = SitkIOs()
     
     def transform_and_resample(self,image_to_transform,image_for_resampling):
-        transformed_image = sitk.Resample(image_to_transform, image_for_resampling, self.transform,
+        transformed_image = sitk.Resample(image_for_resampling, image_to_transform, self.transform,
             sitk.sitkLinear, 0.0, image_to_transform.GetPixelID())
         return transformed_image
 

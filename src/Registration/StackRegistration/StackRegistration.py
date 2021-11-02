@@ -52,14 +52,62 @@ class StackRegistration(Registration):
         self.registration_method.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
     
     def set_optimizer_as_gradient_descent(self,parameters):
-        """set_optimizer [configure gradient descent as the optimizer of the registration process]
+        """ set_optimizer [configure gradient descent as the optimizer of the registration process]
+            some optimizer parameters include:
+            learningRate,
+            numberOfIterations,
+            convergenceMinimumValue,
+            convergenceWindowSize
         """
         self.registration_method.SetOptimizerAsGradientDescent(**parameters)
         self.registration_method.SetOptimizerScalesFromPhysicalShift()
 
+    def set_optimizer_as_regular_step_gradient_descent(self,parameters):
+        """ set_optimizer [configure gradient descent as the optimizer of the registration process]
+            some optimizer parameters include:
+            learningRate,
+            minStep,
+            numberOfIterations, 
+            relaxationFactor=0.5, 
+            gradientMagnitudeTolerance=1e-4
+        """
+        self.registration_method.SetOptimizerAsRegularStepGradientDescent(**parameters)
+        self.registration_method.SetOptimizerScalesFromPhysicalShift()
+
+    def set_optimizer_as_gradient_descent_line_search(self,parameters):
+        """set_optimizer [configure gradient descent as the optimizer of the registration process]
+           some optimizer parameters include:
+           learningRate,
+           numberOfIterations,
+           convergenceMinimumValue,
+           convergenceWindowSize=10,
+           lineSearchLowerLimit=0, 
+           lineSearchUpperLimit=5.0, 
+           lineSearchEpsilon=0.01, 
+           lineSearchMaximumIterations=20
+        """
+        self.registration_method.SetOptimizerAsGradientDescentLineSearch(**parameters)
+        self.registration_method.SetOptimizerScalesFromPhysicalShift()
+    
+    def set_optimizer_as_LBFGS2 (self,parameters):
+        """set_optimizer [configure gradient descent as the optimizer of the registration process]
+           some optimizer parameters include:
+           solutionAccuracy=1e-5,
+           numberOfIterations=0,
+           hessianApproximateAccuracy=6, 
+           deltaConvergenceDistance=0, 
+           deltaConvergenceTolerance=1e-5, 
+           lineSearchMaximumEvaluations=40, 
+           lineSearchMinimumStep=1e-20, 
+           lineSearchMaximumStep=1e20, 
+           lineSearchAccuracy=1e-4
+        """
+        self.registration_method.SetOptimizerAsLBFGS2 (**parameters)
+        self.registration_method.SetOptimizerScalesFromPhysicalShift()
+
     def set_mutual_information_as_similarity_metrics(self,numberOfHistogramBins=50,
                 samping_percentage = 0.01):
-        """set_mutual_information_as_similarity_metic [configure mututal information as the similarity metric of the registration process]
+        """set_mutual_information_as_similarity_metric [configure mututal information as the similarity metric of the registration process]
         """
         self.registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=
                 numberOfHistogramBins)

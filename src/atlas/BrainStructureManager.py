@@ -6,6 +6,8 @@ import numpy as np
 from lib.utilities_atlas_lite import volume_to_polygon, save_mesh
 from Brain import Brain
 from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
+from abakit.registration.utilities import get_similarity_transformation_from_dicts
+from scipy.ndimage.measurements import center_of_mass
 
 class BrainStructureManager(Brain):
     def __init__(self,animal):
@@ -21,10 +23,9 @@ class BrainStructureManager(Brain):
         self.um_to_pixel = 1/self.pixel_to_um
         self.attribute_functions = dict(
             origins = self.load_origins,
-            COM = self.load_com,
             volumes = self.load_volumes,
             aligned_contours = self.load_aligned_contours,
-            structures = self.set_structure)
+            structures = self.set_structure,**self.attribute_functions)
 
     def set_structure(self):
         possible_attributes_with_structure_list = ['origins','COM','volumes','thresholded_volumes','aligned_contours']
@@ -51,9 +52,6 @@ class BrainStructureManager(Brain):
         os.makedirs(self.animal_directory, exist_ok=True)
         os.makedirs(self.volume_path, exist_ok=True)
         os.makedirs(self.origin_path, exist_ok=True)
-
-    def load_com(self):
-        self.COM = self.sqlController.get_com_dict(self.animal)
 
     def load_origins(self):
         assert(os.path.exists(self.origin_path))
@@ -116,16 +114,15 @@ class BrainStructureManager(Brain):
         for structurei in self.structures:
             if structurei in self.COM:
                 coordinates = self.COM[structurei]
-                self.sqlController.add_com(prep_id = self.animal,abbreviation = structurei,coordinates= coordinates)
+                self.sqlController.add_com(prep_id = self.animal,abbreviation = structurei,\
+                        coordinates= coordinates)
+                print(f'adding com from {self.animal}')
             else:
                 print(f'{structurei} not in self.COM')
 
     def get_contour_list(self,structurei):
         return list(self.aligned_contours[structurei].values())
 
-    def get_com_array(self):
-        self.check_attributes(['COM'])
-        return np.array(list(self.COM.values()))
     
     def get_origin_array(self):
         self.check_attributes(['origins'])
@@ -161,6 +158,11 @@ class BrainStructureManager(Brain):
             all_structures.append(data)
         all_structures = np.vstack(all_structures)
         self.plotter.plot_3d_scatter(all_structures,marker=dict(size=3,opacity=0.5),title = self.animal)
+    
+    def convert_unit_of_com_dictionary(self,com_dictionary,conversion_factor):
+        for structure , com in com_dictionary.items():
+            com_dictionary[structure] = np.array(com) * conversion_factor
+
 
 class Atlas(BrainStructureManager):
     def __init__(self,atlas = ATLAS):
@@ -207,3 +209,41 @@ class Atlas(BrainStructureManager):
             else:
                 threshold = 0.5
             self.thresholded_volumes[structurei] = volume > threshold
+    
+    def save_mesh_files(self):
+        self.check_attributes(['volumes','origins','structures','COM'])
+        self.COM = self.get_average_coms()
+        self.origins = self.get_origin_from_coms()
+        for structurei in self.structures:
+            origin,volume = self.origins[structurei],self.volumes[structurei]
+            centered_origin = origin - self.fixed_brain_center
+            aligned_structure = volume_to_polygon(volume=volume,origin = centered_origin ,times_to_simplify=3)
+            filepath = os.path.join(self.animal_directory, 'mesh', f'{structurei}.stl')
+            save_mesh(aligned_structure, filepath)
+    
+    def get_origin_from_coms(self):
+        self.check_attributes(['COM','volumes'])
+        volume_coms = np.array([center_of_mass(vi) for vi in self.volumes.values()]).astype(int)
+        average_com = np.array(list(self.COM.values()))
+        origins = average_com - volume_coms
+        origins = (origins - origins.min(0)).astype(int)+10
+        return dict(zip(self.COM.keys(),origins))
+    
+    def get_average_coms(self):
+        self.check_attributes(['structures'])
+        annotated_animals = self.sqlController.get_annotated_animals()
+        fixed_brain = self.fixed_brain.animal
+        annotated_animals = annotated_animals[annotated_animals!=fixed_brain]
+        annotations = [self.sqlController.get_com_dict(fixed_brain)]
+        self.fixed_brain.load_com()
+        for prepi in annotated_animals:
+            com = self.sqlController.get_com_dict(prepi)
+            r, t = get_similarity_transformation_from_dicts(fixed = self.fixed_brain.COM,\
+                 moving = com)
+            transformed = np.array([brain_to_atlas_transform(point, r, t) for point in com.values()])
+            annotations.append(dict(zip(com.keys(),transformed)))
+        averages = {}
+        for structurei in self.structures:
+            averages[structurei] = np.average([ prepi[structurei] for prepi \
+                in annotations if structurei in prepi],0)
+        return averages

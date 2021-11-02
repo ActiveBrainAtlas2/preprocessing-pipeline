@@ -22,7 +22,7 @@ grad_f = None
 grad_f_origin = None
 
 class Aligner(object):
-    def __init__(self, volume_f_, volume_m_=None, nzvoxels_m_=None, centroid_f=None, centroid_m=None, \
+    def __init__(self, fixed, moving=None, nzvoxels_m_=None, centroid_f=None, centroid_m=None, \
                 labelIndexMap_m2f=None, label_weights=None, reg_weights=None, zrange=None, nz_thresh=0, init_T=None, init_transform_type='affine',
                 invalid_voxel_penalty=1., verbose=False):
         """None
@@ -55,13 +55,13 @@ class Aligner(object):
 
         self.labelIndexMap_m2f = labelIndexMap_m2f
 
-        if isinstance(volume_m_, dict): # probabilistic volume
-            labels_in_volume_m = set(np.unique(list(volume_m_.keys())))
+        if isinstance(moving, dict): # probabilistic volume
+            labels_in_volume_m = set(np.unique(list(moving.keys())))
         else:
             raise Exception("volume_m_ must be a dict.")
 
-        if isinstance(volume_f_, dict): # probabilistic volume
-            labels_in_volume_f = set(np.unique(list(volume_f_.keys())))
+        if isinstance(fixed, dict): # probabilistic volume
+            labels_in_volume_f = set(np.unique(list(fixed.keys())))
         else:
             raise Exception("volume_m_ must be a dict.")
 
@@ -75,15 +75,15 @@ class Aligner(object):
 
         global volume_f, volume_f_origin
 
-        if isinstance(volume_f_, dict): # probabilistic volume
-            volume_f = {i: volume_f_[i][0] for i in self.all_indices_f}
-            volume_f_origin = {i: volume_f_[i][1].astype(np.int) for i in self.all_indices_f}
+        if isinstance(fixed, dict): # probabilistic volume
+            volume_f = {i: fixed[i][0] for i in self.all_indices_f}
+            volume_f_origin = {i: fixed[i][1].astype(np.int) for i in self.all_indices_f}
 
         global volume_m, volume_m_origin
 
-        if isinstance(volume_m_, dict): # probabilistic volume
-            volume_m = {i: volume_m_[i][0] for i in self.all_indices_m}
-            volume_m_origin = {i: volume_m_[i][1].astype(np.int) for i in self.all_indices_m}
+        if isinstance(moving, dict): # probabilistic volume
+            volume_m = {i: moving[i][0] for i in self.all_indices_m}
+            volume_m_origin = {i: moving[i][1].astype(np.int) for i in self.all_indices_m}
 
         assert volume_f is not None, 'Fixed volume is not specified.'
         assert volume_m is not None, 'Moving volume is not specified.'

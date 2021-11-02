@@ -1,9 +1,16 @@
+from lib.sqlcontroller import SqlController
 class UrlGenerator:
     def __init__(self):
         self.layers = []
+        self.controller = SqlController('DK52')
+    
+    def add_stack_image(self,animal,channel,name=None):
+        if name == None:
+            name = animal
+        source = f'precomputed://https://activebrainatlas.ucsd.edu/data/{animal}/neuroglancer_data/C{channel}'
+        self.add_precomputed_image_layer(source,animal)
 
-    def add_precomputed_image_layer(self,source):
-        name = source[source.rfind('/')+1:]
+    def add_precomputed_image_layer(self,source,name):
         image_layer = '''
             {
             "type": "image",
@@ -38,3 +45,7 @@ class UrlGenerator:
 
     def get_url(self):
         return '{"layers": ['+ ',\n'.join(self.layers) +']}'
+    
+    def add_to_database(self,title,person_id):
+        content = self.get_url()
+        self.controller.add_url(content,title,person_id)

@@ -9,12 +9,12 @@ into the database if given a layer name.
 import numpy as np
 from collections import defaultdict
 from abakit.registration.algorithm import brain_to_atlas_transform,umeyama
-from skimage.filters import gaussian
 from lib.utilities_atlas import singular_structures
 from lib.sqlcontroller import SqlController
 from lib.utilities_atlas_lite import  symmetricalize_volume, find_merged_bounding_box,crop_and_pad_volumes
 from atlas.BrainStructureManager import Atlas,BrainStructureManager
 from Registration.StackRegistration.RigidRegistration import RigidRegistration
+from Registration.StackRegistration.AffineRegistration import AffineRegistration
 MANUAL = 1
 CORRECTED = 2
 DETECTED = 3
@@ -33,17 +33,18 @@ class BrainMerger(Atlas):
         self.threshold = threshold
         self.volumes_to_merge = defaultdict(list)
         self.origins_to_merge = defaultdict(list)
-        self.registrator = RigidRegistration()
-        self.sigma = 4.0
+        # self.registrator = RigidRegistration()
+        self.registrator = AffineRegistration()
         self.symmetry_list = singular_structures
 
     def fine_tune_volume_position(self,fixed_volume,moving_volume,
-        gradient_descent_setting,sampling_percentage):
+        optimization_setting,sampling_percentage):
         assert(fixed_volume.size == moving_volume.size)
         self.registrator.load_fixed_image_from_np_array(fixed_volume)
         self.registrator.load_moving_image_from_np_array(moving_volume)
         self.registrator.set_least_squares_as_similarity_metrics(sampling_percentage)
-        self.registrator.set_optimizer_as_gradient_descent(gradient_descent_setting)
+        self.registrator.set_optimizer_as_gradient_descent(optimization_setting)
+        # self.registrator.set_optimizer_as_regular_step_gradient_descent(optimization_setting)
         self.registrator.set_initial_transformation()
         self.registrator.status_reporter.set_report_events()
         self.registrator.registration_method.Execute(self.registrator.fixed,
@@ -54,42 +55,53 @@ class BrainMerger(Atlas):
         return transformed_volume
     
     def refine_align_volumes(self,volumes):
-        gradient_descent_setting = dict(
-                learningRate=1,
+
+        optimization_setting = dict(
+                learningRate=10,
                 numberOfIterations=10000,
                 convergenceMinimumValue=1e-5,
                 convergenceWindowSize=50)
+
+        # optimization_setting = dict(
+        #     learningRate = 5,
+        #     minStep = 100,
+        #     numberOfIterations = 10000, 
+        #     relaxationFactor=0.5, 
+        #     gradientMagnitudeTolerance=1e-4)
+
         volumes_to_align = [1,2]
         for volumei in volumes_to_align:
             transformed_volume = self.fine_tune_volume_position(volumes[0],volumes[volumei],
-            gradient_descent_setting,sampling_percentage = 1)
-            self.plotter.plot_3d_image_stack(transformed_volume - volumes[1],2)
-            self.plotter.plot_3d_image_stack(volumes[1],2)
+            optimization_setting,sampling_percentage = 1)
+            # self.plotter.plot_3d_image_stack(transformed_volume - volumes[0],2)
+            # self.plotter.plot_3d_image_stack(volumes[2] - volumes[0],2)
+            # self.plotter.plot_3d_image_stack(volumes[0],2)
+            # self.plotter.plot_3d_image_stack(transformed_volume,2)
             volumes[volumei] = transformed_volume
         return volumes
+    
+    def pad_volume(self,size,volume):
+        size_difference = size - volume.shape
+        xr,yr,zr = ((size_difference)/2).astype(int)
+        xl,yl,zl = size_difference - np.array([xr,yr,zr])
+        return np.pad(volume,[[xl,xr],[yl,yr],[zl,zr]])
 
-    def get_merged_landmark_probability(self, structure, sigma=2.0):
+
+    def get_merged_landmark_probability(self, structure):
         print(f'aligning structure: {structure}')
         force_symmetry=(structure in self.symmetry_list)
         volumes = self.volumes_to_merge[structure]
-        origins = self.origins_to_merge[structure]
-        bounding_boxes = [(x, x+volume.shape[0]-1, y, y+volume.shape[1]-1, z, z+volume.shape[2]-1) 
-            for volume,(x,y,z) in zip(volumes, origins)]
-        merged_bounding_box = np.floor(find_merged_bounding_box(bounding_boxes)).astype(int)
+        sizes = np.array([vi.shape for vi in volumes])
         margin = 10
-        merged_bounding_box[[0,2,4]] = merged_bounding_box[[0,2,4]] - margin
-        merged_bounding_box[[1,3,5]] = merged_bounding_box[[1,3,5]] + margin
-        volumes = crop_and_pad_volumes(merged_bounding_box, bounding_box_volume=list(zip(volumes, bounding_boxes)))
+        volume_size = sizes.max(0)+ margin
+        volumes = [self.pad_volume(volume_size, vi) for vi in volumes]
         volumes = list([(v > 0).astype(np.int32) for v in volumes])
         self.refine_align_volumes(volumes)
         merged_volume = np.sum(volumes, axis=0)
         merged_volume_prob = merged_volume / float(np.max(merged_volume))
         if force_symmetry:
             merged_volume_prob = symmetricalize_volume(merged_volume_prob)
-        merged_volume_prob = gaussian(merged_volume_prob, sigma) 
-        merged_origin = np.array(merged_bounding_box)[[0,2,4]]
-        merged_origin = merged_origin - np.array(list(self.origins_to_merge.values()), dtype=object).min()+1
-        return merged_volume_prob, merged_origin
+        return merged_volume_prob
 
     def load_data(self,brains):
         for braini in brains:
@@ -103,8 +115,8 @@ class BrainMerger(Atlas):
             if structure == 'RtTg':
                 braini = self.moving_brains[0]
                 origin,volume = braini.origins[structure],braini.volumes[structure]
-                # r,t = self.get_transform_to_align_brain(braini)
-                # origin = brain_to_atlas_transform(origin, r, t)
+                r,t = self.get_transform_to_align_brain(braini)
+                origin = brain_to_atlas_transform(origin, r, t)
             else:
                 origin,volume = self.fixed_brain.origins[structure],self.fixed_brain.volumes[structure]
             self.volumes_to_merge[structure].append(volume)
@@ -114,31 +126,20 @@ class BrainMerger(Atlas):
             r,t = self.get_transform_to_align_brain(brain)
             for structure in brain.origins:
                 origin,volume = brain.origins[structure],brain.volumes[structure]
-                if structure == 'RtTg':
-                    moving_com = (brain.get_com_array()*self.um_to_pixel).T
-                    fixed_com = (self.moving_brains[0].get_com_array()*self.um_to_pixel).T
-                    rs, ts = umeyama(moving_com,fixed_com)
-                    aligned_origin = brain_to_atlas_transform(origin, rs, ts)  
-                else: 
-                    aligned_origin = brain_to_atlas_transform(origin, r, t)   
+                aligned_origin = brain_to_atlas_transform(origin, r, t)   
                 brain.transformed_origins[structure] =  aligned_origin            
                 self.volumes_to_merge[structure].append(volume)
                 self.origins_to_merge[structure].append(aligned_origin)
 
     def create_average_com_and_volume(self):
         self.load_data_from_fixed_and_moving_brains()
-        self.get_merged_landmark_probability('RtTg', sigma=self.sigma)
         for structure in self.volumes_to_merge:
-            self.volumes[structure], self.origins[structure] = \
-            self.get_merged_landmark_probability(structure, sigma=self.sigma)
-        for structure in self.volumes_to_merge:
-            if '_L' in structure:
-                structure_right = structure.split('_')[0]+'_R'
-                self.volumes[structure] = self.volumes[structure_right][:,:,::-1]
+            self.volumes[structure]= self.get_merged_landmark_probability(structure)
+        
 
 if __name__ == '__main__':
     merger = BrainMerger()
     merger.create_average_com_and_volume()
-    merger.save_mesh_files()
-    merger.save_origins()
+    # merger.save_mesh_files()
+    # merger.save_origins()
     merger.save_volumes()

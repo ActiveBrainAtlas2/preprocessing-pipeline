@@ -83,8 +83,8 @@ class AtlasNgMaker(Atlas,NgSegmentMaker):
         self.resolution = self.get_atlas_resolution()
     
     def create_atlas_neuroglancer(self):
-        atlas_volume = maker.assembler.combined_volume
-        maker.create_neuroglancer_files(atlas_volume)
+        atlas_volume = self.assembler.combined_volume
+        self.create_neuroglancer_files(atlas_volume)
 
 
 class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
@@ -104,6 +104,6 @@ class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
 if __name__ == '__main__':
     atlas = 'atlasV8'
     debug = False
-    maker = AtlasNgMaker(atlas,debug,threshold=0.9,out_folder = 'atlas_test')
+    maker = AtlasNgMaker(atlas,debug,threshold=0.95,out_folder = 'atlas_test')
     maker.assembler.assemble_all_structure_volume()
     maker.create_atlas_neuroglancer()

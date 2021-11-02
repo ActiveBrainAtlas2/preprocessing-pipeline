@@ -71,6 +71,14 @@ class SqlController(object):
         for resulti in results:
             animals.append(resulti.prep_id)
         return animals
+    
+    def get_annotated_animals(self):
+        results = self.session.query(LayerData)\
+            .filter(LayerData.active.is_(True))\
+            .filter(LayerData.input_type_id == 1)\
+            .filter(LayerData.person_id == 2)\
+            .filter(LayerData.layer == 'COM').all()
+        return np.unique([ri.prep_id for ri in results])
 
     def get_values_from_column(self, query_result):
         query_result = query_result.all()
@@ -492,6 +500,10 @@ class SqlController(object):
             self.session.rollback()
         finally:
             self.session.close()
+        
+    def add_url(self,content,title,person_id):
+        url = UrlModel(url = content,comments = title,person_id = person_id)
+        self.add_row(url)
 
     def add_elastix_row(self, animal, section, rotation, xshift, yshift):
         data = ElastixTransformation(
@@ -505,15 +517,19 @@ class SqlController(object):
             section=z,structure_id=structure_id,layer=layer)
         self.add_row(data)
     
-    def add_com(self, prep_id, abbreviation, coordinates, person_id=2):
+    def add_com(self, prep_id, abbreviation, coordinates, person_id=2 , input_type_id = 1):
         structure_id = self.structure_abbreviation_to_id(abbreviation)
-        if self.layer_data_row_exists(animal=prep_id,person_id = person_id,input_type_id = 1,\
+        if self.layer_data_row_exists(animal=prep_id,person_id = person_id,input_type_id = input_type_id,\
             structure_id = structure_id,layer = 'COM'):
-            self.delete_layer_data_row(animal=prep_id,person_id = person_id,input_type_id = 1,\
+            self.delete_layer_data_row(animal=prep_id,person_id = person_id,input_type_id = input_type_id,\
                 structure_id = structure_id,layer = 'COM')
-        self.add_layer_data_row(animal = prep_id,person_id = person_id,input_type_id = 1,\
+        self.add_layer_data_row(animal = prep_id,person_id = person_id,input_type_id = input_type_id,\
             coordinates = coordinates,structure_id = structure_id,layer = 'COM')
     
+    def url_exists(self,comments):
+        row_exists = bool(self.session.query(UrlModel).filter(UrlModel.comments == comments).first())
+        return row_exists
+
     def layer_data_row_exists(self,animal, person_id, input_type_id, structure_id, layer):
         row_exists = bool(self.session.query(LayerData).filter(
             LayerData.prep_id == animal, 
@@ -522,8 +538,7 @@ class SqlController(object):
             LayerData.structure_id == structure_id,
             LayerData.layer == layer).first())
         return row_exists
-
-    
+ 
     def delete_layer_data_row(self,animal,person_id,input_type_id,structure_id,layer):
         self.session.query(LayerData)\
             .filter(LayerData.active.is_(True))\

@@ -69,7 +69,7 @@ class VolumeMaker(BrainStructureManager):
 
 
 if __name__ == '__main__':
-    animals = ['MD585', 'MD589', 'MD594']
+    animals = ['MD589','MD585', 'MD594']
     for animal in animals:
         volumemaker = VolumeMaker(animal)
         volumemaker.compute_COMs_origins_and_volumes()

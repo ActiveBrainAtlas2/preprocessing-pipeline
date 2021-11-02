@@ -1,13 +1,19 @@
 import numpy as np
 from atlas.BrainStructureManager import BrainStructureManager,Atlas
+from skimage.filters import gaussian
 
 class Assembler:
     def __init__(self):
         self.check_attributes(['volumes','structures','origins'])
         self.origins = np.array(list(self.origins.values()))
+        self.gaussian_filter_volumes(sigma = 3.0)
         self.volumes = list(self.volumes.values())
         margin = np.array([s.shape for s in self.volumes]).max()+100
         self.origins = self.origins - self.origins.min() + margin
+    
+    def gaussian_filter_volumes(self,sigma):
+        for structure, volume in self.volumes.items():
+            self.volumes[structure] = gaussian(volume,sigma)
 
     def calculate_structure_boundary(self):
         shapes = np.array([str.shape for str in self.volumes])
@@ -71,34 +77,17 @@ class AtlasAssembler(Atlas,Assembler):
         self.threshold = threshold
         self.threshold_volumes()
         self.volumes = self.thresholded_volumes
-        # self.load_com()
-        # com = [np.array(center)*self.um_to_pixel for center in self.COM.values()]
-        # com = dict(zip(self.COM.keys(),com))
-        # self.origins = com
+        self.COM = self.get_average_coms()
+        self.convert_unit_of_com_dictionary(self.COM,self.fixed_brain.um_to_pixel)
         self.standardize_atlas()
+        self.origins = self.get_origin_from_coms()
         Assembler.__init__(self)
     
-    def get_origin_from_coms(self):
-        for braini in self.brains:
-            braini.check_attributes(['structures'])
-            braini.load_com()
-            assert list(braini.structures) == self.structures
-        mean_com = {}
-        for structurei in self.structures:
-            points = []
-            points.append(self.brains[0].COM[structurei])
-            for braini in self.brains[1:]:
-                point = braini.COM[structurei]
-                point = self.align_point_from_braini(braini,point)
-                points.append(point)
-            points = np.mean(points,axis=1)
-            mean_com[structurei] = points
-        return mean_com
-    
     def standardize_atlas(self):
-        mid_point = self.find_mid_point()
-        self.mirror_origins(mid_point)
+        mid_point = self.find_mid_point_from_midline_structures()
+        self.mirror_COMs(mid_point)
         self.center_mid_line_structures(mid_point)
+        self.mirror_volumes_of_paired_structures()
 
     def find_mid_point_from_paired_structures(self):
         self.check_attributes(['origins'])
@@ -113,35 +102,36 @@ class AtlasAssembler(Atlas,Assembler):
         return mid_point
 
     def center_mid_line_structures(self,mid_point):
-        self.check_attributes(['origins'])
-        for structure, origin in self.origins.items():
+        self.check_attributes(['COM'])
+        for structure, origin in self.COM.items():
             if not '_' in structure:
-                structure_width = self.volumes[structure].shape[2]
-                str_mid_point = self.origins[structure][2] +structure_width/2
-                off_set = mid_point - str_mid_point
-                self.origins[structure][2] += off_set
+                self.COM[structure][2] = mid_point
 
-    def find_mid_point(self):
-        self.check_attributes(['origins'])
+    def find_mid_point_from_midline_structures(self):
+        self.check_attributes(['COM'])
         mid_points = []
-        for structure, origin in self.origins.items():
+        for structure, origin in self.COM.items():
             if not '_' in structure:
                 structure_width = self.volumes[structure].shape[2]
-                mid_point = self.origins[structure][2] +structure_width/2
+                mid_point = self.COM[structure][2]
                 mid_points.append(mid_point)
         mid_point = np.mean(mid_points)
         return mid_point
     
-    def mirror_origins(self,mid_point):
-        self.check_attributes(['origins'])
-        for structure,origin_z_right in self.origins.items():
+    def mirror_COMs(self,mid_point):
+        self.check_attributes(['COM'])
+        for structure,com_z_right in self.COM.items():
             if '_L' in structure:
                 right_structure = structure.split('_')[0]+'_R'
-                origin_z_right = self.origins[right_structure][2]
-                structure_width = self.volumes[right_structure].shape[2]
-                origin_z_right = origin_z_right
-                distance = origin_z_right - mid_point
-                origin_z_right = origin_z_right - distance *2
-                self.origins[structure][2] = origin_z_right - structure_width
-                self.origins[structure][:2] = origin_z_right = self.origins[right_structure][:2]
+                com_z_right = self.COM[right_structure][2]
+                distance = com_z_right - mid_point
+                com_z_left = com_z_right - distance *2
+                self.COM[structure][2] = com_z_left
+                self.COM[structure][:2] = self.COM[right_structure][:2]
+    
+    def mirror_volumes_of_paired_structures(self):
+        for structure in self.volumes:
+            if '_L' in structure:
+                structure_right = structure.split('_')[0]+'_R'
+                self.volumes[structure] = self.volumes[structure_right][:,:,::-1]
 

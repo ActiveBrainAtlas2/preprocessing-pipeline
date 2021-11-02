@@ -1,7 +1,7 @@
 import SimpleITK as sitk
-from rough_alignment.Registration import ImageToImageRegistration
+from Registration.StackRegistration.StackRegistration import StackRegistration
 
-class AffineRegistration(ImageToImageRegistration):
+class AffineRegistration(StackRegistration):
 
     def __init__(self):
         super().__init__()

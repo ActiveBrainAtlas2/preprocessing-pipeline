@@ -9,7 +9,7 @@ class UrlModel(Base, AtlasModel):
     __tablename__ = 'neuroglancer_urls'
     id =  Column(Integer, primary_key=True, nullable=False)
     url = Column(String, nullable=False)
-    #person
+    person_id = Column(Integer, nullable=False)
     vetted = Column(Boolean, default=False, nullable=False)
     updated = Column(TIMESTAMP)
     comments = Column(String)
