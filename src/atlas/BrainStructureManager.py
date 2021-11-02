@@ -87,6 +87,7 @@ class BrainStructureManager(Brain):
 
     def save_volumes(self):
         self.check_attributes(['volumes','structures'])
+        os.makedirs(self.volume_path, exist_ok=True)
         for structurei in self.structures:
             volume = self.volumes[structurei]
             volume_filepath = os.path.join(self.volume_path, f'{structurei}.npy')
@@ -94,15 +95,18 @@ class BrainStructureManager(Brain):
     
     def save_mesh_files(self):
         self.check_attributes(['volumes','origins','structures'])
+        filepath = os.path.join(self.animal_directory, 'mesh')
+        os.makedirs(filepath, exist_ok=True)
         for structurei in self.structures:
             origin,volume = self.origins[structurei],self.volumes[structurei]
             centered_origin = origin - self.fixed_brain_center
             aligned_structure = volume_to_polygon(volume=volume,origin = centered_origin ,times_to_simplify=3)
-            filepath = os.path.join(self.animal_directory, 'mesh', f'{structurei}.stl')
-            save_mesh(aligned_structure, filepath)
+            outfile = os.path.join(filepath, f'{structurei}.stl')
+            save_mesh(aligned_structure, outfile)
 
     def save_origins(self):
         self.check_attributes(['origins','structures'])
+        os.makedirs(self.origin_path, exist_ok=True)
         for structurei in self.structures:
             x, y, z = self.origins[structurei]
             origin_filepath = os.path.join(self.origin_path, f'{structurei}.txt')
