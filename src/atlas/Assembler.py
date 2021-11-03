@@ -1,19 +1,13 @@
 import numpy as np
 from atlas.BrainStructureManager import BrainStructureManager,Atlas
-from skimage.filters import gaussian
 
 class Assembler:
     def __init__(self):
         self.check_attributes(['volumes','structures','origins'])
         self.origins = np.array(list(self.origins.values()))
-        self.gaussian_filter_volumes(sigma = 3.0)
         self.volumes = list(self.volumes.values())
         margin = np.array([s.shape for s in self.volumes]).max()+100
         self.origins = self.origins - self.origins.min() + margin
-    
-    def gaussian_filter_volumes(self,sigma):
-        for structure, volume in self.volumes.items():
-            self.volumes[structure] = gaussian(volume,sigma)
 
     def calculate_structure_boundary(self):
         shapes = np.array([str.shape for str in self.volumes])
@@ -66,14 +60,21 @@ class Assembler:
         self.plotter.plot_3d_image_stack(self.combined_volume,2)
 
 class BrainAssembler(BrainStructureManager,Assembler):
-    def __init__(self,animal):
+    def __init__(self,animal,threshold):
         BrainStructureManager.__init__(self,animal)
+        self.load_volumes()
+        # self.gaussian_filter_volumes(sigma = 3.0)
+        # self.threshold = threshold
+        # self.threshold_volumes()
+        # self.volumes = self.thresholded_volumes
         Assembler.__init__(self)
 
 
 class AtlasAssembler(Atlas,Assembler):
-    def __init__(self,atlas,threshold = 0.9):
+    def __init__(self,atlas,threshold,sigma = 3.0):
         Atlas.__init__(self,atlas)
+        self.load_volumes()
+        self.gaussian_filter_volumes(sigma = sigma)
         self.threshold = threshold
         self.threshold_volumes()
         self.volumes = self.thresholded_volumes

@@ -33,7 +33,6 @@ class BrainMerger(Atlas):
         self.threshold = threshold
         self.volumes_to_merge = defaultdict(list)
         self.origins_to_merge = defaultdict(list)
-        # self.registrator = RigidRegistration()
         self.registrator = AffineRegistration()
         self.symmetry_list = singular_structures
 
@@ -44,7 +43,6 @@ class BrainMerger(Atlas):
         self.registrator.load_moving_image_from_np_array(moving_volume)
         self.registrator.set_least_squares_as_similarity_metrics(sampling_percentage)
         self.registrator.set_optimizer_as_gradient_descent(optimization_setting)
-        # self.registrator.set_optimizer_as_regular_step_gradient_descent(optimization_setting)
         self.registrator.set_initial_transformation()
         self.registrator.status_reporter.set_report_events()
         self.registrator.registration_method.Execute(self.registrator.fixed,
@@ -62,21 +60,10 @@ class BrainMerger(Atlas):
                 convergenceMinimumValue=1e-5,
                 convergenceWindowSize=50)
 
-        # optimization_setting = dict(
-        #     learningRate = 5,
-        #     minStep = 100,
-        #     numberOfIterations = 10000, 
-        #     relaxationFactor=0.5, 
-        #     gradientMagnitudeTolerance=1e-4)
-
         volumes_to_align = [1,2]
         for volumei in volumes_to_align:
             transformed_volume = self.fine_tune_volume_position(volumes[0],volumes[volumei],
             optimization_setting,sampling_percentage = 1)
-            # self.plotter.plot_3d_image_stack(transformed_volume - volumes[0],2)
-            # self.plotter.plot_3d_image_stack(volumes[2] - volumes[0],2)
-            # self.plotter.plot_3d_image_stack(volumes[0],2)
-            # self.plotter.plot_3d_image_stack(transformed_volume,2)
             volumes[volumei] = transformed_volume
         return volumes
     
@@ -140,6 +127,5 @@ class BrainMerger(Atlas):
 if __name__ == '__main__':
     merger = BrainMerger()
     merger.create_average_com_and_volume()
-    # merger.save_mesh_files()
-    # merger.save_origins()
+    merger.save_mesh_files()
     merger.save_volumes()

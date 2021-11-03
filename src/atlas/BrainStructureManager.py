@@ -8,6 +8,7 @@ from Brain import Brain
 from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
 from abakit.registration.utilities import get_similarity_transformation_from_dicts
 from scipy.ndimage.measurements import center_of_mass
+from skimage.filters import gaussian
 
 class BrainStructureManager(Brain):
     def __init__(self,animal):
@@ -166,6 +167,26 @@ class BrainStructureManager(Brain):
     def convert_unit_of_com_dictionary(self,com_dictionary,conversion_factor):
         for structure , com in com_dictionary.items():
             com_dictionary[structure] = np.array(com) * conversion_factor
+    
+    def gaussian_filter_volumes(self,sigma):
+        for structure, volume in self.volumes.items():
+            self.volumes[structure] = gaussian(volume,sigma)
+    
+    def turn_volume_into_boolean(self):
+        for structure, volume in self.volumes.items():
+            self.volumes[structure] = volume.astype(np.bool8)
+    
+    def threshold_volumes(self):
+        self.check_attributes(['volumes','structures'])
+        assert(hasattr(self,'threshold'))
+        self.get_structures_from_attribute('volumes')
+        for structurei in self.structures:
+            volume = self.volumes[structurei]
+            if not volume[volume > 0].size == 0:
+                threshold = np.quantile(volume[volume > 0], self.threshold)
+            else:
+                threshold = 0.5
+            self.thresholded_volumes[structurei] = volume > threshold
 
 
 class Atlas(BrainStructureManager):
@@ -202,22 +223,10 @@ class Atlas(BrainStructureManager):
     def load_com(self):
         self.COM = self.sqlController.get_atlas_centers()
     
-    def threshold_volumes(self):
-        self.check_attributes(['volumes','structures'])
-        assert(hasattr(self,'threshold'))
-        self.get_structures_from_attribute('volumes')
-        for structurei in self.structures:
-            volume = self.volumes[structurei]
-            if not volume[volume > 0].size == 0:
-                threshold = np.quantile(volume[volume > 0], self.threshold)
-            else:
-                threshold = 0.5
-            self.thresholded_volumes[structurei] = volume > threshold
-    
     def save_mesh_files(self):
-        self.check_attributes(['volumes','origins','structures','COM'])
-        self.COM = self.get_average_coms()
-        self.origins = self.get_origin_from_coms()
+        self.check_attributes(['volumes'])
+        self.origins = self.get_average_coms()
+        self.convert_unit_of_com_dictionary(self.origins, self.um_to_pixel)
         for structurei in self.structures:
             origin,volume = self.origins[structurei],self.volumes[structurei]
             centered_origin = origin - self.fixed_brain_center
