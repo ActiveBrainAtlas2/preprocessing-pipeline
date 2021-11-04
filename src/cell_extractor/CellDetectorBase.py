@@ -95,3 +95,30 @@ class CellDetectorBase(Brain):
         with open(save_path,'br') as pkl_file:
             E=pkl.load(pkl_file)
             self.Examples=E['Examples']
+    
+    def save_features(self):
+        for featurei in self.features:
+            df_dict=None
+            for i in range(len(self.Examples)):
+                if df_dict==None:
+                    df_dict={}
+                    for key in featurei:
+                        df_dict[key]=[]
+                for key in featurei:
+                    df_dict[key].append(featurei[key])
+        df=pd.DataFrame(df_dict)
+        outfile=self.get_feature_save_path()
+        print('df shape=',df.shape,'output_file=',outfile)
+        df.to_csv(outfile,index=False)
+    
+    def save_examples(self):
+        out={'Examples':self.Examples}
+        print('about to write',time()-self.t0)
+        t1=time()
+        with open(self.get_example_save_path(),'wb') as pkl_file:
+            pkl.dump(out,pkl_file)
+        print('finished writing ',time()-t1)
+
+def get_sections_with_annotation_for_animali(animal):
+    base = CellDetectorBase(animal)
+    return base.get_sections_with_csv()

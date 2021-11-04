@@ -44,13 +44,7 @@ class ExampleFinder(CellDetectorBase):
             tilei_examples=self.get_examples(tile)
             self.Examples.append(tilei_examples)
 
-    def save_examples(self):
-        out={'Examples':self.Examples}
-        print('about to write',time()-self.t0)
-        t1=time()
-        with open(self.get_example_save_path(),'wb') as pkl_file:
-            pkl.dump(out,pkl_file)
-        print('finished writing ',time()-t1)
+
         
     def load_manual_annotation(self):
         dfpath = glob.glob(os.path.join(self.CH3_SECTION_DIR, f'*premotor*{self.section}*.csv'))[0]
@@ -66,12 +60,12 @@ class ExampleFinder(CellDetectorBase):
             segment_row,segment_col= self.segment_location[labeli,:] 
             row_start = int(segment_row-self.radius)
             col_start = int(segment_col-self.radius)
-            if row_start < 0 :
-                row_start = 0
-            if col_start < 0:
-                col_start = 0
+            if row_start < 0 or col_start < 0:
+                continue
             row_end = int(segment_row+self.radius)
             col_end = int(segment_col+self.radius)
+            if row_end > self.tile_height or col_end > self.tile_width:
+                continue
             if self.difference_ch3[row_start:row_end,col_start:col_end].size ==0:
                 breakpoint()
             if self.difference_ch1[row_start:row_end,col_start:col_end].size == 0 :
@@ -159,13 +153,21 @@ class ExampleFinder(CellDetectorBase):
     def label_is_not_in_cloest_segment(self):
         return self.cloest_segment_id !=self.segment_id_at_label_location
 
-
-if __name__ == '__main__':
-    animal = 'DK55'
-    extractor = ExampleFinder(animal,1)
-    sections_with_csv = extractor.get_sections_with_csv()
+def process_all_sections(animal):
+    base = CellDetectorBase(animal)
+    sections_with_csv = base.get_sections_with_csv()
     for sectioni in sections_with_csv:
         print(f'processing section {sectioni}')
         extractor = ExampleFinder(animal,sectioni)
         extractor.find_examples()
         extractor.save_examples()
+
+def test_one_section(animal,section):
+    extractor = ExampleFinder(animal,section)
+    extractor.find_examples()
+    extractor.save_examples()
+
+if __name__ == '__main__':
+    # test_one_section('DK55',180)
+    process_all_sections('DK55')
+    

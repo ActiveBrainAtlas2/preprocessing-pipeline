@@ -1,4 +1,6 @@
 from lib.sqlcontroller import SqlController
+import json 
+
 class UrlGenerator:
     def __init__(self):
         self.layers = []
@@ -11,28 +13,20 @@ class UrlGenerator:
         self.add_precomputed_image_layer(source,animal)
 
     def add_precomputed_image_layer(self,source,name):
-        image_layer = '''
-            {
-            "type": "image",
-            "source": "'''+source+'''",
-            "tab": "source",
-            "name": "''' +name+'''"
-            }
-        '''
-        self.layers.append(image_layer)
+        image_layer = dict( type = "image",
+                            source = "'''+source+'''",
+                            tab = "source",
+                            name = name)
+        self.layers.append(json.dumps(image_layer))
     
-    def add_annotation_layer(self,name,color_hex= None):
-        annotation_layer = '''
-            {
-            "type": "annotation",
-            "source": {
-                "url": "local://annotations",
-                "transform": {}
-            },
-            "annotations": [],
-            "name": "'''+name+'''"
-            }
-        '''
+    def add_annotation_layer(self,name,color_hex= None,annotations = [],shader_controls = None):
+        annotation_layer = dict(type =  "annotation",
+                                source=  dict(  url = "local://annotations",
+                                                transform = {}),
+                                annotations = annotations,
+                                name = name)
+        if shader_controls:
+            annotation_layer['shaderControls'] = shaderControls
         if color_hex != None:
             annotation_layer = self.insert_annotation_color_hex(annotation_layer,color_hex)
         self.layers.append(annotation_layer)
@@ -44,8 +38,19 @@ class UrlGenerator:
         return annotation_layer
 
     def get_url(self):
-        return '{"layers": ['+ ',\n'.join(self.layers) +']}'
+        return '{"layers": ['+ ','.join(self.layers) +']}'
     
     def add_to_database(self,title,person_id):
         content = self.get_url()
         self.controller.add_url(content,title,person_id)
+    
+    def parse_url(self,url):
+        url = json.loads(url.replace('\n',''))
+        layers = url['layers']
+        for layeri in layers:
+            self.layers.append(json.dumps(layeri))
+    
+    def load_database_url(self,url_id):
+        url = self.controller.get_urlModel(url_id)
+        self.parse_url(url.url)
+    
