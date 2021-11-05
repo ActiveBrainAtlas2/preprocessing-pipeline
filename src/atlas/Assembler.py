@@ -1,13 +1,18 @@
 import numpy as np
 from atlas.BrainStructureManager import BrainStructureManager,Atlas
-
+from atlas.VolumeUtilities import VolumeUtilities
+from Brain import Brain
 class Assembler:
     def __init__(self):
         self.check_attributes(['volumes','structures','origins'])
-        self.origins = np.array(list(self.origins.values()))
-        self.volumes = list(self.volumes.values())
-        margin = np.array([s.shape for s in self.volumes]).max()+100
-        self.origins = self.origins - self.origins.min() + margin
+        self.initialize_origins_and_volumes()
+
+    def initialize_origins_and_volumes(self):
+        if not self.origins == {}:
+            self.origins = np.array(list(self.origins.values()))
+            self.volumes = list(self.volumes.values())
+            margin = np.array([s.shape for s in self.volumes]).max()+100
+            self.origins = self.origins - self.origins.min() + margin
 
     def calculate_structure_boundary(self):
         shapes = np.array([str.shape for str in self.volumes])
@@ -58,33 +63,8 @@ class Assembler:
         if not hasattr(self,'combined_volume'):
             self.assemble_all_structure_volume()
         self.plotter.plot_3d_image_stack(self.combined_volume,2)
-
-class BrainAssembler(BrainStructureManager,Assembler):
-    def __init__(self,animal,threshold):
-        BrainStructureManager.__init__(self,animal)
-        self.load_volumes()
-        # self.gaussian_filter_volumes(sigma = 3.0)
-        # self.threshold = threshold
-        # self.threshold_volumes()
-        # self.volumes = self.thresholded_volumes
-        Assembler.__init__(self)
-
-
-class AtlasAssembler(Atlas,Assembler):
-    def __init__(self,atlas,threshold,sigma = 3.0):
-        Atlas.__init__(self,atlas)
-        self.load_volumes()
-        self.gaussian_filter_volumes(sigma = sigma)
-        self.threshold = threshold
-        self.threshold_volumes()
-        self.volumes = self.thresholded_volumes
-        self.COM = self.get_average_coms()
-        self.convert_unit_of_com_dictionary(self.COM,self.fixed_brain.um_to_pixel)
-        self.standardize_atlas()
-        self.origins = self.get_origin_from_coms()
-        Assembler.__init__(self)
     
-    def standardize_atlas(self):
+    def standardize_volumes(self):
         mid_point = self.find_mid_point_from_midline_structures()
         self.mirror_COMs(mid_point)
         self.center_mid_line_structures(mid_point)
@@ -135,4 +115,47 @@ class AtlasAssembler(Atlas,Assembler):
             if '_L' in structure:
                 structure_right = structure.split('_')[0]+'_R'
                 self.volumes[structure] = self.volumes[structure_right][:,:,::-1]
+
+class CustomAssembler(Brain,VolumeUtilities,Assembler):
+    def __init__(self,animal):
+        Brain.__init__(self,animal)
+        identity = lambda : {}
+        self.attribute_functions = dict(
+            origins = identity,
+            volumes = identity,
+            structures = self.set_structure,**self.attribute_functions)
+        VolumeUtilities.__init__(self)
+        self.volumes = {}
+        self.origins = {}
+        Assembler.__init__(self)
+    
+    def set_structure(self):
+        possible_attributes_with_structure_list = ['origins','COM','volumes']
+        self.set_structure_from_attribute(possible_attributes_with_structure_list)
+
+class BrainAssembler(BrainStructureManager,Assembler):
+    def __init__(self,animal,threshold):
+        BrainStructureManager.__init__(self,animal)
+        self.load_volumes()
+        Assembler.__init__(self)
+
+
+class AtlasAssembler(Atlas,Assembler):
+    def __init__(self,atlas,com_function = None,threshold = 0.9,sigma = 3.0):
+        if com_function == None:
+            com_function = self.get_average_coms
+        Atlas.__init__(self,atlas)
+        self.load_volumes()
+        self.gaussian_filter_volumes(sigma = sigma)
+        self.threshold = threshold
+        self.threshold_volumes()
+        self.volumes = self.thresholded_volumes
+        self.COM = com_function()
+        self.COM,self.volumes = self.get_shared_coms(self.COM, self.volumes)
+        self.structures = list(self.COM.keys())
+        self.convert_unit_of_com_dictionary(self.COM,self.fixed_brain.um_to_pixel)
+        self.standardize_volumes()
+        self.origins = self.get_origin_from_coms()
+        Assembler.__init__(self)    
+
 

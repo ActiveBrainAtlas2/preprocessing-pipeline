@@ -33,3 +33,32 @@ class Brain:
         
     def load_com(self):
         self.COM = self.sqlController.get_com_dict(self.animal)
+    
+    def get_shared_coms(self,com_dictionary1,com_dictionary2):
+        shared_structures = set(com_dictionary1.keys()).intersection(set(com_dictionary2.keys()))
+        values1 = [com_dictionary1[str] for str in shared_structures]
+        values2 = [com_dictionary2[str] for str in shared_structures]
+        com_dictionary1 = dict(zip(shared_structures,values1))
+        com_dictionary2 = dict(zip(shared_structures,values2))
+        return com_dictionary1,com_dictionary2
+    
+    def set_structure_from_attribute(self,possible_attributes_with_structure_list):
+        loaded_attributes = []
+        for attributei in possible_attributes_with_structure_list:
+            if hasattr(self,attributei) and getattr(self,attributei) != {}:
+                if not hasattr(self,'structures') or len(self.structures) == 0:
+                    structures = self.get_structures_from_attribute(attributei)
+                    self.structures = structures
+                loaded_attributes.append(attributei)
+        for attributei in loaded_attributes:
+            assert(self.structures==self.get_structures_from_attribute(attributei))
+        if loaded_attributes == []:
+            self.load_com()
+            self.structures = self.origins.keys()
+    
+    def get_structures_from_attribute(self,attribute):
+        return list(getattr(self,attribute).keys())
+    
+    def convert_unit_of_com_dictionary(self,com_dictionary,conversion_factor):
+        for structure , com in com_dictionary.items():
+            com_dictionary[structure] = np.array(com) * conversion_factor

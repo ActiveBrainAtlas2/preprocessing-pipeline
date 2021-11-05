@@ -1,10 +1,10 @@
 import sys
 import numpy as np
 import pickle as pkl
-import compute_image_features 
+from cell_extractor import compute_image_features 
 import cv2
 import pandas as pd
-from CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali
+from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali
 
 class FeatureFinder(CellDetectorBase):
     def __init__(self,animal,section):
@@ -12,7 +12,6 @@ class FeatureFinder(CellDetectorBase):
         self.features = []
         print('DATA_DIR=%s'%(self.CH3))
         self.connected_segment_threshold=2000
-
     
     def copy_information_from_examples(self,example):
         for key in ['animal','section','index','label','area','height','width']:
@@ -80,7 +79,7 @@ def calculate_all_sections_of_animali(animal):
     for sectioni in sections_with_csv:
         print(f'processing section {sectioni}')
         finder = FeatureFinder(animal,sectioni)
-        finder.main()
+        finder.calculate_features()
         finder.save_features()
 
 def test_one_section(animal,section):
@@ -89,4 +88,5 @@ def test_one_section(animal,section):
     finder.save_features()
 
 if __name__ == '__main__':
-    test_one_section('DK55',180)
+    # test_one_section('DK55',180)
+    calculate_all_sections_of_animali('DK55')

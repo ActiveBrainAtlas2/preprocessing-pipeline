@@ -38,6 +38,12 @@ class NgConverter(NumpyToNeuroglancer):
         self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
 class NgSegmentMaker:
+    def __init__(self, debug = False,out_folder = 'atlas_test'):
+        self.start = timer()
+        self.OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/'+out_folder
+        self.reset_output_path()
+        self.debug = debug
+
     def get_atlas_resolution(self):
         self.fixed_brain = BrainStructureManager('MD589')
         resolution = self.fixed_brain.get_resolution()
@@ -73,13 +79,10 @@ class NgSegmentMaker:
         print(f'Finito! Program took {end - self.start} seconds')
 
 class AtlasNgMaker(Atlas,NgSegmentMaker):
-    def __init__(self,atlas_name,debug,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0):
+    def __init__(self,atlas_name,debug = False,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0):
+        NgSegmentMaker.__init__(self, debug,out_folder=out_folder)
         Atlas.__init__(self,atlas_name)
         self.assembler = AtlasAssembler(atlas_name, threshold=threshold,sigma = sigma)
-        self.start = timer()
-        self.OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/'+out_folder
-        self.reset_output_path()
-        self.debug = debug
         self.resolution = self.get_atlas_resolution()
     
     def create_atlas_neuroglancer(self):
@@ -88,13 +91,10 @@ class AtlasNgMaker(Atlas,NgSegmentMaker):
 
 
 class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
-    def __init__(self,animal,debug,out_folder = 'animal_folder',threshold = 0.9):
+    def __init__(self,animal,debug = False,out_folder = 'animal_folder',threshold = 0.9):
+        NgSegmentMaker.__init__(self, debug,out_folder=out_folder)
         BrainStructureManager.__init__(self,animal)
         self.assembler = BrainAssembler(animal,threshold = threshold)
-        self.start = timer()
-        self.OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/'+out_folder
-        self.reset_output_path()
-        self.debug = debug
         self.resolution = self.get_animal_resolution()
     
     def create_brain_neuroglancer(self):

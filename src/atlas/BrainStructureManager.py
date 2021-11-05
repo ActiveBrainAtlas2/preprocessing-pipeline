@@ -7,12 +7,11 @@ from lib.utilities_atlas_lite import volume_to_polygon, save_mesh
 from Brain import Brain
 from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
 from abakit.registration.utilities import get_similarity_transformation_from_dicts
-from scipy.ndimage.measurements import center_of_mass
-from skimage.filters import gaussian
-
-class BrainStructureManager(Brain):
+from atlas.VolumeUtilities import VolumeUtilities
+class BrainStructureManager(Brain,VolumeUtilities):
     def __init__(self,animal):
-        super().__init__(animal)
+        Brain.__init__(self,animal)
+        VolumeUtilities.__init__(self)
         self.origins = {}
         self.COM = {}
         self.volumes = {}
@@ -30,18 +29,7 @@ class BrainStructureManager(Brain):
 
     def set_structure(self):
         possible_attributes_with_structure_list = ['origins','COM','volumes','thresholded_volumes','aligned_contours']
-        loaded_attributes = []
-        for attributei in possible_attributes_with_structure_list:
-            if hasattr(self,attributei) and getattr(self,attributei) != {}:
-                if not hasattr(self,'structures'):
-                    structures = self.get_structures_from_attribute(attributei)
-                    self.structures = structures
-                loaded_attributes.append(attributei)
-        for attributei in loaded_attributes:
-            assert(self.structures==self.get_structures_from_attribute(attributei))
-        if loaded_attributes == []:
-            self.load_origins()
-            self.structures = self.origins.keys()
+        self.set_structure_from_attribute(possible_attributes_with_structure_list)
     
     def set_path_and_create_folders(self):
         self.animal_directory = os.path.join(DATA_PATH, 'atlas_data', ATLAS, self.animal)
@@ -111,9 +99,6 @@ class BrainStructureManager(Brain):
             origin_filepath = os.path.join(self.origin_path, f'{structurei}.txt')
             np.savetxt(origin_filepath, (x,y,z))
     
-    def get_structures_from_attribute(self,attribute):
-        return list(getattr(self,attribute).keys())
-    
     def save_coms(self):
         self.check_attributes(['COM','structures'])
         for structurei in self.structures:
@@ -154,8 +139,7 @@ class BrainStructureManager(Brain):
         self.plotter.set_show_as_true()
 
     def plot_contours_for_all_structures(self):
-        self.check_attributes(['aligned_contours'])
-        self.set_structure()
+        self.check_attributes(['aligned_contours','structures'])
         all_structures = []
         for structurei in self.structures:
             contour = self.aligned_contours[structurei]
@@ -164,30 +148,9 @@ class BrainStructureManager(Brain):
         all_structures = np.vstack(all_structures)
         self.plotter.plot_3d_scatter(all_structures,marker=dict(size=3,opacity=0.5),title = self.animal)
     
-    def convert_unit_of_com_dictionary(self,com_dictionary,conversion_factor):
-        for structure , com in com_dictionary.items():
-            com_dictionary[structure] = np.array(com) * conversion_factor
-    
-    def gaussian_filter_volumes(self,sigma):
-        for structure, volume in self.volumes.items():
-            self.volumes[structure] = gaussian(volume,sigma)
-    
     def turn_volume_into_boolean(self):
         for structure, volume in self.volumes.items():
             self.volumes[structure] = volume.astype(np.bool8)
-    
-    def threshold_volumes(self):
-        self.check_attributes(['volumes','structures'])
-        assert(hasattr(self,'threshold'))
-        self.get_structures_from_attribute('volumes')
-        for structurei in self.structures:
-            volume = self.volumes[structurei]
-            if not volume[volume > 0].size == 0:
-                threshold = np.quantile(volume[volume > 0], self.threshold)
-            else:
-                threshold = 0.5
-            self.thresholded_volumes[structurei] = volume > threshold
-
 
 class Atlas(BrainStructureManager):
     def __init__(self,atlas = ATLAS):
@@ -233,14 +196,6 @@ class Atlas(BrainStructureManager):
             aligned_structure = volume_to_polygon(volume=volume,origin = centered_origin ,times_to_simplify=3)
             filepath = os.path.join(self.animal_directory, 'mesh', f'{structurei}.stl')
             save_mesh(aligned_structure, filepath)
-    
-    def get_origin_from_coms(self):
-        self.check_attributes(['COM','volumes'])
-        volume_coms = np.array([center_of_mass(vi) for vi in self.volumes.values()]).astype(int)
-        average_com = np.array(list(self.COM.values()))
-        origins = average_com - volume_coms
-        origins = (origins - origins.min(0)).astype(int)+10
-        return dict(zip(self.COM.keys(),origins))
     
     def get_average_coms(self):
         self.check_attributes(['structures'])
