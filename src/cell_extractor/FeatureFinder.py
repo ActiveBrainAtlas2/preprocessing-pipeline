@@ -5,13 +5,14 @@ from cell_extractor import compute_image_features
 import cv2
 import pandas as pd
 from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali
-
+import os
 class FeatureFinder(CellDetectorBase):
     def __init__(self,animal,section):
         super().__init__(animal,section)
         self.features = []
         print('DATA_DIR=%s'%(self.CH3))
         self.connected_segment_threshold=2000
+        self.load_or_calulate_average_cell_image()
     
     def copy_information_from_examples(self,example):
         for key in ['animal','section','index','label','area','height','width']:
@@ -55,7 +56,6 @@ class FeatureFinder(CellDetectorBase):
             print(tilei)
             examplei = self.Examples[tilei]
             if examplei != []:
-                self.average_image = self.calculate_average_cell_images(examplei)
                 for example in examplei:
                     image = example['image_CH3']
                     self.featurei={}
@@ -73,6 +73,22 @@ class FeatureFinder(CellDetectorBase):
         average = np.average(images,axis=0)
         average = (average - average.mean())/average.std()
         return average
+    
+    def load_or_calulate_average_cell_image(self):
+        if os.path.exists(self.AVERAGE_CELL_IMAGE_DIR):
+            self.average_image = pkl.load(open(self.AVERAGE_CELL_IMAGE_DIR,'rb'))
+        else:
+            sections = self.get_sections_with_csv()
+            examples = []
+            for sectioni in sections:
+                print(sectioni)
+                base = CellDetectorBase(self.animal,sectioni)
+                base.load_examples()
+                examplei = [i for tilei in base.Examples for i in tilei]
+                print(len(examplei))
+                examples += examplei
+            self.average_image = self.calculate_average_cell_images(examples)
+            pkl.dump(open(self.average_image,self.AVERAGE_CELL_IMAGE_DIR,'wb'))
 
 def calculate_all_sections_of_animali(animal):
     sections_with_csv = get_sections_with_annotation_for_animali(animal)
@@ -88,5 +104,4 @@ def test_one_section(animal,section):
     finder.save_features()
 
 if __name__ == '__main__':
-    # test_one_section('DK55',180)
     calculate_all_sections_of_animali('DK55')

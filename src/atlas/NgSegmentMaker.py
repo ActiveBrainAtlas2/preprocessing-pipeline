@@ -9,7 +9,7 @@ import numpy as np
 from timeit import default_timer as timer
 import shutil
 from cloudvolume import CloudVolume
-from atlas.BrainStructureManager import Atlas
+from atlas.Atlas import Atlas
 from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 from atlas.Assembler import AtlasAssembler, BrainAssembler
 from atlas.BrainStructureManager import BrainStructureManager
@@ -38,7 +38,8 @@ class NgConverter(NumpyToNeuroglancer):
         self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
 class NgSegmentMaker:
-    def __init__(self, debug = False,out_folder = 'atlas_test'):
+    def __init__(self, debug = False,out_folder = 'atlas_test',offset = None):
+        self.offset = offset
         self.start = timer()
         self.OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/'+out_folder
         self.reset_output_path()
@@ -68,8 +69,11 @@ class NgSegmentMaker:
     def create_neuroglancer_files(self,atlas_volume):
         segment_properties = self.get_segment_properties()
         if not self.debug:
-            offset = (np.array(atlas_volume.shape)/2).astype(int)
-            ng = NgConverter(atlas_volume, [self.resolution, self.resolution, 20000], offset=offset)
+            if self.offset:
+                offset = self.offset
+            else:
+                offset = -(np.array(atlas_volume.shape)/2).astype(int) + np.array([220,150,0])
+            ng = NgConverter(atlas_volume, [self.resolution, self.resolution, 20000], offset)
             ng.init_precomputed(self.OUTPUT_DIR)
             ng.add_segment_properties(segment_properties)
             ng.add_downsampled_volumes()
@@ -79,8 +83,8 @@ class NgSegmentMaker:
         print(f'Finito! Program took {end - self.start} seconds')
 
 class AtlasNgMaker(Atlas,NgSegmentMaker):
-    def __init__(self,atlas_name,debug = False,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0):
-        NgSegmentMaker.__init__(self, debug,out_folder=out_folder)
+    def __init__(self,atlas_name,debug = False,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0,offset = None):
+        NgSegmentMaker.__init__(self, debug,out_folder=out_folder,offset=offset)
         Atlas.__init__(self,atlas_name)
         self.assembler = AtlasAssembler(atlas_name, threshold=threshold,sigma = sigma)
         self.resolution = self.get_atlas_resolution()
@@ -104,6 +108,6 @@ class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
 if __name__ == '__main__':
     atlas = 'atlasV8'
     debug = False
-    maker = AtlasNgMaker(atlas,debug,threshold=0.9,out_folder = 'atlas_debug',sigma = 3.0)
+    maker = AtlasNgMaker(atlas,debug,threshold=0.9,out_folder = 'new_atlas',sigma = 3.0)
     maker.assembler.assemble_all_structure_volume()
     maker.create_atlas_neuroglancer()

@@ -19,6 +19,7 @@ class CellDetectorBase(Brain):
         self.nrow = 5
         self.section = section
         self.DATA_DIR = f"/data/cell_segmentation/{self.animal}"
+        self.AVERAGE_CELL_IMAGE_DIR = os.path.join(self.DATA_DIR,'average_cell_image.pkl')
         self.TILE_INFO_DIR = os.path.join(self.DATA_DIR,'tile_info.csv')
         os.makedirs(self.DATA_DIR,exist_ok = True)
         self.CH3 = os.path.join(self.DATA_DIR,"CH3")
@@ -63,14 +64,11 @@ class CellDetectorBase(Brain):
     
     def get_tile_origins(self):
         self.check_attributes(['width'])
-        print('width=%d, tile_width=%d ,height=%d, tile_height=%d'
-        %(self.width, self.tile_width,self.height,self.tile_height))
         self.tile_origins={}
         for i in range(self.nrow*self.ncol):
             row=int(i/self.ncol)
             col=i%self.ncol
             self.tile_origins[i] = (row*self.tile_height,col*self.tile_width)
-        print('origins=',self.tile_origins)
 
     def get_tile_origin(self,tilei):
         self.check_attributes(['tile_origins'])

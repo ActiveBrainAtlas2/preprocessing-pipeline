@@ -505,6 +505,12 @@ class SqlController(object):
         url = UrlModel(url = content,comments = title,person_id = person_id)
         self.add_row(url)
 
+    def delete_url(self,title,person_id):
+        self.session.query(UrlModel)\
+            .filter(UrlModel.comments == title)\
+            .filter(UrlModel.person_id == person_id).delete()
+        self.session.commit()
+
     def add_elastix_row(self, animal, section, rotation, xshift, yshift):
         data = ElastixTransformation(
             prep_id=animal, section=section, rotation=rotation, xshift=xshift, yshift=yshift,

@@ -1,7 +1,8 @@
 import numpy as np
-from atlas.BrainStructureManager import BrainStructureManager,Atlas
+from atlas.Atlas import BrainStructureManager,Atlas
 from atlas.VolumeUtilities import VolumeUtilities
 from Brain import Brain
+from atlas.Atlas import AtlasInitiator
 class Assembler:
     def __init__(self):
         self.check_attributes(['volumes','structures','origins'])
@@ -12,12 +13,12 @@ class Assembler:
             self.origins = np.array(list(self.origins.values()))
             self.volumes = list(self.volumes.values())
             margin = np.array([s.shape for s in self.volumes]).max()+100
-            self.origins = self.origins - self.origins.min() + margin
+            self.origins = self.origins + margin
 
     def calculate_structure_boundary(self):
         shapes = np.array([str.shape for str in self.volumes])
-        self.max_bonds = (np.floor(self.origins -self.origins.min(0))+ shapes).astype(int)
-        self.min_bonds = np.floor(self.origins-self.origins.min(0)).astype(int)
+        self.max_bonds = (np.floor(self.origins)+ shapes).astype(int)
+        self.min_bonds = np.floor(self.origins).astype(int)
 
     def get_bounding_box(self):
         self.calculate_structure_boundary()
@@ -66,8 +67,9 @@ class Assembler:
     
     def standardize_volumes(self):
         mid_point = self.find_mid_point_from_midline_structures()
-        self.mirror_COMs(mid_point)
-        self.center_mid_line_structures(mid_point)
+        if not np.isnan(mid_point):
+            self.mirror_COMs(mid_point)
+            self.center_mid_line_structures(mid_point)
         self.mirror_volumes_of_paired_structures()
 
     def find_mid_point_from_paired_structures(self):
@@ -114,7 +116,8 @@ class Assembler:
         for structure in self.volumes:
             if '_L' in structure:
                 structure_right = structure.split('_')[0]+'_R'
-                self.volumes[structure] = self.volumes[structure_right][:,:,::-1]
+                if structure_right in self.volumes:
+                    self.volumes[structure] = self.volumes[structure_right][:,:,::-1]
 
 class CustomAssembler(Brain,VolumeUtilities,Assembler):
     def __init__(self,animal):
@@ -137,23 +140,13 @@ class BrainAssembler(BrainStructureManager,Assembler):
     def __init__(self,animal,threshold):
         BrainStructureManager.__init__(self,animal)
         self.load_volumes()
+
         Assembler.__init__(self)
 
 
-class AtlasAssembler(Atlas,Assembler):
-    def __init__(self,atlas,com_function = None,threshold = 0.9,sigma = 3.0):
-        if com_function == None:
-            com_function = self.get_average_coms
-        Atlas.__init__(self,atlas)
-        self.load_volumes()
-        self.gaussian_filter_volumes(sigma = sigma)
-        self.threshold = threshold
-        self.threshold_volumes()
-        self.volumes = self.thresholded_volumes
-        self.COM = com_function()
-        self.COM,self.volumes = self.get_shared_coms(self.COM, self.volumes)
-        self.structures = list(self.COM.keys())
-        self.convert_unit_of_com_dictionary(self.COM,self.fixed_brain.um_to_pixel)
+class AtlasAssembler(AtlasInitiator,Assembler):
+    def __init__(self,atlas,com_function = None,threshold = 0.9,sigma = 3.0,conversion_factor = None):
+        AtlasInitiator.__init__(self,com_function = com_function,threshold = threshold,sigma = sigma,conversion_factor = conversion_factor)
         self.standardize_volumes()
         self.origins = self.get_origin_from_coms()
         Assembler.__init__(self)    

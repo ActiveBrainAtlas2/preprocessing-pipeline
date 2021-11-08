@@ -16,7 +16,7 @@ class ExampleFinder(CellDetectorBase):
         self.t0=time()
         print('section=%d, SECTION_DIR=%s'%(self.section,self.CH3_SECTION_DIR))
         self.thresh=2000
-        self.radius=400
+        self.radius=80
         self.max_segment_size = 100000
         self.cell_counter = 0
         self.Examples=[]

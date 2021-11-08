@@ -12,7 +12,7 @@ from abakit.registration.algorithm import brain_to_atlas_transform,umeyama
 from lib.utilities_atlas import singular_structures
 from lib.sqlcontroller import SqlController
 from lib.utilities_atlas_lite import  symmetricalize_volume, find_merged_bounding_box,crop_and_pad_volumes
-from atlas.BrainStructureManager import Atlas,BrainStructureManager
+from atlas.Atlas import Atlas,BrainStructureManager
 from Registration.StackRegistration.RigidRegistration import RigidRegistration
 from Registration.StackRegistration.AffineRegistration import AffineRegistration
 MANUAL = 1
@@ -26,10 +26,6 @@ class BrainMerger(Atlas):
         self.fixed_brain = BrainStructureManager('MD589')
         self.moving_brains = [BrainStructureManager(braini) for braini in moving_brains]
         self.sqlController = SqlController(self.fixed_brain.animal)
-        width = self.sqlController.scan_run.width // 32
-        height = self.sqlController.scan_run.height // 32
-        depth = self.sqlController.get_section_count(self.fixed_brain.animal)
-        self.fixed_brain_center = np.array([width//2, height//2, depth//2])
         self.threshold = threshold
         self.volumes_to_merge = defaultdict(list)
         self.origins_to_merge = defaultdict(list)

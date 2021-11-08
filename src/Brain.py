@@ -1,6 +1,6 @@
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
-from atlas.Plotter import Plotter
+from Plotter.Plotter import Plotter
 import numpy as np
 class Brain:
     def __init__(self,animal):
@@ -9,6 +9,9 @@ class Brain:
         self.path = FileLocationManager(animal)
         self.plotter = Plotter()
         self.attribute_functions = dict(COM = self.load_com)
+        to_um = 32 * self.get_resolution()
+        self.pixel_to_um = np.array([to_um,to_um,20])
+        self.um_to_pixel = 1/self.pixel_to_um
     
     def get_resolution(self):
         return self.sqlController.scan_run.resolution

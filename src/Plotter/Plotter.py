@@ -3,8 +3,10 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 from matplotlib.widgets import Slider
-
+from Plotter.VtkPlotter import VtkPlotter
 class Plotter:
+    def __init__(self):
+        self.vtk = VtkPlotter()
 
     def set_show_as_true(self):
         self.show = True

@@ -11,25 +11,34 @@ class UrlGenerator:
             name = animal
         source = f'precomputed://https://activebrainatlas.ucsd.edu/data/{animal}/neuroglancer_data/C{channel}'
         self.add_precomputed_image_layer(source,animal)
+    
+    def add_segmentation_layer(self,folder_name,layer_name):
+        segment_layer = dict( type = "segmentation",
+                            source = "precomputed://https://activebrainatlas.ucsd.edu/data/structures/" + folder_name,
+                            tab = "segments",
+                            name = layer_name)
+        self.layers.append(json.dumps(segment_layer))
 
     def add_precomputed_image_layer(self,source,name):
         image_layer = dict( type = "image",
-                            source = "'''+source+'''",
+                            source = source,
                             tab = "source",
                             name = name)
         self.layers.append(json.dumps(image_layer))
     
-    def add_annotation_layer(self,name,color_hex= None,annotations = [],shader_controls = None):
-        annotation_layer = dict(type =  "annotation",
-                                source=  dict(  url = "local://annotations",
-                                                transform = {}),
-                                annotations = annotations,
-                                name = name)
+    def add_annotation_layer(self,name,color_hex= None,annotations = None,shader_controls = None):
+        if annotations:
+            annotation_layer = dict(type =  "annotation",
+                                    source=  dict(  url = "local://annotations",
+                                                    transform = {}),
+                                    name = name)
+        if annotations:
+            annotation_layer['annotations'] = annotations
         if shader_controls:
             annotation_layer['shaderControls'] = shaderControls
         if color_hex != None:
             annotation_layer = self.insert_annotation_color_hex(annotation_layer,color_hex)
-        self.layers.append(annotation_layer)
+        self.layers.append(json.dumps(annotation_layer))
 
     def insert_annotation_color_hex(self,annotation_layer,color_hex):
         annotation_layer = annotation_layer.split(',')
