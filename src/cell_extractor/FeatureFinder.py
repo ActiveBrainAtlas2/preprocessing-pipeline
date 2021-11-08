@@ -4,7 +4,7 @@ import pickle as pkl
 from cell_extractor import compute_image_features 
 import cv2
 import pandas as pd
-from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali
+from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali,parallel_process_all_sections
 import os
 class FeatureFinder(CellDetectorBase):
     def __init__(self,animal,section):
@@ -20,12 +20,15 @@ class FeatureFinder(CellDetectorBase):
         self.featurei['row'] = example['row']+example['origin'][0]
         self.featurei['col'] = example['col']+example['origin'][1]
 
-    def calculate_correlation_and_energy(self,image):
-        corr,energy = compute_image_features.calc_img_features(image,self.average_image)
-        self.featurei['corr'] = corr
-        self.featurei['energy'] = energy
+    def calculate_correlation_and_energy(self,example,channel = 3):
+        image = example[f'image_CH{channel}']
+        average_image = getattr(self, f'average_image_ch{channel}')
+        corr,energy = compute_image_features.calc_img_features(image,average_image)
+        self.featurei[f'corr_CH{channel}'] = corr
+        self.featurei[f'energy_CH{channel}'] = energy
 
-    def connected_segment_detected_in_image(self,image):
+    def connected_segment_detected_in_image(self,example,channel = 3):
+        image = example[f'image_CH{channel}']
         Stats=cv2.connectedComponentsWithStats(np.int8(image>self.connected_segment_threshold))
         return Stats[1] is not None
     
@@ -41,14 +44,17 @@ class FeatureFinder(CellDetectorBase):
     def calculate_hu_moments(self,moments):
         return cv2.HuMoments(moments)
 
-    def calculate_moment_and_hu_moment(self,image):
+    def calculate_moment_and_hu_moment(self,example,channel = 3):
+        append_string_to_every_key = lambda dictionary, post_fix : dict(zip([keyi + post_fix for keyi in dictionary.keys()],dictionary.values()))
+        image = example[f'image_CH{channel}']
         Stats=cv2.connectedComponentsWithStats(np.int8(image>self.connected_segment_threshold))
         connected_segments=Stats[1]
         middle_seg_mask = self.get_middle_segment_mask(connected_segments)  
         moments = self.calculate_moments(middle_seg_mask)
+        moments = append_string_to_every_key(moments,f'CH_{channel}')
         self.featurei.update(moments)
         huMoments = self.calculate_hu_moments(moments)       
-        self.featurei.update({'h%d'%i:huMoments[i,0]  for i in range(7)})
+        self.featurei.update({'h%d'%i:huMoments[i,0]+f'_CH_{channel}'  for i in range(7)})
         
     def calculate_features(self):
         self.load_examples()
@@ -57,38 +63,34 @@ class FeatureFinder(CellDetectorBase):
             examplei = self.Examples[tilei]
             if examplei != []:
                 for example in examplei:
-                    image = example['image_CH3']
                     self.featurei={}
                     self.copy_information_from_examples(example)
-                    self.calculate_correlation_and_energy(image)
-                    if self.connected_segment_detected_in_image(image):
-                        self.calculate_moment_and_hu_moment(image)
+                    self.calculate_correlation_and_energy(example,channel=1)
+                    self.calculate_correlation_and_energy(example,channel=3)
+                    if self.connected_segment_detected_in_image(example):
+                        self.calculate_moment_and_hu_moment(example,channel=1)
+                        self.calculate_moment_and_hu_moment(example,channel=3)
                     self.features.append(self.featurei)
 
-    def calculate_average_cell_images(self,examples):
+    def calculate_average_cell_images(self,examples,channel = 3):
         images = []
         for examplei in examples:
-            images.append(examplei['image_CH3'])
+            images.append(examplei[f'image_CH{channel}'])
         images = np.stack(images)
         average = np.average(images,axis=0)
         average = (average - average.mean())/average.std()
         return average
     
     def load_or_calulate_average_cell_image(self):
-        if os.path.exists(self.AVERAGE_CELL_IMAGE_DIR):
-            self.average_image = pkl.load(open(self.AVERAGE_CELL_IMAGE_DIR,'rb'))
+        if os.path.exists(self.AVERAGE_CELL_IMAGE_DIR_CH1) and os.path.exists(self.AVERAGE_CELL_IMAGE_DIR_CH3):
+            self.average_image_ch1 = pkl.load(open(self.AVERAGE_CELL_IMAGE_DIR_CH1,'rb'))
+            self.average_image_ch3 = pkl.load(open(self.AVERAGE_CELL_IMAGE_DIR_CH3,'rb'))
         else:
-            sections = self.get_sections_with_csv()
-            examples = []
-            for sectioni in sections:
-                print(sectioni)
-                base = CellDetectorBase(self.animal,sectioni)
-                base.load_examples()
-                examplei = [i for tilei in base.Examples for i in tilei]
-                print(len(examplei))
-                examples += examplei
-            self.average_image = self.calculate_average_cell_images(examples)
-            pkl.dump(open(self.average_image,self.AVERAGE_CELL_IMAGE_DIR,'wb'))
+            examples = self.load_all_examples_in_brain()
+            self.average_image_ch1 = self.calculate_average_cell_images(examples,channel = 1)
+            self.average_image_ch3 = self.calculate_average_cell_images(examples,channel = 3)
+            pkl.dump(open(self.average_image_ch1,self.AVERAGE_CELL_IMAGE_DIR_CH1,'wb'))
+            pkl.dump(open(self.average_image_ch3,self.AVERAGE_CELL_IMAGE_DIR_CH3,'wb'))
 
 def calculate_all_sections_of_animali(animal):
     sections_with_csv = get_sections_with_annotation_for_animali(animal)
@@ -103,5 +105,13 @@ def test_one_section(animal,section):
     finder.calculate_features()
     finder.save_features()
 
+def parallel_process_all_sections(animal,njobs = 40):
+    base = CellDetectorBase(animal)
+    sections_with_csv = base.get_sections_with_csv()
+    with concurrent.futures.ProcessPoolExecutor(max_workers=njobs) as executor:
+        for sectioni in sections_with_csv:
+            results = executor.submit(test_one_section,animal,sectioni) 
+
 if __name__ == '__main__':
+    # parallel_process_all_sections('DK55')
     calculate_all_sections_of_animali('DK55')

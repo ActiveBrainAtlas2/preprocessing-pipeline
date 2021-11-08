@@ -19,7 +19,8 @@ class CellDetectorBase(Brain):
         self.nrow = 5
         self.section = section
         self.DATA_DIR = f"/data/cell_segmentation/{self.animal}"
-        self.AVERAGE_CELL_IMAGE_DIR = os.path.join(self.DATA_DIR,'average_cell_image.pkl')
+        self.AVERAGE_CELL_IMAGE_DIR_CH1 = os.path.join(self.DATA_DIR,'average_cell_image_ch1.pkl')
+        self.AVERAGE_CELL_IMAGE_DIR_CH3 = os.path.join(self.DATA_DIR,'average_cell_image_ch3.pkl')
         self.TILE_INFO_DIR = os.path.join(self.DATA_DIR,'tile_info.csv')
         os.makedirs(self.DATA_DIR,exist_ok = True)
         self.CH3 = os.path.join(self.DATA_DIR,"CH3")
@@ -93,6 +94,18 @@ class CellDetectorBase(Brain):
         with open(save_path,'br') as pkl_file:
             E=pkl.load(pkl_file)
             self.Examples=E['Examples']
+    
+    def load_all_examples_in_brain(self):
+        sections = self.get_sections_with_csv()
+        examples = []
+        for sectioni in sections:
+            print(sectioni)
+            base = CellDetectorBase(self.animal,sectioni)
+            base.load_examples()
+            examplei = [i for tilei in base.Examples for i in tilei]
+            print(len(examplei))
+            examples += examplei
+        return examples
     
     def save_features(self):
         for featurei in self.features:

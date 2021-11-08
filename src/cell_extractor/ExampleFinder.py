@@ -9,6 +9,7 @@ from time import time
 import glob
 import pickle as pkl
 from cell_extractor.CellDetectorBase import CellDetectorBase
+import concurrent.futures
 
 class ExampleFinder(CellDetectorBase):
     def __init__(self,animal,section):
@@ -16,7 +17,7 @@ class ExampleFinder(CellDetectorBase):
         self.t0=time()
         print('section=%d, SECTION_DIR=%s'%(self.section,self.CH3_SECTION_DIR))
         self.thresh=2000
-        self.radius=80
+        self.radius=40
         self.max_segment_size = 100000
         self.cell_counter = 0
         self.Examples=[]
@@ -162,12 +163,23 @@ def process_all_sections(animal):
         extractor.find_examples()
         extractor.save_examples()
 
+def parallel_process_all_sections(animal,njobs = 40):
+    base = CellDetectorBase(animal)
+    sections_with_csv = base.get_sections_with_csv()
+    with concurrent.futures.ProcessPoolExecutor(max_workers=njobs) as executor:
+        for sectioni in sections_with_csv:
+            results = executor.submit(test_one_section,animal,sectioni) 
+
 def test_one_section(animal,section):
     extractor = ExampleFinder(animal,section)
     extractor.find_examples()
     extractor.save_examples()
 
+def calculate_all_sections_of_animali_in_parallel(animal,njobs = 50):
+    run_section = lambda sectioni : test_one_section(animal, sectioni)
+    parallel_process_all_sections(animal,run_section=run_section,njobs = njobs)
+
 if __name__ == '__main__':
     # test_one_section('DK55',180)
-    process_all_sections('DK55')
+    parallel_process_all_sections('DK55')
     

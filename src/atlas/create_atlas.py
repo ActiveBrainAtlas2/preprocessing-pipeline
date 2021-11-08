@@ -35,9 +35,9 @@ def make_ng_file():
     maker.create_atlas_neuroglancer()
 
 if __name__ == '__main__':
-    # animals = ['MD585', 'MD589', 'MD594']
-    # for animal in animals:
-    #     align_contour(animal)
-    #     create_volume(animal)
-    # merge_brains()
+    animals = ['MD585', 'MD589', 'MD594']
+    for animal in animals:
+        align_contour(animal)
+        create_volume(animal)
+    merge_brains()
     make_ng_file()
