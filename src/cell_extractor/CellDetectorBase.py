@@ -5,22 +5,19 @@ from Brain import Brain
 import pickle as pkl
 import pandas as pd
 import numpy as np
+from cell_extractor.DetectionPlotter import DetectionPlotter
 
 class CellDetectorBase(Brain):
     def __init__(self,animal,section = 0):
         self.attribute_functions = dict(
-            width = self.get_image_dimension,
-            tile_width = self.get_image_dimension,
-            height = self.get_image_dimension,
-            tile_height = self.get_image_dimension,
             tile_origins = self.get_tile_origins)
         super().__init__(animal)
+        self.plotter = DetectionPlotter()
         self.ncol = 2
         self.nrow = 5
         self.section = section
         self.DATA_DIR = f"/data/cell_segmentation/{self.animal}"
-        self.AVERAGE_CELL_IMAGE_DIR_CH1 = os.path.join(self.DATA_DIR,'average_cell_image_ch1.pkl')
-        self.AVERAGE_CELL_IMAGE_DIR_CH3 = os.path.join(self.DATA_DIR,'average_cell_image_ch3.pkl')
+        self.AVERAGE_CELL_IMAGE_DIR = os.path.join(self.DATA_DIR,'average_cell_image.pkl')
         self.TILE_INFO_DIR = os.path.join(self.DATA_DIR,'tile_info.csv')
         os.makedirs(self.DATA_DIR,exist_ok = True)
         self.CH3 = os.path.join(self.DATA_DIR,"CH3")
@@ -95,17 +92,19 @@ class CellDetectorBase(Brain):
             E=pkl.load(pkl_file)
             self.Examples=E['Examples']
     
-    def load_all_examples_in_brain(self):
+    def load_all_examples_in_brain(self,label = 1):
         sections = self.get_sections_with_csv()
         examples = []
         for sectioni in sections:
-            print(sectioni)
             base = CellDetectorBase(self.animal,sectioni)
             base.load_examples()
-            examplei = [i for tilei in base.Examples for i in tilei]
-            print(len(examplei))
+            examplei = [i for tilei in base.Examples for i in tilei if i['label'] == label]
             examples += examplei
         return examples
+    
+    def load_features(self):
+        path=self.get_feature_save_path()
+        self.features = pd.read_csv(path)
     
     def save_features(self):
         for featurei in self.features:
@@ -124,11 +123,15 @@ class CellDetectorBase(Brain):
     
     def save_examples(self):
         out={'Examples':self.Examples}
-        print('about to write',time()-self.t0)
+        # print('about to write',time()-self.t0)
+        print(f'section {self.section}')
         t1=time()
-        with open(self.get_example_save_path(),'wb') as pkl_file:
-            pkl.dump(out,pkl_file)
-        print('finished writing ',time()-t1)
+        try:
+            with open(self.get_example_save_path(),'wb') as pkl_file:
+                pkl.dump(out,pkl_file)
+        except OSError:
+            print(self.section)
+        # print('finished writing ',time()-t1)
 
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)

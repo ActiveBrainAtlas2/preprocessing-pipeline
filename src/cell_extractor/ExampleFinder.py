@@ -40,8 +40,8 @@ class ExampleFinder(CellDetectorBase):
                     cloest_segment_id,labelx,labely = self.find_cloest_connected_segment_to_manual_labeli(labeli)
                     self.is_possitive_segment[cloest_segment_id]=1
                     self.positive_segment_locations[cloest_segment_id,:]=[labelx,labely]
-                print('tile=%d positives=%d, unmatched (size=%d):\n '%(tile,sum(self.is_possitive_segment),
-                len(self.labels_with_no_matching_segments)),self.labels_with_no_matching_segments)
+                # print('tile=%d positives=%d, unmatched (size=%d):\n '%(tile,sum(self.is_possitive_segment),
+                # len(self.labels_with_no_matching_segments)),self.labels_with_no_matching_segments)
             tilei_examples=self.get_examples(tile)
             self.Examples.append(tilei_examples)
 
@@ -93,7 +93,7 @@ class ExampleFinder(CellDetectorBase):
         file = f'{self.section:03}tile-{tilei}.tif'
         infile = os.path.join(folder, file)
         img = np.float32(cv2.imread(infile, -1))
-        print('tile=',tilei,end=',')
+        # print('tile=',tilei,end=',')
         return img
     
     def subtract_blurred_image(self,image):
@@ -116,15 +116,16 @@ class ExampleFinder(CellDetectorBase):
             self.manual_labels_in_tile=np.stack(self.manual_labels_in_tile)
         else:
             self.manual_labels_in_tile = np.array([])
-        print('Manual Detections = %d'%len(self.manual_labels_in_tile))
+        # print('Manual Detections = %d'%len(self.manual_labels_in_tile))
         self.n_manual_label = len(self.manual_labels_in_tile) 
     
     def find_connected_segments(self,image):
         self.connected_segment_info=cv2.connectedComponentsWithStats(np.int8(image>self.thresh))
-        print('Computer Detections=',self.connected_segment_info[0],end=',')
+        # print('Computer Detections=',self.connected_segment_info[0],end=',')
         self.found_connected_segments = self.connected_segment_info[0]>2
         if not self.found_connected_segments:
-            print('skipping tile')
+            ...
+            # print('skipping tile')
         else:
             self.Stats_list.append(self.connected_segment_info)
             self.n_connected_segments = self.connected_segment_info[2].shape[0]
@@ -163,23 +164,34 @@ def process_all_sections(animal):
         extractor.find_examples()
         extractor.save_examples()
 
-def parallel_process_all_sections(animal,njobs = 40):
+def calculate_feature(animal,section):
+    extractor = ExampleFinder(animal,section)
+    extractor.find_examples()
+    return section,extractor.Examples
+
+def parallel_process_all_sections(animal,njobs = 20):
     base = CellDetectorBase(animal)
     sections_with_csv = base.get_sections_with_csv()
     with concurrent.futures.ProcessPoolExecutor(max_workers=njobs) as executor:
+        results = []
         for sectioni in sections_with_csv:
-            results = executor.submit(test_one_section,animal,sectioni) 
+            print(animal,sectioni)
+            results.append(executor.submit(test_one_section,animal,sectioni))
+        
+        for resulti in concurrent.futures.as_completed(results):
+            r = resulti.result()
+            # base = CellDetectorBase(animal,section) 
+            # base.Examples = example
+            # base.save_examples()
+    print('done')
 
 def test_one_section(animal,section):
     extractor = ExampleFinder(animal,section)
     extractor.find_examples()
     extractor.save_examples()
 
-def calculate_all_sections_of_animali_in_parallel(animal,njobs = 50):
-    run_section = lambda sectioni : test_one_section(animal, sectioni)
-    parallel_process_all_sections(animal,run_section=run_section,njobs = njobs)
-
 if __name__ == '__main__':
     # test_one_section('DK55',180)
-    parallel_process_all_sections('DK55')
+    # parallel_process_all_sections('DK55')
+    process_all_sections('DK55')
     
