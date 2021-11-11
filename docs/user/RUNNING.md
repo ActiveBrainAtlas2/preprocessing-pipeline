@@ -36,7 +36,7 @@ You can do this by using the corresponding app and clicking the button on the to
     1. Create the normalized files
     1. Create png files for channel 1.
     1. Creates the final masks
-    1. You'll need to now verify the masks and possibly edit some of them in GIMP
+    1. You'll need to now verify the masks and possibly edit some of them in GIMP.  Use color white to add to the mask and color black to subtract
     1. Check the rotation necessary for the images by viewing the normalized files and then 
     updating the scan run table in the Django database portal and update the rotations. It is usually 3.
 
