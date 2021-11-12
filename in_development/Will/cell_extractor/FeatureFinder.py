@@ -7,6 +7,8 @@ import pandas as pd
 from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali
 import os
 class FeatureFinder(CellDetectorBase):
+    """class to calculate feature vector for each extracted image pair (CH1, CH3)
+    """
     def __init__(self,animal,section):
         super().__init__(animal,section)
         self.features = []
@@ -51,26 +53,43 @@ class FeatureFinder(CellDetectorBase):
         no,mask,statistics,center=cv2.connectedComponentsWithStats(np.int8(image3>self.connected_segment_threshold))
         middle_seg_mask = None
         if mask is not None:
-            middle_segment_mask = self.get_middle_segment_mask(mask)  
-            center_comp_features = self.calc_center_features(image1,image3, middle_segment_mask)
-        return center_comp_features
+            middle_segment_mask = self.get_middle_segment_mask(mask) 
+            example['middle_segment_mask']=middle_segment_mask
+            self.calc_center_features(image1,image3, middle_segment_mask)
    
-    def calc_center_features(self,image1,image3, middle_segment_mask):
-        append_string_to_every_key = lambda dictionary, post_fix : dict(zip([keyi + post_fix for keyi in dictionary.keys()],dictionary.values()))
-        moments = self.calculate_moments(middle_segment_mask)
-        moments = append_string_to_every_key(moments,f'CH_3')
-        self.featurei.update(moments)
-        huMoments = self.calculate_hu_moments(moments)       
-        self.featurei.update({'h%d'%i+f'_CH_3':huMoments[i,0]  for i in range(7)})
-        #Yoav is likely to change this method
+    def calc_center_features(self,image1,image3, mask):
+        def mask_mean(mask,image):
+            mean_in=np.mean(image[mask==1])
+            mean_all=np.mean(image.flatten())
+            return (mean_in-mean_all)/(mean_in+mean_all)
+
+        def append_string_to_every_key(dictionary, post_fix): 
+            return dict(zip([keyi + post_fix for keyi in dictionary.keys()],dictionary.values()))
         
+        def calc_moments_of_mask(mask):
+            moments = self.calculate_moments(mask)
+            moments = append_string_to_every_key(moments,f'CH_3')
+            self.featurei.update(moments)
+            huMoments = self.calculate_hu_moments(moments)
+            self.featurei.update({'h%d'%i+f'_CH_3':huMoments[i,0]  for i in range(7)})
+        
+        def calc_contrasts_relative_to_mask(mask,image1,image3):
+            self.featurei['contrast1']=mask_mean(mask,image1)
+            self.featurei['contrast3']=mask_mean(mask,image3)
+        
+        calc_moments_of_mask(mask)
+        calc_contrasts_relative_to_mask(mask,image1,image3)
+
     def calculate_features(self):
+        """ Master function, calls methods to calculate the features that are then stored in self.features
+        """
         self.load_examples()
         for tilei in range(len(self.Examples)):
             print(tilei)
             examplei = self.Examples[tilei]
             if examplei != []:
-                for example in examplei:
+                for i in range(len(examplei)):
+                    example=examplei[i]
                     self.featurei={}
                     self.copy_information_from_examples(example)
                     self.calculate_correlation_and_energy(example,channel=1)
@@ -80,7 +99,10 @@ class FeatureFinder(CellDetectorBase):
     
     def load_average_cell_image(self):
         if os.path.exists(self.AVERAGE_CELL_IMAGE_DIR):
-            average_image = pkl.load(open(self.AVERAGE_CELL_IMAGE_DIR,'rb'))
+            try:
+                average_image = pkl.load(open(self.AVERAGE_CELL_IMAGE_DIR,'rb'))
+            except IOError as e:
+                print(e)
             self.average_image_ch1 = average_image['CH1']
             self.average_image_ch3 = average_image['CH3']
 

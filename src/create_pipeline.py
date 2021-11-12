@@ -27,40 +27,45 @@ from lib.logger import get_logger
 if __name__ == '__main__':
     
     
-    steps = """
-    start=0, prep, normalized and masks=1, mask, clean and histograms=2, 
-    elastix and alignment=3, neuroglancer=4
-    """
-    parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--channel', help='Enter channel', required=False, default=1)
-    parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
-    parser.add_argument('--step', help=steps, required=False, default=0)
+    # steps = """
+    # start=0, prep, normalized and masks=1, mask, clean and histograms=2, 
+    # elastix and alignment=3, neuroglancer=4
+    # """
+    # parser = argparse.ArgumentParser(description='Work on Animal')
+    # parser.add_argument('--animal', help='Enter the animal', required=True)
+    # parser.add_argument('--channel', help='Enter channel', required=False, default=1)
+    # parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
+    # parser.add_argument('--step', help=steps, required=False, default=0)
     
 
-    args = parser.parse_args()
-    animal = args.animal
-    channel = int(args.channel)
-    downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
-    step = int(args.step)
-    logger = get_logger(animal)
-    
+    # args = parser.parse_args()
+    # animal = args.animal
+    # channel = int(args.channel)
+    # downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    # step = int(args.step)
+    # logger = get_logger(animal)
+
+    animal = 'DK73'
+    channel = 1
+    downsample = True
+    step = 3
     pipeline = Pipeline(animal, channel, downsample)
     start = timer()
+    # pipeline.debug = True
     pipeline.check_programs()
     end = timer()
     print(f'Check programs took {end - start} seconds')    
-    logger.info(f'Check programs took {end - start} seconds')
+    # logger.info(f'Check programs took {end - start} seconds')
     start = timer()
     pipeline.create_meta()
     end = timer()
     print(f'Create meta took {end - start} seconds')    
-    logger.info(f'Ceate meta took {end - start} seconds')
+    # logger.info(f'Ceate meta took {end - start} seconds')
     start = timer()
     pipeline.create_tifs()
     end = timer()
     print(f'Create tifs took {end - start} seconds')    
-    logger.info(f'Create tifs took {end - start} seconds')
+    # logger.info(f'Create tifs took {end - start} seconds')
     if step > 0:
         start = timer()
         pipeline.create_preps()
@@ -68,7 +73,7 @@ if __name__ == '__main__':
         pipeline.create_masks()
         end = timer()
         print(f'Creating normalized and masks took {end - start} seconds')    
-        logger.info(f'Create preps, normalized and masks took {end - start} seconds')
+        # logger.info(f'Create preps, normalized and masks took {end - start} seconds')
     if step > 1:
         start = timer()
         pipeline.create_masks_final()
@@ -81,14 +86,14 @@ if __name__ == '__main__':
         print('\tFinished histograms combined')    
         end = timer()
         print(f'Creating masks, cleaning and histograms took {end - start} seconds')    
-        logger.info(f'Creating masks, cleaning and histograms took {end - start} seconds')
+        # logger.info(f'Creating masks, cleaning and histograms took {end - start} seconds')
     if step > 2:
         start = timer()
         pipeline.create_elastix()
         pipeline.create_alignment()
         end = timer()
         print(f'Creating elastix and alignment took {end - start} seconds')    
-        logger.info(f'Create elastix and alignment took {end - start} seconds')
+        # logger.info(f'Create elastix and alignment took {end - start} seconds')
     if step > 3:
         start = timer()
         pipeline.create_neuroglancer_image()

@@ -33,10 +33,10 @@ def make_full_resolution(animal, channel):
 
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
-
-    if 'thion' in sqlController.histology.counterstain:
-        sqlController.set_task(animal, CREATE_CHANNEL_2_FULL_RES)
-        sqlController.set_task(animal, CREATE_CHANNEL_3_FULL_RES)
+    if sqlController.histology.counterstain:
+        if 'thion' in sqlController.histology.counterstain:
+            sqlController.set_task(animal, CREATE_CHANNEL_2_FULL_RES)
+            sqlController.set_task(animal, CREATE_CHANNEL_3_FULL_RES)
 
     INPUT = os.path.join(fileLocationManager.tif)
     ##### Check if files in dir are valid
@@ -70,10 +70,10 @@ def make_low_resolution(animal, channel, debug):
         list of commands
     """
     sqlController = SqlController(animal)
-
-    if 'thion' in sqlController.histology.counterstain:
-        sqlController.set_task(animal, CREATE_CHANNEL_2_THUMBNAILS)
-        sqlController.set_task(animal, CREATE_CHANNEL_3_THUMBNAILS)
+    if sqlController.histology.counterstain:
+        if 'thion' in sqlController.histology.counterstain:
+            sqlController.set_task(animal, CREATE_CHANNEL_2_THUMBNAILS)
+            sqlController.set_task(animal, CREATE_CHANNEL_3_THUMBNAILS)
     fileLocationManager = FileLocationManager(animal)
     file_keys = []
     INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')

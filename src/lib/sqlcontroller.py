@@ -411,12 +411,16 @@ class SqlController(object):
         self.add_layer_data_row(animal,person_id,input_type_id,coordinates,structure_id,layer)
 
     def get_com_dict(self, prep_id, input_type_id=1, person_id=2,active = True):
+        return self.get_layer_data_entry( prep_id = prep_id, input_type_id=input_type_id,\
+             person_id=person_id,active = active,layer = 'COM')
+    
+    def get_layer_data_entry(self, prep_id, input_type_id=1, person_id=2,active = True,layer = 'COM'):
         rows = self.session.query(LayerData)\
             .filter(LayerData.active.is_(active))\
             .filter(LayerData.prep_id == prep_id)\
             .filter(LayerData.input_type_id == input_type_id)\
             .filter(LayerData.person_id == person_id)\
-            .filter(LayerData.layer == 'COM')\
+            .filter(LayerData.layer == layer)\
             .all()
         row_dict = {}
         for row in rows:

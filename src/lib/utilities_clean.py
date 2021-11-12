@@ -118,10 +118,10 @@ def masker(animal, channel, downsample, debug):
         if os.path.exists(outpath):
             continue
         maskfile = os.path.join(MASKS, file)
-
-        if 'thion' in stain.lower():
-            print('Not implemented.')
-            #fixed = fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height)
+        if stain:
+            if 'thion' in stain.lower():
+                print('Not implemented.')
+                #fixed = fix_thion(infile, mask, maskfile, logger, rotation, flip, max_width, max_height)
         else:
             file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
 

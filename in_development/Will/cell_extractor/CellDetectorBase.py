@@ -45,7 +45,10 @@ class CellDetectorBase(Brain):
     
     def save_tile_information(self):
         tile_information = self.get_tile_information()
-        tile_information.to_csv(self.TILE_INFO_DIR,index = False)
+        try:
+            tile_information.to_csv(self.TILE_INFO_DIR,index = False)
+        except IOError as e:
+            print(e)
     
     def check_tile_information(self):
         if os.path.exists(self.TILE_INFO_DIR):
@@ -88,10 +91,13 @@ class CellDetectorBase(Brain):
     
     def load_examples(self):
         save_path = self.get_example_save_path()
-        with open(save_path,'br') as pkl_file:
-            E=pkl.load(pkl_file)
-            self.Examples=E['Examples']
-    
+        try:
+            with open(save_path,'br') as pkl_file:
+                E=pkl.load(pkl_file)
+                self.Examples=E['Examples']
+        except IOError as e:
+            print(e)
+        
     def load_all_examples_in_brain(self,label = 1):
         sections = self.get_sections_with_csv()
         examples = []
@@ -104,7 +110,10 @@ class CellDetectorBase(Brain):
     
     def load_features(self):
         path=self.get_feature_save_path()
-        self.features = pd.read_csv(path)
+        try:
+            self.features = pd.read_csv(path)
+        except IOError as e:
+            print(e)
     
     def save_features(self):
         for featurei in self.features:
@@ -119,19 +128,20 @@ class CellDetectorBase(Brain):
         df=pd.DataFrame(df_dict)
         outfile=self.get_feature_save_path()
         print('df shape=',df.shape,'output_file=',outfile)
-        df.to_csv(outfile,index=False)
+        try:
+            df.to_csv(outfile,index=False)
+        except IOError as e:
+            print(e)
     
     def save_examples(self):
         out={'Examples':self.Examples}
-        # print('about to write',time()-self.t0)
         print(f'section {self.section}')
         t1=time()
         try:
             with open(self.get_example_save_path(),'wb') as pkl_file:
                 pkl.dump(out,pkl_file)
-        except OSError:
-            print(self.section)
-        # print('finished writing ',time()-t1)
+        except IOError as e:
+            print(e)
 
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)
