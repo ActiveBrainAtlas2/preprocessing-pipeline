@@ -1,4 +1,7 @@
 ## Database design of the base tables
+This is a listing of the base tables used by the Active Brain Atlas project.
+Each table has all the columns listed along with the column type and some
+additional description. Columns that have never been used are marked by *NOTUSED*. 
 
 ### animal
 * `prep_id` varchar(20) NOT NULL COMMENT 'Name for lab mouse/rat, max 20 chars'
@@ -17,9 +20,9 @@
 * `tracking_number` varchar(100) DEFAULT NULL
 * `aliases_1` varchar(100) DEFAULT NULL COMMENT 'names given by others'
 * `aliases_2` varchar(100) DEFAULT NULL
-* `aliases_3` varchar(100) DEFAULT NULL
-* `aliases_4` varchar(100) DEFAULT NULL
-* `aliases_5` varchar(100) DEFAULT NULL
+* `aliases_3` varchar(100) DEFAULT NULL *NOTUSED*
+* `aliases_4` varchar(100) DEFAULT NULL *NOTUSED*
+* `aliases_5` varchar(100) DEFAULT NULL *NOTUSED*
 * `comments` varchar(2001) DEFAULT NULL COMMENT 'assessment'
 * `active` tinyint(4) NOT NULL DEFAULT 1
 * `created` timestamp NULL DEFAULT current_timestamp()
@@ -123,7 +126,7 @@
 * `created` timestamp NOT NULL DEFAULT current_timestamp()
 * `active` tinyint(4) NOT NULL DEFAULT 1
 
-### organic_label 
+### organic_label *this table is not being used at all*
 * `id` int(11) NOT NULL AUTO_INCREMENT
 * `label_id` varchar(20) NOT NULL
 * `label_type` enum('Cascade Blue','Chicago Blue','Alexa405','Alexa488','Alexa647','Cy2','Cy3','Cy5','Cy5.5','Cy7','Fluorescein','Rhodamine B','Rhodamine 6G','Texas Red','TMR') DEFAULT NULL
