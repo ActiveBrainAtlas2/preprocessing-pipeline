@@ -2,6 +2,7 @@
 This is a listing of the base tables used by the Active Brain Atlas project.
 Each table has all the columns listed along with the column type and some
 additional description. Columns that have never been used are marked by *NOTUSED*. 
+For a graphical (ERD) view of the database, click this [diagram](database.erd.png)
 
 ### animal
 * `prep_id` varchar(20) NOT NULL COMMENT 'Name for lab mouse/rat, max 20 chars'
