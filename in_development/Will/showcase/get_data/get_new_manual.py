@@ -39,8 +39,8 @@ class ManualVSAffineAtlasCOM:
         distance = {}
         distance_xyz = {}
         for animali in self.animals:
-            comi1 = self.com1[animali]
-            comi2 = self.com2[animali]
+            comi1 = com1[animali]
+            comi2 = com2[animali]
             if comi2 != {}:
                 dist_xyz = np.array([comi2[structurei]-comi1[structurei] for structurei in comi2])
                 dist = np.sqrt(np.power(dist_xyz,2).sum(1))
@@ -52,8 +52,8 @@ class ManualVSAffineAtlasCOM:
         distance = {}
         distance_xyz = {}
         for animali in self.animals:
-            comi1 = self.com1[animali]
-            comi2 = self.com2[animali]
+            comi1 = com1[animali]
+            comi2 = com2[animali]
             if comi2 != {}:
                 dist_xyz = np.array([comi2[structurei]-comi1[structurei] for structurei in comi2])
                 dist = np.sqrt(np.power(dist_xyz,2).sum(1))
