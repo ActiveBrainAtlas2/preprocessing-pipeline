@@ -8,10 +8,12 @@ from atlas.VolumeMaker import VolumeMaker
 from atlas.BrainMerger import BrainMerger
 from atlas.NgSegmentMaker import AtlasNgMaker
 
+
 def align_contour(animal):
     aligner = FoundationContourAligner(animal)
     aligner.create_aligned_contours()
     aligner.save_contours()
+
 
 def create_volume(animal):
     volumemaker = VolumeMaker(animal)
@@ -20,19 +22,22 @@ def create_volume(animal):
     volumemaker.save_origins()
     volumemaker.save_volumes()
 
+
 def merge_brains():
     merger = BrainMerger()
-    #merger.create_average_com_and_volume()
-    #merger.save_mesh_files() #TODO these are too big
+    # merger.create_average_com_and_volume()
+    # merger.save_mesh_files() #TODO these are too big
     merger.save_origins() 
-    merger.save_coms() #TODO, this fails as teh self.COM dictionary is empty
+    merger.save_coms()  # TODO, this fails as teh self.COM dictionary is empty
+
 
 def make_ng_file():
     atlas = 'atlasV8'
     debug = False
-    maker = AtlasNgMaker(atlas,debug,threshold=0.9)
+    maker = AtlasNgMaker(atlas, debug, threshold=0.9)
     maker.assembler.assemble_all_structure_volume()
     maker.create_atlas_neuroglancer()
+
 
 if __name__ == '__main__':
     animals = ['MD585', 'MD589', 'MD594']
