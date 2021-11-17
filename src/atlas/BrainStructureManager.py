@@ -8,10 +8,13 @@ from atlas.VolumeUtilities import VolumeUtilities
 from lib.utilities_atlas_lite import volume_to_polygon
 from lib.utilities_atlas_lite import save_mesh
 
-class BrainStructureManager(Brain,VolumeUtilities):
-    def __init__(self,animal):
-        Brain.__init__(self,animal)
-        VolumeUtilities.__init__(self)
+
+class BrainStructureManager(Brain, VolumeUtilities):
+
+    def __init__(self, animal):
+        Brain.__init__(self, animal)
+        # TODO there is no __init__ method in VolumeUtilities
+        # VolumeUtilities.__init__(self)
         self.origins = {}
         self.COM = {}
         self.volumes = {}
@@ -19,20 +22,20 @@ class BrainStructureManager(Brain,VolumeUtilities):
         self.thresholded_volumes = {}
         self.set_path_and_create_folders()
         self.attribute_functions = dict(
-            origins = self.load_origins,
-            volumes = self.load_volumes,
-            aligned_contours = self.load_aligned_contours,
-            structures = self.set_structure,**self.attribute_functions)
+            origins=self.load_origins,
+            volumes=self.load_volumes,
+            aligned_contours=self.load_aligned_contours,
+            structures=self.set_structure, **self.attribute_functions)
 
     def set_structure(self):
-        possible_attributes_with_structure_list = ['origins','COM','volumes','thresholded_volumes','aligned_contours']
+        possible_attributes_with_structure_list = ['origins', 'COM', 'volumes', 'thresholded_volumes', 'aligned_contours']
         self.set_structure_from_attribute(possible_attributes_with_structure_list)
     
     def set_path_and_create_folders(self):
         self.animal_directory = os.path.join(DATA_PATH, 'atlas_data', ATLAS, self.animal)
-        self.original_contour_path = os.path.join(self.animal_directory,  'original_structures.json')
-        self.padded_contour_path = os.path.join(self.animal_directory,  'unaligned_padded_structures.json')
-        self.align_and_padded_contour_path = os.path.join(self.animal_directory,  'aligned_padded_structures.json')
+        self.original_contour_path = os.path.join(self.animal_directory, 'original_structures.json')
+        self.padded_contour_path = os.path.join(self.animal_directory, 'unaligned_padded_structures.json')
+        self.align_and_padded_contour_path = os.path.join(self.animal_directory, 'aligned_padded_structures.json')
         self.volume_path = os.path.join(self.animal_directory, 'structure')
         self.origin_path = os.path.join(self.animal_directory, 'origin')
         os.makedirs(self.animal_directory, exist_ok=True)
@@ -59,9 +62,9 @@ class BrainStructureManager(Brain,VolumeUtilities):
         self.structures = list(self.aligned_contours.keys())        
     
     def save_contours(self):
-        assert(hasattr(self,'original_structures'))
-        assert(hasattr(self,'centered_structures'))
-        assert(hasattr(self,'aligned_structures'))
+        assert(hasattr(self, 'original_structures'))
+        assert(hasattr(self, 'centered_structures'))
+        assert(hasattr(self, 'aligned_structures'))
         with open(self.original_contour_path, 'w') as f:
             json.dump(self.original_structures, f, sort_keys=True)
         with open(self.padded_contour_path, 'w') as f:
@@ -70,7 +73,7 @@ class BrainStructureManager(Brain,VolumeUtilities):
             json.dump(self.aligned_structures, f, sort_keys=True)
 
     def save_volumes(self):
-        self.check_attributes(['volumes','structures'])
+        self.check_attributes(['volumes', 'structures'])
         os.makedirs(self.volume_path, exist_ok=True)
         for structurei in self.structures:
             volume = self.volumes[structurei]
@@ -86,34 +89,32 @@ class BrainStructureManager(Brain,VolumeUtilities):
         for structurei in self.structures:
             if structurei == '10N_L':
                 breakpoint()
-            origin,volume = self.origins[structurei],self.volumes[structurei]
+            origin, volume = self.origins[structurei], self.volumes[structurei]
             centered_origin = origin - self.get_origin_array().mean(0)
-            aligned_structure = volume_to_polygon(volume=volume,origin = centered_origin ,times_to_simplify=3)
+            aligned_structure = volume_to_polygon(volume=volume, origin=centered_origin , times_to_simplify=3)
             filepath = os.path.join(self.animal_directory, 'mesh', f'{structurei}.stl')
             save_mesh(aligned_structure, filepath)
 
     def save_origins(self):
-        self.check_attributes(['origins','structures'])
+        self.check_attributes(['origins', 'structures'])
         os.makedirs(self.origin_path, exist_ok=True)
         for structurei in self.structures:
             x, y, z = self.origins[structurei]
             origin_filepath = os.path.join(self.origin_path, f'{structurei}.txt')
-            np.savetxt(origin_filepath, (x,y,z))
+            np.savetxt(origin_filepath, (x, y, z))
     
     def save_coms(self):
-        self.check_attributes(['COM','structures'])
+        self.check_attributes(['COM', 'structures'])
         for structurei in self.structures:
             if structurei in self.COM:
                 coordinates = self.COM[structurei]
-                self.sqlController.add_com(prep_id = self.animal,abbreviation = structurei,\
-                        coordinates= coordinates)
-                print(f'adding com from {self.animal}')
+                self.sqlController.add_com(prep_id=self.animal, abbreviation=structurei, \
+                        coordinates=coordinates)
             else:
                 print(f'{structurei} not in self.COM')
 
-    def get_contour_list(self,structurei):
+    def get_contour_list(self, structurei):
         return list(self.aligned_contours[structurei].values())
-
     
     def get_origin_array(self):
         self.check_attributes(['origins'])
@@ -123,31 +124,31 @@ class BrainStructureManager(Brain,VolumeUtilities):
         self.check_attributes(['volumes'])
         return np.array(list(self.volumes.values()))
 
-    def plot_volume_3d(self,structure='10N_L'):
+    def plot_volume_3d(self, structure='10N_L'):
         volume = self.volumes[structure]
         self.plotter.plot_3d_boolean_array(volume)
 
-    def plot_volume_stack(self,structure='10N_L'):
+    def plot_volume_stack(self, structure='10N_L'):
         volume = self.volumes[structure]
-        self.plotter.plot_3d_image_stack(volume,2)
+        self.plotter.plot_3d_image_stack(volume, 2)
     
-    def compare_structure_vs_contour(self,structure='10N_L'):
+    def compare_structure_vs_contour(self, structure='10N_L'):
         self.plotter.set_show_as_false()
         volume = self.volumes[structure]
         contour = self.get_contour_list(structure)
-        self.plotter.compare_contour_and_stack(contour,volume)
+        self.plotter.compare_contour_and_stack(contour, volume)
         self.plotter.show()
         self.plotter.set_show_as_true()
 
     def plot_contours_for_all_structures(self):
-        self.check_attributes(['aligned_contours','structures'])
+        self.check_attributes(['aligned_contours', 'structures'])
         all_structures = []
         for structurei in self.structures:
             contour = self.aligned_contours[structurei]
-            data = self.plotter.get_contour_data(contour,down_sample_factor=100)
+            data = self.plotter.get_contour_data(contour, down_sample_factor=100)
             all_structures.append(data)
         all_structures = np.vstack(all_structures)
-        self.plotter.plot_3d_scatter(all_structures,marker=dict(size=3,opacity=0.5),title = self.animal)
+        self.plotter.plot_3d_scatter(all_structures, marker=dict(size=3, opacity=0.5), title=self.animal)
     
     def turn_volume_into_boolean(self):
         for structure, volume in self.volumes.items():
@@ -157,5 +158,5 @@ class BrainStructureManager(Brain,VolumeUtilities):
         width = self.sqlController.scan_run.width // 32
         height = self.sqlController.scan_run.height // 32
         depth = self.sqlController.get_section_count(self.fixed_brain.animal)
-        self.fixed_brain_center = np.array([width//2, height//2, depth//2])
+        self.fixed_brain_center = np.array([width // 2, height // 2, depth // 2])
 

@@ -2,16 +2,22 @@ import numpy as np
 from scipy.ndimage.measurements import center_of_mass
 from skimage.filters import gaussian
 
+
 class VolumeUtilities:
-    def gaussian_filter_volumes(self,sigma):
+        
+
+    def gaussian_filter_volumes(self, sigma):
         for structure, volume in self.volumes.items():
-            self.volumes[structure] = gaussian(volume,sigma)
+            self.volumes[structure] = gaussian(volume, sigma)
 
     def threshold_volumes(self):
         self.thresholded_volumes = {}
-        self.check_attributes(['volumes','structures'])
-        assert(hasattr(self,'threshold'))
-        self.set_structure()
+        self.check_attributes(['volumes', 'structures'])
+        assert(hasattr(self, 'threshold'))
+        # TODO, there are two methods named set_structures, one in Assembler and 
+        # one in BrainStructureManager, which one should it use?
+        # self.stuctures below is empty when i run it.
+        self.set_structures()
         for structurei in self.structures:
             volume = self.volumes[structurei]
             if not volume[volume > 0].size == 0:
@@ -21,12 +27,11 @@ class VolumeUtilities:
             self.thresholded_volumes[structurei] = volume > threshold
     
     def get_origin_from_coms(self):
-        self.check_attributes(['COM','volumes'])
+        self.check_attributes(['COM', 'volumes'])
         shared_structures = set(self.COM.keys()).union(self.volumes.keys())
         volume_coms = np.array([center_of_mass(vi) for vi in self.volumes.values()]).astype(int)
         average_com = np.array(list(self.COM.values()))
         origins = average_com - volume_coms
-        origins = (origins - origins.min(0)).astype(int)+10
-        return dict(zip(self.COM.keys(),origins))
-    
+        origins = (origins - origins.min(0)).astype(int) + 10
+        return dict(zip(self.COM.keys(), origins))
     
