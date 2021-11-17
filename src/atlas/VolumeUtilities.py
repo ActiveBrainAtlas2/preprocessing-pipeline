@@ -14,10 +14,6 @@ class VolumeUtilities:
         self.thresholded_volumes = {}
         self.check_attributes(['volumes', 'structures'])
         assert(hasattr(self, 'threshold'))
-        # TODO, there are two methods named set_structures, one in Assembler and 
-        # one in BrainStructureManager, which one should it use?
-        # self.stuctures below is empty when i run it.
-        self.set_structures()
         for structurei in self.structures:
             volume = self.volumes[structurei]
             if not volume[volume > 0].size == 0:

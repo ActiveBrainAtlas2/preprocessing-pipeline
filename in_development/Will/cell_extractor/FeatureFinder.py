@@ -68,9 +68,9 @@ class FeatureFinder(CellDetectorBase):
         
         def calc_moments_of_mask(mask):
             moments = self.calculate_moments(mask)
+            huMoments = self.calculate_hu_moments(moments)
             moments = append_string_to_every_key(moments,f'CH_3')
             self.featurei.update(moments)
-            huMoments = self.calculate_hu_moments(moments)
             self.featurei.update({'h%d'%i+f'_CH_3':huMoments[i,0]  for i in range(7)})
         
         def calc_contrasts_relative_to_mask(mask,image1,image3):
@@ -128,5 +128,5 @@ def parallel_process_all_sections(animal,njobs = 40):
 
 if __name__ == '__main__':
     # parallel_process_all_sections('DK55')
-    calculate_all_sections_of_animali('DK55')
-    # test_one_section('DK55',220)
+    # calculate_all_sections_of_animali('DK55')
+    test_one_section('DK55',180)

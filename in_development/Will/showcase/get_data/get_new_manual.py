@@ -29,11 +29,15 @@ class ManualVSAffineAtlasCOM:
         self.animals = list(self.aligned_atlas_coms .keys())
         self.new_coms = {}
         self.stats = {}
+        self.all_coms = {}
         for animali in self.animals:
             self.new_coms[animali] = controller.get_layer_data_entry(prep_id = animali,layer = 'COM_addition')
         self.coms = {}
         for animali in self.animals:
             self.coms[animali] = controller.get_com_dict(prep_id = animali)
+            self.all_coms[animali] = self.coms[animali]
+            self.all_coms[animali].update(self.new_coms[animali])
+        print('done')
     
     def set_distance_field(self,com1,com2):
         distance = {}
@@ -54,6 +58,7 @@ class ManualVSAffineAtlasCOM:
         for animali in self.animals:
             comi1 = com1[animali]
             comi2 = com2[animali]
+            print(animali)
             if comi2 != {}:
                 dist_xyz = np.array([comi2[structurei]-comi1[structurei] for structurei in comi2])
                 dist = np.sqrt(np.power(dist_xyz,2).sum(1))
@@ -62,8 +67,15 @@ class ManualVSAffineAtlasCOM:
         return distance, distance_xyz
 
     def find_distance(self):
-        self.distance,self.distance_xyz = self.set_distance_field(self.aligned_atlas_coms,self.new_coms)
-        self.distance_og,self.distance_xyz_og = self.set_distance_field_kui(self.aligned_atlas_coms,self.detected)
+        a1 = self.aligned_atlas_coms
+        a2 = self.new_coms
+        a2k = self.detected
+        a1['DK63'] = {}
+        a2['DK63'] = {}
+        a2k['DK63'] = {}
+        self.distance,self.distance_xyz = self.set_distance_field_kui(a1,a2)
+        self.distance_og,self.distance_xyz_og = self.set_distance_field_kui(a1,a2k)
+        self.distance_og,self.distance_xyz_og_abs = self.set_distance_field(a1,a2k)
 
     def save_csv(self):
         df = {}
@@ -117,16 +129,12 @@ class ManualVSAffineAtlasCOM:
         distance = getattr(self, distance_field)
         structures = []
         for animal, dict in distance.items():
-            if animal == 'DK63':
-                continue
             for structure, _ in dict.items():
                 structures.append(structure)
         result = {}
         for structurei in structures:
             result[structurei] = []
             for animal, dict in distance.items():
-                if animal == 'DK63':
-                    continue
                 for structure, dist_xyz in dict.items():
                     if structure ==structurei:
                         result[structurei].append(dist_xyz)
@@ -135,16 +143,18 @@ class ManualVSAffineAtlasCOM:
     def yoavs_recipe(self):
         self.xyz_per_structure = self.get_dist_per_structure('distance_xyz')
         self.xyz_per_structure_og = self.get_dist_per_structure('distance_xyz_og')
+        self.xyz_per_structure_og_abs = self.get_dist_per_structure('distance_xyz_og_abs')
         self.yoavs_csv(self.xyz_per_structure,title = 'manual_com_to_affine_transformed_atlas_com_distance_stat')
         self.yoavs_csv(self.xyz_per_structure_og,title = 'recreating_kui')
+        self.yoavs_csv(self.xyz_per_structure_og_abs,title = 'recreating_kui_abs')
 
-
-ana = ManualVSAffineAtlasCOM()
-ana.load_detected_com()
-ana.load_data()
-ana.find_distance()
-ana.yoavs_recipe()
-ana.save_csv()
+if __name__ =='__main__':
+    ana = ManualVSAffineAtlasCOM()
+    ana.load_detected_com()
+    ana.load_data()
+    ana.find_distance()
+    ana.yoavs_recipe()
+    # ana.save_csv()
 
 
 

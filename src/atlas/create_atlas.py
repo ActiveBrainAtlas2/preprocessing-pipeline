@@ -25,11 +25,9 @@ def create_volume(animal):
 
 def merge_brains():
     merger = BrainMerger()
-    # merger.create_average_com_and_volume()
-    # merger.save_mesh_files() #TODO these are too big
+    merger.create_average_com_and_volume()
+    merger.save_mesh_files() 
     merger.save_origins() 
-    merger.save_coms()  # TODO, this fails as teh self.COM dictionary is empty
-
 
 def make_ng_file():
     atlas = 'atlasV8'

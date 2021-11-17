@@ -10,9 +10,6 @@ All imports are listed by the order in which they are used in the pipeline.
 import os
 import sys
 from shutil import which
-
-
-
 from lib.file_location import FileLocationManager
 from lib.utilities_meta import make_meta
 from lib.utilities_preps import make_full_resolution, make_low_resolution, set_task_preps
@@ -26,9 +23,6 @@ from lib.utilities_create_alignment import parse_elastix, run_offsets
 from lib.utilities_web import make_web_thumbnails
 from lib.utilities_neuroglancer_image import create_neuroglancer
 from lib.utilities_downsampling import create_downsamples
-
-
-
 
 
 class Pipeline:

@@ -116,16 +116,12 @@ class CellDetectorBase(Brain):
             print(e)
     
     def save_features(self):
+        df=pd.DataFrame()
+        i = 0
         for featurei in self.features:
-            df_dict=None
-            for i in range(len(self.Examples)):
-                if df_dict==None:
-                    df_dict={}
-                    for key in featurei:
-                        df_dict[key]=[]
-                for key in featurei:
-                    df_dict[key].append(featurei[key])
-        df=pd.DataFrame(df_dict)
+            df_dict = pd.DataFrame(featurei,index = [i])
+            i+=1
+            df=df.append(df_dict)
         outfile=self.get_feature_save_path()
         print('df shape=',df.shape,'output_file=',outfile)
         try:

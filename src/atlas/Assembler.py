@@ -132,8 +132,6 @@ class CustomAssembler(Brain, VolumeUtilities, Assembler):
             origins=identity,
             volumes=identity,
             structures=self.set_structure, **self.attribute_functions)
-        # TODO there is no __init__ method in VolumeUtilities
-        # VolumeUtilities.__init__(self)
         self.volumes = {}
         self.origins = {}
         Assembler.__init__(self)

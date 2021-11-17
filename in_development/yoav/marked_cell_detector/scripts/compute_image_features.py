@@ -2,10 +2,10 @@ import pickle as pkl
 import cv2
 import numpy as np
 
-with open('mean.pkl','br') as pkl_file:
+with open('/data/cell_segmentation/DK55/average_cell_image.pkl','br') as pkl_file:
     stat=pkl.load(pkl_file) 
 
-mean_s=stat['Mean']
+mean_s=stat['CH3']
 
 def sobel(img):
     sobel_x = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)

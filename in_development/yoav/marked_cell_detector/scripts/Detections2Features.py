@@ -4,22 +4,22 @@ import pickle as pkl
 import compute_image_features 
 import cv2
 
-if __name__=='__main__':
-    DATA_DIR =sys.argv[1]
+# if __name__=='__main__':
+    # DATA_DIR =sys.argv[1]
 
-#DATA_DIR='/Users/yoavfreund/projects/butons/data/164'
+DATA_DIR='/data/cell_segmentation/DK55/CH3/180'
 print('DATA_DIR=%s'%(DATA_DIR))
 
-with open(DATA_DIR+'/extracted_cells.pkl','br') as pkl_file:
+with open(DATA_DIR+'/extracted_cells_180.pkl','br') as pkl_file:
     E=pkl.load(pkl_file)
     Examples=E['Examples']
 
 df_dict=None
 thresh=2000
-for i in range(len(Examples)):
-    e=Examples[i]
+for i in range(len(Examples[0])):
+    e=Examples[0][i]
 
-    img = e['image']
+    img = e['image_CH3']
 
     #calc features based on connected components
     Stats=cv2.connectedComponentsWithStats(np.int8(img>thresh))
@@ -68,7 +68,23 @@ for i in range(len(Examples)):
 
 import pandas as pd
 df=pd.DataFrame(df_dict)
-outfile=DATA_DIR+'/puntas.csv'
-print('df shape=',df.shape,'output_file=',outfile)
+print('done')
 
-df.to_csv(outfile,index=False)
+dfpath = '/data/cell_segmentation/DK55/CH3/180/puntas_180.csv'
+df1 = pd.read_csv(dfpath)
+
+df = df.iloc[0]
+df1 = df1.iloc[0]
+
+for key in df.keys():
+    # print((key,np.where([key in key1 for key1 in df1.keys()])))
+    df1_key_bool = np.array([key in key1 for key1 in df1.keys()])
+    df1_key = np.array(df1.keys())[df1_key_bool][0]
+    # print((key,df1_key))
+    if np.any(df1_key_bool):
+        print((df[key],df1[df1_key]))
+
+# outfile=DATA_DIR+'/puntas.csv'
+# print('df shape=',df.shape,'output_file=',outfile)
+
+# df.to_csv(outfile,index=False)

@@ -13,8 +13,6 @@ class BrainStructureManager(Brain, VolumeUtilities):
 
     def __init__(self, animal):
         Brain.__init__(self, animal)
-        # TODO there is no __init__ method in VolumeUtilities
-        # VolumeUtilities.__init__(self)
         self.origins = {}
         self.COM = {}
         self.volumes = {}
@@ -87,8 +85,6 @@ class BrainStructureManager(Brain, VolumeUtilities):
         self.convert_unit_of_com_dictionary(self.COM, self.fixed_brain.um_to_pixel)
         self.origins = self.get_origin_from_coms()
         for structurei in self.structures:
-            if structurei == '10N_L':
-                breakpoint()
             origin, volume = self.origins[structurei], self.volumes[structurei]
             centered_origin = origin - self.get_origin_array().mean(0)
             aligned_structure = volume_to_polygon(volume=volume, origin=centered_origin , times_to_simplify=3)
