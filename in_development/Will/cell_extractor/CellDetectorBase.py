@@ -74,15 +74,41 @@ class CellDetectorBase(Brain):
     def get_tile_origin(self,tilei):
         self.check_attributes(['tile_origins'])
         return np.array(self.tile_origins[tilei],dtype=np.int32)
+    
+    def get_sections_with_string(self,search_string):
+        sections = os.listdir(self.CH3)
+        sections_with_string = []
+        for sectioni in sections:
+            if glob.glob(os.path.join(self.CH3,sectioni,search_string)):
+                sections_with_string.append(int(sectioni))
+        return sections_with_string
+
+    def get_sections_without_string(self,search_string):
+        sections = os.listdir(self.CH3)
+        sections_with_string = []
+        for sectioni in sections:
+            if not glob.glob(os.path.join(self.CH3,sectioni,search_string)):
+                sections_with_string.append(int(sectioni))
+        return sections_with_string
 
     def get_sections_with_csv(self):
-        sections = os.listdir(self.CH3)
-        sections_with_csv = []
-        for sectioni in sections:
-            if glob.glob(os.path.join(self.CH3,sectioni,f'*.csv')):
-                sections_with_csv.append(int(sectioni))
-        return sections_with_csv
+        return self.get_sections_with_string('*.csv')
     
+    def get_sections_without_csv(self):
+        return self.get_sections_without_string('*.csv')
+
+    def get_sections_with_example(self):
+        return self.get_sections_with_string('extracted_cells*')
+
+    def get_sections_without_example(self):
+        return self.get_sections_without_string('extracted_cells*')
+    
+    def get_sections_with_features(self):
+        return self.get_sections_with_string('puntas_*')
+
+    def get_sections_without_features(self):
+        return self.get_sections_without_string('puntas_*')
+
     def get_example_save_path(self):
         return self.CH3_SECTION_DIR+f'/extracted_cells_{self.section}.pkl'
     
@@ -142,3 +168,7 @@ class CellDetectorBase(Brain):
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)
     return base.get_sections_with_csv()
+
+def get_sections_without_annotation_for_animali(animal):
+    base = CellDetectorBase(animal)
+    return base.get_sections_without_csv()

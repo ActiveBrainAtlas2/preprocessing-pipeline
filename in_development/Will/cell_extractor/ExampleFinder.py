@@ -8,7 +8,8 @@ from numpy.linalg import norm
 from time import time
 import glob
 import pickle as pkl
-from cell_extractor.CellDetectorBase import CellDetectorBase
+from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali,\
+    get_sections_without_annotation_for_animali
 import concurrent.futures
 
 class ExampleFinder(CellDetectorBase):
@@ -48,8 +49,12 @@ class ExampleFinder(CellDetectorBase):
 
         
     def load_manual_annotation(self):
-        dfpath = glob.glob(os.path.join(self.CH3_SECTION_DIR, f'*premotor*{self.section}*.csv'))[0]
-        self.manual_annotation = pd.read_csv(dfpath)
+        file_list = glob.glob(os.path.join(self.CH3_SECTION_DIR, f'*premotor*{self.section}*.csv'))
+        if file_list != []:
+            dfpath = file_list[0]
+            self.manual_annotation = pd.read_csv(dfpath)
+        else:
+            self.manual_annotation = None
 
     def get_examples(self,tile):
         origin = self.get_tile_origin(tile)
@@ -105,19 +110,21 @@ class ExampleFinder(CellDetectorBase):
     
     def load_manual_labels_in_tilei(self,tilei):
         tile_origin= self.get_tile_origin(tilei)
-        manual_labels=np.int32(self.manual_annotation[['y','x']])-tile_origin   
         self.manual_labels_in_tile=[]
-        for i in range(manual_labels.shape[0]):
-            row,col=list(manual_labels[i,:])
-            if row<0 or row>=self.tile_height or col<0 or col>=self.tile_width:
-                continue
-            self.manual_labels_in_tile.append(np.array([row,col]))
-        if not self.manual_labels_in_tile ==[]:
-            self.manual_labels_in_tile=np.stack(self.manual_labels_in_tile)
-        else:
-            self.manual_labels_in_tile = np.array([])
-        # print('Manual Detections = %d'%len(self.manual_labels_in_tile))
-        self.n_manual_label = len(self.manual_labels_in_tile) 
+        self.n_manual_label = 0
+        if self.manual_annotation is not None:  
+            manual_labels=np.int32(self.manual_annotation[['y','x']])-tile_origin   
+            for i in range(manual_labels.shape[0]):
+                row,col=list(manual_labels[i,:])
+                if row<0 or row>=self.tile_height or col<0 or col>=self.tile_width:
+                    continue
+                self.manual_labels_in_tile.append(np.array([row,col]))
+            if not self.manual_labels_in_tile ==[]:
+                self.manual_labels_in_tile=np.stack(self.manual_labels_in_tile)
+            else:
+                self.manual_labels_in_tile = np.array([])
+            # print('Manual Detections = %d'%len(self.manual_labels_in_tile))
+            self.n_manual_label = len(self.manual_labels_in_tile) 
     
     def find_connected_segments(self,image):
         self.connected_segment_info=cv2.connectedComponentsWithStats(np.int8(image>self.thresh))
@@ -137,6 +144,7 @@ class ExampleFinder(CellDetectorBase):
     def load_and_preprocess_image(self,tile):
         self.ch3_image = self.get_tilei(tile,channel = 3)
         self.ch1_image = self.get_tilei(tile,channel = 1)
+        print(tile)
         self.difference_ch3 = self.subtract_blurred_image(self.ch3_image)
         self.difference_ch1 = self.subtract_blurred_image(self.ch1_image)
         self.diff_list.append(self.difference_ch3)
@@ -155,35 +163,30 @@ class ExampleFinder(CellDetectorBase):
     def label_is_not_in_cloest_segment(self):
         return self.cloest_segment_id !=self.segment_id_at_label_location
 
-def process_all_sections(animal):
+def process_all_sections_with_annotation(animal):
+    sections_with_csv = get_sections_with_annotation_for_animali(animal)
+    process_all_sections_in_list(animal,sections_with_csv)
+
+def process_all_sections_without_annotation(animal):
+    sections_without_csv = get_sections_without_annotation_for_animali(animal)
+    process_all_sections_in_list(animal,sections_without_csv)
+
+def process_all_sections_in_list(animal,section_list):
     base = CellDetectorBase(animal)
-    sections_with_csv = base.get_sections_with_csv()
-    for sectioni in sections_with_csv:
+    for sectioni in section_list:
         print(f'processing section {sectioni}')
         extractor = ExampleFinder(animal,sectioni)
         extractor.find_examples()
         extractor.save_examples()
 
-def calculate_feature(animal,section):
-    extractor = ExampleFinder(animal,section)
-    extractor.find_examples()
-    return section,extractor.Examples
-
-def parallel_process_all_sections(animal,njobs = 20):
-    base = CellDetectorBase(animal)
-    sections_with_csv = base.get_sections_with_csv()
+def parallel_process_all_sections(animal,njobs = 40):
+    sections_with_csv = get_sections_without_annotation_for_animali(animal)
     with concurrent.futures.ProcessPoolExecutor(max_workers=njobs) as executor:
         results = []
         for sectioni in sections_with_csv:
-            print(animal,sectioni)
+            print(sectioni)
             results.append(executor.submit(test_one_section,animal,sectioni))
-        
-        for resulti in concurrent.futures.as_completed(results):
-            r = resulti.result()
-            # base = CellDetectorBase(animal,section) 
-            # base.Examples = example
-            # base.save_examples()
-    print('done')
+        print('done')
 
 def test_one_section(animal,section):
     extractor = ExampleFinder(animal,section)
@@ -191,7 +194,9 @@ def test_one_section(animal,section):
     extractor.save_examples()
 
 if __name__ == '__main__':
-    # test_one_section('DK55',180)
-    # parallel_process_all_sections('DK55')
-    process_all_sections('DK55')
+    # animal = 'DK55'
+    # base = CellDetectorBase(animal)
+    # section_list = base.get_sections_without_example()
+    # process_all_sections_in_list(animal,section_list)
+    test_one_section('DK55',180)
     

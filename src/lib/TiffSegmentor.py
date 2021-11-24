@@ -8,7 +8,7 @@ from lib.sqlcontroller import SqlController
 from cell_extractor.CellDetectorBase import CellDetectorBase
 class TiffSegmentor(CellDetectorBase):
     def __init__(self,animal):
-        super.__init__(animal,0)
+        super().__init__(animal,0)
         self.detect_annotator_person_id()
     
     def detect_annotator_person_id(self):
@@ -16,7 +16,7 @@ class TiffSegmentor(CellDetectorBase):
         Hannah = 3
         for person_id in [Beth,Hannah]:
             search_dictionary = {'prep_id':self.animal,'input_type_id':1,'person_id':person_id,'layer':'Premotor'}
-            has_annotation = self.controller.get_layer_data(search_dictionary)
+            has_annotation = self.sqlController.get_layer_data(search_dictionary)
             if has_annotation != []:
                 self.person_id = person_id
     
@@ -44,6 +44,8 @@ class TiffSegmentor(CellDetectorBase):
     def generate_tiff_segments(self,channel,create_csv=False):
         self.create_directories_for_channeli(channel)
         for save_folder in self.save_folders:
+            filei = '/'+save_folder[-3:]+'.tif'
+            file_name = save_folder[-3:]
             if create_csv:
                 self.create_sectioni_csv(save_folder,int(file_name))
                 if len(os.listdir(save_folder)) >= 10:

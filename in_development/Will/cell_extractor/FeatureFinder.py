@@ -4,7 +4,7 @@ import pickle as pkl
 from cell_extractor import compute_image_features 
 import cv2
 import pandas as pd
-from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali
+from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali,get_sections_without_annotation_for_animali
 import os
 class FeatureFinder(CellDetectorBase):
     """class to calculate feature vector for each extracted image pair (CH1, CH3)
@@ -107,7 +107,7 @@ class FeatureFinder(CellDetectorBase):
             self.average_image_ch3 = average_image['CH3']
 
 def calculate_all_sections_of_animali(animal):
-    sections_with_csv = get_sections_with_annotation_for_animali(animal)
+    sections_with_csv = get_sections_without_annotation_for_animali(animal)
     for sectioni in sections_with_csv:
         print(f'processing section {sectioni}')
         finder = FeatureFinder(animal,sectioni)
@@ -128,5 +128,5 @@ def parallel_process_all_sections(animal,njobs = 40):
 
 if __name__ == '__main__':
     # parallel_process_all_sections('DK55')
-    # calculate_all_sections_of_animali('DK55')
-    test_one_section('DK55',180)
+    calculate_all_sections_of_animali('DK55')
+    # test_one_section('DK55',180)

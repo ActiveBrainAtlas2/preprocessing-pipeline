@@ -12,6 +12,7 @@ class Structure(Base, AtlasModel):
     description = Column(String, nullable=False)
     color = Column(Integer, nullable=False)
     hexadecimal = Column(String, nullable=False)
+    is_structure = Column(Integer, nullable=False)
 
 
 
