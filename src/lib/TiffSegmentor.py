@@ -12,9 +12,10 @@ class TiffSegmentor(CellDetectorBase):
         self.detect_annotator_person_id()
     
     def detect_annotator_person_id(self):
+        Ed = 1
         Beth = 2
         Hannah = 3
-        for person_id in [Beth,Hannah]:
+        for person_id in [Beth,Hannah,Ed]:
             search_dictionary = {'prep_id':self.animal,'input_type_id':1,'person_id':person_id,'layer':'Premotor'}
             has_annotation = self.sqlController.get_layer_data(search_dictionary)
             if has_annotation != []:
@@ -69,8 +70,8 @@ class TiffSegmentor(CellDetectorBase):
         if not self.have_csv_in_path(save_path):
             search_dictionary = {'prep_id':self.animal,'input_type_id':1,\
                 'person_id':self.person_id,'layer':'Premotor','section':int(sectioni*20)}
-            premotor = self.controller.get_layer_data(search_dictionary)
-            premotor = self.controller.get_coordinates_from_query_result(premotor)
+            premotor = self.sqlController.get_layer_data(search_dictionary)
+            premotor = self.sqlController.get_coordinates_from_query_result(premotor)
             if premotor != []:
                 print('creating '+ csv_path)
                 np.savetxt(csv_path,premotor,delimiter=',',header='x,y,Section',comments = '',fmt = '%f')

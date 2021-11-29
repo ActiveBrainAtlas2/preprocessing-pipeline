@@ -194,9 +194,11 @@ def test_one_section(animal,section):
     extractor.save_examples()
 
 if __name__ == '__main__':
-    # animal = 'DK55'
-    # base = CellDetectorBase(animal)
-    # section_list = base.get_sections_without_example()
-    # process_all_sections_in_list(animal,section_list)
-    test_one_section('DK55',180)
+    animal = 'DK52'
+    base = CellDetectorBase(animal)
+    section_list = base.get_sections_without_example()
+    process_all_sections_in_list(animal,section_list)
+    # test_one_section('DK55',180)
+    # process_all_sections_with_annotation('DK52')
+    # process_all_sections_without_annotation('DK52')
     
