@@ -6,9 +6,16 @@ convert it to micrometers and insert into the database table: layer_data.
 The only exception is if the user does not change the layer name from the default:
 'annotation'. If the user wants the data saved, the user `must` change the name
 from 'annotation' to something more meaningful.
+### Existing annotations
 1. When the user hits the 'Save' button again in the same Neuroglancer view,
-the program will take the existing annotation data in that layer and mark it as
-inactive, then insert all data. This will occur for all layers.
+the program will:
+    1. Take the existing annotation data in that layer and mark it as
+inactive.
+    1. Mark each row with the current timestamp
+    1. Mark each row with the person doing the updating 
+    1. Insert all data and mark it with the current timestamp and the person
+    who entered the data. 
+    1. This will occur for all layers.
 1. For the large annotation layer like 'DK39 premotor' where there are 2,200
 annotations, this will take a few seconds to save. Take note, for this instance,
 whenever the user hits 'Save', there will be an additional 2,200 inactive DK39 premotor
