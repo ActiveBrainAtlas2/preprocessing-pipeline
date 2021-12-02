@@ -44,5 +44,6 @@ inactive.
 1. If a user deletes an annotation layer in Neuroglancer and clicks 'Save', the
 database will still retain that data. If the data needs to be purged for good,
 the programmer will need to do that.
-1. If a user wants to delete one or more annotations in the layer, the process
-will be as above, but the number of active annotations in the database will be less.
+1. If a user wants to delete one or more annotations in the layer by clicking
+the `Trash` icon next to the row, the process will be as above, 
+but the number of active annotations in the database will be less.
