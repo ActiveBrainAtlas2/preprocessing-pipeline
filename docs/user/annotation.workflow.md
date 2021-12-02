@@ -14,7 +14,7 @@ from 'annotation' to something more meaningful.
     1. updatedby - this column keeps track of who updated the column.
     1. updated - this column keeps track of when the row was updated.
 ### Existing annotations
-1. When the user hits the 'Save' button again in the same Neuroglancer view,
+1. When the user hits the 'Save' button in the same Neuroglancer view,
 the program will:
     1. Take the existing annotation data in that layer and mark it as
 inactive. (active=False)
@@ -29,7 +29,7 @@ whenever the user hits 'Save', there will be an additional 2,200 inactive DK39 p
 annotations. This is not a problem as the database can easily handle millions
 of rows, but the user needs to be aware of this fact when searching.
 ### Existing annotation with a different user
-1. This is very similar to the above step, except a differnt user's ID will be
+1. This is very similar to the above step, except a different user's ID will be
 logged in the creation and update fields.
 1. When a different user comes into the same Neuroglancer view and edits the
 same annotation data, the program will:
@@ -40,3 +40,9 @@ inactive.
     1. Insert all data and mark it with the current timestamp and the person
     who entered the data. 
     1. This will occur for all layers.
+### Deleting data
+1. If a user deletes an annotation layer in Neuroglancer and clicks 'Save', the
+database will still retain that data. If the data needs to be purged for good,
+the programmer will need to do that.
+1. If a user wants to delete one or more annotations in the layer, the process
+will be as above, but the number of active annotations in the database will be less.
