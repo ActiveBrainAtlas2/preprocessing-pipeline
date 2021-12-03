@@ -42,7 +42,6 @@ class Pipeline:
         self.downsample = downsample
         self.debug = False
         self.fileLocationManager =  FileLocationManager(animal)
-
         
     def create_meta(self):
         """

@@ -8,15 +8,16 @@ from lib.sqlcontroller import SqlController
 from cell_extractor.CellDetectorBase import CellDetectorBase
 class TiffSegmentor(CellDetectorBase):
     def __init__(self,animal):
-        super.__init__(animal,0)
+        super().__init__(animal,0)
         self.detect_annotator_person_id()
     
     def detect_annotator_person_id(self):
+        Ed = 1
         Beth = 2
         Hannah = 3
-        for person_id in [Beth,Hannah]:
+        for person_id in [Beth,Hannah,Ed]:
             search_dictionary = {'prep_id':self.animal,'input_type_id':1,'person_id':person_id,'layer':'Premotor'}
-            has_annotation = self.controller.get_layer_data(search_dictionary)
+            has_annotation = self.sqlController.get_layer_data(search_dictionary)
             if has_annotation != []:
                 self.person_id = person_id
     
@@ -44,6 +45,8 @@ class TiffSegmentor(CellDetectorBase):
     def generate_tiff_segments(self,channel,create_csv=False):
         self.create_directories_for_channeli(channel)
         for save_folder in self.save_folders:
+            filei = '/'+save_folder[-3:]+'.tif'
+            file_name = save_folder[-3:]
             if create_csv:
                 self.create_sectioni_csv(save_folder,int(file_name))
                 if len(os.listdir(save_folder)) >= 10:
@@ -67,8 +70,8 @@ class TiffSegmentor(CellDetectorBase):
         if not self.have_csv_in_path(save_path):
             search_dictionary = {'prep_id':self.animal,'input_type_id':1,\
                 'person_id':self.person_id,'layer':'Premotor','section':int(sectioni*20)}
-            premotor = self.controller.get_layer_data(search_dictionary)
-            premotor = self.controller.get_coordinates_from_query_result(premotor)
+            premotor = self.sqlController.get_layer_data(search_dictionary)
+            premotor = self.sqlController.get_coordinates_from_query_result(premotor)
             if premotor != []:
                 print('creating '+ csv_path)
                 np.savetxt(csv_path,premotor,delimiter=',',header='x,y,Section',comments = '',fmt = '%f')

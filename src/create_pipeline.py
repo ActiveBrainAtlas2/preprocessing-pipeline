@@ -26,29 +26,24 @@ from lib.logger import get_logger
 
 if __name__ == '__main__':
     
-    
-    # steps = """
-    # start=0, prep, normalized and masks=1, mask, clean and histograms=2, 
-    # elastix and alignment=3, neuroglancer=4
-    # """
-    # parser = argparse.ArgumentParser(description='Work on Animal')
-    # parser.add_argument('--animal', help='Enter the animal', required=True)
-    # parser.add_argument('--channel', help='Enter channel', required=False, default=1)
-    # parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
-    # parser.add_argument('--step', help=steps, required=False, default=0)
+    steps = """
+    start=0, prep, normalized and masks=1, mask, clean and histograms=2, 
+     elastix and alignment=3, neuroglancer=4
+     """
+    parser = argparse.ArgumentParser(description='Work on Animal')
+    parser.add_argument('--animal', help='Enter the animal', required=True)
+    parser.add_argument('--channel', help='Enter channel', required=False, default=1)
+    parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
+    parser.add_argument('--step', help=steps, required=False, default=0)
     
 
-    # args = parser.parse_args()
-    # animal = args.animal
-    # channel = int(args.channel)
-    # downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
-    # step = int(args.step)
-    # logger = get_logger(animal)
+    args = parser.parse_args()
+    animal = args.animal
+    channel = int(args.channel)
+    downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    step = int(args.step)
+    logger = get_logger(animal)
 
-    animal = 'DK52'
-    channel = 1
-    downsample = True
-    step = 4
     pipeline = Pipeline(animal, channel, downsample)
     start = timer()
     # pipeline.debug = True

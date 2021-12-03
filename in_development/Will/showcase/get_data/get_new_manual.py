@@ -1,12 +1,13 @@
 from lib.UrlGenerator import UrlGenerator
 from lib.sqlcontroller import SqlController
+from Will.toolbox.tmp.LoadCom import ComLoader
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import glob
 controller = SqlController('DK52')
-class ManualVSAffineAtlasCOM:
+class ManualVSAffineAtlasCOM(LoadCom):
 
     def load_detected_com(self):
         path = '/home/zhw272/Downloads/'

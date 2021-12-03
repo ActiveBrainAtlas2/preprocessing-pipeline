@@ -24,10 +24,12 @@ class VolumeUtilities:
     
     def get_origin_from_coms(self):
         self.check_attributes(['COM', 'volumes'])
-        shared_structures = set(self.COM.keys()).union(self.volumes.keys())
-        volume_coms = np.array([center_of_mass(vi) for vi in self.volumes.values()]).astype(int)
+        shared_structures = set(self.COM.keys()).intersection(self.volumes.keys())
+        volume_coms = np.array([center_of_mass(self.volumes[si]) for si in shared_structures]).astype(int)
         average_com = np.array(list(self.COM.values()))
         origins = average_com - volume_coms
         origins = (origins - origins.min(0)).astype(int) + 10
+        values = [self.volumes[ki] for ki in shared_structures]
+        self.volumes = dict(zip(shared_structures,values))
         return dict(zip(self.COM.keys(), origins))
     
