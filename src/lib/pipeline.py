@@ -190,7 +190,12 @@ class Pipeline:
     def check_programs():
         '''
         Make sure the necessary tools are installed on the machine.
+        And the java heap size is big enough 10GB seems to work
+        If it doesn't work, check the workernoshell.err.log
+        for more info in the base directory of this program
         '''
+        os.environ["_JAVA_OPTIONS"] = "-Xmx10g"
+        
         error = ""
         if not os.path.exists('/usr/local/share/bftools/showinf'):
             error += "showinf in bftools is not installed"
