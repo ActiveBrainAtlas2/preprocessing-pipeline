@@ -1,10 +1,14 @@
 ### Here is a list of helpful links to documentation for Duane
 1. The [location](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/tree/master/docs)
 of all our main documentation.
-1. A [high level overview](README.md)
+1. A [high level overview](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/README.md)
 of the image preprocessing pipeline.
-1. A step by step guide to the image preprocessing 
-[pipeline](../user/PROCESS.md)
+1. A [lower level description] of the 
+[preprocessing](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/user/PROCESS.md) 
+process
+1. A step by step guide to running the image preprocessing 
+[pipeline](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/user/RUNNING.md)
+
 1. To [setup](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/SETUP.md)
 the preprocessing pipeline on your workstation.
 1. The full mysqldump [database schema](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/schema.sql)
