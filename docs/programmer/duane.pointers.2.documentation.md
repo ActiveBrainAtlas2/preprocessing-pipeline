@@ -3,12 +3,15 @@
 of all our main documentation.
 1. A [high level overview](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/README.md)
 of the image preprocessing pipeline.
+1. A step by step guide to the image preprocessing 
+[pipeline](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/user/PROCESS.md)
 1. To [setup](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/SETUP.md)
 the preprocessing pipeline on your workstation.
 1. The [full database schema](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/schema.sql)
 1. A readable version of our [important tables](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/Database.tables.md)
 This document also [includes](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/database.erd.png)
  a link to the EER diagram.
+
 #### Things that need to be done
 1. Read the above documentation
 1. Get connected to the database
