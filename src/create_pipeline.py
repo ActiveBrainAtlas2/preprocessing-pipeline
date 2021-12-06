@@ -90,7 +90,7 @@ if __name__ == '__main__':
     if step > 2:
         start = timer()
         pipeline.create_elastix()
-        pipeline.create_alignment()
+        pipeline.create_aligned()
         end = timer()
         print(f'Creating elastix and alignment took {end - start} seconds')    
         # logger.info(f'Create elastix and alignment took {end - start} seconds')

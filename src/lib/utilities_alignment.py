@@ -366,8 +366,7 @@ def process_image(file_key):
     index, infile, outfile, T = file_key
     im1 = Image.open(infile)
     im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
-    im2.save(outfile)
-
+    tiff.imsave(outfile, np.array(im2))
     del im1, im2
     return
 

@@ -29,3 +29,5 @@ class DataLoader:
 if __name__ == '__main__':
     loader = DataLoader()
     loader.premotors.head()
+    for _,row in loader.premotors.iterrows():
+        print(row['Mouse ID'],row['Goal'])
