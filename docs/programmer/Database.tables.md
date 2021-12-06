@@ -5,7 +5,7 @@ additional description. Columns that have never been used are marked by *NOTUSED
 For a graphical (ERD) view of the database, click this [diagram](database.erd.png).
 
 ### animal
-* `prep_id` varchar(20) NOT NULL COMMENT 'Name for lab mouse/rat, max 20 chars'
+* `prep_id` varchar(20) PRIMARY KEY NOT NULL COMMENT 'Name for lab mouse/rat, max 20 chars'
 * `performance_center` enum('CSHL','Salk','UCSD','HHMI','Duke') DEFAULT NULL
 * `date_of_birth` date DEFAULT NULL COMMENT 'the mouse''s date of birth'
 * `species` enum('mouse','rat') DEFAULT NULL
@@ -29,7 +29,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `created` timestamp NULL DEFAULT current_timestamp()
 
 ### scan_run 
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `prep_id` varchar(200) NOT NULL
 * `performance_center` enum('CSHL','Salk','UCSD','HHMI') DEFAULT NULL COMMENT 'default population is from Histology'
 * `machine` enum('Zeiss','Axioscan','Nanozoomer','Olympus VA') DEFAULT NULL
@@ -58,7 +58,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `created` timestamp NULL DEFAULT current_timestamp()
 
 ### slide
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `scan_run_id` int(11) NOT NULL
 * `slide_physical_id` int(11) NOT NULL COMMENT 'one per slide'
 * `rescan_number` enum('','1','2','3') NOT NULL DEFAULT ''
@@ -86,7 +86,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 
 
 ### slide_czi_to_tif 
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `slide_id` int(11) NOT NULL
 * `file_name` varchar(200) NOT NULL
 * `scene_number` tinyint(4) NOT NULL
@@ -101,7 +101,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `processing_duration` float NOT NULL DEFAULT 0
 
 ### histology
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `prep_id` varchar(20) NOT NULL
 * `virus_id` int(11) DEFAULT NULL
 * `label_id` int(11) DEFAULT NULL
@@ -128,7 +128,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `active` tinyint(4) NOT NULL DEFAULT 1
 
 ### organic_label *this table is not being used at all*
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `label_id` varchar(20) NOT NULL
 * `label_type` enum('Cascade Blue','Chicago Blue','Alexa405','Alexa488','Alexa647','Cy2','Cy3','Cy5','Cy5.5','Cy7','Fluorescein','Rhodamine B','Rhodamine 6G','Texas Red','TMR') DEFAULT NULL
 * `type_lot_number` varchar(20) DEFAULT NULL
@@ -149,7 +149,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `active` tinyint(4) NOT NULL DEFAULT 1
 
 ### injection
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `prep_id` varchar(200) NOT NULL
 * `label_id` int(11) DEFAULT NULL
 * `performance_center` enum('CSHL','Salk','UCSD','HHMI','Duke') DEFAULT NULL
@@ -170,14 +170,14 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `active` tinyint(4) NOT NULL DEFAULT 1
 
 ### injection_virus
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `injection_id` int(11) NOT NULL
 * `virus_id` int(11) NOT NULL
 * `created` timestamp NOT NULL DEFAULT current_timestamp()
 * `active` tinyint(4) NOT NULL DEFAULT 1
 
 ### virus
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `virus_name` varchar(50) NOT NULL
 * `virus_type` enum('Adenovirus','AAV','CAV','DG rabies','G-pseudo-Lenti','Herpes','Lenti','N2C rabies','Sinbis') DEFAULT NULL
 * `virus_active` enum('yes','no') DEFAULT NULL
@@ -201,7 +201,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 
 ## Tables specifically related to Neuroglancer metadata
 ### layer_data 
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `prep_id` varchar(20) NOT NULL
 * `structure_id` int(11) NOT NULL
 * `person_id` int(11) NOT NULL
@@ -217,7 +217,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `updated` timestamp NOT NULL DEFAULT current_timestamp()
 
 ### structure 
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `abbreviation` varchar(25) COLLATE utf8_bin NOT NULL
 * `description` longtext COLLATE utf8_bin NOT NULL
 * `color` int(11) NOT NULL DEFAULT 100
@@ -226,7 +226,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `created` datetime(6) NOT NULL
 
 ### com_type 
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `input_type` varchar(50) NOT NULL
 * `description` varchar(255) DEFAULT NULL
 * `active` tinyint(1) NOT NULL DEFAULT 1
@@ -234,7 +234,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `updated` timestamp NOT NULL DEFAULT current_timestamp()
 
 ### neuroglancer_urls
-* `id` int(11) NOT NULL AUTO_INCREMENT
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `person_id` int(11) DEFAULT NULL
 * `url` longtext NOT NULL
 * `active` tinyint(1) DEFAULT NULL

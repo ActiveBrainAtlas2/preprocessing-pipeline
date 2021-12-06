@@ -16,7 +16,7 @@ This document also [includes](https://github.com/ActiveBrainAtlas2/preprocessing
  a link to the EER diagram.
 1. Suggested database [modifications](suggested.db.modifications.md)
 
-#### Things that need to be done
+#### Things to do on your first days
 1. Read the above documentation
 1. Get connected to the database
 1. Get software set up on your local workstation. You can use ratto, muralis, basalis or prebotzinger.
