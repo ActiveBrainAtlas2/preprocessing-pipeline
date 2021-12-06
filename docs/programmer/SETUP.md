@@ -1,18 +1,25 @@
 
 ### Utilities for the Active Atlas Pipeline
 #### Creating a sandbox on your computer. Only do this on your home computer. Our workstations already have the software installed.
-1. git clone this repository, create a virtual environment in your home dir and install the required packages
+1. git clone this repository, create a virtual environment in our standard location 
+and install the required packages:
     ```bash
-    git clone git@github.com:ActiveBrainAtlas2/pipeline.git
+    git clone git@github.com:ActiveBrainAtlas2/preprocessing-pipeline.git
     sudo python3 -m venv /usr/local/share/pipeline
-    cd pipeline_utility
+    sudo chown -R $(id -u):$(id -g) /usr/local/share/pipeline
+    cd preprocessing-pipeline
     source /usr/local/share/pipeline/bin/activate
-    pip install -r prerequirements.txt
+    cd ..
+    git clone git@github.com:ActiveBrainAtlas2/abakit.git
+    cd abakit
+    python -m build
+    pip install . --extra-index-url --trusted-host
+    cd ../preprocessing-pipeline
     pip install -r requirements.txt
     ```
-1. We are currently using Ubuntu 18.04 as of October 2020. Either install this on your local machine or install it
-as a VM with Virtualbox or VMware. Note, using Ubuntu 20.04 also works, and since our servers will eventually 
-get upgraded to that, you may as well install 20.04 
+1. We are currently using Ubuntu 18.04 as of December 2021 (20.04 is on muralis). Either install this 
+on your local machine or install it as a VM with Virtualbox or VMware. Note, using Ubuntu 20.04 also works, 
+and since our servers will eventually get upgraded to that, you may as well install 20.04 
 1. Create this directory to start with: `sudo mkdir -p /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK52/preps/CH1` 
 1. Make yourself user: `sudo chown -R $(id -u):$(id -g) /net`
 1. Get some thumbnails to start with 
@@ -20,15 +27,16 @@ get upgraded to that, you may as well install 20.04
 /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK52/preps/CH1/thumbnails/`
 1. You can now experiment with some of the thumbnails for DK52
 ### Setup the database portal on your local machine
+1. This is not necessary if you are using the VPN or are at UCSD
 1. Clone the repository, use the same virtualenv as above. You might need to install some more packages.
     ```bash
-    git clone git@github.com:eddyod/ActiveBrainAtlasAdmin.git
+    git clone git@github.com:ActiveBrainAtlas2/activebrainatlasadmin.git
     source /usr/local/share/pipeline/bin/activate
     ```
 ### Mysql for the database portal on Ubuntu
 - For complete instructions, look at this page: https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04
 Step-by-step guide:
-1. Install and run mysql
+1. Install and run mysql on your local machine. Again, you don't need to do this if you are on the VPN or are at UCSD.
     ```bash
     sudo apt update
     sudo apt install mariadb-server
@@ -71,7 +79,7 @@ Step-by-step guide:
 1. Visual Code - IDE for python and typescript. This is free and works on most OSs.
 1. Dbeaver - database GUI tool
 1. imagemagick - used for converting images.
-1. matlab - we are just starting to use this. UCSD license is also available
+1. matlab - we are not using this much. UCSD license is also available
 1. jupyter notebooks
 1. Fiji, port of ImageJ
 1. 3D Slicer 
@@ -86,8 +94,6 @@ Step-by-step guide:
 4. The directory structure of a 3 channel brain will look like this:
 ![MD589](./docs/images/MD589.tree.png)
 
-### Annotations
-1. Annotation keys are viewable in the database: https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/structure/
 
 ### Database backups
 1. The development and production databases are backed up multiple times each day on basalis
@@ -123,19 +129,13 @@ Now you should be able to SSH into the servers without password.
 
 ### Set up PYTHONPATH environmental variable
 
-the pythonpath environmental variable allows you to add folder to the search path of python automatically.  This is useful for adding project folder to python path so that they work like normal packages in terms of imports.
-
-to do this, edit the activate file in virtual environment and the following lines to the end:
-
-```
-unset PYTHONPATH
-export PYTHONPATH=~/first_location:${PYTHONPATH}
-export PYTHONPATH=~/second_location:${PYTHONPATH}
-...
-```
-
+the pythonpath environmental variable allows you to add folder to the search path of python automatically.  
+This is useful for adding project folder to python path so that they work like normal packages in terms of imports.
+For the preprocessing project, the code lives in the src directory so you'll want to add that
+path to your PYTHONPATH in your IDE
 ### Set up virtual environment
 
 1. install list of packages in requirements.txt
-2. install elastics
+2. install elastix, though we are using the SimpleITK version that includes elastix.
+If you install this on your local machine, it takes a while to compile.
 

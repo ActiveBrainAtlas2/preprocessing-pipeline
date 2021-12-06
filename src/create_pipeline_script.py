@@ -60,7 +60,7 @@ def run_pipeline(animal, channel, downsample,step):
     if step > 2:
         start = timer()
         pipeline.create_elastix()
-        pipeline.create_alignment()
+        pipeline.create_aligned()
         end = timer()
         print(f'Creating elastix and alignment took {end - start} seconds')    
     if step > 3:
@@ -75,11 +75,11 @@ if __name__ == '__main__':
     animal = 'DK73'
     channel = 1
     downsample = True
-    step = 1
-    run_pipeline(animal, 1, downsample,step)
-    # run_pipeline(animal, 2, downsample,step)
+    step = 4
+    # run_pipeline(animal, 1, downsample,step)
+    # run_pipeline(animal, channel = 2, downsample = downsample, step = step)
     # run_pipeline(animal, 3, downsample,step)
     downsample = False
-    # run_pipeline(animal, 1, downsample,step)
+    run_pipeline(animal, 1, downsample,step)
     # run_pipeline(animal, 2, downsample,step)
     # run_pipeline(animal, 3, downsample,step)

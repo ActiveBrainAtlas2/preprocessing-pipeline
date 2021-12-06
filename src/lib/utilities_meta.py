@@ -22,8 +22,6 @@ def make_meta(animal):
     scan_id = sqlController.scan_run.id
     slides = session.query(Slide).filter(Slide.scan_run_id == scan_id).count()
 
-    if slides > 0:
-        return
 
     # session.query(Slide).filter(Slide.scan_run_id == scan_id).delete(synchronize_session=False)
     # session.commit()
@@ -33,6 +31,9 @@ def make_meta(animal):
     except OSError as e:
         print(e)
         sys.exit()
+
+    if slides == len(czi_files):
+        return
 
     section_number = 1
     for i, czi_file in enumerate(tqdm(czi_files)):

@@ -20,6 +20,7 @@
 1. [Database quality control for images](docs/programmer/QC.md)
 1. [Django database interface portal wiki](docs/programmer/releasing.new.database.portal.md)
 1. [Helper functions generic code for misc tasks](docs/programmer/HELPER.FUNCTIONS.md)
+1. [Creating cvat tasks for annotation](docs/programmer/set_up_cvat_for_annotation.md)
 ### Other software documentation
 1. [Clearmap software for vasculature ](docs/old/CLEARMAP.md)
 
