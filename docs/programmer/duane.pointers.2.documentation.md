@@ -5,3 +5,11 @@ of all our main documentation.
 of the image preprocessing pipeline.
 1. To [setup](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/SETUP.md)
 the preprocessing pipeline on your workstation.
+1. The [full database schema](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/schema.sql)
+1. A readable version of our [important tables](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/Database.tables.md)
+This document also [includes](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/database.erd.png)
+ a link to the EER diagram.
+#### Things that need to be done
+1. Read the above documentation
+1. Get connected to the database
+1. Get software set up on your local workstation. You can use ratto, muralis, basalis or prebotzinger.
