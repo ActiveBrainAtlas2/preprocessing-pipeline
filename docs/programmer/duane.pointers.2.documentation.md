@@ -3,10 +3,9 @@
 of all our main documentation.
 1. A [high level overview](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/README.md)
 of the image preprocessing pipeline.
-1. A [lower level description] of the 
-[preprocessing](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/user/PROCESS.md) 
-process
-1. A step by step guide to running the image preprocessing 
+1. A [lower level description](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/user/PROCESS.md) 
+of the preprocessing pipeline
+1. A step by step guide to running the python code for the image preprocessing 
 [pipeline](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/user/RUNNING.md)
 
 1. To [setup](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/SETUP.md)
