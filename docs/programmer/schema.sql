@@ -450,6 +450,7 @@ CREATE TABLE `django_site` (
 --
 
 DROP TABLE IF EXISTS `elastix_transformation`;
+/* What is this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `elastix_transformation` (
@@ -984,6 +985,7 @@ CREATE TABLE `file_operation` (
 --
 
 DROP TABLE IF EXISTS `foundation_coms`;
+/* What is this table, does it relate to the other coms tables *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `foundation_coms` (
@@ -1019,6 +1021,7 @@ CREATE TABLE `git_gitdata` (
 --
 
 DROP TABLE IF EXISTS `histology`;
+/* this table describes the histological preparation of the animal***/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `histology` (
@@ -1062,6 +1065,7 @@ CREATE TABLE `histology` (
 --
 
 DROP TABLE IF EXISTS `injection`;
+/* Describes the location and type of injected dyes and viruses */
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `injection` (
@@ -1085,7 +1089,7 @@ CREATE TABLE `injection` (
   `created` timestamp NOT NULL DEFAULT current_timestamp(),
   `active` tinyint(4) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  KEY `K__label_id` (`label_id`),
+  KEY `K__label_id` (`label_id`),  /* What is the meaning of the name  `K__label_id` *********/
   KEY `FK__injection_prep_id` (`prep_id`),
   CONSTRAINT `FK__injection_label_id` FOREIGN KEY (`label_id`) REFERENCES `organic_label` (`id`) ON UPDATE CASCADE,
   CONSTRAINT `FK__injection_prep_id` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`)
@@ -1118,6 +1122,7 @@ CREATE TABLE `injection_virus` (
 --
 
 DROP TABLE IF EXISTS `journals`;
+/* Ask Beth what this is ******/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `journals` (
@@ -1152,6 +1157,7 @@ CREATE TABLE `journals` (
 --
 
 DROP TABLE IF EXISTS `layer_data`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `layer_data` (
@@ -1186,6 +1192,7 @@ CREATE TABLE `layer_data` (
 --
 
 DROP TABLE IF EXISTS `layer_data_history`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `layer_data_history` (
@@ -1208,6 +1215,7 @@ CREATE TABLE `layer_data_history` (
 --
 
 DROP TABLE IF EXISTS `location`;
+/*   What is the role of this table  (Scanner related ?*) *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `location` (
@@ -1246,6 +1254,7 @@ CREATE TABLE `location_primary_people` (
 --
 
 DROP TABLE IF EXISTS `logs`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `logs` (
@@ -1267,6 +1276,8 @@ CREATE TABLE `logs` (
 --
 
 DROP TABLE IF EXISTS `neuroglancer_urls`;
+/* YF: This table is for storing information sent to and from neuroglancer. *****/
+/* It should be constructed by the user using tables, and stored back in tables when the user hit "save" */
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `neuroglancer_urls` (
@@ -1321,6 +1332,7 @@ CREATE TABLE `organic_label` (
 --
 
 DROP TABLE IF EXISTS `problem_category`;
+/* How does this relate to the other log tables and how are these log tables used? *********/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `problem_category` (
@@ -1337,6 +1349,7 @@ CREATE TABLE `problem_category` (
 --
 
 DROP TABLE IF EXISTS `progress_lookup`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `progress_lookup` (
@@ -1357,6 +1370,7 @@ CREATE TABLE `progress_lookup` (
 --
 
 DROP TABLE IF EXISTS `resource`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `resource` (
@@ -1375,6 +1389,7 @@ CREATE TABLE `resource` (
 --
 
 DROP TABLE IF EXISTS `row_sequence`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `row_sequence` (
@@ -1388,6 +1403,7 @@ CREATE TABLE `row_sequence` (
 --
 
 DROP TABLE IF EXISTS `scan_run`;
+/*   This table describes a sequence of slides scanned by the Zeiss Axio scanner  *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `scan_run` (
@@ -1428,6 +1444,7 @@ CREATE TABLE `scan_run` (
 --
 
 DROP TABLE IF EXISTS `schedule`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `schedule` (
@@ -1452,6 +1469,7 @@ CREATE TABLE `schedule` (
 --
 
 DROP TABLE IF EXISTS `sections`;
+/*   What is the role of this table, what happened to the conversion of slides to sections?*****/
 /*!50001 DROP VIEW IF EXISTS `sections`*/;
 SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = utf8;
@@ -1476,6 +1494,7 @@ SET character_set_client = @saved_cs_client;
 --
 
 DROP TABLE IF EXISTS `seq`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `seq` (
@@ -1489,6 +1508,7 @@ CREATE TABLE `seq` (
 --
 
 DROP TABLE IF EXISTS `slide`;
+/*   What is the role of this table, did this subsume the tablee "sections"? *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `slide` (
@@ -1555,6 +1575,7 @@ CREATE TABLE `slide_czi_to_tif` (
 --
 
 DROP TABLE IF EXISTS `socialaccount_socialaccount`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `socialaccount_socialaccount` (
@@ -1636,6 +1657,7 @@ CREATE TABLE `socialaccount_socialtoken` (
 --
 
 DROP TABLE IF EXISTS `structure`;
+/*   What is the role of this table does it store the 3D shape of the structures? *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `structure` (
@@ -1656,6 +1678,7 @@ CREATE TABLE `structure` (
 --
 
 DROP TABLE IF EXISTS `table_metadata`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `table_metadata` (
@@ -1678,6 +1701,7 @@ CREATE TABLE `table_metadata` (
 --
 
 DROP TABLE IF EXISTS `task`;
+/*   What is the role of this table What are tasks and how are they used? *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `task` (
@@ -1703,6 +1727,7 @@ CREATE TABLE `task` (
 --
 
 DROP TABLE IF EXISTS `task_resources`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `task_resources` (
@@ -1751,6 +1776,7 @@ CREATE TABLE `task_view` (
 --
 
 DROP TABLE IF EXISTS `transformation`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `transformation` (
@@ -1811,6 +1837,7 @@ CREATE TABLE `virus` (
 --
 
 DROP TABLE IF EXISTS `~jobs`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `~jobs` (
@@ -1834,6 +1861,7 @@ CREATE TABLE `~jobs` (
 --
 
 DROP TABLE IF EXISTS `~log`;
+/*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `~log` (
