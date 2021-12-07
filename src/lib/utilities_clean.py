@@ -9,7 +9,8 @@ from lib.sqlcontroller import SqlController
 from lib.utilities_mask import rotate_image, place_image, scaled, equalized
 from lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
 import tifffile as tiff
-
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 def fix_ntb(file_keys):
     """
     This method clean all NTB images in the specified channel. For channel one it also scales
@@ -62,8 +63,10 @@ def fix_ntb(file_keys):
         fixed = np.flip(fixed, axis=1)
 
     fixed = place_image(fixed, infile, max_width, max_height, 0)
-
+    # cv2.imwrite(outpath, fixed)
     tiff.imsave(outpath, fixed)
+    # im = Image.fromarray(fixed)
+    # im.save(outpath)
     del fixed
     return
 

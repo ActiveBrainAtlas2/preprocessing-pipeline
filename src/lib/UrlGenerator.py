@@ -66,6 +66,13 @@ class UrlGenerator:
         for layer in self.layers:
             if layer['name'] == name:
                 return layer
+
+    def get_image_layers(self):
+        image_layers = []
+        for layer in self.layers:
+            if layer['type'] == "image":
+                image_layers.append(layer)
+        return image_layers
     
     def get_points_from_annotation_layer(self,name):
         layer = self.get_layer_with_name(name)

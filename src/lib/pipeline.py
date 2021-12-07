@@ -219,6 +219,7 @@ class Pipeline:
         for more info in the base directory of this program
         '''
         os.environ["_JAVA_OPTIONS"] = "-Xmx10g"
+        os.environ["export CV_IO_MAX_IMAGE_PIXELS"] = '21474836480'
         
         error = ""
         if not os.path.exists('/usr/local/share/bftools/showinf'):
