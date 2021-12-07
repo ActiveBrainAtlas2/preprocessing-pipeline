@@ -94,6 +94,7 @@ CREATE TABLE `animal` (
 --
 
 DROP TABLE IF EXISTS `atlas_coms`;
+/*            YF what is the role of this table. How is this table related to the tables structure_com, com_type and  detected_soma ******/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `atlas_coms` (
@@ -241,6 +242,7 @@ CREATE TABLE `authtoken_token` (
 --
 
 DROP TABLE IF EXISTS `center_of_mass`;
+/* How is this table related to structure com, DK and YF need a comprehensive explanation of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `center_of_mass` (
@@ -257,7 +259,7 @@ CREATE TABLE `center_of_mass` (
   `created` datetime(6) NOT NULL,
   `updated` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  KEY `K__COM_AID` (`prep_id`),
+  KEY `K__COM_AID` (`prep_id`),  /* Does this refer to the animal taable? *****/
   KEY `K__COM_SID` (`structure_id`),
   KEY `K__COM_PID` (`person_id`),
   KEY `K__COM_TID` (`transformation_id`),
@@ -275,6 +277,7 @@ CREATE TABLE `center_of_mass` (
 --
 
 DROP TABLE IF EXISTS `com_type`;
+/* what is the role of this table *********/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `com_type` (
@@ -470,6 +473,7 @@ CREATE TABLE `elastix_transformation` (
 --
 
 DROP TABLE IF EXISTS `engine_attributespec`;
+/* What is this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `engine_attributespec` (
