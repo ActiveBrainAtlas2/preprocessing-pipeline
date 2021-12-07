@@ -13,7 +13,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `sex` enum('M','F') DEFAULT NULL COMMENT '(M/F) either ''M'' for male, ''F'' for female'
 * `genotype` varchar(100) DEFAULT NULL COMMENT 'transgenic description, usually "C57"; We will need a genotype table'
 * `breeder_line` varchar(100) DEFAULT NULL COMMENT 'We will need a local breeding table'
-* `vender` enum('Jackson','Charles River','Harlan','NIH','Taconic') DEFAULT NULL
+* `vendor` enum('Jackson','Charles River','Harlan','NIH','Taconic') DEFAULT NULL
 * `stock_number` varchar(100) DEFAULT NULL COMMENT 'if not from a performance center'
 * `tissue_source` enum('animal','brain','slides') DEFAULT NULL
 * `ship_date` date DEFAULT NULL
