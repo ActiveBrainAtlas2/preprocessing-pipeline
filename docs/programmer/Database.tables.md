@@ -3,6 +3,99 @@ This is a listing of the base tables used by the Active Brain Atlas project.
 Each table has all the columns listed along with the column type and some
 additional description. Columns that have never been used are marked by *NOTUSED*. 
 For a graphical (ERD) view of the database, click this [diagram](database.erd.png).
+### Sorting tables by name and use
+### Tables used by the scheduling app
+    1. `location`
+    1. `location_primary_people`
+    1. `schedule`
+ 
+### Tables used by the problem reporting system for image QC
+    1. `journals`
+    1. `problem_category`
+
+### Tables used by the preprocessing pipeline python logging system
+    1. `logs`
+### Tables used by the workflow reporting process
+    1. `progress_lookup`
+    1. `resource`
+    1. `task`
+    1. `task_resources`
+    1. `task_roles`
+
+1. All tables beginning with the `engine_` and `gitdata` prefixes 
+are tables that are used by CVAT.These tables can't be updated by the programmer
+ and are listed below:
+    1. `engine_attributespec`
+    1. `engine_clientfile`
+    1. `engine_data`
+    1. `engine_image`
+    1. `engine_job`
+    1. `engine_jobcommit`
+    1. `engine_label`
+    1. `engine_labeledimage`
+    1. `engine_labeledimageattributeval`
+    1. `engine_labeledshape`
+    1. `engine_labeledshapeattributeval`
+    1. `engine_labeledtrack`
+    1. `engine_labeledtrackattributeval`
+    1. `engine_plugin`
+    1. `engine_pluginoption`
+    1. `engine_project`
+    1. `engine_remotefile`
+    1. `engine_segment`
+    1. `engine_serverfile`
+    1. `engine_task`
+    1. `engine_trackedshape`
+    1. `engine_trackedshapeattributeval`
+    1. `engine_video`
+    1. `git_gitdata`
+
+1. All tables beginning with `django_` and `auth_` 
+are used by the Django database portal and
+cannot be changed by the programmer and are listed below:
+    1. `auth_group`
+    1. `auth_group_permissions`
+    1. `auth_permission`
+    1. `authtoken_token`
+    1. `auth_user`
+    1. `auth_user_groups`
+    1. `django_admin_log`
+    1. `django_content_type`
+    1. `django_migrations`
+    1. `django_plotly_dash_dashapp`
+    1. `django_plotly_dash_statelessapp`
+    1. `django_session`
+    1. `django_site`
+1. These tables are used by the oauth login system. CVAT uses this and we
+will want to make use of these in the future:
+    1. `account_emailaddress`
+    1. `account_emailconfirmation`
+    1. `socialaccount_socialaccount`
+    1. `socialaccount_socialapp`
+    1. `socialaccount_socialapp_sites`
+    1. `socialaccount_socialtoken`
+
+1. Below is a list of `donkey` tables that can *probably* be deleted:
+    1. `atlas_coms`
+    1. `center_of_mass`
+    1. `detected_soma`
+    1. `foundation_coms`
+    1. `md589_beth`
+    1. `md589_ed`
+    1. `~jobs`
+    1. `layer_data_history`
+    1. `~log`
+    1. `row_sequence`
+    1. `seq`
+    1. `table_metadata`
+    1. `transformation`
+    1. `file_operation`
+
+### There are two views currently being used
+1. `sections`
+1. `task_view`
+
+## Below is a list of tables initially created by Yoav and David and later modified by Ed
 
 ### animal
 * `prep_id` varchar(20) PRIMARY KEY NOT NULL COMMENT 'Name for lab mouse/rat, max 20 chars'
@@ -243,4 +336,10 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `user_date` varchar(25) DEFAULT NULL
 * `comments` varchar(255) DEFAULT NULL
 * `updated` timestamp NOT NULL DEFAULT current_timestamp()
+
+
+
+
+* `elastix_transformation`
+* `file_log`
 
