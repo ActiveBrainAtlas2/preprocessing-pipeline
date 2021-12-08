@@ -1,0 +1,162 @@
+--
+-- Main Tables, used by all users of brainsharer.
+--
+
+animal
+structure      /* Does this structure include the 3D shape information? */
+transformation /* Does this store transformations between stack
+coordinates and atlas coordinates (both ways)? does it support
+different types of transformation? (rigid, affine,beta spline?) */
+virus
+histology
+organic_label
+
+--
+--  Neuroglancer related
+--
+
+neuroglancer_urls /* Information in this table should be short lived,
+a new URL can be started from the web interface by specifying brain
+and viewing configuration. Once the user hits "save" the json
+information should be parsed and added to the appropriate
+tables. coms to coms tables and configuration to configuration tables
+(for storing the chosen histogram configuration, point of view, etc).
+
+--
+--  injection related tables
+--
+
+injection
+injection_virus
+
+--
+-- Layer related tables (what is this?)
+--
+
+layer_data
+layer_data_history
+
+--
+--  COM related tables
+--
+
+atlas_coms
+center_of_mass
+com_type
+detected_soma
+foundation_coms
+
+--
+--  Scanner related tables
+--
+
+slide
+slide_czi_to_tif
+row_sequence
+scan_run
+elastix_transformation
+
+--
+--  Engine tables (what is this?)
+--
+
+engine_attributespec
+engine_clientfile
+engine_data
+engine_image
+engine_job
+engine_jobcommit
+engine_label
+engine_labeledimage
+engine_labeledimageattributeval
+engine_labeledshape
+engine_labeledshapeattributeval
+engine_labeledtrack
+engine_labeledtrackattributeval
+engine_plugin
+engine_pluginoption
+engine_project
+engine_remotefile
+engine_segment
+engine_serverfile
+engine_task
+engine_trackedshape
+engine_trackedshapeattributeval
+engine_video
+
+--
+--  Django tables (what is this?)
+--
+
+django_admin_log
+django_content_type
+django_migrations
+django_plotly_dash_dashapp
+django_plotly_dash_statelessapp
+django_session
+django_site
+
+--
+--  Account tables
+--
+
+account_emailaddress
+account_emailconfirmation
+
+--
+-- Auth tables
+--
+
+auth_group
+auth_group_permissions
+auth_permission
+auth_user
+auth_user_groups
+auth_user_user_permissions
+authtoken_token
+
+--
+--  Social Account tables
+--
+
+socialaccount_socialaccount
+socialaccount_socialapp
+socialaccount_socialapp_sites
+socialaccount_socialtoken
+
+--
+--  Location tables
+--
+location
+location_primary_people
+
+--
+--  Logging (?) tables
+--
+
+file_log
+file_operation
+journals
+logs
+problem_category
+progress_lookup
+resource
+schedule
+~jobs
+~log
+
+--
+-- Task tables
+--
+
+task
+task_resources
+task_roles
+task_view
+
+--
+-- ?
+--
+table_metadata
+git_gitdata
+seq

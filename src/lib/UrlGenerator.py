@@ -1,5 +1,6 @@
 from lib.sqlcontroller import SqlController
 import json 
+import numpy as np
 
 class UrlGenerator:
     def __init__(self):
@@ -17,14 +18,14 @@ class UrlGenerator:
                             source = "precomputed://https://activebrainatlas.ucsd.edu/data/structures/" + folder_name,
                             tab = "segments",
                             name = layer_name)
-        self.layers.append(json.dumps(segment_layer))
+        self.layers.append(segment_layer)
 
     def add_precomputed_image_layer(self,source,name):
         image_layer = dict( type = "image",
                             source = source,
                             tab = "source",
                             name = name)
-        self.layers.append(json.dumps(image_layer))
+        self.layers.append(image_layer)
     
     def add_annotation_layer(self,name,color_hex= None,annotations = None,shader_controls = None):
         if annotations:
@@ -38,7 +39,7 @@ class UrlGenerator:
             annotation_layer['shaderControls'] = shaderControls
         if color_hex != None:
             annotation_layer = self.insert_annotation_color_hex(annotation_layer,color_hex)
-        self.layers.append(json.dumps(annotation_layer))
+        self.layers.append(annotation_layer)
 
     def insert_annotation_color_hex(self,annotation_layer,color_hex):
         annotation_layer = annotation_layer.split(',')
@@ -47,7 +48,7 @@ class UrlGenerator:
         return annotation_layer
 
     def get_url(self):
-        return '{"layers": ['+ ','.join(self.layers) +']}'
+        return json.dumps({'layers': self.layers})
     
     def add_to_database(self,title,person_id):
         content = self.get_url()
@@ -55,11 +56,30 @@ class UrlGenerator:
     
     def parse_url(self,url):
         url = json.loads(url.replace('\n',''))
-        layers = url['layers']
-        for layeri in layers:
-            self.layers.append(json.dumps(layeri))
+        self.layers = url['layers']
     
     def load_database_url(self,url_id):
         url = self.controller.get_urlModel(url_id)
         self.parse_url(url.url)
+    
+    def get_layer_with_name(self,name):
+        for layer in self.layers:
+            if layer['name'] == name:
+                return layer
+
+    def get_image_layers(self):
+        image_layers = []
+        for layer in self.layers:
+            if layer['type'] == "image":
+                image_layers.append(layer)
+        return image_layers
+    
+    def get_points_from_annotation_layer(self,name):
+        layer = self.get_layer_with_name(name)
+        annotations = layer['annotations']
+        points = []
+        for annotation in annotations:
+            points.append(annotation['point'])
+        return np.array(points)
+
     

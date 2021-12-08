@@ -23,6 +23,8 @@ from lib.utilities_create_alignment import parse_elastix, run_offsets
 from lib.utilities_web import make_web_thumbnails
 from lib.utilities_neuroglancer_image import create_neuroglancer
 from lib.utilities_downsampling import create_downsamples
+import yaml
+import socket
 
 
 class Pipeline:
@@ -42,7 +44,29 @@ class Pipeline:
         self.downsample = downsample
         self.debug = False
         self.fileLocationManager =  FileLocationManager(animal)
+        self.hostname = self.get_hostname()
+        self.load_parallel_settings()
         
+    def load_parallel_settings(self):
+        dirname = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','..'))
+        file_path = os.path.join(dirname, 'parallel_settings.yaml')
+        with open(file_path) as file:
+            self.parallel_settings = yaml.load(file, Loader=yaml.FullLoader)
+        assert self.parallel_settings['name'] == self.hostname
+
+    def get_hostname(self):
+        hostname = socket.gethostname()
+        hostname = hostname.split(".")[0]
+        return hostname
+
+    def get_nworkers(self,downsample = True):
+        function_name = sys._getframe(1).f_code.co_name
+        nworkers = eval(self.parallel_settings[function_name])
+        if downsample:
+            return nworkers[1]
+        else:
+            return nworkers[0]
+
     def create_meta(self):
         """
         The CZI file need to be present. Test to make sure the dir exists
@@ -66,7 +90,7 @@ class Pipeline:
         This method creates the tifs from the czi files. The files are used for the create_preps method
         It also creates the scenes under data/DKXX/www/scenes
         '''
-        make_tifs(self.animal, self.channel)
+        make_tifs(self.animal, self.channel,self.get_nworkers())
         if self.channel == 1 and self.downsample:
             make_scenes(self.animal)
 
@@ -76,8 +100,8 @@ class Pipeline:
         Creates the tifs. These need to be checked in the DB before
         proceeding to the create_preps step
         """
-        make_full_resolution(self.animal, self.channel)
-        make_low_resolution(self.animal, self.channel, self.debug)
+        make_full_resolution(self.animal, self.channel,self.get_nworkers())
+        make_low_resolution(self.animal, self.channel, self.debug,self.get_nworkers())
         set_task_preps(self.animal, self.channel)
 
     
@@ -149,7 +173,7 @@ class Pipeline:
             create_elastix(self.animal)
 
     
-    def create_alignment(self):
+    def create_aligned(self):
         '''
         This gets run on all downsampled and full res and all 3 channels. It
         fetches the data from the elastix_transformation table and then uses
@@ -195,6 +219,7 @@ class Pipeline:
         for more info in the base directory of this program
         '''
         os.environ["_JAVA_OPTIONS"] = "-Xmx10g"
+        os.environ["export CV_IO_MAX_IMAGE_PIXELS"] = '21474836480'
         
         error = ""
         if not os.path.exists('/usr/local/share/bftools/showinf'):

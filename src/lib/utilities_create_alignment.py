@@ -6,6 +6,7 @@ from skimage import io
 from collections import OrderedDict
 from concurrent.futures.process import ProcessPoolExecutor
 from sqlalchemy.orm.exc import NoResultFound
+import tifffile as tiff
 
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
@@ -144,14 +145,15 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
             continue
 
         file_keys.append([i,infile, outfile, T])
-
     
     if create_csv:
         create_csv_data(animal, file_keys)
     else:
-        workers, _ = get_cpus()
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(process_image, sorted(file_keys))
+        for filei in file_keys:
+            process_image(filei)
+        # workers, _ = get_cpus()
+        # with ProcessPoolExecutor(max_workers=workers) as executor:
+        #     executor.map(process_image, sorted(file_keys))
         
 def create_csv_data(animal, file_keys):
     data = []

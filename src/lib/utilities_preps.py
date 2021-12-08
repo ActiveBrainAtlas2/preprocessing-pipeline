@@ -22,7 +22,7 @@ def set_task_preps(animal,channel):
     sqlController.set_task(animal, progress_id)
 
 
-def make_full_resolution(animal, channel):
+def make_full_resolution(animal, channel,workers = 10):
     """
     Args:
         animal: the prep id of the animal
@@ -39,28 +39,29 @@ def make_full_resolution(animal, channel):
             sqlController.set_task(animal, CREATE_CHANNEL_3_FULL_RES)
 
     INPUT = os.path.join(fileLocationManager.tif)
-    ##### Check if files in dir are valid
     OUTPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'full')
     os.makedirs(OUTPUT, exist_ok=True)
-
+    input_paths = []
+    output_paths = []
     sections = sqlController.get_sections(animal, channel)
     for section_number, section in enumerate(sections):
         input_path = os.path.join(INPUT, section.file_name)
         output_path = os.path.join(OUTPUT, str(
             section_number).zfill(3) + '.tif')
-
         if not os.path.exists(input_path):
-            #print('Input tif does not exist', input_path)
             continue
 
         if os.path.exists(output_path):
             continue
-
-        copyfile(input_path, output_path)
+        input_paths.append(input_path)
+        output_paths.append(output_path)
         width, height = get_image_size(input_path)
         sqlController.update_tif(section.id, width, height)
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        results = executor.map(copyfile, input_paths,output_paths)
 
-def make_low_resolution(animal, channel, debug):
+
+def make_low_resolution(animal, channel, debug,workers = 10):
     """
     Args:
         takes the full resolution tifs and downsamples them.
@@ -93,7 +94,6 @@ def make_low_resolution(animal, channel, debug):
 
         file_keys.append([infile, outpath])
 
-    workers, _ = get_cpus()
     if debug:
         for file_key in file_keys:
             resize_and_save_tif(file_key)
