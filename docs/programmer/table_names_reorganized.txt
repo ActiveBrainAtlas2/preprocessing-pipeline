@@ -7,7 +7,6 @@ structure      /* Does this structure include the 3D shape information? */
 transformation /* Does this store transformations between stack, does not exist at this point.
 coordinates and atlas coordinates (both ways)? does it support
 different types of transformation? (rigid, affine,beta spline?) */
-virus
 histology
 organic_label
 
@@ -27,7 +26,9 @@ tables. coms to coms tables and configuration to configuration tables
 --
 
 injection
-injection_virus
+injection_virus - many to many join table
+virus
+
 
 --
 -- tables of brain locations (x,y,z location data)
@@ -56,34 +57,6 @@ row_sequence - delete
 scan_run
 elastix_transformation
 
---
---  Engine tables - tables related to CVAT
---
-
-engine_attributespec
-engine_clientfile
-engine_data
-engine_image
-engine_job
-engine_jobcommit
-engine_label
-engine_labeledimage
-engine_labeledimageattributeval
-engine_labeledshape
-engine_labeledshapeattributeval
-engine_labeledtrack
-engine_labeledtrackattributeval
-engine_plugin
-engine_pluginoption
-engine_project
-engine_remotefile
-engine_segment
-engine_serverfile
-engine_task
-engine_trackedshape
-engine_trackedshapeattributeval
-engine_video
-git_gitdata
 
 --
 --   Administrative tables ---------------------------------------------------------------------
@@ -160,3 +133,32 @@ task
 task_resources
 task_roles
 task_view
+
+--
+--  Engine tables - tables related to CVAT
+--
+
+engine_attributespec
+engine_clientfile
+engine_data
+engine_image
+engine_job
+engine_jobcommit
+engine_label
+engine_labeledimage
+engine_labeledimageattributeval
+engine_labeledshape
+engine_labeledshapeattributeval
+engine_labeledtrack
+engine_labeledtrackattributeval
+engine_plugin
+engine_pluginoption
+engine_project
+engine_remotefile
+engine_segment
+engine_serverfile
+engine_task
+engine_trackedshape
+engine_trackedshapeattributeval
+engine_video
+git_gitdata
