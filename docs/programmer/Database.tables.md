@@ -2,9 +2,12 @@
 This is a listing of all tables used by the Active Brain Atlas project.
 Each table has all the columns listed along with the column type and some
 additional description. Columns that have never been used are marked by *NOTUSED*. 
+
 For a graphical (ERD) view of the database, click this [diagram](database.erd.png).
+
 To view the datajoint Princeton lightsheet schema, 
-[click here](https://github.com/BrainSharer/database_portal/blob/master/schemas/princeton_lightsheet.py)
+[click here](https://github.com/BrainSharer/database_portal/blob/master/schemas/princeton_lightsheet.py).
+
 For a full listing of all tables in the active_atlas_production database, 
 [see here](table_names_reorganized.md)
 
