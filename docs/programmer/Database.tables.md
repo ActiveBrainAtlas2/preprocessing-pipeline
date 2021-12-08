@@ -8,7 +8,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 To view the datajoint Princeton lightsheet schema, 
 [click here](https://github.com/BrainSharer/database_portal/blob/master/schemas/princeton_lightsheet.py).
 
-For a full listing of all tables in the active_atlas_production database, 
+For a full listing of all tables in the active_atlas_production database sorted by category, 
 [see here](table_names_reorganized.md)
 
 The following prefixes are used to mark the appropriate key:

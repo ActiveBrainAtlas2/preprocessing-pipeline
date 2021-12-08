@@ -1,5 +1,6 @@
 # A listing of all tables in the active_atlas_production database
-This is a listing of all tables used by the Active Brain Atlas project.
+This is a listing of all tables used by the Active Brain Atlas project. They 
+are sorted into application groups.
 
 ### Brain tables
 1. `animal`
