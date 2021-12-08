@@ -1,8 +1,12 @@
 # A description of all tables in the active_atlas_production database
-This is a listing of the base tables used by the Active Brain Atlas project.
+This is a listing of all tables used by the Active Brain Atlas project.
 Each table has all the columns listed along with the column type and some
 additional description. Columns that have never been used are marked by *NOTUSED*. 
 For a graphical (ERD) view of the database, click this [diagram](database.erd.png).
+The following prefixes are used to mark the appropriate key:
+1. Foriegn keys =  `FK__`
+1. Index keys = `K__`
+1. Unique keys = `UK__`
 ## Sorting tables by name and use
 ### Tables used by the scheduling app
     1. `location`
