@@ -4,7 +4,7 @@
 
 animal
 structure      /* Does this structure include the 3D shape information? */
-transformation /* Does this store transformations between stack
+transformation /* Does this store transformations between stack, does not exist at this point.
 coordinates and atlas coordinates (both ways)? does it support
 different types of transformation? (rigid, affine,beta spline?) */
 virus
@@ -30,21 +30,21 @@ injection
 injection_virus
 
 --
--- Layer related tables (what is this?)
+-- tables of brain locations (x,y,z location data)
 --
 
-layer_data
-layer_data_history
+layer_data - main annotation table where the x,y,z data is stored
+layer_data_history - delete
+
+atlas_coms - delete
+center_of_mass - delete
+com_type - should be renamed to input_type, lookup table of manual, detected, corrected
+detected_soma - can be deleted
+foundation_coms - can be deleted after checking
 
 --
---  COM related tables
+-- tables of boundaries, does not exist yet. Will store 2D and 3D boundaries
 --
-
-atlas_coms
-center_of_mass
-com_type
-detected_soma
-foundation_coms
 
 --
 --  Scanner related tables
@@ -52,12 +52,12 @@ foundation_coms
 
 slide
 slide_czi_to_tif
-row_sequence
+row_sequence - delete
 scan_run
 elastix_transformation
 
 --
---  Engine tables (what is this?)
+--  Engine tables - tables related to CVAT
 --
 
 engine_attributespec
@@ -83,11 +83,14 @@ engine_task
 engine_trackedshape
 engine_trackedshapeattributeval
 engine_video
+git_gitdata
 
 --
---  Django tables (what is this?)
+--   Administrative tables ---------------------------------------------------------------------
+-- 
+-- 
+--  Django administration tables that are used by the portal, used for user information and Django 
 --
-
 django_admin_log
 django_content_type
 django_migrations
@@ -95,18 +98,6 @@ django_plotly_dash_dashapp
 django_plotly_dash_statelessapp
 django_session
 django_site
-
---
---  Account tables
---
-
-account_emailaddress
-account_emailconfirmation
-
---
--- Auth tables
---
-
 auth_group
 auth_group_permissions
 auth_permission
@@ -116,7 +107,7 @@ auth_user_user_permissions
 authtoken_token
 
 --
---  Social Account tables
+--  Social Account tables, oauth tables
 --
 
 socialaccount_socialaccount
@@ -125,25 +116,41 @@ socialaccount_socialapp_sites
 socialaccount_socialtoken
 
 --
---  Location tables
+--  Schedule Location related tables
 --
+schedule
 location
 location_primary_people
 
 --
---  Logging (?) tables
+--  Tables related to logging throughout the workflow --------------------------------------
 --
 
 file_log
 file_operation
-journals
 logs
+
+--
+-- Tables related to slide QC
+--
+journals
 problem_category
+
+--
+-- Tables related to the preprocessing workflow
+-- 
 progress_lookup
 resource
 schedule
-~jobs
-~log
+
+--
+-- tables that are not used and should be deleted
+--
+
+~jobs - delete
+~log - delete
+table_metadata - delete
+seq - delete
 
 --
 -- Task tables
@@ -153,10 +160,3 @@ task
 task_resources
 task_roles
 task_view
-
---
--- ?
---
-table_metadata
-git_gitdata
-seq
