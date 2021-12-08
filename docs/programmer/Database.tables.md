@@ -4,10 +4,10 @@ Each table has all the columns listed along with the column type and some
 additional description. Columns that have never been used are marked by *NOTUSED*. 
 For a graphical (ERD) view of the database, click this [diagram](database.erd.png).
 The following prefixes are used to mark the appropriate key:
-1. Foriegn keys =  `FK__`
+1. Foreign keys =  `FK__`
 1. Index keys = `K__`
 1. Unique keys = `UK__`
-## Sorting tables by name and use
+## Sorting tables by use and name
 ### Tables used by the scheduling app
     1. `location`
     1. `location_primary_people`
@@ -29,7 +29,7 @@ The following prefixes are used to mark the appropriate key:
 
 ### Tables used by CVAT
 1. All tables beginning with the `engine_` and `gitdata` prefixes 
-are tables that are used by CVAT.These tables can't be updated by the programmer
+are tables that are used by CVAT. These tables can't be updated by the programmer
  and are listed below:
     1. `engine_attributespec`
     1. `engine_clientfile`
