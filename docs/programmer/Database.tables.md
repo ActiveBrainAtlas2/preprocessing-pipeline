@@ -1,9 +1,9 @@
-## Database design of the base tables
+# A description of all tables in the active_atlas_production database
 This is a listing of the base tables used by the Active Brain Atlas project.
 Each table has all the columns listed along with the column type and some
 additional description. Columns that have never been used are marked by *NOTUSED*. 
 For a graphical (ERD) view of the database, click this [diagram](database.erd.png).
-### Sorting tables by name and use
+## Sorting tables by name and use
 ### Tables used by the scheduling app
     1. `location`
     1. `location_primary_people`
@@ -15,6 +15,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 
 ### Tables used by the preprocessing pipeline python logging system
     1. `logs`
+
 ### Tables used by the workflow reporting process
     1. `progress_lookup`
     1. `resource`
@@ -22,6 +23,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
     1. `task_resources`
     1. `task_roles`
 
+### Tables used by CVAT
 1. All tables beginning with the `engine_` and `gitdata` prefixes 
 are tables that are used by CVAT.These tables can't be updated by the programmer
  and are listed below:
@@ -50,6 +52,7 @@ are tables that are used by CVAT.These tables can't be updated by the programmer
     1. `engine_video`
     1. `git_gitdata`
 
+### Tables used by the Django portal
 1. All tables beginning with `django_` and `auth_` 
 are used by the Django database portal and
 cannot be changed by the programmer and are listed below:
@@ -66,6 +69,8 @@ cannot be changed by the programmer and are listed below:
     1. `django_plotly_dash_statelessapp`
     1. `django_session`
     1. `django_site`
+    
+### Tables used by oauth system
 1. These tables are used by the oauth login system. CVAT uses this and we
 will want to make use of these in the future:
     1. `account_emailaddress`
@@ -75,6 +80,7 @@ will want to make use of these in the future:
     1. `socialaccount_socialapp_sites`
     1. `socialaccount_socialtoken`
 
+### Rogue tables
 1. Below is a list of `donkey` tables that can *probably* be deleted:
     1. `atlas_coms`
     1. `center_of_mass`
@@ -337,9 +343,21 @@ will want to make use of these in the future:
 * `comments` varchar(255) DEFAULT NULL
 * `updated` timestamp NOT NULL DEFAULT current_timestamp()
 
+### `elastix_transformation`
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
+* `prep_id`  varchar(20) NOT NULL
+* `section`  char(3)
+* `rotation` float
+* `xshift`   float
+* `yshift`   float
+* `created`  timestamp NOT NULL current_timestamp()
+* `active`   tinyint(4)
 
-
-
-* `elastix_transformation`
-* `file_log`
+### `file_log`
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
+* `prep_id`      varchar(20)                            
+* `progress_id`  int(11)                                
+* `filename`     varchar(255)                               
+* `active`       tinyint(1)                                
+* `created`      timestamp NOT NULL current_timestamp()                 
 
