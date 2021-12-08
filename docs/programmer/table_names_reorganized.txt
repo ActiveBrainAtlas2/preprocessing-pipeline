@@ -1,5 +1,8 @@
-animal
+--
+-- Main Tables, used by all users of brainsharer.
+--
 
+animal
 structure      /* Does this structure include the 3D shape information? */
 transformation /* Does this store transformations between stack
 coordinates and atlas coordinates (both ways)? does it support
