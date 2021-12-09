@@ -156,3 +156,17 @@ task_resources
 task_roles
 task_view
 
+--
+-- Tables to be deleted
+--
+
+layer_data_history - delete
+atlas_coms - deleted
+center_of_mass - deleted
+com_type - should be renamed to input_type, lookup table of manual, detected, corrected
+detected_soma - deleted
+foundation_coms - deleted
+~jobs - deleted
+~log - deleted
+seq  - deleted
+row_sequence - deleted
