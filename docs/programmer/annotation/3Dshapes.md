@@ -47,24 +47,24 @@ sliced to create the contours to be drawn on the sections.
 ### Tables
 
 ##### Contour sequence table
-Contour Sequence ID
-Brain
-Transformation
-generator (user_ID or ID of 3d-blob)
-name of 3D shape (Should probably have a table for these names, to
-ensure consistency)
-First section number
-Last section number 
+1. Contour Sequence ID
+1. Brain  
+1. Transformation  
+1. generator (user_ID or ID of 3d-blob)  
+1. name of 3D shape (Should probably have a table for these names, to
+ensure consistency)  
+1. First section number  
+1. Last section number   
 
 ##### Contour table
-ID,
-Contour sequence ID
-Section index
-polygon (blob, json or pickle)
+1. ID,
+1. Contour sequence ID
+1. Section index
+1. polygon (blob, json or pickle)
 
 ##### 3D 
 
-ID
-Shape name (pointer to a table of shape names, including structures
-and other things)
-3D shape (blob: pickle)
+1. ID
+1. Shape name (pointer to a table of shape names, including structures
+1. and other things)
+1. 3D shape (blob: pickle)
