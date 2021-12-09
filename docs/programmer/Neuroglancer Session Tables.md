@@ -112,7 +112,7 @@ I am proposing the creation of five tables that will replace the current way of 
 |radius_z|int|z radius of elipsoids if applicable|
 
 ### Steps to recreate a neuroglancer session:
-#### 1. Get all entries in the Neuroglancer Layers table with a session_name.  The state_json field has the json file with an empty entry for the layers field
-#### 2. Search through the Neuroglancer Layers table and insert each layers accordingly
-#### 3. For Image and Segmentation layers, get layer name from Neuroglancer Layers table, and source from the Image Layers or Segmentation Layers table and insert them into a template.  Then the postfixing json values are attached.  These could include the contract and color widget, current layer state etc.
-#### 4. For Annotation layers points are collected by the combination of session and layer id.  Then a Annotation layer is created from a template
+ 1. Get all entries in the Neuroglancer Layers table with a session_name.  The state_json field has the json file with an empty entry for the layers field
+ 2. Search through the Neuroglancer Layers table and insert each layers accordingly
+ 3. For Image and Segmentation layers, get layer name from Neuroglancer Layers table, and source from the Image Layers or Segmentation Layers table and insert them into a template.  Then the postfixing json values are attached.  These could include the contract and color widget, current layer state etc.
+ 4. For Annotation layers points are collected by the combination of session and layer id.  Then a Annotation layer is created from a template
