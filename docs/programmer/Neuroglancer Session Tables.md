@@ -21,7 +21,7 @@
 {
       "type": "segmentation",
       "source": #url pointing to local or hosted data,
-      "name": "Atlas"
+      "name": #layer name
       #extra fields can exist for widget settings, transformations and layer state
 }
 ```
