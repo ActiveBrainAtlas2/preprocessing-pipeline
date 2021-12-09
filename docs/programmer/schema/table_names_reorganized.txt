@@ -3,23 +3,13 @@
 --
 
 animal
-structure      /* Does this structure include the 3D shape information? */
-transformation /* Does this store transformations between stack, does not exist at this point.
-coordinates and atlas coordinates (both ways)? does it support
-different types of transformation? (rigid, affine,beta spline?) */
+structure      /* Does not include the 3D shape information? */
+transformation /* Does this store transformations between stack, does */
+-- /* not exist at this point. coordinates and atlas coordinates (both */
+-- /* ways)? does it support different types of transformation? (rigid, affine,beta spline?) */
 histology
 organic_label
 
---
---  Neuroglancer related
---
-
-neuroglancer_urls /* Information in this table should be short lived,
-a new URL can be started from the web interface by specifying brain
-and viewing configuration. Once the user hits "save" the json
-information should be parsed and added to the appropriate
-tables. coms to coms tables and configuration to configuration tables
-(for storing the chosen histogram configuration, point of view, etc).
 
 --
 --  injection related tables
@@ -29,22 +19,24 @@ injection
 injection_virus - many to many join table
 virus
 
+--
+-- Annotation related tables   ---------------------------------------------------------
+--
 
 --
 -- tables of brain locations (x,y,z location data)
 --
 
 layer_data - main annotation table where the x,y,z data is stored
-layer_data_history - delete
-
-atlas_coms - delete
-center_of_mass - delete
 com_type - should be renamed to input_type, lookup table of manual, detected, corrected
-detected_soma - can be deleted
-foundation_coms - can be deleted after checking
 
 --
 -- tables of boundaries, does not exist yet. Will store 2D and 3D boundaries
+--
+
+
+--
+-- tables related to hardware/software --------------------------------------------------
 --
 
 --
@@ -53,10 +45,49 @@ foundation_coms - can be deleted after checking
 
 slide
 slide_czi_to_tif
-row_sequence - delete
 scan_run
 elastix_transformation
 
+--
+--  Neuroglancer related tables
+--
+
+neuroglancer_urls /* Information in this table should be short lived,a */
+-- new URL can be started from the web interface by specifying brain and
+-- viewing configuration. Once the user hits "save" the json, 
+-- information should be parsed and added to the appropriate
+-- tables. com,to coms tables and configuration to configuration tables
+-- (for storing the chosen histogram configuration, point of view, etc). */
+
+
+--
+--  Engine tables - tables related to CVAT
+--
+
+engine_attributespec
+engine_clientfile
+engine_data
+engine_image
+engine_job
+engine_jobcommit
+engine_label
+engine_labeledimage
+engine_labeledimageattributeval
+engine_labeledshape
+engine_labeledshapeattributeval
+engine_labeledtrack
+engine_labeledtrackattributeval
+engine_plugin
+engine_pluginoption
+engine_project
+engine_remotefile
+engine_segment
+engine_serverfile
+engine_task
+engine_trackedshape
+engine_trackedshapeattributeval
+engine_video
+git_gitdata
 
 --
 --   Administrative tables ---------------------------------------------------------------------
@@ -117,15 +148,6 @@ resource
 schedule
 
 --
--- tables that are not used and should be deleted
---
-
-~jobs - delete
-~log - delete
-table_metadata - delete
-seq - delete
-
---
 -- Task tables
 --
 
@@ -134,31 +156,3 @@ task_resources
 task_roles
 task_view
 
---
---  Engine tables - tables related to CVAT
---
-
-engine_attributespec
-engine_clientfile
-engine_data
-engine_image
-engine_job
-engine_jobcommit
-engine_label
-engine_labeledimage
-engine_labeledimageattributeval
-engine_labeledshape
-engine_labeledshapeattributeval
-engine_labeledtrack
-engine_labeledtrackattributeval
-engine_plugin
-engine_pluginoption
-engine_project
-engine_remotefile
-engine_segment
-engine_serverfile
-engine_task
-engine_trackedshape
-engine_trackedshapeattributeval
-engine_video
-git_gitdata
