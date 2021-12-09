@@ -33,7 +33,7 @@ concensus, smoothing, and generating a 3D blob (using single
 voxels as the unit for large structures consumes memory and time, we
 can do better by combining small and large cubes to make the shape).
 
-The 3D blobs, together with the points (coms) are  the most valuable
+The 3D blobs, together with the points (coms) are  some of the most valuable
 data to be shared using mindsharer. Version control here is critical
 as over time people would add/alter shapes.
 
