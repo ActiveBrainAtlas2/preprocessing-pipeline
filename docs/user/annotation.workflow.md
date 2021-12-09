@@ -1,4 +1,12 @@
-## This is the flow of how annotation layers are added to the database
+## Current flow of annotation adding,updating and deleting
+1. When the user hits 'Save' all data is saved as JSON in the neuroglancer_urls
+table. Any annotations in a layer labeled:
+    1. COM
+    1. ADDITIONAL MANUAL ANNOTATIONS
+are entered into the database table layer_data. Any other layer containing
+annotations are NOT entered into the layer_data table.
+
+## This is the proposed flow of how annotation layers are added to the database
 ### New set of annotations
 1. The user opens up an annotation layer in Neuroglancer and adds data. 
 When the user hits 'Save', the program will enter all data under that layer,
