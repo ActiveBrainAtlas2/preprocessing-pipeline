@@ -62,15 +62,12 @@
 I am proposing the creation of five tables that will replace the current way of storing the json neuroglancer sessons in the database:
 
 ### Table1 Neuroglancer Sessions
-id                  int             primary key
-
-session_name        string          name of the session 
-
-state_json          json            Remainder of the json that logs the state of current viewing session eg: location zoom level etc
+| id |int | primary key |
+| session_name | string | name of the session | 
+| state_json | json | Remainder of the json that logs the state of current viewing session eg: location zoom level etc |
 
 ### Table2 Neuroglancer Layers
-id                  int             primary key
-
+|id|                  int|             primary key|
 session_name        string          name of the session
 
 layer_name          string          name of the layer
