@@ -47,9 +47,10 @@ def create_neuroglancer(animal, channel, downsample, debug=False):
         INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'full_aligned')
         channel_outdir = f'C{channel}_rechunkme'
         sqlController.set_task(animal, progress_id)
-        if 'thion' in sqlController.histology.counterstain:
-            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
-            sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
+        if not  sqlController.histology.counterstain == None:
+            if 'thion' in sqlController.histology.counterstain:
+                sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES)
+                sqlController.set_task(animal, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES)
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     error = test_dir(animal, INPUT, downsample, same_size=True)
