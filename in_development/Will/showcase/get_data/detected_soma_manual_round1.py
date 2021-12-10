@@ -58,8 +58,10 @@ sum(matching)
 
 false_positives = get_min_distance(positive,unsure)
 duplicates = get_second_min_distance(positive,positive)
+negative_duplicates = get_second_min_distance(negative,negative)
 
 n_duplicates = sum(duplicates == 0)
+n_duplicates_negative = sum(negative_duplicates == 0)
 n_false_positive = np.sum(false_positives==0)
 
 n_duplicates = np.sum(duplicates==0)
