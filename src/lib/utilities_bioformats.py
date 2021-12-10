@@ -1,5 +1,4 @@
 import subprocess
-
 import bioformats
 
 def get_czi_metadata(infile):

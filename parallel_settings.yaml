@@ -1,0 +1,9 @@
+name: "muralis"
+create_tifs: (40,40)
+create_preps : (60,60)
+create_mask : (60,60)
+create_clean : (60,60)
+create_aligned : (60,60)
+create_histograms : (60,60)
+create_neuroglancer : (60,60)
+create_downsamples : (60,60)

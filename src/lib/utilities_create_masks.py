@@ -71,23 +71,16 @@ def create_mask(animal, downsample):
     else:
         print('no model to load')
         return
-
-    ##### Create directories
-
-
     if not downsample:
         sqlController = SqlController(animal)
         sqlController.set_task(animal, CREATE_FULL_RES_MASKS)
         INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
-        ##### Check if files in dir are valid
         error = test_dir(animal, INPUT, downsample, same_size=False)
         if len(error) > 0:
             print(error)
             sys.exit()
 
         THUMBNAIL = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_masked')
-        ##### Check if files in dir are valid
-        ##error = test_dir(animal, THUMBNAIL, full=False, same_size=False)
         MASKED = os.path.join(fileLocationManager.prep, 'masks', 'full_masked')
         os.makedirs(MASKED, exist_ok=True)
         files = sorted(os.listdir(INPUT))
