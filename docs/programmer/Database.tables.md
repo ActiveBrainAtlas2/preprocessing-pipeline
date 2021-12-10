@@ -1,8 +1,20 @@
-## Database design of the base tables
-This is a listing of the base tables used by the Active Brain Atlas project.
+## Active brain atlas specific tables initially created by Yoav and David and later modified by Ed
+This is a listing of all tables used by the Active Brain Atlas project.
 Each table has all the columns listed along with the column type and some
 additional description. Columns that have never been used are marked by *NOTUSED*. 
+
 For a graphical (ERD) view of the database, click this [diagram](database.erd.png).
+
+To view the datajoint Princeton lightsheet schema, 
+[click here](https://github.com/BrainSharer/database_portal/blob/master/schemas/princeton_lightsheet.py).
+
+For a full listing of all tables in the active_atlas_production database sorted by category, 
+[see here](table_names_reorganized.md)
+
+The following prefixes are used to mark the appropriate key:
+1. Foreign keys =  `FK__`
+1. Index keys = `K__`
+1. Unique keys = `UK__`
 
 ### animal
 * `prep_id` varchar(20) PRIMARY KEY NOT NULL COMMENT 'Name for lab mouse/rat, max 20 chars'
@@ -56,6 +68,9 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `comments` varchar(2001) DEFAULT NULL COMMENT 'assessment'
 * `active` tinyint(4) NOT NULL DEFAULT 1
 * `created` timestamp NULL DEFAULT current_timestamp()
+    * KEY `FK__scan_run_prep_id` (`prep_id`)
+    * CONSTRAINT `FK__scan_run_prep_id` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`)
+
 
 ### slide
 * `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
@@ -83,6 +98,8 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `scene_qc_4` tinyint(4) NOT NULL DEFAULT 0
 * `scene_qc_5` tinyint(4) NOT NULL DEFAULT 0
 * `scene_qc_6` tinyint(4) NOT NULL DEFAULT 0
+    * KEY `K__slide_scan_run_id` (`scan_run_id`)
+    * CONSTRAINT `FK__slide_scan_run_id` FOREIGN KEY (`scan_run_id`) REFERENCES `scan_run` (`id`) ON UPDATE CASCADE
 
 
 ### slide_czi_to_tif 
@@ -99,6 +116,8 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `file_size` float NOT NULL DEFAULT 0
 * `scene_index` int(11) NOT NULL DEFAULT 0
 * `processing_duration` float NOT NULL DEFAULT 0
+    * KEY `K__slide_id` (`slide_id`)
+    * CONSTRAINT `FK__slide_id` FOREIGN KEY (`slide_id`) REFERENCES `slide` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 
 ### histology
 * `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
@@ -126,6 +145,12 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `comments` varchar(2001) DEFAULT NULL COMMENT 'assessment'
 * `created` timestamp NOT NULL DEFAULT current_timestamp()
 * `active` tinyint(4) NOT NULL DEFAULT 1
+    * KEY `K__histology_virus_id` (`virus_id`)
+    * KEY `K__histology_label_id` (`label_id`)
+    * KEY `K__histology_prep_id` (`prep_id`)
+    * CONSTRAINT `FK__histology_label_id` FOREIGN KEY (`label_id`) REFERENCES `organic_label` (`id`) ON UPDATE CASCADE
+    * CONSTRAINT `FK__histology_prep_id` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`) ON UPDATE CASCADE
+    * CONSTRAINT `FK__histology_virus_id` FOREIGN KEY (`virus_id`) REFERENCES `virus` (`id`) ON UPDATE CASCADE
 
 ### organic_label *this table is not being used at all*
 * `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
@@ -168,6 +193,10 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `comments` varchar(2001) DEFAULT NULL COMMENT 'assessment'
 * `created` timestamp NOT NULL DEFAULT current_timestamp()
 * `active` tinyint(4) NOT NULL DEFAULT 1
+    * KEY `K__label_id` (`label_id`)
+    * KEY `FK__injection_prep_id` (`prep_id`)
+    * CONSTRAINT `FK__injection_label_id` FOREIGN KEY (`label_id`) REFERENCES `organic_label` (`id`) ON UPDATE CASCADE
+    * CONSTRAINT `FK__injection_prep_id` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`)
 
 ### injection_virus
 * `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
@@ -175,6 +204,10 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `virus_id` int(11) NOT NULL
 * `created` timestamp NOT NULL DEFAULT current_timestamp()
 * `active` tinyint(4) NOT NULL DEFAULT 1
+    * KEY `K__IV_injection_id` (`injection_id`)
+    * KEY `K__IV_virus_id` (`virus_id`)
+    * CONSTRAINT `FK__IV_injection_id` FOREIGN KEY (`injection_id`) REFERENCES `injection` (`id`) ON UPDATE CASCADE
+    * CONSTRAINT `FK__IV_virus_id` FOREIGN KEY (`virus_id`) REFERENCES `virus` (`id`) ON UPDATE CASCADE
 
 ### virus
 * `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
@@ -215,6 +248,14 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `active` tinyint(1) DEFAULT NULL
 * `created` datetime(6) NOT NULL
 * `updated` timestamp NOT NULL DEFAULT current_timestamp()
+    * KEY `K__LDA_AID` (`prep_id`)
+    * KEY `K__LDA_SID` (`structure_id`)
+    * KEY `K__LDA_PID` (`person_id`)
+    * KEY `K__LDA_ITID` (`input_type_id`)
+    * CONSTRAINT `FK__LDA_AID` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`) ON UPDATE CASCADE
+    * CONSTRAINT `FK__LDA_ITID` FOREIGN KEY (`input_type_id`) REFERENCES `com_type` (`id`)
+    * CONSTRAINT `FK__LDA_PID` FOREIGN KEY (`person_id`) REFERENCES `auth_user` (`id`)
+    * CONSTRAINT `FK__LDA_STRID` FOREIGN KEY (`structure_id`) REFERENCES `structure` (`id`) ON UPDATE CASCADE
 
 ### structure 
 * `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
@@ -224,7 +265,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `hexadecimal` char(7) COLLATE utf8_bin DEFAULT NULL
 * `active` tinyint(1) NOT NULL
 * `created` datetime(6) NOT NULL
-
+    * KEY `K__S_ABBREV` (`abbreviation`)
 ### com_type 
 * `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `input_type` varchar(50) NOT NULL
@@ -232,7 +273,7 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `active` tinyint(1) NOT NULL DEFAULT 1
 * `created` datetime(6) NOT NULL
 * `updated` timestamp NOT NULL DEFAULT current_timestamp()
-
+    * KEY `K__CT_INID` (`input_type`)
 ### neuroglancer_urls
 * `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
 * `person_id` int(11) DEFAULT NULL
@@ -243,4 +284,30 @@ For a graphical (ERD) view of the database, click this [diagram](database.erd.pn
 * `user_date` varchar(25) DEFAULT NULL
 * `comments` varchar(255) DEFAULT NULL
 * `updated` timestamp NOT NULL DEFAULT current_timestamp()
+
+### `elastix_transformation`
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
+* `prep_id`  varchar(20) NOT NULL
+* `section`  char(3)
+* `rotation` float
+* `xshift`   float
+* `yshift`   float
+* `created`  timestamp NOT NULL current_timestamp()
+* `active`   tinyint(4)
+    * UNIQUE KEY `UK__ETR_prep_id_section` (`prep_id`,`section`)
+    * KEY `K__ETR_prepid` (`prep_id`)
+    * CONSTRAINT `FK__ETR_prepid` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`)
+
+### `file_log`
+* `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT
+* `prep_id`      varchar(20)                            
+* `progress_id`  int(11)                                
+* `filename`     varchar(255)                               
+* `active`       tinyint(1)                                
+* `created`      timestamp NOT NULL current_timestamp()                 
+    * UNIQUE KEY `UK__AID_PID_C_S` (`prep_id`,`progress_id`,`filename`)
+    * KEY `K__FILE_LOG_AID` (`prep_id`)
+    * KEY `K__FILE_LOG_PID` (`progress_id`)
+    * CONSTRAINT `FK__FILE_LOG_AID` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`) ON UPDATE CASCADE,
+    * CONSTRAINT `FK__FILE_LOG_PID` FOREIGN KEY (`progress_id`) REFERENCES `progress_lookup` (`id`) ON UPDATE CASCADE
 
