@@ -510,7 +510,6 @@ CREATE TABLE `neuroglancer_urls` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 
-
 --
 --  Engine tables - tables related to CVAT
 --
