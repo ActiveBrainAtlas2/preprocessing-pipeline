@@ -31,9 +31,14 @@ def get_all_ng_folders():
     animals = os.listdir(root_dir)
     ng_folders = []
     for animali in animals:
+        if animali == 'MD661':
+            continue
         folders = os.listdir(root_dir+'/'+animali)
         if 'neuroglancer_data' in folders:
             cloud_volumes = os.listdir(root_dir+'/'+animali+'/'+'neuroglancer_data')
+            cloud_volumes = [volumei for volumei in cloud_volumes  
+                                     if os.path.isdir(os.path.join(root_dir,animali,\
+                                         'neuroglancer_data',volumei))]
             ng_folders += [[animali,'neuroglancer_data',volumei] for volumei in cloud_volumes]
     return ng_folders
 
