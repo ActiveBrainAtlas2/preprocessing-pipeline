@@ -1,8 +1,13 @@
-from lib.sqlcontroller import SqlController
-from lib.UrlGenerator import UrlGenerator
-from collections import Counter
 import numpy as np
 import os
+import sys
+from pathlib import Path
+
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
+
+from lib.sqlcontroller import SqlController
+from lib.UrlGenerator import UrlGenerator
 
 controller = SqlController('DK55')
 id_list = controller.get_url_id_list()
@@ -21,10 +26,10 @@ def extract_active_ng_folders(image_layers):
 
 def sort_folders(active_folders):
     prep_ids = [folderi[0] for folderi in active_folders]
-    sorted = []
+    sorted_folders = []
     for prep_id in prep_ids:
-        sorted += [folders for folders in active_folders if prep_id == folders[0]]
-    return sorted
+        sorted_folders += [folders for folders in active_folders if prep_id == folders[0]]
+    return sorted_folders
 
 def get_all_ng_folders():
     root_dir = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
