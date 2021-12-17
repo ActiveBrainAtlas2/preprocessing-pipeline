@@ -34,7 +34,7 @@ def get_cpus():
     usecpus = (nmax,nmax)
     cpus = {}
     cpus['mothra'] = (1,1)
-    cpus['muralis'] = (16,40)
+    cpus['muralis'] = (10,20)
     cpus['basalis'] = (4,12)
     cpus['ratto'] = (4,8)
     hostname = get_hostname()
@@ -131,7 +131,7 @@ def get_last_2d(data):
     m,n = data.shape[-2:]
     return data.flat[:m*n].reshape(m,n)
 
-def make_tifs(animal, channel):
+def make_tifs(animal, channel,workers = 10):
     """
     This method will:
         1. Fetch the sections from the database
@@ -168,8 +168,6 @@ def make_tifs(animal, channel):
             continue
 
         commands.append(cmd)
-
-    _, workers = get_cpus()
     with Pool(workers) as p:
         p.map(workernoshell, commands)
 

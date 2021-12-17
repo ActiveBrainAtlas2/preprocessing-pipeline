@@ -28,4 +28,4 @@ class MeanImageCalculator(CellDetectorBase):
         return average
 
 if __name__ == '__main__':
-    calculator = MeanImageCalculator('DK55')
+    calculator = MeanImageCalculator('DK52')

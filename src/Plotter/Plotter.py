@@ -63,6 +63,28 @@ class Plotter:
         self.plot_3d_image_stack_on_axes(fig_and_axes,stack,axis = axis,vmin_and_max=vmin_and_max)
         self.show_according_to_setting()
 
+    def plot_3d_and_scatter(self,stack,annotation,axis = 0,vmin_and_max=None):
+        fig,ax = plt.subplots()
+        if axis !=0:
+            stack = np.swapaxes(stack,0,axis)
+        def _update_image(val):
+            current_section = slider.val
+            volume_plot.set_data(stack[int(current_section)])
+            stact_plot.set_offsets(annotation[int(current_section)].T)
+            fig.canvas.draw_idle()
+        mid_point = int(len(stack)/2)
+        if vmin_and_max is not None:
+            vmin,vmax = vmin_and_max
+            volume_plot = ax.imshow(stack[mid_point],vmin = vmin,vmax = vmax)
+            stact_plot = ax.scatter(annotation[mid_point][0],annotation[mid_point][1])
+        else:
+            volume_plot = ax.imshow(stack[mid_point],vmin = stack.min(),vmax = stack.max())
+            stact_plot = ax.scatter(annotation[mid_point][0],annotation[mid_point][1])
+        ax = plt.axes([0.25, 0.15, 0.65, 0.03])
+        slider = Slider(ax, 'index',0, stack.shape[0]-1, valinit=mid_point, valfmt='%d')
+        slider.on_changed(_update_image)
+        plt.show()
+
     def compare_contour_and_stack(self,contour,stack,axis = 2):
         if axis !=0:
             stack = np.swapaxes(stack,0,axis)

@@ -123,6 +123,11 @@ class SqlController(object):
         """
         return self.session.query(UrlModel).filter(UrlModel.id == ID).one()
 
+    def get_url_id_list(self):
+        urls = self.session.query(UrlModel).all()
+        ids = [url.id for url in urls]
+        return ids
+
     def get_sections(self, animal, channel):
         """
         The sections table is a view and it is already filtered by active and file_status = 'good'
@@ -164,7 +169,7 @@ class SqlController(object):
         """
         sections = self.session.query(Section.czi_file, Section.file_name, Section.scene_index,  Section.channel_index).distinct()\
             .filter(Section.prep_id == animal).filter(
-            Section.channel == channel) \
+            Section.channel == channel).all()
 
         return sections
 
@@ -290,7 +295,7 @@ class SqlController(object):
     def get_structures_dict(self):
         rows = self.session.query(Structure)\
             .filter(Structure.abbreviation != 'R')\
-            .filter(Structure.id < 52).filter(
+            .filter(Structure.is_structure ==1).filter(
             Structure.active.is_(True)).all()
         structures_dict = {}
         for structure in rows:

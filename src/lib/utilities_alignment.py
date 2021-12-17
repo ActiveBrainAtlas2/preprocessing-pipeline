@@ -7,13 +7,12 @@ Image.MAX_IMAGE_PIXELS = None
 import pickle
 import re
 from sqlalchemy.orm.exc import NoResultFound
-
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
 from model.elastix_transformation import ElastixTransformation
 from lib.sql_setup import session
-
-
+import tifffile as tiff
+from scipy.ndimage import affine_transform
 def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_filepath=None):
     """
     Args:
@@ -364,11 +363,15 @@ orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
 
 def process_image(file_key):
     index, infile, outfile, T = file_key
-    im1 = Image.open(infile)
-    im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
-    im2.save(outfile)
-
-    del im1, im2
+    T[:2,:2] = np.linalg.inv(T[:2,:2])
+    T[2:,:2] = np.linalg.inv(T[2:,:2])
+    # T = np.linalg.inv(T)
+    image = tiff.imread(infile)
+    image = affine_transform(image,T)
+    # im1 = Image.open(infile)
+    # im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
+    tiff.imsave(outfile, image)
+    del image
     return
 
 

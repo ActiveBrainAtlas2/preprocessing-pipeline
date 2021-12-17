@@ -44,8 +44,8 @@ class FileLocationManager(object):
     # def get_full_masked(self,channel = 1):
     #     return os.path.join(self.prep,f'CH{channel}','full_masked')
     
-    # def get_full_aligned(self,channel = 1):
-    #     return os.path.join(self.prep,f'CH{channel}','full_aligned')
+    def get_full_aligned(self,channel = 1):
+        return os.path.join(self.prep,f'CH{channel}','full_aligned')
         
     # def get_thumbnail_masked(self,channel = 1):
     #     return os.path.join(self.prep,f'CH{channel}', 'masks', 'thumbnail_masked')

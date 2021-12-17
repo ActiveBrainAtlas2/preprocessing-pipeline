@@ -9,14 +9,11 @@ class Assembler:
 
     def __init__(self):
         self.check_attributes(['volumes', 'structures', 'origins'])
-        self.initialize_origins_and_volumes()
 
     def initialize_origins_and_volumes(self):
         if not self.origins == {}:
             self.origins = np.array(list(self.origins.values()))
             self.volumes = list(self.volumes.values())
-            margin = np.array([s.shape for s in self.volumes]).max() + 100
-            self.origins = self.origins + margin
 
     def calculate_structure_boundary(self):
         shapes = np.array([s.shape for s in self.volumes])
@@ -44,6 +41,7 @@ class Assembler:
         return structure_to_id
 
     def assemble_all_structure_volume(self):
+        self.initialize_origins_and_volumes()
         structure_to_id = self.get_structure_dictionary()
         size = self.get_bounding_box()
         size = size + np.array([10, 10, 10])

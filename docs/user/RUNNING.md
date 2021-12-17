@@ -1,5 +1,6 @@
 ### Setup
-1. To install the software prerequisites, [look here.](README.md) Or use the installed virtual environment on ratto, basalis and muralis by running: 
+1. To install the software prerequisites, [look here.](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/SETUP.md) 
+Or use the installed virtual environment on ratto, basalis and muralis by running: 
 ```source /usr/local/share/pipeline/bin/activate```
 
 1. To run any of these commands at high resolution, prefix each command with `nohup`and end the command with `&`. That will make it run in the background and you can log out.
