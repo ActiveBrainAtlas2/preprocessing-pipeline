@@ -363,6 +363,9 @@ orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
 
 def process_image(file_key):
     index, infile, outfile, T = file_key
+    T[:2,:2] = np.linalg.inv(T[:2,:2])
+    T[2:,:2] = np.linalg.inv(T[2:,:2])
+    # T = np.linalg.inv(T)
     image = tiff.imread(infile)
     image = affine_transform(image,T)
     # im1 = Image.open(infile)

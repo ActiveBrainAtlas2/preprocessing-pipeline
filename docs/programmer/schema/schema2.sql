@@ -21,76 +21,40 @@
 
 -- Table structure for table `animal`
 --
-/*
- * 16-DEC-2021 SUMMARY (DUANE):
- * MODS FOR animal TABLE:
- * ADDED animal_id AS PRIMARY KEY
- * REMOVE prep_id AS PRIMARY KEY
- * [FIELD AND CONSTRAINT STILL EXIST FOR LEGACY COMPATIBILITY]
- *
- * REMOVE aliases_1, aliases_2, aliases_3, aliases_4, aliases_5 FIELDS
- * [NOTE: WILL NEED TO MIGRATE EXISTING DATA TO NEW alias TABLE]
- *
- * REMOVED vender FIELD
- * ADDED FK_vendorid FIELD
- * [CORRECTED SPELLING AND IS FOREIGN KEY TO vendors TABLE]
- *
- * REMOVED tissue_source FIELD
- * ADDED FK_tissue_source_id FIELD
- *
- * REMOVED performance_center FIELD
- * ADDED FK_performance_center_id FIELD
- * ---------------------------------------
- * NEW TABLES ADDED AT END OF DOCUMENT (EXCEPT FOR annotations_points, annotations_points_archive, archive_sets):
- * ADDED vendor TABLE WITH DEFAULT VALUES (LEGACY)
- * ADDED tissue_source TABLE WITH DEFAULT VALUES (LEGACY)
- * ADDED performance_center WITH DEFAULT VALUES (LEGACY)
- *   - OUTSTANDING TABLE CHANGES: scan_run, injection, histology
- * ADDED input_type TABLE (REPLACES com_type)
- * ADDED alias TABLE
- * ADDED animal_alias TABLE
- * ADDED annotations_points TABLE
- * ADDED annotations_points_archive TABLE
- * ADDED archive_sets TABLE
- * ---------------------------------------
- * RENAMED layer_data TABLE TO annotations_points
-*/
 
-
+DROP TABLE IF EXISTS `animal`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `animal` (
-  `animal_id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL COMMENT 'Name for lab animal, max 20 chars',
+  `prep_id` varchar(20) NOT NULL COMMENT 'Name for lab mouse/rat, max 20 chars',
+  `performance_center` enum('CSHL','Salk','UCSD','HHMI','Duke') DEFAULT NULL,
   `date_of_birth` date DEFAULT NULL COMMENT 'the mouse''s date of birth',
   `species` enum('mouse','rat') DEFAULT NULL,
   `strain` varchar(50) DEFAULT NULL,
   `sex` enum('M','F') DEFAULT NULL COMMENT '(M/F) either ''M'' for male, ''F'' for female',
   `genotype` varchar(100) DEFAULT NULL COMMENT 'transgenic description, usually "C57"; We will need a genotype table',
   `breeder_line` varchar(100) DEFAULT NULL COMMENT 'We will need a local breeding table',
+  `vender` enum('Jackson','Charles River','Harlan','NIH','Taconic') DEFAULT NULL,
   `stock_number` varchar(100) DEFAULT NULL COMMENT 'if not from a performance center',
+  `tissue_source` enum('animal','brain','slides') DEFAULT NULL,
   `ship_date` date DEFAULT NULL,
   `shipper` enum('FedEx','UPS') DEFAULT NULL,
   `tracking_number` varchar(100) DEFAULT NULL,
+  `aliases_1` varchar(100) DEFAULT NULL COMMENT 'names given by others, alternatives to prep-id. Should be refactored to a separate table because often no aliases and sometimes more than 5'
+  `aliases_2` varchar(100) DEFAULT NULL,
+  `aliases_3` varchar(100) DEFAULT NULL,
+  `aliases_4` varchar(100) DEFAULT NULL,
+  `aliases_5` varchar(100) DEFAULT NULL,
   `comments` varchar(2001) DEFAULT NULL COMMENT 'assessment',
   `active` tinyint(4) NOT NULL DEFAULT 1,
   `created` timestamp NULL DEFAULT current_timestamp(),
-  `FK_vendor_id` int(11),
-  `FK_tissue_source_id` int(11),
-  `FK_performance_center_id` int(11),
-  `FK_alias_id` int(11),
-  FOREIGN KEY (`FK_alias_id`) REFERENCES alias(`alias_id`),
-  FOREIGN KEY (`FK_vendor_id`) REFERENCES vendor(`vendor_id`),
-  FOREIGN KEY (`FK_tissue_source_id`) REFERENCES tissue_source(`tissue_source_id`),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
-  PRIMARY KEY (`animal_id`)
+  PRIMARY KEY (`prep_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
-
--- Table structure for table `structure`
---       /* Does not include the 3D shape information? */
---
-
+-- A list of 3D regions in the mouse brain
+-- Includes the 52 landmarks from the foundation brains.
 DROP TABLE IF EXISTS `structure`;
-/*   What is the role of this table does it store the 3D shape of the structures? *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `structure` (
@@ -98,18 +62,20 @@ CREATE TABLE `structure` (
   `abbreviation` varchar(25) COLLATE utf8_bin NOT NULL,
   `description` longtext COLLATE utf8_bin NOT NULL,
   `color` int(11) NOT NULL DEFAULT 100,
-  `hexadecimal` char(7) COLLATE utf8_bin DEFAULT NULL,
+  `hexadecimal` char(7) COLLATE utf8_bin DEFAULT NULL,   /** What is this for? */
   `active` tinyint(1) NOT NULL,
   `created` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `K__S_ABBREV` (`abbreviation`)
 ) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 -- Table structure for table `transformation`
---  /* Does this store transformations between stack, does */
--- /* not exist at this point. coordinates and atlas coordinates (both */
--- /* ways)? does it support different types of transformation? (rigid, affine,beta spline?) */
+--  /* YF: Does this store transformations between stack coordinates and atlas coordinates (both */
+-- /* ways)?
+--  YF: that we need is a blob that holds a pickle string that
+---  defined the type of transformation and the parameters of the transformation
 --
 
 DROP TABLE IF EXISTS `transformation`;
@@ -179,44 +145,13 @@ CREATE TABLE `histology` (
 ) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
--- Table structure for table `organic_label`
---
-
-DROP TABLE IF EXISTS `organic_label`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `organic_label` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `label_id` varchar(20) NOT NULL,
-  `label_type` enum('Cascade Blue','Chicago Blue','Alexa405','Alexa488','Alexa647','Cy2','Cy3','Cy5','Cy5.5','Cy7','Fluorescein','Rhodamine B','Rhodamine 6G','Texas Red','TMR') DEFAULT NULL,
-  `type_lot_number` varchar(20) DEFAULT NULL,
-  `type_tracer` enum('BDA','Dextran','FluoroGold','DiI','DiO') DEFAULT NULL,
-  `type_details` varchar(500) DEFAULT NULL,
-  `concentration` float NOT NULL DEFAULT 0 COMMENT '(µM) if applicable',
-  `excitation_1p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `excitation_1p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `excitation_2p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `excitation_2p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `lp_dichroic_cut` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `emission_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `emission_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `label_source` enum('','Invitrogen','Sigma','Thermo-Fisher') DEFAULT NULL,
-  `source_details` varchar(100) DEFAULT NULL,
-  `comments` varchar(2000) DEFAULT NULL COMMENT 'assessment',
-  `created` timestamp NOT NULL DEFAULT current_timestamp(),
-  `active` tinyint(4) NOT NULL DEFAULT 1,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
-
 
 --
 --  injection related tables
 --
 
 -- Table structure for table `injection`
---
+-- DK: organics can also be injected.
 
 DROP TABLE IF EXISTS `injection`;
 /* Describes the location and type of injected dyes and viruses */
@@ -303,6 +238,35 @@ CREATE TABLE `virus` (
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+-- Table structure for table `organic_label`
+-- Oraganics are labels that can be injected 
+
+DROP TABLE IF EXISTS `organic_label`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `organic_label` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `label_id` varchar(20) NOT NULL,
+  `label_type` enum('Cascade Blue','Chicago Blue','Alexa405','Alexa488','Alexa647','Cy2','Cy3','Cy5','Cy5.5','Cy7','Fluorescein','Rhodamine B','Rhodamine 6G','Texas Red','TMR') DEFAULT NULL,
+  `type_lot_number` varchar(20) DEFAULT NULL,
+  `type_tracer` enum('BDA','Dextran','FluoroGold','DiI','DiO') DEFAULT NULL,
+  `type_details` varchar(500) DEFAULT NULL,
+  `concentration` float NOT NULL DEFAULT 0 COMMENT '(µM) if applicable',
+  `excitation_1p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_1p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_2p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_2p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `lp_dichroic_cut` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `emission_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `emission_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `label_source` enum('','Invitrogen','Sigma','Thermo-Fisher') DEFAULT NULL,
+  `source_details` varchar(100) DEFAULT NULL,
+  `comments` varchar(2000) DEFAULT NULL COMMENT 'assessment',
+  `created` timestamp NOT NULL DEFAULT current_timestamp(),
+  `active` tinyint(4) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Annotation related tables   ---------------------------------------------------------
@@ -313,134 +277,40 @@ CREATE TABLE `virus` (
 --
 
 -- Table structure for table `layer_data`
+-- The name "layer_data should be changed"
 --  - main annotation table where the x,y,z data is stored
---
-
-
-/*
- * CHANGED TABLE NAME FROM layer_data TO annotations_points
- * RENAMED PRIMARY INDEX FROM id TO annotation_id [FOR CONSISTENCY]
- * RENAMED person_id TO FK_owner_id [ORG ANNOTATIONS CREATOR/OWNER]
- *
- * REMOVED:
- * KEY `K__LDA_AID` (`prep_id`) [REPLACED BY FK_animal_id TO REFERENCE animal TABLE]
- * KEY `K__LDA_PID` (`person_id`) [REPLACED BY FK_owner_id TO REFERENCE auth_user TABLE; NO SEPARATE INDEX]
- * KEY `K__LDA_ITID` (`input_type_id`) [NO SEPARATE INDEX]
- *
- * ANTICIPATED OPERATION:
- * 1) USER SAVES ANNOTATION POINTS IN NEUROGLANCER
- * 2) NEW ENTRY IN archive_set TABLE (PARENT 'archive_id' - 0 IF FIRST; UPDATE USER; TIMESTAMP )
- * 2) ALL CURRENT POINTS FOR USER ARE MOVED TO annotations_points_archive
- * 3) NEW POINTS ARE ADDED TO annotations_points
- *    - CONSIDERATIONS:
- *      A) IF LATENCY -> DB MODIFICATIONS MAY BE QUEUED AND MADE VIA CRON JOB (DURING OFF-PEAK)
- *      B) annotations_points_archive, archive_sets WILL NOT BE STORED ON LIVE DB
- */
-
+--   Where are the atlas COMs stored? **************************************************
 
 DROP TABLE IF EXISTS `layer_data`;
 /*   What is the role of this table *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-
-/* PREV TABLE TO STORE ANNOTATIONS POINTS (layer_data) */
-
--- CREATE TABLE `layer_data` (
---   `id` int(11) NOT NULL AUTO_INCREMENT,
---   `prep_id` varchar(20) NOT NULL,
---   `structure_id` int(11) NOT NULL comments 'either structure, point, or line',
---   `person_id` int(11) NOT NULL comments 'person that created the point',
---   `updated_by` int(11) DEFAULT NULL comments 'person that updated the row',
---   `input_type_id` int(11) NOT NULL DEFAULT 1 comments 'manual person, corrected person, detected computer',
---   `vetted` enum('yes','no') DEFAULT NULL comments 'good enough for public',
---   `layer` varchar(255) DEFAULT NULL comments 'freeform name/label the layer',
---   `x` float DEFAULT NULL,
---   `y` float DEFAULT NULL,
---   `section` float NOT NULL DEFAULT 0,
---   `active` tinyint(1) DEFAULT NULL comments 'old data gets marked inactive from Neuroglancer',
---   `created` datetime(6) NOT NULL comments 'when the row was created',
---   `updated` timestamp NOT NULL DEFAULT current_timestamp() comments 'auto timestamp',
---   PRIMARY KEY (`id`),
---   KEY `K__LDA_AID` (`prep_id`),
---   KEY `K__LDA_SID` (`structure_id`),
---   KEY `K__LDA_PID` (`person_id`),
---   KEY `K__LDA_ITID` (`input_type_id`),
---   CONSTRAINT `FK__LDA_AID` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`) ON UPDATE CASCADE,
---   CONSTRAINT `FK__LDA_ITID` FOREIGN KEY (`input_type_id`) REFERENCES `com_type` (`id`),
---   CONSTRAINT `FK__LDA_PID` FOREIGN KEY (`person_id`) REFERENCES `auth_user` (`id`),
---   CONSTRAINT `FK__LDA_STRID` FOREIGN KEY (`structure_id`) REFERENCES `structure` (`id`) ON UPDATE CASCADE
--- ) ENGINE=InnoDB AUTO_INCREMENT=15566 DEFAULT CHARSET=utf8;
-
-
-DROP TABLE IF EXISTS `annotations_points` ;
-CREATE TABLE `annotations_points` (
-  `point_id` INT(11) NOT NULL AUTO_INCREMENT,
-  `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
-  `layer` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
-  `x` FLOAT DEFAULT NULL,
-  `y` FLOAT DEFAULT NULL,
-  `section` FLOAT NOT NULL DEFAULT 0,
-  `prep_id` VARCHAR(20) NOT NULL COMMENT '*LEGACY COMPATABILITY*',
-  `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
-  `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
-  `FK_animal_id` INT(11) NOT NULL,
-  `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
-  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(animal_id) ON UPDATE CASCADE,
-  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(input_id),
-  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id) ON UPDATE CASCADE,
-  PRIMARY KEY (`point_id`)
-) ENGINE=INNODB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `annotations_points_archive`;
-CREATE TABLE `annotations_points_archive` (
-  `point_id` INT(11) NOT NULL,
-  `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
-  `layer` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
-  `x` FLOAT DEFAULT NULL,
-  `y` FLOAT DEFAULT NULL,
-  `section` FLOAT NOT NULL DEFAULT 0,
-  `prep_id` VARCHAR(20) NOT NULL COMMENT '*LEGACY COMPATABILITY*',
-  `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
-  `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
-  `FK_animal_id` INT(11) NOT NULL,
-  `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
-  `FK_archive_set_id` INT(11) NOT NULL,
-  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(animal_id),
-  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(input_id),
-  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id),
-  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(archive_id),
-  PRIMARY KEY (`point_id`)
-) ENGINE=INNODB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `archive_sets`;
-CREATE TABLE `archive_sets` (
- `archive_id` INT(11) NOT NULL,
- `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
- `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
- `FK_update_user_id` INT(11) DEFAULT NULL COMMENT 'person that updated the row',
- FOREIGN KEY (`FK_update_user_id`) REFERENCES auth_user(id),
- PRIMARY KEY (`archive_id`)
- ) ENGINE=INNODB DEFAULT CHARSET=utf8;
-
-/*
-* MODIFIED TIMESTAMP ON input_type TABLE [DEFAULT SPECIFICITY SUFFICIENT - NOT (6)]
-*/
-DROP TABLE IF EXISTS `input_type`;
-CREATE TABLE `input_type` (
-  `input_id` int(11) NOT NULL AUTO_INCREMENT,
-  `input_type` varchar(50) NOT NULL,
-  `description` varchar(255) DEFAULT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT 1,
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`input_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-INSERT INTO input_type (input_id, input_type) VALUES (1, 'manual person');
-INSERT INTO input_type (input_id, input_type) VALUES (2, 'corrected person');
-INSERT INTO input_type (input_id, input_type) VALUES (3, 'detected computer');
-
+CREATE TABLE `layer_data` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL,
+  `structure_id` int(11) NOT NULL comments 'either structure, point, or line   do we really want line here?',
+  `person_id` int(11) NOT NULL comments 'person that created the point',
+  `updated_by` int(11) DEFAULT NULL comments 'person that updated the row',
+  `input_type_id` int(11) NOT NULL DEFAULT 1 comments 'manual person, corrected person, detected computer',
+  `vetted` enum('yes','no') DEFAULT NULL comments 'good enough for public',
+  `layer` varchar(255) DEFAULT NULL comments 'freeform name/label the layer',
+  `x` float DEFAULT NULL,
+  `y` float DEFAULT NULL,
+  `section` float NOT NULL DEFAULT 0,
+  `active` tinyint(1) DEFAULT NULL comments 'old data gets marked inactive from Neuroglancer',
+  `created` datetime(6) NOT NULL comments 'when the row was created',
+  `updated` timestamp NOT NULL DEFAULT current_timestamp() comments 'auto timestamp',
+  PRIMARY KEY (`id`),
+  KEY `K__LDA_AID` (`prep_id`),
+  KEY `K__LDA_SID` (`structure_id`),
+  KEY `K__LDA_PID` (`person_id`),
+  KEY `K__LDA_ITID` (`input_type_id`),
+  CONSTRAINT `FK__LDA_AID` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`) ON UPDATE CASCADE,
+  CONSTRAINT `FK__LDA_ITID` FOREIGN KEY (`input_type_id`) REFERENCES `com_type` (`id`),
+  CONSTRAINT `FK__LDA_PID` FOREIGN KEY (`person_id`) REFERENCES `auth_user` (`id`),
+  CONSTRAINT `FK__LDA_STRID` FOREIGN KEY (`structure_id`) REFERENCES `structure` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=15566 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 -- Table structure for table `com_type`
 --  - should be renamed to input_type, lookup table of manual, detected, corrected
@@ -473,7 +343,7 @@ CREATE TABLE `com_type` (
 --
 
 --
---  Scanner related tables
+--  Zeiss Z1 Scanner related tables
 --
 
 -- Table structure for table `slide`
@@ -582,7 +452,7 @@ CREATE TABLE `scan_run` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 -- Table structure for table `elastix_transformation`
---
+-- Defines section to section alignment.
 
 DROP TABLE IF EXISTS `elastix_transformation`;
 /* What is this table *****/
@@ -638,7 +508,6 @@ CREATE TABLE `neuroglancer_urls` (
   CONSTRAINT `FK__NU_user_id` FOREIGN KEY (`person_id`) REFERENCES `auth_user` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=350 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
 
 
 --
@@ -1289,10 +1158,6 @@ CREATE TABLE `auth_permission` (
 -- Table structure for table `auth_user`
 --
 
-/* MOVING auth_user TO SEPARATE DATABASE MAY REQUIRE RESTRUCTURING THE FOREIGN KEYS ON annotation_points, annotations_points_archive, archive_sets TABLES
-* ALTERNATIVE MAY BE TO STORE TABLE JUST FOR SYNCHRONIZATION (BUT NOT ACTIVELY USED BY DJANGO) - CRON JOB CAN SYNC ON SCHEDULE
-*/
-
 DROP TABLE IF EXISTS `auth_user`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -1826,73 +1691,7 @@ CREATE TABLE `task_view` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-/* NEW TABLE: vendor */
-DROP TABLE IF EXISTS `vendor`;
-CREATE TABLE `vendor` (
-  `vendor_id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`vendor_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/* INSERT DEFAULTS */
-INSERT INTO vendor (vendor_id, name) VALUES (1, 'Jackson');
-INSERT INTO vendor (vendor_id, name) VALUES (2, 'Charles River');
-INSERT INTO vendor (vendor_id, name) VALUES (3, 'Harlan');
-INSERT INTO vendor (vendor_id, name) VALUES (4, 'NIH');
-INSERT INTO vendor (vendor_id, name) VALUES (5, 'Taconic');
 
-/* NEW TABLE: tissue_source */
-DROP TABLE IF EXISTS `tissue_source`;
-CREATE TABLE `tissue_source` (
-  `tissue_source_id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`tissue_source_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/* INSERT DEFAULTS */
-INSERT INTO tissue_source (tissue_source_id, name) VALUES (1, 'animal');
-INSERT INTO tissue_source (tissue_source_id, name) VALUES (2, 'brain');
-INSERT INTO tissue_source (tissue_source_id, name) VALUES (3, 'slides');
-
-/* NEW TABLE: performance_center */
-DROP TABLE IF EXISTS `performance_center`;
-CREATE TABLE `performance_center` (
-  `performance_center_id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`performance_center_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/* INSERT DEFAULTS */
-INSERT INTO performance_center (performance_center_id, name) VALUES (1, 'CSHL');
-INSERT INTO performance_center (performance_center_id, name) VALUES (2, 'Salk');
-INSERT INTO performance_center (performance_center_id, name) VALUES (3, 'UCSD');
-INSERT INTO performance_center (performance_center_id, name) VALUES (4, 'HHMI');
-INSERT INTO performance_center (performance_center_id, name) VALUES (5, 'Duke');
-
-/* NEW TABLE: input_type */
-DROP TABLE IF EXISTS `input_type`;
-CREATE TABLE `input_type` (
-  `input_id` int(11) NOT NULL AUTO_INCREMENT,
-  `input_type` varchar(50) NOT NULL,
-  `description` varchar(255) DEFAULT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT 1,
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`input_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/* INSERT DEFAULTS */
-INSERT INTO input_type (input_id, input_type) VALUES (1, 'manual person');
-INSERT INTO input_type (input_id, input_type) VALUES (2, 'corrected person');
-INSERT INTO input_type (input_id, input_type) VALUES (3, 'detected computer');
-
-/* NEW TABLE: ALIAS */
-DROP TABLE IF EXISTS `alias`;
-CREATE TABLE `alias` (
-  `alias_id` int(11) NOT NULL AUTO_INCREMENT,
-  `FK_animal_id` int(11),
-  `name` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`alias_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/* ADD CASCADING FOREIGN KEY */
-ALTER TABLE `alias`
-  ADD CONSTRAINT `alias_ibfk_1` FOREIGN KEY (`FK_animal_id`) REFERENCES `animal` (`animal_id`) ON DELETE CASCADE;
 
 --
 -- Final view structure for view `sections`

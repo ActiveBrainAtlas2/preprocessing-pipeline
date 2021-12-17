@@ -66,23 +66,23 @@ def parse_elastix(animal):
         transformation_to_previous_sec[i] = T
     
     
-    transformation_to_anchor_sec = {}
+    transformations = {}
     # Converts every transformation
     for moving_index in range(len(files)):
         if moving_index == midpoint:
-            transformation_to_anchor_sec[files[moving_index]] = np.eye(3)
+            transformations[files[moving_index]] = np.eye(3)
         elif moving_index < midpoint:
             T_composed = np.eye(3)
             for i in range(midpoint, moving_index, -1):
                 T_composed = np.dot(np.linalg.inv(transformation_to_previous_sec[i]), T_composed)
-            transformation_to_anchor_sec[files[moving_index]] = T_composed
+            transformations[files[moving_index]] = T_composed
         else:
             T_composed = np.eye(3)
             for i in range(midpoint + 1, moving_index + 1):
                 T_composed = np.dot(transformation_to_previous_sec[i], T_composed)
-            transformation_to_anchor_sec[files[moving_index]] = T_composed
+            transformations[files[moving_index]] = T_composed
 
-    return transformation_to_anchor_sec
+    return transformations
 
 
 
@@ -124,11 +124,11 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
     progress_id = sqlController.get_progress_id(downsample, channel, 'ALIGN')
     sqlController.set_task(animal, progress_id)
 
-    warp_transforms = create_downsampled_transforms(animal, transforms, downsample)
-    ordered_transforms = OrderedDict(sorted(warp_transforms.items()))
+    downsampled_transforms = create_downsampled_transforms(animal, transforms, downsample)
+    downsampled_transforms = OrderedDict(sorted(downsampled_transforms.items()))
     file_keys = []
     r90 = np.array([[0,-1,0],[1,0,0],[0,0,1]])
-    for i, (file, T) in enumerate(ordered_transforms.items()):
+    for i, (file, T) in enumerate(downsampled_transforms.items()):
         if allen:
             ROT_DIR = os.path.join(fileLocationManager.root, animal, 'rotations')
             rotfile = file.replace('tif', 'txt')

@@ -77,7 +77,9 @@ I am proposing the creation of five tables that will replace the current way of 
 |layer_type|string|'image','segmentation' or 'Annotation'|
 |post_fixing_json|json|all the flexible json fields|
 
-### Table3 Image Layers
+### Table3 Image Layers  
+**YF: is there support for variable transparency? 
+This is useful when creating layers with computer generated annotations, such as directionality maps.**
 |Column Name | data type | description|
 |--|--|--|
 |id|int|primary key|
@@ -92,6 +94,11 @@ I am proposing the creation of five tables that will replace the current way of 
 |source|string|address where the public layer is hosted|
 |(optional)||
 |lab|string|laboratory hosting the data|
+
+
+/* YF: I think we need to support: x,y,z (coms), contours and 3D meshes.
+/* there is no need for box, line or ellipsoid.
+/* There should be a separate table for each of the supported types of annotations.
 
 ### Table5 Annotation Layers
 |Column Name | data type | description|
@@ -113,6 +120,6 @@ I am proposing the creation of five tables that will replace the current way of 
 
 ### Steps to recreate a neuroglancer session:
  1. Get all entries in the Neuroglancer Layers table with a session_name.  The state_json field has the json file with an empty entry for the layers field
- 2. Search through the Neuroglancer Layers table and insert each layers accordingly
+ 2. Search through the Neuroglancer Layers table and insert each layers accordingly    /* YF: can the user choose the layers they want?
  3. For Image and Segmentation layers, get layer name from Neuroglancer Layers table, and source from the Image Layers or Segmentation Layers table and insert them into a template.  Then the postfixing json values are attached.  These could include the contract and color widget, current layer state etc.
  4. For Annotation layers points are collected by the combination of session and layer id.  Then a Annotation layer is created from a template
