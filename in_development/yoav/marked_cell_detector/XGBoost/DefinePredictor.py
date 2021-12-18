@@ -1,12 +1,12 @@
 from numpy import *
-from pylab import plot,legend
+from pylab import plot,legend,figure
 
 def points2line(p1,p2,i):
     x1,y1=p1
     x2,y2=p2
     a=(y1-y2)/(x1-x2)
     b=y1-a*x1
-    plotline(a,b,i)
+    #plotline(a,b,i)
     return a,b
 
 p=[[0,0.8],[2,2.5],[0,3.3],[-2,2.5],[-10,4],[10,4]]
