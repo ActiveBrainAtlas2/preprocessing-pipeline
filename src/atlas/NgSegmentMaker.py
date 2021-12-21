@@ -94,9 +94,9 @@ class AtlasNgMaker(Atlas,NgSegmentMaker):
 
 
 class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
-    def __init__(self,animal,debug = False,out_folder = 'animal_folder',threshold = 0.9):
+    def __init__(self,animal,debug = False,out_folder = 'animal_folder',threshold = 0.9, *args, **kwargs):
         BrainStructureManager.__init__(self,animal)
-        NgSegmentMaker.__init__(self, debug,out_folder=out_folder)
+        NgSegmentMaker.__init__(self, debug,out_folder=out_folder, *args, **kwargs)
         self.assembler = BrainAssembler(animal,threshold = threshold)
         self.resolution = self.get_animal_resolution()
     
