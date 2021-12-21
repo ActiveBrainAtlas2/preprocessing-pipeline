@@ -13,12 +13,11 @@ import cv2
 import numpy as np
 from tqdm import tqdm
 from scipy.ndimage.measurements import center_of_mass
-DOWNSAMPLE_FACTOR = 32
 from atlas.BrainStructureManager import BrainStructureManager
 
 class VolumeMaker(BrainStructureManager):
-    def __init__(self,animal):
-        super().__init__(animal)
+    def __init__(self,animal, *args, **kwargs):
+        BrainStructureManager.__init__(self,animal = animal, *args, **kwargs)
 
     def calculate_origin_COM_and_volume(self,contour_for_structurei,structurei):
         contour_for_structurei = self.sort_contours(contour_for_structurei)
@@ -50,20 +49,17 @@ class VolumeMaker(BrainStructureManager):
         self.volumes[structurei] = volume
 
     def compute_COMs_origins_and_volumes(self):
-        self.load_aligned_contours()
         for structurei in tqdm(self.structures):
             contours_of_structurei = self.aligned_contours[structurei]
             self.calculate_origin_COM_and_volume(contours_of_structurei,structurei)
         
     def show_steps(self):
-        # self.compare_point_dictionaries([self.COM,self.origins])
         self.plot_volume_stack()
     
     def sort_contours(self,contour_for_structurei):
-        sections = [int(structure) for structure in contour_for_structurei]
+        sections = [int(section) for section in contour_for_structurei]
         section_order = np.argsort(sections)
         keys = np.array(list(contour_for_structurei.keys()))[section_order]
-        # this throws a warning
         values = np.array(list(contour_for_structurei.values()), dtype=object)[section_order]
         return dict(zip(keys,values))
 
@@ -72,6 +68,7 @@ if __name__ == '__main__':
     animals = ['MD589','MD585', 'MD594']
     for animal in animals:
         volumemaker = VolumeMaker(animal)
+        volumemaker.load_aligned_contours()
         volumemaker.compute_COMs_origins_and_volumes()
         # volumemaker.show_steps()
         volumemaker.save_coms()

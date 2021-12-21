@@ -12,7 +12,7 @@ class Brain:
         self.path = FileLocationManager(animal)
         self.plotter = Plotter()
         self.attribute_functions = dict(COM=self.load_com)
-        to_um = 32 * self.get_resolution()
+        to_um = self.get_resolution()
         self.pixel_to_um = np.array([to_um, to_um, 20])
         self.um_to_pixel = 1 / self.pixel_to_um
     

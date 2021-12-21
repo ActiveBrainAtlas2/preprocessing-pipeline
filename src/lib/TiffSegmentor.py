@@ -6,6 +6,9 @@ from datetime import datetime
 from lib.utilities_process import workernoshell
 from lib.sqlcontroller import SqlController
 from cell_extractor.CellDetectorBase import CellDetectorBase
+from multiprocessing.pool import Pool
+import tqdm
+
 class TiffSegmentor(CellDetectorBase):
     def __init__(self,animal):
         super().__init__(animal,0)
@@ -34,7 +37,7 @@ class TiffSegmentor(CellDetectorBase):
         self.channel = channel
         os.path.join(self.path.prep)
         self.tif_directory = self.path.get_full_aligned(self.channel)
-        self.save_directory = self.DATA_DIR + f'/CH{self.channel}/'
+        self.save_directory = self.ANIMAL_PATH + f'/CH{self.channel}/'
         if not os.path.exists(self.save_directory):
             os.mkdir(self.save_directory)
         self.get_save_folders(self.save_directory)
@@ -43,7 +46,9 @@ class TiffSegmentor(CellDetectorBase):
                 os.mkdir(save_folder)
 
     def generate_tiff_segments(self,channel,create_csv=False):
+        print(f'generate segment for channel: {channel}')
         self.create_directories_for_channeli(channel)
+        commands = []
         for save_folder in self.save_folders:
             filei = '/'+save_folder[-3:]+'.tif'
             file_name = save_folder[-3:]
@@ -57,8 +62,11 @@ class TiffSegmentor(CellDetectorBase):
             cmd = [f'convert', self.tif_directory + filei, '-compress', 'LZW', '-crop', 
             f'{self.ncol}x{self.nrow}-0-0@', '+repage', '+adjoin', 
             f'{save_folder}/{file_name}tile-%d.tif']
-            print(' '.join(cmd))
-            workernoshell(cmd)
+            commands.append(cmd)
+        workers = 1
+        with Pool(workers) as p:
+            for _ in tqdm.tqdm(p.map(workernoshell, commands), total=len(commands)):
+                pass
     
     def have_csv_in_path(self,path):
         files = os.listdir(path)

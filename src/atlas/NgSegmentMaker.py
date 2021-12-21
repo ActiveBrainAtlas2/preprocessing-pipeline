@@ -53,8 +53,7 @@ class NgSegmentMaker:
     
     def get_animal_resolution(self):
         resolution = self.get_resolution()
-        SCALE = 32
-        return int(resolution * SCALE * 1000)
+        return int(resolution * self.DOWNSAMPLE_FACTOR * 1000)
     
     def reset_output_path(self):
         if os.path.exists(self.OUTPUT_DIR):
@@ -84,8 +83,8 @@ class NgSegmentMaker:
 
 class AtlasNgMaker(Atlas,NgSegmentMaker):
     def __init__(self,atlas_name,debug = False,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0,offset = None):
-        NgSegmentMaker.__init__(self, debug,out_folder=out_folder,offset=offset)
         Atlas.__init__(self,atlas_name)
+        NgSegmentMaker.__init__(self, debug,out_folder=out_folder,offset=offset)
         self.assembler = AtlasAssembler(atlas_name, threshold=threshold,sigma = sigma)
         self.resolution = self.get_atlas_resolution()
     
@@ -96,14 +95,14 @@ class AtlasNgMaker(Atlas,NgSegmentMaker):
 
 class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
     def __init__(self,animal,debug = False,out_folder = 'animal_folder',threshold = 0.9):
-        NgSegmentMaker.__init__(self, debug,out_folder=out_folder)
         BrainStructureManager.__init__(self,animal)
+        NgSegmentMaker.__init__(self, debug,out_folder=out_folder)
         self.assembler = BrainAssembler(animal,threshold = threshold)
         self.resolution = self.get_animal_resolution()
     
     def create_brain_neuroglancer(self):
-        atlas_volume = maker.assembler.combined_volume
-        maker.create_neuroglancer_files(atlas_volume)
+        atlas_volume = self.assembler.combined_volume
+        self.create_neuroglancer_files(atlas_volume)
 
 if __name__ == '__main__':
     atlas = 'atlasV8'

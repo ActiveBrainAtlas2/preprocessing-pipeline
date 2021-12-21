@@ -112,25 +112,25 @@ def gen_decision():
     return decision
 
 #classification rule
-bst_list=read_classifier('/data/cell_segmentation/BoostedTrees.pkl')
+classifier=read_classifier('/data/cell_segmentation/BoostedTrees.pkl')
 decision=gen_decision()
 
 #feature data and scores
-full_df=read_csv_files('/data/cell_segmentation/DK55/CH3/*/puntas_*.csv')
-scores=calculate_scores(full_df,bst_list)
-full_df=calc_score_stats(scores,full_df)
+features=read_csv_files('/data/cell_segmentation/DK55/CH3/*/puntas_*.csv')
+scores=calculate_scores(features,classifier)
+stats=calc_score_stats(scores,features)
 
 predictions=[]
-for i,row in full_df.iterrows():
-    p=decision(float(row['mean_score']),float(row['std_score']))
-    predictions.append(p)
+for i,row in stats.iterrows():
+    prediction=decision(float(row['mean_score']),float(row['std_score']))
+    predictions.append(prediction)
     if i %100==0:
         print('\r%d'%i,end='')
-full_df['predictions']=predictions
+stats['predictions']=predictions
 
 DATA_DIR='/data/cell_segmentation'
 
-detection_df=full_df[full_df['predictions']!=-2]
+detection_df=stats[stats['predictions']!=-2]
 detection_df = detection_df[['animal', 'section', 'row', 'col','label', 'mean_score',
        'std_score', 'predictions']]
 detection_df.to_csv(DATA_DIR+'/detections_DK55.2.csv',index=False)

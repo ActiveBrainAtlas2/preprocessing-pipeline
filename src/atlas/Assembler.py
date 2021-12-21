@@ -141,8 +141,8 @@ class CustomAssembler(Brain, VolumeUtilities, Assembler):
 
 class BrainAssembler(BrainStructureManager, Assembler):
 
-    def __init__(self, animal, threshold):
-        BrainStructureManager.__init__(self, animal)
+    def __init__(self, animal, threshold, *args, **kwargs):
+        BrainStructureManager.__init__(self, animal, *args, **kwargs)
         self.load_volumes()
 
         Assembler.__init__(self)
