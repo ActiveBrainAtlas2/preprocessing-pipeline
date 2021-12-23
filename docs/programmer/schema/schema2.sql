@@ -40,7 +40,7 @@ CREATE TABLE `animal` (
   `ship_date` date DEFAULT NULL,
   `shipper` enum('FedEx','UPS') DEFAULT NULL,
   `tracking_number` varchar(100) DEFAULT NULL,
-  `aliases_1` varchar(100) DEFAULT NULL COMMENT 'names given by others',
+  `aliases_1` varchar(100) DEFAULT NULL COMMENT 'names given by others, alternatives to prep-id. Should be refactored to a separate table because often no aliases and sometimes more than 5'
   `aliases_2` varchar(100) DEFAULT NULL,
   `aliases_3` varchar(100) DEFAULT NULL,
   `aliases_4` varchar(100) DEFAULT NULL,
@@ -52,12 +52,9 @@ CREATE TABLE `animal` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
--- Table structure for table `structure`
---       /* Does not include the 3D shape information? */
---
-
+-- A list of 3D regions in the mouse brain
+-- Includes the 52 landmarks from the foundation brains.
 DROP TABLE IF EXISTS `structure`;
-/*   What is the role of this table does it store the 3D shape of the structures? *****/
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `structure` (
@@ -65,18 +62,20 @@ CREATE TABLE `structure` (
   `abbreviation` varchar(25) COLLATE utf8_bin NOT NULL,
   `description` longtext COLLATE utf8_bin NOT NULL,
   `color` int(11) NOT NULL DEFAULT 100,
-  `hexadecimal` char(7) COLLATE utf8_bin DEFAULT NULL,
+  `hexadecimal` char(7) COLLATE utf8_bin DEFAULT NULL,   /** What is this for? */
   `active` tinyint(1) NOT NULL,
   `created` datetime(6) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `K__S_ABBREV` (`abbreviation`)
 ) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 -- Table structure for table `transformation`
---  /* Does this store transformations between stack, does */
--- /* not exist at this point. coordinates and atlas coordinates (both */
--- /* ways)? does it support different types of transformation? (rigid, affine,beta spline?) */
+--  /* YF: Does this store transformations between stack coordinates and atlas coordinates (both */
+-- /* ways)?
+--  YF: that we need is a blob that holds a pickle string that
+---  defined the type of transformation and the parameters of the transformation
 --
 
 DROP TABLE IF EXISTS `transformation`;
@@ -146,44 +145,13 @@ CREATE TABLE `histology` (
 ) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
--- Table structure for table `organic_label`
---
-
-DROP TABLE IF EXISTS `organic_label`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `organic_label` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `label_id` varchar(20) NOT NULL,
-  `label_type` enum('Cascade Blue','Chicago Blue','Alexa405','Alexa488','Alexa647','Cy2','Cy3','Cy5','Cy5.5','Cy7','Fluorescein','Rhodamine B','Rhodamine 6G','Texas Red','TMR') DEFAULT NULL,
-  `type_lot_number` varchar(20) DEFAULT NULL,
-  `type_tracer` enum('BDA','Dextran','FluoroGold','DiI','DiO') DEFAULT NULL,
-  `type_details` varchar(500) DEFAULT NULL,
-  `concentration` float NOT NULL DEFAULT 0 COMMENT '(µM) if applicable',
-  `excitation_1p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `excitation_1p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `excitation_2p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `excitation_2p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `lp_dichroic_cut` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `emission_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `emission_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `label_source` enum('','Invitrogen','Sigma','Thermo-Fisher') DEFAULT NULL,
-  `source_details` varchar(100) DEFAULT NULL,
-  `comments` varchar(2000) DEFAULT NULL COMMENT 'assessment',
-  `created` timestamp NOT NULL DEFAULT current_timestamp(),
-  `active` tinyint(4) NOT NULL DEFAULT 1,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
-
 
 --
 --  injection related tables
 --
 
 -- Table structure for table `injection`
---
+-- DK: organics can also be injected.
 
 DROP TABLE IF EXISTS `injection`;
 /* Describes the location and type of injected dyes and viruses */
@@ -270,6 +238,35 @@ CREATE TABLE `virus` (
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+-- Table structure for table `organic_label`
+-- Oraganics are labels that can be injected 
+
+DROP TABLE IF EXISTS `organic_label`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `organic_label` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `label_id` varchar(20) NOT NULL,
+  `label_type` enum('Cascade Blue','Chicago Blue','Alexa405','Alexa488','Alexa647','Cy2','Cy3','Cy5','Cy5.5','Cy7','Fluorescein','Rhodamine B','Rhodamine 6G','Texas Red','TMR') DEFAULT NULL,
+  `type_lot_number` varchar(20) DEFAULT NULL,
+  `type_tracer` enum('BDA','Dextran','FluoroGold','DiI','DiO') DEFAULT NULL,
+  `type_details` varchar(500) DEFAULT NULL,
+  `concentration` float NOT NULL DEFAULT 0 COMMENT '(µM) if applicable',
+  `excitation_1p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_1p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_2p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_2p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `lp_dichroic_cut` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `emission_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `emission_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `label_source` enum('','Invitrogen','Sigma','Thermo-Fisher') DEFAULT NULL,
+  `source_details` varchar(100) DEFAULT NULL,
+  `comments` varchar(2000) DEFAULT NULL COMMENT 'assessment',
+  `created` timestamp NOT NULL DEFAULT current_timestamp(),
+  `active` tinyint(4) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Annotation related tables   ---------------------------------------------------------
@@ -280,8 +277,9 @@ CREATE TABLE `virus` (
 --
 
 -- Table structure for table `layer_data`
+-- The name "layer_data should be changed"
 --  - main annotation table where the x,y,z data is stored
---
+--   Where are the atlas COMs stored? **************************************************
 
 DROP TABLE IF EXISTS `layer_data`;
 /*   What is the role of this table *****/
@@ -290,7 +288,7 @@ DROP TABLE IF EXISTS `layer_data`;
 CREATE TABLE `layer_data` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `prep_id` varchar(20) NOT NULL,
-  `structure_id` int(11) NOT NULL comments 'either structure, point, or line',
+  `structure_id` int(11) NOT NULL comments 'either structure, point, or line   do we really want line here?',
   `person_id` int(11) NOT NULL comments 'person that created the point',
   `updated_by` int(11) DEFAULT NULL comments 'person that updated the row',
   `input_type_id` int(11) NOT NULL DEFAULT 1 comments 'manual person, corrected person, detected computer',
@@ -345,7 +343,7 @@ CREATE TABLE `com_type` (
 --
 
 --
---  Scanner related tables
+--  Zeiss Z1 Scanner related tables
 --
 
 -- Table structure for table `slide`
@@ -454,7 +452,7 @@ CREATE TABLE `scan_run` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 -- Table structure for table `elastix_transformation`
---
+-- Defines section to section alignment.
 
 DROP TABLE IF EXISTS `elastix_transformation`;
 /* What is this table *****/
@@ -510,7 +508,6 @@ CREATE TABLE `neuroglancer_urls` (
   CONSTRAINT `FK__NU_user_id` FOREIGN KEY (`person_id`) REFERENCES `auth_user` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=350 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
 
 
 --

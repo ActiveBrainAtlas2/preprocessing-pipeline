@@ -16,14 +16,19 @@ class CellDetectorBase(Brain):
         self.ncol = 2
         self.nrow = 5
         self.section = section
-        self.DATA_DIR = f"/data/cell_segmentation/{self.animal}"
-        self.AVERAGE_CELL_IMAGE_DIR = os.path.join(self.DATA_DIR,'average_cell_image.pkl')
-        self.TILE_INFO_DIR = os.path.join(self.DATA_DIR,'tile_info.csv')
-        os.makedirs(self.DATA_DIR,exist_ok = True)
-        self.CH3 = os.path.join(self.DATA_DIR,"CH3")
-        self.CH1 = os.path.join(self.DATA_DIR,"CH1")
+        self.DATA_PATH = "/data/cell_segmentation/"
+        self.ANIMAL_PATH = os.path.join(self.DATA_PATH,self.animal)
+        self.AVERAGE_CELL_IMAGE_DIR = os.path.join(self.ANIMAL_PATH,'average_cell_image.pkl')
+        self.TILE_INFO_DIR = os.path.join(self.ANIMAL_PATH,'tile_info.csv')
+        os.makedirs(self.ANIMAL_PATH,exist_ok = True)
+        self.CH3 = os.path.join(self.ANIMAL_PATH,"CH3")
+        self.CH1 = os.path.join(self.ANIMAL_PATH,"CH1")
         self.CH3_SECTION_DIR=os.path.join(self.CH3,f"{self.section:03}")
         self.CH1_SECTION_DIR=os.path.join(self.CH1,f"{self.section:03}")
+        if hasattr(self, 'version'):
+            csv_name = 'detections_'+self.animal+'.'+str(self.version)+'.csv'
+            self.DETECTION_RESULT_DIR = os.path.join(self.ANIMAL_PATH,csv_name)
+        self.CLASSIFIER_PATH = os.path.join(self.DATA_PATH,'BoostedTrees.pkl')
         self.get_tile_and_image_dimensions()
         self.get_tile_origins()
         self.check_tile_information()

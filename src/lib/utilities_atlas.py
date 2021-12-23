@@ -33,7 +33,7 @@ REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CS
 
 MESH_DIR = os.path.join(DATA_PATH, 'CSHL_meshes')
 VOL_DIR = os.path.join(DATA_PATH, 'CSHL', 'CSHL_volumes')
-ATLAS = 'atlasV8'
+ATLAS = 'AtlasV8'
 paired_structures = ['5N', '6N', '7N', '7n', 'Amb',
                      'LC', 'LRt', 'Pn', 'Tz', 'VLL', 'RMC',
                      'SNC', 'SNR', '3N', '4N', 'Sp5I',

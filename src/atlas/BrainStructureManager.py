@@ -7,30 +7,35 @@ from Brain import Brain
 from atlas.VolumeUtilities import VolumeUtilities
 from lib.utilities_atlas_lite import volume_to_polygon
 from lib.utilities_atlas_lite import save_mesh
-
-
+import xml.etree.ElementTree as ET
+from collections import defaultdict
 class BrainStructureManager(Brain, VolumeUtilities):
 
-    def __init__(self, animal):
+    def __init__(self, animal,atlas = ATLAS,downsample_factor = 32):
         Brain.__init__(self, animal)
         self.origins = {}
         self.COM = {}
         self.volumes = {}
         self.aligned_contours = {}
         self.thresholded_volumes = {}
+        self.atlas = atlas
         self.set_path_and_create_folders()
         self.attribute_functions = dict(
             origins=self.load_origins,
             volumes=self.load_volumes,
             aligned_contours=self.load_aligned_contours,
             structures=self.set_structure, **self.attribute_functions)
+        self.DOWNSAMPLE_FACTOR = downsample_factor
+        to_um = self.DOWNSAMPLE_FACTOR * self.get_resolution()
+        self.pixel_to_um = np.array([to_um, to_um, 20])
+        self.um_to_pixel = 1 / self.pixel_to_um
 
     def set_structure(self):
         possible_attributes_with_structure_list = ['origins', 'COM', 'volumes', 'thresholded_volumes', 'aligned_contours']
         self.set_structure_from_attribute(possible_attributes_with_structure_list)
     
     def set_path_and_create_folders(self):
-        self.animal_directory = os.path.join(DATA_PATH, 'atlas_data', ATLAS, self.animal)
+        self.animal_directory = os.path.join(DATA_PATH, 'atlas_data', self.atlas, self.animal)
         self.original_contour_path = os.path.join(self.animal_directory, 'original_structures.json')
         self.padded_contour_path = os.path.join(self.animal_directory, 'unaligned_padded_structures.json')
         self.align_and_padded_contour_path = os.path.join(self.animal_directory, 'aligned_padded_structures.json')
@@ -56,9 +61,12 @@ class BrainStructureManager(Brain, VolumeUtilities):
     
     def load_aligned_contours(self):
         with open(self.align_and_padded_contour_path) as f:
-            self.aligned_contours = json.load(f)
-        self.structures = list(self.aligned_contours.keys())        
-    
+            self.set_aligned_contours(json.load(f))
+
+    def set_aligned_contours(self,contours):
+        self.aligned_contours = contours
+        self.structures = list(self.aligned_contours.keys())  
+
     def save_contours(self):
         assert(hasattr(self, 'original_structures'))
         assert(hasattr(self, 'centered_structures'))
@@ -155,4 +163,23 @@ class BrainStructureManager(Brain, VolumeUtilities):
         height = self.sqlController.scan_run.height // 32
         depth = self.sqlController.get_section_count(self.fixed_brain.animal)
         self.fixed_brain_center = np.array([width // 2, height // 2, depth // 2])
+    
+    def load_contours_from_cvat_xml(self,xml_path):
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        image_layers = [childi for childi in root if childi.tag =='image']
+        contours = defaultdict(dict)
+        for imagei in image_layers:
+            section_name = imagei.attrib['name'].split('.')[0]
+            section_contour = defaultdict(list)
+            polygons = [childi for childi in imagei if childi.tag =='polygon']
+            for polygoni in polygons:
+                if polygoni.tag == 'polygon':
+                    structure = polygoni.attrib['label']
+                    points = polygoni.attrib['points'].split(';')
+                    points = np.array([pointi.split(',') for pointi in points]).astype(float)
+                    section_contour[structure].append(points)
+            for structurei in section_contour:
+                contours[structurei][section_name] = np.vstack(section_contour[structurei])
+        return contours
 

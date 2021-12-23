@@ -4,11 +4,15 @@
 1. git clone this repository, create a virtual environment in our standard location 
 and install the required packages:
     ```bash
+    sudo apt install build-essential
+    sudo apt install libmysqlclient-dev
+    sudo apt install python3-dev
     git clone git@github.com:ActiveBrainAtlas2/preprocessing-pipeline.git
     sudo python3 -m venv /usr/local/share/pipeline
     sudo chown -R $(id -u):$(id -g) /usr/local/share/pipeline
     cd preprocessing-pipeline
     source /usr/local/share/pipeline/bin/activate
+    pip install -U pip
     cd ..
     git clone git@github.com:ActiveBrainAtlas2/abakit.git
     cd abakit

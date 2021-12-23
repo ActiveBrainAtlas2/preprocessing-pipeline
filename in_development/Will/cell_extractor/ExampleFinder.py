@@ -41,8 +41,6 @@ class ExampleFinder(CellDetectorBase):
                     cloest_segment_id,labelx,labely = self.find_cloest_connected_segment_to_manual_labeli(labeli)
                     self.is_possitive_segment[cloest_segment_id]=1
                     self.positive_segment_locations[cloest_segment_id,:]=[labelx,labely]
-                # print('tile=%d positives=%d, unmatched (size=%d):\n '%(tile,sum(self.is_possitive_segment),
-                # len(self.labels_with_no_matching_segments)),self.labels_with_no_matching_segments)
             tilei_examples=self.get_examples(tile)
             self.Examples.append(tilei_examples)
 

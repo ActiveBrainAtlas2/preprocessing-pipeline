@@ -4,10 +4,11 @@
 
 1. Contour-sequence: a sequence of 2D polygons, one per section, in
 stack coordinates. This modality supports drawing contours on
-sections, and creating/updating contours by user.
+sections, and creating/updating contours.
 
 2. 3d blob: a representation of the 3D shape of the structure in
-atlas coordinates, currently stored as a voxel map in a numpy
+atlas coordinates. For example a 3D blob can be a particular 
+landmark in the atlas.currently stored as a voxel map in a numpy
 array. The 3D blob can be exported as a 3D mesh, or as
 a contour sequence to be displayed on the sections.
 
@@ -33,22 +34,24 @@ concensus, smoothing, and generating a 3D blob (using single
 voxels as the unit for large structures consumes memory and time, we
 can do better by combining small and large cubes to make the shape).
 
-The 3D blobs, together with the points (coms) are  the most valuable
-data to be shared using mindsharer. Version control here is critical
+The 3D blobs, together with the points (coms) are  some of the most valuable
+data to be shared using BrainSharer. Version control here is critical
 as over time people would add/alter shapes.
 
 Given a stack and the coordinate transformation between the stack and
-the atlas the 3D blobs are transformed to stack coordinates and the
+the atlas, the 3D blobs are transformed to stack coordinates and
 sliced to create the contours to be drawn on the sections. 
+
+Another transformation takes the 3D structure and makes it into a mesh
+that can be viewed in neuroglancer in 3D.
 
 [This approach transforms the atlas to the stack, rather than transforming the stack to the atlas, which is currently used and causes "striping" of the images.]
 
-
-### Tables
+### Suggested New Tables
 
 ##### Contour sequence table
 1. Contour Sequence ID
-1. Brain  
+1. prep_id
 1. Transformation  
 1. generator (user_ID or ID of 3d-blob)  
 1. name of 3D shape (Should probably have a table for these names, to
@@ -60,9 +63,9 @@ ensure consistency)
 1. ID,
 1. Contour sequence ID
 1. Section index
-1. polygon (blob, json or pickle)
+1. polygon (blob, pickle)
 
-##### 3D 
+##### 3D blob
 
 1. ID
 1. Shape name (pointer to a table of shape names, including structures

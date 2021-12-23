@@ -364,11 +364,12 @@ orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
 def process_image(file_key):
     index, infile, outfile, T = file_key
     image = tiff.imread(infile)
-    image = affine_transform(image,T)
-    # im1 = Image.open(infile)
-    # im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
-    tiff.imsave(outfile, image)
-    del image
+    matrix = T[:2,:2]
+    offset = T[:2,2]
+    offset = np.flip(offset)
+    image1 = affine_transform(image,matrix.T,offset)
+    tiff.imsave(outfile,image1)
+    del image,image1
     return
 
 

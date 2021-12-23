@@ -59,8 +59,6 @@ CREATE TABLE `account_emailconfirmation` (
 -- Table structure for table `animal`
 --
 
-/* AH - What is the animal field for? We need a species column. */
-
 DROP TABLE IF EXISTS `animal`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -81,9 +79,6 @@ CREATE TABLE `animal` (
 -- Table structure for table `annotations_point_archive`
 --
 
-/* AH - replace name of field "section" with "z". The idea of a section is specific to slice histology. */
-/* AH - why do we need both annotations_point_archive and annotations_points tables? 
-/* AH - What do the following fields mean: "layer", "archive_set_id", "input_type", "owner_id", "structure_id" */
 DROP TABLE IF EXISTS `annotations_point_archive`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -145,7 +140,6 @@ CREATE TABLE `annotations_points` (
 -- Table structure for table `archive_set`
 --
 
-/* What is this table for? */
 DROP TABLE IF EXISTS `archive_set`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -405,15 +399,8 @@ CREATE TABLE `django_site` (
 -- Table structure for table `injection`
 --
 
-/* AH - need to specify units of injection volume, e.g. microliters like
-injection_volume -> injection_volume_ul 
-- what is the "location" field for? Is that brain area?
-That depends on the reference atlas that is being used, 
-so also need a column for the name of the atlas being used
-*/
-
 DROP TABLE IF EXISTS `injection`;
-/*!40101 SET @saved_cs_client     =  @@character_set_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `injection` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -465,8 +452,6 @@ CREATE TABLE `injection_virus` (
 -- Table structure for table `input_type`
 --
 
-/* AH - What does this table represent? */ 
-
 DROP TABLE IF EXISTS `input_type`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -484,7 +469,6 @@ CREATE TABLE `input_type` (
 --
 -- Table structure for table `neuroglancer_state`
 --
-
 
 DROP TABLE IF EXISTS `neuroglancer_state`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -612,23 +596,9 @@ CREATE TABLE `socialaccount_socialtoken` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
-
-/* AH - I suggest we add a table for brain atlases like so: */
-
-CREATE TABLE `brain_atlas` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `atlas_name` varchar(64) NOT NULL,
-  `description` longtext NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
-
 --
 -- Table structure for table `structure`
 --
-/* AH - I assume this is for brain regions. 
-If so, I suggest renaming it to brain_region.
-We also need to add a foreign key to the id field of the brain_atlas table.
-That is because each structure is part of a specific atlas.  */ 
 
 DROP TABLE IF EXISTS `structure`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
