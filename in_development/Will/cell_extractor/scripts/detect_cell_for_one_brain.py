@@ -15,7 +15,7 @@ info = DKLabInformation
 #     detector = CellDetector(braini)
 #     detector.calculate_and_save_detection_results()
 
-braini = 'DK41'
+braini = 'DK54'
 print('starting cell detection for ' + braini)
 segmentor = TiffSegmentor(braini)
 segmentor.generate_tiff_segments(channel = 1,create_csv = False)

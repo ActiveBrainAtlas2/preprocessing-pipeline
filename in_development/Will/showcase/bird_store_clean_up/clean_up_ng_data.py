@@ -3,7 +3,7 @@ from lib.UrlGenerator import UrlGenerator
 from collections import Counter
 import numpy as np
 import os
-from lib.utility_process import workernoshell
+from lib.utilities_process import workernoshell
 
 controller = SqlController('DK55')
 id_list = controller.get_url_id_list()
@@ -58,6 +58,7 @@ def get_active_folders():
     active_folders = sort_folders(active_folders)
     return active_folders
 
+root_dir = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
 ng_folders = get_all_ng_folders()
 active_folders = get_active_folders()
 inactive_folders = [folder for folder in ng_folders if folder not in active_folders]
@@ -65,4 +66,4 @@ for folderi in inactive_folders:
     # cmd = ['rm','-rf',folderi]
     # workernoshell(cmd)
     print(folderi)
-print('done')
+Sprint('done')
