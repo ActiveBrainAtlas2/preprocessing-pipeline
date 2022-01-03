@@ -18,6 +18,7 @@ class TiffSegmentor(CellDetectorBase):
         Ed = 1
         Beth = 2
         Hannah = 3
+        self.person_id =None
         for person_id in [Beth,Hannah,Ed]:
             search_dictionary = {'prep_id':self.animal,'input_type_id':1,'person_id':person_id,'layer':'Premotor'}
             has_annotation = self.sqlController.get_layer_data(search_dictionary)
@@ -53,7 +54,8 @@ class TiffSegmentor(CellDetectorBase):
             filei = '/'+save_folder[-3:]+'.tif'
             file_name = save_folder[-3:]
             if create_csv:
-                self.create_sectioni_csv(save_folder,int(file_name))
+                if self.person_id != None:
+                    self.create_sectioni_csv(save_folder,int(file_name))
                 if len(os.listdir(save_folder)) >= 10:
                     continue
             else:
@@ -63,7 +65,8 @@ class TiffSegmentor(CellDetectorBase):
             f'{self.ncol}x{self.nrow}-0-0@', '+repage', '+adjoin', 
             f'{save_folder}/{file_name}tile-%d.tif']
             commands.append(cmd)
-        workers = 1
+        print(f'working on {len(commands)} sections')
+        workers = 10
         with Pool(workers) as p:
             for _ in tqdm.tqdm(p.map(workernoshell, commands), total=len(commands)):
                 pass

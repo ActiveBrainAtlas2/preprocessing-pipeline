@@ -3,6 +3,7 @@ from lib.UrlGenerator import UrlGenerator
 from collections import Counter
 import numpy as np
 import os
+from lib.utility_process import workernoshell
 
 controller = SqlController('DK55')
 id_list = controller.get_url_id_list()
@@ -61,5 +62,7 @@ ng_folders = get_all_ng_folders()
 active_folders = get_active_folders()
 inactive_folders = [folder for folder in ng_folders if folder not in active_folders]
 for folderi in inactive_folders:
+    # cmd = ['rm','-rf',folderi]
+    # workernoshell(cmd)
     print(folderi)
 print('done')
