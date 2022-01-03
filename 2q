@@ -1,0 +1,13 @@
+updates
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# On branch master
+# Your branch is behind 'origin/master' by 15 commits, and can be fast-forwarded.
+#   (use "git pull" to update your local branch)
+#
+# Changes to be committed:
+#	modified:   in_development/Will/cvat/make_ng_volume_for_structures.py
+#	modified:   in_development/Will/showcase/bird_store_clean_up/clean_up_ng_data.py
+#	modified:   src/lib/TiffSegmentor.py
+#
