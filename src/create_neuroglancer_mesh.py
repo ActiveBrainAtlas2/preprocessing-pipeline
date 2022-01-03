@@ -27,7 +27,7 @@ def chunker(seq, size):
 def create_mesh(animal, limit, mse):
     #chunks = calculate_chunks('full', -1)
     chunks = [64,64,1]
-    scales = (20000, 20000, 20000)
+    scales = (10000, 10000, 10000)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel = 1
