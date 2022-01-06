@@ -46,7 +46,7 @@ def run_pipeline(animal, channel, downsample,step):
         end = timer()
         print(f'Creating normalized and masks took {end - start} seconds')    
     if step > 1:
-        start = timer()
+        start = timer() 
         pipeline.create_masks_final()
         print('\tFinished create_masks final')    
         pipeline.create_clean()
@@ -72,14 +72,14 @@ def run_pipeline(animal, channel, downsample,step):
 
 if __name__ == '__main__':
 
-    animal = 'DK73'
+    animal = 'DK39'
     channel = 1
     downsample = True
     step = 4
     run_pipeline(animal, 1, downsample,step)
-    # run_pipeline(animal, channel = 2, downsample = downsample, step = step)
-    # run_pipeline(animal, 3, downsample,step)
+    # run_pipeline(animal, 2, downsample, step)
+    # run_pipeline(animal, 3, downsample, step)
     downsample = False
     # run_pipeline(animal, 1, downsample,step)
     # run_pipeline(animal, 2, downsample,step)
-    # run_pipeline(animal, 3, downsample,step)
+    run_pipeline(animal, 3, downsample,step)

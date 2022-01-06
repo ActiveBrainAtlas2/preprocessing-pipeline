@@ -1,4 +1,5 @@
-animal='$1'
+#!/bin/bash
+
 channel=3
 root="/data/cell_segmentation/$1"
 
@@ -20,7 +21,7 @@ echo "${files_to_process[*]}"
 for file in "${files_to_process[@]}"
 do
    ((i=i%10)); ((i++==0)) && wait
-   python /data/programming/pipeline/in_development/Will/cell_extractor/scripts/calculate_features_for_one_section.py --animal "$animal" --section "$file"&
+   python /data/programming/pipeline/in_development/Will/cell_extractor/scripts/calculate_features_for_one_section.py --animal "$1" --section "$file" --disk "$2"&
 done
 )
 }

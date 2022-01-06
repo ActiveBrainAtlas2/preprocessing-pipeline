@@ -10,8 +10,8 @@ from multiprocessing.pool import Pool
 import tqdm
 
 class TiffSegmentor(CellDetectorBase):
-    def __init__(self,animal):
-        super().__init__(animal,0)
+    def __init__(self,animal, *args, **kwargs):
+        super().__init__(animal, *args, **kwargs)
         self.detect_annotator_person_id()
     
     def detect_annotator_person_id(self):
