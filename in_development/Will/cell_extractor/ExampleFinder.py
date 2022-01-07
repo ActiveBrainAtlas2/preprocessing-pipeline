@@ -13,8 +13,8 @@ from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_a
 import concurrent.futures
 
 class ExampleFinder(CellDetectorBase):
-    def __init__(self,animal,section):
-        super().__init__(animal,section)
+    def __init__(self,animal,section, *args, **kwargs):
+        super().__init__(animal,section, *args, **kwargs)
         self.t0=time()
         print('section=%d, SECTION_DIR=%s'%(self.section,self.CH3_SECTION_DIR))
         self.thresh=2000
@@ -96,13 +96,12 @@ class ExampleFinder(CellDetectorBase):
         file = f'{self.section:03}tile-{tilei}.tif'
         infile = os.path.join(folder, file)
         img = np.float32(cv2.imread(infile, -1))
-        # print('tile=',tilei,end=',')
         return img
     
     def subtract_blurred_image(self,image):
         small=cv2.resize(image,(0,0),fx=0.05,fy=0.05, interpolation=cv2.INTER_AREA)
         blurred=cv2.GaussianBlur(small,ksize=(21,21),sigmaX=10)
-        relarge=cv2.resize(blurred,(0,0),fx=20,fy=20) #,interpolation=cv2.INTER_AREA)
+        relarge=cv2.resize(blurred, image.T.shape,interpolation=cv2.INTER_AREA)
         difference=image-relarge
         return difference
     
@@ -186,8 +185,8 @@ def parallel_process_all_sections(animal,njobs = 40):
             results.append(executor.submit(test_one_section,animal,sectioni))
         print('done')
 
-def test_one_section(animal,section):
-    extractor = ExampleFinder(animal,section)
+def test_one_section(animal,section,disk):
+    extractor = ExampleFinder(animal=animal,section=section,disk=disk)
     extractor.find_examples()
     extractor.save_examples()
 

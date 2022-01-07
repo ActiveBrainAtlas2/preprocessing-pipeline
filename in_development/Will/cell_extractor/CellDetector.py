@@ -14,10 +14,10 @@ from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_a
 
 class CellDetector(CellDetectorBase):
 
-    def __init__(self,animal,version = 2):
+    def __init__(self,animal,version = 2, *args, **kwargs):
         print('version of xgboost is:',xgb.__version__,'should be at least 1.5.0')
         self.version = version
-        super().__init__(animal)
+        super().__init__(animal, *args, **kwargs)
 
     def read_csv_files(self):
         pattern=self.CH3+'/*/puntas_*.csv'
