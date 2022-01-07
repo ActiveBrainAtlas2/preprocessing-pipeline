@@ -1,0 +1,8 @@
+#!/bin/bash
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+eval "python $SCRIPT_DIR/segment_tifs.py --animal $1 --disk $2"
+eval "./$SCRIPT_DIR/parallel_create_examples $1 $2"
+eval "python $SCRIPT_DIR/calculate_mean_image.py --animal $1 --disk $2"
+eval "./$SCRIPT_DIR/parallel_calculate_features $1 $2"
+eval "python $SCRIPT_DIR/detect_cell_for_one_brain.py --animal $1 --disk $2"

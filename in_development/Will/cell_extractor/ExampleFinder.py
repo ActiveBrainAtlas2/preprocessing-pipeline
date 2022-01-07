@@ -96,7 +96,6 @@ class ExampleFinder(CellDetectorBase):
         file = f'{self.section:03}tile-{tilei}.tif'
         infile = os.path.join(folder, file)
         img = np.float32(cv2.imread(infile, -1))
-        # print('tile=',tilei,end=',')
         return img
     
     def subtract_blurred_image(self,image):

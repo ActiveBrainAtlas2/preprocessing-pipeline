@@ -4,7 +4,7 @@ if __name__ =='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--animal', type=str, help='Animal ID')
     parser.add_argument('--section', type=int, help='Secton being processed')
-    parser.add_argument('--disk', type=int, help='storage disk')
+    parser.add_argument('--disk', type=str, help='storage disk')
     args = parser.parse_args()
     animal = args.animal
     section = args.section

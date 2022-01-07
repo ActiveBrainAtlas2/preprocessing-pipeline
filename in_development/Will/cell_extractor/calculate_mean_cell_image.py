@@ -7,8 +7,8 @@ import pandas as pd
 from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali
 import os
 class MeanImageCalculator(CellDetectorBase):
-    def __init__(self,animal):
-        super().__init__(animal)
+    def __init__(self,animal, *args, **kwargs):
+        super().__init__(animal, *args, **kwargs)
         self.calulate_average_cell_image()
     
     def calulate_average_cell_image(self):

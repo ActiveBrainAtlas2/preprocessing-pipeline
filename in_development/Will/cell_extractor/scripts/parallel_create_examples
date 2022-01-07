@@ -1,7 +1,7 @@
 #!/bin/bash
 
 channel=3
-path="/scratch/cell_segmentation/$1/CH$channel"
+path="/$2/cell_segmentation/$1/CH$channel"
 count=0
 files_to_process=()
 for file in "$path"/*;

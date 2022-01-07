@@ -68,7 +68,7 @@ def run_pipeline(animal, channel, downsample,step):
         pipeline.create_neuroglancer_image()
         pipeline.create_downsampling()
         end = timer()
-        print(f'Last step: creating neuroglancer images took {end - start} seconds')    
+        print(f'Last step: creating n3euroglancer images took {end - start} seconds')    
 
 if __name__ == '__main__':
 

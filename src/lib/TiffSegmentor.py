@@ -10,9 +10,10 @@ from multiprocessing.pool import Pool
 import tqdm
 
 class TiffSegmentor(CellDetectorBase):
-    def __init__(self,animal, *args, **kwargs):
+    def __init__(self,animal,n_workers = 10, *args, **kwargs):
         super().__init__(animal, *args, **kwargs)
         self.detect_annotator_person_id()
+        self.n_workers = n_workers
     
     def detect_annotator_person_id(self):
         Ed = 1
@@ -66,8 +67,7 @@ class TiffSegmentor(CellDetectorBase):
             f'{save_folder}/{file_name}tile-%d.tif']
             commands.append(cmd)
         print(f'working on {len(commands)} sections')
-        workers = 10
-        with Pool(workers) as p:
+        with Pool(self.n_workers) as p:
             for _ in tqdm.tqdm(p.map(workernoshell, commands), total=len(commands)):
                 pass
     
