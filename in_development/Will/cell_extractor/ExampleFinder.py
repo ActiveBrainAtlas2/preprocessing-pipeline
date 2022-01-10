@@ -3,7 +3,6 @@ import cv2
 import pandas as pd
 import numpy as np
 import os
-import cv2
 from numpy.linalg import norm
 from time import time
 import glob
@@ -33,8 +32,8 @@ class ExampleFinder(CellDetectorBase):
             if not self.found_connected_segments:
                 continue
             self.load_manual_labels_in_tilei(tile)
-            self.is_possitive_segment=np.zeros(self.n_connected_segments) 
-            self.positive_segment_locations=np.zeros([self.n_connected_segments,2])
+            self.is_possitive_segment=np.zeros(self.n_segments) 
+            self.positive_segment_locations=np.zeros([self.n_segments,2])
             if self.n_manual_label>0:   
                 self.labels_with_no_matching_segments=[]
                 for labeli in range(self.n_manual_label):
@@ -120,21 +119,16 @@ class ExampleFinder(CellDetectorBase):
                 self.manual_labels_in_tile=np.stack(self.manual_labels_in_tile)
             else:
                 self.manual_labels_in_tile = np.array([])
-            # print('Manual Detections = %d'%len(self.manual_labels_in_tile))
             self.n_manual_label = len(self.manual_labels_in_tile) 
     
     def find_connected_segments(self,image):
         self.connected_segment_info=cv2.connectedComponentsWithStats(np.int8(image>self.thresh))
-        # print('Computer Detections=',self.connected_segment_info[0],end=',')
-        self.found_connected_segments = self.connected_segment_info[0]>2
-        if not self.found_connected_segments:
-            ...
-            # print('skipping tile')
-        else:
-            self.Stats_list.append(self.connected_segment_info)
+        self.n_segments,self.segment_masks,self.segment_stats,self.segment_location \
+            = cv2.connectedComponentsWithStats(np.int8(image>self.thresh))
+        if self.n_segments>2:
+            self.Stats_list.append([self.n_segments,self.segment_masks,self.segment_stats,self.segment_location])
             self.n_connected_segments = self.connected_segment_info[2].shape[0]
-            self.segment_map = self.connected_segment_info[1]
-            self.segment_location=np.int32(self.connected_segment_info[3])  
+            self.segment_location=np.int32(self.segment_location)  
             self.segment_location = np.flip(self.segment_location,1)
         
     
@@ -152,7 +146,7 @@ class ExampleFinder(CellDetectorBase):
         self.segment_distance_to_label=norm(self.segment_location-self.manual_labels_in_tile[labeli],axis=1)
         self.cloest_segment_id=np.argmin(self.segment_distance_to_label)  
         cloest_segment_distance = np.min(self.segment_distance_to_label)
-        self.segment_id_at_label_location=self.segment_map[labelx,labely] 
+        self.segment_id_at_label_location=self.segment_masks[labelx,labely] 
         if self.label_is_not_in_cloest_segment():
             self.labels_with_no_matching_segments.append((labeli,cloest_segment_distance,self.segment_id_at_label_location,self.cloest_segment_id))
         return self.cloest_segment_id , labelx , labely
