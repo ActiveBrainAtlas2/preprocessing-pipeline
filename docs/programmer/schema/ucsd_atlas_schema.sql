@@ -21,6 +21,7 @@ UCSD ATLAS SCHEMA - MODS BASED ON REVISED PRE-PROCESSING PIPELINE DATA FLOWS, IN
    COMMENTS RELATED TO TABLE: biosource
    DR - FIELDS 'species, strain, sex' (PRIOR animal TABLE) NOW INCORPORATED INTO biocyc TABLE (name, strain, sex)
 */
+SET SESSION FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `biosource`;
 CREATE TABLE `biosource` (
@@ -30,7 +31,7 @@ CREATE TABLE `biosource` (
   `active` tinyint(4) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
   `comments` varchar(2001) DEFAULT NULL,
-  `sex` varchar enum('Male','Female', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
+  `sex` enum('Male','Female', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
   `tissue` varchar(100) DEFAULT NULL COMMENT 'ex. animal, brain, slides',
   `genotype` varchar(100) DEFAULT NULL COMMENT 'transgenic description, usually "C57"; We will need a genotype table',
   `breeder_line` varchar(100) DEFAULT NULL COMMENT 'We will need a local breeding table',
@@ -205,7 +206,7 @@ CREATE TABLE `brain_region` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
+DROP TABLE IF EXISTS `brain_atlas`;
 CREATE TABLE `brain_atlas` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `atlas_name` varchar(64) NOT NULL,
@@ -305,6 +306,8 @@ CREATE TABLE `organic_label` (
    COMMENTS RELATED TO TABLE: slide
    Unknown contrib - What is the role of this table, did this subsume the table "sections"?
 */
+-- ZW This table cannot be created 
+-- You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'int(11) REFERENCES scan_run(`id`) ON UPDATE CASCADE,
 
 DROP TABLE IF EXISTS `slide`;
 CREATE TABLE `slide` (
@@ -333,8 +336,8 @@ CREATE TABLE `slide` (
   `scene_qc_5` tinyint(4) NOT NULL DEFAULT 0,
   `scene_qc_6` tinyint(4) NOT NULL DEFAULT 0,
    `FK_scan_run_id` int(11) NOT NULL,
-  FOREIGN KEY `FK_scan_run_id` int(11) REFERENCES scan_run(`id`) ON UPDATE CASCADE,
-  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_scan_run_id`) REFERENCES scan_run(id) ON UPDATE CASCADE,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `slide_czi_to_tif`;
@@ -352,14 +355,15 @@ CREATE TABLE `slide_czi_to_tif` (
   `scene_index` int(11) NOT NULL DEFAULT 0,
   `processing_duration` float NOT NULL DEFAULT 0,
   `FK_slide_id` int(11) NOT NULL,
-  FOREIGN KEY `FK_slide_id` int(11) REFERENCES slide(`id`) ON UPDATE CASCADE ON DELETE CASCADE ON UPDATE CASCADE,
-  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_slide_id`) REFERENCES slide(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: elastix_transformation
    Unknown contrib - What is this table?
 */
+  --FK_prep_id 'LEGACY: Name for lab animal, max 20 chars'
 
 DROP TABLE IF EXISTS `elastix_transformation`;
 CREATE TABLE `elastix_transformation` (
@@ -370,9 +374,9 @@ CREATE TABLE `elastix_transformation` (
   `yshift` float NOT NULL DEFAULT 0,
   `created` timestamp NULL DEFAULT current_timestamp(),
   `active` tinyint(4) NOT NULL DEFAULT 1,
-  `FK_prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
-  FOREIGN KEY (`FK_prep_i`) REFERENCES biosource(id),
-  PRIMARY KEY (`id`),
+  `FK_prep_id` int(11) NOT NULL , 
+  FOREIGN KEY (`FK_prep_id`) REFERENCES biosource(`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `alias`;
@@ -391,11 +395,11 @@ CREATE TABLE `vendor` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /* INSERT DEFAULTS */
-INSERT INTO vendor (vendor_id, name) VALUES (1, 'Jackson');
-INSERT INTO vendor (vendor_id, name) VALUES (2, 'Charles River');
-INSERT INTO vendor (vendor_id, name) VALUES (3, 'Harlan');
-INSERT INTO vendor (vendor_id, name) VALUES (4, 'NIH');
-INSERT INTO vendor (vendor_id, name) VALUES (5, 'Taconic');
+INSERT INTO vendor (id, name) VALUES (1, 'Jackson');
+INSERT INTO vendor (id, name) VALUES (2, 'Charles River');
+INSERT INTO vendor (id, name) VALUES (3, 'Harlan');
+INSERT INTO vendor (id, name) VALUES (4, 'NIH');
+INSERT INTO vendor (id, name) VALUES (5, 'Taconic');
 
 /*
      2) TABLES RELATED TO POINT ANNOTATIONS STORAGE: annotations_points, annotations_point_archive, archive_set, input_type
@@ -436,7 +440,7 @@ CREATE TABLE `annotations_points` (
   `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(animal_id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(input_id),
+  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
   FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id) ON UPDATE CASCADE,
   PRIMARY KEY (`id`)
 ) ENGINE=INNODB DEFAULT CHARSET=utf8;
@@ -486,11 +490,11 @@ CREATE TABLE `input_type` (
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`input_id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-INSERT INTO input_type (input_id, input_type) VALUES (1, 'manual person');
-INSERT INTO input_type (input_id, input_type) VALUES (2, 'corrected person');
-INSERT INTO input_type (input_id, input_type) VALUES (3, 'detected computer');
+INSERT INTO input_type (id, input_type) VALUES (1, 'manual person');
+INSERT INTO input_type (id, input_type) VALUES (2, 'corrected person');
+INSERT INTO input_type (id, input_type) VALUES (3, 'detected computer');
 
 /*
    COMMENTS RELATED TO TABLE: neuroglancer_state
@@ -533,7 +537,7 @@ CREATE TABLE `neuroglancer_urls` (
   `updated` datetime DEFAULT current_timestamp(),
   `FK_owner_id` int(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER/UPDATER',
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id) ON DELETE CASCADE,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
@@ -1355,7 +1359,7 @@ CREATE TABLE `task_view` (
    Unknown contrib - What is the role of this table, what happened to the conversion of slides to sections?
 */
 
-haracter_set_client = @saved_cs_client;
+-- haracter_set_client = @saved_cs_client;
 
 /*
    COMMENTS RELATED TO TABLE: location

@@ -170,6 +170,24 @@ class CellDetectorBase(Brain):
         except IOError as e:
             print(e)
 
+    def get_manual_annotation_in_tilei(self,annotations,tilei):
+        tile_origin= self.get_tile_origin(tilei)
+        manual_labels_in_tile=[]
+        n_manual_label = 0
+        if annotations is not None:  
+            manual_labels=np.int32(annotations)-tile_origin   
+            for i in range(manual_labels.shape[0]):
+                row,col=list(manual_labels[i,:])
+                if row<0 or row>=self.tile_height or col<0 or col>=self.tile_width:
+                    continue
+                manual_labels_in_tile.append(np.array([row,col]))
+            if not manual_labels_in_tile ==[]:
+                manual_labels_in_tile=np.stack(manual_labels_in_tile)
+            else:
+                manual_labels_in_tile = np.array([])
+            n_manual_label = len(manual_labels_in_tile) 
+        return manual_labels_in_tile,n_manual_label
+
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)
     return base.get_sections_with_csv()
