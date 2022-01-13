@@ -1,5 +1,5 @@
 /* TABLE OF CONTENTS - OVERALL ORGANIZATION STRUCTURE:
-   1) TABLES RELATED TO BIOLOGICAL DATA SOURCE & SAMPLE PREP: biosource, biocyc, injection, injection_virus, virus, scan_run, brain_region, brain_atlas, **[transformation, histology, organic_label, slide, slide_czi_to_tif, elastix_transformation, alias, vendor]
+   1:quartz) TABLES RELATED TO BIOLOGICAL DATA SOURCE & SAMPLE PREP: biosource, biocyc, injection, injection_virus, virus, scan_run, brain_region, brain_atlas, **[transformation, histology, organic_label, slide, slide_czi_to_tif, elastix_transformation, alias, vendor]
    2) TABLES RELATED TO POINT ANNOTATIONS STORAGE: annotations_points, annotations_point_archive, archive_sets, input_type, neuroglancer_state, **[neuroglancer_urls]
    3) TABLES RELATED TO USER ACCOUNTS: auth_user, auth_group, auth_group_permissions, auth_permission, performance_center, auth_user_groups, auth_user_user_permissions, authtoken_token, socialaccount_socialaccount, socialaccount_socialapp, socialaccount_socialapp_sites, socialaccount_socialtoken
    4) TABLES RELATED TO PLATFORM ADMINISTRATION/FUNCTIONALITY: django_admin_log, django_content_type, django_migrations, django_session, django_site, **[django_plotly_dash_dashapp, django_plotly_dash_statelessapp, file_log, file_operation, logs]
