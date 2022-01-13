@@ -22,6 +22,8 @@ CREATE TABLE `biosource` (
   `active` tinyint(4) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
   `comments` varchar(2001) DEFAULT NULL,
+  `sex` varchar enum('Male','Female', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
+  `tissue` varchar(100) DEFAULT NULL COMMENT 'ex. animal, brain, slides',
    FK_ORGID int(11) COMMENT 'organism id',
   `FK_authentication_lab_id` int(11),
    FOREIGN KEY (`FK_authentication_lab_id`) REFERENCES authentication_lab(`id`),
@@ -29,14 +31,19 @@ CREATE TABLE `biosource` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-/* BASED ON REF: http://bioinformatics.ai.sri.com/biowarehouse/repos/schema/doc/BioSource.html */
+/* UNIQUE NAMES BASED ON REF: http://bioinformatics.ai.sri.com/biowarehouse/repos/schema/doc/BioSource.html */
 DROP TABLE IF EXISTS `biocyc`;
 CREATE TABLE `biocyc` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `wid` BIGINT NOT NULL,
+  `strain` varchar(220) DEFAULT NULL,
   `name` varchar(200) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT INTO biocyc (name) VALUES ('MOUSE');
+INSERT INTO biocyc (name) VALUES ('RAT');
+INSERT INTO biocyc (name) VALUES ('FLY');
+INSERT INTO biocyc (name) VALUES ('ZFISH');
+
 
 
 /* AH - need to specify units of injection volume, e.g. microliters like
@@ -58,12 +65,12 @@ CREATE TABLE `injection` (
   `pipet` enum('glass','quartz','Hamilton','syringe needle') DEFAULT NULL,
   `location` varchar(20) DEFAULT NULL,
   `angle` varchar(20) DEFAULT NULL,
-  `brain_location_dv` double NOT NULL,
-  `brain_location_ml` double NOT NULL,
-  `brain_location_ap` double NOT NULL,
+  `brain_location_dv` double NOT NULL DEFAULT 0 COMMENT '(mm) dorsal-ventral relative to Bregma',
+  `brain_location_ml` double NOT NULL DEFAULT 0 COMMENT '(mm) medial-lateral relative to Bregma; check if positive',
+  `brain_location_ap` double NOT NULL DEFAULT 0 COMMENT '(mm) anterior-posterior relative to Bregma',
   `injection_date` date DEFAULT NULL,
-  `transport_days` int(11) NOT NULL,
-  `virus_count` int(11) NOT NULL,
+  `transport_days` int(11) NOT NULL DEFAULT 0,
+  `virus_count` int(11) NOT NULL DEFAULT 0,
   `comments` longtext DEFAULT NULL,
   `injection_volume_ul` varchar(20) DEFAULT NULL,
   `FK_performance_center_id` int(11),
@@ -115,11 +122,14 @@ CREATE TABLE `virus` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+/* DR - ADDED FK_performance_center_id, instrument FIELDS */
+
 DROP TABLE IF EXISTS `scan_run`;
 CREATE TABLE `scan_run` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `active` tinyint(1) NOT NULL,
   `created` datetime DEFAULT current_timestamp(),
+  `instrument` enum('Zeiss','Axioscan','Nanozoomer','Olympus VA') DEFAULT NULL,
   `objective` enum('60X','40X','20X','10X') DEFAULT NULL,
   `resolution` double NOT NULL,
   `zresolution` double NOT NULL,
@@ -131,7 +141,9 @@ CREATE TABLE `scan_run` (
   `height` int(11) NOT NULL,
   `comments` longtext DEFAULT NULL,
   `FK_biosource_id` int(11),
+  `FK_performance_center_id` int(11),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -162,7 +174,8 @@ CREATE TABLE `brain_atlas` (
   `atlas_name` varchar(64) NOT NULL,
   `description` longtext NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT INTO brain_atlas (id, atlas_name, description) VALUES (1, 'UCSD', 'UCSD Kleinfeld lab Active Brain Atlas');
 
 /*
      2) TABLES RELATED TO POINT ANNOTATIONS STORAGE: annotations_points, annotations_point_archive, archive_set, input_type
@@ -177,10 +190,11 @@ CREATE TABLE `brain_atlas` (
    DR - "layer" is related to Neuroglancer layer (user can name layer for superimposition of annotated points), "FK_archive_set_id" is for versioning of Neuroglancer annotated points (i.e., if points are added/removed/edited user can restore from previous version), "FK_input_type_id" is used to store point annotations input source: 'manual person', 'corrected person', 'detected computer', "FK_owner_id" is user who initially created/uploaded/input annotations
    DR - I believe data is stored in "structure" table is for each brain region (table renamed to brain_region)
 */
+*/
 
 DROP TABLE IF EXISTS `annotations_points`;
 CREATE TABLE `annotations_points` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id` INT(20) NOT NULL AUTO_INCREMENT,
   `layer` varchar(255) NOT NULL COMMENT 'freeform name/label the layer[annotation]',
   `x` double NOT NULL,
   `y` double NOT NULL,
@@ -189,16 +203,16 @@ CREATE TABLE `annotations_points` (
   `FK_input_type_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
   `FK_owner_id` int(11) NOT NULL,
   `FK_brain_region_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES authentication_user(id) ON DELETE CASCADE,
   FOREIGN KEY (`FK_input_type_id`) REFERENCES input_type(id),
   FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id)
+  PRIMARY KEY (`id`),
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `annotations_point_archive`;
 CREATE TABLE `annotations_point_archive` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id` int(20) NOT NULL AUTO_INCREMENT,
   `layer` varchar(255) NOT NULL COMMENT 'freeform name/label the layer[annotation]',
   `x` double NOT NULL,
   `y` double NOT NULL,
@@ -208,37 +222,35 @@ CREATE TABLE `annotations_point_archive` (
   `FK_owner_id` int(11) NOT NULL,
   `FK_brain_region_id` int(11) DEFAULT NULL,
   `FK_archive_set_id` bigint(20) NOT NULL,
-  PRIMARY KEY (`id`),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES authentication_user(id) ON DELETE CASCADE,
   FOREIGN KEY (`FK_input_type_id`) REFERENCES input_type(id),
   FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id),
-  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(archive_id)
+  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id)
+  PRIMARY KEY (`id`),
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* What is this table for? */
 /* DR - this table (archive_set) is for versioning of Neuroglancer annotated points (i.e., if points are added/removed/edited user can restore from previous version) */
 
-DROP TABLE IF EXISTS `archive_set`;
-CREATE TABLE `archive_set` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS `archive_sets`;
+CREATE TABLE `archive_sets` (
+  `id` int(20) NOT NULL AUTO_INCREMENT,
   `created` datetime DEFAULT current_timestamp(),
   `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
-  `FK_update_user_id` int(11) NOT NULL,
-  `FK_update_user_id` INT(11) DEFAULT NULL COMMENT 'person that updated the row',
+  `FK_owner_id` int(11) NOT NULL COMMENT 'USER WHO MADE REVISIONS',
+  FOREIGN KEY (`FK_owner_id`) REFERENCES authentication_user(id) ON DELETE CASCADE,
   PRIMARY KEY (`id`),
-  KEY `archive_set_FK_update_user_id_4a89ce81_fk_authentication_user_id` (`FK_update_user_id`),
-  CONSTRAINT `archive_set_FK_update_user_id_4a89ce81_fk_authentication_user_id` FOREIGN KEY (`FK_update_user_id`) REFERENCES `authentication_user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* AH - What does this table represent? */
 /* DR - point annotations input source: 'manual person', 'corrected person', 'detected computer' (INSERT statements added after table) */
 
 DROP TABLE IF EXISTS `input_type`;
 CREATE TABLE `input_type` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `input_type` varchar(50) NOT NULL,
-  `description` longtext DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
   `updated` datetime DEFAULT current_timestamp(),
@@ -251,7 +263,7 @@ INSERT INTO input_type (id, input_type) VALUES (3, 'detected computer');
 
 DROP TABLE IF EXISTS `neuroglancer_state`;
 CREATE TABLE `neuroglancer_state` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `neuroglancer_state` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`neuroglancer_state`)),
   `created` datetime DEFAULT current_timestamp(),
   `updated` datetime DEFAULT current_timestamp(),
