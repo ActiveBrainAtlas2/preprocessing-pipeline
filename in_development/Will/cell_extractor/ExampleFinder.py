@@ -3,7 +3,6 @@ import cv2
 import pandas as pd
 import numpy as np
 import os
-import cv2
 from numpy.linalg import norm
 from time import time
 import glob
@@ -13,8 +12,8 @@ from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_a
 import concurrent.futures
 
 class ExampleFinder(CellDetectorBase):
-    def __init__(self,animal,section):
-        super().__init__(animal,section)
+    def __init__(self,animal,section, *args, **kwargs):
+        super().__init__(animal,section, *args, **kwargs)
         self.t0=time()
         print('section=%d, SECTION_DIR=%s'%(self.section,self.CH3_SECTION_DIR))
         self.thresh=2000
@@ -33,8 +32,8 @@ class ExampleFinder(CellDetectorBase):
             if not self.found_connected_segments:
                 continue
             self.load_manual_labels_in_tilei(tile)
-            self.is_possitive_segment=np.zeros(self.n_connected_segments) 
-            self.positive_segment_locations=np.zeros([self.n_connected_segments,2])
+            self.is_possitive_segment=np.zeros(self.n_segments) 
+            self.positive_segment_locations=np.zeros([self.n_segments,2])
             if self.n_manual_label>0:   
                 self.labels_with_no_matching_segments=[]
                 for labeli in range(self.n_manual_label):
@@ -96,13 +95,12 @@ class ExampleFinder(CellDetectorBase):
         file = f'{self.section:03}tile-{tilei}.tif'
         infile = os.path.join(folder, file)
         img = np.float32(cv2.imread(infile, -1))
-        # print('tile=',tilei,end=',')
         return img
     
     def subtract_blurred_image(self,image):
         small=cv2.resize(image,(0,0),fx=0.05,fy=0.05, interpolation=cv2.INTER_AREA)
         blurred=cv2.GaussianBlur(small,ksize=(21,21),sigmaX=10)
-        relarge=cv2.resize(blurred,(0,0),fx=20,fy=20) #,interpolation=cv2.INTER_AREA)
+        relarge=cv2.resize(blurred, image.T.shape,interpolation=cv2.INTER_AREA)
         difference=image-relarge
         return difference
     
@@ -121,21 +119,16 @@ class ExampleFinder(CellDetectorBase):
                 self.manual_labels_in_tile=np.stack(self.manual_labels_in_tile)
             else:
                 self.manual_labels_in_tile = np.array([])
-            # print('Manual Detections = %d'%len(self.manual_labels_in_tile))
             self.n_manual_label = len(self.manual_labels_in_tile) 
     
     def find_connected_segments(self,image):
         self.connected_segment_info=cv2.connectedComponentsWithStats(np.int8(image>self.thresh))
-        # print('Computer Detections=',self.connected_segment_info[0],end=',')
-        self.found_connected_segments = self.connected_segment_info[0]>2
-        if not self.found_connected_segments:
-            ...
-            # print('skipping tile')
-        else:
-            self.Stats_list.append(self.connected_segment_info)
+        self.n_segments,self.segment_masks,self.segment_stats,self.segment_location \
+            = cv2.connectedComponentsWithStats(np.int8(image>self.thresh))
+        if self.n_segments>2:
+            self.Stats_list.append([self.n_segments,self.segment_masks,self.segment_stats,self.segment_location])
             self.n_connected_segments = self.connected_segment_info[2].shape[0]
-            self.segment_map = self.connected_segment_info[1]
-            self.segment_location=np.int32(self.connected_segment_info[3])  
+            self.segment_location=np.int32(self.segment_location)  
             self.segment_location = np.flip(self.segment_location,1)
         
     
@@ -153,7 +146,7 @@ class ExampleFinder(CellDetectorBase):
         self.segment_distance_to_label=norm(self.segment_location-self.manual_labels_in_tile[labeli],axis=1)
         self.cloest_segment_id=np.argmin(self.segment_distance_to_label)  
         cloest_segment_distance = np.min(self.segment_distance_to_label)
-        self.segment_id_at_label_location=self.segment_map[labelx,labely] 
+        self.segment_id_at_label_location=self.segment_masks[labelx,labely] 
         if self.label_is_not_in_cloest_segment():
             self.labels_with_no_matching_segments.append((labeli,cloest_segment_distance,self.segment_id_at_label_location,self.cloest_segment_id))
         return self.cloest_segment_id , labelx , labely
@@ -186,8 +179,8 @@ def parallel_process_all_sections(animal,njobs = 40):
             results.append(executor.submit(test_one_section,animal,sectioni))
         print('done')
 
-def test_one_section(animal,section):
-    extractor = ExampleFinder(animal,section)
+def test_one_section(animal,section,disk):
+    extractor = ExampleFinder(animal=animal,section=section,disk=disk)
     extractor.find_examples()
     extractor.save_examples()
 

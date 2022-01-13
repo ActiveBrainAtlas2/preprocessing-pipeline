@@ -8,7 +8,7 @@ import numpy as np
 from cell_extractor.DetectionPlotter import DetectionPlotter
 
 class CellDetectorBase(Brain):
-    def __init__(self,animal,section = 0):
+    def __init__(self,animal,section = 0,disk = 'scratch'):
         self.attribute_functions = dict(
             tile_origins = self.get_tile_origins)
         super().__init__(animal)
@@ -16,7 +16,7 @@ class CellDetectorBase(Brain):
         self.ncol = 2
         self.nrow = 5
         self.section = section
-        self.DATA_PATH = "/data/cell_segmentation/"
+        self.DATA_PATH = f"/{disk}/cell_segmentation/"
         self.ANIMAL_PATH = os.path.join(self.DATA_PATH,self.animal)
         self.AVERAGE_CELL_IMAGE_DIR = os.path.join(self.ANIMAL_PATH,'average_cell_image.pkl')
         self.TILE_INFO_DIR = os.path.join(self.ANIMAL_PATH,'tile_info.csv')

@@ -11,3 +11,4 @@ This will cost $12/year.
 will be producing more pages with the ability for other people to post replies.
 1. Install the Django portal.
 1. Add google oauth so people can easily login.
+1. Get a https certificate

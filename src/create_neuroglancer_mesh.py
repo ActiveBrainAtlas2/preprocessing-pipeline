@@ -3,6 +3,7 @@ Creates a 3D Mesh
 """
 import argparse
 import os
+import sys
 import json
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
@@ -26,16 +27,19 @@ def chunker(seq, size):
 def create_mesh(animal, limit, mse):
     #chunks = calculate_chunks('full', -1)
     chunks = [64,64,1]
-    scales = (20000, 20000, 20000)
+    scales = (10000, 10000, 10000)
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     channel = 1
     downsample = True
 
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'downsampled_10')
     OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
-    OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
-    if 'ultraman' in get_hostname():
+    OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_10')
+    if 'mothra' in get_hostname():
+        print('Cleaning output dirs:')
+        print(OUTPUT1_DIR)
+        print(OUTPUT2_DIR)
         if os.path.exists(OUTPUT1_DIR):
             shutil.rmtree(OUTPUT1_DIR)
         if os.path.exists(OUTPUT2_DIR):
@@ -51,6 +55,10 @@ def create_mesh(animal, limit, mse):
     midfilepath = os.path.join(INPUT, files[midpoint])
     midfile = io.imread(midfilepath)
     data_type = midfile.dtype
+    if limit > 0:
+        start = midpoint - limit
+        end = midpoint + limit
+        files = files[start:end]
     #image = np.load('/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/allen/allen.npy')
     ids = np.unique(midfile)
     #ids = {'infrahypoglossal': 200, 'perifacial': 210, 'suprahypoglossal': 220}
@@ -86,7 +94,7 @@ def create_mesh(animal, limit, mse):
 
     ##### rechunk
     cloudpath1 = f"file://{OUTPUT1_DIR}"
-    cv1 = CloudVolume(cloudpath1, 0)
+    # cv1 = CloudVolume(cloudpath1, 0)
     _, workers = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
     cloudpath2 = f'file://{OUTPUT2_DIR}'

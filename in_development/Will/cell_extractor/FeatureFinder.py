@@ -9,8 +9,8 @@ import os
 class FeatureFinder(CellDetectorBase):
     """class to calculate feature vector for each extracted image pair (CH1, CH3)
     """
-    def __init__(self,animal,section):
-        super().__init__(animal,section)
+    def __init__(self,animal,section, *args, **kwargs):
+        super().__init__(animal,section, *args, **kwargs)
         self.features = []
         print('DATA_DIR=%s'%(self.CH3))
         print(self.section,section)
@@ -114,8 +114,8 @@ def calculate_all_sections_of_animali(animal):
         finder.calculate_features()
         finder.save_features()
 
-def test_one_section(animal,section):
-    finder = FeatureFinder(animal,section)
+def test_one_section(animal,section,disk):
+    finder = FeatureFinder(animal,section = section,disk = disk)
     finder.calculate_features()
     finder.save_features()
 
