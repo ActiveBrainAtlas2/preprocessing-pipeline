@@ -2,7 +2,7 @@ import pandas as pd
 
 class logger:
     """A helper class for defining a logger function and for parsing the
-    log, assuming it is created by XGBoost.
+log, assuming it is created by XGBoost.
     Typical use:
 
     Logger=logger()
@@ -37,6 +37,7 @@ class logger:
         df=pd.DataFrame(D)
         df=df.set_index('iter')
         test_col=[c for c in df.columns if 'eval' in c][0]
+        print('test column=',test_col)
         _min=df[test_col].min()
         index_min=df[test_col].idxmin()
         title='min of %s=%f at %d'%(test_col,_min,index_min)

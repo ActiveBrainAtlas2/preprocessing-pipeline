@@ -22,11 +22,12 @@ UCSD ATLAS SCHEMA - MODS BASED ON REVISED PRE-PROCESSING PIPELINE DATA FLOWS, IN
    DR - FIELDS 'species, strain, sex' (PRIOR animal TABLE) NOW INCORPORATED INTO biocyc TABLE (name, strain, sex)
 */
 SET SESSION FOREIGN_KEY_CHECKS=0;
+--prep_id  COMMENT 'LEGACY: Name for lab animal, max 20 chars'
 
 DROP TABLE IF EXISTS `biosource`;
 CREATE TABLE `biosource` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+  `prep_id` varchar(20) NOT NULL,
   `date_of_birth` date DEFAULT NULL COMMENT 'the mouse''s date of birth',
   `active` tinyint(4) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
@@ -47,8 +48,9 @@ CREATE TABLE `biosource` (
    FOREIGN KEY (`FK_ORGID`) REFERENCES biocyc(`id`),
    FOREIGN KEY (`FK_alias_id`) REFERENCES alias(`id`),
    FOREIGN KEY (`FK_vendor_id`) REFERENCES vendor(`id`),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+   PRIMARY KEY (`id`),
+   UNIQUE KEY (`prep_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: biocyc
@@ -61,7 +63,7 @@ CREATE TABLE `biocyc` (
   `strain` varchar(220) DEFAULT NULL,
   `name` varchar(200) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO biocyc (name) VALUES ('MOUSE');
 INSERT INTO biocyc (name) VALUES ('RAT');
 INSERT INTO biocyc (name) VALUES ('FLY');
@@ -102,7 +104,7 @@ CREATE TABLE `injection` (
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
   FOREIGN KEY (`FK_ref_atlas_id`) REFERENCES biosource(`id`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `injection_virus`;
 CREATE TABLE `injection_virus` (
@@ -114,7 +116,7 @@ CREATE TABLE `injection_virus` (
   FOREIGN KEY (`FK_injection_id`) REFERENCES injection(`id`),
   FOREIGN KEY (`FK_virus_id`) REFERENCES virus(`id`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: virus
@@ -145,7 +147,7 @@ CREATE TABLE `virus` (
   `source_details` varchar(100) DEFAULT NULL,
   `comments` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: scan_run
@@ -184,7 +186,7 @@ CREATE TABLE `scan_run` (
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
   FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: brain_region
@@ -204,7 +206,7 @@ CREATE TABLE `brain_region` (
   `FK_ref_atlas_id` int(11),
   FOREIGN KEY (`FK_ref_atlas_id`) REFERENCES biosource(`id`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `brain_atlas`;
 CREATE TABLE `brain_atlas` (
@@ -212,7 +214,7 @@ CREATE TABLE `brain_atlas` (
   `atlas_name` varchar(64) NOT NULL,
   `description` longtext NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO brain_atlas (atlas_name, description) VALUES ('UCSD', 'UCSD Kleinfeld lab Active Brain Atlas');
 
 /*
@@ -517,7 +519,7 @@ CREATE TABLE `neuroglancer_state` (
   `FK_owner_id` int(11) NOT NULL,
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id) ON DELETE CASCADE,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: neuroglancer_urls
@@ -777,7 +779,7 @@ CREATE TABLE `django_plotly_dash_dashapp` (
   UNIQUE KEY `slug` (`slug`),
   KEY `django_plotly_dash_d_stateless_app_id_220444de_fk_django_pl` (`stateless_app_id`),
   CONSTRAINT `django_plotly_dash_d_stateless_app_id_220444de_fk_django_pl` FOREIGN KEY (`stateless_app_id`) REFERENCES `django_plotly_dash_statelessapp` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `django_plotly_dash_statelessapp`;
 CREATE TABLE `django_plotly_dash_statelessapp` (
@@ -787,7 +789,7 @@ CREATE TABLE `django_plotly_dash_statelessapp` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `app_name` (`app_name`),
   UNIQUE KEY `slug` (`slug`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `file_log`;
 CREATE TABLE `file_log` (
@@ -1348,7 +1350,7 @@ CREATE TABLE `task_view` (
   `percent_complete` tinyint(4) NOT NULL,
   `complete` tinyint(4) NOT NULL,
   `created` tinyint(4) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 /*
     8) TABLES RELATED TO UNKNOWN CLASSIFICATION: location, location_primary_people
@@ -1390,3 +1392,29 @@ CREATE TABLE `location_primary_people` (
   CONSTRAINT `location_primary_people_user_id_4125b3f6_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `transformation_type`;
+CREATE TABLE `transformation_type` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `transformation_type` varchar(40) DEFAULT NULL,
+  `active` int(2) NOT NULL DEFAULT 1,
+  `created` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK__T_AID_PID_ITID` (`transformation_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `transformation`;
+CREATE TABLE `transformation` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `source` varchar(20) NOT NULL ,
+  `destination` varchar(20) NOT NULL ,
+  `transformation_type` int(11) NOT NULL,
+  `transformation` blob NOT NULL,
+  `created` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  `updated` timestamp NOT NULL DEFAULT current_timestamp(),
+  `active` int(2) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_source` (`source`,`destination`,`transformation_type`),
+  CONSTRAINT `transformation_ibfk_1` FOREIGN KEY (`source`) REFERENCES `biosource` (`prep_id`) ON DELETE CASCADE,
+  CONSTRAINT `transformation_ibfk_2` FOREIGN KEY (`destination`) REFERENCES `biosource` (`prep_id`) ON DELETE CASCADE,
+  CONSTRAINT `transformation_ibfk_3` FOREIGN KEY (`transformation_type`) REFERENCES `transformation_type` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=266 DEFAULT CHARSET=utf8;
