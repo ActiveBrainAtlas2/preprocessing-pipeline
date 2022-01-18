@@ -21,6 +21,8 @@ and install the required packages:
     cd ../preprocessing-pipeline
     pip install -r requirements.txt
     ```
+    for cent os use https://github.com/ instead of git@github.com: for git repository.
+    
 1. We are currently using Ubuntu 18.04 as of December 2021 (20.04 is on muralis). Either install this 
 on your local machine or install it as a VM with Virtualbox or VMware. Note, using Ubuntu 20.04 also works, 
 and since our servers will eventually get upgraded to that, you may as well install 20.04 
