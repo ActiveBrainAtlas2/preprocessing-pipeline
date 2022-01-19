@@ -33,6 +33,7 @@ and install the required packages:
     source /usr/local/share/pipeline/bin/activate
     pip install -U pip
     pip install build
+    sudo dnf install python3-devel
     cd ..
     git clone https://github.com/ActiveBrainAtlas2/abakit.git
     cd abakit
