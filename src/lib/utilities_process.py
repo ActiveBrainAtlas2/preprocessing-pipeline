@@ -73,7 +73,9 @@ def workernoshell(cmd):
     stdout_template = os.path.join(os.getcwd(), 'workernoshell.log')
     stdout_f = open(stdout_template, "w")
     stderr_f = open(stderr_template, "w")
-    proc = Popen(cmd, shell=False, stderr=stderr_f, stdout=stdout_f)
+    my_env = os.environ.copy()
+    my_env["PATH"] = "/usr/sbin:/sbin:" + my_env["PATH"]
+    proc = Popen(cmd, shell=False, stderr=stderr_f, stdout=stdout_f, env=my_env)
     proc.wait()
 
 def test_dir(animal, directory, downsample=True, same_size=False):

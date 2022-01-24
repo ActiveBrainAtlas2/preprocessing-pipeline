@@ -1,6 +1,5 @@
 from numpy import *
-from pylab import plot,legend,figure
-
+from pylab import plot
 def points2line(p1,p2,i):
     x1,y1=p1
     x2,y2=p2
@@ -26,8 +25,6 @@ L.append(points2line(p[2],p[3],2))
 L.append(points2line(p[3],p[0],3))
 L.append(points2line(p[1],p[5],4))
 L.append(points2line(p[3],p[4],5))
-legend()
-L
 
 def decision(x,y):
     p=[x,y]

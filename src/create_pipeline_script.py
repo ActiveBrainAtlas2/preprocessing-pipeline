@@ -25,6 +25,7 @@ from lib.pipeline import Pipeline
 from lib.logger import get_logger
 
 def run_pipeline(animal, channel, downsample,step):
+    print(f'working on animal {animal}')
     pipeline = Pipeline(animal, channel, downsample)
     start = timer()
     pipeline.check_programs()
@@ -75,11 +76,11 @@ if __name__ == '__main__':
     animal = 'DK39'
     channel = 1
     downsample = True
-    step = 4
+    step = 3
     run_pipeline(animal, 1, downsample,step)
     # run_pipeline(animal, 2, downsample, step)
     # run_pipeline(animal, 3, downsample, step)
     downsample = False
-    # run_pipeline(animal, 1, downsample,step)
-    # run_pipeline(animal, 2, downsample,step)
+    run_pipeline(animal, 1, downsample,step)
+    # # run_pipeline(animal, 2, downsample,step)
     run_pipeline(animal, 3, downsample,step)

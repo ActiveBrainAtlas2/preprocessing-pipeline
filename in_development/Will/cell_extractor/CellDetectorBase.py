@@ -17,6 +17,7 @@ class CellDetectorBase(Brain):
         self.nrow = 5
         self.section = section
         self.DATA_PATH = f"/{disk}/cell_segmentation/"
+        self.ORIGINAL_IMAGE = os.path.join(self.DATA_PATH,'original')
         self.ANIMAL_PATH = os.path.join(self.DATA_PATH,self.animal)
         self.AVERAGE_CELL_IMAGE_DIR = os.path.join(self.ANIMAL_PATH,'average_cell_image.pkl')
         self.TILE_INFO_DIR = os.path.join(self.ANIMAL_PATH,'tile_info.csv')

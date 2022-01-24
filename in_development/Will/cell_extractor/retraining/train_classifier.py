@@ -17,6 +17,7 @@ from glob import glob
 from sklearn.metrics import roc_curve
 import pickle as pk
 from DefinePredictor import *
+from collections import Counter
 
 print(xgb.__version__)
 
@@ -47,19 +48,6 @@ def create_parameter():
     param['eval_metric'] = eval_metric[1]
     print(param)
     return param
-
-def test_xgboost(depth=1,num_round=100,param = {},evallist = []):
-    param['max_depth']= depth   # depth of tree
-    fig, axes = plt.subplots(1,2,figsize=(12,5))
-    i=0
-    for _eval in ['error','logloss']:
-        Logger=logger()
-        logall=Logger.get_logger()  # Set logger to collect results
-        param['eval_metric'] = _eval 
-        bst = xgb.train(param, train, num_round, evallist, verbose_eval=False, callbacks=[logall])
-        df=Logger.parse_log(ax=axes[i])
-        i+=1
-    return bst,Logger
 
 def plot_margins(_train_size):
     plt.figure(figsize=(8, 6))
@@ -165,110 +153,100 @@ def plot_roc(test,pred):
     plt.grid()
     plt.show()
 
-dir = '/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/all_features_modified.csv'
-df = pd.read_csv(dir)
-drops = ['animal', 'section', 'index', 'row', 'col'] 
-df=df.drop(drops,axis=1)
-
-train,test,all=get_train_and_test(df)
-print(train.num_row(), test.num_row(), all.num_row())
-param = create_parameter()
-evallist = [(train, 'train'), (test, 'eval')]
-
-bst,log = test_xgboost(depth=1,num_round=1000,param = param,evallist = evallist)
-bst,log = test_xgboost(depth=2,num_round=1000,param = param)
-bst,log = test_xgboost(depth=3,num_round=400,param = param)
-bst,log = test_xgboost(depth=4,num_round=1000,param = param)
-bst,log = test_xgboost(depth=5,num_round=1000,param = param)
-
-
-num_round=250
-bst = xgb.train(param, train, num_round, evallist, verbose_eval=False)
-y_pred = bst.predict(test, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
-y_test=test.get_label()
-plot_roc(y_test,y_pred)
-
-pos_preds=y_pred[y_test==1]
-neg_preds=y_pred[y_test==0]
-pos_preds.shape,neg_preds.shape
-
-hist([pos_preds,neg_preds],bins=20);
-
-figure(figsize=[15,8])
-num_round=200
-
-bst_list=[]
-for i in range(30):
+def train_classifier(features_path,depth,niter):
+    df = pd.read_csv(features_path)
+    drops = ['animal', 'section', 'index', 'row', 'col'] 
+    df=df.drop(drops,axis=1)
     train,test,all=get_train_and_test(df)
-    bst = xgb.train(param, train, num_round, evallist, verbose_eval=False)
-    bst_list.append(bst)
-    y_pred = bst.predict(test, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
-    y_test=test.get_label()
-    pos_preds=y_pred[y_test==1]
-    neg_preds=y_pred[y_test==0]
-    pos_preds=sort(pos_preds)
-    neg_preds=sort(neg_preds)
-    plot(pos_preds,gen_scale(pos_preds.shape[0]));
-    plot(neg_preds,gen_scale(neg_preds.shape[0],reverse=True))
+    print(train.num_row(), test.num_row(), all.num_row())
+    param = create_parameter()
+    evallist = [(train, 'train'), (test, 'eval')]
+    bst_list=[]
+    for i in range(30):
+        train,test,all=get_train_and_test(df)
+        bst = xgb.train(param, train, num_round, evallist, verbose_eval=False)
+        bst_list.append(bst)
+    return bst_list
 
-DATA_DIR='/data/cell_segmentation/'
-with open(DATA_DIR+'BoostedTrees.pkl','bw') as pkl_file:
-    pk.dump(bst_list,pkl_file)
+def plot_boosting_result(bst_list):
+    for bst in bst_list:
+        y_pred = bst.predict(test, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
+        y_test=test.get_label()
+        pos_preds=y_pred[y_test==1]
+        neg_preds=y_pred[y_test==0]
+        pos_preds=sort(pos_preds)
+        neg_preds=sort(neg_preds)
+        plot(pos_preds,gen_scale(pos_preds.shape[0]));
+        plot(neg_preds,gen_scale(neg_preds.shape[0],reverse=True))
 
-with open(DATA_DIR+'BoostedTrees.pkl','br') as pkl_file:
-    bst_list=pk.load(pkl_file)
+if __name__ == '__main__':
+    features_path = '/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/all_features_modified.csv'
+    depth = 4
+    niter = 500
+    bst_list = train_classifier(features_path,depth,niter)
+        
+    DATA_DIR='/data/cell_segmentation/'
+    with open(DATA_DIR+'BoostedTrees.pkl','bw') as pkl_file:
+        pk.dump(bst_list,pkl_file)
 
-train,test,all=get_train_and_test(df)
-labels=all.get_label()
-scores=np.zeros([df.shape[0],len(bst_list)])
-for i in range(len(bst_list)):
-    bst=bst_list[i]
-    scores[:,i] = bst.predict(all, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
-_max=np.max(scores,axis=1)
-_min=np.min(scores,axis=1)
-_mean=np.mean(scores,axis=1)
-_std=np.std(scores,axis=1)
+    # with open(DATA_DIR+'BoostedTrees.pkl','br') as pkl_file:
+    #     bst_list=pk.load(pkl_file)
+    labels=all.get_label()
+    scores = get_prediction_scores(df)
+    make_predictions(scores,df)
 
-figure(figsize=[15,10])
-scatter(_mean,_std,c=labels,s=3)
-title('mean and std of scores for 30 classifiers')
-xlabel('mean')
-ylabel('std')
-grid()
+def get_prediction_scores(df,bst_list):
+    all=createDM(df)
+    scores=np.zeros([df.shape[0],len(bst_list)])
+    for i in range(len(bst_list)):
+        bst=bst_list[i]
+        scores[:,i] = bst.predict(all, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
+    return scores
 
-_mean.shape, full_df.shape, _std.shape
-full_df['mean_score']=_mean
-full_df['std_score']=_std
-full_df.columns
+def plot_score_vs_variance(scores,labels):
+    _mean=np.mean(scores,axis=1)
+    _std=np.std(scores,axis=1)
 
+    plt.figure(figsize=[15,10])
+    plt.scatter(_mean,_std,c=labels,s=3)
+    plt.title('mean and std of scores for 30 classifiers')
+    plt.xlabel('mean')
+    plt.ylabel('std')
+    plt.grid()
+    return _mean,_std
 
-predictions=[]
-for i,row in full_df.iterrows():
-    p=decision(float(row['mean_score']),float(row['std_score']))
-    predictions.append(p)
-full_df['predictions']=predictions
+def make_predictions(scores,df):
+    _mean=np.mean(scores,axis=1)
+    _std=np.std(scores,axis=1)
+    df['mean_score']=_mean
+    df['std_score']=_std
+    predictions=[]
+    for i,row in df.iterrows():
+        p=decision(float(row['mean_score']),float(row['std_score']))
+        predictions.append(p)
+    df['predictions']=predictions
+    return df
 
-full_df.to_csv(DATA_DIR+'demo_scores.csv')
+df.to_csv(DATA_DIR+'demo_scores.csv')
 
-full_df.columns
+df.columns
 
-detection_df=full_df[full_df['predictions']!=-2]
+detection_df=df[df['predictions']!=-2]
 detection_df = detection_df[['animal', 'section', 'row', 'col','label', 'mean_score',
        'std_score', 'predictions']]
 detection_df.head()
 
 detection_df.to_csv(DATA_DIR+'detections_DK55.csv',index=False)
 
-from collections import Counter
 Counter(predictions)
 
-figure(figsize=[15,10])
-scatter(_mean,_std,c=predictions+labels,s=5)
+plt.figure(figsize=[15,10])
+plt.scatter(_mean,_std,c=predictions+labels,s=5)
 
-title('mean and std of scores for 30 classifiers')
-xlabel('mean')
-ylabel('std')
-grid()
+plt.title('mean and std of scores for 30 classifiers')
+plt.xlabel('mean')
+plt.ylabel('std')
+plt.grid()
 
 a,b=solve(-1,5,2,4)
 x=arange(-2,5)
@@ -305,3 +283,17 @@ plt.show()
 
 
 
+num_round=250
+bst = xgb.train(param, train, num_round, evallist, verbose_eval=False)
+y_pred = bst.predict(test, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
+y_test = test.get_label()
+plot_roc(y_test,y_pred)
+
+pos_preds=y_pred[y_test==1]
+neg_preds=y_pred[y_test==0]
+pos_preds.shape,neg_preds.shape
+
+hist([pos_preds,neg_preds],bins=20);
+
+figure(figsize=[15,8])
+num_round=200
