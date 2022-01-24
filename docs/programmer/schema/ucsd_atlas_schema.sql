@@ -24,28 +24,28 @@ UCSD ATLAS SCHEMA - MODS BASED ON REVISED PRE-PROCESSING PIPELINE DATA FLOWS, IN
 SET SESSION FOREIGN_KEY_CHECKS=0;
 --prep_id  COMMENT 'LEGACY: Name for lab animal, max 20 chars'
 
-DROP TABLE IF EXISTS `biosource`;
+DROP TABLE IF EXISTS `biosource`;  /* why not 'animal' ? */
 CREATE TABLE `biosource` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL,
+  `prep_id` varchar(20) NOT NULL,  
   `date_of_birth` date DEFAULT NULL COMMENT 'the mouse''s date of birth',
   `active` tinyint(4) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
   `comments` varchar(2001) DEFAULT NULL,
   `sex` enum('Male','Female', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
   `tissue` varchar(100) DEFAULT NULL COMMENT 'ex. animal, brain, slides',
-  `genotype` varchar(100) DEFAULT NULL COMMENT 'transgenic description, usually "C57"; We will need a genotype table',
-  `breeder_line` varchar(100) DEFAULT NULL COMMENT 'We will need a local breeding table',
+  `genotype` varchar(100) DEFAULT NULL COMMENT 'transgenic description, usually "C57"; We will need a genotype table', 'This should go below species and breeder line'
+  `species_and_breeder_line` varchar(100) DEFAULT NULL /* this should replace biocyc as a foreign key */
   `stock_number` varchar(100) DEFAULT NULL COMMENT 'if not from a performance center',
   `ship_date` date DEFAULT NULL,
   `shipper` enum('FedEx','UPS') DEFAULT NULL,
   `tracking_number` varchar(100) DEFAULT NULL,
-   `FK_ORGID` int(11) COMMENT 'organism id',
+   `FK_ORGID` int(11) COMMENT 'organism id', 
   `FK_performance_center_id` int(11),
   `FK_alias_id` int(11),
   `FK_vendor_id` int(11),
    FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
-   FOREIGN KEY (`FK_ORGID`) REFERENCES biocyc(`id`),
+   FOREIGN KEY (`FK_ORGID`) REFERENCES biocyc(`id`), /* instead of biocyc, we can have an enumeraton of species "mouse"/"rat"/"marmaset"/Ma
    FOREIGN KEY (`FK_alias_id`) REFERENCES alias(`id`),
    FOREIGN KEY (`FK_vendor_id`) REFERENCES vendor(`id`),
    PRIMARY KEY (`id`),
@@ -57,17 +57,21 @@ CREATE TABLE `biosource` (
    DR - UNIQUE NAMES BASED ON REF: http://bioinformatics.ai.sri.com/biowarehouse/repos/schema/doc/BioSource.html
 */
 
-DROP TABLE IF EXISTS `biocyc`;
+DROP TABLE IF EXISTS `biocyc`;  /* Turn into Species and Breeder Line table */
 CREATE TABLE `biocyc` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `strain` varchar(220) DEFAULT NULL,
+  `strain` varchar(220) DEFAULT NULL, /* the name of the animal supplied to the vivarium */
+  `breeder_line` varchar(200) DEFAULT NULL,  /* Name in the vivarium */
   `name` varchar(200) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO biocyc (name) VALUES ('MOUSE');
 INSERT INTO biocyc (name) VALUES ('RAT');
 INSERT INTO biocyc (name) VALUES ('FLY');
-INSERT INTO biocyc (name) VALUES ('ZFISH');
+INSERT INTO biocyc (name) VALUES ('MONKEY');
+INSERT INTO biocyc (name) VALUES ('WORM');
+INSERT INTO biocyc (name) VALUES ('FISH');
+INSERT INTO biocyc (name) VALUES ('BIRDD');
 
 /*
    COMMENTS RELATED TO TABLE: injection
