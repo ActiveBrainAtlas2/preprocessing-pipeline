@@ -10,9 +10,6 @@ import shutil
 from skimage import io
 from tqdm import tqdm
 
-HOME = os.path.expanduser("~")
-#PATH = os.path.join(HOME, 'programming/pipeline_utility')
-#sys.path.append(PATH)
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
 from lib.utilities_cvat_neuroglancer import mask_to_shell, NumpyToNeuroglancer
@@ -23,8 +20,8 @@ def create_shell(animal):
     start = timer()
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'rotated_aligned_masked')
-    error = test_dir(animal, INPUT, full=False, same_size=True)
+    INPUT = os.path.join(fileLocationManager.prep, 'masks', 'rotated_aligned_masked')
+    error = test_dir(animal, INPUT, downsample=True, same_size=True)
     if len(error) > 0:
         print(error)
         sys.exit()

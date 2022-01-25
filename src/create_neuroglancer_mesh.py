@@ -17,25 +17,29 @@ from tqdm import tqdm
 
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
 from lib.utilities_process import get_cpus, get_hostname
 
-def chunker(seq, size):
-    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
-
-def create_mesh(animal, limit, mse):
+def create_mesh(animal, limit, mse, downsample):
     #chunks = calculate_chunks('full', -1)
-    chunks = [64,64,1]
-    scales = (10000, 10000, 10000)
-    fileLocationManager = FileLocationManager(animal)
+    chunks = calculate_chunks(downsample, -1)
     sqlController = SqlController(animal)
-    channel = 1
-    downsample = True
-
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'downsampled_10')
+    fileLocationManager = FileLocationManager(animal)
+    xy = sqlController.scan_run.resolution * 1000
+    z = sqlController.scan_run.zresolution * 1000
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
     OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
-    OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_10')
+    OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
+    if downsample:
+        xy = xy * 10
+        z = z * 10
+        INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'downsampled_10')
+        OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
+        OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_10')
+    scales = (xy, xy, z)
+    channel = 1
+
     if 'mothra' in get_hostname():
         print('Cleaning output dirs:')
         print(OUTPUT1_DIR)
@@ -66,6 +70,8 @@ def create_mesh(animal, limit, mse):
     height, width = midfile.shape
     volume_size = (width, height, len(files)) # neuroglancer is width, height
     print('volume size', volume_size)
+    print('scales', scales)
+    print('chunks', chunks)
     ng = NumpyToNeuroglancer(animal, None, scales, layer_type='segmentation', 
         data_type=data_type, chunk_size=chunks)
     progress_id = sqlController.get_progress_id(downsample, channel, 'NEUROGLANCER')
@@ -98,9 +104,9 @@ def create_mesh(animal, limit, mse):
     _, workers = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
     cloudpath2 = f'file://{OUTPUT2_DIR}'
-
+    chunks = calculate_chunks(downsample, 0)
     tasks = tc.create_transfer_tasks(cloudpath1, dest_layer_path=cloudpath2, 
-        chunk_size=[64,64,64], mip=0, skip_downsamples=True)
+        chunk_size=chunks, mip=0, skip_downsamples=True)
 
     tq.insert(tasks)
     tq.execute()
@@ -150,9 +156,11 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--limit', help='Enter the # of files to test', required=False, default=0)
     parser.add_argument('--mse', help='Enter the MSE', required=False, default=40)
+    parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     args = parser.parse_args()
     animal = args.animal
     limit = int(args.limit)
     mse = int(args.mse)
-    create_mesh(animal, limit, mse)
+    downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    create_mesh(animal, limit, mse, downsample)
 
