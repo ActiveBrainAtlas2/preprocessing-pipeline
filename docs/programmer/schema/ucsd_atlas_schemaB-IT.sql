@@ -3,6 +3,85 @@
 */
 
 /*
+   COMMENTS RELATED TO TABLE: slide
+   Unknown contrib - What is the role of this table, did this subsume the table "sections"?
+*/
+
+DROP TABLE IF EXISTS `slide`;
+CREATE TABLE `slide` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `slide_physical_id` int(11) NOT NULL COMMENT 'one per slide',
+  `rescan_number` enum('','1','2','3') NOT NULL DEFAULT '',
+  `slide_status` enum('Bad','Good') NOT NULL DEFAULT 'Good',
+  `scenes` int(11) DEFAULT NULL,
+  `insert_before_one` tinyint(4) NOT NULL DEFAULT 0,
+  `insert_between_one_two` tinyint(4) NOT NULL DEFAULT 0,
+  `insert_between_two_three` tinyint(4) NOT NULL DEFAULT 0,
+  `insert_between_three_four` tinyint(4) NOT NULL DEFAULT 0,
+  `insert_between_four_five` tinyint(4) NOT NULL DEFAULT 0,
+  `insert_between_five_six` tinyint(4) NOT NULL DEFAULT 0,
+  `file_name` varchar(200) NOT NULL,
+  `comments` longtext DEFAULT NULL COMMENT 'assessment',
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `file_size` float NOT NULL DEFAULT 0,
+  `processing_duration` float NOT NULL DEFAULT 0,
+  `processed` tinyint(4) NOT NULL DEFAULT 0,
+  `scene_qc_1` tinyint(4) NOT NULL DEFAULT 0,
+  `scene_qc_2` tinyint(4) NOT NULL DEFAULT 0,
+  `scene_qc_3` tinyint(4) NOT NULL DEFAULT 0,
+  `scene_qc_4` tinyint(4) NOT NULL DEFAULT 0,
+  `scene_qc_5` tinyint(4) NOT NULL DEFAULT 0,
+  `scene_qc_6` tinyint(4) NOT NULL DEFAULT 0,
+  `FK_scan_run_id` int(11) NOT NULL,
+  FOREIGN KEY `FK_scan_run_id` int(11) REFERENCES scan_run(`id`) ON UPDATE CASCADE,
+  PRIMARY KEY (`id`),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+/*
+   COMMENTS RELATED TO TABLE: transformation
+   Unknown contrib - Does this store transformations between stack, does not exist at this point.
+   coordinates and atlas coordinates (both ways)? does it support different types of transformation? (rigid, affine,beta spline?)
+*/
+
+DROP TABLE IF EXISTS `transformation`;
+CREATE TABLE `transformation` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+  `com_name` varchar(50) NOT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `FK_animal_id` int(11),
+  `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
+  `FK_owner_id` int(11) NOT NULL,
+  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
+  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
+  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `slide_czi_to_tif`;
+CREATE TABLE `slide_czi_to_tif` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `file_name` varchar(200) NOT NULL,
+  `scene_number` tinyint(4) NOT NULL,
+  `channel` tinyint(4) NOT NULL,
+  `width` int(11) NOT NULL DEFAULT 0,
+  `height` int(11) NOT NULL DEFAULT 0,
+  `comments` longtext DEFAULT NULL COMMENT 'assessment',
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `file_size` float NOT NULL DEFAULT 0,
+  `scene_index` int(11) NOT NULL DEFAULT 0,
+  `processing_duration` float NOT NULL DEFAULT 0,
+  `FK_slide_id` int(11) NOT NULL,
+  FOREIGN KEY `FK_slide_id` int(11) REFERENCES slide(`id`) ON UPDATE CASCADE ON DELETE CASCADE ON UPDATE CASCADE,
+  PRIMARY KEY (`id`),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+/*
    COMMENTS RELATED TO TABLE: elastix_transformation
    Unknown contrib - What is this table?
 */
@@ -31,6 +110,7 @@ CREATE TABLE `elastix_transformation` (
    DR - we do not need annotations_point_archive table if archived versions are stored on disk and referenced with archive_set.id (perhaps filename); this is for versioning of annotated Neuroglancer points (org. proposal was to store in file rather than live in database)
    DR - "layer" is related to Neuroglancer layer (user can name layer for superimposition of annotated points), "FK_archive_set_id" is for versioning of Neuroglancer annotated points (i.e., if points are added/removed/edited user can restore from previous version), "FK_input_type_id" is used to store point annotations input source: 'manual person', 'corrected person', 'detected computer', "FK_owner_id" is user who initially created/uploaded/input annotations
    DR - I believe data is stored in "structure" table is for each brain region (table renamed to brain_region)
+   ZW - modified layer to label
 */
 
 /*
@@ -49,7 +129,7 @@ CREATE TABLE `elastix_transformation` (
 DROP TABLE IF EXISTS `annotations_points` ;
 CREATE TABLE `annotations_points` (
   `id` INT(20) NOT NULL AUTO_INCREMENT,
-  `layer` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
+  `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
   `x` FLOAT DEFAULT NULL,
   `y` FLOAT DEFAULT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
