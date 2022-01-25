@@ -17,6 +17,7 @@ class CellDetectorBase(Brain):
         self.nrow = 5
         self.section = section
         self.DATA_PATH = f"/{disk}/cell_segmentation/"
+        self.ORIGINAL_IMAGE = os.path.join(self.DATA_PATH,'original')
         self.ANIMAL_PATH = os.path.join(self.DATA_PATH,self.animal)
         self.AVERAGE_CELL_IMAGE_DIR = os.path.join(self.ANIMAL_PATH,'average_cell_image.pkl')
         self.TILE_INFO_DIR = os.path.join(self.ANIMAL_PATH,'tile_info.csv')
@@ -169,6 +170,24 @@ class CellDetectorBase(Brain):
                 pkl.dump(out,pkl_file)
         except IOError as e:
             print(e)
+
+    def get_manual_annotation_in_tilei(self,annotations,tilei):
+        tile_origin= self.get_tile_origin(tilei)
+        manual_labels_in_tile=[]
+        n_manual_label = 0
+        if annotations is not None:  
+            manual_labels=np.int32(annotations)-tile_origin   
+            for i in range(manual_labels.shape[0]):
+                row,col=list(manual_labels[i,:])
+                if row<0 or row>=self.tile_height or col<0 or col>=self.tile_width:
+                    continue
+                manual_labels_in_tile.append(np.array([row,col]))
+            if not manual_labels_in_tile ==[]:
+                manual_labels_in_tile=np.stack(manual_labels_in_tile)
+            else:
+                manual_labels_in_tile = np.array([])
+            n_manual_label = len(manual_labels_in_tile) 
+        return manual_labels_in_tile,n_manual_label
 
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)

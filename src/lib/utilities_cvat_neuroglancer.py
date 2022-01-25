@@ -174,8 +174,9 @@ class NumpyToNeuroglancer():
             volume_size = self.volume.shape[:3], # e.g. a cubic millimeter dataset
         )
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
+        self.precomputed_vol[:, :, :] = self.volume[:, :, :]
         self.precomputed_vol.commit_info()
-        #self.precomputed_vol[:, :, :] = self.volume[:, :, :]
+        self.precomputed_vol.commit_provenance()
 
     def add_segment_properties(self, segment_properties):
         if self.precomputed_vol is None:

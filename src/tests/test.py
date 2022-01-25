@@ -1,4 +1,4 @@
-from  atlas.Assembler import Assembler
-from Brain import Brain
-braini = Brain('DK52')
-braini.sqlController.get_com_dict(brain.animal)
+from lib.TiffSegmentor import TiffSegmentor
+segmentor = TiffSegmentor('DK60',disk = 'scratch',n_workers = 10)
+segmentor.generate_tiff_segments(channel = 1,create_csv = False)
+segmentor.generate_tiff_segments(channel = 3,create_csv = True)

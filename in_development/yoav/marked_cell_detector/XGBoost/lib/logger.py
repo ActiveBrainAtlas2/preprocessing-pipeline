@@ -2,7 +2,7 @@ import pandas as pd
 
 class logger:
     """A helper class for defining a logger function and for parsing the
-log, assuming it is created by XGBoost.
+    log, assuming it is created by XGBoost.
     Typical use:
 
     Logger=logger()

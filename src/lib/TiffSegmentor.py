@@ -8,6 +8,7 @@ from lib.sqlcontroller import SqlController
 from cell_extractor.CellDetectorBase import CellDetectorBase
 from multiprocessing.pool import Pool
 import tqdm
+import shutil
 
 class TiffSegmentor(CellDetectorBase):
     def __init__(self,animal,n_workers = 10, *args, **kwargs):
@@ -86,3 +87,17 @@ class TiffSegmentor(CellDetectorBase):
             if premotor != []:
                 print('creating '+ csv_path)
                 np.savetxt(csv_path,premotor,delimiter=',',header='x,y,Section',comments = '',fmt = '%f')
+    
+    def move_full_aligned(self):
+        os.path.mkdir(self.ORIGINAL_IMAGE)
+        for channeli in [1,3]:
+            self.tif_directory = self.path.get_full_aligned(channeli)
+            ch_dir = os.path.join(self.ORIGINAL_IMAGE,f'CH{channeli}')
+            if not os.path.exists(ch_dir):
+                shutil.copytree(self.tif_directory,ch_dir)
+    
+    def delete_full_aligned(self):
+        for channeli in [1,3]:
+            ch_dir = os.path.join(self.ORIGINAL_IMAGE,f'CH{channeli}')
+            if os.path.exists(ch_dir):
+                os.remove(ch_dir)

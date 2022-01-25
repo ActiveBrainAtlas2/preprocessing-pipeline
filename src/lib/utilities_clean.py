@@ -85,7 +85,6 @@ def masker(animal, channel, downsample, debug):
     channel_dir = 'CH{}'.format(channel)
     CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail_cleaned')
     INPUT = os.path.join(fileLocationManager.prep, channel_dir, 'thumbnail')
-
     MASKS = os.path.join(fileLocationManager.prep, 'masks', 'thumbnail_masked')
     os.makedirs(CLEANED, exist_ok=True)
     width = sqlController.scan_run.width
@@ -97,7 +96,6 @@ def masker(animal, channel, downsample, debug):
     stain = sqlController.histology.counterstain
     if channel == 1:
         sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)
-
     if not downsample:
         CLEANED = os.path.join(fileLocationManager.prep, channel_dir, 'full_cleaned')
         os.makedirs(CLEANED, exist_ok=True)
@@ -105,8 +103,6 @@ def masker(animal, channel, downsample, debug):
         MASKS = os.path.join(fileLocationManager.prep, 'masks', 'full_masked')
         max_width = width
         max_height = height
-
-
     error = test_dir(animal, INPUT, downsample, same_size=False)
     if len(error) > 0:
         print(error)
@@ -114,7 +110,6 @@ def masker(animal, channel, downsample, debug):
     files = sorted(os.listdir(INPUT))
     progress_id = sqlController.get_progress_id(downsample, channel, 'CLEAN')
     sqlController.set_task(animal, progress_id)
-
     file_keys = []
     for file in files:
         infile = os.path.join(INPUT, file)
@@ -125,9 +120,8 @@ def masker(animal, channel, downsample, debug):
         if stain:
             if 'thion' in stain.lower():
                 print('Not implemented.')
-        else:
-            file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
-
+            else:
+                file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
     workers, _ = get_cpus() 
     if debug:
         print('debugging with single core')

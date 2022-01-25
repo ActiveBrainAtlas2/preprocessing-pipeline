@@ -21,50 +21,57 @@ UCSD ATLAS SCHEMA - MODS BASED ON REVISED PRE-PROCESSING PIPELINE DATA FLOWS, IN
    COMMENTS RELATED TO TABLE: biosource
    DR - FIELDS 'species, strain, sex' (PRIOR animal TABLE) NOW INCORPORATED INTO biocyc TABLE (name, strain, sex)
 */
+SET SESSION FOREIGN_KEY_CHECKS=0;
+--prep_id  COMMENT 'LEGACY: Name for lab animal, max 20 chars'
 
-DROP TABLE IF EXISTS `biosource`;
+DROP TABLE IF EXISTS `biosource`;  /* why not 'animal' ? */
 CREATE TABLE `biosource` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+  `prep_id` varchar(20) NOT NULL,  
   `date_of_birth` date DEFAULT NULL COMMENT 'the mouse''s date of birth',
   `active` tinyint(4) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
   `comments` varchar(2001) DEFAULT NULL,
   `sex` enum('Male','Female', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
   `tissue` varchar(100) DEFAULT NULL COMMENT 'ex. animal, brain, slides',
-  `genotype` varchar(100) DEFAULT NULL COMMENT 'transgenic description, usually "C57"; We will need a genotype table',
-  `breeder_line` varchar(100) DEFAULT NULL COMMENT 'We will need a local breeding table',
+  `genotype` varchar(100) DEFAULT NULL COMMENT 'transgenic description, usually "C57"; We will need a genotype table', 'This should go below species and breeder line'
+  `species_and_breeder_line` varchar(100) DEFAULT NULL /* this should replace biocyc as a foreign key */
   `stock_number` varchar(100) DEFAULT NULL COMMENT 'if not from a performance center',
   `ship_date` date DEFAULT NULL,
   `shipper` enum('FedEx','UPS') DEFAULT NULL,
   `tracking_number` varchar(100) DEFAULT NULL,
-   `FK_ORGID` int(11) COMMENT 'organism id',
+   `FK_ORGID` int(11) COMMENT 'organism id', 
   `FK_performance_center_id` int(11),
   `FK_alias_id` int(11),
   `FK_vendor_id` int(11),
    FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
-   FOREIGN KEY (`FK_ORGID`) REFERENCES biocyc(`id`),
+   FOREIGN KEY (`FK_ORGID`) REFERENCES biocyc(`id`), /* instead of biocyc, we can have an enumeraton of species "mouse"/"rat"/"marmaset"/Ma
    FOREIGN KEY (`FK_alias_id`) REFERENCES alias(`id`),
    FOREIGN KEY (`FK_vendor_id`) REFERENCES vendor(`id`),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+   PRIMARY KEY (`id`),
+   UNIQUE KEY (`prep_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: biocyc
    DR - UNIQUE NAMES BASED ON REF: http://bioinformatics.ai.sri.com/biowarehouse/repos/schema/doc/BioSource.html
 */
 
-DROP TABLE IF EXISTS `biocyc`;
+DROP TABLE IF EXISTS `biocyc`;  /* Turn into Species and Breeder Line table */
 CREATE TABLE `biocyc` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `strain` varchar(220) DEFAULT NULL,
+  `strain` varchar(220) DEFAULT NULL, /* the name of the animal supplied to the vivarium */
+  `breeder_line` varchar(200) DEFAULT NULL,  /* Name in the vivarium */
   `name` varchar(200) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO biocyc (name) VALUES ('MOUSE');
 INSERT INTO biocyc (name) VALUES ('RAT');
 INSERT INTO biocyc (name) VALUES ('FLY');
-INSERT INTO biocyc (name) VALUES ('ZFISH');
+INSERT INTO biocyc (name) VALUES ('MONKEY');
+INSERT INTO biocyc (name) VALUES ('WORM');
+INSERT INTO biocyc (name) VALUES ('FISH');
+INSERT INTO biocyc (name) VALUES ('BIRDD');
 
 /*
    COMMENTS RELATED TO TABLE: injection
@@ -101,7 +108,7 @@ CREATE TABLE `injection` (
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
   FOREIGN KEY (`FK_ref_atlas_id`) REFERENCES biosource(`id`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `injection_virus`;
 CREATE TABLE `injection_virus` (
@@ -113,7 +120,7 @@ CREATE TABLE `injection_virus` (
   FOREIGN KEY (`FK_injection_id`) REFERENCES injection(`id`),
   FOREIGN KEY (`FK_virus_id`) REFERENCES virus(`id`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: virus
@@ -144,7 +151,7 @@ CREATE TABLE `virus` (
   `source_details` varchar(100) DEFAULT NULL,
   `comments` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: scan_run
@@ -183,7 +190,7 @@ CREATE TABLE `scan_run` (
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
   FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: brain_region
@@ -203,15 +210,15 @@ CREATE TABLE `brain_region` (
   `FK_ref_atlas_id` int(11),
   FOREIGN KEY (`FK_ref_atlas_id`) REFERENCES biosource(`id`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
+DROP TABLE IF EXISTS `brain_atlas`;
 CREATE TABLE `brain_atlas` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `atlas_name` varchar(64) NOT NULL,
   `description` longtext NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 INSERT INTO brain_atlas (atlas_name, description) VALUES ('UCSD', 'UCSD Kleinfeld lab Active Brain Atlas');
 
 /*
@@ -305,6 +312,8 @@ CREATE TABLE `organic_label` (
    COMMENTS RELATED TO TABLE: slide
    Unknown contrib - What is the role of this table, did this subsume the table "sections"?
 */
+-- ZW This table cannot be created 
+-- You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'int(11) REFERENCES scan_run(`id`) ON UPDATE CASCADE,
 
 DROP TABLE IF EXISTS `slide`;
 CREATE TABLE `slide` (
@@ -333,8 +342,8 @@ CREATE TABLE `slide` (
   `scene_qc_5` tinyint(4) NOT NULL DEFAULT 0,
   `scene_qc_6` tinyint(4) NOT NULL DEFAULT 0,
    `FK_scan_run_id` int(11) NOT NULL,
-  FOREIGN KEY `FK_scan_run_id` int(11) REFERENCES scan_run(`id`) ON UPDATE CASCADE,
-  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_scan_run_id`) REFERENCES scan_run(id) ON UPDATE CASCADE,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `slide_czi_to_tif`;
@@ -352,14 +361,15 @@ CREATE TABLE `slide_czi_to_tif` (
   `scene_index` int(11) NOT NULL DEFAULT 0,
   `processing_duration` float NOT NULL DEFAULT 0,
   `FK_slide_id` int(11) NOT NULL,
-  FOREIGN KEY `FK_slide_id` int(11) REFERENCES slide(`id`) ON UPDATE CASCADE ON DELETE CASCADE ON UPDATE CASCADE,
-  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_slide_id`) REFERENCES slide(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: elastix_transformation
    Unknown contrib - What is this table?
 */
+  --FK_prep_id 'LEGACY: Name for lab animal, max 20 chars'
 
 DROP TABLE IF EXISTS `elastix_transformation`;
 CREATE TABLE `elastix_transformation` (
@@ -370,9 +380,9 @@ CREATE TABLE `elastix_transformation` (
   `yshift` float NOT NULL DEFAULT 0,
   `created` timestamp NULL DEFAULT current_timestamp(),
   `active` tinyint(4) NOT NULL DEFAULT 1,
-  `FK_prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
-  FOREIGN KEY (`FK_prep_i`) REFERENCES biosource(id),
-  PRIMARY KEY (`id`),
+  `FK_prep_id` int(11) NOT NULL , 
+  FOREIGN KEY (`FK_prep_id`) REFERENCES biosource(`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `alias`;
@@ -391,11 +401,11 @@ CREATE TABLE `vendor` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /* INSERT DEFAULTS */
-INSERT INTO vendor (vendor_id, name) VALUES (1, 'Jackson');
-INSERT INTO vendor (vendor_id, name) VALUES (2, 'Charles River');
-INSERT INTO vendor (vendor_id, name) VALUES (3, 'Harlan');
-INSERT INTO vendor (vendor_id, name) VALUES (4, 'NIH');
-INSERT INTO vendor (vendor_id, name) VALUES (5, 'Taconic');
+INSERT INTO vendor (id, name) VALUES (1, 'Jackson');
+INSERT INTO vendor (id, name) VALUES (2, 'Charles River');
+INSERT INTO vendor (id, name) VALUES (3, 'Harlan');
+INSERT INTO vendor (id, name) VALUES (4, 'NIH');
+INSERT INTO vendor (id, name) VALUES (5, 'Taconic');
 
 /*
      2) TABLES RELATED TO POINT ANNOTATIONS STORAGE: annotations_points, annotations_point_archive, archive_set, input_type
@@ -436,7 +446,7 @@ CREATE TABLE `annotations_points` (
   `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(animal_id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(input_id),
+  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
   FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id) ON UPDATE CASCADE,
   PRIMARY KEY (`id`)
 ) ENGINE=INNODB DEFAULT CHARSET=utf8;
@@ -486,11 +496,11 @@ CREATE TABLE `input_type` (
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`input_id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-INSERT INTO input_type (input_id, input_type) VALUES (1, 'manual person');
-INSERT INTO input_type (input_id, input_type) VALUES (2, 'corrected person');
-INSERT INTO input_type (input_id, input_type) VALUES (3, 'detected computer');
+INSERT INTO input_type (id, input_type) VALUES (1, 'manual person');
+INSERT INTO input_type (id, input_type) VALUES (2, 'corrected person');
+INSERT INTO input_type (id, input_type) VALUES (3, 'detected computer');
 
 /*
    COMMENTS RELATED TO TABLE: neuroglancer_state
@@ -513,7 +523,7 @@ CREATE TABLE `neuroglancer_state` (
   `FK_owner_id` int(11) NOT NULL,
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id) ON DELETE CASCADE,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
    COMMENTS RELATED TO TABLE: neuroglancer_urls
@@ -533,7 +543,7 @@ CREATE TABLE `neuroglancer_urls` (
   `updated` datetime DEFAULT current_timestamp(),
   `FK_owner_id` int(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER/UPDATER',
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id) ON DELETE CASCADE,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*
@@ -773,7 +783,7 @@ CREATE TABLE `django_plotly_dash_dashapp` (
   UNIQUE KEY `slug` (`slug`),
   KEY `django_plotly_dash_d_stateless_app_id_220444de_fk_django_pl` (`stateless_app_id`),
   CONSTRAINT `django_plotly_dash_d_stateless_app_id_220444de_fk_django_pl` FOREIGN KEY (`stateless_app_id`) REFERENCES `django_plotly_dash_statelessapp` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `django_plotly_dash_statelessapp`;
 CREATE TABLE `django_plotly_dash_statelessapp` (
@@ -783,7 +793,7 @@ CREATE TABLE `django_plotly_dash_statelessapp` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `app_name` (`app_name`),
   UNIQUE KEY `slug` (`slug`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `file_log`;
 CREATE TABLE `file_log` (
@@ -1344,7 +1354,7 @@ CREATE TABLE `task_view` (
   `percent_complete` tinyint(4) NOT NULL,
   `complete` tinyint(4) NOT NULL,
   `created` tinyint(4) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 /*
     8) TABLES RELATED TO UNKNOWN CLASSIFICATION: location, location_primary_people
@@ -1355,7 +1365,7 @@ CREATE TABLE `task_view` (
    Unknown contrib - What is the role of this table, what happened to the conversion of slides to sections?
 */
 
-haracter_set_client = @saved_cs_client;
+-- haracter_set_client = @saved_cs_client;
 
 /*
    COMMENTS RELATED TO TABLE: location
@@ -1386,3 +1396,29 @@ CREATE TABLE `location_primary_people` (
   CONSTRAINT `location_primary_people_user_id_4125b3f6_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `transformation_type`;
+CREATE TABLE `transformation_type` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `transformation_type` varchar(40) DEFAULT NULL,
+  `active` int(2) NOT NULL DEFAULT 1,
+  `created` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK__T_AID_PID_ITID` (`transformation_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `transformation`;
+CREATE TABLE `transformation` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `source` varchar(20) NOT NULL ,
+  `destination` varchar(20) NOT NULL ,
+  `transformation_type` int(11) NOT NULL,
+  `transformation` blob NOT NULL,
+  `created` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  `updated` timestamp NOT NULL DEFAULT current_timestamp(),
+  `active` int(2) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_source` (`source`,`destination`,`transformation_type`),
+  CONSTRAINT `transformation_ibfk_1` FOREIGN KEY (`source`) REFERENCES `biosource` (`prep_id`) ON DELETE CASCADE,
+  CONSTRAINT `transformation_ibfk_2` FOREIGN KEY (`destination`) REFERENCES `biosource` (`prep_id`) ON DELETE CASCADE,
+  CONSTRAINT `transformation_ibfk_3` FOREIGN KEY (`transformation_type`) REFERENCES `transformation_type` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=266 DEFAULT CHARSET=utf8;
