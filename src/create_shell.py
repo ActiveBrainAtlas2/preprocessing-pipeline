@@ -1,11 +1,10 @@
 """
-Creates a shell from  aligned thumbnails
+Creates a shell from  aligned masks
 """
 import argparse
 import os
 import sys
 import numpy as np
-from timeit import default_timer as timer
 import shutil
 from skimage import io, measure
 import cv2
@@ -22,6 +21,11 @@ from lib.utilities_process import test_dir, SCALING_FACTOR
 
 
 def mask_to_shell(mask):
+    '''
+    Takes in a binary mask file, gets the contours
+    and returns an outline of the brain.
+    :param mask: the binary tif file: mask
+    '''
     sub_contours = measure.find_contours(mask, 1)
 
     sub_shells = []
@@ -36,14 +40,15 @@ def mask_to_shell(mask):
     return shell
 
 class NumpyToNeuroglancer():
-    viewer = None
+    '''
+    This should be replaced with the class from lib/utilities_cvat_neuroglancer.py
+    '''
 
     def __init__(self, volume, scales, offset=[0, 0, 0], layer_type='segmentation'):
         self.volume = volume
         self.scales = scales
         self.offset = offset
         self.layer_type = layer_type
-
         self.precomputed_vol = None
 
     def init_precomputed(self, path):
@@ -112,6 +117,13 @@ class NumpyToNeuroglancer():
 
 
 def create_shell(animal, DEBUG=False):
+    '''
+    Gets some info from the database used to create the numpy volume from
+    the masks. It then turns that numpy volume into a neuroglancer precomputed
+    mesh
+    :param animal:
+    :param DEBUG:
+    '''
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'masks', 'rotated_aligned_masked')
@@ -141,20 +153,14 @@ def create_shell(animal, DEBUG=False):
     volume = np.array(volume).astype('uint8')
     volume = np.swapaxes(volume, 0, 2)
     ids = np.unique(volume)
-    print('ids', ids)
 
     resolution = sqlController.scan_run.resolution
     resolution = int(resolution * 1000 / SCALING_FACTOR)
-    print('Resolution at', resolution)
     ng = NumpyToNeuroglancer(volume, [resolution, resolution, 20000], offset=[0,0,0])
     ng.init_precomputed(OUTPUT_DIR)
     ng.add_segment_properties(ids)
     ng.add_downsampled_volumes()
     ng.add_segmentation_mesh()
-
-    end = timer()
-    print(f'Finito! Program took {end - start} seconds')
-
 
 
 if __name__ == '__main__':
