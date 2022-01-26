@@ -44,7 +44,29 @@ INSERT INTO biocyc (name) VALUES ('RAT');
 INSERT INTO biocyc (name) VALUES ('FLY');
 INSERT INTO biocyc (name) VALUES ('ZFISH');
 
+/* AH - The table describing histological preparation for a single animal */
+/* AH - should primary_staining_agent be an enum ('virus','antibody') ? 
+likewise for secondary? */
 
+/* AH - added histology table */ 
+
+DROP TABLE IF EXISTS `histology`;
+CREATE TABLE `histology` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `active` tinyint(1) NOT NULL,
+  `created` datetime DEFAULT current_timestamp(),
+  `perfusion_timestamp` datetime DEFAULT current_timestamp(),
+  `sectioning_method` enum('free floating', 'cryostat','not sectioned') DEFAULT NULL,
+  `clearing_method` enum('iDISCO+_immuno', 'iDISCO_abbreviated','uDISCO','experimental','not cleared') DEFAULT NULL,
+  `primary_fluorophore` varchar(64) DEFAULT NULL COMMENT 'e.g. antibody X or virus Y',
+  `secondary_fluorophore` varchar(64) DEFAULT NULL COMMENT 'e.g. antibody Z or virus Q',
+  `comments` longtext DEFAULT NULL,
+  `FK_performance_center_id` int(11),
+  `FK_biosource_id` int(11),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* AH - need to specify units of injection volume, e.g. microliters like
 injection_volume -> injection_volume_ul
@@ -77,7 +99,7 @@ CREATE TABLE `injection` (
   `FK_ref_atlas_id` int(11),
   FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
-  FOREIGN KEY (`FK_ref_atlas_id`) REFERENCES biosource(`id`),
+  FOREIGN KEY (`FK_ref_atlas_id`) REFERENCES brain_atlas(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -128,13 +150,13 @@ CREATE TABLE `scan_run` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `active` tinyint(1) NOT NULL,
   `created` datetime DEFAULT current_timestamp(),
-  `instrument` enum('Zeiss','Axioscan','Nanozoomer','Olympus VA') DEFAULT NULL,
-  `objective` enum('60X','40X','20X','10X') DEFAULT NULL,
-  `resolution` double NOT NULL,
+  `instrument` enum('Zeiss','Axioscan','Nanozoomer','Olympus VA','UltraMicroscopeII','SmartSPIM') DEFAULT NULL,
+  `objective` enum('60X','40X','20X','10X','1.1x','1.3x','3.6x','4x','15x') DEFAULT NULL,
+  `axial_resolution` double NOT NULL,
   `zresolution` double NOT NULL,
   `number_of_slides` int(11) NOT NULL,
   `scan_date` date DEFAULT NULL,
-  `file_type` enum('CZI','JPEG2000','NDPI','NGR') DEFAULT NULL,
+  `file_type` enum('CZI','JPEG2000','NDPI','NGR','TIFF') DEFAULT NULL,
   `channels_per_scene` enum('1','2','3','4') DEFAULT NULL,
   `width` int(11) NOT NULL,
   `height` int(11) NOT NULL,
@@ -170,11 +192,14 @@ CREATE TABLE `brain_region` (
 
 CREATE TABLE `brain_atlas` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `atlas_name` varchar(64) NOT NULL,
+  `atlas_name` varchar(64) NOT NULL DEFAULT 'UCSD',
   `description` longtext NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 INSERT INTO brain_atlas (id, atlas_name, description) VALUES (1, 'UCSD', 'UCSD Kleinfeld lab Active Brain Atlas');
+INSERT INTO brain_atlas (id, atlas_name, description) VALUES (2, 'Allen_ccf_v3', 'The Allen Mouse Brain Common Coordinate Framework version 3');
+INSERT INTO brain_atlas (id, atlas_name, description) VALUES (3, 'Princeton_mouse', 'The Princeton Mouse Brain Atlas');
+INSERT INTO brain_atlas (id, atlas_name, description) VALUES (4, 'Princeton_rat', 'The Princeton Rat Brain Atlas');
 
 /*
      2) TABLES RELATED TO POINT ANNOTATIONS STORAGE: annotations_points, annotations_point_archive, archive_set, input_type
@@ -354,6 +379,9 @@ CREATE TABLE `auth_permission` (
 ) ENGINE=InnoDB AUTO_INCREMENT=97 DEFAULT CHARSET=utf8mb4;
 
 /* DR - Can we consolidate authentication_lab and performance_center? */
+/* AH - I don't think we want to do that. I think of authentication_lab 
+as where the data are hosted and performance_center as where the data were
+collected, which are separate concepts. */
 
 DROP TABLE IF EXISTS `authentication_lab`;
 CREATE TABLE `authentication_lab` (
@@ -377,6 +405,7 @@ INSERT INTO performance_center (performance_center_id, name) VALUES (2, 'Salk');
 INSERT INTO performance_center (performance_center_id, name) VALUES (3, 'UCSD');
 INSERT INTO performance_center (performance_center_id, name) VALUES (4, 'HHMI');
 INSERT INTO performance_center (performance_center_id, name) VALUES (5, 'Duke');
+INSERT INTO performance_center (performance_center_id, name) VALUES (6, 'Princeton');
 
 DROP TABLE IF EXISTS `authentication_user_groups`;
 CREATE TABLE `authentication_user_groups` (
