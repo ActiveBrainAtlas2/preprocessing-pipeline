@@ -1,5 +1,5 @@
 /* TABLE OF CONTENTS - OVERALL ORGANIZATION STRUCTURE:
-   1) TABLES RELATED TO BIOLOGICAL DATA SOURCE & SAMPLE PREP: biosource, biocyc, injection, injection_virus, virus, scan_run, brain_region, brain_atlas
+   1) TABLES RELATED TO BIOLOGICAL DATA SOURCE & SAMPLE PREP: biosource, species, injection, injection_virus, virus, scan_run, brain_region, brain_atlas
    2) TABLES RELATED TO POINT ANNOTATIONS STORAGE: annotations_points, annotations_point_archive, archive_set, input_type, neuroglancer_state
    3) TABLES RELATED TO USER ACCOUNTS: authentication_user, account_emailaddress, account_emailconfirmation, auth_group, auth_group_permissions, auth_permission, authentication_lab, authentication_user_groups, authentication_user_labs, authentication_user_user_permissions, socialaccount_socialaccount, socialaccount_socialapp, socialaccount_socialapp_sites, socialaccount_socialtoken
    4) TABLES RELATED TO PLATFORM ADMINISTRATION/FUNCTIONALITY: django_admin_log, django_content_type, django_migrations, django_session, django_site
@@ -8,13 +8,14 @@
 /* 26-JAN-2022 - DR CHANGES MADE TO histology, antibody TABLES */
 
 /*
-   1) TABLES RELATED TO BIOLOGICAL DATA SOURCE: biosource, biocyc
+   1) TABLES RELATED TO BIOLOGICAL DATA SOURCE: biosource, species
 */
 
 /* AH - What is the animal field for? We need a species column. */
 /* DR - I agree but also we could generalize even more to 'biosource', which could be more inclusive.  Previous work on biological pathways related to metabolomics, genomics, proteomics used biocyc databases (https://biocyc.org/).  Using nomenclature (HUMAN, MOUSE, FLY) as foreign key may lead to additional applications in future.
 
-   DR - RENAMED animal TABLE TO biosource [REFERENCES biocyc TABLE FOR ALL SPECIES]
+   DR - RENAMED animal TABLE TO biosource [REFERENCES species TABLE FOR ALL SPECIES]
+   ZW - Are we anticipitating samples that do not come from an animal?  If not it might be more straight forward to call this 'animal' table 
 */
 
 DROP TABLE IF EXISTS `biosource`;
@@ -28,22 +29,24 @@ CREATE TABLE `biosource` (
    FK_ORGID int(11) COMMENT 'organism id',
   `FK_authentication_lab_id` int(11),
    FOREIGN KEY (`FK_authentication_lab_id`) REFERENCES authentication_lab(`id`),
-   FOREIGN KEY (`FK_ORGID`) REFERENCES biocyc(`id`),
+   FOREIGN KEY (`FK_ORGID`) REFERENCES species(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+/* Changed to species as it would be easier to understand */
+
 /* UNIQUE NAMES BASED ON REF: http://bioinformatics.ai.sri.com/biowarehouse/repos/schema/doc/BioSource.html */
-DROP TABLE IF EXISTS `biocyc`;
-CREATE TABLE `biocyc` (
+DROP TABLE IF EXISTS `species`;
+CREATE TABLE `species` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `strain` varchar(220) DEFAULT NULL,
   `name` varchar(200) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-INSERT INTO biocyc (name) VALUES ('MOUSE');
-INSERT INTO biocyc (name) VALUES ('RAT');
-INSERT INTO biocyc (name) VALUES ('FLY');
-INSERT INTO biocyc (name) VALUES ('ZFISH');
+INSERT INTO species (name) VALUES ('MOUSE');
+INSERT INTO species (name) VALUES ('RAT');
+INSERT INTO species (name) VALUES ('FLY');
+INSERT INTO species (name) VALUES ('ZFISH');
 
 /* AH - The table describing histological preparation for a single animal */
 /* AH - should primary_staining_agent be an enum ('virus','antibody') ? 
@@ -263,10 +266,11 @@ INSERT INTO brain_atlas (id, atlas_name, description) VALUES (4, 'Princeton_rat'
 */
 */
 
+/*ZW changed layer to label.  Layer is a label for groups of annotations as it used to be specified by the neuroglancer layer name*/
 DROP TABLE IF EXISTS `annotations_points`;
 CREATE TABLE `annotations_points` (
   `id` INT(20) NOT NULL AUTO_INCREMENT,
-  `layer` varchar(255) NOT NULL COMMENT 'freeform name/label the layer[annotation]',
+  `label` varchar(255) NOT NULL COMMENT 'freeform name/label the annotation',
   `x` double NOT NULL,
   `y` double NOT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
@@ -284,7 +288,7 @@ CREATE TABLE `annotations_points` (
 DROP TABLE IF EXISTS `annotations_point_archive`;
 CREATE TABLE `annotations_point_archive` (
   `id` int(20) NOT NULL AUTO_INCREMENT,
-  `layer` varchar(255) NOT NULL COMMENT 'freeform name/label the layer[annotation]',
+  `label` varchar(255) NOT NULL COMMENT 'freeform name/label the annotation',
   `x` double NOT NULL,
   `y` double NOT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
