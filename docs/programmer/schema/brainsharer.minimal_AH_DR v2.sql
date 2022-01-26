@@ -5,6 +5,7 @@
    4) TABLES RELATED TO PLATFORM ADMINISTRATION/FUNCTIONALITY: django_admin_log, django_content_type, django_migrations, django_session, django_site
 */
 
+/* 26-JAN-2022 - DR CHANGES MADE TO histology, antibody TABLES */
 
 /*
    1) TABLES RELATED TO BIOLOGICAL DATA SOURCE: biosource, biocyc
@@ -47,8 +48,7 @@ INSERT INTO biocyc (name) VALUES ('ZFISH');
 /* AH - The table describing histological preparation for a single animal */
 /* AH - should primary_staining_agent be an enum ('virus','antibody') ? 
 likewise for secondary? */
-
-/* AH - added histology table */ 
+/* DR - added FK_virus_id, FK_antibody_id fields to address 'primary_staining_agent' comment above */ 
 
 DROP TABLE IF EXISTS `histology`;
 CREATE TABLE `histology` (
@@ -78,10 +78,42 @@ CREATE TABLE `histology` (
   `comments` longtext DEFAULT NULL,
   `FK_performance_center_id` int(11),
   `FK_biosource_id` int(11),
+  `FK_virus_id` int(11),
+  `FK_antibody_id` int(11),
   FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
+  FOREIGN KEY (`FK_virus_id`) REFERENCES virus(`id`),
+  FOREIGN KEY (`FK_antibody_id`) REFERENCES antibody(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+/* DR - NEW TABLE - UCSD EQUIVALENT TABLE: organic_label */ 
+
+DROP TABLE IF EXISTS `antibody`;
+CREATE TABLE `antibody` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `label_id` varchar(20) NOT NULL,
+  `label_type` enum('Cascade Blue','Chicago Blue','Alexa405','Alexa488','Alexa647','Cy2','Cy3','Cy5','Cy5.5','Cy7','Fluorescein','Rhodamine B','Rhodamine 6G','Texas Red','TMR') DEFAULT NULL,
+  `type_lot_number` varchar(20) DEFAULT NULL,
+  `type_tracer` enum('BDA','Dextran','FluoroGold','DiI','DiO') DEFAULT NULL,
+  `type_details` varchar(500) DEFAULT NULL,
+  `concentration` float NOT NULL DEFAULT 0 COMMENT '(µM) if applicable',
+  `excitation_1p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_1p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_2p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_2p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `lp_dichroic_cut` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `emission_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `emission_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `label_source` enum('','Invitrogen','Sigma','Thermo-Fisher') DEFAULT NULL,
+  `source_details` varchar(100) DEFAULT NULL,
+  `comments` longtext DEFAULT NULL COMMENT 'assessment',
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 /* AH - need to specify units of injection volume, e.g. microliters like
 injection_volume -> injection_volume_ul

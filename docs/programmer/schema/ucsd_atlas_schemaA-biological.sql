@@ -1,16 +1,24 @@
 /* TABLE OF CONTENTS - OVERALL ORGANIZATION STRUCTURE (BIOLOGICAL):
 
-   TOTAL TABLES (14): alias, animal, biosource, brain_region, histology, injection, injection_virus, organic_label, scan_run, slide, slide_czi_to_tif, transformation, vendor, virus
+   TOTAL TABLES (12): alias, animal, brain_region, breeder_line, genotype, histology, injection, injection_virus, organic_label, scan_run, virus, vendor_strain
+
+FOR REVIEW (27-JAN-2022):
+-animal [NORMALIZATION]
+-breeder_line [NEW - NORMALIZATION]
+-genotype [NEW - NORMALIZATION]
+-vendor_strain
+
 
    TABLES MODIFIED FROM schema2.sql [WITH JUSTIFICATION]
-   alias [NORMALIZATION]
+   alias [NORMALIZATION] *APPROVED 26-JAN-2022
    animal [NORMALIZATION]
-   biosource [NORMALIZATION]
-   brain_region [NORMALIZATION AND NEW NAME BETTER DESCRIBES ROLE OF TABLE]
-   histology [NORMALIZATION]
-   injection [NORMALIZATION]
-   scan_run [NORMALIZATION]
-   vendor [NORMALIZATION]
+   brain_region [NORMALIZATION AND NEW NAME BETTER DESCRIBES ROLE OF TABLE] *APPROVED 26-JAN-2022
+   breeder_line [NEW - NORMALIZATION]
+   genotype [NEW - NORMALIZATION]
+   histology [NORMALIZATION] *APPROVED 26-JAN-2022
+   injection [NORMALIZATION] *APPROVED 26-JAN-2022
+   scan_run [NORMALIZATION] *APPROVED 26-JAN-2022
+   vendor_strain [NORMALIZATION & ADDED STRAIN (PREV stock_number FIELD IN animal TABLE)]
 
    TABLES NOT MODIFIED FROM schema2.sql
    injection_virus
@@ -22,54 +30,8 @@
    COMMENTS RELATED TO TABLE: animal
    DR - performance_center FIELD REMOVED; DATA IN SEPARATE TABLE (performance_center) [JUSTIFICATION: NORMALIZATION]
    DR - aliases_1, aliases_2, aliases_3, aliases_4, aliases_5 FIELDS REMOVED; DATA IN SEPARATE TABLE alias [JUSTIFICATION: NORMALIZATION]
-   DR - species, strain FIELDS REMOVED; REPLACED WITH FOREIGN KEY TO biosource, WHICH HAS SPECIES, STRAIN DATA [JUSTIFICATION: EASIER INTEGRATION WITH CLOUD, NORMALIZTION]
+   DR - FK_vendor_strain_id FIELD MODIFIED TO REFERENCE vendor_strain TABLE (INCLUDES stock_number, vendor_name)
 */
-
-CREATE TABLE `animal` (
-  `int(11)` NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
-  `date_of_birth` date DEFAULT NULL COMMENT 'organism date of birth',
-  `sex` enum('M', 'F', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
-  `tissue_source` enum('animal','brain','slides') DEFAULT NULL,
-  `genotype` varchar(100) DEFAULT NULL COMMENT 'transgenic description, usually "C57"; We will need a genotype table',
-  `breeder_line` varchar(100) DEFAULT NULL COMMENT 'We will need a local breeding table',
-  `stock_number` varchar(100) DEFAULT NULL COMMENT 'if not from a performance center',
-  `ship_date` date DEFAULT NULL,
-  `shipper` enum('FedEx','UPS') DEFAULT NULL,
-  `tracking_number` varchar(100) DEFAULT NULL,
-  `comments` varchar(2001) DEFAULT NULL COMMENT 'assessment',
-  `active` tinyint(1) NOT NULL DEFAULT 1,
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `FK_ORGID` int(11) COMMENT 'organism id',
-  `FK_performance_center_id` int(11),
-  `FK_alias_id` int(11),
-  `FK_vendor_id` int(11),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
-  FOREIGN KEY (`FK_ORGID`) REFERENCES biosource(`id`),
-  FOREIGN KEY (`FK_alias_id`) REFERENCES alias(`alias_id`),
-  FOREIGN KEY (`FK_vendor_id`) REFERENCES vendor(`vendor_id`),
-  PRIMARY KEY (`prep_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-/*
-   COMMENTS RELATED TO TABLE: biosource
-   DR - [JUSTIFICATION: NORMALIZATION]
-   DR - UNIQUE NAMES BASED ON REF: http://bioinformatics.ai.sri.com/biowarehouse/repos/schema/doc/BioSource.html
-*/
-
-DROP TABLE IF EXISTS `biosource`;
-CREATE TABLE `biosource` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `strain` varchar(220) DEFAULT NULL,
-  `name` varchar(200) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-INSERT INTO biosource (name) VALUES ('MOUSE');
-INSERT INTO biosource (name) VALUES ('RAT');
-INSERT INTO biosource (name) VALUES ('FLY');
-INSERT INTO biosource (name) VALUES ('ZFISH');
-
 
 DROP TABLE IF EXISTS `alias`;
 CREATE TABLE `alias` (
@@ -81,18 +43,101 @@ CREATE TABLE `alias` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
-DROP TABLE IF EXISTS `vendor`;
-CREATE TABLE `vendor` (
+CREATE TABLE `animal` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) DEFAULT NULL,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+  `date_of_birth` date DEFAULT NULL COMMENT 'organism date of birth',
+  `sex` enum('M', 'F', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
+  `tissue_source` enum('animal','brain','slides') DEFAULT NULL,
+  `ship_date` date DEFAULT NULL,
+  `shipper` enum('FedEx','UPS') DEFAULT NULL,
+  `tracking_number` varchar(100) DEFAULT NULL,
+  `comments` varchar(2001) DEFAULT NULL COMMENT 'assessment',
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `species` enum('mouse','rat') DEFAULT NULL,
+  `FK_performance_center_id` int(11),
+  `FK_alias_id` int(11),
+  `FK_vendor_strain_id` int(11),
+  `FK_breeder_line_id` int(11),
+  `FK_genotype_id` int(11),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_alias_id`) REFERENCES alias(`alias_id`),
+  FOREIGN KEY (`FK_vendor_strain_id`) REFERENCES vendor_strain(`id`),
+  FOREIGN KEY (`FK_breeder_line_id`) REFERENCES breeder_line(`id`),
+  FOREIGN KEY (`FK_genotype_id`) REFERENCES genotype(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-/* INSERT DEFAULTS */
-INSERT INTO vendor (vendor_id, name) VALUES (1, 'Jackson');
-INSERT INTO vendor (vendor_id, name) VALUES (2, 'Charles River');
-INSERT INTO vendor (vendor_id, name) VALUES (3, 'Harlan');
-INSERT INTO vendor (vendor_id, name) VALUES (4, 'NIH');
-INSERT INTO vendor (vendor_id, name) VALUES (5, 'Taconic');
+
+
+/*
+   COMMENTS RELATED TO TABLE: brain_region
+   DR - RENAMED TABLE 'structure' to 'brain_region'
+   Unknown contrib - Does not include the 3D shape information?
+*/
+
+DROP TABLE IF EXISTS `brain_region`;
+CREATE TABLE `brain_region` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  `created` datetime DEFAULT current_timestamp(),
+  `abbreviation` varchar(200) NOT NULL,
+  `description` longtext NOT NULL,
+  `color` int(11) NOT NULL DEFAULT 100,
+  `hexadecimal` char(7) COLLATE utf8_bin DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `breeder_line`;
+CREATE TABLE `breeder_line` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `breeder_line` varchar(100) DEFAULT NULL,  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `genotype`;
+CREATE TABLE `genotype` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parent1` varchar(100) DEFAULT NULL COMMENT 'father',  
+  `parent2` varchar(100) DEFAULT NULL COMMENT 'mother',  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `histology`;
+CREATE TABLE `histology` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+  `anesthesia` enum('ketamine','isoflurane','pentobarbital','fatal plus') DEFAULT NULL,
+  `perfusion_age_in_days` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `perfusion_date` date DEFAULT NULL,
+  `exsangination_method` enum('PBS','aCSF','Ringers') DEFAULT NULL,
+  `fixative_method` enum('Para','Glut','Post fix') DEFAULT NULL,
+  `special_perfusion_notes` varchar(200) DEFAULT NULL,
+  `post_fixation_period` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT '(days)',
+  `whole_brain` enum('Y','N') DEFAULT NULL,
+  `block` varchar(200) DEFAULT NULL COMMENT 'if applicable',
+  `date_sectioned` date DEFAULT NULL,
+  `side_sectioned_first` enum('ASC','DESC') NOT NULL DEFAULT 'ASC',
+  `sectioning_method` enum('cryoJane','cryostat','vibratome','optical','sliding microtiome') DEFAULT NULL,
+  `section_thickness` tinyint(3) unsigned NOT NULL DEFAULT 20 COMMENT '(µm)',
+  `orientation` enum('coronal','horizontal','sagittal','oblique') DEFAULT NULL,
+  `oblique_notes` varchar(200) DEFAULT NULL,
+  `mounting` enum('every section','2nd','3rd','4th','5ft','6th') DEFAULT NULL COMMENT 'used to automatically populate Placeholder',
+  `counterstain` enum('thionin','NtB','NtFR','DAPI','Giemsa','Syto41') DEFAULT NULL,
+  `comments` longtext DEFAULT NULL COMMENT 'assessment',
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `FK_animal_id` int(11),
+  `FK_virus_id` int(11),
+  `FK_performance_center_id` int(11),
+  `FK_organic_label_id` int(11),
+  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
+  FOREIGN KEY (`FK_virus_id`) REFERENCES virus(id),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_organic_label_id`) REFERENCES organic_label(id),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 /*
@@ -146,33 +191,31 @@ CREATE TABLE `injection_virus` (
 
 
 /*
-   COMMENTS RELATED TO TABLE: virus
-   DR - recommend move virus_type, virus_source to separate tables
+   COMMENTS RELATED TO TABLE: organic_label
+   Unknown contrib -  Oraganics are labels that can be injected
 */
 
-DROP TABLE IF EXISTS `virus`;
-CREATE TABLE `virus` (
+DROP TABLE IF EXISTS `organic_label`;
+CREATE TABLE `organic_label` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `active` tinyint(1) NOT NULL DEFAULT 1,
-  `created` datetime DEFAULT current_timestamp(),
-  `virus_name` varchar(50) NOT NULL,
-  `virus_type` enum('Adenovirus','AAV','CAV','DG rabies','G-pseudo-Lenti','Herpes','Lenti','N2C rabies','Sinbis') DEFAULT NULL,
-  `virus_active` enum('yes','no') DEFAULT NULL,
+  `label_id` varchar(20) NOT NULL,
+  `label_type` enum('Cascade Blue','Chicago Blue','Alexa405','Alexa488','Alexa647','Cy2','Cy3','Cy5','Cy5.5','Cy7','Fluorescein','Rhodamine B','Rhodamine 6G','Texas Red','TMR') DEFAULT NULL,
+  `type_lot_number` varchar(20) DEFAULT NULL,
+  `type_tracer` enum('BDA','Dextran','FluoroGold','DiI','DiO') DEFAULT NULL,
   `type_details` varchar(500) DEFAULT NULL,
-  `titer` double NOT NULL DEFAULT 0 COMMENT '(particles/ml) if applicable',
-  `lot_number` varchar(20) DEFAULT NULL,
-  `label` enum('YFP','GFP','RFP','histo-tag') DEFAULT NULL,
-  `label2` varchar(200) DEFAULT NULL,
-  `excitation_1p_wavelength` int(11) NOT NULL,
-  `excitation_1p_range` int(11) NOT NULL,
-  `excitation_2p_wavelength` int(11) NOT NULL,
-  `excitation_2p_range` int(11) NOT NULL,
-  `lp_dichroic_cut` int(11) NOT NULL,
-  `emission_wavelength` int(11) NOT NULL,
-  `emission_range` int(11) NOT NULL,
-  `virus_source` enum('Adgene','Salk','Penn','UNC') DEFAULT NULL,
+  `concentration` float NOT NULL DEFAULT 0 COMMENT '(µM) if applicable',
+  `excitation_1p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_1p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_2p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `excitation_2p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `lp_dichroic_cut` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `emission_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `emission_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
+  `label_source` enum('','Invitrogen','Sigma','Thermo-Fisher') DEFAULT NULL,
   `source_details` varchar(100) DEFAULT NULL,
-  `comments` longtext DEFAULT NULL,
+  `comments` longtext DEFAULT NULL COMMENT 'assessment',
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -220,88 +263,41 @@ CREATE TABLE `scan_run` (
 
 
 /*
-   COMMENTS RELATED TO TABLE: brain_region
-   DR - RENAMED TABLE 'structure' to 'brain_region'
-   Unknown contrib - Does not include the 3D shape information?
+   COMMENTS RELATED TO TABLE: virus
+   DR - recommend move virus_type, virus_source to separate tables
 */
 
-DROP TABLE IF EXISTS `brain_region`;
-CREATE TABLE `brain_region` (
+DROP TABLE IF EXISTS `virus`;
+CREATE TABLE `virus` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
-  `abbreviation` varchar(200) NOT NULL,
-  `description` longtext NOT NULL,
-  `color` int(11) NOT NULL DEFAULT 100,
-  `hexadecimal` char(7) COLLATE utf8_bin DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-DROP TABLE IF EXISTS `histology`;
-CREATE TABLE `histology` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
-  `anesthesia` enum('ketamine','isoflurane','pentobarbital','fatal plus') DEFAULT NULL,
-  `perfusion_age_in_days` tinyint(3) unsigned NOT NULL DEFAULT 0,
-  `perfusion_date` date DEFAULT NULL,
-  `exsangination_method` enum('PBS','aCSF','Ringers') DEFAULT NULL,
-  `fixative_method` enum('Para','Glut','Post fix') DEFAULT NULL,
-  `special_perfusion_notes` varchar(200) DEFAULT NULL,
-  `post_fixation_period` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT '(days)',
-  `whole_brain` enum('Y','N') DEFAULT NULL,
-  `block` varchar(200) DEFAULT NULL COMMENT 'if applicable',
-  `date_sectioned` date DEFAULT NULL,
-  `side_sectioned_first` enum('ASC','DESC') NOT NULL DEFAULT 'ASC',
-  `sectioning_method` enum('cryoJane','cryostat','vibratome','optical','sliding microtiome') DEFAULT NULL,
-  `section_thickness` tinyint(3) unsigned NOT NULL DEFAULT 20 COMMENT '(µm)',
-  `orientation` enum('coronal','horizontal','sagittal','oblique') DEFAULT NULL,
-  `oblique_notes` varchar(200) DEFAULT NULL,
-  `mounting` enum('every section','2nd','3rd','4th','5ft','6th') DEFAULT NULL COMMENT 'used to automatically populate Placeholder',
-  `counterstain` enum('thionin','NtB','NtFR','DAPI','Giemsa','Syto41') DEFAULT NULL,
-  `comments` longtext DEFAULT NULL COMMENT 'assessment',
-  `active` tinyint(1) NOT NULL DEFAULT 1,
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `FK_animal_id` int(11),
-  `FK_virus_id` int(11),
-  `FK_performance_center_id` int(11),
-  `FK_label_id` int(11),
-  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
-  FOREIGN KEY (`FK_virus_id`) REFERENCES virus(id),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
-  FOREIGN KEY (`FK_label_id`) REFERENCES organic_label(id),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-/*
-   COMMENTS RELATED TO TABLE: organic_label
-   Unknown contrib -  Oraganics are labels that can be injected
-*/
-
-DROP TABLE IF EXISTS `organic_label`;
-CREATE TABLE `organic_label` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `label_id` varchar(20) NOT NULL,
-  `label_type` enum('Cascade Blue','Chicago Blue','Alexa405','Alexa488','Alexa647','Cy2','Cy3','Cy5','Cy5.5','Cy7','Fluorescein','Rhodamine B','Rhodamine 6G','Texas Red','TMR') DEFAULT NULL,
-  `type_lot_number` varchar(20) DEFAULT NULL,
-  `type_tracer` enum('BDA','Dextran','FluoroGold','DiI','DiO') DEFAULT NULL,
+  `virus_name` varchar(50) NOT NULL,
+  `virus_type` enum('Adenovirus','AAV','CAV','DG rabies','G-pseudo-Lenti','Herpes','Lenti','N2C rabies','Sinbis') DEFAULT NULL,
+  `virus_active` enum('yes','no') DEFAULT NULL,
   `type_details` varchar(500) DEFAULT NULL,
-  `concentration` float NOT NULL DEFAULT 0 COMMENT '(µM) if applicable',
-  `excitation_1p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `excitation_1p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `excitation_2p_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `excitation_2p_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `lp_dichroic_cut` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `emission_wavelength` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `emission_range` int(11) NOT NULL DEFAULT 0 COMMENT '(nm)',
-  `label_source` enum('','Invitrogen','Sigma','Thermo-Fisher') DEFAULT NULL,
+  `titer` double NOT NULL DEFAULT 0 COMMENT '(particles/ml) if applicable',
+  `lot_number` varchar(20) DEFAULT NULL,
+  `label` enum('YFP','GFP','RFP','histo-tag') DEFAULT NULL,
+  `label2` varchar(200) DEFAULT NULL,
+  `excitation_1p_wavelength` int(11) NOT NULL,
+  `excitation_1p_range` int(11) NOT NULL,
+  `excitation_2p_wavelength` int(11) NOT NULL,
+  `excitation_2p_range` int(11) NOT NULL,
+  `lp_dichroic_cut` int(11) NOT NULL,
+  `emission_wavelength` int(11) NOT NULL,
+  `emission_range` int(11) NOT NULL,
+  `virus_source` enum('Adgene','Salk','Penn','UNC') DEFAULT NULL,
   `source_details` varchar(100) DEFAULT NULL,
-  `comments` longtext DEFAULT NULL COMMENT 'assessment',
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `active` tinyint(1) NOT NULL DEFAULT 1,
+  `comments` longtext DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
-
-
+DROP TABLE IF EXISTS `vendor_strain`;
+CREATE TABLE `vendor_strain` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `vendor` enum('Jackson','Charles River','Harlan','NIH','Taconic', 'UCSD') DEFAULT NULL,
+  `strain` varchar(220) DEFAULT NULL COMMENT 'strain is inclusive of stock_number',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

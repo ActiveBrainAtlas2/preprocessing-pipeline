@@ -2,6 +2,81 @@
    TOTAL TABLES (64): annotations_points, annotations_points_archive, archive_sets, auth_user, auth_group, auth_group_permission, auth_permission, auth_user_groups, auth_user_user_permissions, authtoken_token, django_admin_log,  django_content_type, django_migrations, django_plotly_dash_dashapp, django_plotly_dash_statelessapp, django_session, django_site, elastix_transformation, input_type, neuroglancer_state, neuroglancer_urls, performance_center, socialaccount_socialaccount, socialaccount_socialapp, socialaccount_socialapp_sites, socialaccount_socialtoken, file_log, file_operation, logs, engine_attributespec, engine_clientfile, engine_data, engine_image, engine_job, engine_jobcommit, engine_label, engine_labeledimage, engine_labeledimageattributeval, engine_labeledshape, engine_labeledshapeattributeval, engine_labeledtrack, engine_labeledtrackattributeval, engine_plugin, engine_pluginoption, engine_project, engine_remotefile, engine_segment, engine_serverfile, engine_task, engine_trackedshape, engine_trackedshapeattributeval, engine_video, git_gitdata, journals, location, location_primary_people, problem_category, progress_lookup, resource, schedule, sections, task, task_resources, task_roles, task_view
 */
 
+/* DR - modified field "section" to "z" with comment in annotations_points and annotations_point_archive.
+   DR - we do not need annotations_point_archive table if archived versions are stored on disk and referenced with archive_set.id (perhaps filename); this is for versioning of annotated Neuroglancer points (org. proposal was to store in file rather than live in database)
+   DR - "layer" is related to Neuroglancer layer (user can name layer for superimposition of annotated points), "FK_archive_set_id" is for versioning of Neuroglancer annotated points (i.e., if points are added/removed/edited user can restore from previous version), "FK_input_type_id" is used to store point annotations input source: 'manual person', 'corrected person', 'detected computer', "FK_owner_id" is user who initially created/uploaded/input annotations
+   DR - I believe data is stored in "structure" table is for each brain region (table renamed to brain_region)
+   ZW - modified layer to label
+*/
+
+/*
+ * PRIOR NAME: `layer_data` TO annotations_points
+ *
+ * ANTICIPATED OPERATION:
+ * 1) USER SAVES ANNOTATION POINTS IN NEUROGLANCER
+ * 2) NEW ENTRY IN archive_set TABLE (PARENT 'archive_id' - 0 IF FIRST; UPDATE USER; TIMESTAMP )
+ * 2) ALL CURRENT POINTS FOR USER ARE MOVED TO annotations_points_archive
+ * 3) NEW POINTS ARE ADDED TO annotations_points
+ *    - CONSIDERATIONS:
+ *      A) IF LATENCY -> DB MODIFICATIONS MAY BE QUEUED AND MADE VIA CRON JOB (DURING OFF-PEAK)
+ *      B) annotations_points_archive, archive_sets WILL NOT BE STORED ON LIVE DB
+ */
+
+DROP TABLE IF EXISTS `annotations_points` ;
+CREATE TABLE `annotations_points` (
+  `id` INT(20) NOT NULL AUTO_INCREMENT,
+  `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
+  `x` FLOAT DEFAULT NULL,
+  `y` FLOAT DEFAULT NULL,
+  `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
+  `prep_id` VARCHAR(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+  `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
+  `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
+  `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
+  `FK_animal_id` INT(11) NOT NULL,
+  `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
+  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(animal_id) ON UPDATE CASCADE,
+  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
+  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(input_id),
+  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id) ON UPDATE CASCADE,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `annotations_points_archive`;
+CREATE TABLE `annotations_points_archive` (
+  `id` int(20) NOT NULL AUTO_INCREMENT,
+  `layer` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
+  `x` FLOAT DEFAULT NULL,
+  `y` FLOAT DEFAULT NULL,
+  `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
+  `prep_id` VARCHAR(20) NOT NULL COMMENT '*LEGACY COMPATABILITY*',
+  `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
+  `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
+  `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
+  `FK_animal_id` INT(11) NOT NULL,
+  `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
+  `FK_archive_set_id` INT(11) NOT NULL,
+  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(animal_id),
+  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
+  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
+  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id),
+  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+DROP TABLE IF EXISTS `archive_sets`;
+CREATE TABLE `archive_sets` (
+ `id` int(20) NOT NULL AUTO_INCREMENT,
+ `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+ `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
+ `FK_owner_id` int(11) NOT NULL COMMENT 'USER WHO MADE REVISIONS',
+ FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
+ PRIMARY KEY (`id`)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
 /*
    COMMENTS RELATED TO TABLE: slide
    Unknown contrib - What is the role of this table, did this subsume the table "sections"?
@@ -105,79 +180,6 @@ CREATE TABLE `elastix_transformation` (
 /*
      2) TABLES RELATED TO POINT ANNOTATIONS STORAGE: annotations_points, annotations_point_archive, archive_set, input_type
 */
-
-/* DR - modified field "section" to "z" with comment in annotations_points and annotations_point_archive.
-   DR - we do not need annotations_point_archive table if archived versions are stored on disk and referenced with archive_set.id (perhaps filename); this is for versioning of annotated Neuroglancer points (org. proposal was to store in file rather than live in database)
-   DR - "layer" is related to Neuroglancer layer (user can name layer for superimposition of annotated points), "FK_archive_set_id" is for versioning of Neuroglancer annotated points (i.e., if points are added/removed/edited user can restore from previous version), "FK_input_type_id" is used to store point annotations input source: 'manual person', 'corrected person', 'detected computer', "FK_owner_id" is user who initially created/uploaded/input annotations
-   DR - I believe data is stored in "structure" table is for each brain region (table renamed to brain_region)
-   ZW - modified layer to label
-*/
-
-/*
- * PRIOR NAME: `layer_data` TO annotations_points
- *
- * ANTICIPATED OPERATION:
- * 1) USER SAVES ANNOTATION POINTS IN NEUROGLANCER
- * 2) NEW ENTRY IN archive_set TABLE (PARENT 'archive_id' - 0 IF FIRST; UPDATE USER; TIMESTAMP )
- * 2) ALL CURRENT POINTS FOR USER ARE MOVED TO annotations_points_archive
- * 3) NEW POINTS ARE ADDED TO annotations_points
- *    - CONSIDERATIONS:
- *      A) IF LATENCY -> DB MODIFICATIONS MAY BE QUEUED AND MADE VIA CRON JOB (DURING OFF-PEAK)
- *      B) annotations_points_archive, archive_sets WILL NOT BE STORED ON LIVE DB
- */
-
-DROP TABLE IF EXISTS `annotations_points` ;
-CREATE TABLE `annotations_points` (
-  `id` INT(20) NOT NULL AUTO_INCREMENT,
-  `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
-  `x` FLOAT DEFAULT NULL,
-  `y` FLOAT DEFAULT NULL,
-  `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
-  `prep_id` VARCHAR(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
-  `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
-  `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
-  `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
-  `FK_animal_id` INT(11) NOT NULL,
-  `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
-  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(animal_id) ON UPDATE CASCADE,
-  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(input_id),
-  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id) ON UPDATE CASCADE,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-DROP TABLE IF EXISTS `annotations_points_archive`;
-CREATE TABLE `annotations_points_archive` (
-  `id` int(20) NOT NULL AUTO_INCREMENT,
-  `layer` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
-  `x` FLOAT DEFAULT NULL,
-  `y` FLOAT DEFAULT NULL,
-  `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
-  `prep_id` VARCHAR(20) NOT NULL COMMENT '*LEGACY COMPATABILITY*',
-  `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
-  `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
-  `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
-  `FK_animal_id` INT(11) NOT NULL,
-  `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
-  `FK_archive_set_id` INT(11) NOT NULL,
-  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(animal_id),
-  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id),
-  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-DROP TABLE IF EXISTS `archive_sets`;
-CREATE TABLE `archive_sets` (
- `id` int(20) NOT NULL AUTO_INCREMENT,
- `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
- `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
- `FK_owner_id` int(11) NOT NULL COMMENT 'USER WHO MADE REVISIONS',
- FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
- PRIMARY KEY (`id`)
- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 /*
