@@ -39,9 +39,9 @@ CREATE TABLE `annotations_points` (
   `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
   `FK_animal_id` INT(11) NOT NULL,
   `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
-  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(animal_id) ON UPDATE CASCADE,
+  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(input_id),
+  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
   FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id) ON UPDATE CASCADE,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -61,7 +61,7 @@ CREATE TABLE `annotations_points_archive` (
   `FK_animal_id` INT(11) NOT NULL,
   `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
   `FK_archive_set_id` INT(11) NOT NULL,
-  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(animal_id),
+  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id),
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
   FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id),
@@ -280,11 +280,13 @@ CREATE TABLE `elastix_transformation` (
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `FK_animal_id` int(11),
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
-/* TABLE RELATED TO CVAT: engine_attributespec */
+/* TABLE RELATED TO CVAT: engine_attributespec 
+   DR - SUGGESTED RENAME FIELD label_id TO FK_label_id FOR CONSISTENCY
+*/
 
 DROP TABLE IF EXISTS `engine_attributespec`;
 CREATE TABLE `engine_attributespec` (
@@ -295,9 +297,9 @@ CREATE TABLE `engine_attributespec` (
   `default_value` varchar(128) NOT NULL,
   `values` varchar(4096) NOT NULL,
   `label_id` int(11) NOT NULL,
+  FOREIGN KEY (`label_id`) REFERENCES engine_label(`id`),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `engine_attributespec_label_id_name_d85e616c_uniq` (`label_id`,`name`),
-  CONSTRAINT `engine_attributespec_label_id_274838ef_fk_engine_label_id` FOREIGN KEY (`label_id`) REFERENCES `engine_label` (`id`)
+  UNIQUE KEY `engine_attributespec_label_id_name_d85e616c_uniq` (`label_id`,`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -310,9 +312,6 @@ CREATE TABLE `engine_clientfile` (
   `data_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-
 
 
 /* TABLE RELATED TO CVAT: engine_data */
@@ -665,17 +664,15 @@ CREATE TABLE `engine_video` (
 DROP TABLE IF EXISTS `file_log`;
 CREATE TABLE `file_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL,
-  `progress_id` int(11) NOT NULL,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `filename` varchar(255) NOT NULL,
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UK__AID_PID_C_S` (`prep_id`,`progress_id`,`filename`),
-  KEY `K__FILE_LOG_AID` (`prep_id`),
-  KEY `K__FILE_LOG_PID` (`progress_id`),
-  CONSTRAINT `FK__FILE_LOG_AID` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`) ON UPDATE CASCADE,
-  CONSTRAINT `FK__FILE_LOG_PID` FOREIGN KEY (`progress_id`) REFERENCES `progress_lookup` (`id`) ON UPDATE CASCADE
+  `FK_animal_id` int(11),
+  `FK_progress_id` int(11) NOT NULL,
+  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
+  FOREIGN KEY (`FK_progress_id`) REFERENCES progress_lookup(`id`) ON UPDATE CASCADE,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -713,17 +710,17 @@ CREATE TABLE `git_gitdata` (
 
 DROP TABLE IF EXISTS `input_type`;
 CREATE TABLE `input_type` (
-  `input_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `input_type` varchar(50) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`input_id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-INSERT INTO input_type (input_id, input_type) VALUES (1, 'manual person');
-INSERT INTO input_type (input_id, input_type) VALUES (2, 'corrected person');
-INSERT INTO input_type (input_id, input_type) VALUES (3, 'detected computer');
+INSERT INTO input_type (id, input_type) VALUES (1, 'manual person');
+INSERT INTO input_type (id, input_type) VALUES (2, 'corrected person');
+INSERT INTO input_type (id, input_type) VALUES (3, 'detected computer');
 
 
 /* TABLE RELATED TO SLIDE QC: journals 
@@ -733,7 +730,7 @@ INSERT INTO input_type (input_id, input_type) VALUES (3, 'detected computer');
 DROP TABLE IF EXISTS `journals`;
 CREATE TABLE `journals` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `entry` longtext NOT NULL,
   `fix` longtext DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
@@ -746,13 +743,13 @@ CREATE TABLE `journals` (
   `url_id` int(11) DEFAULT NULL,
   `section` int(11) DEFAULT NULL,
   `channel` int(11) DEFAULT NULL,
+  `FK_animal_id` int(11),
+  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
   PRIMARY KEY (`id`),
-  KEY `K__journals_prep_id` (`prep_id`),
   KEY `K__journals_person_id` (`person_id`),
   KEY `K__journals_problem_id` (`problem_id`),
   KEY `FK__url_id` (`url_id`),
   CONSTRAINT `FK__journals_person_id` FOREIGN KEY (`person_id`) REFERENCES `auth_user` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `FK__journals_prep_id` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`),
   CONSTRAINT `FK__journals_problem_id` FOREIGN KEY (`problem_id`) REFERENCES `problem_category` (`id`),
   CONSTRAINT `FK__url_id` FOREIGN KEY (`url_id`) REFERENCES `neuroglancer_urls` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -818,7 +815,7 @@ CREATE TABLE `neuroglancer_urls` (
   `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `FK_owner_id` int(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER/UPDATER',
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id) ON DELETE CASCADE,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -876,10 +873,9 @@ CREATE TABLE `progress_lookup` (
    DR - THIS IS A VIEW; UNCLEAR HOW GENERATED *POSSIBLY REMOVE*
 */
 
-DROP TABLE IF EXISTS `sections`;
-
-/*!50001 DROP VIEW IF EXISTS `sections`*/
-/*!50001 CREATE TABLE `sections` (
+DROP VIEW IF EXISTS `sections`;
+/*
+CREATE TABLE `sections` (
   `id` tinyint NOT NULL,
   `prep_id` tinyint NOT NULL,
   `czi_file` tinyint NOT NULL,
@@ -892,7 +888,8 @@ DROP TABLE IF EXISTS `sections`;
   `channel_index` tinyint NOT NULL,
   `active` tinyint NOT NULL,
   `created` tinyint NOT NULL
-) ENGINE=MyISAM */;
+) ENGINE=MyISAM 
+*/
 
 
 /*
@@ -927,8 +924,8 @@ CREATE TABLE `slide` (
   `scene_qc_5` tinyint(4) NOT NULL DEFAULT 0,
   `scene_qc_6` tinyint(4) NOT NULL DEFAULT 0,
   `FK_scan_run_id` int(11) NOT NULL,
-  FOREIGN KEY `FK_scan_run_id` REFERENCES scan_run(`id`) ON UPDATE CASCADE,
-  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_scan_run_id`) REFERENCES scan_run(`id`) ON UPDATE CASCADE,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -947,8 +944,8 @@ CREATE TABLE `slide_czi_to_tif` (
   `scene_index` int(11) NOT NULL DEFAULT 0,
   `processing_duration` float NOT NULL DEFAULT 0,
   `FK_slide_id` int(11) NOT NULL,
-  FOREIGN KEY `FK_slide_id` int(11) REFERENCES slide(`id`) ON UPDATE CASCADE ON DELETE CASCADE ON UPDATE CASCADE,
-  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_slide_id`) REFERENCES slide(`id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -1022,18 +1019,18 @@ DROP TABLE IF EXISTS `task`;
 CREATE TABLE `task` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `lookup_id` int(11) NOT NULL,
-  `prep_id` varchar(20) NOT NULL,
+  `prep_id` VARCHAR(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `completed` tinyint(4) NOT NULL DEFAULT 0,
   `start_date` datetime DEFAULT NULL,
   `end_date` datetime DEFAULT NULL,
   `active` tinyint(4) NOT NULL DEFAULT 1,
   `created` timestamp NULL DEFAULT current_timestamp(),
+  `FK_animal_id` INT(11) NOT NULL,
+  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id) ON UPDATE CASCADE,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UK__progress_datFa_prep_lookup` (`prep_id`,`lookup_id`),
-  KEY `K__task_prep_id` (`prep_id`),
   KEY `K__task_data_lookup_id` (`lookup_id`),
-  CONSTRAINT `FK__task_lookup_id` FOREIGN KEY (`lookup_id`) REFERENCES `progress_lookup` (`id`),
-  CONSTRAINT `FK__task_prep_id` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`)
+  CONSTRAINT `FK__task_lookup_id` FOREIGN KEY (`lookup_id`) REFERENCES `progress_lookup` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -1090,8 +1087,8 @@ CREATE TABLE `transformation` (
   `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
   `FK_owner_id` int(11) NOT NULL,
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
+  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(`id`),
+  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
