@@ -64,10 +64,14 @@ original = np.array([[ci[1]['x'],ci[1]['y'],ci[1]['section']] for ci in original
 positive = test_counts['detected by computer as UNsure, marked by human as positive']
 positive = np.array([[ci[1]['x'],ci[1]['y'],ci[1]['section']] for ci in positive])
 
+additional_positive = test_counts['computer missed, human detected']
+additional_positive = np.array([[ci[1]['x'],ci[1]['y'],ci[1]['section']] for ci in additional_positive])
+
 positive_index = []
 positive_index = find_corresponding_row_index(all_segment,cells,positive_index)
 positive_index = find_corresponding_row_index(all_segment,positive,positive_index)
 positive_index = find_corresponding_row_index(all_segment,original,positive_index)
+positive_index = find_corresponding_row_index(all_segment,additional_positive,positive_index)
 
 npoints = len(df)
 for i in range(npoints):
