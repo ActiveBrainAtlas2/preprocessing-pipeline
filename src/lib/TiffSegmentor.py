@@ -51,6 +51,7 @@ class TiffSegmentor(CellDetectorBase):
     def generate_tiff_segments(self,channel,create_csv=False):
         print(f'generate segment for channel: {channel}')
         self.create_directories_for_channeli(channel)
+        tif_directory = os.path.join(self.ORIGINAL_IMAGE,f'CH{channel}')
         commands = []
         for save_folder in self.save_folders:
             filei = '/'+save_folder[-3:]+'.tif'
@@ -63,7 +64,7 @@ class TiffSegmentor(CellDetectorBase):
             else:
                 if len(os.listdir(save_folder)) == 10:
                     continue
-            cmd = [f'convert', self.tif_directory + filei, '-compress', 'LZW', '-crop', 
+            cmd = [f'convert', tif_directory + filei, '-compress', 'LZW', '-crop', 
             f'{self.ncol}x{self.nrow}-0-0@', '+repage', '+adjoin', 
             f'{save_folder}/{file_name}tile-%d.tif']
             commands.append(cmd)
@@ -89,7 +90,7 @@ class TiffSegmentor(CellDetectorBase):
                 np.savetxt(csv_path,premotor,delimiter=',',header='x,y,Section',comments = '',fmt = '%f')
     
     def move_full_aligned(self):
-        os.path.mkdir(self.ORIGINAL_IMAGE)
+        os.makedirs(self.ORIGINAL_IMAGE,exist_ok = True)
         for channeli in [1,3]:
             self.tif_directory = self.path.get_full_aligned(channeli)
             ch_dir = os.path.join(self.ORIGINAL_IMAGE,f'CH{channeli}')

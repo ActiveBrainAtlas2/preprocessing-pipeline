@@ -10,15 +10,27 @@ import pickle as pk
 def load_annotations():
     data2 = os.path.abspath(os.path.dirname(__file__)+'/../../../yoav/'+
         'marked_cell_detector/data2/')
+    DATA_DIR='/data/cell_segmentation/'
+    df = pd.read_csv(DATA_DIR+'detections_DK55_round2.csv')
+
     file={'manual_train':       data2+'/DK55_premotor_manual_2021-12-09.csv',
-        'manual_negative':    data2+'/DK55_premotor_manual_negative_round1_2021-12-09.csv',
-        'manual_positive':    data2+'/DK55_premotor_manual_positive_round1_2021-12-09.csv',
-        'computer_sure':      data2+'/DK55_premotor_sure_detection_2021-12-09.csv',
-        'computer_unsure':    data2+'/DK55_premotor_unsure_detection_2021-12-09.csv'}
+    'manual_negative':    data2+'/DK55_premotor_manual_negative_round1_2021-12-09.csv',
+    'manual_positive':    data2+'/DK55_premotor_manual_positive_round1_2021-12-09.csv'}
+
     dfs={}
+
     for name,path in file.items():
         dfs[name]= pd.read_csv(path,header=None)
         dfs[name]['name']=name
+    
+    dfs['computer_sure'] = df[df.predictions==2][['col','row','section']]
+    dfs['computer_sure'].columns = range(dfs['computer_sure'].shape[1])
+    dfs['computer_sure']['name']='computer_sure'
+
+    dfs['computer_unsure'] = df[df.predictions==0][['col','row','section']]
+    dfs['computer_unsure'].columns = range(dfs['computer_unsure'].shape[1])
+    dfs['computer_unsure']['name']='computer_unsure'
+
     All=pd.concat([dfs[key] for key in dfs])
     All.columns=['x','y','section','name']
     All['x']=np.round(All['x'])
@@ -101,6 +113,8 @@ All = load_annotations()
 Distances = get_distance(All)
 sets,set_names,sections = prep(All,Distances)
 
+All = All[np.logical_not(All.isnull().any(axis=1))]
+
 train_sections={}
 is_category = []
 for i in sets:
@@ -111,10 +125,25 @@ train_sections['Computer Detected in train sections, Human Missed']=is_category
 
 is_category = []
 for i in sets:
-        if int(All.iloc[i,2]) in sections:
-            if 'manual_train' in set_names[i]:
-                is_category.append((i,dict(All.iloc[i,:])))
-train_sections['total train']=is_category
+    if  check(set_names[i],yes=['manual_positive'],no=['computer_sure','computer_unsure'],size_max=1):
+        is_category.append((i,dict(All.iloc[i,:])))
+train_sections['computer missed, human detected']=is_category
+
+is_category = []
+for i in sets:
+    if int(All.iloc[i,2]) in sections:
+        if check(set_names[i],yes=['computer_sure','manual_train']):
+            is_category.append((i,dict(All.iloc[i,:])))
+train_sections['Computer and Human agree']=is_category
+
+is_category = []
+for i in sets:
+    if int(All.iloc[i,2]) in sections:
+        if check(set_names[i],yes=['computer_unsure','manual_train']):
+            is_category.append((i,dict(All.iloc[i,:])))
+train_sections['Humarn marked as cell but computer is not sure']=is_category
+
+
 
 contra=[]
 is_category = []
@@ -125,23 +154,15 @@ for i in sets:
                 contra.append(j)
             is_category.append((i,dict(All.iloc[i,:])))
 train_sections['Human mind change']=is_category
-
-contra=[]
 is_category = []
 for i in sets:
-    if int(All.iloc[i,2]) in sections:
-        if check(set_names[i],yes=['manual_train'],no=['manual_negative']):
-            for j in sets[i]:
-                contra.append(j)
-            is_category.append((i,dict(All.iloc[i,:])))
-train_sections['original training set after mind change']=is_category
+        if int(All.iloc[i,2]) in sections:
+            if 'manual_train' in set_names[i]:
+                is_category.append((i,dict(All.iloc[i,:])))
+train_sections['total train']=is_category
 
 test_counts={}
-is_category = []
-for i in sets:
-    if  check(set_names[i],yes=['manual_positive'],no=['computer_sure','computer_unsure'],size_max=1):
-        is_category.append((i,dict(All.iloc[i,:])))
-test_counts['computer missed, human detected']=is_category
+
 
 label="detected by computer as sure, marked by human as negative"
 is_category = []
@@ -160,7 +181,7 @@ test_counts[label]=is_category
 label="detected by computer as UNsure, marked by human as positive"
 is_category = []
 for i in sets:
-    if  check(set_names[i],yes=['computer_unsure','manual_positive'],size_max=2):
+    if  check(set_names[i],yes=['computer_unsure','manual_positive','manual_train'],size_max=2):
             is_category.append((i,dict(All.iloc[i,:])))
 test_counts[label]=is_category
 
@@ -201,4 +222,4 @@ for keyi in test_counts:
     print(keyi)
     print(len(test_counts[keyi]))
 
-# pk.dump((test_counts,train_sections),open('categories.pkl','wb'))
+print()
