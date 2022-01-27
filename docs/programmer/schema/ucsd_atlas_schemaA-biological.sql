@@ -62,7 +62,7 @@ CREATE TABLE `animal` (
   `FK_breeder_line_id` int(11),
   `FK_genotype_id` int(11),
   FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
-  FOREIGN KEY (`FK_alias_id`) REFERENCES alias(`alias_id`),
+  FOREIGN KEY (`FK_alias_id`) REFERENCES alias(`id`),
   FOREIGN KEY (`FK_vendor_strain_id`) REFERENCES vendor_strain(`id`),
   FOREIGN KEY (`FK_breeder_line_id`) REFERENCES breeder_line(`id`),
   FOREIGN KEY (`FK_genotype_id`) REFERENCES genotype(`id`),
@@ -92,7 +92,8 @@ CREATE TABLE `brain_region` (
 DROP TABLE IF EXISTS `breeder_line`;
 CREATE TABLE `breeder_line` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `breeder_line` varchar(100) DEFAULT NULL,  
+  `breeder_line` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -100,7 +101,8 @@ DROP TABLE IF EXISTS `genotype`;
 CREATE TABLE `genotype` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `parent1` varchar(100) DEFAULT NULL COMMENT 'father',  
-  `parent2` varchar(100) DEFAULT NULL COMMENT 'mother',  
+  `parent2` varchar(100) DEFAULT NULL COMMENT 'mother',
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
