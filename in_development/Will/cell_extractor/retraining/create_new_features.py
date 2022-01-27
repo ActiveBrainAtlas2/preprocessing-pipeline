@@ -58,12 +58,16 @@ all_segment = np.array([df.col,df.row,df.section]).T
 cells = test_counts['detected by computer as sure, unmarked by human']
 cells = np.array([[ci[1]['x'],ci[1]['y'],ci[1]['section']] for ci in cells])
 
+original = train_sections['original training set after mind change']
+original = np.array([[ci[1]['x'],ci[1]['y'],ci[1]['section']] for ci in original])
+
 positive = test_counts['detected by computer as UNsure, marked by human as positive']
 positive = np.array([[ci[1]['x'],ci[1]['y'],ci[1]['section']] for ci in positive])
 
 positive_index = []
 positive_index = find_corresponding_row_index(all_segment,cells,positive_index)
 positive_index = find_corresponding_row_index(all_segment,positive,positive_index)
+positive_index = find_corresponding_row_index(all_segment,original,positive_index)
 
 npoints = len(df)
 for i in range(npoints):

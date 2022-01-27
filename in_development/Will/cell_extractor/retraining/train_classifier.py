@@ -21,163 +21,271 @@ from collections import Counter
 
 print(xgb.__version__)
 
-def createDM(df):
-    labels=df['label']
-    features=df.drop('label',axis=1)
-    return xgb.DMatrix(features, label=labels)
+class CellDetectorTrainer:
+    def __init__():
+        ...
 
-def get_train_and_test(df,frac=0.5):
-    train = pd.DataFrame(df.sample(frac = 0.5))
-    test = df.drop(train.index,axis=0)
-    print(train.shape,test.shape,train.index.shape,df.shape)
+    def createDM(df):
+        labels=df['label']
+        features=df.drop('label',axis=1)
+        return xgb.DMatrix(features, label=labels)
 
-    train=createDM(train)
-    test=createDM(test)
-    all=createDM(df)
-    return train,test,all
+    def get_train_and_test(df,frac=0.5):
+        train = pd.DataFrame(df.sample(frac = 0.5))
+        test = df.drop(train.index,axis=0)
+        print(train.shape,test.shape,train.index.shape,df.shape)
 
-def create_parameter():
-    param = {}
-    depth_of_tree = 3
-    shrinkage_parameter = 0.3
-    eval_metric = ['error','logloss']
-    param['max_depth']= depth_of_tree
-    param['eta'] =shrinkage_parameter
-    param['objective'] = 'binary:logistic'
-    param['nthread'] = 7 
-    param['eval_metric'] = eval_metric[1]
-    print(param)
-    return param
+        train=createDM(train)
+        test=createDM(test)
+        all=createDM(df)
+        return train,test,all
 
-def plot_margins(_train_size):
-    plt.figure(figsize=(8, 6))
-    for i in range(10):
-        train,test=get_train_and_test(df)
-        legends=[]
-        for num_round in [100]:
-            bst = xgb.train(param, train, num_round, evallist, verbose_eval=False)
-            y_pred = bst.predict(test, iteration_range=[0,bst.best_ntree_limit], output_margin=True)
-            thresholds = sorted(np.unique(np.round(y_pred, 2)))
-            error_cuv, error_ger = xgbh.get_error_values(y_pred, y_test, thresholds)
-            legends += ['Cuviers %d'%num_round, 'Gervais %d'%num_round]
-            _style=['y','g'] if num_round==100 else ['b', 'r']
-            xgbh.get_margin_plot(error_cuv, error_ger, thresholds, legends = legends, style=_style)
-        
-        plt.grid(which='major', linestyle='-', linewidth='0.5', color='gray')
-        plt.grid(which='minor', linestyle=':', linewidth='0.5', color='gray')
-        thr = thresholds/(np.max(thresholds) - np.min(thresholds))
-    plt.title('data_size=%4.3f'%(X_train.shape[0]))
-    plt.show()
+    def create_parameter():
+        param = {}
+        depth_of_tree = 3
+        shrinkage_parameter = 0.3
+        eval_metric = ['error','logloss']
+        param['max_depth']= depth_of_tree
+        param['eta'] =shrinkage_parameter
+        param['objective'] = 'binary:logistic'
+        param['nthread'] = 7 
+        param['eval_metric'] = eval_metric[1]
+        print(param)
+        return param
 
-def get_error_ranges(error_cuv_samp, error_ger_samp, thresholds_samp, num_chunks=20):
-    error_cuv_bin = np.array(np.array(error_cuv_samp) * num_chunks, dtype=int)
-    error_cuv_bin[error_cuv_bin == num_chunks] = num_chunks - 1
-    error_ger_bin = np.array(np.array(error_ger_samp) * num_chunks, dtype=int)
-    error_ger_bin[error_ger_bin == num_chunks] = num_chunks - 1
-    
-    min_cuv = np.zeros(num_chunks, dtype=float)
-    max_cuv = np.zeros(num_chunks, dtype=float)
-    min_ger = np.zeros(num_chunks, dtype=float)
-    max_ger = np.zeros(num_chunks, dtype=float)
-    
-    normalizing_factor = (max(thresholds_samp) - min(thresholds_samp))
-    
-    for i in range(num_chunks):
-        min_cuv[i] = thresholds_samp[np.min(np.where(error_cuv_bin == i))]/normalizing_factor
-        max_cuv[i] = thresholds_samp[np.max(np.where(error_cuv_bin == i))]/normalizing_factor
-        min_ger[i] = thresholds_samp[np.min(np.where(error_ger_bin == i))]/normalizing_factor
-        max_ger[i] = thresholds_samp[np.max(np.where(error_ger_bin == i))]/normalizing_factor
+    def plot_margins(_train_size):
+        plt.figure(figsize=(8, 6))
+        for i in range(10):
+            train,test=get_train_and_test(df)
+            legends=[]
+            for num_round in [100]:
+                bst = xgb.train(param, train, num_round, evallist, verbose_eval=False)
+                y_pred = bst.predict(test, iteration_range=[0,bst.best_ntree_limit], output_margin=True)
+                thresholds = sorted(np.unique(np.round(y_pred, 2)))
+                error_cuv, error_ger = xgbh.get_error_values(y_pred, y_test, thresholds)
+                legends += ['Cuviers %d'%num_round, 'Gervais %d'%num_round]
+                _style=['y','g'] if num_round==100 else ['b', 'r']
+                xgbh.get_margin_plot(error_cuv, error_ger, thresholds, legends = legends, style=_style)
             
-    return min_cuv, max_cuv, min_ger, max_ger
+            plt.grid(which='major', linestyle='-', linewidth='0.5', color='gray')
+            plt.grid(which='minor', linestyle=':', linewidth='0.5', color='gray')
+            thr = thresholds/(np.max(thresholds) - np.min(thresholds))
+        plt.title('data_size=%4.3f'%(X_train.shape[0]))
+        plt.show()
 
-def gen_scale(n,reverse=False):
-    s=arange(0,1,1/n)
-    while s.shape[0] !=n:
-        if s.shape[0]>n:
-            s=s[:n]
-        if s.shape[0]<n:
-            s=arange(0,1,1/(n+0.1))
-    if reverse:
-        s=s[-1::-1]
-    return s
+    def get_error_ranges(error_cuv_samp, error_ger_samp, thresholds_samp, num_chunks=20):
+        error_cuv_bin = np.array(np.array(error_cuv_samp) * num_chunks, dtype=int)
+        error_cuv_bin[error_cuv_bin == num_chunks] = num_chunks - 1
+        error_ger_bin = np.array(np.array(error_ger_samp) * num_chunks, dtype=int)
+        error_ger_bin[error_ger_bin == num_chunks] = num_chunks - 1
+        
+        min_cuv = np.zeros(num_chunks, dtype=float)
+        max_cuv = np.zeros(num_chunks, dtype=float)
+        min_ger = np.zeros(num_chunks, dtype=float)
+        max_ger = np.zeros(num_chunks, dtype=float)
+        
+        normalizing_factor = (max(thresholds_samp) - min(thresholds_samp))
+        
+        for i in range(num_chunks):
+            min_cuv[i] = thresholds_samp[np.min(np.where(error_cuv_bin == i))]/normalizing_factor
+            max_cuv[i] = thresholds_samp[np.max(np.where(error_cuv_bin == i))]/normalizing_factor
+            min_ger[i] = thresholds_samp[np.min(np.where(error_ger_bin == i))]/normalizing_factor
+            max_ger[i] = thresholds_samp[np.max(np.where(error_ger_bin == i))]/normalizing_factor
+                
+        return min_cuv, max_cuv, min_ger, max_ger
 
-def generate_samples(data, size=500, num_chunks=20):
-    for i in range(200):
-        if i == 0:
-            min_cuv = np.zeros(num_chunks, dtype=float)
-            max_cuv = np.zeros(num_chunks, dtype=float)
-            min_ger = np.zeros(num_chunks, dtype=float)
-            max_ger = np.zeros(num_chunks, dtype=float)
-        
-        samp_indices = np.random.randint(len(data), size=size)
-        
-        X_samp = data[samp_indices, :-1]
-        y_samp = np.array(data[samp_indices, -1], dtype=int)
-        
-        dsamp = xgb.DMatrix(X_samp, label=y_samp)    
-        y_samp_pred = bst.predict(dsamp, iteration_range=[0,bst.best_ntree_limit], output_margin=True)
+    def gen_scale(n,reverse=False):
+        s=arange(0,1,1/n)
+        while s.shape[0] !=n:
+            if s.shape[0]>n:
+                s=s[:n]
+            if s.shape[0]<n:
+                s=arange(0,1,1/(n+0.1))
+        if reverse:
+            s=s[-1::-1]
+        return s
 
-        thresholds_samp = sorted(np.unique(np.round(y_samp_pred, 2)))
-        error_cuv_samp, error_ger_samp = xgbh.get_error_values(y_samp_pred, y_samp, thresholds_samp)
+    def generate_samples(data, size=500, num_chunks=20):
+        for i in range(200):
+            if i == 0:
+                min_cuv = np.zeros(num_chunks, dtype=float)
+                max_cuv = np.zeros(num_chunks, dtype=float)
+                min_ger = np.zeros(num_chunks, dtype=float)
+                max_ger = np.zeros(num_chunks, dtype=float)
+            
+            samp_indices = np.random.randint(len(data), size=size)
+            
+            X_samp = data[samp_indices, :-1]
+            y_samp = np.array(data[samp_indices, -1], dtype=int)
+            
+            dsamp = xgb.DMatrix(X_samp, label=y_samp)    
+            y_samp_pred = bst.predict(dsamp, iteration_range=[0,bst.best_ntree_limit], output_margin=True)
+
+            thresholds_samp = sorted(np.unique(np.round(y_samp_pred, 2)))
+            error_cuv_samp, error_ger_samp = xgbh.get_error_values(y_samp_pred, y_samp, thresholds_samp)
+            
+            min_cuv_samp, max_cuv_samp, min_ger_samp, max_ger_samp = get_error_ranges(error_cuv_samp, error_ger_samp, thresholds_samp)
+            
+            if i == 0:
+                min_cuv = min_cuv_samp
+                max_cuv = max_cuv_samp
+                min_ger = min_ger_samp
+                max_ger = max_ger_samp
+            else:
+                min_cuv[min_cuv > min_cuv_samp] = min_cuv_samp[min_cuv > min_cuv_samp]
+                max_cuv[max_cuv < max_cuv_samp] = max_cuv_samp[max_cuv < max_cuv_samp]
+                min_ger[min_ger > min_ger_samp] = min_ger_samp[min_ger > min_ger_samp]
+                max_ger[max_ger < max_ger_samp] = max_ger_samp[max_ger < max_ger_samp]         
         
-        min_cuv_samp, max_cuv_samp, min_ger_samp, max_ger_samp = get_error_ranges(error_cuv_samp, error_ger_samp, thresholds_samp)
-        
-        if i == 0:
-            min_cuv = min_cuv_samp
-            max_cuv = max_cuv_samp
-            min_ger = min_ger_samp
-            max_ger = max_ger_samp
-        else:
-            min_cuv[min_cuv > min_cuv_samp] = min_cuv_samp[min_cuv > min_cuv_samp]
-            max_cuv[max_cuv < max_cuv_samp] = max_cuv_samp[max_cuv < max_cuv_samp]
-            min_ger[min_ger > min_ger_samp] = min_ger_samp[min_ger > min_ger_samp]
-            max_ger[max_ger < max_ger_samp] = max_ger_samp[max_ger < max_ger_samp]         
+        for i in range(20):
+            plt.plot([min_cuv[i], max_cuv[i]], [i/20.0, i/20.0], 'b')
+            plt.plot([min_ger[i], max_ger[i]], [i/20.0, i/20.0], 'r')
+
+    def solve(x1,x2,y1,y2):
+        b=(y1-y2)/(x1-x2)
+        a=0.5*(y1+y2-b*(x1+x2))
+        return a,b
+
+    def plot_roc(test,pred):
+        plt.figure(figsize=(8, 6))
+        fpr, tpr, thresholds = roc_curve(y_test, y_pred)
+        plt.plot(fpr, tpr)
+        plt.xlim([0,1])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title("ROC Curve after")
+        plt.grid()
+        plt.show()
+
+    def train_classifier(features_path,depth,niter):
+        df = pd.read_csv(features_path)
+        drops = ['animal', 'section', 'index', 'row', 'col'] 
+        df=df.drop(drops,axis=1)
+        train,test,all=get_train_and_test(df)
+        print(train.num_row(), test.num_row(), all.num_row())
+        param = create_parameter()
+        evallist = [(train, 'train'), (test, 'eval')]
+        bst_list=[]
+        for i in range(30):
+            train,test,all=get_train_and_test(df)
+            bst = xgb.train(param, train, num_round, evallist, verbose_eval=False)
+            bst_list.append(bst)
+        return bst_list
+
+    def plot_boosting_result(bst_list):
+        for bst in bst_list:
+            y_pred = bst.predict(test, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
+            y_test=test.get_label()
+            pos_preds=y_pred[y_test==1]
+            neg_preds=y_pred[y_test==0]
+            pos_preds=sort(pos_preds)
+            neg_preds=sort(neg_preds)
+            plot(pos_preds,gen_scale(pos_preds.shape[0]));
+            plot(neg_preds,gen_scale(neg_preds.shape[0],reverse=True))
+
     
-    for i in range(20):
-        plt.plot([min_cuv[i], max_cuv[i]], [i/20.0, i/20.0], 'b')
-        plt.plot([min_ger[i], max_ger[i]], [i/20.0, i/20.0], 'r')
+    def get_prediction_scores(df,bst_list):
+        all=createDM(df)
+        scores=np.zeros([df.shape[0],len(bst_list)])
+        for i in range(len(bst_list)):
+            bst=bst_list[i]
+            scores[:,i] = bst.predict(all, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
+        return scores
 
-def solve(x1,x2,y1,y2):
-    b=(y1-y2)/(x1-x2)
-    a=0.5*(y1+y2-b*(x1+x2))
-    return a,b
+    def plot_score_vs_variance(scores,labels):
+        _mean=np.mean(scores,axis=1)
+        _std=np.std(scores,axis=1)
 
-def plot_roc(test,pred):
-    plt.figure(figsize=(8, 6))
-    fpr, tpr, thresholds = roc_curve(y_test, y_pred)
-    plt.plot(fpr, tpr)
-    plt.xlim([0,1])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title("ROC Curve after")
+        plt.figure(figsize=[15,10])
+        plt.scatter(_mean,_std,c=labels,s=3)
+        plt.title('mean and std of scores for 30 classifiers')
+        plt.xlabel('mean')
+        plt.ylabel('std')
+        plt.grid()
+        return _mean,_std
+
+    def make_predictions(scores,df):
+        _mean=np.mean(scores,axis=1)
+        _std=np.std(scores,axis=1)
+        df['mean_score']=_mean
+        df['std_score']=_std
+        predictions=[]
+        for i,row in df.iterrows():
+            p=decision(float(row['mean_score']),float(row['std_score']))
+            predictions.append(p)
+        df['predictions']=predictions
+        return df
+
+    df.to_csv(DATA_DIR+'demo_scores.csv')
+
+    df.columns
+
+    detection_df=df[df['predictions']!=-2]
+    detection_df = detection_df[['animal', 'section', 'row', 'col','label', 'mean_score',
+        'std_score', 'predictions']]
+    detection_df.head()
+
+    detection_df.to_csv(DATA_DIR+'detections_DK55.csv',index=False)
+
+    Counter(predictions)
+
+    plt.figure(figsize=[15,10])
+    plt.scatter(_mean,_std,c=predictions+labels,s=5)
+
+    plt.title('mean and std of scores for 30 classifiers')
+    plt.xlabel('mean')
+    plt.ylabel('std')
     plt.grid()
+
+    a,b=solve(-1,5,2,4)
+    x=arange(-2,5)
+    plot(x,a+b*x)
+
+    with open('../data/172/BoostedTrees.pkl','bw') as pkl_file:
+        pk.dump(bst_list,pkl_file)
+
+    plot_margins(0.03)
+    plot_margins(0.1)
+    plot_margins(0.8)
+
+    data  = np.load("Data/processed_data_15mb.np")
+
+        
+    plt.figure(figsize=(8, 6))
+    thr_lower_index = np.min(np.where((tpr > 0.95)))
+    thr_upper_index = np.max(np.where((tpr  < 0.6)))
+    thr_lower, thr_upper = thresholds[thr_lower_index], thresholds[thr_upper_index]
+    thr_lower_norm = thr_lower/(np.max(thresholds) - np.min(thresholds))
+    thr_upper_norm = thr_upper/(np.max(thresholds) - np.min(thresholds))
+    print("Thresholds (lower, upper):", thr_lower_norm, thr_upper_norm)
+
+    generate_samples(data, num_chunks=20)
+    plt.plot([thr_lower_norm, thr_lower_norm], [0, 1], 'm:')
+    plt.plot([thr_upper_norm, thr_upper_norm], [0, 1], 'm:')
+    plt.grid(which='major', linestyle='-', linewidth='0.5', color='gray')
+    plt.grid(which='minor', linestyle=':', linewidth='0.5', color='gray')
+    plt.xlabel('Score')
+    plt.ylabel('CDF')
+    legends = ['Cuviers_100', 'Gervais_100']
+    plt.legend(legends)
     plt.show()
 
-def train_classifier(features_path,depth,niter):
-    df = pd.read_csv(features_path)
-    drops = ['animal', 'section', 'index', 'row', 'col'] 
-    df=df.drop(drops,axis=1)
-    train,test,all=get_train_and_test(df)
-    print(train.num_row(), test.num_row(), all.num_row())
-    param = create_parameter()
-    evallist = [(train, 'train'), (test, 'eval')]
-    bst_list=[]
-    for i in range(30):
-        train,test,all=get_train_and_test(df)
-        bst = xgb.train(param, train, num_round, evallist, verbose_eval=False)
-        bst_list.append(bst)
-    return bst_list
 
-def plot_boosting_result(bst_list):
-    for bst in bst_list:
-        y_pred = bst.predict(test, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
-        y_test=test.get_label()
-        pos_preds=y_pred[y_test==1]
-        neg_preds=y_pred[y_test==0]
-        pos_preds=sort(pos_preds)
-        neg_preds=sort(neg_preds)
-        plot(pos_preds,gen_scale(pos_preds.shape[0]));
-        plot(neg_preds,gen_scale(neg_preds.shape[0],reverse=True))
+
+    num_round=250
+    bst = xgb.train(param, train, num_round, evallist, verbose_eval=False)
+    y_pred = bst.predict(test, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
+    y_test = test.get_label()
+    plot_roc(y_test,y_pred)
+
+    pos_preds=y_pred[y_test==1]
+    neg_preds=y_pred[y_test==0]
+    pos_preds.shape,neg_preds.shape
+
+    hist([pos_preds,neg_preds],bins=20);
+
+    figure(figsize=[15,8])
+    num_round=200
 
 if __name__ == '__main__':
     features_path = '/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/all_features_modified.csv'
@@ -194,106 +302,3 @@ if __name__ == '__main__':
     labels=all.get_label()
     scores = get_prediction_scores(df)
     make_predictions(scores,df)
-
-def get_prediction_scores(df,bst_list):
-    all=createDM(df)
-    scores=np.zeros([df.shape[0],len(bst_list)])
-    for i in range(len(bst_list)):
-        bst=bst_list[i]
-        scores[:,i] = bst.predict(all, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
-    return scores
-
-def plot_score_vs_variance(scores,labels):
-    _mean=np.mean(scores,axis=1)
-    _std=np.std(scores,axis=1)
-
-    plt.figure(figsize=[15,10])
-    plt.scatter(_mean,_std,c=labels,s=3)
-    plt.title('mean and std of scores for 30 classifiers')
-    plt.xlabel('mean')
-    plt.ylabel('std')
-    plt.grid()
-    return _mean,_std
-
-def make_predictions(scores,df):
-    _mean=np.mean(scores,axis=1)
-    _std=np.std(scores,axis=1)
-    df['mean_score']=_mean
-    df['std_score']=_std
-    predictions=[]
-    for i,row in df.iterrows():
-        p=decision(float(row['mean_score']),float(row['std_score']))
-        predictions.append(p)
-    df['predictions']=predictions
-    return df
-
-df.to_csv(DATA_DIR+'demo_scores.csv')
-
-df.columns
-
-detection_df=df[df['predictions']!=-2]
-detection_df = detection_df[['animal', 'section', 'row', 'col','label', 'mean_score',
-       'std_score', 'predictions']]
-detection_df.head()
-
-detection_df.to_csv(DATA_DIR+'detections_DK55.csv',index=False)
-
-Counter(predictions)
-
-plt.figure(figsize=[15,10])
-plt.scatter(_mean,_std,c=predictions+labels,s=5)
-
-plt.title('mean and std of scores for 30 classifiers')
-plt.xlabel('mean')
-plt.ylabel('std')
-plt.grid()
-
-a,b=solve(-1,5,2,4)
-x=arange(-2,5)
-plot(x,a+b*x)
-
-with open('../data/172/BoostedTrees.pkl','bw') as pkl_file:
-    pk.dump(bst_list,pkl_file)
-
-plot_margins(0.03)
-plot_margins(0.1)
-plot_margins(0.8)
-
-data  = np.load("Data/processed_data_15mb.np")
-
-    
-plt.figure(figsize=(8, 6))
-thr_lower_index = np.min(np.where((tpr > 0.95)))
-thr_upper_index = np.max(np.where((tpr  < 0.6)))
-thr_lower, thr_upper = thresholds[thr_lower_index], thresholds[thr_upper_index]
-thr_lower_norm = thr_lower/(np.max(thresholds) - np.min(thresholds))
-thr_upper_norm = thr_upper/(np.max(thresholds) - np.min(thresholds))
-print("Thresholds (lower, upper):", thr_lower_norm, thr_upper_norm)
-
-generate_samples(data, num_chunks=20)
-plt.plot([thr_lower_norm, thr_lower_norm], [0, 1], 'm:')
-plt.plot([thr_upper_norm, thr_upper_norm], [0, 1], 'm:')
-plt.grid(which='major', linestyle='-', linewidth='0.5', color='gray')
-plt.grid(which='minor', linestyle=':', linewidth='0.5', color='gray')
-plt.xlabel('Score')
-plt.ylabel('CDF')
-legends = ['Cuviers_100', 'Gervais_100']
-plt.legend(legends)
-plt.show()
-
-
-
-num_round=250
-bst = xgb.train(param, train, num_round, evallist, verbose_eval=False)
-y_pred = bst.predict(test, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
-y_test = test.get_label()
-plot_roc(y_test,y_pred)
-
-pos_preds=y_pred[y_test==1]
-neg_preds=y_pred[y_test==0]
-pos_preds.shape,neg_preds.shape
-
-hist([pos_preds,neg_preds],bins=20);
-
-figure(figsize=[15,8])
-num_round=200

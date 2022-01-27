@@ -37,6 +37,13 @@ class NgConverter(NumpyToNeuroglancer):
         self.precomputed_vol.commit_info()
         self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
+    def create_neuroglancer_files(self,output_dir,segment_properties):
+        self.init_precomputed(output_dir)
+        self.add_segment_properties(segment_properties)
+        self.add_downsampled_volumes()
+        self.add_segmentation_mesh()
+        
+        
 class NgSegmentMaker:
     def __init__(self, debug = False,out_folder = 'atlas_test',offset = None):
         self.offset = offset
@@ -64,22 +71,7 @@ class NgSegmentMaker:
         db_structure_infos = self.sqlController.get_structures_dict()
         segment_properties = [(number, f'{structure}: {label}') for structure, (label, number) in db_structure_infos.items()]
         return segment_properties
-    
-    def create_neuroglancer_files(self,atlas_volume):
-        segment_properties = self.get_segment_properties()
-        if not self.debug:
-            if self.offset:
-                offset = self.offset
-            else:
-                offset = -(np.array(atlas_volume.shape)/2).astype(int) + np.array([220,150,0])
-            ng = NgConverter(atlas_volume, [self.resolution, self.resolution, 20000], offset)
-            ng.init_precomputed(self.OUTPUT_DIR)
-            ng.add_segment_properties(segment_properties)
-            ng.add_downsampled_volumes()
-            ng.add_segmentation_mesh()
-        print()
-        end = timer()
-        print(f'Finito! Program took {end - self.start} seconds')
+
 
 class AtlasNgMaker(Atlas,NgSegmentMaker):
     def __init__(self,atlas_name,debug = False,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0,offset = None):
@@ -89,8 +81,9 @@ class AtlasNgMaker(Atlas,NgSegmentMaker):
         self.resolution = self.get_atlas_resolution()
     
     def create_atlas_neuroglancer(self):
-        atlas_volume = self.assembler.combined_volume
-        self.create_neuroglancer_files(atlas_volume)
+        self.volume = self.assembler.combined_volume
+        segment_properties = self.get_segment_properties()
+        self.create_neuroglancer_files(self.OUTPUT_DIR,segment_properties)
 
 
 class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
@@ -101,8 +94,9 @@ class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
         self.resolution = self.get_animal_resolution()
     
     def create_brain_neuroglancer(self):
-        atlas_volume = self.assembler.combined_volume
-        self.create_neuroglancer_files(atlas_volume)
+        self.volume = self.assembler.combined_volume
+        segment_properties = self.get_segment_properties()
+        self.create_neuroglancer_files(self.OUTPUT_DIR,segment_properties)
 
 if __name__ == '__main__':
     atlas = 'atlasV8'
