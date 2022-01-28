@@ -1,8 +1,8 @@
 /* TABLE OF CONTENTS - OVERALL ORGANIZATION STRUCTURE (IT - OR 'NON-BIOLOGICAL'):
    TOTAL TABLES (63): annotations_points,	annotations_points_archive,	archive_sets,	auth_group,	auth_group_permissions,	auth_permission,	auth_user,	auth_user_groups,	auth_user_user_permissions,	authtoken_token, django_admin_log,	django_content_type,	django_migrations,	django_plotly_dash_dashapp,	django_plotly_dash_statelessapp,	django_session,	django_site,	elastix_transformation,	engine_attributespec,	engine_clientfile,	engine_data,	engine_image,	engine_job,	engine_jobcommit,	engine_label,	engine_labeledimage,	engine_labeledimageattributeval,	engine_labeledshape,	engine_labeledshapeattributeval,	engine_labeledtrack,	engine_labeledtrackattributeval,	engine_plugin,	engine_pluginoption,	engine_project,	engine_remotefile,	engine_segment,	engine_serverfile,	engine_task,	engine_trackedshape,	engine_trackedshapeattributeval,	engine_video,	file_log,	file_operation,	git_gitdata,	input_type,	journals,	logs,	neuroglancer_state,	neuroglancer_urls,	performance_center,	problem_category,	progress_lookup,	sections,	slide, slide_czi_to_tif, socialaccount_socialaccount,	socialaccount_socialapp,	socialaccount_socialapp_sites,	socialaccount_socialtoken,	task,	task_resources,	task_roles,	task_view, transformation
 
-NON-RELEVANT [TO PORTAL] TABLES (4):
-   location,	location_primary_people, resource, schedule
+NON-RELEVANT [TO PORTAL] TABLES (1):
+   resource
 
 */
 
@@ -1099,38 +1099,6 @@ CREATE TABLE `transformation` (
 
 
 /*
-   COMMENTS RELATED TO TABLE: location
-   Unknown contrib - What is the role of this table (Scanner related)?
-*/
-
-DROP TABLE IF EXISTS `location`;
-CREATE TABLE `location` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `active` tinyint(1) NOT NULL,
-  `created` datetime(6) NOT NULL,
-  `updated` datetime(6) NOT NULL,
-  `room` varchar(25) NOT NULL,
-  `description` longtext NOT NULL,
-  `people_allowed` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
-
-
-DROP TABLE IF EXISTS `location_primary_people`;
-CREATE TABLE `location_primary_people` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `location_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `location_primary_people_location_id_user_id_58be910f_uniq` (`location_id`,`user_id`),
-  KEY `location_primary_people_user_id_4125b3f6_fk_auth_user_id` (`user_id`),
-  CONSTRAINT `location_primary_people_location_id_bb62bcf7_fk_location_id` FOREIGN KEY (`location_id`) REFERENCES `location` (`id`),
-  CONSTRAINT `location_primary_people_user_id_4125b3f6_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
-
-
-
-/*
    COMMENTS RELATED TO TABLE: resource
    Unknown contrib - What is the role of this table?
 */
@@ -1145,24 +1113,3 @@ CREATE TABLE `resource` (
   CONSTRAINT `FK__RESOURCE_role_id` FOREIGN KEY (`role_id`) REFERENCES `task_roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
-/*
-   COMMENTS RELATED TO TABLE: schedule
-   Unknown contrib - What is the role of this table?
-*/
-DROP TABLE IF EXISTS `schedule`;
-CREATE TABLE `schedule` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `active` tinyint(1) NOT NULL,
-  `created` datetime(6) NOT NULL,
-  `updated` datetime(6) NOT NULL,
-  `start_time` datetime(6) NOT NULL,
-  `end_time` datetime(6) NOT NULL,
-  `location_id` int(11) NOT NULL,
-  `person_id` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `schedule_location_id_d296afa1_fk_location_id` (`location_id`),
-  KEY `schedule_person_id_9f59b05d_fk_auth_user_id` (`person_id`),
-  CONSTRAINT `schedule_location_id_d296afa1_fk_location_id` FOREIGN KEY (`location_id`) REFERENCES `location` (`id`),
-  CONSTRAINT `schedule_person_id_9f59b05d_fk_auth_user_id` FOREIGN KEY (`person_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
