@@ -33,6 +33,7 @@ CREATE TABLE `annotations_points` (
   `x` FLOAT DEFAULT NULL,
   `y` FLOAT DEFAULT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
+  `prep_id` VARCHAR(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
   `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
   `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
@@ -53,6 +54,7 @@ CREATE TABLE `annotations_points_archive` (
   `x` FLOAT DEFAULT NULL,
   `y` FLOAT DEFAULT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
+  `prep_id` VARCHAR(20) NOT NULL COMMENT '*LEGACY COMPATABILITY*',
   `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
   `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
   `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
@@ -269,6 +271,7 @@ CREATE TABLE `django_site` (
 DROP TABLE IF EXISTS `elastix_transformation`;
 CREATE TABLE `elastix_transformation` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `FK_prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `section` char(3) NOT NULL,
   `rotation` float NOT NULL DEFAULT 0,
   `xshift` float NOT NULL DEFAULT 0,
@@ -661,6 +664,7 @@ CREATE TABLE `engine_video` (
 DROP TABLE IF EXISTS `file_log`;
 CREATE TABLE `file_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `filename` varchar(255) NOT NULL,
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -726,6 +730,7 @@ INSERT INTO input_type (id, input_type) VALUES (3, 'detected computer');
 DROP TABLE IF EXISTS `journals`;
 CREATE TABLE `journals` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `entry` longtext NOT NULL,
   `fix` longtext DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
@@ -816,7 +821,7 @@ CREATE TABLE `neuroglancer_urls` (
 
 DROP TABLE IF EXISTS `performance_center`;
 CREATE TABLE `performance_center` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `performance_center_id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`performance_center_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -872,6 +877,7 @@ DROP VIEW IF EXISTS `sections`;
 /*
 CREATE TABLE `sections` (
   `id` tinyint NOT NULL,
+  `prep_id` tinyint NOT NULL,
   `czi_file` tinyint NOT NULL,
   `slide_physical_id` tinyint NOT NULL,
   `file_name` tinyint NOT NULL,
@@ -1013,6 +1019,7 @@ DROP TABLE IF EXISTS `task`;
 CREATE TABLE `task` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `lookup_id` int(11) NOT NULL,
+  `prep_id` VARCHAR(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `completed` tinyint(4) NOT NULL DEFAULT 0,
   `start_date` datetime DEFAULT NULL,
   `end_date` datetime DEFAULT NULL,
@@ -1021,7 +1028,7 @@ CREATE TABLE `task` (
   `FK_animal_id` INT(11) NOT NULL,
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id) ON UPDATE CASCADE,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `UK__progress_datFa_prep_lookup` (`FK_animal_id`,`lookup_id`),
+  UNIQUE KEY `UK__progress_datFa_prep_lookup` (`prep_id`,`lookup_id`),
   KEY `K__task_data_lookup_id` (`lookup_id`),
   CONSTRAINT `FK__task_lookup_id` FOREIGN KEY (`lookup_id`) REFERENCES `progress_lookup` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -1055,11 +1062,10 @@ CREATE TABLE `task_roles` (
 
 DROP TABLE IF EXISTS `task_view`;
 CREATE TABLE `task_view` (
-  `FK_animal_id` tinyint(4) NOT NULL,
+  `prep_id` tinyint(4) NOT NULL,
   `percent_complete` tinyint(4) NOT NULL,
   `complete` tinyint(4) NOT NULL,
-  `created` tinyint(4) NOT NULL,
-   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id) ON UPDATE CASCADE
+  `created` tinyint(4) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 
@@ -1072,6 +1078,7 @@ CREATE TABLE `task_view` (
 DROP TABLE IF EXISTS `transformation`;
 CREATE TABLE `transformation` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `com_name` varchar(50) NOT NULL,
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,

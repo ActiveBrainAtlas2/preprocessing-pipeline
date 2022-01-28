@@ -45,6 +45,7 @@ CREATE TABLE `alias` (
 
 CREATE TABLE `animal` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `date_of_birth` date DEFAULT NULL COMMENT 'organism date of birth',
   `sex` enum('M', 'F', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
   `tissue_source` enum('animal','brain','slides') DEFAULT NULL,
@@ -108,6 +109,7 @@ CREATE TABLE `genotype` (
 DROP TABLE IF EXISTS `histology`;
 CREATE TABLE `histology` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `anesthesia` enum('ketamine','isoflurane','pentobarbital','fatal plus') DEFAULT NULL,
   `perfusion_age_in_days` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `perfusion_date` date DEFAULT NULL,
@@ -134,7 +136,7 @@ CREATE TABLE `histology` (
   `FK_organic_label_id` int(11),
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_virus_id`) REFERENCES virus(id),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
   FOREIGN KEY (`FK_organic_label_id`) REFERENCES organic_label(id),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -150,6 +152,7 @@ CREATE TABLE `histology` (
 DROP TABLE IF EXISTS `injection`;
 CREATE TABLE `injection` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `label_id` int(11) DEFAULT NULL,
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
@@ -169,7 +172,7 @@ CREATE TABLE `injection` (
   `FK_performance_center_id` int(11),
   `FK_animal_id` int(11),
   `FK_ref_atlas_id` int(11),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`),
   FOREIGN KEY (`FK_ref_atlas_id`) REFERENCES biosource(`id`),
   PRIMARY KEY (`id`)
@@ -228,6 +231,7 @@ CREATE TABLE `organic_label` (
 DROP TABLE IF EXISTS `scan_run`;
 CREATE TABLE `scan_run` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
   `machine` enum('Zeiss','Axioscan','Nanozoomer','Olympus VA') DEFAULT NULL,
@@ -255,7 +259,7 @@ CREATE TABLE `scan_run` (
   `FK_animal_id` int(11),
   `FK_performance_center_id` int(11),
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
