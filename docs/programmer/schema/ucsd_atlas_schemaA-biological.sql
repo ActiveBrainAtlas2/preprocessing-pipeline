@@ -61,7 +61,7 @@ CREATE TABLE `animal` (
   `FK_vendor_strain_id` int(11),
   `FK_breeder_line_id` int(11),
   `FK_genotype_id` int(11),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
   FOREIGN KEY (`FK_alias_id`) REFERENCES alias(`id`),
   FOREIGN KEY (`FK_vendor_strain_id`) REFERENCES vendor_strain(`id`),
   FOREIGN KEY (`FK_breeder_line_id`) REFERENCES breeder_line(`id`),
@@ -136,7 +136,7 @@ CREATE TABLE `histology` (
   `FK_organic_label_id` int(11),
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_virus_id`) REFERENCES virus(id),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
   FOREIGN KEY (`FK_organic_label_id`) REFERENCES organic_label(id),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -172,7 +172,7 @@ CREATE TABLE `injection` (
   `FK_performance_center_id` int(11),
   `FK_animal_id` int(11),
   `FK_ref_atlas_id` int(11),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`),
   FOREIGN KEY (`FK_ref_atlas_id`) REFERENCES biosource(`id`),
   PRIMARY KEY (`id`)
@@ -259,7 +259,7 @@ CREATE TABLE `scan_run` (
   `FK_animal_id` int(11),
   `FK_performance_center_id` int(11),
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
