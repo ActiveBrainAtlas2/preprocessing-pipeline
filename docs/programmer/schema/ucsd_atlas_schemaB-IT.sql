@@ -821,16 +821,16 @@ CREATE TABLE `neuroglancer_urls` (
 
 DROP TABLE IF EXISTS `performance_center`;
 CREATE TABLE `performance_center` (
-  `performance_center_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`performance_center_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /* INSERT DEFAULTS */
-INSERT INTO performance_center (performance_center_id, name) VALUES (1, 'CSHL');
-INSERT INTO performance_center (performance_center_id, name) VALUES (2, 'Salk');
-INSERT INTO performance_center (performance_center_id, name) VALUES (3, 'UCSD');
-INSERT INTO performance_center (performance_center_id, name) VALUES (4, 'HHMI');
-INSERT INTO performance_center (performance_center_id, name) VALUES (5, 'Duke');
+INSERT INTO performance_center (id, name) VALUES (1, 'CSHL');
+INSERT INTO performance_center (id, name) VALUES (2, 'Salk');
+INSERT INTO performance_center (id, name) VALUES (3, 'UCSD');
+INSERT INTO performance_center (id, name) VALUES (4, 'HHMI');
+INSERT INTO performance_center (id, name) VALUES (5, 'Duke');
 
 
 /*
