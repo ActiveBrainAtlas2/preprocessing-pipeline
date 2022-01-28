@@ -823,7 +823,7 @@ DROP TABLE IF EXISTS `performance_center`;
 CREATE TABLE `performance_center` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`performance_center_id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /* INSERT DEFAULTS */
 INSERT INTO performance_center (id, name) VALUES (1, 'CSHL');
