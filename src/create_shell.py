@@ -29,7 +29,7 @@ def create_shell(animal, DEBUG=False):
     '''
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'rotated_aligned_masked')
+    INPUT = os.path.join(fileLocationManager.prep, 'masks', 'rotated_aligned_masked')
     error = test_dir(animal, INPUT, downsample=True, same_size=True)
     if len(error) > 0:
         print(error)

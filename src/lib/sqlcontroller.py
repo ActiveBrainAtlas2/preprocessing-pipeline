@@ -256,7 +256,7 @@ class SqlController(object):
         query_start = self.session.query(LayerData)
         for key, value in search_dictionary.items():
             query_start = eval(f'query_start.filter(LayerData.{key}=="{value}")')
-        return self.get_coordinates_from_query_result(query_start.all())
+        return query_start.all()
 
     def get_coordinates_from_query_result(self,query_result):
         coord = []
