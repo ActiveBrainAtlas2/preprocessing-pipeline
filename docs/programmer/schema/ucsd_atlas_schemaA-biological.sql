@@ -109,7 +109,7 @@ CREATE TABLE `genotype` (
 DROP TABLE IF EXISTS `histology`;
 CREATE TABLE `histology` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+  `prep_id` varchar(20) DEFAULT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `anesthesia` enum('ketamine','isoflurane','pentobarbital','fatal plus') DEFAULT NULL,
   `perfusion_age_in_days` tinyint(3) unsigned NOT NULL DEFAULT 0,
   `perfusion_date` date DEFAULT NULL,
