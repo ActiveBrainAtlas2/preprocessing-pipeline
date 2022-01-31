@@ -45,7 +45,7 @@ CREATE TABLE `alias` (
 
 CREATE TABLE `animal` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+  `prep_id` varchar(20) COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `date_of_birth` date DEFAULT NULL COMMENT 'organism date of birth',
   `sex` enum('M', 'F', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
   `tissue_source` enum('animal','brain','slides') DEFAULT NULL,
