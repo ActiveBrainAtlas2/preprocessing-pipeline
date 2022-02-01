@@ -475,7 +475,7 @@ INSERT INTO performance_center (performance_center_id, name) VALUES (6, 'Princet
 DROP TABLE IF EXISTS `authentication_user_groups`;
 CREATE TABLE `authentication_user_groups` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` big(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `authentication_user_groups_user_id_group_id_8af031ac_uniq` (`user_id`,`group_id`),
@@ -487,7 +487,7 @@ CREATE TABLE `authentication_user_groups` (
 DROP TABLE IF EXISTS `authentication_user_labs`;
 CREATE TABLE `authentication_user_labs` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` int(11) NOT NULL,
   `lab_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `authentication_user_labs_user_id_lab_id_85e83707_uniq` (`user_id`,`lab_id`),
@@ -499,7 +499,7 @@ CREATE TABLE `authentication_user_labs` (
 DROP TABLE IF EXISTS `authentication_user_user_permissions`;
 CREATE TABLE `authentication_user_user_permissions` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` int(11) NOT NULL,
   `permission_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `authentication_user_user_user_id_permission_id_ec51b09f_uniq` (`user_id`,`permission_id`),
@@ -516,7 +516,7 @@ CREATE TABLE `socialaccount_socialaccount` (
   `last_login` datetime(6) NOT NULL,
   `date_joined` datetime(6) NOT NULL,
   `extra_data` longtext NOT NULL,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `socialaccount_socialaccount_provider_uid_fc810c6e_uniq` (`provider`,`uid`),
   KEY `socialaccount_social_user_id_8146e70c_fk_authentic` (`user_id`),
@@ -574,7 +574,7 @@ CREATE TABLE `django_admin_log` (
   `action_flag` smallint(5) unsigned NOT NULL CHECK (`action_flag` >= 0),
   `change_message` longtext NOT NULL,
   `content_type_id` int(11) DEFAULT NULL,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `django_admin_log_content_type_id_c4bce8eb_fk_django_co` (`content_type_id`),
   KEY `django_admin_log_user_id_c564eba6_fk_authentication_user_id` (`user_id`),
