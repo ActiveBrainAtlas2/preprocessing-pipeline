@@ -315,8 +315,8 @@ CREATE TABLE `annotations_point_archive` (
   FOREIGN KEY (`FK_owner_id`) REFERENCES authentication_user(id) ON DELETE CASCADE,
   FOREIGN KEY (`FK_input_type_id`) REFERENCES input_type(id),
   FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id),
-  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id)
-  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* What is this table for? */
@@ -329,7 +329,7 @@ CREATE TABLE `archive_sets` (
   `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
   `FK_owner_id` int(11) NOT NULL COMMENT 'USER WHO MADE REVISIONS',
   FOREIGN KEY (`FK_owner_id`) REFERENCES authentication_user(id) ON DELETE CASCADE,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* AH - What does this table represent? */
