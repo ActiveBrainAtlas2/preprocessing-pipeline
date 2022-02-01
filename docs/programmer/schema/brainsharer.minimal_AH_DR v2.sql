@@ -254,6 +254,7 @@ CREATE TABLE `brain_region` (
 /* AH - I suggest we add a table for brain atlases like so: */
 /* DR - agree - what are default values? */
 
+DROP TABLE IF EXISTS `brain_atlas`;
 CREATE TABLE `brain_atlas` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `atlas_name` varchar(64) NOT NULL DEFAULT 'UCSD',
