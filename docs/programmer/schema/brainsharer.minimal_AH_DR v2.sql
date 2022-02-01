@@ -279,13 +279,12 @@ INSERT INTO brain_atlas (id, atlas_name, description) VALUES (4, 'Princeton_rat'
    DR - "layer" is related to Neuroglancer layer (user can name layer for superimposition of annotated points), "FK_archive_set_id" is for versioning of Neuroglancer annotated points (i.e., if points are added/removed/edited user can restore from previous version), "FK_input_type_id" is used to store point annotations input source: 'manual person', 'corrected person', 'detected computer', "FK_owner_id" is user who initially created/uploaded/input annotations
    DR - I believe data is stored in "structure" table is for each brain region (table renamed to brain_region)
 */
-*/
 
-/*ZW changed layer to label.  Layer is a label for groups of annotations as it used to be specified by the neuroglancer layer name*/
+/* ZW changed layer to label.  Layer is a label for groups of annotations as it used to be specified by the neuroglancer layer name */
 DROP TABLE IF EXISTS `annotations_points`;
 CREATE TABLE `annotations_points` (
   `id` INT(20) NOT NULL AUTO_INCREMENT,
-  `label` varchar(255) NOT NULL COMMENT 'freeform name/label the annotation',
+  `label` varchar(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
   `x` double NOT NULL,
   `y` double NOT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
@@ -296,8 +295,8 @@ CREATE TABLE `annotations_points` (
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES authentication_user(id) ON DELETE CASCADE,
   FOREIGN KEY (`FK_input_type_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id)
-  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `annotations_point_archive`;
