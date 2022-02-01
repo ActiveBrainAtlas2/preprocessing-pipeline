@@ -38,7 +38,7 @@ CREATE TABLE `biosource` (
   `active` tinyint(4) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
   `comments` varchar(2001) DEFAULT NULL,
-  `sex` varchar enum('Male','Female', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
+  `sex` enum('M', 'F', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
   `tissue` varchar(100) DEFAULT NULL COMMENT 'ex. animal, brain, slides',
    FK_ORGID int(11) COMMENT 'organism id',
   `FK_authentication_lab_id` int(11),
