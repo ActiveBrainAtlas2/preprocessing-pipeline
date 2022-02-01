@@ -1094,6 +1094,24 @@ CREATE TABLE `transformation` (
   CONSTRAINT `transformation_ibfk_3` FOREIGN KEY (`transformation_type`) REFERENCES `transformation_type` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=266 DEFAULT CHARSET=utf8;
 
+drop table transformation ;
+CREATE TABLE `transformation` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `FK_source_id` int(11) NOT NULL,
+  `FK_destination_id` int(11) NOT NULL,
+  `FK_transformation_type_id` int(11) NOT NULL DEFAULT 1,
+  `transformation` blob NOT NULL,
+  `created` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  `updated` timestamp NOT NULL DEFAULT current_timestamp(),
+  `active` int(2) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `source` (`FK_source_id`,`FK_destination_id`,`FK_transformation_type_id`),
+  KEY `FK_destination_id` (`FK_destination_id`),
+  KEY `FK_transformation_type_id` (`FK_transformation_type_id`),
+  CONSTRAINT `transformation_ibfk_1` FOREIGN KEY (`FK_source_id`) REFERENCES `animal` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `transformation_ibfk_2` FOREIGN KEY (`FK_destination_id`) REFERENCES `animal` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `transformation_ibfk_3` FOREIGN KEY (`FK_transformation_type_id`) REFERENCES `transformation_type` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=266 DEFAULT CHARSET=utf8;
 
 /*
     8) TABLES NOT RELEVANT TO PORTAL (CONFIRM): location, location_primary_people, resource, schedule
