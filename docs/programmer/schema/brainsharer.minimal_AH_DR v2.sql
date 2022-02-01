@@ -6,10 +6,24 @@
 */
 
 /* 26-JAN-2022 - DR CHANGES MADE TO histology, antibody TABLES */
+/* 01-FEB-2022 - DR CHANGES ADDED alias TABLE */
 
 /*
-   1) TABLES RELATED TO BIOLOGICAL DATA SOURCE: biosource, species
+   1) TABLES RELATED TO BIOLOGICAL DATA SOURCE: alias, biosource, species
 */
+
+/*
+   DR - alias table to store names of organisms/animals/biosources
+*/
+DROP TABLE IF EXISTS `alias`;
+CREATE TABLE `alias` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `FK_biosource_id` int(11),
+  `name` varchar(100) DEFAULT NULL,
+  FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`) ON DELETE CASCADE,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 /* AH - What is the animal field for? We need a species column. */
 /* DR - I agree but also we could generalize even more to 'biosource', which could be more inclusive.  Previous work on biological pathways related to metabolomics, genomics, proteomics used biocyc databases (https://biocyc.org/).  Using nomenclature (HUMAN, MOUSE, FLY) as foreign key may lead to additional applications in future.
