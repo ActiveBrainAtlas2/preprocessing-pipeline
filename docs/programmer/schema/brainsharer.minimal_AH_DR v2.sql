@@ -475,7 +475,7 @@ INSERT INTO performance_center (performance_center_id, name) VALUES (6, 'Princet
 DROP TABLE IF EXISTS `authentication_user_groups`;
 CREATE TABLE `authentication_user_groups` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_id` big(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `authentication_user_groups_user_id_group_id_8af031ac_uniq` (`user_id`,`group_id`),
