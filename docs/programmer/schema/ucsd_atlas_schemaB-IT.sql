@@ -1078,19 +1078,21 @@ CREATE TABLE `task_view` (
 DROP TABLE IF EXISTS `transformation`;
 CREATE TABLE `transformation` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
-  `com_name` varchar(50) NOT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT 1,
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `FK_animal_id` int(11),
-  `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
-  `FK_owner_id` int(11) NOT NULL,
-  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(`id`),
-  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(`id`),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `source` varchar(50) NOT NULL DEFAULT '1',
+  `destination` varchar(50) NOT NULL DEFAULT '1',
+  `transformation_type` int(11) NOT NULL DEFAULT 1,
+  `transformation` blob NOT NULL,
+  `created` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  `updated` timestamp NOT NULL DEFAULT current_timestamp(),
+  `active` int(2) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `source` (`source`,`destination`,`transformation_type`),
+  KEY `destination` (`destination`),
+  KEY `transformation_type` (`transformation_type`),
+  CONSTRAINT `transformation_ibfk_1` FOREIGN KEY (`source`) REFERENCES `animal` (`prep_id`) ON DELETE CASCADE,
+  CONSTRAINT `transformation_ibfk_2` FOREIGN KEY (`destination`) REFERENCES `animal` (`prep_id`) ON DELETE CASCADE,
+  CONSTRAINT `transformation_ibfk_3` FOREIGN KEY (`transformation_type`) REFERENCES `transformation_type` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=266 DEFAULT CHARSET=utf8;
 
 
 /*
