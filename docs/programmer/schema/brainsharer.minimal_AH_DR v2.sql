@@ -368,7 +368,7 @@ CREATE TABLE `neuroglancer_state` (
 */
 DROP TABLE IF EXISTS `authentication_user`;
 CREATE TABLE `authentication_user` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `password` varchar(128) NOT NULL,
   `last_login` datetime(6) DEFAULT NULL,
   `is_superuser` tinyint(1) NOT NULL,
