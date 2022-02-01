@@ -324,7 +324,7 @@ CREATE TABLE `annotations_point_archive` (
 
 DROP TABLE IF EXISTS `archive_sets`;
 CREATE TABLE `archive_sets` (
-  `id` int(20) NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `created` datetime DEFAULT current_timestamp(),
   `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
   `FK_owner_id` int(11) NOT NULL COMMENT 'USER WHO MADE REVISIONS',
