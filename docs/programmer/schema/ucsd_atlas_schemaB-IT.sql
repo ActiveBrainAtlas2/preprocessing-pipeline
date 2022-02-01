@@ -1068,32 +1068,6 @@ CREATE TABLE `task_view` (
   `created` tinyint(4) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
-
-/*
-   COMMENTS RELATED TO TABLE: transformation
-   Unknown contrib - Does this store transformations between stack, does not exist at this point.
-   coordinates and atlas coordinates (both ways)? does it support different types of transformation? (rigid, affine,beta spline?)
-*/
-
-DROP TABLE IF EXISTS `transformation`;
-CREATE TABLE `transformation` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `source` varchar(50) NOT NULL DEFAULT '1',
-  `destination` varchar(50) NOT NULL DEFAULT '1',
-  `transformation_type` int(11) NOT NULL DEFAULT 1,
-  `transformation` blob NOT NULL,
-  `created` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-  `updated` timestamp NOT NULL DEFAULT current_timestamp(),
-  `active` int(2) NOT NULL DEFAULT 1,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `source` (`source`,`destination`,`transformation_type`),
-  KEY `destination` (`destination`),
-  KEY `transformation_type` (`transformation_type`),
-  CONSTRAINT `transformation_ibfk_1` FOREIGN KEY (`source`) REFERENCES `animal` (`prep_id`) ON DELETE CASCADE,
-  CONSTRAINT `transformation_ibfk_2` FOREIGN KEY (`destination`) REFERENCES `animal` (`prep_id`) ON DELETE CASCADE,
-  CONSTRAINT `transformation_ibfk_3` FOREIGN KEY (`transformation_type`) REFERENCES `transformation_type` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=266 DEFAULT CHARSET=utf8;
-
 drop table transformation ;
 CREATE TABLE `transformation` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
