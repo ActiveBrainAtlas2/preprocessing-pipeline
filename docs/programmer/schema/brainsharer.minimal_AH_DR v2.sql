@@ -1,7 +1,7 @@
 /* TABLE OF CONTENTS - OVERALL ORGANIZATION STRUCTURE:
    1) TABLES RELATED TO BIOLOGICAL DATA SOURCE & SAMPLE PREP: biosource, species, injection, injection_virus, virus, scan_run, brain_region, brain_atlas
    2) TABLES RELATED TO POINT ANNOTATIONS STORAGE: annotations_points, annotations_point_archive, archive_set, input_type, neuroglancer_state
-   3) TABLES RELATED TO USER ACCOUNTS: authentication_user, account_emailaddress, account_emailconfirmation, auth_group, auth_group_permissions, auth_permission, authentication_lab, authentication_user_groups, authentication_user_labs, authentication_user_user_permissions, socialaccount_socialaccount, socialaccount_socialapp, socialaccount_socialapp_sites, socialaccount_socialtoken
+   3) TABLES RELATED TO USER ACCOUNTS: auth_user, account_emailaddress, account_emailconfirmation, auth_group, auth_group_permissions, auth_permission, authentication_lab, authentication_user_groups, authentication_user_labs, authentication_user_user_permissions, socialaccount_socialaccount, socialaccount_socialapp, socialaccount_socialapp_sites, socialaccount_socialtoken
    4) TABLES RELATED TO PLATFORM ADMINISTRATION/FUNCTIONALITY: django_admin_log, django_content_type, django_migrations, django_session, django_site
 */
 
@@ -366,8 +366,8 @@ CREATE TABLE `neuroglancer_state` (
 /*
   3) TABLES RELATED TO USER ACCOUNTS: authentication_user, account_emailaddress, account_emailconfirmation, auth_group, auth_group_permissions, auth_permission, authentication_lab, authentication_user_groups, authentication_user_labs, authentication_user_user_permissions, socialaccount_socialaccount, socialaccount_socialapp, socialaccount_socialapp_sites, socialaccount_socialtoken
 */
-DROP TABLE IF EXISTS `authentication_user`;
-CREATE TABLE `authentication_user` (
+DROP TABLE IF EXISTS `auth_user`;
+CREATE TABLE `auth_user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `password` varchar(128) NOT NULL,
   `last_login` datetime(6) DEFAULT NULL,
