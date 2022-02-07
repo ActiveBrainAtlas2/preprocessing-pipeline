@@ -45,7 +45,7 @@ CREATE TABLE `biosource` (
   `FK_authentication_lab_id` int(11) COMMENT 'WHERE DATA ARE HOSTED',
   `FK_performance_center_id` int(11) COMMENT 'WHERE DATA ARE COLLECTED',
    FOREIGN KEY (`FK_authentication_lab_id`) REFERENCES authentication_lab(`id`),
-   FOREIGN KEY (`FK_performance_center_id`) REFERENCES FK_performance_center(`id`),
+   FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
    FOREIGN KEY (`FK_ORGID`) REFERENCES species(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -470,17 +470,17 @@ INSERT INTO authentication_lab (id, lab_name) VALUES (6, 'Princeton');
 
 DROP TABLE IF EXISTS `performance_center`;
 CREATE TABLE `performance_center` (
-  `performance_center_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`performance_center_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /* INSERT DEFAULTS */
-INSERT INTO performance_center (performance_center_id, name) VALUES (1, 'CSHL');
-INSERT INTO performance_center (performance_center_id, name) VALUES (2, 'Salk');
-INSERT INTO performance_center (performance_center_id, name) VALUES (3, 'UCSD');
-INSERT INTO performance_center (performance_center_id, name) VALUES (4, 'HHMI');
-INSERT INTO performance_center (performance_center_id, name) VALUES (5, 'Duke');
-INSERT INTO performance_center (performance_center_id, name) VALUES (6, 'Princeton');
+INSERT INTO performance_center (id, name) VALUES (1, 'CSHL');
+INSERT INTO performance_center (id, name) VALUES (2, 'Salk');
+INSERT INTO performance_center (id, name) VALUES (3, 'UCSD');
+INSERT INTO performance_center (id, name) VALUES (4, 'HHMI');
+INSERT INTO performance_center (id, name) VALUES (5, 'Duke');
+INSERT INTO performance_center (id, name) VALUES (6, 'Princeton');
 
 DROP TABLE IF EXISTS `authentication_user_groups`;
 CREATE TABLE `authentication_user_groups` (
