@@ -42,7 +42,7 @@ CREATE TABLE `annotations_points` (
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id) ON UPDATE CASCADE,
+  FOREIGN KEY (`FK_structure_id`) REFERENCES brain_region(id) ON UPDATE CASCADE,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
