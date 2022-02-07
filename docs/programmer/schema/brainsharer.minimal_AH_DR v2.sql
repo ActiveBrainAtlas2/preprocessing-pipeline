@@ -7,6 +7,7 @@
 
 /* 26-JAN-2022 - DR CHANGES MADE TO histology, antibody TABLES */
 /* 01-FEB-2022 - DR CHANGES ADDED alias TABLE */
+/* 07-FEB-2022 - DR CHANGES ADDED biosource TABLE */
 
 /*
    1) TABLES RELATED TO BIOLOGICAL DATA SOURCE: alias, biosource, species
@@ -40,9 +41,11 @@ CREATE TABLE `biosource` (
   `comments` varchar(2001) DEFAULT NULL,
   `sex` enum('M', 'F', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
   `tissue` varchar(100) DEFAULT NULL COMMENT 'ex. animal, brain, slides',
-   FK_ORGID int(11) COMMENT 'organism id',
-  `FK_authentication_lab_id` int(11),
+  `FK_ORGID` int(11) COMMENT 'organism id',
+  `FK_authentication_lab_id` int(11) COMMENT 'WHERE DATA ARE HOSTED',
+  `FK_performance_center_id` int(11) COMMENT 'WHERE DATA ARE COLLECTED',
    FOREIGN KEY (`FK_authentication_lab_id`) REFERENCES authentication_lab(`id`),
+   FOREIGN KEY (`FK_performance_center_id`) REFERENCES FK_performance_center(`id`),
    FOREIGN KEY (`FK_ORGID`) REFERENCES species(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -447,16 +450,23 @@ CREATE TABLE `auth_permission` (
 /* AH - I don't think we want to do that. I think of authentication_lab 
 as where the data are hosted and performance_center as where the data were
 collected, which are separate concepts. */
+/* DR - I added additioal [foreign key] field to biosource table to accommodate */
 
 DROP TABLE IF EXISTS `authentication_lab`;
 CREATE TABLE `authentication_lab` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `lab_name` varchar(100) NOT NULL,
-  `lab_url` varchar(250) NOT NULL,
-  `active` tinyint(1) NOT NULL,
+  `lab_url` varchar(250) DEFAULT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
+INSERT INTO authentication_lab (id, lab_name) VALUES (1, 'CSHL');
+INSERT INTO authentication_lab (id, lab_name) VALUES (2, 'Salk');
+INSERT INTO authentication_lab (id, lab_name) VALUES (3, 'UCSD');
+INSERT INTO authentication_lab (id, lab_name) VALUES (4, 'HHMI');
+INSERT INTO authentication_lab (id, lab_name) VALUES (5, 'Duke');
+INSERT INTO authentication_lab (id, lab_name) VALUES (6, 'Princeton');
 
 DROP TABLE IF EXISTS `performance_center`;
 CREATE TABLE `performance_center` (
