@@ -64,7 +64,7 @@ CREATE TABLE `annotations_points_archive` (
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id),
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id),
+  FOREIGN KEY (`FK_structure_id`) REFERENCES brain_region(id),
   FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
