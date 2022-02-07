@@ -100,7 +100,7 @@ CREATE TABLE `histology` (
   `FK_biosource_id` int(11),
   `FK_virus_id` int(11),
   `FK_antibody_id` int(11),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
   FOREIGN KEY (`FK_virus_id`) REFERENCES virus(`id`),
   FOREIGN KEY (`FK_antibody_id`) REFERENCES antibody(`id`),
@@ -164,7 +164,7 @@ CREATE TABLE `injection` (
   `FK_performance_center_id` int(11),
   `FK_biosource_id` int(11),
   `FK_ref_atlas_id` int(11),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
   FOREIGN KEY (`FK_ref_atlas_id`) REFERENCES brain_atlas(`id`),
   PRIMARY KEY (`id`)
@@ -231,7 +231,7 @@ CREATE TABLE `scan_run` (
   `FK_biosource_id` int(11),
   `FK_performance_center_id` int(11),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -472,7 +472,7 @@ DROP TABLE IF EXISTS `performance_center`;
 CREATE TABLE `performance_center` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`performance_center_id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /* INSERT DEFAULTS */
 INSERT INTO performance_center (id, name) VALUES (1, 'CSHL');
