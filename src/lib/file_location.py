@@ -36,7 +36,10 @@ class FileLocationManager(object):
         self.elastix_dir = os.path.join(self.prep, 'elastix')
         self.full_masked = os.path.join(self.prep, 'full_masked')
         self.full_aligned = os.path.join(self.prep, 'full_aligned')
-        self.thumbnail_masked = os.path.join(self.prep, 'masks', 'thumbnail_masked')
+        self.thumbnail_mask = os.path.join(self.prep, 'masks', 'thumbnail_masked')
+        self.rotated_and_padded_thumbnail_mask = os.path.join(self.prep, 'masks', 'thumbnail_rotated_and_padded')
+        self.aligned_rotated_and_padded_thumbnail_mask = os.path.join(self.prep, 'masks', 'thumbnail_aligned_rotated_and_padded')
+        self.shell = os.path.join(ROOT_DIR, stack,'shell')
 
     # def get_elastix(self,channel = 1):
     #     return os.path.join(self.prep,f'CH{channel}','elastix')
@@ -46,6 +49,9 @@ class FileLocationManager(object):
     
     def get_full_aligned(self,channel = 1):
         return os.path.join(self.prep,f'CH{channel}','full_aligned')
+    
+    def get_thumbnail_aligned(self,channel = 1):
+        return os.path.join(self.prep, f'CH{channel}', 'thumbnail_aligned')
         
     # def get_thumbnail_masked(self,channel = 1):
     #     return os.path.join(self.prep,f'CH{channel}', 'masks', 'thumbnail_masked')

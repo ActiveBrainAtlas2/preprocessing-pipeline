@@ -46,8 +46,7 @@ def make_full_resolution(animal, channel,workers = 10):
     sections = sqlController.get_sections(animal, channel)
     for section_number, section in enumerate(sections):
         input_path = os.path.join(INPUT, section.file_name)
-        output_path = os.path.join(OUTPUT, str(
-            section_number).zfill(3) + '.tif')
+        output_path = os.path.join(OUTPUT, str(section_number).zfill(3) + '.tif')
         if not os.path.exists(input_path):
             continue
 

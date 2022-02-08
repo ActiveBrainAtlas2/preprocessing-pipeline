@@ -181,8 +181,8 @@ def align_allen_image():
 
 def align_section_masks(animal, transforms):
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'thumbnail_masked')
-    OUTPUT = os.path.join(fileLocationManager.prep, 'rotated_aligned_masked')
+    INPUT = fileLocationManager.rotated_and_padded_thumbnail_mask
+    OUTPUT = fileLocationManager.aligned_rotated_and_padded_thumbnail_mask
     align_images(INPUT,OUTPUT,transforms)
 
 def align_images(INPUT,OUTPUT,transforms):

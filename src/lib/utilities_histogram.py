@@ -27,7 +27,7 @@ def make_histogram(animal, channel):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
-    MASK_INPUT = fileLocationManager.thumbnail_masked
+    MASK_INPUT = fileLocationManager.thumbnail_mask
     files = sqlController.get_sections(animal, channel)
     error = test_dir(animal, INPUT, downsample=True, same_size=False)
     if len(files) == 0:
@@ -117,7 +117,7 @@ def make_combined(animal, channel):
     logger = get_logger(animal)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, f'CH{channel}', 'thumbnail')
-    MASK_INPUT = fileLocationManager.thumbnail_masked
+    MASK_INPUT = fileLocationManager.thumbnail_mask
     OUTPUT = os.path.join(fileLocationManager.histogram, f'CH{channel}')
     os.makedirs(OUTPUT, exist_ok=True)
     files = os.listdir(INPUT)

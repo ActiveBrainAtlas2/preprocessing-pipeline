@@ -330,8 +330,7 @@ class SqlController(object):
 
     def get_section_count(self, animal):
         try:
-            count = self.session.query(Section).filter(
-                Section.prep_id == animal).filter(Section.channel == 1).count()
+            count = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).count()
         except:
             count = 666
         return count
