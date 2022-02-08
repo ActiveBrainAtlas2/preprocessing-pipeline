@@ -256,7 +256,7 @@ class SqlController(object):
         query_start = self.session.query(LayerData)
         for key, value in search_dictionary.items():
             query_start = eval(f'query_start.filter(LayerData.{key}=="{value}")')
-        return query_start.all()
+        return self.get_coordinates_from_query_result(query_start.all())
 
     def get_coordinates_from_query_result(self,query_result):
         coord = []
@@ -330,8 +330,7 @@ class SqlController(object):
 
     def get_section_count(self, animal):
         try:
-            count = self.session.query(Section).filter(
-                Section.prep_id == animal).filter(Section.channel == 1).count()
+            count = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).count()
         except:
             count = 666
         return count

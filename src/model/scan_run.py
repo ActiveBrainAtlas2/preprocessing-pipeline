@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, Date, ForeignKey, Enum, String, Float
 from sqlalchemy.orm import relationship
 from .atlas_model import Base, AtlasModel
-from .slide import Slide
 
 
 class ScanRun(Base, AtlasModel):
@@ -13,6 +12,7 @@ class ScanRun(Base, AtlasModel):
     machine = Column(Enum("Zeiss", "Axioscan", "Nanozoomer","Olympus VA"))
     objective = Column(Enum("60X", "40X", "20X", "10X"))
     resolution = Column(Float, default=0)
+    zresolution = Column(Float, default=20)
     number_of_slides = Column(Integer, default=0)
     scan_date = Column(Date)
     file_type = Column(Enum("CZI", "JPEG2000", "NDPI", "NGR"))

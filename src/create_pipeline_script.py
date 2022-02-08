@@ -73,7 +73,7 @@ def run_pipeline(animal, channel, downsample,step):
 
 if __name__ == '__main__':
 
-    animal = 'DK39'
+    animal = 'DK40'
     channel = 1
     downsample = True
     step = 3
@@ -82,5 +82,11 @@ if __name__ == '__main__':
     # run_pipeline(animal, 3, downsample, step)
     downsample = False
     run_pipeline(animal, 1, downsample,step)
+<<<<<<< HEAD
     # run_pipeline(animal, 2, downsample,step)
     run_pipeline(animal, 3, downsample,step)
+=======
+    # # run_pipeline(animal, 2, downsample,step)
+    # run_pipeline(animal, 3, downsample,step)ls
+
+>>>>>>> efd7b944b3c3244ae370ede0400ea1f626128fdb

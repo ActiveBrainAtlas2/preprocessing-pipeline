@@ -48,6 +48,14 @@ def get_image_size(filepath):
     width, height = results[2].split('x')
     return width, height
 
+def get_max_imagze_size(folder_path):
+    size = []
+    for file in os.listdir(folder_path):
+        filepath = folder_path+'/'+file
+        width,height = get_image_size(filepath)
+        size.append([int(width),int(height)])
+    return np.array(size).max(axis = 0)
+
 def workershell(cmd):
     """
     Set up an shell command. That is what the shell true is for.

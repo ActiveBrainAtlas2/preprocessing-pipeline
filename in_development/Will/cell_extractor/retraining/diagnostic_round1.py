@@ -126,6 +126,16 @@ for i in sets:
             is_category.append((i,dict(All.iloc[i,:])))
 train_sections['Human mind change']=is_category
 
+contra=[]
+is_category = []
+for i in sets:
+    if int(All.iloc[i,2]) in sections:
+        if check(set_names[i],yes=['manual_train'],no=['manual_negative']):
+            for j in sets[i]:
+                contra.append(j)
+            is_category.append((i,dict(All.iloc[i,:])))
+train_sections['original training set after mind change']=is_category
+
 test_counts={}
 is_category = []
 for i in sets:
@@ -182,4 +192,13 @@ for i in sets:
         is_category.append((i,dict(All.iloc[i,:])))
 test_counts[label]=is_category
 
-pk.dump((test_counts,train_sections),open('categories.pkl','wb'))
+
+for keyi in train_sections:
+    print(keyi)
+    print(len(train_sections[keyi]))
+
+for keyi in test_counts:
+    print(keyi)
+    print(len(test_counts[keyi]))
+
+# pk.dump((test_counts,train_sections),open('categories.pkl','wb'))
