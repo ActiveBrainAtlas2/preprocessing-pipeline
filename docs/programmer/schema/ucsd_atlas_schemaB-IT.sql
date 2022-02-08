@@ -74,8 +74,11 @@ DROP TABLE IF EXISTS `archive_sets`;
 CREATE TABLE `archive_sets` (
  `id` int(20) NOT NULL AUTO_INCREMENT,
  `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+ `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',  
+ `FK_animal_id` INT(11) NOT NULL,
  `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
  `FK_owner_id` int(11) NOT NULL COMMENT 'USER WHO MADE REVISIONS',
+ FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id),
  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
  PRIMARY KEY (`id`)
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
