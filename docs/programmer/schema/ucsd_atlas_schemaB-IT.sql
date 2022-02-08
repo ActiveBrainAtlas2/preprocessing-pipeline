@@ -50,7 +50,7 @@ CREATE TABLE `annotations_points` (
 DROP TABLE IF EXISTS `annotations_points_archive`;
 CREATE TABLE `annotations_points_archive` (
   `id` int(20) NOT NULL AUTO_INCREMENT,
-  `layer` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
+  `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
   `x` FLOAT DEFAULT NULL,
   `y` FLOAT DEFAULT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
