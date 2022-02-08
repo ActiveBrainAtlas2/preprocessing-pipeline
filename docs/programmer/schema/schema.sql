@@ -1875,6 +1875,16 @@ CREATE TABLE `~log` (
 ) ENGINE=InnoDB AUTO_INCREMENT=29785 DEFAULT CHARSET=utf8 COMMENT='event logging table for `active_atlas_development`';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+DROP TABLE IF EXISTS `transformation_type`;
+CREATE TABLE `transformation_type` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `transformation_type` varchar(40) DEFAULT NULL,
+  `active` int(2) NOT NULL DEFAULT 1,
+  `created` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK__T_AID_PID_ITID` (`transformation_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
 --
 -- Final view structure for view `sections`
 --

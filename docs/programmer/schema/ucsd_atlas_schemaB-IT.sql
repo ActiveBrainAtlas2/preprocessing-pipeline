@@ -1,8 +1,8 @@
 /* TABLE OF CONTENTS - OVERALL ORGANIZATION STRUCTURE (IT - OR 'NON-BIOLOGICAL'):
    TOTAL TABLES (63): annotations_points,	annotations_points_archive,	archive_sets,	auth_group,	auth_group_permissions,	auth_permission,	auth_user,	auth_user_groups,	auth_user_user_permissions,	authtoken_token, django_admin_log,	django_content_type,	django_migrations,	django_plotly_dash_dashapp,	django_plotly_dash_statelessapp,	django_session,	django_site,	elastix_transformation,	engine_attributespec,	engine_clientfile,	engine_data,	engine_image,	engine_job,	engine_jobcommit,	engine_label,	engine_labeledimage,	engine_labeledimageattributeval,	engine_labeledshape,	engine_labeledshapeattributeval,	engine_labeledtrack,	engine_labeledtrackattributeval,	engine_plugin,	engine_pluginoption,	engine_project,	engine_remotefile,	engine_segment,	engine_serverfile,	engine_task,	engine_trackedshape,	engine_trackedshapeattributeval,	engine_video,	file_log,	file_operation,	git_gitdata,	input_type,	journals,	logs,	neuroglancer_state,	neuroglancer_urls,	performance_center,	problem_category,	progress_lookup,	sections,	slide, slide_czi_to_tif, socialaccount_socialaccount,	socialaccount_socialapp,	socialaccount_socialapp_sites,	socialaccount_socialtoken,	task,	task_resources,	task_roles,	task_view, transformation
 
-NON-RELEVANT [TO PORTAL] TABLES (4):
-   location,	location_primary_people, resource, schedule
+NON-RELEVANT [TO PORTAL] TABLES (1):
+   resource
 
 */
 
@@ -19,8 +19,8 @@ NON-RELEVANT [TO PORTAL] TABLES (4):
  * ANTICIPATED OPERATION:
  * 1) USER SAVES ANNOTATION POINTS IN NEUROGLANCER
  * 2) NEW ENTRY IN archive_set TABLE (PARENT 'archive_id' - 0 IF FIRST; UPDATE USER; TIMESTAMP )
- * 2) ALL CURRENT POINTS FOR USER ARE MOVED TO annotations_points_archive
- * 3) NEW POINTS ARE ADDED TO annotations_points
+ * 3) ALL CURRENT POINTS FOR USER ARE MOVED TO annotations_points_archive
+ * 4) NEW POINTS ARE ADDED TO annotations_points
  *    - CONSIDERATIONS:
  *      A) IF LATENCY -> DB MODIFICATIONS MAY BE QUEUED AND MADE VIA CRON JOB (DURING OFF-PEAK)
  *      B) annotations_points_archive, archive_sets WILL NOT BE STORED ON LIVE DB
@@ -35,14 +35,14 @@ CREATE TABLE `annotations_points` (
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
   `prep_id` VARCHAR(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
-  `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
+  `FK_brain_region_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
   `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
   `FK_animal_id` INT(11) NOT NULL,
   `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id) ON UPDATE CASCADE,
+  FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id) ON UPDATE CASCADE,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -56,7 +56,7 @@ CREATE TABLE `annotations_points_archive` (
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
   `prep_id` VARCHAR(20) NOT NULL COMMENT '*LEGACY COMPATABILITY*',
   `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
-  `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
+  `FK_brain_region_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
   `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
   `FK_animal_id` INT(11) NOT NULL,
   `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
@@ -64,7 +64,7 @@ CREATE TABLE `annotations_points_archive` (
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id),
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id),
+  FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id),
   FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -821,16 +821,16 @@ CREATE TABLE `neuroglancer_urls` (
 
 DROP TABLE IF EXISTS `performance_center`;
 CREATE TABLE `performance_center` (
-  `performance_center_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`performance_center_id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /* INSERT DEFAULTS */
-INSERT INTO performance_center (performance_center_id, name) VALUES (1, 'CSHL');
-INSERT INTO performance_center (performance_center_id, name) VALUES (2, 'Salk');
-INSERT INTO performance_center (performance_center_id, name) VALUES (3, 'UCSD');
-INSERT INTO performance_center (performance_center_id, name) VALUES (4, 'HHMI');
-INSERT INTO performance_center (performance_center_id, name) VALUES (5, 'Duke');
+INSERT INTO performance_center (id, name) VALUES (1, 'CSHL');
+INSERT INTO performance_center (id, name) VALUES (2, 'Salk');
+INSERT INTO performance_center (id, name) VALUES (3, 'UCSD');
+INSERT INTO performance_center (id, name) VALUES (4, 'HHMI');
+INSERT INTO performance_center (id, name) VALUES (5, 'Duke');
 
 
 /*
@@ -1068,66 +1068,28 @@ CREATE TABLE `task_view` (
   `created` tinyint(4) NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
-
-/*
-   COMMENTS RELATED TO TABLE: transformation
-   Unknown contrib - Does this store transformations between stack, does not exist at this point.
-   coordinates and atlas coordinates (both ways)? does it support different types of transformation? (rigid, affine,beta spline?)
-*/
-
-DROP TABLE IF EXISTS `transformation`;
+drop table transformation ;
 CREATE TABLE `transformation` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
-  `com_name` varchar(50) NOT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT 1,
-  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `FK_animal_id` int(11),
-  `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
-  `FK_owner_id` int(11) NOT NULL,
-  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(`id`) ON UPDATE CASCADE,
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(`id`),
-  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(`id`),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
+  `FK_source_id` int(11) NOT NULL,
+  `FK_destination_id` int(11) NOT NULL,
+  `FK_transformation_type_id` int(11) NOT NULL DEFAULT 1,
+  `transformation` blob NOT NULL,
+  `created` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  `updated` timestamp NOT NULL DEFAULT current_timestamp(),
+  `active` int(2) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `source` (`FK_source_id`,`FK_destination_id`,`FK_transformation_type_id`),
+  KEY `FK_destination_id` (`FK_destination_id`),
+  KEY `FK_transformation_type_id` (`FK_transformation_type_id`),
+  CONSTRAINT `transformation_ibfk_1` FOREIGN KEY (`FK_source_id`) REFERENCES `animal` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `transformation_ibfk_2` FOREIGN KEY (`FK_destination_id`) REFERENCES `animal` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `transformation_ibfk_3` FOREIGN KEY (`FK_transformation_type_id`) REFERENCES `transformation_type` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=266 DEFAULT CHARSET=utf8;
 
 /*
     8) TABLES NOT RELEVANT TO PORTAL (CONFIRM): location, location_primary_people, resource, schedule
 */
-
-
-/*
-   COMMENTS RELATED TO TABLE: location
-   Unknown contrib - What is the role of this table (Scanner related)?
-*/
-
-DROP TABLE IF EXISTS `location`;
-CREATE TABLE `location` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `active` tinyint(1) NOT NULL,
-  `created` datetime(6) NOT NULL,
-  `updated` datetime(6) NOT NULL,
-  `room` varchar(25) NOT NULL,
-  `description` longtext NOT NULL,
-  `people_allowed` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
-
-
-DROP TABLE IF EXISTS `location_primary_people`;
-CREATE TABLE `location_primary_people` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `location_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `location_primary_people_location_id_user_id_58be910f_uniq` (`location_id`,`user_id`),
-  KEY `location_primary_people_user_id_4125b3f6_fk_auth_user_id` (`user_id`),
-  CONSTRAINT `location_primary_people_location_id_bb62bcf7_fk_location_id` FOREIGN KEY (`location_id`) REFERENCES `location` (`id`),
-  CONSTRAINT `location_primary_people_user_id_4125b3f6_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
-
 
 
 /*
@@ -1145,24 +1107,3 @@ CREATE TABLE `resource` (
   CONSTRAINT `FK__RESOURCE_role_id` FOREIGN KEY (`role_id`) REFERENCES `task_roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
-/*
-   COMMENTS RELATED TO TABLE: schedule
-   Unknown contrib - What is the role of this table?
-*/
-DROP TABLE IF EXISTS `schedule`;
-CREATE TABLE `schedule` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `active` tinyint(1) NOT NULL,
-  `created` datetime(6) NOT NULL,
-  `updated` datetime(6) NOT NULL,
-  `start_time` datetime(6) NOT NULL,
-  `end_time` datetime(6) NOT NULL,
-  `location_id` int(11) NOT NULL,
-  `person_id` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `schedule_location_id_d296afa1_fk_location_id` (`location_id`),
-  KEY `schedule_person_id_9f59b05d_fk_auth_user_id` (`person_id`),
-  CONSTRAINT `schedule_location_id_d296afa1_fk_location_id` FOREIGN KEY (`location_id`) REFERENCES `location` (`id`),
-  CONSTRAINT `schedule_person_id_9f59b05d_fk_auth_user_id` FOREIGN KEY (`person_id`) REFERENCES `auth_user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

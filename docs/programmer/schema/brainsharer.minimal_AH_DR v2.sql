@@ -1,15 +1,30 @@
 /* TABLE OF CONTENTS - OVERALL ORGANIZATION STRUCTURE:
    1) TABLES RELATED TO BIOLOGICAL DATA SOURCE & SAMPLE PREP: biosource, species, injection, injection_virus, virus, scan_run, brain_region, brain_atlas
    2) TABLES RELATED TO POINT ANNOTATIONS STORAGE: annotations_points, annotations_point_archive, archive_set, input_type, neuroglancer_state
-   3) TABLES RELATED TO USER ACCOUNTS: authentication_user, account_emailaddress, account_emailconfirmation, auth_group, auth_group_permissions, auth_permission, authentication_lab, authentication_user_groups, authentication_user_labs, authentication_user_user_permissions, socialaccount_socialaccount, socialaccount_socialapp, socialaccount_socialapp_sites, socialaccount_socialtoken
+   3) TABLES RELATED TO USER ACCOUNTS: auth_user, account_emailaddress, account_emailconfirmation, auth_group, auth_group_permissions, auth_permission, authentication_lab, authentication_user_groups, authentication_user_labs, authentication_user_user_permissions, socialaccount_socialaccount, socialaccount_socialapp, socialaccount_socialapp_sites, socialaccount_socialtoken
    4) TABLES RELATED TO PLATFORM ADMINISTRATION/FUNCTIONALITY: django_admin_log, django_content_type, django_migrations, django_session, django_site
 */
 
 /* 26-JAN-2022 - DR CHANGES MADE TO histology, antibody TABLES */
+/* 01-FEB-2022 - DR CHANGES ADDED alias TABLE */
+/* 07-FEB-2022 - DR CHANGES ADDED biosource TABLE */
 
 /*
-   1) TABLES RELATED TO BIOLOGICAL DATA SOURCE: biosource, species
+   1) TABLES RELATED TO BIOLOGICAL DATA SOURCE: alias, biosource, species
 */
+
+/*
+   DR - alias table to store names of organisms/animals/biosources
+*/
+DROP TABLE IF EXISTS `alias`;
+CREATE TABLE `alias` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `FK_biosource_id` int(11),
+  `name` varchar(100) DEFAULT NULL,
+  FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`) ON DELETE CASCADE,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 /* AH - What is the animal field for? We need a species column. */
 /* DR - I agree but also we could generalize even more to 'biosource', which could be more inclusive.  Previous work on biological pathways related to metabolomics, genomics, proteomics used biocyc databases (https://biocyc.org/).  Using nomenclature (HUMAN, MOUSE, FLY) as foreign key may lead to additional applications in future.
@@ -24,11 +39,13 @@ CREATE TABLE `biosource` (
   `active` tinyint(4) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
   `comments` varchar(2001) DEFAULT NULL,
-  `sex` varchar enum('Male','Female', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
+  `sex` enum('M', 'F', 'Hermaphrodite', 'DoesNotApply') DEFAULT NULL,
   `tissue` varchar(100) DEFAULT NULL COMMENT 'ex. animal, brain, slides',
-   FK_ORGID int(11) COMMENT 'organism id',
-  `FK_authentication_lab_id` int(11),
+  `FK_ORGID` int(11) COMMENT 'organism id',
+  `FK_authentication_lab_id` int(11) COMMENT 'WHERE DATA ARE HOSTED',
+  `FK_performance_center_id` int(11) COMMENT 'WHERE DATA ARE COLLECTED',
    FOREIGN KEY (`FK_authentication_lab_id`) REFERENCES authentication_lab(`id`),
+   FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
    FOREIGN KEY (`FK_ORGID`) REFERENCES species(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -83,7 +100,7 @@ CREATE TABLE `histology` (
   `FK_biosource_id` int(11),
   `FK_virus_id` int(11),
   `FK_antibody_id` int(11),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
   FOREIGN KEY (`FK_virus_id`) REFERENCES virus(`id`),
   FOREIGN KEY (`FK_antibody_id`) REFERENCES antibody(`id`),
@@ -147,7 +164,7 @@ CREATE TABLE `injection` (
   `FK_performance_center_id` int(11),
   `FK_biosource_id` int(11),
   `FK_ref_atlas_id` int(11),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
   FOREIGN KEY (`FK_ref_atlas_id`) REFERENCES brain_atlas(`id`),
   PRIMARY KEY (`id`)
@@ -214,7 +231,7 @@ CREATE TABLE `scan_run` (
   `FK_biosource_id` int(11),
   `FK_performance_center_id` int(11),
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(`id`),
-  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`performance_center_id`),
+  FOREIGN KEY (`FK_performance_center_id`) REFERENCES performance_center(`id`),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -240,6 +257,7 @@ CREATE TABLE `brain_region` (
 /* AH - I suggest we add a table for brain atlases like so: */
 /* DR - agree - what are default values? */
 
+DROP TABLE IF EXISTS `brain_atlas`;
 CREATE TABLE `brain_atlas` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `atlas_name` varchar(64) NOT NULL DEFAULT 'UCSD',
@@ -264,13 +282,12 @@ INSERT INTO brain_atlas (id, atlas_name, description) VALUES (4, 'Princeton_rat'
    DR - "layer" is related to Neuroglancer layer (user can name layer for superimposition of annotated points), "FK_archive_set_id" is for versioning of Neuroglancer annotated points (i.e., if points are added/removed/edited user can restore from previous version), "FK_input_type_id" is used to store point annotations input source: 'manual person', 'corrected person', 'detected computer', "FK_owner_id" is user who initially created/uploaded/input annotations
    DR - I believe data is stored in "structure" table is for each brain region (table renamed to brain_region)
 */
-*/
 
-/*ZW changed layer to label.  Layer is a label for groups of annotations as it used to be specified by the neuroglancer layer name*/
+/* ZW changed layer to label.  Layer is a label for groups of annotations as it used to be specified by the neuroglancer layer name */
 DROP TABLE IF EXISTS `annotations_points`;
 CREATE TABLE `annotations_points` (
   `id` INT(20) NOT NULL AUTO_INCREMENT,
-  `label` varchar(255) NOT NULL COMMENT 'freeform name/label the annotation',
+  `label` varchar(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
   `x` double NOT NULL,
   `y` double NOT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
@@ -281,8 +298,8 @@ CREATE TABLE `annotations_points` (
   FOREIGN KEY (`FK_biosource_id`) REFERENCES biosource(id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES authentication_user(id) ON DELETE CASCADE,
   FOREIGN KEY (`FK_input_type_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id)
-  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `annotations_point_archive`;
@@ -301,8 +318,8 @@ CREATE TABLE `annotations_point_archive` (
   FOREIGN KEY (`FK_owner_id`) REFERENCES authentication_user(id) ON DELETE CASCADE,
   FOREIGN KEY (`FK_input_type_id`) REFERENCES input_type(id),
   FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id),
-  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id)
-  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* What is this table for? */
@@ -310,12 +327,12 @@ CREATE TABLE `annotations_point_archive` (
 
 DROP TABLE IF EXISTS `archive_sets`;
 CREATE TABLE `archive_sets` (
-  `id` int(20) NOT NULL AUTO_INCREMENT,
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `created` datetime DEFAULT current_timestamp(),
   `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
   `FK_owner_id` int(11) NOT NULL COMMENT 'USER WHO MADE REVISIONS',
   FOREIGN KEY (`FK_owner_id`) REFERENCES authentication_user(id) ON DELETE CASCADE,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* AH - What does this table represent? */
@@ -352,9 +369,9 @@ CREATE TABLE `neuroglancer_state` (
 /*
   3) TABLES RELATED TO USER ACCOUNTS: authentication_user, account_emailaddress, account_emailconfirmation, auth_group, auth_group_permissions, auth_permission, authentication_lab, authentication_user_groups, authentication_user_labs, authentication_user_user_permissions, socialaccount_socialaccount, socialaccount_socialapp, socialaccount_socialapp_sites, socialaccount_socialtoken
 */
-DROP TABLE IF EXISTS `authentication_user`;
-CREATE TABLE `authentication_user` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS `auth_user`;
+CREATE TABLE `auth_user` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `password` varchar(128) NOT NULL,
   `last_login` datetime(6) DEFAULT NULL,
   `is_superuser` tinyint(1) NOT NULL,
@@ -378,7 +395,7 @@ CREATE TABLE `account_emailaddress` (
   `email` varchar(254) NOT NULL,
   `verified` tinyint(1) NOT NULL,
   `primary` tinyint(1) NOT NULL,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` int(20) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   KEY `account_emailaddress_user_id_2c513194_fk_authentication_user_id` (`user_id`),
@@ -433,35 +450,42 @@ CREATE TABLE `auth_permission` (
 /* AH - I don't think we want to do that. I think of authentication_lab 
 as where the data are hosted and performance_center as where the data were
 collected, which are separate concepts. */
+/* DR - I added additioal [foreign key] field to biosource table to accommodate */
 
 DROP TABLE IF EXISTS `authentication_lab`;
 CREATE TABLE `authentication_lab` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `lab_name` varchar(100) NOT NULL,
-  `lab_url` varchar(250) NOT NULL,
-  `active` tinyint(1) NOT NULL,
+  `lab_url` varchar(250) DEFAULT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
+INSERT INTO authentication_lab (id, lab_name) VALUES (1, 'CSHL');
+INSERT INTO authentication_lab (id, lab_name) VALUES (2, 'Salk');
+INSERT INTO authentication_lab (id, lab_name) VALUES (3, 'UCSD');
+INSERT INTO authentication_lab (id, lab_name) VALUES (4, 'HHMI');
+INSERT INTO authentication_lab (id, lab_name) VALUES (5, 'Duke');
+INSERT INTO authentication_lab (id, lab_name) VALUES (6, 'Princeton');
 
 DROP TABLE IF EXISTS `performance_center`;
 CREATE TABLE `performance_center` (
-  `performance_center_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`performance_center_id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /* INSERT DEFAULTS */
-INSERT INTO performance_center (performance_center_id, name) VALUES (1, 'CSHL');
-INSERT INTO performance_center (performance_center_id, name) VALUES (2, 'Salk');
-INSERT INTO performance_center (performance_center_id, name) VALUES (3, 'UCSD');
-INSERT INTO performance_center (performance_center_id, name) VALUES (4, 'HHMI');
-INSERT INTO performance_center (performance_center_id, name) VALUES (5, 'Duke');
-INSERT INTO performance_center (performance_center_id, name) VALUES (6, 'Princeton');
+INSERT INTO performance_center (id, name) VALUES (1, 'CSHL');
+INSERT INTO performance_center (id, name) VALUES (2, 'Salk');
+INSERT INTO performance_center (id, name) VALUES (3, 'UCSD');
+INSERT INTO performance_center (id, name) VALUES (4, 'HHMI');
+INSERT INTO performance_center (id, name) VALUES (5, 'Duke');
+INSERT INTO performance_center (id, name) VALUES (6, 'Princeton');
 
 DROP TABLE IF EXISTS `authentication_user_groups`;
 CREATE TABLE `authentication_user_groups` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `authentication_user_groups_user_id_group_id_8af031ac_uniq` (`user_id`,`group_id`),
@@ -473,7 +497,7 @@ CREATE TABLE `authentication_user_groups` (
 DROP TABLE IF EXISTS `authentication_user_labs`;
 CREATE TABLE `authentication_user_labs` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` int(11) NOT NULL,
   `lab_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `authentication_user_labs_user_id_lab_id_85e83707_uniq` (`user_id`,`lab_id`),
@@ -485,7 +509,7 @@ CREATE TABLE `authentication_user_labs` (
 DROP TABLE IF EXISTS `authentication_user_user_permissions`;
 CREATE TABLE `authentication_user_user_permissions` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` int(11) NOT NULL,
   `permission_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `authentication_user_user_user_id_permission_id_ec51b09f_uniq` (`user_id`,`permission_id`),
@@ -502,7 +526,7 @@ CREATE TABLE `socialaccount_socialaccount` (
   `last_login` datetime(6) NOT NULL,
   `date_joined` datetime(6) NOT NULL,
   `extra_data` longtext NOT NULL,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `socialaccount_socialaccount_provider_uid_fc810c6e_uniq` (`provider`,`uid`),
   KEY `socialaccount_social_user_id_8146e70c_fk_authentic` (`user_id`),
@@ -560,7 +584,7 @@ CREATE TABLE `django_admin_log` (
   `action_flag` smallint(5) unsigned NOT NULL CHECK (`action_flag` >= 0),
   `change_message` longtext NOT NULL,
   `content_type_id` int(11) DEFAULT NULL,
-  `user_id` bigint(20) NOT NULL,
+  `user_id` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `django_admin_log_content_type_id_c4bce8eb_fk_django_co` (`content_type_id`),
   KEY `django_admin_log_user_id_c564eba6_fk_authentication_user_id` (`user_id`),
