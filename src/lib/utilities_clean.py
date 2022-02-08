@@ -11,7 +11,7 @@ from lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
 import tifffile as tiff
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-def fix_ntb(file_keys):
+def fix_ntb(file_key):
     """
     This method clean all NTB images in the specified channel. For channel one it also scales
     and does an adaptive histogram equalization.
@@ -28,7 +28,7 @@ def fix_ntb(file_keys):
         :param scale: used in scaling. Gotten from the histogram
     :return: nothing. we write the image to disk
     """
-    infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_keys
+    infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
     try:
         img = io.imread(infile)
     except IOError as e:
@@ -91,8 +91,8 @@ def masker(animal, channel, downsample, debug):
     height = sqlController.scan_run.height
     rotation = sqlController.scan_run.rotation
     flip = sqlController.scan_run.flip
-    max_width = int(width * SCALING_FACTOR)
-    max_height = int(height * SCALING_FACTOR)
+    max_width = int(width * SCALING_FACTOR+500)
+    max_height = int(height * SCALING_FACTOR+500)
     stain = sqlController.histology.counterstain
     if channel == 1:
         sqlController.set_task(animal, CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK)

@@ -7,13 +7,13 @@ from collections import OrderedDict
 from concurrent.futures.process import ProcessPoolExecutor
 from sqlalchemy.orm.exc import NoResultFound
 import tifffile as tiff
-
+from lib.utilities_mask import  place_image
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
 from lib.utilities_alignment import (create_downsampled_transforms, process_image)
-from lib.utilities_process import test_dir, get_cpus
+from lib.utilities_process import test_dir, get_cpus ,get_image_size
 from model.elastix_transformation import ElastixTransformation
 from lib.sql_setup import session
 
@@ -119,11 +119,9 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
             print(error)
             sys.exit()
         OUTPUT = os.path.join(fileLocationManager.prep, 'rotated_aligned_masked')
-
     os.makedirs(OUTPUT, exist_ok=True)
     progress_id = sqlController.get_progress_id(downsample, channel, 'ALIGN')
     sqlController.set_task(animal, progress_id)
-
     downsampled_transforms = create_downsampled_transforms(animal, transforms, downsample)
     downsampled_transforms = OrderedDict(sorted(downsampled_transforms.items()))
     file_keys = []
@@ -143,17 +141,12 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
         outfile = os.path.join(OUTPUT, file)
         if os.path.exists(outfile) and not create_csv:
             continue
-
         file_keys.append([i,infile, outfile, T])
-    
     if create_csv:
         create_csv_data(animal, file_keys)
     else:
         for filei in file_keys:
             process_image(filei)
-        # workers, _ = get_cpus()
-        # with ProcessPoolExecutor(max_workers=workers) as executor:
-        #     executor.map(process_image, sorted(file_keys))
         
 def create_csv_data(animal, file_keys):
     data = []
