@@ -10,8 +10,9 @@ if __name__ =='__main__':
     disk = args.disk
     njobs = args.njobs
     segmentor = TiffSegmentor(animal,disk = disk,n_workers = njobs)
-    print('moving files to scratch')
+    print('moving files to disk')
     segmentor.move_full_aligned()
     segmentor.generate_tiff_segments(channel = 1,create_csv = False)
     segmentor.generate_tiff_segments(channel = 3,create_csv = True)
+    print('cleaning_up_folder')
     segmentor.delete_full_aligned()
