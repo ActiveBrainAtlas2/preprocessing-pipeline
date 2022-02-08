@@ -49,7 +49,7 @@ CREATE TABLE `annotations_points` (
 
 DROP TABLE IF EXISTS `annotations_points_archive`;
 CREATE TABLE `annotations_points_archive` (
-  `id` int(20) NOT NULL AUTO_INCREMENT,
+  `id` int(20) NOT NULL,
   `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
   `x` FLOAT DEFAULT NULL,
   `y` FLOAT DEFAULT NULL,
@@ -65,8 +65,7 @@ CREATE TABLE `annotations_points_archive` (
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
   FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id),
-  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id),
-  PRIMARY KEY (`id`)
+  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
