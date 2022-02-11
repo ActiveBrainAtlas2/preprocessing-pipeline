@@ -8,7 +8,7 @@ def points2line(p1,p2,i):
     #plotline(a,b,i)
     return a,b
 
-p=[[0,1.5],[2,3],[1,4],[-1,2.8],[-10,6],[10,6]]
+p=[[0,3],[3,4.5],[1,6],[-3,4],[-10,7],[10,7]]
 def plotline(a,b,i):
     X=arange(-5,5,0.01)
     Y=a*X+b

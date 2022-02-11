@@ -1,31 +1,3 @@
-<<<<<<< HEAD
-Check programs took 0.00011575399548746645 seconds
-create meta is working with 116 files.
-Create meta took 0.04618128300353419 seconds
-identify-im6.q16: Cannot read TIFF header. `/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH1/full/002.tif' @ error/tiff.c/TIFFErrors/604.
-Create tifs took 0.5044632770004682 seconds
-Traceback (most recent call last):
-  File "create_pipeline.py", line 66, in <module>
-    pipeline.create_preps()
-  File "/scratch/programming/preprocessing-pipeline/src/lib/pipeline.py", line 104, in create_preps
-    make_low_resolution(self.animal, self.channel, self.debug,self.get_nworkers())
-  File "/scratch/programming/preprocessing-pipeline/src/lib/utilities_preps.py", line 80, in make_low_resolution
-    error = test_dir(animal, INPUT, downsample=False, same_size=False)
-  File "/scratch/programming/preprocessing-pipeline/src/lib/utilities_process.py", line 113, in test_dir
-    width, height = get_image_size(filepath)
-  File "/scratch/programming/preprocessing-pipeline/src/lib/utilities_process.py", line 46, in get_image_size
-    result_parts = str(check_output(["identify", filepath]))
-  File "/usr/lib/python3.8/subprocess.py", line 415, in check_output
-    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
-  File "/usr/lib/python3.8/subprocess.py", line 516, in run
-    raise CalledProcessError(retcode, process.args,
-subprocess.CalledProcessError: Command '['identify', '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH1/full/002.tif']' returned non-zero exit status 1.
-Check programs took 0.00015253497986122966 seconds
-create meta is working with 20 files.
-Create meta took 0.05156106999493204 seconds
-Create tifs took 0.45253401302034035 seconds
-Creating normalized and masks took 3.00949092299561 seconds
-=======
 usage: create_pipeline.py [-h] --animal ANIMAL [--channel CHANNEL]
                           [--downsample DOWNSAMPLE] [--step STEP]
 create_pipeline.py: error: unrecognized arguments: --steps 3
@@ -73,7 +45,6 @@ Number of files in /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39
 
 Create tifs took 0.7174868800002514 seconds
 Creating normalized and masks took 33.643648848999874 seconds
->>>>>>> 6fc3fd4b220b398fc618d1256378e38703b341bf
 	Finished create_masks final
 	Finished clean
 	Finished histogram single
