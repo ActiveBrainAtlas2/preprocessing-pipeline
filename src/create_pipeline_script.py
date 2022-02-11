@@ -77,11 +77,10 @@ if __name__ == '__main__':
     channel = 1
     downsample = True
     step = 3
-    run_pipeline(animal, 1, downsample,step)
+    # run_pipeline(animal, 1, downsample,step)
     # run_pipeline(animal, 2, downsample, step)
     # run_pipeline(animal, 3, downsample, step)
     downsample = False
-    # run_pipeline(animal, 1, downsample,step)
-    # # run_pipeline(animal, 2, downsample,step)
-    # run_pipeline(animal, 3, downsample,step)ls
-
+    run_pipeline(animal, 1, downsample,step)
+    # run_pipeline(animal, 2, downsample,step)
+    run_pipeline(animal, 3, downsample,step)

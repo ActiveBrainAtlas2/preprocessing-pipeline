@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Check programs took 0.00011575399548746645 seconds
 create meta is working with 116 files.
 Create meta took 0.04618128300353419 seconds
@@ -24,10 +25,60 @@ create meta is working with 20 files.
 Create meta took 0.05156106999493204 seconds
 Create tifs took 0.45253401302034035 seconds
 Creating normalized and masks took 3.00949092299561 seconds
+=======
+usage: create_pipeline.py [-h] --animal ANIMAL [--channel CHANNEL]
+                          [--downsample DOWNSAMPLE] [--step STEP]
+create_pipeline.py: error: unrecognized arguments: --steps 3
+usage: create_pipeline.py [-h] --animal ANIMAL [--channel CHANNEL]
+                          [--downsample DOWNSAMPLE] [--step STEP]
+create_pipeline.py: error: unrecognized arguments: --steps 3
+Check programs took 0.00012576500012073666 seconds
+create meta is working with 116 files.
+Create meta took 0.1714349960002437 seconds
+Check programs took 0.00012642500041692983 seconds
+create meta is working with 116 files.
+Create meta took 0.04853904100036743 seconds
+Create tifs took 0.7655266259998825 seconds
+Creating normalized and masks took 35.718352032999974 seconds
+	Finished create_masks final
+Error in masking /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH3/full/453.tif with mask shape (11187, 7505) img shape (20514, 15011)
+Are the shapes exactly the same?
+Unexpected error: <class 'cv2.error'>
+Error in masking /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH3/full/002.tif with mask shape (9439, 7595) img shape (9421, 9420)
+Are the shapes exactly the same?
+Unexpected error: <class 'cv2.error'>
+Error in masking /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH3/full/217.tif with mask shape (48248, 26077) img shape (38999, 22393)
+Are the shapes exactly the same?
+Unexpected error: <class 'cv2.error'>
+Error in masking /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH3/full/218.tif with mask shape (48248, 26077) img shape (38999, 22393)
+Are the shapes exactly the same?
+Unexpected error: <class 'cv2.error'>
+Error in masking /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH3/full/216.tif with mask shape (48248, 26077) img shape (38999, 22393)
+Are the shapes exactly the same?
+Unexpected error: <class 'cv2.error'>
+Error in masking /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH3/full/211.tif with mask shape (48244, 22389) img shape (51945, 24235)
+Are the shapes exactly the same?
+Unexpected error: <class 'cv2.error'>
+Error in masking /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH3/full/175.tif with mask shape (46425, 24242) img shape (37147, 24246)
+Are the shapes exactly the same?
+Unexpected error: <class 'cv2.error'>
+Error in masking /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH3/full/210.tif with mask shape (51945, 24235) img shape (50096, 24231)
+Are the shapes exactly the same?
+Unexpected error: <class 'cv2.error'>
+	Finished clean
+	Finished histogram single
+	Finished histograms combined
+Creating masks, cleaning and histograms took 52.94988766900042 seconds
+Number of files in /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH3/full_cleaned is incorrect.
+
+Create tifs took 0.7174868800002514 seconds
+Creating normalized and masks took 33.643648848999874 seconds
+>>>>>>> 6fc3fd4b220b398fc618d1256378e38703b341bf
 	Finished create_masks final
 	Finished clean
 	Finished histogram single
 	Finished histograms combined
+<<<<<<< HEAD
 Creating masks, cleaning and histograms took 2.314641158998711 seconds
 Creating elastix and alignment took 8.06030449300306 seconds
 Section 0 already processed, skipping 
@@ -101,3 +152,7 @@ Section 56 already processed, skipping
 Section 66 already processed, skipping 
 DIR /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK73/neuroglancer_data/C2 already exists and not performing any downsampling.
 Last step: creating neuroglancer images took 40.462167780002346 seconds
+=======
+Creating masks, cleaning and histograms took 29.44048018399917 seconds
+Creating elastix and alignment took 17005.915921251 seconds
+>>>>>>> 6fc3fd4b220b398fc618d1256378e38703b341bf

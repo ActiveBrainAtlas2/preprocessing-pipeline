@@ -49,8 +49,8 @@ CREATE TABLE `annotations_points` (
 
 DROP TABLE IF EXISTS `annotations_points_archive`;
 CREATE TABLE `annotations_points_archive` (
-  `id` int(20) NOT NULL AUTO_INCREMENT,
-  `layer` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
+  `id` int(20) NOT NULL,
+  `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
   `x` FLOAT DEFAULT NULL,
   `y` FLOAT DEFAULT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
@@ -65,8 +65,7 @@ CREATE TABLE `annotations_points_archive` (
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
   FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id),
-  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id),
-  PRIMARY KEY (`id`)
+  FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -74,8 +73,11 @@ DROP TABLE IF EXISTS `archive_sets`;
 CREATE TABLE `archive_sets` (
  `id` int(20) NOT NULL AUTO_INCREMENT,
  `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+ `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',  
+ `FK_animal_id` INT(11) NOT NULL,
  `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
  `FK_owner_id` int(11) NOT NULL COMMENT 'USER WHO MADE REVISIONS',
+ FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id),
  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
  PRIMARY KEY (`id`)
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -8,13 +8,13 @@ from concurrent.futures.process import ProcessPoolExecutor
 from sqlalchemy import false
 from sqlalchemy.orm.exc import NoResultFound
 import tifffile as tiff
-
+from lib.utilities_mask import  place_image
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
 from lib.utilities_alignment import (create_downsampled_transforms, process_image)
-from lib.utilities_process import test_dir, get_cpus
+from lib.utilities_process import test_dir, get_cpus ,get_image_size
 from model.elastix_transformation import ElastixTransformation
 from lib.sql_setup import session
 
@@ -144,9 +144,7 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
         outfile = os.path.join(OUTPUT, file)
         if os.path.exists(outfile) and not create_csv:
             continue
-
         file_keys.append([i,infile, outfile, T])
-    
     if create_csv:
         create_csv_data(animal, file_keys)
     else:
