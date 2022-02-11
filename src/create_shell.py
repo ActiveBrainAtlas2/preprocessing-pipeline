@@ -21,6 +21,7 @@ from skimage import measure
 import pickle as pk
 from scipy.signal import savgol_filter
 from lib.utilities_process import get_image_size
+import scipy
 
 def align_masks(animal):
     rotate_and_pad_masks(animal)
@@ -37,8 +38,6 @@ def rotate_and_pad_masks(animal):
     os.makedirs(OUTPUT,exist_ok=True)
     max_width, max_height = get_max_imagze_size(fileLocationManager.get_thumbnail_aligned())
     for file in os.listdir(INPUT):
-        if file == '045.tif':
-            breakpoint()
         infile = os.path.join(INPUT, file)
         outfile = os.path.join(OUTPUT, file)
         if os.path.exists(outfile):
@@ -90,13 +89,13 @@ def create_shell(animal, DEBUG=False):
     volume = []
     for file in tqdm(files):
         tif = io.imread(os.path.join(INPUT, file))
-        tif = (tif>125)*255
-        tif = mask_to_shell(tif)
-        if tif.shape!=(1854, 1045):
-            breakpoint()
+        # tif = (tif>125)*255
+        # tif = mask_to_shell(tif)
         volume.append(tif)
     volume = np.array(volume).astype('uint8')
     volume = np.swapaxes(volume, 0, 2)
+    volume = (volume!=0).astype('uint8')
+    volume = scipy.ndimage.gaussian_filter(volume,sigma=3)
     ids = np.unique(volume)
     ids = [(i,i) for i in ids]
     resolution = sqlController.scan_run.resolution
@@ -138,6 +137,7 @@ def create_shell_threshold(animal):
         volume.append(sub_shell)
     volume = np.array(volume).astype('uint8')
     volume = np.swapaxes(volume, 0, 2)
+    volume = (volume!=0).astype('uint8')
     ids = np.unique(volume)
     ids = [(i,i) for i in ids]
     resolution = sqlController.scan_run.resolution

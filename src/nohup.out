@@ -1,0 +1,103 @@
+Check programs took 0.00011575399548746645 seconds
+create meta is working with 116 files.
+Create meta took 0.04618128300353419 seconds
+identify-im6.q16: Cannot read TIFF header. `/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH1/full/002.tif' @ error/tiff.c/TIFFErrors/604.
+Create tifs took 0.5044632770004682 seconds
+Traceback (most recent call last):
+  File "create_pipeline.py", line 66, in <module>
+    pipeline.create_preps()
+  File "/scratch/programming/preprocessing-pipeline/src/lib/pipeline.py", line 104, in create_preps
+    make_low_resolution(self.animal, self.channel, self.debug,self.get_nworkers())
+  File "/scratch/programming/preprocessing-pipeline/src/lib/utilities_preps.py", line 80, in make_low_resolution
+    error = test_dir(animal, INPUT, downsample=False, same_size=False)
+  File "/scratch/programming/preprocessing-pipeline/src/lib/utilities_process.py", line 113, in test_dir
+    width, height = get_image_size(filepath)
+  File "/scratch/programming/preprocessing-pipeline/src/lib/utilities_process.py", line 46, in get_image_size
+    result_parts = str(check_output(["identify", filepath]))
+  File "/usr/lib/python3.8/subprocess.py", line 415, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+  File "/usr/lib/python3.8/subprocess.py", line 516, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['identify', '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK39/preps/CH1/full/002.tif']' returned non-zero exit status 1.
+Check programs took 0.00015253497986122966 seconds
+create meta is working with 20 files.
+Create meta took 0.05156106999493204 seconds
+Create tifs took 0.45253401302034035 seconds
+Creating normalized and masks took 3.00949092299561 seconds
+	Finished create_masks final
+	Finished clean
+	Finished histogram single
+	Finished histograms combined
+Creating masks, cleaning and histograms took 2.314641158998711 seconds
+Creating elastix and alignment took 8.06030449300306 seconds
+Section 0 already processed, skipping 
+Section 19 already processed, skipping 
+Section 33 already processed, skipping 
+Section 47 already processed, skipping 
+Section 59 already processed, skipping 
+Section 9 already processed, skipping 
+Section 15 already processed, skipping 
+Section 30 already processed, skipping 
+Section 46 already processed, skipping 
+Section 63 already processed, skipping 
+Section 1 already processed, skipping 
+Section 11 already processed, skipping 
+Section 20 already processed, skipping 
+Section 26 already processed, skipping 
+Section 35 already processed, skipping 
+Section 41 already processed, skipping 
+Section 49 already processed, skipping 
+Section 55 already processed, skipping 
+Section 65 already processed, skipping 
+Section 6 already processed, skipping 
+Section 13 already processed, skipping 
+Section 31 already processed, skipping 
+Section 44 already processed, skipping 
+Section 58 already processed, skipping 
+Section 3 already processed, skipping 
+Section 14 already processed, skipping 
+Section 21 already processed, skipping 
+Section 28 already processed, skipping 
+Section 36 already processed, skipping 
+Section 42 already processed, skipping 
+Section 50 already processed, skipping 
+Section 57 already processed, skipping 
+Section 2 already processed, skipping 
+Section 16 already processed, skipping 
+Section 22 already processed, skipping 
+Section 29 already processed, skipping 
+Section 37 already processed, skipping 
+Section 43 already processed, skipping 
+Section 51 already processed, skipping 
+Section 60 already processed, skipping 
+Section 68 already processed, skipping 
+Section 4 already processed, skipping 
+Section 17 already processed, skipping 
+Section 25 already processed, skipping 
+Section 34 already processed, skipping 
+Section 40 already processed, skipping 
+Section 52 already processed, skipping 
+Section 62 already processed, skipping 
+Section 5 already processed, skipping 
+Section 18 already processed, skipping 
+Section 24 already processed, skipping 
+Section 32 already processed, skipping 
+Section 39 already processed, skipping 
+Section 48 already processed, skipping 
+Section 54 already processed, skipping 
+Section 61 already processed, skipping 
+Section 67 already processed, skipping 
+Section 8 already processed, skipping 
+Section 10 already processed, skipping 
+Section 23 already processed, skipping 
+Section 38 already processed, skipping 
+Section 53 already processed, skipping 
+Section 64 already processed, skipping 
+Section 7 already processed, skipping 
+Section 12 already processed, skipping 
+Section 27 already processed, skipping 
+Section 45 already processed, skipping 
+Section 56 already processed, skipping 
+Section 66 already processed, skipping 
+DIR /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK73/neuroglancer_data/C2 already exists and not performing any downsampling.
+Last step: creating neuroglancer images took 40.462167780002346 seconds

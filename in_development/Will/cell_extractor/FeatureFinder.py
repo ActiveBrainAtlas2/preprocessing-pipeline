@@ -54,6 +54,8 @@ class FeatureFinder(CellDetectorBase):
         middle_seg_mask = None
         if mask is not None:
             middle_segment_mask = self.get_middle_segment_mask(mask) 
+            if middle_segment_mask.shape!=(80,80):
+                breakpoint()
             example['middle_segment_mask']=middle_segment_mask
             self.calc_center_features(image1,image3, middle_segment_mask)
    

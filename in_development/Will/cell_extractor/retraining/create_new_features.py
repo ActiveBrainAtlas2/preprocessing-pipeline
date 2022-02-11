@@ -6,20 +6,21 @@ import os
 
 def create_combined_features():
     dir = '/net/birdstore/Active_Atlas_Data/cell_segmentation'
-    dirs=glob(dir + '/DK55/CH3/*/puntas*.csv')  
+    dirs=glob(dir + '/DK55/CH3/*/punta*.csv')  
     dirs=['/'.join(d.split('/')[:-1]) for d in dirs]
     df_list=[]
     for dir in dirs:
-        filename=glob(dir + '/puntas*.csv')[0]
+        filename=glob(dir + '/punta*.csv')[0]
         if os.path.getsize(filename) == 1:
             continue
         df=pd.read_csv(filename)
         print(filename,df.shape)
         df_list.append(df)
-    len(df_list)
+
     full_df=pd.concat(df_list)
     full_df.index=list(range(full_df.shape[0]))
     df=pd.DataFrame(full_df)
+
     # df = df.drop('label',axis=1)
     return df
 
@@ -76,9 +77,9 @@ def create_positive_index(df):
 
 if __name__ == '__main__':
     df = create_combined_features()
-    dir = '/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/all_features_og.csv'
+    dir = '/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/all_features.csv'
     df.to_csv(dir,index = False)
 
-    # dir = '/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/all_features.csv'
-    # df = pd.read_csv(dir)
-    # create_positive_index(df)
+    dir = '/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/all_features.csv'
+    df = pd.read_csv(dir)
+    create_positive_index(df)

@@ -1,30 +1,6 @@
-Traceback (most recent call last):
-  File "segment_tifs.py", line 1, in <module>
-    from lib.TiffSegmentor import TiffSegmentor
-ImportError: No module named lib.TiffSegmentor
 generate segment for channel: 1
-working on 383 sections
-  0%|          | 0/383 [00:00<?, ?it/s]100%|██████████| 383/383 [00:00<00:00, 2764919.85it/s]generate segment for channel: 3
-working on 384 sections
+working on 232 sections
+  0%|          | 0/232 [00:00<?, ?it/s]100%|██████████| 232/232 [00:00<00:00, 879817.84it/s]generate segment for channel: 3
+working on 444 sections
 
-  0%|          | 0/384 [00:00<?, ?it/s]100%|██████████| 384/384 [00:00<00:00, 1449696.43it/s]
-generate segment for channel: 1
-working on 383 sections
-generate segment for channel: 1
-working on 383 sections
-  0%|          | 0/383 [00:00<?, ?it/s]100%|██████████| 383/383 [00:00<00:00, 1337567.39it/s]generate segment for channel: 3
-working on 384 sections
-
-  0%|          | 0/384 [00:00<?, ?it/s]100%|██████████| 384/384 [00:00<00:00, 1367243.41it/s]
-generate segment for channel: 1
-working on 348 sections
-  0%|          | 0/348 [00:00<?, ?it/s]100%|██████████| 348/348 [00:00<00:00, 886766.58it/s]generate segment for channel: 3
-working on 384 sections
-
-  0%|          | 0/384 [00:00<?, ?it/s]100%|██████████| 384/384 [00:00<00:00, 1609003.73it/s]
-generate segment for channel: 1
-working on 0 sections
-0it [00:00, ?it/s]0it [00:00, ?it/s]generate segment for channel: 3
-working on 225 sections
-
-  0%|          | 0/225 [00:00<?, ?it/s]100%|██████████| 225/225 [00:00<00:00, 435093.78it/s]
+  0%|          | 0/444 [00:00<?, ?it/s]100%|██████████| 444/444 [00:00<00:00, 761665.02it/s]
