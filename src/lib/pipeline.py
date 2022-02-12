@@ -32,7 +32,7 @@ class Pipeline:
     A class that sets the methods and attributes for the Active Brain Atlas
     image processing pipeline
     '''
-    def __init__(self, animal, channel=1, downsample=True):
+    def __init__(self, animal, channel=1, downsample=True, debug=False):
         '''
         Set i[ the pipeline. Only required parameter is animal
         :param animal: string, usually something like DKXX
@@ -42,7 +42,7 @@ class Pipeline:
         self.animal = animal
         self.channel = channel
         self.downsample = downsample
-        self.debug = False
+        self.debug = debug
         self.fileLocationManager =  FileLocationManager(animal)
         self.hostname = self.get_hostname()
         self.load_parallel_settings()

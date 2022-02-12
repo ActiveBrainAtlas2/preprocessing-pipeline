@@ -64,7 +64,15 @@ def fix_ntb(file_key):
 
     fixed = place_image(fixed, infile, max_width, max_height, 0)
     # cv2.imwrite(outpath, fixed)
-    tiff.imsave(outpath, fixed)
+    try:
+        tiff.imsave(outpath, fixed)
+    except Exception as e:
+        print(f'Error in saving {outpath} with shape {fixed.shape} img type {type(fixed)}')
+        print(f'Error is {e}')
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
+        sys.exit()
+        
     # im = Image.fromarray(fixed)
     # im.save(outpath)
     del fixed
