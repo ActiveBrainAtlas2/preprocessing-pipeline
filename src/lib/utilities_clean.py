@@ -120,6 +120,8 @@ def masker(animal, channel, downsample, debug):
     progress_id = sqlController.get_progress_id(downsample, channel, 'CLEAN')
     sqlController.set_task(animal, progress_id)
     file_keys = []
+    if debug:
+        print(f'debugging and working with {len(files)} files')
     for file in files:
         infile = os.path.join(INPUT, file)
         outpath = os.path.join(CLEANED, file)
@@ -133,7 +135,7 @@ def masker(animal, channel, downsample, debug):
                 file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
     workers, _ = get_cpus() 
     if debug:
-        print(f'debugging with single core with len(file_keys) files')
+        print(f'debugging with single core with {len(file_keys)} file keys')
         for file_key in file_keys:
             fix_ntb(file_key)
     else:
