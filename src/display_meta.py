@@ -19,20 +19,20 @@ if __name__ == '__main__':
     series = get_fullres_series_indices(metadata_dict)
     print('series', series)
     scenes = len(series)
+    print()
     print('# scenes', scenes)
 
+    czi_file = os.path.basename(czi_file_path)
     for j, series_index in enumerate(series):
         scene_number = j + 1
         channels = range(metadata_dict[series_index]['channels'])
-        print('channels range and dict', channels,metadata_dict[series_index]['channels'])
         width = metadata_dict[series_index]['width']
         height = metadata_dict[series_index]['height']
         channel_counter = 0
-        czi_file = os.path.basename(czi_file_path)
         for channel in channels:
             channel_counter += 1
             newtif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
             newtif = newtif.replace('.czi', '').replace('__','_')
-            print(newtif)
+            print(f'File: {newtif} height: {height}, width {width}, channel {channel}')
             
     
