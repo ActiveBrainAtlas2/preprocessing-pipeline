@@ -29,6 +29,7 @@ def fix_ntb(file_key):
     :return: nothing. we write the image to disk
     """
     infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
+    print('fix_ntb', file_key)
     try:
         img = io.imread(infile)
     except IOError as e:
