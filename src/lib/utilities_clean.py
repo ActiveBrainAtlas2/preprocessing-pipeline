@@ -133,7 +133,7 @@ def masker(animal, channel, downsample, debug):
                 file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
     workers, _ = get_cpus() 
     if debug:
-        print('debugging with single core')
+        print(f'debugging with single core with len(file_keys) files')
         for file_key in file_keys:
             fix_ntb(file_key)
     else:
