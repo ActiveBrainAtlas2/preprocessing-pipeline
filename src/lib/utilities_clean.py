@@ -128,11 +128,10 @@ def masker(animal, channel, downsample, debug):
         if os.path.exists(outpath):
             continue
         maskfile = os.path.join(MASKS, file)
-        if stain:
-            if 'thion' in stain.lower():
-                print('Not implemented.')
-            else:
-                file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
+        if stain and 'thion' in stain.lower():
+            print('Not implemented.')
+        else:
+            file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
     workers, _ = get_cpus() 
     if debug:
         print(f'debugging with single core with {len(file_keys)} file keys')
