@@ -34,6 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=False, default=1)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
+    parser.add_argument('--debug', help='Enter true or false', required=False, default='false')
     parser.add_argument('--step', help=steps, required=False, default=0)
     
 
@@ -41,12 +42,12 @@ if __name__ == '__main__':
     animal = args.animal
     channel = int(args.channel)
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
     step = int(args.step)
     logger = get_logger(animal)
 
-    pipeline = Pipeline(animal, channel, downsample)
+    pipeline = Pipeline(animal, channel, downsample, debug)
     start = timer()
-    # pipeline.debug = True
     pipeline.check_programs()
     end = timer()
     print(f'Check programs took {end - start} seconds')    

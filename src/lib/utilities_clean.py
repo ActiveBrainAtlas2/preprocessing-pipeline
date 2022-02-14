@@ -64,7 +64,15 @@ def fix_ntb(file_key):
 
     fixed = place_image(fixed, infile, max_width, max_height, 0)
     # cv2.imwrite(outpath, fixed)
-    tiff.imsave(outpath, fixed)
+    try:
+        tiff.imsave(outpath, fixed)
+    except Exception as e:
+        print(f'Error in saving {outpath} with shape {fixed.shape} img type {type(fixed)}')
+        print(f'Error is {e}')
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
+        sys.exit()
+        
     # im = Image.fromarray(fixed)
     # im.save(outpath)
     del fixed
@@ -111,20 +119,21 @@ def masker(animal, channel, downsample, debug):
     progress_id = sqlController.get_progress_id(downsample, channel, 'CLEAN')
     sqlController.set_task(animal, progress_id)
     file_keys = []
+    if debug:
+        print(f'debugging and working with {len(files)} files')
     for file in files:
         infile = os.path.join(INPUT, file)
         outpath = os.path.join(CLEANED, file)
         if os.path.exists(outpath):
             continue
         maskfile = os.path.join(MASKS, file)
-        if stain:
-            if 'thion' in stain.lower():
-                print('Not implemented.')
-            else:
-                file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
+        if stain and 'thion' in stain.lower():
+            print('Not implemented.')
+        else:
+            file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, channel])
     workers, _ = get_cpus() 
     if debug:
-        print('debugging with single core')
+        print(f'debugging with single core with {len(file_keys)} file keys')
         for file_key in file_keys:
             fix_ntb(file_key)
     else:

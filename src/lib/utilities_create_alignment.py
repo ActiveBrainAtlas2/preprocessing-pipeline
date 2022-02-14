@@ -14,7 +14,7 @@ Image.MAX_IMAGE_PIXELS = None
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
 from lib.utilities_alignment import (create_downsampled_transforms, process_image)
-from lib.utilities_process import test_dir, get_cpus ,get_image_size
+from lib.utilities_process import test_dir, get_cpus
 from model.elastix_transformation import ElastixTransformation
 from lib.sql_setup import session
 
