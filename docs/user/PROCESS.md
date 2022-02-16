@@ -53,11 +53,11 @@ https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
 are then used to create clean images in 
 */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CHX/thumbnail_cleaned/*
 ##### Retraing the masking objection detection model
-1. After the masks have been chekced for quality, we can take the good masks and retrain the model
-to make the entire process better. To do that follow these steps:
+1. After the masks have been checked for quality, we can take the good masks and retrain the model
+to make the entire process better. To do that, follow these steps:
     1. Take the good final masks from */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/masks/thumbnail_masked/*
     and copy them to  */net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/thumbnail_masked* The file names must 
-    be named like: DKXX.249.tif. The animal name must be prepended to the actual file name. 
+    be named like: *DKXX.249.tif*. The animal name must be prepended to the actual file name. 
     1. Take the normalized images from */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/CH1/normalized*
     and copy them to */net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/normalized* Again, prepend the animal
     name to the file.
@@ -65,17 +65,17 @@ to make the entire process better. To do that follow these steps:
         1. /net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/normalized
         1. /net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/thumbnail_masked
     1. You can now start the training process. 
-        1. Back up the existing model: `cp -vf /net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth
+        1. Back up the existing model: `mv -vf /net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth
         /net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth.bak`
         1. In the base part of this repo activate the virtualenv and do: `python src/masking/mask_trainer.py --runmodel false`
         1. That will not run the process but will tell you how many images you are working with and if you are using 
         a CPU or GPU. You really need to use a GPU on this process otherwise it will take days to run.
         1. After you are sure you have a viable GPU, do: `python src/masking/mask_trainer.py --runmodel true --epochs 30`
         That will run the model for 30 epochs. 30 is probably overkill, 20 might do it, I would not go under 15.
-        1. After that runs a new model will be stored in: */net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth*
+        1. After that runs, a new model will be stored in: */net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth*
     1. The new model will now be ready to use. You can test it out by removing the files in:
     */net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/thumbnail_colored* 
-    and rerunning the create_pipeline.py script: `python src/create_pipeline.py --animal DKXX --step 1
+    and rerunning the create_pipeline.py script: `python src/create_pipeline.py --animal DKXX --step 1`
     Go to the */net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/thumbnail_colored* and verify the masks
     look good. They should as those images have already been used in the training process. A better test
     would be to use them on new images.
