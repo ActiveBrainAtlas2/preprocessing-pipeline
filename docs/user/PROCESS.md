@@ -55,6 +55,7 @@ are then used to create clean images in
 ##### Retraing the masking objection detection model
 1. After the masks have been checked for quality, we can take the good masks and retrain the model
 to make the entire process better. To do that, follow these steps:
+    1. Use muralis as it has two good GPUs and make sure /net/birdstore is accessible.
     1. Take the good final masks from */net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DKXX/preps/masks/thumbnail_masked/*
     and copy them to  */net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/thumbnail_masked* The file names must 
     be named like: *DKXX.249.tif*. The animal name must be prepended to the actual file name. 
