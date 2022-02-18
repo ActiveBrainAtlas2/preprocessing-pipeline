@@ -1,5 +1,5 @@
 import argparse
-from lib.utilities_create_masks import create_final,create_mask
+from lib.utilities_create_masks import ,create_mask
 
 
 if __name__ == '__main__':
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     final = bool({'true': True, 'false': False}[str(args.final).lower()])
 
     if final:
-         create_final(animal)
+         (animal)
     else:
          create_mask(animal, downsample)
        

@@ -6,7 +6,7 @@ import numpy as np
 
 #from lib.utilities_contour import create_alignment_specs, load_transformed_volume, load_json, \
 #    get_structure_contours_from_structure_volumes_v3, VOL_DIR
-from lib.file_location import DATA_PATH
+from lib.FileLocationManager import DATA_PATH
 from lib.utilities_atlas import ATLAS
 ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', ATLAS)
 

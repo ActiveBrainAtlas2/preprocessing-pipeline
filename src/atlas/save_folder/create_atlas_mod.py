@@ -21,7 +21,7 @@ PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 
 RESOLUTION = 0.325
 

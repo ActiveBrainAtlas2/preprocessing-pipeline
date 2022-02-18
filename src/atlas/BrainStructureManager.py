@@ -1,6 +1,6 @@
 import os
 import json
-from lib.file_location import DATA_PATH
+from lib.FileLocationManager import DATA_PATH
 from lib.utilities_atlas import ATLAS
 import numpy as np
 from Brain import Brain

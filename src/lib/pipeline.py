@@ -10,24 +10,26 @@ All imports are listed by the order in which they are used in the pipeline.
 import os
 import sys
 from shutil import which
-from lib.file_location import FileLocationManager
-from lib.utilities_meta import make_meta
-from lib.utilities_preps import make_full_resolution, make_low_resolution, set_task_preps
-from lib.utilities_process import make_tifs, make_scenes
-from lib.utilities_normalized import create_normalization
-from lib.utilities_create_masks import create_final,create_mask
-from lib.utilities_histogram import make_combined,make_histogram
-from lib.utilities_clean import masker
-from lib.utilities_elastics import create_elastix
-from lib.utilities_create_alignment import parse_elastix, run_offsets
-from lib.utilities_web import make_web_thumbnails
-from lib.utilities_neuroglancer_image import create_neuroglancer
-from lib.utilities_downsampling import create_downsamples
-import yaml
-import socket
-import multiprocessing
+from lib.FileLocationManager import FileLocationManager
+from lib.MetaUtilities import MetaUtilities
+from lib.PrepCreater import PrepCreater
+from lib.NgPrecomputedMaker import NgPrecomputedMaker
+from lib.NgDownsampler import NgDownsampler
+from lib.ProgressLookup import ProgressLookup
+from lib.TiffExtractor import TiffExtractor
+from timeit import default_timer as timer
 
-class Pipeline:
+from lib.SqlController import SqlController
+from lib.logger import get_logger
+from lib.ParallelManager import ParallelManager
+from lib.Normalizer import Normalizer
+from lib.MaskManager import MaskManager
+from lib.ImageCleaner import ImageCleaner
+from lib.HistogramMaker import HistogramMaker
+from lib.ElastixManager import ElastixManager
+
+class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalizer,MaskManager,\
+    ImageCleaner,HistogramMaker,ElastixManager,NgPrecomputedMaker,NgDownsampler):
     '''
     A class that sets the methods and attributes for the Active Brain Atlas
     image processing pipeline
@@ -41,190 +43,16 @@ class Pipeline:
         '''
         self.animal = animal
         self.channel = channel
+        self.ch_dir = f'CH{self.channel}'
         self.downsample = downsample
         self.debug = False
         self.fileLocationManager =  FileLocationManager(animal)
+        self.sqlController = SqlController(animal)
         self.hostname = self.get_hostname()
         self.load_parallel_settings()
-        
-    def load_parallel_settings(self):
-        dirname = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','..'))
-        file_path = os.path.join(dirname, 'parallel_settings.yaml')
-        if os.path.exists(file_path):
-            with open(file_path) as file:
-                self.parallel_settings = yaml.load(file, Loader=yaml.FullLoader)
-            assert self.parallel_settings['name'] == self.hostname
-        else:
-            ncpu = multiprocessing.cpu_count()
-            host = self.hostname
-            self.parallel_settings = dict(   name = host,
-                                        create_tifs= (ncpu,ncpu),
-                                        create_preps = (ncpu,ncpu),
-                                        create_mask = (ncpu,ncpu),
-                                        create_clean = (ncpu,ncpu),
-                                        create_aligned = (ncpu,ncpu),
-                                        create_histograms = (ncpu,ncpu),
-                                        create_neuroglancer = (ncpu,ncpu),
-                                        create_downsamples = (ncpu,ncpu))
-            with open(r'E:\data\store_file.yaml', 'w') as file:
-                documents = yaml.dump(self.parallel_settings, file_path)
-            
-    def get_hostname(self):
-        hostname = socket.gethostname()
-        hostname = hostname.split(".")[0]
-        return hostname
+        self.progress_lookup = ProgressLookup()
+        self.logger = get_logger(animal)
 
-    def get_nworkers(self,downsample = True):
-        function_name = sys._getframe(1).f_code.co_name
-        nworkers = eval(self.parallel_settings[function_name])
-        if downsample:
-            return nworkers[1]
-        else:
-            return nworkers[0]
-
-    def create_meta(self):
-        """
-        The CZI file need to be present. Test to make sure the dir exists
-        and there are some files there.
-        """
-        INPUT = self.fileLocationManager.czi
-        if not os.path.exists(INPUT):
-            print(f'{INPUT} does not exist, we are exiting.')
-            sys.exit()
-        files = os.listdir(INPUT)
-        nfiles = len(files)
-        if nfiles < 1:
-            print('There are no CZI files to work with, we are exiting.')
-            sys.exit()
-        print(f'create meta is working with {nfiles} files.')
-        make_meta(self.animal)
-
-                
-    def create_tifs(self):
-        '''
-        This method creates the tifs from the czi files. The files are used for the create_preps method
-        It also creates the scenes under data/DKXX/www/scenes
-        '''
-        make_tifs(self.animal, self.channel,self.get_nworkers())
-        if self.channel == 1 and self.downsample:
-            make_scenes(self.animal)
-
-
-    def create_preps(self):
-        """
-        Creates the tifs. These need to be checked in the DB before
-        proceeding to the create_preps step
-        """
-        make_full_resolution(self.animal, self.channel,self.get_nworkers())
-        make_low_resolution(self.animal, self.channel, self.debug,self.get_nworkers())
-        set_task_preps(self.animal, self.channel)
-
-    
-    def create_normalized(self):
-        '''
-        This method creates the histogram equalized channel 1 downampled files.
-        These are used by the user to easily see the images.
-        '''
-        if self.channel == 1 and self.downsample:
-            create_normalization(self.animal, self.channel)
-
-    
-    def create_masks(self):
-        """
-        After running this step, the masks need to manually checked and if 
-        needed, edited with GIMP, see the Process.md file for instructions.
-        This creates the masks in preps/masks/thumbnail_colored
-        If downsample is False and we are creating full scale masks,
-        the masks are created in preps/masks/full_masked
-        """
-        if self.channel == 1:
-            create_mask(self.animal, self.downsample)
-
-    
-    def create_masks_final(self):
-        '''
-        This is the 2nd step in the masking process. It is performed
-        after the user verifies and possibly edits the colored masks
-        Creates the black/white masks in preps/masks/thumbnail_masked
-        Only run on the downsampled images
-        '''
-        if self.channel == 1 and self.downsample:
-            create_final(self.animal)
-    
-    def create_histograms(self, single):
-        '''
-        Creates histograms for each image (single=True)
-        Also creates a combined histogram with data from all downsampled
-        images (single=False)
-        :param single: boolean, single=True means a histogram is created for
-        every single image. Otherwise, single=False means all the images are
-        combined and the data is aggregated into one histogram.
-        '''
-        if self.downsample:
-            if single:
-                make_histogram(self.animal, self.channel)
-            else:
-                make_combined(self.animal, self.channel)
-
-    
-    def create_clean(self):
-        '''
-        Uses the data from preps/masks/thumbnail_masked to mask 
-        for the downsampled and preps/masks/full_masked for the full resolution
-        images. Resulting images are in preps/CHX/thumbnail_cleaned
-        and preps/CHX/full_cleaned
-        '''
-        masker(self.animal, self.channel, self.downsample, self.debug)
-
-    
-    def create_elastix(self):
-        '''
-        This runs the elastix section-section alignment process.
-        The resulting transformation rotation, xshift and yshift is
-        stored in the elastix_transformation table.
-        This method is only run when channel=1 and downsample=True
-        '''
-        if self.channel == 1 and self.downsample:
-            create_elastix(self.animal)
-
-    
-    def create_aligned(self):
-        '''
-        This gets run on all downsampled and full res and all 3 channels. It
-        fetches the data from the elastix_transformation table and then uses
-        PIL to rotate, shift the image.
-        '''
-        transforms = parse_elastix(self.animal)
-        masks = False 
-        create_csv = False
-        allen = False
-        run_offsets(self.animal, transforms, self.channel, self.downsample, masks, create_csv, allen)
-
-    
-    def create_web(self):
-        '''
-        Creates png files from the thumbnail_cleaned dir and puts them in the www/
-        directory.
-        '''
-        make_web_thumbnails(self.animal)
-    
-    def create_neuroglancer_image(self):
-        '''
-        This the first step in the neuroglancer process. Data is created
-        in the DKXX/neuroglancer_data/CX_rechunkme directory
-        '''
-        create_neuroglancer(self.animal, self.channel, self.downsample, self.debug)
-
-    
-    def create_downsampling(self):
-        '''
-        This the second step in the neuroglancer process. Data is pulled
-        from the previous step in the DKXX/neuroglancer_data/CX_rechunkme dir
-        and it then creates the appropriate chunks and pyramids in the 
-        DKXX/neuroglancer_data/CX directory
-        '''
-        create_downsamples(self.animal, self.channel, self.downsample)
-        
     @staticmethod
     def check_programs():
         '''
@@ -233,6 +61,7 @@ class Pipeline:
         If it doesn't work, check the workernoshell.err.log
         for more info in the base directory of this program
         '''
+        start = timer()
         os.environ["_JAVA_OPTIONS"] = "-Xmx10g"
         os.environ["export CV_IO_MAX_IMAGE_PIXELS"] = '21474836480'
         
@@ -249,5 +78,61 @@ class Pipeline:
         if len(error) > 0:
             print(error)
             sys.exit()
+        end = timer()
+        print(f'Check programs took {end - start} seconds')    
 
+    def prepare_image_for_quality_control(self):
+        self.check_programs()
+        start = timer()
+        self.extract_slide_meta_data_and_insert_to_database()
+        end = timer()
+        print(f'Create meta took {end - start} seconds') 
+        start = timer()
+        self.extract_tifs_from_czi()
+        if self.channel == 1 and self.downsample:
+            self.create_web_friendly_image()
+        end = timer()
+        print(f'Create tifs took {end - start} seconds') 
+
+    def apply_qc_and_prepare_image_masks(self):
+        self.make_full_resolution()
+        self.make_low_resolution()
+        self.set_task_preps()
+        if self.channel == 1 and self.downsample:
+            self.create_normalization()
+        if self.channel == 1:
+            self.create_mask()
         
+    def clean_images_and_create_histogram(self):
+        start = timer()
+        print(f'Creating masks, cleaning and histograms took {end - start} seconds')    
+        if self.channel == 1 and self.downsample:
+            self.apply_user_mask_edits()
+        print('\tFinished applying user mask edits')    
+        self.create_cleaned_images()
+        print('\tFinished clean')    
+        if self.downsample:
+            self.make_histogram()
+            print('\tFinished histogram single')    
+            self.make_combined_histogram()
+        print('\tFinished histograms combined')    
+        end = timer()
+    
+    def align_images(self):
+        start = timer()
+        if self.channel == 1 and self.downsample:
+            self.create_elastix()
+        transforms = self.parse_elastix()
+        if self.downsample:
+            self.align_downsampled_images(transforms)
+        else:
+            self.align_full_size_image(transforms)
+        end = timer()
+        print(f'Creating elastix and alignment took {end - start} seconds')   
+        
+    def create_neuroglancer_cloud_volume(self):
+        start = timer()
+        self.create_neuroglancer()
+        self.create_downsamples()
+        end = timer()
+        print(f'Last step: creating neuroglancer images took {end - start} seconds')    

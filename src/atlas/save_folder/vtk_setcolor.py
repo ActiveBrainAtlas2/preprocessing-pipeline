@@ -6,7 +6,7 @@ from pathlib import Path
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from lib.file_location import DATA_PATH
+from lib.FileLocationManager import DATA_PATH
 from lib.utilities_atlas import save_mesh_stl
 
 ATLAS_PATH = os.path.join(DATA_PATH, 'atlas_data', 'atlasV8')

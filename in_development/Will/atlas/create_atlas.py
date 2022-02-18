@@ -18,7 +18,7 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
 
 # from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_properties
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 
 RESOLUTION = 0.325
 OUTPUT_DIR = '../atlas_ng/'

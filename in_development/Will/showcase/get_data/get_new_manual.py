@@ -1,5 +1,5 @@
 from lib.UrlGenerator import UrlGenerator
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 from Will.toolbox.tmp.LoadCom import ComLoader
 import pickle
 import numpy as np

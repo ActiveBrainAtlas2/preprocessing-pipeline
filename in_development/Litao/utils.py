@@ -6,7 +6,7 @@ PATH = os.path.join(HOME, 'Projects/pipeline_utility')
 sys.path.append(PATH)
 
 
-from utilities.sqlcontroller import SqlController
+from utilities.SqlController import SqlController
 
 def get_db_structure_infos():
     sqlController = SqlController('MD589')

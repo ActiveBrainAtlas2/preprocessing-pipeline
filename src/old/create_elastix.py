@@ -10,7 +10,7 @@ import os, sys
 import argparse
 import subprocess
 from multiprocessing.pool import Pool
-from lib.file_location import FileLocationManager
+from lib.FileLocationManager import FileLocationManager
 from lib.utilities_process import workernoshell, test_dir
 ELASTIX_BIN = '/usr/bin/elastix'
 def run_elastix(animal, njobs):

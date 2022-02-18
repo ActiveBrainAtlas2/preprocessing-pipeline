@@ -1,4 +1,4 @@
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 import json 
 import numpy as np
 

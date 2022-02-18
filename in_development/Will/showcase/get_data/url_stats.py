@@ -1,4 +1,4 @@
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 import sys
 import numpy as np
 import matplotlib.pyplot as plt

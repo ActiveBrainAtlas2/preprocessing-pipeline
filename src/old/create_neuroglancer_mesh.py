@@ -15,8 +15,8 @@ import shutil
 import numpy as np
 from tqdm import tqdm
 
-from lib.file_location import FileLocationManager
-from lib.sqlcontroller import SqlController
+from lib.FileLocationManager import FileLocationManager
+from lib.SqlController import SqlController
 from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
 from lib.utilities_process import get_cpus, get_hostname
 

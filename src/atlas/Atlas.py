@@ -1,6 +1,6 @@
 from atlas.BrainStructureManager import BrainStructureManager
 from lib.utilities_atlas import ATLAS
-from lib.file_location import DATA_PATH
+from lib.FileLocationManager import DATA_PATH
 import os
 from abakit.registration.utilities import get_similarity_transformation_from_dicts
 from abakit.registration.algorithm import brain_to_atlas_transform, umeyama

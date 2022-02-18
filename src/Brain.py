@@ -1,5 +1,5 @@
-from lib.sqlcontroller import SqlController
-from lib.file_location import FileLocationManager
+from lib.SqlController import SqlController
+from lib.FileLocationManager import FileLocationManager
 from Plotter.Plotter import Plotter
 import numpy as np
 

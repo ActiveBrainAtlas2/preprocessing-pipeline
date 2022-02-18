@@ -20,9 +20,7 @@ see: src/python/create_pipeline.py -h
 for more information.
 """
 import argparse
-from timeit import default_timer as timer
 from lib.pipeline import Pipeline
-from lib.logger import get_logger
 
 if __name__ == '__main__':
     
@@ -36,64 +34,20 @@ if __name__ == '__main__':
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--step', help=steps, required=False, default=0)
     
-
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     step = int(args.step)
-    logger = get_logger(animal)
 
     pipeline = Pipeline(animal, channel, downsample)
-    start = timer()
-    # pipeline.debug = True
-    pipeline.check_programs()
-    end = timer()
-    print(f'Check programs took {end - start} seconds')    
-    # logger.info(f'Check programs took {end - start} seconds')
-    start = timer()
-    pipeline.create_meta()
-    end = timer()
-    print(f'Create meta took {end - start} seconds')    
-    # logger.info(f'Ceate meta took {end - start} seconds')
-    start = timer()
-    pipeline.create_tifs()
-    end = timer()
-    print(f'Create tifs took {end - start} seconds')    
-    # logger.info(f'Create tifs took {end - start} seconds')
+    if step == 0:
+        pipeline.prepare_image_for_quality_control()
     if step > 0:
-        start = timer()
-        pipeline.create_preps()
-        pipeline.create_normalized()
-        pipeline.create_masks()
-        end = timer()
-        print(f'Creating normalized and masks took {end - start} seconds')    
-        # logger.info(f'Create preps, normalized and masks took {end - start} seconds')
+        pipeline.apply_qc_and_prepare_image_masks()
     if step > 1:
-        start = timer()
-        pipeline.create_masks_final()
-        print('\tFinished create_masks final')    
-        pipeline.create_clean()
-        print('\tFinished clean')    
-        pipeline.create_histograms(single=True)
-        print('\tFinished histogram single')    
-        pipeline.create_histograms(single=False)
-        print('\tFinished histograms combined')    
-        end = timer()
-        print(f'Creating masks, cleaning and histograms took {end - start} seconds')    
-        # logger.info(f'Creating masks, cleaning and histograms took {end - start} seconds')
+        pipeline.clean_images_and_create_histogram()
     if step > 2:
-        start = timer()
-        pipeline.create_elastix()
-        pipeline.create_aligned()
-        end = timer()
-        print(f'Creating elastix and alignment took {end - start} seconds')    
-        # logger.info(f'Create elastix and alignment took {end - start} seconds')
+        pipeline.align_images()
     if step > 3:
-        start = timer()
-        pipeline.create_neuroglancer_image()
-        pipeline.create_downsampling()
-        end = timer()
-        print(f'Last step: creating neuroglancer images took {end - start} seconds')    
-
-    
+        pipeline.create_neuroglancer_cloud_volume()

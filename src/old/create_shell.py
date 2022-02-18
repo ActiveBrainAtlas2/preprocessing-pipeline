@@ -10,11 +10,11 @@ from skimage import io
 from tqdm import tqdm
 from atlas.NgSegmentMaker import NgConverter
 from lib.utilities_cvat_neuroglancer import mask_to_shell
-from lib.sqlcontroller import SqlController
-from lib.file_location import FileLocationManager
+from lib.SqlController import SqlController
+from lib.FileLocationManager import FileLocationManager
 from lib.utilities_process import test_dir, SCALING_FACTOR,get_max_imagze_size
 from lib.utilities_create_alignment import parse_elastix, align_section_masks
-from lib.utilities_mask import place_image,rotate_image
+from lib.utilities_mask import pad_image,rotate_image
 import tifffile as tiff
 import cv2
 from skimage import measure
@@ -55,7 +55,7 @@ def rotate_and_pad_masks(animal):
             mask = np.flip(mask)
         if flip == 'flop':
             mask = np.flip(mask, axis=1)
-        mask = place_image(mask, infile, max_width, max_height, 0)
+        mask = pad_image(mask, infile, max_width, max_height, 0)
         tiff.imsave(outfile, mask)
 
 def create_shell(animal, DEBUG=False):

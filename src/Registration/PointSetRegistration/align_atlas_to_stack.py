@@ -1,7 +1,7 @@
 from Registration.PointSetRegistration.PointSetAlignment import AffinePointSetAlignment,\
     get_shared_key_and_array
 from atlas.Plotter import Plotter
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 import pickle
 from abakit.registration.utilities import get_similarity_transformation_from_dicts,apply_similarity_transformation_to_com_dict,umeyama
 import numpy as np

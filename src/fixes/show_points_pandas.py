@@ -12,7 +12,7 @@ HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(DIR)
 
-from lib.file_location import FileLocationManager
+from lib.FileLocationManager import FileLocationManager
 from model.layer_data import LayerData
 from lib.sql_setup import session
 SCALE = 10000/325.0

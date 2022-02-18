@@ -1,6 +1,6 @@
 from Registration.PointSetRegistration.PointSetAlignment import \
     get_rigid_alignmented_points, get_affine_alignment_points, get_similarity_alignment_points
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 from atlas.Plotter import Plotter
 import numpy as np
 from abakit.registration.utilities import get_and_apply_similarity_transform_to_dictionaries

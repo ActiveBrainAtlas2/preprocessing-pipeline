@@ -3,7 +3,7 @@ from atlas.Atlas import Atlas
 from atlas.Assembler import AtlasAssembler
 from atlas.VolumeUtilities import VolumeUtilities
 from atlas.NgSegmentMaker import AtlasNgMaker
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 import numpy as np
 class CustomAtlasVolumeMaker(Brain):
     def __init__(self,animal,atlas = 'atlasV8',volume_threshold = 0.9,sigma = 3):

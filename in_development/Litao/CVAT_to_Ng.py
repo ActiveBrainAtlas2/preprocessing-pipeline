@@ -8,7 +8,7 @@ import cv2
 from tqdm import tqdm
 
 sys.path.append(os.path.join(os.getcwd(), '../'))
-from utilities.sqlcontroller import SqlController
+from utilities.SqlController import SqlController
 from .utils import get_structure_number, get_segment_properties, NumpyToNeuroglancer
 
 

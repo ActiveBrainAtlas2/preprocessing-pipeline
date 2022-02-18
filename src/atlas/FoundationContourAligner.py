@@ -23,7 +23,7 @@ from tqdm import tqdm
 from abakit.utilities.shell_tools import get_image_size
 from scipy.interpolate import splprep, splev
 from lib.utilities_contour_lite import get_contours_from_annotations
-from lib.file_location import DATA_PATH
+from lib.FileLocationManager import DATA_PATH
 from lib.utilities_alignment import transform_points, create_downsampled_transforms
 from lib.utilities_create_alignment import parse_elastix
 DOWNSAMPLE_FACTOR = 32

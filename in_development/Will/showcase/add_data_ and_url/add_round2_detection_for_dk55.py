@@ -1,4 +1,4 @@
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 import pandas as pd
 import numpy as np
 animal = 'DK55'

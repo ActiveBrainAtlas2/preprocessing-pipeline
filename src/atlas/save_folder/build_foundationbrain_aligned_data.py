@@ -26,8 +26,8 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
 from lib.utilities_contour import get_contours_from_annotations
-from lib.sqlcontroller import SqlController
-from lib.file_location import DATA_PATH, FileLocationManager
+from lib.SqlController import SqlController
+from lib.FileLocationManager import DATA_PATH, FileLocationManager
 from lib.utilities_alignment import create_downsampled_transforms
 from lib.utilities_create_alignment import parse_elastix
 from lib.utilities_atlas import ATLAS

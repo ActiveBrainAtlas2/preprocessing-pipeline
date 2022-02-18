@@ -2,8 +2,8 @@ import os, sys
 from PIL import Image
 from tqdm import tqdm
 
-from lib.file_location import FileLocationManager
-from lib.sqlcontroller import SqlController
+from lib.FileLocationManager import FileLocationManager
+from lib.SqlController import SqlController
 from lib.utilities_process import test_dir
 
 

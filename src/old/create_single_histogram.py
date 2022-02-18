@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from skimage import io
 import numpy as np
 HOME = os.path.expanduser("~")
-from lib.file_location import FileLocationManager
+from lib.FileLocationManager import FileLocationManager
 COLORS = {1: 'b', 2: 'r', 3: 'g'}
 
 

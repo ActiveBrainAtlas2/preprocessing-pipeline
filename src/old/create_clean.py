@@ -7,7 +7,7 @@ a good value for 16bit images. Note, opencv uses lzw compression by default
 to save files.
 """
 import argparse
-from lib.utilities_clean import masker
+from lib.utilities_clean import create_cleaned_images
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
@@ -24,5 +24,5 @@ if __name__ == '__main__':
     scale = int(args.scale)
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-    masker(animal, channel, downsample, debug)
+    create_cleaned_images(animal, channel, downsample, debug)
 

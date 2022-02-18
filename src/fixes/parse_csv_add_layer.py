@@ -16,7 +16,7 @@ HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(DIR)
 from model.urlModel import UrlModel
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 
 def create_task(animal, filepath, debug):
     layer = 'detected_soma'

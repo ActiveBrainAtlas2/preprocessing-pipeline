@@ -2,7 +2,7 @@ import numpy as np
 from datetime import datetime
 #from controller.preprocessor import make_thumbnail, make_histogram, make_tif
 from controller.preprocessor import SlideProcessor, make_tif, make_mask
-from utilities.sqlcontroller import SqlController
+from utilities.SqlController import SqlController
 from sql_setup import session, dj, database
 import sys
 import time

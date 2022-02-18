@@ -2,7 +2,7 @@
 This program creates histograms for each tif file or creates a combined histogram of all files.
 """
 import argparse
-from lib.utilities_histogram import make_combined,make_histogram
+from lib.utilities_histogram import make_combined_histogram,make_histogram
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
@@ -18,4 +18,4 @@ if __name__ == '__main__':
     if single:
         make_histogram(animal, channel)
     else:
-        make_combined(animal, channel)
+        make_combined_histogram(animal, channel)

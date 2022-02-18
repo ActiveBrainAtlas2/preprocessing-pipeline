@@ -3,13 +3,13 @@ import sys
 import os
 sys.path.append('/scratch/programming/preprocessing-pipeline/src')
 from skimage import io
-from lib.sqlcontroller import SqlController
-from lib.file_location import FileLocationManager
+from lib.SqlController import SqlController
+from lib.FileLocationManager import FileLocationManager
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 from skimage import measure
-from lib.utilities_mask import place_image,rotate_image
+from lib.utilities_mask import pad_image,rotate_image
 import scipy.ndimage
 from scipy.signal import savgol_filter
 from scipy import fftpack

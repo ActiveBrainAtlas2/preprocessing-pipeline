@@ -11,7 +11,7 @@ from pathlib import Path
 from pprint import pprint
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
-from utilities.file_location import FileLocationManager
+from utilities.FileLocationManager import FileLocationManager
 from utilities.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
 
 

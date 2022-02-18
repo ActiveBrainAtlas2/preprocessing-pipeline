@@ -10,17 +10,13 @@ import cv2
 import numpy as np
 import gc
 from skimage.transform import rescale
-from concurrent.futures.process import ProcessPoolExecutor
-# from fixes.split_save import img
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
-
-from lib.file_location import FileLocationManager
-from lib.sqlcontroller import SqlController
+from lib.FileLocationManager import FileLocationManager
+from lib.SqlController import SqlController
 from lib.sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
-from lib.logger import get_logger
-SCALING_FACTOR = 0.03125
 
+SCALING_FACTOR = 0.03125
 Image.MAX_IMAGE_PIXELS = None
 
 
@@ -133,8 +129,10 @@ def test_dir(animal, directory, downsample=True, same_size=False):
         error += f"Widths are not of equal size, min is {min_width} and max is {max_width}.\n"
     if min_height != max_height and min_height > 0 and same_size:
         error += f"Heights are not of equal size, min is {min_height} and max is {max_height}.\n"
-    return error
-
+    if len(error) > 0:
+            print(error)
+            sys.exit()
+            
 def get_last_2d(data):
     if data.ndim <= 2:
         return data

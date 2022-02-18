@@ -7,7 +7,7 @@ This file does the following operations:
     5. The location of elastix is hardcoded below which is a typical linux install location.
 """
 import argparse
-from lib.utilities_create_alignment import parse_elastix, run_offsets
+from lib.utilities_create_alignment import parse_elastix, align_images
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
@@ -28,4 +28,4 @@ if __name__ == '__main__':
     masks = args.masks
     scale = int(args.scale)
     transforms = parse_elastix(animal)
-    run_offsets(animal, transforms, channel, downsample, masks, create_csv, allen)
+    align_images(animal, transforms, channel, downsample, masks, create_csv, allen)

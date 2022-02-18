@@ -575,6 +575,10 @@ class SqlController(object):
         y*=resolution
         z*=20
         return x,y,z
+    
+    def set_task_for_step(self,animal,downsample,channel,step):
+        progress_id = self.get_progress_id(downsample, channel, step)
+        self.set_task(animal, progress_id)
 
 def file_processed(animal, progress_id, filename):
     """
@@ -618,6 +622,7 @@ def set_file_completed(animal, progress_id, filename):
         pooledsession.rollback()
     finally:
         pooledsession.close()
+
 
 
     

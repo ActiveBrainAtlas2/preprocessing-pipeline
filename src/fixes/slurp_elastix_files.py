@@ -16,8 +16,8 @@ from datetime import datetime
 HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(DIR)
-from lib.sqlcontroller import SqlController
-from lib.file_location import FileLocationManager
+from lib.SqlController import SqlController
+from lib.FileLocationManager import FileLocationManager
 from lib.utilities_alignment import parameter_elastix_parameter_file_to_dict
 
 def slurp(animal):

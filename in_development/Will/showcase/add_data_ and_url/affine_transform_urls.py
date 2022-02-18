@@ -1,6 +1,6 @@
 from lib.UrlGenerator import UrlGenerator
 import pickle
-from lib.sqlcontroller import SqlController
+from lib.SqlController import SqlController
 import numpy as np
 controller = SqlController('DK52')
 

@@ -7,8 +7,8 @@ Image.MAX_IMAGE_PIXELS = None
 import pickle
 import re
 from sqlalchemy.orm.exc import NoResultFound
-from lib.sqlcontroller import SqlController
-from lib.file_location import FileLocationManager
+from lib.SqlController import SqlController
+from lib.FileLocationManager import FileLocationManager
 from model.elastix_transformation import ElastixTransformation
 from lib.sql_setup import session
 import tifffile as tiff

@@ -195,7 +195,7 @@ def make_mask(img):
     return closing, scaled
 
 
-def place_image(img, file, max_width, max_height, bgcolor=None):
+def pad_image(img, file, max_width, max_height, bgcolor=None):
     """
     Places the image in a padded one size container with the correct background
     :param img: image we are working on.

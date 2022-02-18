@@ -6,7 +6,7 @@ import vtk
 import mcubes # https://github.com/pmneila/PyMCubes
 from vtkmodules.util import numpy_support
 
-from lib.file_location import DATA_PATH
+from lib.FileLocationManager import DATA_PATH
 SECTION_THICKNESS = 20. # in um
 
 REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL/CSHL_registration_parameters'
