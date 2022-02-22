@@ -1,29 +1,22 @@
 import os
-
-
-DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
-ROOT_DIR = os.path.join(DATA_PATH, 'pipeline_data')
-
-
 class FileLocationManager(object):
     """ Create a class for processing the pipeline,
     """
-
-    def __init__(self, stack):
+    def __init__(self, stack,DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'):
         """ setup the directory, file locations
             Args:
                 stack: the animal brain name, AKA prep_id
         """
-        self.root = ROOT_DIR
-        self.prep = os.path.join(ROOT_DIR, stack, 'preps')
-        self.czi = os.path.join(ROOT_DIR, stack, 'czi')
-        self.tif = os.path.join(ROOT_DIR, stack, 'tif')
-        self.jp2 = os.path.join(ROOT_DIR, stack, 'jp2')
+        self.root = os.path.join(DATA_PATH, 'pipeline_data')
+        self.prep = os.path.join(self.root, stack, 'preps')
+        self.czi = os.path.join(self.root, stack, 'czi')
+        self.tif = os.path.join(self.root, stack, 'tif')
+        self.jp2 = os.path.join(self.root, stack, 'jp2')
         self.thumbnail = os.path.join(self.prep, 'CH1', 'thumbnail')
-        self.histogram = os.path.join(ROOT_DIR, stack, 'histogram')
-        self.thumbnail_web = os.path.join(ROOT_DIR, stack, 'www','scene')
-        self.neuroglancer_data = os.path.join(ROOT_DIR, stack, 'neuroglancer_data')
-        self.brain_info = os.path.join(ROOT_DIR, stack, 'brains_info')
+        self.histogram = os.path.join(self.root, stack, 'histogram')
+        self.thumbnail_web = os.path.join(self.root, stack, 'www','scene')
+        self.neuroglancer_data = os.path.join(self.root, stack, 'neuroglancer_data')
+        self.brain_info = os.path.join(self.root, stack, 'brains_info')
         self.operation_configs = os.path.join(self.brain_info, 'operation_configs')
         self.mxnet_models = os.path.join(self.brain_info, 'mxnet_models')
         self.atlas_volume = os.path.join(self.brain_info, 'CSHL_volumes', 'atlasV7', 'score_volumes')
@@ -38,13 +31,13 @@ class FileLocationManager(object):
         self.thumbnail_colored = os.path.join(self.masks, 'thumbnail_colored')
         self.rotated_and_padded_thumbnail_mask = os.path.join(self.masks, 'thumbnail_rotated_and_padded')
         self.aligned_rotated_and_padded_thumbnail_mask = os.path.join(self.masks, 'thumbnail_aligned_rotated_and_padded')
-        self.shell = os.path.join(ROOT_DIR, stack,'shell')
+        self.shell = os.path.join(self.root, stack,'shell')
     
     def get_full(self,channel=1):
-        return os.path.join(self.fileLocationManager.prep, f'CH{channel}', 'full')
+        return os.path.join(self.prep, f'CH{channel}', 'full')
     
     def get_thumbnail(self,channel=1):
-        return os.path.join(self.fileLocationManager.prep, f'CH{channel}', 'thumbnail')
+        return os.path.join(self.prep, f'CH{channel}', 'thumbnail')
 
     def get_elastix(self,channel = 1):
         return os.path.join(self.prep,f'CH{channel}','elastix')

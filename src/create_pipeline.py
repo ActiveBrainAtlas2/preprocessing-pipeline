@@ -23,7 +23,6 @@ import argparse
 from lib.pipeline import Pipeline
 
 if __name__ == '__main__':
-    
     steps = """
     start=0, prep, normalized and masks=1, mask, clean and histograms=2, 
      elastix and alignment=3, neuroglancer=4
@@ -33,16 +32,13 @@ if __name__ == '__main__':
     parser.add_argument('--channel', help='Enter channel', required=False, default=1)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--step', help=steps, required=False, default=0)
-    
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
     step = int(args.step)
-
     pipeline = Pipeline(animal, channel, downsample)
-    if step == 0:
-        pipeline.prepare_image_for_quality_control()
+    pipeline.prepare_image_for_quality_control()
     if step > 0:
         pipeline.apply_qc_and_prepare_image_masks()
     if step > 1:

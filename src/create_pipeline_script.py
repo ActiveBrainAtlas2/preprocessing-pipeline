@@ -19,74 +19,29 @@ increasing the step size will make the pipeline move forward in the process.
 see: src/python/create_pipeline.py -h
 for more information.
 """
-import argparse
-from timeit import default_timer as timer
 from lib.pipeline import Pipeline
-from lib.logger import get_logger
 
-def run_pipeline(animal, channel, downsample,step):
-    print(f'working on animal {animal}')
-    pipeline = Pipeline(animal, channel, downsample)
-    start = timer()
-    pipeline.check_programs()
-    end = timer()
-    print(f'Check programs took {end - start} seconds')    
-    start = timer()
-    pipeline.create_meta()
-    end = timer()
-    print(f'Create meta took {end - start} seconds')    
-    start = timer()
-    pipeline.create_tifs()
-    end = timer()
-    print(f'Create tifs took {end - start} seconds')    
+def run_pipeline(animal, channel, downsample,step,DATA_PATH):
+    pipeline = Pipeline(animal, channel, downsample,DATA_PATH=DATA_PATH)
+    pipeline.prepare_image_for_quality_control()
     if step > 0:
-        start = timer()
-        pipeline.create_preps()
-        pipeline.create_normalized()
-        pipeline.create_masks()
-        end = timer()
-        print(f'Creating normalized and masks took {end - start} seconds')    
+        pipeline.apply_qc_and_prepare_image_masks()
     if step > 1:
-        start = timer() 
-        pipeline.create_masks_final()
-        print('\tFinished create_masks final')    
-        pipeline.create_clean()
-        print('\tFinished clean')    
-        pipeline.create_histograms(single=True)
-        print('\tFinished histogram single')    
-        pipeline.create_histograms(single=False)    
-        print('\tFinished histograms combined')    
-        end = timer()
-        print(f'Creating masks, cleaning and histograms took {end - start} seconds') 
+        pipeline.clean_images_and_create_histogram()
     if step > 2:
-        start = timer()
-        pipeline.create_elastix()
-        pipeline.create_aligned()
-        end = timer()
-        print(f'Creating elastix and alignment took {end - start} seconds')    
+        pipeline.align_images()
     if step > 3:
-        start = timer()
-        pipeline.create_neuroglancer_image()
-        pipeline.create_downsampling()
-        end = timer()
-        print(f'Last step: creating n3euroglancer images took {end - start} seconds')    
+        pipeline.create_neuroglancer_cloud_volume()
 
 if __name__ == '__main__':
 
-    animal = 'DK40'
+    animal = 'test'
     channel = 1
     downsample = True
     step = 3
-    # run_pipeline(animal, 1, downsample,step)
+    DATA_PATH = '/data/'
+    run_pipeline(animal, 1, downsample,step,DATA_PATH)
     # run_pipeline(animal, 2, downsample, step)
     # run_pipeline(animal, 3, downsample, step)
     downsample = False
     run_pipeline(animal, 1, downsample,step)
-<<<<<<< HEAD
-    # run_pipeline(animal, 2, downsample,step)
-    run_pipeline(animal, 3, downsample,step)
-=======
-    # # run_pipeline(animal, 2, downsample,step)
-    # run_pipeline(animal, 3, downsample,step)ls
-
->>>>>>> efd7b944b3c3244ae370ede0400ea1f626128fdb

@@ -23,8 +23,8 @@ class MetaUtilities:
         if not self.slide_meta_data_exists(czi_files):
             for _, czi_file in enumerate(tqdm(czi_files)):
                 if self.is_czi_file(czi_file):
-                    self.add_slide_information_to_database()
-                    self.add_to_slide_czi_tiff_table()
+                    self.add_slide_information_to_database(czi_file)
+                    self.add_to_slide_czi_tiff_table(czi_file)
             self.update_database()
 
     def get_czi_files(self):
@@ -35,17 +35,17 @@ class MetaUtilities:
             sys.exit()
         return czi_files
     
-    def add_slide_information_to_database(self):
+    def add_slide_information_to_database(self,czi_file):
         self.slide = Slide()
         self.slide.scan_run_id = self.scan_id
-        self.slide.slide_physical_id = int(re.findall(r'\d+', self.czi_file)[1])
+        self.slide.slide_physical_id = int(re.findall(r'\d+', czi_file)[1])
         self.slide.rescan_number = "1"
         self.slide.slide_status = 'Good'
         self.slide.processed = False
-        self.slide.file_size = os.path.getsize(os.path.join(self.fileLocationManager.czi, self.czi_file))
-        self.slide.file_name = self.czi_file
-        self.slide.created = datetime.fromtimestamp(os.path.getmtime(os.path.join(self.fileLocationManager.czi, self.czi_file)))
-        czi_file_path = os.path.join(self.fileLocationManager.czi, self.czi_file)
+        self.slide.file_size = os.path.getsize(os.path.join(self.fileLocationManager.czi, czi_file))
+        self.slide.file_name = czi_file
+        self.slide.created = datetime.fromtimestamp(os.path.getmtime(os.path.join(self.fileLocationManager.czi, czi_file)))
+        czi_file_path = os.path.join(self.fileLocationManager.czi, czi_file)
         self.metadata = get_czi_metadata(czi_file_path)
         self.series = get_fullres_series_indices(self.metadata)
         self.slide.scenes = len(self.series)
@@ -53,7 +53,7 @@ class MetaUtilities:
         session.flush()
         session.commit()
     
-    def add_to_slide_czi_tiff_table(self):
+    def add_to_slide_czi_tiff_table(self,czi_file):
         for j, series_index in enumerate(self.series):
             scene_number = j + 1
             channels = range(self.metadata[series_index]['channels'])
@@ -70,7 +70,7 @@ class MetaUtilities:
                 tif.height = height
                 tif.scene_index = series_index
                 channel_counter += 1
-                newtif = '{}_S{}_C{}.tif'.format(self.czi_file, scene_number, channel_counter)
+                newtif = '{}_S{}_C{}.tif'.format(czi_file, scene_number, channel_counter)
                 newtif = newtif.replace('.czi', '').replace('__','_')
                 tif.file_name = newtif
                 tif.channel = channel_counter

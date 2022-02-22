@@ -6,7 +6,6 @@ Args are animal, channel, and downsample. With animal being
 the only required argument.
 All imports are listed by the order in which they are used in the pipeline.
 """
-
 import os
 import sys
 from shutil import which
@@ -18,7 +17,6 @@ from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
 from timeit import default_timer as timer
-
 from lib.SqlController import SqlController
 from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
@@ -34,7 +32,7 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
     A class that sets the methods and attributes for the Active Brain Atlas
     image processing pipeline
     '''
-    def __init__(self, animal, channel=1, downsample=True):
+    def __init__(self, animal, channel=1, downsample=True,DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'):
         '''
         Set i[ the pipeline. Only required parameter is animal
         :param animal: string, usually something like DKXX
@@ -46,7 +44,7 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
         self.ch_dir = f'CH{self.channel}'
         self.downsample = downsample
         self.debug = False
-        self.fileLocationManager =  FileLocationManager(animal)
+        self.fileLocationManager =  FileLocationManager(animal,DATA_PATH = DATA_PATH)
         self.sqlController = SqlController(animal)
         self.hostname = self.get_hostname()
         self.load_parallel_settings()

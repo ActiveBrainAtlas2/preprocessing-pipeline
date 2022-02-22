@@ -1,5 +1,7 @@
 import os
-class TiffExtractor:
+from lib.ParallelManager import ParallelManager
+
+class TiffExtractor(ParallelManager):
     def extract_tifs_from_czi(self):
         """
         This method will:

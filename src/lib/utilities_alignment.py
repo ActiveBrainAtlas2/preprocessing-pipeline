@@ -6,11 +6,8 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import pickle
 import re
-from sqlalchemy.orm.exc import NoResultFound
 from lib.SqlController import SqlController
 from lib.FileLocationManager import FileLocationManager
-from model.elastix_transformation import ElastixTransformation
-from lib.sql_setup import session
 import tifffile as tiff
 from scipy.ndimage import affine_transform
 def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_filepath=None):
