@@ -70,7 +70,7 @@ deflate==0.3.0
 defusedxml==0.7.1
 dijkstra3d==1.11.0
 dill==0.3.4
-Django==3.2.8
+Django==3.2.12
 django-cors-headers==3.8.0
 django-debug-toolbar==3.2.2
 django-mysql==4.0.0
