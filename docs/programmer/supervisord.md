@@ -23,3 +23,7 @@ stdout_logfile_maxbytes=10MB
 1. Reread the conf dir: `sudo supervisorctl reread`
 1. Enact changes: `sudo supervisorctl update`
 1. For more information see: [Supervisor on Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-install-and-manage-supervisor-on-ubuntu-and-debian-vps)
+1. The background tasks for moving and inserting data in the annotation tables will now be run in a queue. The
+moving method is run first with a delay of 0 seconds and then the inserting is delayed 60 seconds later.
+1. You can check for errors and logging in the */var/log/supervisor* directory.
+### These instructions should be very similar with the Centos web server.
