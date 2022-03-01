@@ -4,7 +4,7 @@ alembic==1.7.1
 algopy==0.5.7
 amqp==5.0.6
 anyio==3.3.1
-apache-airflow==2.1.4
+apache-airflow==2.2.4
 apache-airflow-providers-ftp==2.0.1
 apache-airflow-providers-http==2.0.1
 apache-airflow-providers-imap==2.0.1
