@@ -5,22 +5,17 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import cv2
 from concurrent.futures.process import ProcessPoolExecutor
-
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from abakit.utilities.file_location import FileLocationManager 
 from abakit.utilities.shell_tools import get_image_size
 from abakit.utilities.masking import combine_dims, merge_mask
-
-
-
 from lib.sql_setup import CREATE_FULL_RES_MASKS
 from lib.sqlcontroller import SqlController
 from lib.utilities_process import get_cpus, test_dir
 import warnings
 warnings.filterwarnings("ignore")
-
 
 def create_final(animal):
     fileLocationManager = FileLocationManager(animal)
@@ -30,22 +25,17 @@ def create_final(animal):
     if len(error) > 0:
         print(error)
         sys.exit()
-
     os.makedirs(MASKS, exist_ok=True)
-
     files = sorted(os.listdir(COLORED))
     for file in files:
         filepath = os.path.join(COLORED, file)
         maskpath = os.path.join(MASKS, file)
-
         if os.path.exists(maskpath):
             continue
-
         mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
         mask = mask[:,:,2]
         mask[mask>0] = 255
         cv2.imwrite(maskpath, mask.astype(np.uint8))
-
 
 def get_model_instance_segmentation(num_classes):
     # load an instance segmentation model pre-trained pre-trained on COCO
@@ -62,7 +52,6 @@ def get_model_instance_segmentation(num_classes):
     return model
 
 def create_mask(animal, downsample):
-
     fileLocationManager = FileLocationManager(animal)
     modelpath = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth')
     loaded_model = get_model_instance_segmentation(num_classes=2)

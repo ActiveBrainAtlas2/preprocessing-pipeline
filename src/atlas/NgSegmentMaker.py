@@ -44,8 +44,9 @@ class NgConverter(NumpyToNeuroglancer):
         self.add_segmentation_mesh()
         
         
-class NgSegmentMaker:
+class NgSegmentMaker(NgConverter):
     def __init__(self, debug = False,out_folder = 'atlas_test',offset = None):
+        self.layer_type='segmentation'
         self.offset = offset
         self.start = timer()
         self.OUTPUT_DIR = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures/'+out_folder

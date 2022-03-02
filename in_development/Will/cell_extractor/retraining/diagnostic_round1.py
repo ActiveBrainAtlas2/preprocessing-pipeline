@@ -201,4 +201,4 @@ for keyi in test_counts:
     print(keyi)
     print(len(test_counts[keyi]))
 
-# pk.dump((test_counts,train_sections),open('categories.pkl','wb'))
+pk.dump((test_counts,train_sections),open('categories.pkl','wb'))

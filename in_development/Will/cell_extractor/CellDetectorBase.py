@@ -1,6 +1,6 @@
 import os
 from time import time
-import glob
+from glob import glob
 from Brain import Brain
 import pickle as pkl
 import pandas as pd
@@ -8,7 +8,7 @@ import numpy as np
 from cell_extractor.DetectionPlotter import DetectionPlotter
 
 class CellDetectorBase(Brain):
-    def __init__(self,animal,section = 0,disk = 'scratch'):
+    def __init__(self,animal,section = 0,disk = '/net/birdstore/Active_Atlas_Data/',round = 1):
         self.attribute_functions = dict(
             tile_origins = self.get_tile_origins)
         super().__init__(animal)
@@ -26,10 +26,14 @@ class CellDetectorBase(Brain):
         self.CH1 = os.path.join(self.ANIMAL_PATH,"CH1")
         self.CH3_SECTION_DIR=os.path.join(self.CH3,f"{self.section:03}")
         self.CH1_SECTION_DIR=os.path.join(self.CH1,f"{self.section:03}")
+        self.COMBINED_FEATURES = os.path.join(self.ANIMAL_PATH,'all_features.csv')
+        self.QUALIFICATIONS = os.path.join(self.ANIMAL_PATH,f'categories_round{round}.pkl')
+        self.POSITIVE_LABELS = os.path.join(self.ANIMAL_PATH,f'positive_labels_for_{round+1}.pkl')
         if hasattr(self, 'version'):
             csv_name = 'detections_'+self.animal+'.'+str(self.version)+'.csv'
             self.DETECTION_RESULT_DIR = os.path.join(self.ANIMAL_PATH,csv_name)
         self.CLASSIFIER_PATH = os.path.join(self.DATA_PATH,'BoostedTrees.pkl')
+        self.ALL_FEATURES = os.path.join(self.ANIMAL_PATH,'all_features.csv')
         self.get_tile_and_image_dimensions()
         self.get_tile_origins()
         self.check_tile_information()
@@ -85,7 +89,7 @@ class CellDetectorBase(Brain):
         sections = os.listdir(self.CH3)
         sections_with_string = []
         for sectioni in sections:
-            if glob.glob(os.path.join(self.CH3,sectioni,search_string)):
+            if glob(os.path.join(self.CH3,sectioni,search_string)):
                 sections_with_string.append(int(sectioni))
         return sections_with_string
 
@@ -93,7 +97,7 @@ class CellDetectorBase(Brain):
         sections = os.listdir(self.CH3)
         sections_with_string = []
         for sectioni in sections:
-            if not glob.glob(os.path.join(self.CH3,sectioni,search_string)):
+            if not glob(os.path.join(self.CH3,sectioni,search_string)):
                 sections_with_string.append(int(sectioni))
         return sections_with_string
 
@@ -188,6 +192,49 @@ class CellDetectorBase(Brain):
                 manual_labels_in_tile = np.array([])
             n_manual_label = len(manual_labels_in_tile) 
         return manual_labels_in_tile,n_manual_label
+    
+    def get_combined_features_of_train_sections(self):
+        dirs=glob(self.CH3 + f'/*/{self.animal}*.csv')
+        dirs=['/'.join(d.split('/')[:-1]) for d in dirs]
+        df_list=[]
+        for dir in dirs:
+            filename=glob(dir + '/puntas*.csv')[0]
+            df=pd.read_csv(filename)
+            print(filename,df.shape)
+            df_list.append(df)
+        full_df=pd.concat(df_list)
+        full_df.index=list(range(full_df.shape[0]))
+        drops = ['animal', 'section', 'index', 'row', 'col'] 
+        full_df=full_df.drop(drops,axis=1)
+        return full_df
+
+    def get_combined_features(self):
+        files=glob(self.CH3+'/*/punta*.csv')  
+        df_list=[]
+        for filei in files:
+            if os.path.getsize(filei) == 1:
+                continue
+            df=pd.read_csv(filei)
+            print(filei,df.shape)
+            df_list.append(df)
+        full_df=pd.concat(df_list)
+        full_df.index=list(range(full_df.shape[0]))
+        return full_df
+    
+    def create_combined_features(self):
+        full_df = self.get_combined_features()
+        full_df.to_csv(self.COMBINED_FEATURES)
+
+    def load_combined_features(self):
+        if not os.path.exists(self.COMBINED_FEATURES):
+            self.create_combined_features()
+        self.combined_features = pd.read_csv(self.COMBINED_FEATURES,index_col=0)
+        drops = ['animal', 'section', 'index', 'row', 'col'] 
+        self.combined_features=self.combined_features.drop(drops,axis=1)
+        self.nfeatures = len(self.combined_features)
+
+    def get_qualifications(self):
+        return pkl.load(open(self.QUALIFICATIONS,'rb'))
 
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)

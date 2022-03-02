@@ -152,7 +152,7 @@ if __name__ == '__main__':
                 dataset, batch_size=2, shuffle=True, num_workers=workers,
                 collate_fn=utils.collate_fn)
     data_loader_test = torch.utils.data.DataLoader(
-            dataset_test, batch_size=1, shuffle=False, num_workers=0,
+            dataset_test, batch_size=1, shuffle=False, num_workers=workers,
             collate_fn=utils.collate_fn)
     print("We have: {} examples, {} are training and {} testing".format(len(indices), len(dataset), len(dataset_test)))
 
@@ -172,8 +172,7 @@ if __name__ == '__main__':
         model.to(device)
         # construct an optimizer
         params = [p for p in model.parameters() if p.requires_grad]
-        optimizer = torch.optim.SGD(params, lr=0.005,
-                                momentum=0.9, weight_decay=0.0005)
+        optimizer = torch.optim.SGD(params, lr=0.005,momentum=0.9, weight_decay=0.0005)
         # and a learning rate scheduler which decreases the learning rate by # 10x every 3 epochs
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 

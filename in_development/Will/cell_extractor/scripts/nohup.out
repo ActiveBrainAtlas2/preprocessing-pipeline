@@ -109,3 +109,43 @@ working on 444 sections
 working on 0 sections
 
 0it [00:00, ?it/s]0it [00:00, ?it/s]
+Traceback (most recent call last):
+  File "fix_bad_segments.py", line 2, in <module>
+    from lib.TiffSegmentor import TiffSegmentor
+  File "/data/programming/preprocessing-pipeline/src/lib/TiffSegmentor.py", line 5, in <module>
+    from lib.utilities_process import workernoshell
+  File "/data/programming/preprocessing-pipeline/src/lib/utilities_process.py", line 12, in <module>
+    from skimage.transform import rescale
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/skimage/transform/__init__.py", line 5, in <module>
+    from .radon_transform import (radon, iradon, iradon_sart,
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/skimage/transform/radon_transform.py", line 5, in <module>
+    from ._warps import warp
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/skimage/transform/_warps.py", line 7, in <module>
+    from ..measure import block_reduce
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/skimage/measure/__init__.py", line 8, in <module>
+    from ._polygon import approximate_polygon, subdivide_polygon
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/skimage/measure/_polygon.py", line 2, in <module>
+    from scipy import signal
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/scipy/signal/__init__.py", line 299, in <module>
+    from .filter_design import *
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/scipy/signal/filter_design.py", line 17, in <module>
+    from scipy import special, optimize, fft as sp_fft
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/scipy/optimize/__init__.py", line 387, in <module>
+    from .optimize import *
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/scipy/optimize/optimize.py", line 36, in <module>
+    from ._numdiff import approx_derivative
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/scipy/optimize/_numdiff.py", line 6, in <module>
+    from scipy.sparse.linalg import LinearOperator
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/scipy/sparse/linalg/__init__.py", line 114, in <module>
+    from .eigen import *
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/scipy/sparse/linalg/eigen/__init__.py", line 9, in <module>
+    from .arpack import *
+  File "/usr/local/share/pipeline/lib/python3.8/site-packages/scipy/sparse/linalg/eigen/arpack/__init__.py", line 20, in <module>
+    from .arpack import *
+  File "<frozen importlib._bootstrap>", line 991, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 975, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 671, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 844, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 976, in get_code
+  File "<frozen importlib._bootstrap_external>", line 640, in _compile_bytecode
+KeyboardInterrupt
