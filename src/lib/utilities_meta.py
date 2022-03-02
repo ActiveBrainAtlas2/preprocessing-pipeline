@@ -5,6 +5,7 @@ import re
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
 from lib.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
+from model.scan_run import ScanRun
 from model.slide import Slide
 from model.slide_czi_to_tif import SlideCziTif
 from lib.sql_setup import session, SLIDES_ARE_SCANNED, CZI_FILES_ARE_PLACED_ON_BIRDSTORE, CZI_FILES_ARE_SCANNED_TO_GET_METADATA
@@ -31,6 +32,8 @@ def make_meta(animal):
         sys.exit()
 
     if slide_count == len(czi_files):
+        session.query(ScanRun).filter(ScanRun.id == scan_id).update({'number_of_slides': slide_count})
+        session.commit()
         return
     else:
         print('Slides in DB and #slides on filesystem differ, redoing slide DB update.')

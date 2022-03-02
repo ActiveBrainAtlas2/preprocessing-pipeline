@@ -9,7 +9,7 @@ from lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_process import create_downsample, get_cpus, test_dir, \
+from lib.utilities_process import create_downsample, test_dir, \
     get_image_size, resize_and_save_tif
 
 def set_task_preps(animal,channel):
