@@ -14,7 +14,7 @@ PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 
-from masking.engine import train_one_epoch, evaluate
+from engine import train_one_epoch, evaluate
 import utils
 import transforms as T
 import cv2

@@ -284,10 +284,8 @@ class NumpyToNeuroglancer():
             return
 
         img = io.imread(infile)
-        starty, endy, startx, endx = self.starting_points
         #img = np.rot90(img, 2)
         #img = np.flip(img)
-        img = img[starty:endy, startx:endx]
         img = img.reshape(img.shape[0], img.shape[1], 1)
         #print(index, infile, img.shape, img.dtype, self.precomputed_vol.dtype, self.precomputed_vol.shape)
         self.precomputed_vol[:, :, index] = img
