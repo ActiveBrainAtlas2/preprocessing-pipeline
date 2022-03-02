@@ -105,7 +105,7 @@ class ExampleFinder(CellDetectorBase):
         return difference
     
     def load_manual_labels_in_tilei(self,tilei):
-        if self.manual_annotation != None:
+        if type(self.manual_annotation) != type(None):
             manual_annotation_array = self.manual_annotation[['y','x']] 
             self.manual_labels_in_tile,self.n_manual_label = \
                 self.get_manual_annotation_in_tilei(manual_annotation_array,tilei)

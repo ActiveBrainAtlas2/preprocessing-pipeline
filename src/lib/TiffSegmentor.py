@@ -1,10 +1,8 @@
 import os
 from multiprocessing.pool import Pool
-import sys
 import numpy as np
 from datetime import datetime
 from lib.utilities_process import workernoshell
-from lib.sqlcontroller import SqlController
 from cell_extractor.CellDetectorBase import CellDetectorBase
 from multiprocessing.pool import Pool
 import tqdm
@@ -84,7 +82,6 @@ class TiffSegmentor(CellDetectorBase):
             search_dictionary = {'prep_id':self.animal,'input_type_id':1,\
                 'person_id':self.person_id,'layer':'Premotor','section':int(sectioni*20)}
             premotor = self.sqlController.get_layer_data(search_dictionary)
-            premotor = self.sqlController.get_coordinates_from_query_result(premotor)
             if premotor != []:
                 print('creating '+ csv_path)
                 np.savetxt(csv_path,premotor,delimiter=',',header='x,y,Section',comments = '',fmt = '%f')

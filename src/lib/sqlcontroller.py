@@ -65,6 +65,9 @@ class SqlController(object):
     def animal_exists(self,animal):
         return bool(self.session.query(Animal).filter(Animal.prep_id == animal).first())
 
+    def slide_exists(self,scan_id,slide_id):
+        return bool(self.session.query(Slide).filter(Slide.scan_run_id == scan_id).filter(Slide.slide_physical_id == slide_id).first())
+
     def get_animal_list(self):
         results = self.session.query(Animal).all()
         animals = []

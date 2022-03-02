@@ -38,17 +38,17 @@ def make_meta(animal):
     section_number = 1
     for i, czi_file in enumerate(tqdm(czi_files)):
         extension = os.path.splitext(czi_file)[1]
-        if extension.endswith('czi'):
+        slide_id = int(re.findall(r'\d+', czi_file)[1])
+        if extension.endswith('czi') and not sqlController.slide_exists(scan_id,slide_id):
             slide = Slide()
             slide.scan_run_id = scan_id
-            slide.slide_physical_id = int(re.findall(r'\d+', czi_file)[1])
+            slide.slide_physical_id = slide_id
             slide.rescan_number = "1"
             slide.slide_status = 'Good'
             slide.processed = False
             slide.file_size = os.path.getsize(os.path.join(fileLocationManager.czi, czi_file))
             slide.file_name = czi_file
             slide.created = datetime.fromtimestamp(os.path.getmtime(os.path.join(fileLocationManager.czi, czi_file)))
-
             # Get metadata from the czi file
             czi_file_path = os.path.join(fileLocationManager.czi, czi_file)
             metadata_dict = get_czi_metadata(czi_file_path)
