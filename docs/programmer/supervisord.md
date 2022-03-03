@@ -27,3 +27,6 @@ stdout_logfile_maxbytes=10MB
 moving method is run first with a delay of 0 seconds and then the inserting is delayed 60 seconds later.
 1. You can check for errors and logging in the */var/log/supervisor* directory.
 ### These instructions should be very similar with the Centos web server.
+
+installing on centos
+https://cloudwafer.com/blog/installing-supervisor-on-centos-8/
