@@ -23,6 +23,8 @@ def make_meta(animal):
     fileLocationManager = FileLocationManager(animal)
     scan_id = sqlController.scan_run.id
     slide_count = session.query(Slide).filter(Slide.scan_run_id == scan_id).count()
+    session.query(ScanRun).filter(ScanRun.id == scan_id).update({'number_of_slides': slide_count})
+    session.commit()
 
     try:
         czi_files = sorted(os.listdir(fileLocationManager.czi))
@@ -31,8 +33,6 @@ def make_meta(animal):
         sys.exit()
 
     if slide_count == len(czi_files):
-        session.query(ScanRun).filter(ScanRun.id == scan_id).update({'number_of_slides': slide_count})
-        session.commit()
         return
     else:
         print('Slides in DB and #slides on filesystem differ, redoing slide DB update.')
