@@ -5,15 +5,12 @@ It also needs for the animal, histology and scan run tables to be
 filled out for each animal to use
 """
 import sys
-
-
-
 from lib.sql_setup import session, pooledsession
 from model.file_log import FileLog
 from model.urlModel import UrlModel
 from model.task import Task, ProgressLookup
-from model.layer_data import LayerData
-from model.structure import Structure
+from model.annotations_points import AnnotationPoint
+from model.brain_region import BrainRegion
 from model.slide_czi_to_tif import SlideCziTif
 from model.slide import Slide
 from model.section import Section
@@ -76,11 +73,11 @@ class SqlController(object):
         return animals
     
     def get_annotated_animals(self):
-        results = self.session.query(LayerData)\
-            .filter(LayerData.active.is_(True))\
-            .filter(LayerData.input_type_id == 1)\
-            .filter(LayerData.person_id == 2)\
-            .filter(LayerData.layer == 'COM').all()
+        results = self.session.query(AnnotationPoint)\
+            .filter(AnnotationPoint.active.is_(True))\
+            .filter(AnnotationPoint.FK_input_id == 1)\
+            .filter(AnnotationPoint.owner_id == 2)\
+            .filter(AnnotationPoint.label == 'COM').all()
         return np.unique([ri.prep_id for ri in results])
 
     def get_values_from_column(self, query_result):
@@ -253,12 +250,12 @@ class SqlController(object):
         :param abbrv: the abbreviation of the structure
         :return: structure object
         """
-        return self.session.query(Structure).filter(Structure.abbreviation == func.binary(abbrv)).one()
+        return self.session.query(BrainRegion).filter(BrainRegion.abbreviation == func.binary(abbrv)).one()
     
     def get_layer_data(self,search_dictionary):
-        query_start = self.session.query(LayerData)
+        query_start = self.session.query(AnnotationPoint)
         for key, value in search_dictionary.items():
-            query_start = eval(f'query_start.filter(LayerData.{key}=="{value}")')
+            query_start = eval(f'query_start.filter(AnnotationPoint.{key}=="{value}")')
         return self.get_coordinates_from_query_result(query_start.all())
 
     def get_coordinates_from_query_result(self,query_result):
@@ -275,8 +272,8 @@ class SqlController(object):
         :param abbrv: the abbreviation of the structure
         :return: tuple of rgb
         """
-        row = self.session.query(Structure).filter(
-            Structure.abbreviation == func.binary(abbrv)).one()
+        row = self.session.query(BrainRegion).filter(
+            BrainRegion.abbreviation == func.binary(abbrv)).one()
         return int(row.color)
 
     def get_structure_color_rgb(self, abbrv):
@@ -286,20 +283,20 @@ class SqlController(object):
         :param abbrv: the abbreviation of the structure
         :return: tuple of rgb
         """
-        row = self.session.query(Structure).filter(
-            Structure.abbreviation == func.binary(abbrv)).one()
+        row = self.session.query(BrainRegion).filter(
+            BrainRegion.abbreviation == func.binary(abbrv)).one()
         hexa = row.hexadecimal
         h = hexa.lstrip('#')
         return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
     def get_structures(self):
-        return self.session.query(Structure).filter(Structure.active.is_(True)).all()
+        return self.session.query(BrainRegion).filter(BrainRegion.active.is_(True)).all()
 
     def get_structures_dict(self):
-        rows = self.session.query(Structure)\
-            .filter(Structure.abbreviation != 'R')\
-            .filter(Structure.is_structure ==1).filter(
-            Structure.active.is_(True)).all()
+        rows = self.session.query(BrainRegion)\
+            .filter(BrainRegion.abbreviation != 'R')\
+            .filter(BrainRegion.is_structure ==1).filter(
+            BrainRegion.active.is_(True)).all()
         structures_dict = {}
         for structure in rows:
             structures_dict[structure.abbreviation] = [
@@ -308,9 +305,9 @@ class SqlController(object):
         return structures_dict
 
     def get_structures_list(self):
-        rows = self.session.query(Structure).filter(Structure.id<52)\
-                .filter(Structure.abbreviation != 'R').filter(Structure.active.is_(
-            True)).order_by(Structure.abbreviation.asc()).all()
+        rows = self.session.query(BrainRegion).filter(BrainRegion.id<52)\
+                .filter(BrainRegion.abbreviation != 'R').filter(BrainRegion.active.is_(
+            True)).order_by(BrainRegion.abbreviation.asc()).all()
         structures = []
         for structure in rows:
             structures.append(structure.abbreviation)
@@ -322,8 +319,8 @@ class SqlController(object):
         Not sure when/if this is needed, but will only return sided structures
         :return: list of structures that are not singules
         """
-        rows = self.session.query(Structure).filter(
-            Structure.active.is_(True)).all()
+        rows = self.session.query(BrainRegion).filter(
+            BrainRegion.active.is_(True)).all()
         structures = []
         for structure in rows:
             if "_" in structure.abbreviation:
@@ -407,8 +404,8 @@ class SqlController(object):
         Returns:
             nothing, just merges
         try:
-            structure = self.session.query(Structure) \
-                .filter(Structure.abbreviation == func.binary(abbreviation)).one()
+            structure = self.session.query(BrainRegion) \
+                .filter(BrainRegion.abbreviation == func.binary(abbreviation)).one()
         except NoResultFound:
             print(f'No structure for {abbreviation}')
         """
@@ -422,18 +419,26 @@ class SqlController(object):
              person_id=person_id,active = active,layer = 'COM')
     
     def get_layer_data_entry(self, prep_id, input_type_id=1, person_id=2,active = True,layer = 'COM'):
-        rows = self.session.query(LayerData)\
-            .filter(LayerData.active.is_(active))\
-            .filter(LayerData.prep_id == prep_id)\
-            .filter(LayerData.input_type_id == input_type_id)\
-            .filter(LayerData.person_id == person_id)\
-            .filter(LayerData.layer == layer)\
+        rows = self.session.query(AnnotationPoint)\
+            .filter(AnnotationPoint.active.is_(active))\
+            .filter(AnnotationPoint.prep_id == prep_id)\
+            .filter(AnnotationPoint.FK_input_id == input_type_id)\
+            .filter(AnnotationPoint.owner_id == person_id)\
+            .filter(AnnotationPoint.label == layer)\
             .all()
         row_dict = {}
         for row in rows:
             structure = row.structure.abbreviation
             row_dict[structure] = [row.x, row.y, row.section]
         return row_dict
+    
+    def get_annotations(self, prep_id, input_type_id, label):
+        rows = self.session.query(AnnotationPoint)\
+            .filter(AnnotationPoint.prep_id == prep_id)\
+            .filter(AnnotationPoint.FK_input_id == input_type_id)\
+            .filter(AnnotationPoint.label == label)\
+            .all()
+        return rows
 
     def get_atlas_centers(self):
         PERSON_ID_LAUREN = 16
@@ -530,7 +535,7 @@ class SqlController(object):
 
     def add_layer_data_row(self,animal,person_id,input_type_id,coordinates,structure_id,layer):
         x,y,z = coordinates
-        data = LayerData(prep_id = animal, person_id = person_id, input_type_id = input_type_id, x=x, y=y, \
+        data = AnnotationPoint(prep_id = animal, person_id = person_id, input_type_id = input_type_id, x=x, y=y, \
             section=z,structure_id=structure_id,layer=layer)
         self.add_row(data)
     
@@ -548,22 +553,22 @@ class SqlController(object):
         return row_exists
 
     def layer_data_row_exists(self,animal, person_id, input_type_id, structure_id, layer):
-        row_exists = bool(self.session.query(LayerData).filter(
-            LayerData.prep_id == animal, 
-            LayerData.person_id == person_id, 
-            LayerData.input_type_id == input_type_id, 
-            LayerData.structure_id == structure_id,
-            LayerData.layer == layer).first())
+        row_exists = bool(self.session.query(AnnotationPoint).filter(
+            AnnotationPoint.prep_id == animal, 
+            AnnotationPoint.owner_id == person_id, 
+            AnnotationPoint.FK_input_id == input_type_id, 
+            AnnotationPoint.brain_region_id == structure_id,
+            AnnotationPoint.label == layer).first())
         return row_exists
  
     def delete_layer_data_row(self,animal,person_id,input_type_id,structure_id,layer):
-        self.session.query(LayerData)\
-            .filter(LayerData.active.is_(True))\
-            .filter(LayerData.prep_id == animal)\
-            .filter(LayerData.input_type_id == input_type_id)\
-            .filter(LayerData.person_id == person_id)\
-            .filter(LayerData.structure_id == structure_id)\
-            .filter(LayerData.layer == layer).delete()
+        self.session.query(AnnotationPoint)\
+            .filter(AnnotationPoint.active.is_(True))\
+            .filter(AnnotationPoint.prep_id == animal)\
+            .filter(AnnotationPoint.FK_input_id == input_type_id)\
+            .filter(AnnotationPoint.owner_id == person_id)\
+            .filter(AnnotationPoint.brain_region_id == structure_id)\
+            .filter(AnnotationPoint.label == layer).delete()
         self.session.commit()
 
     def clear_elastix(self, animal):
