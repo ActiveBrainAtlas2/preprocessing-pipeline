@@ -11,10 +11,10 @@ count=0
 files_to_process=()
 for file in "$path"/*;
 do
-  file=$(basename "$file")
-  if ! (ls "$path/$file" | grep -q 'puntas'); then
-     files_to_process+=("$file")
-  fi
+   file=$(basename "$file")
+#   if ! (ls "$path/$file" | grep -q 'puntas'); then
+   files_to_process+=("$file")
+#   fi
 done
 
 
@@ -22,7 +22,7 @@ done
 for file in "${files_to_process[@]}"
 do
    ((i=i%10)); ((i++==0)) && wait
-   python /$2/programming/preprocessing-pipeline/in_development/Will/cell_extractor/scripts/calculate_features_for_one_section.py --animal "$1" --section "$file" --disk "$2"&
+   python /scratch/programming/preprocessing-pipeline/in_development/Will/cell_extractor/scripts/calculate_features_for_one_section.py --animal "$1" --section "$file" --disk "$2"&
 done
 )
 }

@@ -15,34 +15,33 @@ class ExampleFinder(CellDetectorBase):
     def __init__(self,animal,section, *args, **kwargs):
         super().__init__(animal,section, *args, **kwargs)
         self.t0=time()
-        print('section=%d, SECTION_DIR=%s'%(self.section,self.CH3_SECTION_DIR))
-        self.thresh=2000
+        print('section=%d, SECTION_DIR=%s, threshold=%d'%(self.section,self.CH3_SECTION_DIR,self.segmentation_threshold))
         self.radius=40
         self.max_segment_size = 100000
         self.cell_counter = 0
         self.Examples=[]
-        self.Stats_list=[]
         self.diff_list=[]
 
     def find_examples(self):    
         self.load_manual_annotation()
         for tile in range(10):
+            print(f'finding example for tile {tile}')
             self.load_and_preprocess_image(tile)
             self.find_connected_segments(self.difference_ch3)
             if self.n_segments>2:
-                self.load_manual_labels_in_tilei(tile)
-                self.is_possitive_segment=np.zeros(self.n_segments) 
-                self.positive_segment_locations=np.zeros([self.n_segments,2])
-                if self.n_manual_label>0:   
-                    self.labels_with_no_matching_segments=[]
-                    for labeli in range(self.n_manual_label):
-                        cloest_segment_id,labelx,labely = self.find_cloest_connected_segment_to_manual_labeli(labeli)
-                        self.is_possitive_segment[cloest_segment_id]=1
-                        self.positive_segment_locations[cloest_segment_id,:]=[labelx,labely]
+                self.find_segments_corresponding_to_manual_labels(tile)
                 tilei_examples=self.get_examples(tile)
-                print(len(tilei_examples))
                 self.Examples.append(tilei_examples)
-        
+
+    def find_segments_corresponding_to_manual_labels(self,tile):
+        self.load_manual_labels_in_tilei(tile)
+        self.is_possitive_segment=np.zeros(self.n_segments) 
+        if self.n_manual_label>0:   
+            for labeli in range(self.n_manual_label):
+                manual_label=self.manual_labels_in_tile[labeli]
+                cloest_segment_id = self.find_cloest_connected_segment_to_manual_label(manual_label)
+                self.is_possitive_segment[cloest_segment_id]=1    
+
     def load_manual_annotation(self):
         file_list = glob.glob(os.path.join(self.CH3_SECTION_DIR, f'*premotor*{self.section}*.csv'))
         if file_list != []:
@@ -54,11 +53,12 @@ class ExampleFinder(CellDetectorBase):
     def get_examples(self,tile):
         origin = self.get_tile_origin(tile)
         Examples=[]
-        for labeli in range(len(self.is_possitive_segment)):
-            _,_,width,height,area = self.connected_segment_info[2][labeli,:]
+        for segmenti in range(self.n_segments):
+            _,_,width,height,area = self.segment_stats[segmenti,:]
             if area>self.max_segment_size: 
                 continue
-            segment_row,segment_col= self.segment_location[labeli,:] 
+            segment_row,segment_col= self.segment_location[segmenti,:] 
+            segment_mask = self.segment_masks == segmenti
             row_start = int(segment_row-self.radius)
             col_start = int(segment_col-self.radius)
             if row_start < 0 or col_start < 0:
@@ -67,9 +67,6 @@ class ExampleFinder(CellDetectorBase):
             col_end = int(segment_col+self.radius)
             if row_end > self.tile_height or col_end > self.tile_width:
                 continue
-            if self.is_possitive_segment[labeli] == 1:
-                print('positive label')
-                print(len(self.Examples),len(Examples))
             if self.difference_ch3[row_start:row_end,col_start:col_end].size ==0:
                 breakpoint()
             if self.difference_ch1[row_start:row_end,col_start:col_end].size == 0 :
@@ -77,7 +74,7 @@ class ExampleFinder(CellDetectorBase):
             example={'animal':self.animal,
                      'section':self.section,
                      'index':self.cell_counter,
-                     'label':int(self.is_possitive_segment[labeli]),
+                     'label':int(self.is_possitive_segment[segmenti]),
                      'area':area,
                      'row':segment_row,
                      'col':segment_col,
@@ -85,7 +82,8 @@ class ExampleFinder(CellDetectorBase):
                      'height':height,
                      'width':width,
                      'image_CH3':self.difference_ch3[row_start:row_end,col_start:col_end],
-                     'image_CH1':self.difference_ch1[row_start:row_end,col_start:col_end]}
+                     'image_CH1':self.difference_ch1[row_start:row_end,col_start:col_end],
+                     'mask':segment_mask[row_start:row_end,col_start:col_end]}
             self.cell_counter+=1
             Examples.append(example)
         return Examples
@@ -113,37 +111,22 @@ class ExampleFinder(CellDetectorBase):
             self.n_manual_label = 0
             
     def find_connected_segments(self,image):
-        self.connected_segment_info=cv2.connectedComponentsWithStats(np.int8(image>self.thresh))
         self.n_segments,self.segment_masks,self.segment_stats,self.segment_location \
-            = cv2.connectedComponentsWithStats(np.int8(image>self.thresh))
-        if self.n_segments>2:
-            self.Stats_list.append([self.n_segments,self.segment_masks,self.segment_stats,self.segment_location])
-            self.n_connected_segments = self.connected_segment_info[2].shape[0]
-            self.segment_location=np.int32(self.segment_location)  
-            self.segment_location = np.flip(self.segment_location,1)
-        
+            = cv2.connectedComponentsWithStats(np.int8(image>self.segmentation_threshold))
+        self.segment_location=np.int32(self.segment_location)  
+        self.segment_location = np.flip(self.segment_location,1)
     
     def load_and_preprocess_image(self,tile):
         self.ch3_image = self.get_tilei(tile,channel = 3)
         self.ch1_image = self.get_tilei(tile,channel = 1)
-        print(tile)
         self.difference_ch3 = self.subtract_blurred_image(self.ch3_image)
         self.difference_ch1 = self.subtract_blurred_image(self.ch1_image)
         self.diff_list.append(self.difference_ch3)
 
-
-    def find_cloest_connected_segment_to_manual_labeli(self,labeli):
-        labelx,labely=self.manual_labels_in_tile[labeli]
-        self.segment_distance_to_label=norm(self.segment_location-self.manual_labels_in_tile[labeli],axis=1)
+    def find_cloest_connected_segment_to_manual_label(self,manual_label):
+        self.segment_distance_to_label=norm(self.segment_location-manual_label,axis=1)
         self.cloest_segment_id=np.argmin(self.segment_distance_to_label)  
-        cloest_segment_distance = np.min(self.segment_distance_to_label)
-        self.segment_id_at_label_location=self.segment_masks[labelx,labely] 
-        if self.label_is_not_in_cloest_segment():
-            self.labels_with_no_matching_segments.append((labeli,cloest_segment_distance,self.segment_id_at_label_location,self.cloest_segment_id))
-        return self.cloest_segment_id , labelx , labely
-
-    def label_is_not_in_cloest_segment(self):
-        return self.cloest_segment_id !=self.segment_id_at_label_location
+        return self.cloest_segment_id
 
 def process_all_sections_with_annotation(animal):
     sections_with_csv = get_sections_with_annotation_for_animali(animal)
@@ -154,7 +137,6 @@ def process_all_sections_without_annotation(animal):
     process_all_sections_in_list(animal,sections_without_csv)
 
 def process_all_sections_in_list(animal,section_list):
-    base = CellDetectorBase(animal)
     for sectioni in section_list:
         print(f'processing section {sectioni}')
         extractor = ExampleFinder(animal,sectioni)

@@ -8,11 +8,12 @@ from scipy.spatial import distance_matrix
 import pickle as pk
 from cell_extractor.CellDetectorBase import CellDetectorBase
 
+
 class DetectorMetrics(CellDetectorBase):
 
     def __init__(self,animal,round=1):
         super().__init__(animal,round = round)
-        self.qc_annotation_input_path = '/data/programming/preprocessing-pipeline/in_development/yoav/marked_cell_detector/data2/'
+        self.qc_annotation_input_path = '/scratch/programming/preprocessing-pipeline/in_development/yoav/marked_cell_detector/data2/'
         self.pair_distance = 30
 
     def load_qc_annotations(self):
@@ -30,17 +31,6 @@ class DetectorMetrics(CellDetectorBase):
             'manual_positive':    self.qc_annotation_input_path+'/DK55_premotor_manual_positive_round1_2021-12-09.csv'}
         dfs=[]
         for name,path in self.annotation_category_and_filepath.items():
-            df= pd.read_csv(path,header=None)
-            df['name']=name
-            dfs.append(df)
-        return dfs
-    
-    def load_machine_detection(self):
-        self.machine_detection_filepath ={
-            'computer_sure':      self.qc_annotation_input_path+'/DK55_premotor_sure_detection_2021-12-09.csv',
-            'computer_unsure':    self.qc_annotation_input_path+'/DK55_premotor_unsure_detection_2021-12-09.csv'}
-        dfs=[]
-        for name,path in self.machine_detection_filepath.items():
             df= pd.read_csv(path,header=None)
             df['name']=name
             dfs.append(df)
@@ -157,6 +147,23 @@ class DetectorMetrics(CellDetectorBase):
             print(keyi)
             print(len(qualifications[keyi]))
 
+
+class DetectorMetricsDK55Round1(DetectorMetrics):
+    def __init__(self,*args,**kwrds):
+        super().__init__(*args,**kwrds)
+    
+    def load_machine_detection(self):
+        self.machine_detection_filepath ={
+            'computer_sure':      self.qc_annotation_input_path+'/DK55_premotor_sure_detection_2021-12-09.csv',
+            'computer_unsure':    self.qc_annotation_input_path+'/DK55_premotor_unsure_detection_2021-12-09.csv'}
+        dfs=[]
+        for name,path in self.machine_detection_filepath.items():
+            df= pd.read_csv(path,header=None)
+            df['name']=name
+            dfs.append(df)
+        return dfs
+
+
 if __name__=='__main__':
-    mec = DetectorMetrics('DK55',round =1)
+    mec = DetectorMetricsDK55Round1('DK55',round =1)
     mec.calculate_and_save_qualifications()

@@ -24,15 +24,12 @@ class BrainStructureManager(Brain, VolumeUtilities):
             origins=self.load_origins,
             volumes=self.load_volumes,
             aligned_contours=self.load_aligned_contours,
-            structures=self.set_structure, **self.attribute_functions)
+            structures=self.set_structures)
         self.DOWNSAMPLE_FACTOR = downsample_factor
         to_um = self.DOWNSAMPLE_FACTOR * self.get_resolution()
         self.pixel_to_um = np.array([to_um, to_um, 20])
         self.um_to_pixel = 1 / self.pixel_to_um
 
-    def set_structure(self):
-        possible_attributes_with_structure_list = ['origins', 'COM', 'volumes', 'thresholded_volumes', 'aligned_contours']
-        self.set_structure_from_attribute(possible_attributes_with_structure_list)
     
     def set_path_and_create_folders(self):
         self.animal_directory = os.path.join(DATA_PATH, 'atlas_data', self.atlas, self.animal)
@@ -77,6 +74,11 @@ class BrainStructureManager(Brain, VolumeUtilities):
             json.dump(self.centered_structures, f, sort_keys=True)
         with open(self.align_and_padded_contour_path, 'w') as f:
             json.dump(self.aligned_structures, f, sort_keys=True)
+    
+    def contours_aligned(self):
+        return os.path.exists(self.aligned_structures) and \
+        os.path.exists(self.centered_structures) and \
+        os.path.exists(self.original_structures)        
 
     def save_volumes(self):
         self.check_attributes(['volumes', 'structures'])
@@ -182,4 +184,3 @@ class BrainStructureManager(Brain, VolumeUtilities):
             for structurei in section_contour:
                 contours[structurei][section_name] = np.vstack(section_contour[structurei])
         return contours
-

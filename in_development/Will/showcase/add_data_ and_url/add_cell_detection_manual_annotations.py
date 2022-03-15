@@ -1,11 +1,10 @@
 from lib.sqlcontroller import SqlController
 from lib.UrlGenerator import UrlGenerator
-import json
 import numpy as np
 url = 377
 animal = 'DK55'
-generator = UrlGenerator()
 controller = SqlController(animal)
+generator = UrlGenerator()
 generator.load_database_url(url)
 positive = generator.get_points_from_annotation_layer('Positive')*np.array([0.325,0.325,20])
 negative = generator.get_points_from_annotation_layer('Negative')*np.array([0.325,0.325,20])

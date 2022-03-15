@@ -11,7 +11,7 @@ class Brain:
         self.sqlController = SqlController(self.animal)
         self.path = FileLocationManager(animal)
         self.plotter = Plotter()
-        self.attribute_functions = dict(COM=self.load_com)
+        self.attribute_functions = dict(COM=self.load_com,structures=self.set_structures)
         to_um = self.get_resolution()
         self.pixel_to_um = np.array([to_um, to_um, 20])
         self.um_to_pixel = 1 / self.pixel_to_um
@@ -48,19 +48,9 @@ class Brain:
         com_dictionary2 = dict(zip(shared_structures, values2))
         return com_dictionary1, com_dictionary2
     
-    def set_structure_from_attribute(self, possible_attributes_with_structure_list):
-        loaded_attributes = []
-        for attributei in possible_attributes_with_structure_list:
-            if hasattr(self, attributei) and getattr(self, attributei) != {}:
-                if not hasattr(self, 'structures') or len(self.structures) == 0:
-                    structures = self.get_structures_from_attribute(attributei)
-                    self.structures = structures
-                loaded_attributes.append(attributei)
-        for attributei in loaded_attributes:
-            assert(self.structures == self.get_structures_from_attribute(attributei))
-        if loaded_attributes == []:
-            self.load_com()
-            self.structures = self.origins.keys()
+    def set_structures(self):
+        self.load_com()
+        self.structures = self.COM.keys()
     
     def get_structures_from_attribute(self, attribute):
         return list(getattr(self, attribute).keys())
