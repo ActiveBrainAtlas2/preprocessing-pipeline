@@ -1,11 +1,9 @@
-from datetime import datetime
-from sqlalchemy.sql import func
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, String, Integer
 from .atlas_model import Base, AtlasModel
 
 
 
-class Structure(Base, AtlasModel):
+class BrainRegion(Base, AtlasModel):
     __tablename__ = 'structure'
     id =  Column(Integer, primary_key=True, nullable=False)
     abbreviation = Column(String, nullable=False)
