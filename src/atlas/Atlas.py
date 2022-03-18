@@ -5,6 +5,7 @@ import os
 from abakit.registration.utilities import get_similarity_transformation_from_dicts
 from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
 import numpy as np 
+import cv2
 
 class Atlas(BrainStructureManager):
     def __init__(self,atlas = ATLAS):
@@ -13,7 +14,7 @@ class Atlas(BrainStructureManager):
         self.moving_brain = [BrainStructureManager(braini) for braini in ['MD594', 'MD585']]
         self.brains = self.moving_brain
         self.brains.append(self.fixed_brain)
-        super().__init__('Atlas')
+        super().__init__('Atlas',atlas = atlas)
     
     def set_path_and_create_folders(self):
         self.animal_directory = os.path.join(DATA_PATH, 'atlas_data', self.atlas)
@@ -58,6 +59,30 @@ class Atlas(BrainStructureManager):
             averages[structurei] = np.average([ prepi[structurei] for prepi \
                 in annotations if structurei in prepi],0)
         return averages
+
+    def volume_to_contours(self):
+        self.load_volumes()
+        all_contours = {}
+        for structure in self.volumes.keys():
+            volumei = self.volumes[structure]
+            contours_for_structurei = {}
+            for sectioni in range(volumei.shape[2]):
+                section = volumei[:,:,sectioni]
+                threshold = np.quantile(section[section>0],0.2)
+                section = section>threshold
+                section = np.pad(section,[[1,1],[1,1]])
+                im = np.array(section * 255, dtype = np.uint8)
+                threshed = cv2.adaptiveThreshold(im, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 3, 0)
+                contours, hierarchy  = cv2.findContours(threshed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                contour_of_sectioni = []
+                for contour in contours:
+                    if cv2.contourArea(contour) > cv2.arcLength(contour, True):
+                        contour_of_sectioni.append(contour[0].reshape(-1,2)-np.array([1,1]))
+                    else:
+                        print(structure,sectioni)
+                contours_for_structurei[sectioni] = contour
+            all_contours[structure] = contours_for_structurei
+        return all_contours
 
 class AtlasInitiator(Atlas):
     def __init__(self,atlas = ATLAS,com_function = None,threshold = 0.9,sigma = 3.0,conversion_factor = None):

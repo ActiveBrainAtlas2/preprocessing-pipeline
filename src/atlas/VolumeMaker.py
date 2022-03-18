@@ -19,6 +19,7 @@ from scipy.interpolate import splprep, splev
 class VolumeMaker(BrainStructureManager):
     def __init__(self,animal, *args, **kwargs):
         BrainStructureManager.__init__(self,animal = animal, *args, **kwargs)
+        self.load_aligned_contours()
     
     def get_contours_dimension(self,contours):
         section_mins = []
@@ -41,9 +42,6 @@ class VolumeMaker(BrainStructureManager):
         volume = []
         for _, contour_points in contour_for_structurei.items():
             vertices = np.array(contour_points) - np.array((min_x, min_y))
-            if len(np.unique(contour_points,axis=0))!=len(contour_points):
-                contour_points = self.eliminate_duplicates(contour_points)
-            contour_points = self.bspline_interpolate_contour(contour_points.T)
             contour_points = (vertices).astype(np.int32)
             volume_slice = np.zeros(PADDED_SIZE, dtype=np.uint8)
             volume_slice = cv2.polylines(volume_slice, [contour_points], isClosed=True, color=1, thickness=1)
@@ -57,6 +55,7 @@ class VolumeMaker(BrainStructureManager):
         self.volumes[structurei] = volume
 
     def compute_COMs_origins_and_volumes(self):
+        self.check_attributes(['structures'])
         for structurei in tqdm(self.structures):
             contours_of_structurei = self.aligned_contours[structurei]
             self.calculate_origin_COM_and_volume(contours_of_structurei,structurei)

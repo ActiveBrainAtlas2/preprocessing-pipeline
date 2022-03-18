@@ -6,37 +6,50 @@ import pickle as pkl
 import pandas as pd
 import numpy as np
 from cell_extractor.DetectionPlotter import DetectionPlotter
+from cell_extractor.Predictor import Predictor
 
 class CellDetectorBase(Brain):
-    def __init__(self,animal,section = 0,disk = '/net/birdstore/Active_Atlas_Data/',round = 1):
+    def __init__(self,animal='DK55',section = 0,disk = '/net/birdstore/Active_Atlas_Data/',round = 1,segmentation_threshold=2000):
         self.attribute_functions = dict(
             tile_origins = self.get_tile_origins)
         super().__init__(animal)
+        self.disk = disk
+        self.round = round
         self.plotter = DetectionPlotter()
+        self.segmentation_threshold=segmentation_threshold
         self.ncol = 2
         self.nrow = 5
         self.section = section
-        self.DATA_PATH = f"/{disk}/cell_segmentation/"
+        self.set_folder_paths()
+        self.check_path_exists()
+        self.get_tile_and_image_dimensions()
+        self.get_tile_origins()
+        self.check_tile_information()
+        self.predictor = Predictor()
+    
+    def set_folder_paths(self):
+        self.DATA_PATH = f"/{self.disk}/cell_segmentation/"
         self.ANIMAL_PATH = os.path.join(self.DATA_PATH,self.animal)
-        self.ORIGINAL_IMAGE = os.path.join(self.ANIMAL_PATH,'original')
+        self.DETECTOR = os.path.join(self.DATA_PATH,'detectors')
+        self.FEATURE_PATH = os.path.join(self.ANIMAL_PATH,'features')
+        self.DETECTION = os.path.join(self.ANIMAL_PATH,'detections')
         self.AVERAGE_CELL_IMAGE_DIR = os.path.join(self.ANIMAL_PATH,'average_cell_image.pkl')
         self.TILE_INFO_DIR = os.path.join(self.ANIMAL_PATH,'tile_info.csv')
-        os.makedirs(self.ANIMAL_PATH,exist_ok = True)
         self.CH3 = os.path.join(self.ANIMAL_PATH,"CH3")
         self.CH1 = os.path.join(self.ANIMAL_PATH,"CH1")
         self.CH3_SECTION_DIR=os.path.join(self.CH3,f"{self.section:03}")
         self.CH1_SECTION_DIR=os.path.join(self.CH1,f"{self.section:03}")
         self.COMBINED_FEATURES = os.path.join(self.ANIMAL_PATH,'all_features.csv')
-        self.QUALIFICATIONS = os.path.join(self.ANIMAL_PATH,f'categories_round{round}.pkl')
-        self.POSITIVE_LABELS = os.path.join(self.ANIMAL_PATH,f'positive_labels_for_{round+1}.pkl')
-        if hasattr(self, 'version'):
-            csv_name = 'detections_'+self.animal+'.'+str(self.version)+'.csv'
-            self.DETECTION_RESULT_DIR = os.path.join(self.ANIMAL_PATH,csv_name)
-        self.CLASSIFIER_PATH = os.path.join(self.DATA_PATH,'BoostedTrees.pkl')
-        self.ALL_FEATURES = os.path.join(self.ANIMAL_PATH,'all_features.csv')
-        self.get_tile_and_image_dimensions()
-        self.get_tile_origins()
-        self.check_tile_information()
+        self.QUALIFICATIONS = os.path.join(self.FEATURE_PATH,f'categories_round{self.round}.pkl')
+        self.POSITIVE_LABELS = os.path.join(self.FEATURE_PATH,f'positive_labels_for_{self.round+1}.pkl')
+        self.DETECTOR_PATH = os.path.join(self.DETECTOR,f'detector_round_{self.round}.pkl')
+        self.DETECTION_RESULT_DIR = os.path.join(self.DETECTION,'detections_'+self.animal+'.'+str(self.round)+'.csv')
+        self.ALL_FEATURES = os.path.join(self.FEATURE_PATH,'all_features.csv')
+
+    def check_path_exists(self):
+        check_paths = [self.ANIMAL_PATH,self.FEATURE_PATH,self.DETECTION,self.DETECTOR]
+        for path in check_paths:
+            os.makedirs(path,exist_ok = True)
     
     def get_tile_information(self):
         self.check_attributes(['tile_origins'])
@@ -120,17 +133,16 @@ class CellDetectorBase(Brain):
         return self.get_sections_without_string('puntas_*')
 
     def get_example_save_path(self):
-        return self.CH3_SECTION_DIR+f'/extracted_cells_{self.section}.pkl'
+        return self.CH3_SECTION_DIR+f'/extracted_cells_{self.section}_threshold_{self.segmentation_threshold}.pkl'
     
     def get_feature_save_path(self):
-        return self.CH3_SECTION_DIR+f'/puntas_{self.section}.csv'
+        return self.CH3_SECTION_DIR+f'/puntas_{self.section}_threshold_{self.segmentation_threshold}.csv'
     
     def load_examples(self):
         save_path = self.get_example_save_path()
         try:
             with open(save_path,'br') as pkl_file:
-                E=pkl.load(pkl_file)
-                self.Examples=E['Examples']
+                self.Examples=pkl.load(pkl_file)
         except IOError as e:
             print(e)
         
@@ -166,12 +178,9 @@ class CellDetectorBase(Brain):
             print(e)
     
     def save_examples(self):
-        out={'Examples':self.Examples}
-        print(f'section {self.section}')
-        t1=time()
         try:
             with open(self.get_example_save_path(),'wb') as pkl_file:
-                pkl.dump(out,pkl_file)
+                pkl.dump(self.Examples,pkl_file)
         except IOError as e:
             print(e)
 
@@ -235,6 +244,37 @@ class CellDetectorBase(Brain):
 
     def get_qualifications(self):
         return pkl.load(open(self.QUALIFICATIONS,'rb'))
+    
+    def save_detector(self,detector):
+        pkl.dump(detector,open(self.DETECTOR_PATH,'wb'))
+    
+    def load_detector(self):
+        detector = pkl.load(open(self.DETECTOR_PATH,'rb'))
+        return detector
+    
+    def save_custom_features(self,features,file_name):
+        path = os.path.join(self.FEATURE_PATH,f'{file_name}.pkl')
+        pkl.dump(features,open(path,'wb'))
+    
+    def list_available_features(self):
+        return os.listdir(self.FEATURE_PATH)
+    
+    def load_features(self,file_name):
+        path = os.path.join(self.FEATURE_PATH,f'{file_name}.pkl')
+        if os.path.exists(path):
+            features = pkl.load(open(path,'rb'))
+        else:
+            print(file_name + ' do not exist')
+        return features
+    
+    def load_average_cell_image(self):
+        if os.path.exists(self.AVERAGE_CELL_IMAGE_DIR):
+            try:
+                average_image = pkl.load(open(self.AVERAGE_CELL_IMAGE_DIR,'rb'))
+            except IOError as e:
+                print(e)
+            self.average_image_ch1 = average_image['CH1']
+            self.average_image_ch3 = average_image['CH3']
 
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)

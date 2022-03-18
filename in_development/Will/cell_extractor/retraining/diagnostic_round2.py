@@ -9,8 +9,8 @@ import pickle as pk
 def load_annotations():
     data2 = os.path.abspath(os.path.dirname(__file__)+'/../../../yoav/'+
         'marked_cell_detector/data2/')
-    DATA_DIR='/net/birdstore/Active_Atlas_Data/cell_segmentation/'
-    df = pd.read_csv(DATA_DIR+'detections_DK55_new.csv')
+    DATA_DIR='/data/cell_segmentation/'
+    df = pd.read_csv(DATA_DIR+'detections_DK55.csv')
     file={'manual_train':       data2+'/DK55_premotor_manual_2021-12-09.csv',
     'manual_negative':    data2+'/DK55_premotor_manual_negative_round1_2021-12-09.csv',
     'manual_positive':    data2+'/DK55_premotor_manual_positive_round1_2021-12-09.csv'}
