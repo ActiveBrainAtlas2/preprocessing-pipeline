@@ -32,7 +32,7 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
     A class that sets the methods and attributes for the Active Brain Atlas
     image processing pipeline
     '''
-    def __init__(self, animal, channel=1, downsample=True,DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'):
+    def __init__(self, animal, channel=1, downsample=True,DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root',debug=False):
         '''
         Set i[ the pipeline. Only required parameter is animal
         :param animal: string, usually something like DKXX
@@ -43,7 +43,7 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
         self.channel = channel
         self.ch_dir = f'CH{self.channel}'
         self.downsample = downsample
-        self.debug = False
+        self.debug = debug
         self.fileLocationManager =  FileLocationManager(animal,DATA_PATH = DATA_PATH)
         self.sqlController = SqlController(animal)
         self.hostname = self.get_hostname()
@@ -103,7 +103,6 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
         
     def clean_images_and_create_histogram(self):
         start = timer()
-        print(f'Creating masks, cleaning and histograms took {end - start} seconds')    
         if self.channel == 1 and self.downsample:
             self.apply_user_mask_edits()
         print('\tFinished applying user mask edits')    
@@ -115,8 +114,9 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
             self.make_combined_histogram()
         print('\tFinished histograms combined')    
         end = timer()
+        print(f'Creating masks, cleaning and histograms took {end - start} seconds')    
     
-    def align_images(self):
+    def align_images_within_stack(self):
         start = timer()
         if self.channel == 1 and self.downsample:
             self.create_elastix()

@@ -9,9 +9,9 @@ from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.FileLocationManager import FileLocationManager
-from lib.SqlController import SqlController
 from lib.utilities_alignment import (create_downsampled_transforms, process_image)
-from lib.utilities_process import test_dir, get_cpus 
+from lib.utilities_registration import register_simple
+from lib.utilities_process import get_cpus 
 from model.elastix_transformation import ElastixTransformation
 from lib.sql_setup import session
 from lib.PipelineUtilities import PipelineUtilities
@@ -30,7 +30,7 @@ class ElastixManager(PipelineUtilities):
             fixed_index = os.path.splitext(files[i-1])[0]
             moving_index = os.path.splitext(files[i])[0]        
             if not self.sqlController.check_elastix_row(self.animal,moving_index):
-                rotation, xshift, yshift = self.register_simple(INPUT, fixed_index, moving_index)
+                rotation, xshift, yshift = register_simple(INPUT, fixed_index, moving_index)
                 self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
 
     def load_elastix_transformation(self,animal, moving_index):

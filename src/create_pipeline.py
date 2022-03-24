@@ -44,6 +44,6 @@ if __name__ == '__main__':
     if step > 1:
         pipeline.clean_images_and_create_histogram()
     if step > 2:
-        pipeline.align_images()
+        pipeline.align_images_within_stack()
     if step > 3:
         pipeline.create_neuroglancer_cloud_volume()

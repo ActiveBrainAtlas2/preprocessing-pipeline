@@ -16,10 +16,7 @@ class MaskManager(PipelineUtilities):
     def apply_user_mask_edits(self):
         COLORED = self.fileLocationManager.thumbnail_colored
         MASKS = self.fileLocationManager.thumbnail_masked
-        error = test_dir(self.animal, COLORED, True, same_size=False)
-        if len(error) > 0:
-            print(error)
-            sys.exit()
+        test_dir(self.animal, COLORED, True, same_size=False)
         os.makedirs(MASKS, exist_ok=True)
         files = sorted(os.listdir(COLORED))
         for file in files:
@@ -32,7 +29,7 @@ class MaskManager(PipelineUtilities):
             mask[mask>0] = 255
             cv2.imwrite(maskpath, mask.astype(np.uint8))
 
-    def get_model_instance_segmentation(num_classes):
+    def get_model_instance_segmentation(self,num_classes):
         # load an instance segmentation model pre-trained pre-trained on COCO
         model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
         # get number of input features for the classifier
@@ -64,7 +61,7 @@ class MaskManager(PipelineUtilities):
     def create_full_resolution_mask(self):
         self.sqlController.set_task(self.animal, self.progress_lookup.CREATE_FULL_RES_MASKS)
         FULLRES = self.fileLocationManager.get_full(self.channel)
-        THUMBNAIL = self.fileLocationManager.thumbnail_mask
+        THUMBNAIL = self.fileLocationManager.thumbnail_masked
         MASKED = self.fileLocationManager.full_masked
         test_dir(self.animal, FULLRES, self.downsample, same_size=False)
         os.makedirs(MASKED, exist_ok=True)
