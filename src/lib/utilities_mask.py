@@ -205,11 +205,11 @@ def pad_image(img, file, max_width, max_height, bgcolor=None):
     :param bgcolor: background color of image, 0 for NTB, white for thionin
     :return: placed image centered in the correct size.
     """
-    zmidr = max_height // 2
-    zmidc = max_width // 2
-    startr = zmidr - (img.shape[0] // 2)
+    half_max_width = max_width // 2
+    half_max_height = max_height // 2
+    startr = half_max_width - (img.shape[0] // 2)
     endr = startr + img.shape[0]
-    startc = zmidc - (img.shape[1] // 2)
+    startc = half_max_height - (img.shape[1] // 2)
     endc = startc + img.shape[1]
     dt = img.dtype
     if bgcolor == None:
@@ -217,13 +217,13 @@ def pad_image(img, file, max_width, max_height, bgcolor=None):
         bottom_rows = img[start_bottom:img.shape[0], :]
         avg = np.mean(bottom_rows)
         bgcolor = int(round(avg))
-    new_img = np.zeros([max_height, max_width]) + bgcolor
+    new_img = np.zeros([ max_width,max_height]) + bgcolor
     if img.ndim == 2:
         try:
-            new_img[startr:endr, startc:endc] = img
+            new_img[startr:endr,startc:endc] = img
         except:
             print('Could not place {} with width:{}, height:{} in {}x{}'
-                  .format(file, img.shape[1], img.shape[0], max_width, max_height))
+                  .format(file, img.shape[0], img.shape[1], max_width, max_height))
     if img.ndim == 3:
         try:
             new_img = np.zeros([max_height, max_width, 3]) + bgcolor
@@ -232,7 +232,7 @@ def pad_image(img, file, max_width, max_height, bgcolor=None):
             new_img[startr:endr, startc:endc,2] = img[:,:,2]
         except:
             print('Could not place {} with width:{}, height:{} in {}x{}'
-                  .format(file, img.shape[1], img.shape[0], max_width, max_height))
+                  .format(file, img.shape[0], img.shape[1], max_width, max_height))
     del img
     return new_img.astype(dt)
 
