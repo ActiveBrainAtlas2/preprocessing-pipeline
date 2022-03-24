@@ -80,14 +80,14 @@ class ImageCleaner(PipelineUtilities):
         INPUT = self.fileLocationManager.get_thumbnail(self.channel)
         MASKS = self.fileLocationManager.thumbnail_masked
         os.makedirs(CLEANED, exist_ok=True)
-        self.parallel_create_cleaned(self,INPUT,CLEANED,MASKS)
+        self.parallel_create_cleaned(INPUT,CLEANED,MASKS)
     
     def create_cleaned_images_fullres(self):
         CLEANED = self.fileLocationManager.get_full_cleaned(self.channel)
         os.makedirs(CLEANED, exist_ok=True)
         INPUT = self.fileLocationManager.get_full(self.channel)
         MASKS = self.fileLocationManager.full_masked
-        self.parallel_create_cleaned(self,INPUT,CLEANED,MASKS)
+        self.parallel_create_cleaned(INPUT,CLEANED,MASKS)
 
     def parallel_create_cleaned(self,INPUT,CLEANED,MASKS):
         max_width,max_height = self.get_max_imagze_size(INPUT)

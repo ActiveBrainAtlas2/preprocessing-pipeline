@@ -1,4 +1,5 @@
 import os
+from sqlalchemy import false
 import yaml
 import multiprocessing
 import socket
@@ -6,6 +7,9 @@ import sys
 from multiprocessing.pool import Pool
 from lib.utilities_process import workernoshell
 from concurrent.futures.process import ProcessPoolExecutor
+from multiprocessing import Pool
+import copy
+
 class ParallelManager:
     def load_parallel_settings(self):
         dirname = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','..'))
@@ -52,6 +56,8 @@ class ParallelManager:
                 p.map(workernoshell, commands)
         
     def run_commands_in_parallel_with_executor(self,file_keys,workers,function):
+        if self.function_belongs_to_a_pipeline_object(function):
+            function = self.make_picklable_copy_of_function(function)
         if self.debug:
             print('debugging with single core')
             for file_key in file_keys:
@@ -59,3 +65,14 @@ class ParallelManager:
         else:
             with ProcessPoolExecutor(max_workers=workers) as executor:
                 executor.map(function, sorted(file_keys))
+
+    def function_belongs_to_a_pipeline_object(self,function):
+        if not hasattr(function,'__self__'):
+            return False
+        else:
+            return type(function.__self__) == type(self)
+    
+    def make_picklable_copy_of_function(self,function):
+        object = copy.copy(function.__self__)
+        del object.sqlController
+        return getattr(object,function.__name__)

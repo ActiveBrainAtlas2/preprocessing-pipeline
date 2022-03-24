@@ -27,7 +27,7 @@ class FileLocationManager(object):
         self.full_masked = os.path.join(self.prep, 'full_masked')
         self.full_aligned = os.path.join(self.prep, 'full_aligned')
         self.masks = os.path.join(self.prep, 'masks')
-        self.thumbnail_mask = os.path.join(self.masks, 'thumbnail_masked')
+        self.thumbnail_masked = os.path.join(self.masks, 'thumbnail_masked')
         self.thumbnail_colored = os.path.join(self.masks, 'thumbnail_colored')
         self.rotated_and_padded_thumbnail_mask = os.path.join(self.masks, 'thumbnail_rotated_and_padded')
         self.aligned_rotated_and_padded_thumbnail_mask = os.path.join(self.masks, 'thumbnail_aligned_rotated_and_padded')
@@ -52,10 +52,10 @@ class FileLocationManager(object):
         return os.path.join(self.prep, f'CH{channel}', 'thumbnail_aligned')
         
     def get_thumbnail_cleaned(self,channel = 1):
-        return os.path.join(self.prep,f'CH{channel}', 'masks', 'thumbnail_cleaned')
+        return os.path.join(self.prep,f'CH{channel}', 'thumbnail_cleaned')
     
     def get_normalized(self,channel = 1):
-        return os.path.join(self.fileLocationManager.prep, f'CH{channel}', 'normalized')
+        return os.path.join(self.prep, f'CH{channel}', 'normalized')
 
     def get_histogram(self,channel = 1):
         return os.path.join(self.histogram, f'CH{channel}')
@@ -67,4 +67,4 @@ class FileLocationManager(object):
             channel_outdir = f'C{channel}'
         if not rechunck:
             channel_outdir += "_rechunkme"
-        return os.path.join(self.fileLocationManager.neuroglancer_data, f'{channel_outdir}')
+        return os.path.join(self.neuroglancer_data, f'{channel_outdir}')

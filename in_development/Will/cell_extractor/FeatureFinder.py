@@ -14,7 +14,7 @@ class FeatureFinder(CellDetectorBase):
         self.features = []
         print('DATA_DIR=%s'%(self.CH3))
         print(self.section,section)
-        self.connected_segment_threshold=2000
+        self.segmentation_threshold=2000
         self.load_average_cell_image()
     
     def copy_information_from_examples(self,example):
@@ -32,7 +32,7 @@ class FeatureFinder(CellDetectorBase):
 
     def connected_segment_detected_in_image(self,example,channel = 3):
         image = example[f'image_CH{channel}']
-        Stats=cv2.connectedComponentsWithStats(np.int8(image>self.connected_segment_threshold))
+        Stats=cv2.connectedComponentsWithStats(np.int8(image>self.segmentation_threshold))
         return Stats[1] is not None
     
     def get_middle_segment_mask(self,segments):
@@ -50,7 +50,7 @@ class FeatureFinder(CellDetectorBase):
     def features_using_center_connectd_components(self,example):
         image1 = example[f'image_CH1']
         image3 = example[f'image_CH3']
-        no,mask,statistics,center=cv2.connectedComponentsWithStats(np.int8(image3>self.connected_segment_threshold))
+        no,mask,statistics,center=cv2.connectedComponentsWithStats(np.int8(image3>self.segmentation_threshold))
         middle_seg_mask = None
         if mask is not None:
             middle_segment_mask = self.get_middle_segment_mask(mask) 

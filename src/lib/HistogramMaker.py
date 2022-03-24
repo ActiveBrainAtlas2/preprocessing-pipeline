@@ -23,7 +23,7 @@ class HistogramMaker(PipelineUtilities):
             nothing
         """
         INPUT = self.fileLocationManager.get_thumbnail(self.channel)
-        MASK_INPUT = self.fileLocationManager.thumbnail_mask
+        MASK_INPUT = self.fileLocationManager.thumbnail_masked
         files = self.sqlController.get_sections(self.animal, self.channel)
         test_dir(self.animal, INPUT, downsample=True, same_size=False)
         if len(files) == 0:
@@ -82,7 +82,7 @@ class HistogramMaker(PipelineUtilities):
         :return: nothing
         """
         INPUT = self.fileLocationManager.get_thumbnail(self.channel)
-        MASK_INPUT = self.fileLocationManager.thumbnail_mask
+        MASK_INPUT = self.fileLocationManager.thumbnail_masked
         OUTPUT = self.fileLocationManager.get_histogram(self.channel)
         os.makedirs(OUTPUT, exist_ok=True)
         files = os.listdir(INPUT)

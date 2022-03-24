@@ -31,12 +31,11 @@ class NgPrecomputedMaker:
         return midfile,file_keys,volume_size,num_channels
 
     def create_neuroglancer(self):
-        INPUT = self.fileLocationManager.get_thumbnail_aligned(self.ch_dir)
-        workers, _ = get_cpus()
+        INPUT = self.fileLocationManager.get_thumbnail_aligned(channel=self.channel)
         progress_id = self.sqlController.get_progress_id(self.downsample, self.channel, 'NEUROGLANCER')
         self.sqlController.session.close()
         if not self.downsample:
-            INPUT = self.fileLocationManager.get_full_aligned(self.ch_dir)
+            INPUT = self.fileLocationManager.get_full_aligned(channel=self.channel)
             self.sqlController.set_task(self.animal, progress_id)
         OUTPUT_DIR = self.fileLocationManager.get_neuroglancer(self.downsample,self.channel)
         os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -46,6 +45,7 @@ class NgPrecomputedMaker:
         scales = self.get_scales()
         ng = NumpyToNeuroglancer(self.animal, None, scales, 'image', midfile.dtype, num_channels=num_channels, chunk_size=chunks)
         ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=progress_id)
+        workers, _ = get_cpus()
         with ProcessPoolExecutor(max_workers=workers) as executor:
             if num_channels == 1:
                 executor.map(ng.process_image, sorted(file_keys))

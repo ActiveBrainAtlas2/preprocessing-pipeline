@@ -4,7 +4,7 @@ Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
 from shutil import copyfile
 from lib.SqlController import SqlController
-from lib.utilities_process import test_dir, resize_and_save_tif
+from lib.utilities_process import test_dir, create_downsample
 from lib.PipelineUtilities import PipelineUtilities
 class PrepCreater(PipelineUtilities):
 
@@ -13,7 +13,7 @@ class PrepCreater(PipelineUtilities):
         if self.channel == 1:
             self.sqlController.update_scanrun(self.sqlController.scan_run.id)
         progress_id = self.sqlController.get_progress_id(True, self.channel, 'TIF')
-        self.sqlController.set_task(self.self.animal, progress_id)
+        self.sqlController.set_task(self.animal, progress_id)
         progress_id = self.sqlController.get_progress_id(False, self.channel, 'TIF')
         self.sqlController.set_task(self.animal, progress_id)
 
@@ -70,4 +70,4 @@ class PrepCreater(PipelineUtilities):
                 continue
             file_keys.append([infile, outpath])
         workers = 10
-        self.run_commands_in_parallel_with_executor(file_keys,workers,resize_and_save_tif)
+        self.run_commands_in_parallel_with_executor(file_keys,workers,create_downsample)
