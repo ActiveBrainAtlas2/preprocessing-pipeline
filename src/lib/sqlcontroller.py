@@ -258,6 +258,24 @@ class SqlController(object):
             query_start = eval(f'query_start.filter(AnnotationPoint.{key}=="{value}")')
         return self.get_coordinates_from_query_result(query_start.all())
 
+
+    def get_distinct_structures(self, label):
+        """
+        Get list of distinct structures in a layer. Used mostly for recreating atlas
+        Args:
+            label: the label/layer to query
+
+        Returns: list of structure IDs
+
+        """
+        ids = []
+        
+        for FK_structure_id in self.session.query(AnnotationPoint.FK_structure_id).distinct():
+            ids.append(FK_structure_id[0])
+
+        return ids
+
+
     def get_coordinates_from_query_result(self,query_result):
         coord = []
         resolution = self.scan_run.resolution
@@ -275,6 +293,14 @@ class SqlController(object):
         row = self.session.query(BrainRegion).filter(
             BrainRegion.abbreviation == func.binary(abbrv)).one()
         return int(row.color)
+
+    def get_structure_from_id(self, FK_structure_id):
+        """
+        Sometimes you need the abbr from the ID
+        """
+        row = self.session.query(BrainRegion).filter(
+            BrainRegion.id == func.binary(FK_structure_id)).one()
+        return row.abbreviation
 
     def get_structure_color_rgb(self, abbrv):
         """
@@ -300,7 +326,7 @@ class SqlController(object):
         structures_dict = {}
         for structure in rows:
             structures_dict[structure.abbreviation] = [
-                structure.description, structure.color]
+                structure.description, structure.color, structure.id]
 
         return structures_dict
 
@@ -439,6 +465,15 @@ class SqlController(object):
             .filter(AnnotationPoint.label == label)\
             .all()
         return rows
+    
+    def get_annotations_by_structure(self, prep_id, input_type_id, label, FK_structure_id):
+        rows = self.session.query(AnnotationPoint)\
+            .filter(AnnotationPoint.prep_id == prep_id)\
+            .filter(AnnotationPoint.FK_input_id == input_type_id)\
+            .filter(AnnotationPoint.label == label)\
+            .filter(AnnotationPoint.FK_structure_id==FK_structure_id)\
+            .all()
+        return rows
 
     def get_atlas_centers(self):
         PERSON_ID_LAUREN = 16
@@ -507,7 +542,7 @@ class SqlController(object):
             ElastixTransformation.section == section).first())
         return row_exists
 
-    def add_row(self,data):
+    def add_row(self, data):
         try:
             self.session.add(data)
             self.session.commit()
@@ -533,10 +568,10 @@ class SqlController(object):
             created=datetime.utcnow(), active=True)
         self.add_row(data)
 
-    def add_layer_data_row(self,animal,person_id,input_type_id,coordinates,structure_id,layer):
-        x,y,z = coordinates
-        data = AnnotationPoint(prep_id = animal, person_id = person_id, input_type_id = input_type_id, x=x, y=y, \
-            section=z,structure_id=structure_id,layer=layer)
+    def add_layer_data_row(self, animal, FK_owner_id, FK_input_id, coordinates, FK_structure_id, label, segment_id):
+        x, y, z = coordinates
+        data = AnnotationPoint(prep_id=animal, FK_owner_id=FK_owner_id, FK_input_id=FK_input_id, x=x, y=y, \
+            z=z, FK_structure_id=FK_structure_id, label=label, ordering=0, active=1, segment_id=segment_id)
         self.add_row(data)
     
     def add_com(self, prep_id, abbreviation, coordinates, person_id=2 , input_type_id = 1):
