@@ -19,8 +19,12 @@ class AnnotationPoint(Base):
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
     z = Column(Float, nullable=False)
+<<<<<<< HEAD
     active = Column(Boolean, default=True, nullable=False)
 
+=======
+    ordering = Column(Integer)
+>>>>>>> e90accce200cc9b2d02fba44124401f8312b0c58
     brain_region = relationship('BrainRegion', lazy=True)
 
 

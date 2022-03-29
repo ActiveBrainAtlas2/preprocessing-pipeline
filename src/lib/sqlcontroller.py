@@ -6,7 +6,6 @@ filled out for each animal to use
 """
 import sys
 from lib.sql_setup import session, pooledsession
-from model.file_log import FileLog
 from model.urlModel import UrlModel
 from model.task import Task, ProgressLookup
 from model.annotations_points import AnnotationPoint
@@ -18,6 +17,7 @@ from model.scan_run import ScanRun
 from model.histology import Histology
 from model.animal import Animal
 from model.elastix_transformation import ElastixTransformation
+from model.file_log import FileLog
 import json
 import pandas as pd
 from collections import OrderedDict
@@ -25,6 +25,8 @@ from datetime import datetime
 import numpy as np
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
+import binascii
+import os
 
 
 class SqlController(object):
@@ -74,9 +76,8 @@ class SqlController(object):
     
     def get_annotated_animals(self):
         results = self.session.query(AnnotationPoint)\
-            .filter(AnnotationPoint.active.is_(True))\
             .filter(AnnotationPoint.FK_input_id == 1)\
-            .filter(AnnotationPoint.owner_id == 2)\
+            .filter(AnnotationPoint.FK_owner_id == 2)\
             .filter(AnnotationPoint.label == 'COM').all()
         return np.unique([ri.prep_id for ri in results])
 
@@ -252,7 +253,7 @@ class SqlController(object):
         """
         return self.session.query(BrainRegion).filter(BrainRegion.abbreviation == func.binary(abbrv)).one()
     
-    def get_layer_data(self,search_dictionary):
+    def get_annotation_points(self,search_dictionary):
         query_start = self.session.query(AnnotationPoint)
         for key, value in search_dictionary.items():
             query_start = eval(f'query_start.filter(AnnotationPoint.{key}=="{value}")')
@@ -417,40 +418,16 @@ class SqlController(object):
             return
         return structure.id
 
-    def add_layer_data(self, abbreviation, animal, layer, x, y, section, 
-                       person_id, input_type_id):
-        """
-        Look up the structure id from the structure.
-        Args:
-            structure: abbreviation with the _L or _R ending
-            animal: prep_id
-            x=float of x coordinate
-            y=float of y coordinate
-            section = int of z/section coordinate
-        Returns:
-            nothing, just merges
-        try:
-            structure = self.session.query(BrainRegion) \
-                .filter(BrainRegion.abbreviation == func.binary(abbreviation)).one()
-        except NoResultFound:
-            print(f'No structure for {abbreviation}')
-        """
-
-        structure_id = self.structure_abbreviation_to_id(abbreviation)
-        coordinates = (x,y,section)
-        self.add_layer_data_row(animal,person_id,input_type_id,coordinates,structure_id,layer)
-
-    def get_com_dict(self, prep_id, input_type_id=1, person_id=2,active = True):
-        return self.get_layer_data_entry( prep_id = prep_id, input_type_id=input_type_id,\
-             person_id=person_id,active = active,layer = 'COM')
+    def get_com_dict(self, prep_id, input_id=1, person_id=2,active = True):
+        return self.get_annotation_points_entry( prep_id = prep_id, input_id=input_id,\
+             person_id=person_id,active = active,label = 'COM')
     
-    def get_layer_data_entry(self, prep_id, input_type_id=1, person_id=2,active = True,layer = 'COM'):
+    def get_annotation_points_entry(self, prep_id, input_id=1, person_id=2,active = True,label = 'COM'):
         rows = self.session.query(AnnotationPoint)\
-            .filter(AnnotationPoint.active.is_(active))\
             .filter(AnnotationPoint.prep_id == prep_id)\
-            .filter(AnnotationPoint.FK_input_id == input_type_id)\
-            .filter(AnnotationPoint.owner_id == person_id)\
-            .filter(AnnotationPoint.label == layer)\
+            .filter(AnnotationPoint.FK_input_id == input_id)\
+            .filter(AnnotationPoint.FK_owner_id == person_id)\
+            .filter(AnnotationPoint.label == label)\
             .all()
         row_dict = {}
         for row in rows:
@@ -458,10 +435,10 @@ class SqlController(object):
             row_dict[structure] = [row.x, row.y, row.section]
         return row_dict
     
-    def get_annotations(self, prep_id, input_type_id, label):
+    def get_annotations(self, prep_id, input_id, label):
         rows = self.session.query(AnnotationPoint)\
             .filter(AnnotationPoint.prep_id == prep_id)\
-            .filter(AnnotationPoint.FK_input_id == input_type_id)\
+            .filter(AnnotationPoint.FK_input_id == input_id)\
             .filter(AnnotationPoint.label == label)\
             .all()
         return rows
@@ -500,8 +477,8 @@ class SqlController(object):
         dfs = []
         if urlModel.url is not None:
             json_txt = json.loads(urlModel.url)
-            layers = json_txt['layers']
-            for l in layers:
+            labels = json_txt['labels']
+            for l in labels:
                 if 'annotations' in l:
                     name = l['name']
                     annotation = l['annotations']
@@ -510,8 +487,8 @@ class SqlController(object):
                     df['X'] = df['X'].astype(int)
                     df['Y'] = df['Y'].astype(int)
                     df['Section'] = df['Section'].astype(int)
-                    df['Layer'] = name
-                    df = df[['Layer', 'X', 'Y', 'Section']]
+                    df['label'] = name
+                    df = df[['label', 'X', 'Y', 'Section']]
                     dfs.append(df)
             if len(dfs) == 0:
                 result = None
@@ -568,42 +545,48 @@ class SqlController(object):
             created=datetime.utcnow(), active=True)
         self.add_row(data)
 
-    def add_layer_data_row(self, animal, FK_owner_id, FK_input_id, coordinates, FK_structure_id, label, segment_id):
+    def add_annotation_point_row(self, animal, owner_id, input_id, coordinates, structure_id, label, ordering=0, segment_id=None):
         x, y, z = coordinates
-        data = AnnotationPoint(prep_id=animal, FK_owner_id=FK_owner_id, FK_input_id=FK_input_id, x=x, y=y, \
-            z=z, FK_structure_id=FK_structure_id, label=label, ordering=0, active=1, segment_id=segment_id)
+        data = AnnotationPoint(prep_id=animal, FK_owner_id=owner_id, FK_input_id=input_id, x=x, y=y, \
+            z=z, FK_structure_id=structure_id, label=label, ordering=ordering, segment_id=segment_id)
         self.add_row(data)
     
-    def add_com(self, prep_id, abbreviation, coordinates, person_id=2 , input_type_id = 1):
+    def add_com(self, prep_id, abbreviation, coordinates, person_id=2 , input_id = 1):
         structure_id = self.structure_abbreviation_to_id(abbreviation)
-        if self.layer_data_row_exists(animal=prep_id,person_id = person_id,input_type_id = input_type_id,\
-            structure_id = structure_id,layer = 'COM'):
-            self.delete_layer_data_row(animal=prep_id,person_id = person_id,input_type_id = input_type_id,\
-                structure_id = structure_id,layer = 'COM')
-        self.add_layer_data_row(animal = prep_id,person_id = person_id,input_type_id = input_type_id,\
-            coordinates = coordinates,structure_id = structure_id,layer = 'COM')
+        if self.annotation_points_row_exists(animal=prep_id,person_id = person_id,input_id = input_id,\
+            structure_id = structure_id,label = 'COM'):
+            self.delete_annotation_points_row(animal=prep_id,person_id = person_id,input_id = input_id,\
+                structure_id = structure_id,label = 'COM')
+        self.add_annotation_points_row(animal = prep_id,person_id = person_id,input_id = input_id,\
+            coordinates = coordinates,structure_id = structure_id,label = 'COM')
     
     def url_exists(self,comments):
         row_exists = bool(self.session.query(UrlModel).filter(UrlModel.comments == comments).first())
         return row_exists
 
-    def layer_data_row_exists(self,animal, person_id, input_type_id, structure_id, layer):
+    def annotation_points_row_exists(self,animal, person_id, input_id, structure_id, label):
         row_exists = bool(self.session.query(AnnotationPoint).filter(
             AnnotationPoint.prep_id == animal, 
-            AnnotationPoint.owner_id == person_id, 
-            AnnotationPoint.FK_input_id == input_type_id, 
-            AnnotationPoint.brain_region_id == structure_id,
-            AnnotationPoint.label == layer).first())
+            AnnotationPoint.FK_owner_id == person_id, 
+            AnnotationPoint.FK_input_id == input_id, 
+            AnnotationPoint.FK_structure_id == structure_id,
+            AnnotationPoint.label == label).first())
         return row_exists
+    
+    def get_new_segment_id(self):
+        new_id = binascii.b2a_hex(os.urandom(20)).decode('ascii')
+        used_ids = [i.segment_id for i in self.session.query(AnnotationPoint.segment_id).distinct().all()]
+        while new_id in used_ids:
+            new_id = binascii.b2a_hex(os.urandom(20)).decode('ascii')
+        return new_id
  
-    def delete_layer_data_row(self,animal,person_id,input_type_id,structure_id,layer):
+    def delete_annotation_points_row(self,animal,person_id,input_id,structure_id,label):
         self.session.query(AnnotationPoint)\
-            .filter(AnnotationPoint.active.is_(True))\
             .filter(AnnotationPoint.prep_id == animal)\
-            .filter(AnnotationPoint.FK_input_id == input_type_id)\
-            .filter(AnnotationPoint.owner_id == person_id)\
-            .filter(AnnotationPoint.brain_region_id == structure_id)\
-            .filter(AnnotationPoint.label == layer).delete()
+            .filter(AnnotationPoint.FK_input_id == input_id)\
+            .filter(AnnotationPoint.FK_owner_id == person_id)\
+            .filter(AnnotationPoint.FK_structure_id == structure_id)\
+            .filter(AnnotationPoint.label == label).delete()
         self.session.commit()
 
     def clear_elastix(self, animal):

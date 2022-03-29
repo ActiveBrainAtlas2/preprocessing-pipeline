@@ -29,20 +29,20 @@ NON-RELEVANT [TO PORTAL] TABLES (1):
 DROP TABLE IF EXISTS `annotations_points` ;
 CREATE TABLE `annotations_points` (
   `id` INT(20) NOT NULL AUTO_INCREMENT,
-  `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
+  `prep_id` VARCHAR(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+  `label` VARCHAR(255) COLLATE utf8_bin DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
   `x` FLOAT DEFAULT NULL,
   `y` FLOAT DEFAULT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
-  `prep_id` VARCHAR(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
   `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
-  `FK_brain_region_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
+  `FK_structure_id` INT(11) NOT NULL,
   `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
   `FK_animal_id` INT(11) NOT NULL,
   `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id) ON UPDATE CASCADE,
+  FOREIGN KEY (`FK_structure_id`) REFERENCES brain_region(id) ON UPDATE CASCADE,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -50,13 +50,13 @@ CREATE TABLE `annotations_points` (
 DROP TABLE IF EXISTS `annotations_points_archive`;
 CREATE TABLE `annotations_points_archive` (
   `id` int(20) NOT NULL,
-  `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
+  `prep_id` VARCHAR(20) NOT NULL COMMENT '*LEGACY COMPATABILITY*',
+  `label` VARCHAR(255) COLLATE utf8_bin DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
   `x` FLOAT DEFAULT NULL,
   `y` FLOAT DEFAULT NULL,
-  `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
-  `prep_id` VARCHAR(20) NOT NULL COMMENT '*LEGACY COMPATABILITY*',
+  `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',  
   `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
-  `FK_brain_region_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
+  `FK_structure_id` INT(11) NOT NULL COMMENT 'either structure, point, or line   do we really want line here?',
   `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
   `FK_animal_id` INT(11) NOT NULL,
   `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
@@ -64,7 +64,7 @@ CREATE TABLE `annotations_points_archive` (
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id),
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_brain_region_id`) REFERENCES brain_region(id),
+  FOREIGN KEY (`FK_structure_id`) REFERENCES brain_region(id),
   FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

@@ -14,6 +14,7 @@ this code does the following:
 2. applies them
 3. save the result
 """
+
 from collections import defaultdict
 import os
 import numpy as np
@@ -30,8 +31,8 @@ DOWNSAMPLE_FACTOR = 32
 from atlas.BrainStructureManager import BrainStructureManager
 
 class FoundationContourAligner(BrainStructureManager):
-    def __init__(self,animal):
-        super().__init__(animal)
+    def __init__(self,animal, *args, **kwrds):
+        super().__init__(animal,*args, **kwrds)
         self.contour_path = os.path.join(DATA_PATH, 'atlas_data','foundation_brain_annotations',f'{self.animal}_annotation.csv')
     
     def create_clean_transform(self):
@@ -86,7 +87,7 @@ class FoundationContourAligner(BrainStructureManager):
         self.contour_per_structure_per_section = defaultdict(dict)
         structures = self.sqlController.get_structures_dict()
         for structurei, _ in structures.items():
-            contour_for_structurei, _, _ = get_contours_from_annotations(self.animal, structurei, hand_annotations, densify=4)
+            contour_for_structurei, _, _ = get_contours_from_annotations(self.animal, structurei, hand_annotations, densify=0)#7-MAR-2022 MOD (PREV densify=4)
             for section in contour_for_structurei:
                 self.contour_per_structure_per_section[structurei][section] = contour_for_structurei[section]
 

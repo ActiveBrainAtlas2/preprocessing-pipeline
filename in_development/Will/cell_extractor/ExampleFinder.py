@@ -67,10 +67,6 @@ class ExampleFinder(CellDetectorBase):
             col_end = int(segment_col+self.radius)
             if row_end > self.tile_height or col_end > self.tile_width:
                 continue
-            if self.difference_ch3[row_start:row_end,col_start:col_end].size ==0:
-                breakpoint()
-            if self.difference_ch1[row_start:row_end,col_start:col_end].size == 0 :
-                breakpoint()
             example={'animal':self.animal,
                      'section':self.section,
                      'index':self.cell_counter,
