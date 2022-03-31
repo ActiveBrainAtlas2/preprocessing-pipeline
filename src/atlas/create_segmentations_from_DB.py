@@ -15,9 +15,10 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
+POLYGON_ID = 54
 
 
-def create_segmentation(animal, label, debug=False):
+def create_segmentation(animal, debug=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     from lib.utilities_process import SCALING_FACTOR
@@ -36,54 +37,65 @@ def create_segmentation(animal, label, debug=False):
     scale_xy = sqlController.scan_run.resolution
     z_scale = sqlController.scan_run.zresolution
     scales = np.array([int(scale_xy*32*1000), int(scale_xy*32*1000), int(z_scale*1000)])
-    print('scales', scales)
+    if debug:
+        print('scales', scales)
 
     width = int(width * SCALING_FACTOR)
     height = int(height * SCALING_FACTOR)
     aligned_shape = np.array((width, height))
+    if debug:
+        print('aligned shape', aligned_shape)
     
-    # get all distinct structures in layer
     volume = np.zeros((aligned_shape[1], aligned_shape[0], num_sections), dtype=np.uint8)
-    structures = sqlController.get_distinct_structures(label)
+    
+    # get all distinct structures in DB
+    abbreviations = sqlController.get_distinct_labels(animal)
+    if debug:
+        print(f'Working with {len(abbreviations)} structures')
     structure_dict = sqlController.get_structures_dict()
-
-    print(f'Working with {len(structures)} structures')
-    ## loop thru all the structures and get all points
-    #structures = [21, 33] ## IC and SC for testing, they are big and obvious
     segment_properties = {}
-    for FK_structure_id in structures:
-        abbreviation = sqlController.get_structure_from_id(FK_structure_id)
+    # We loop through every structure from the CSV data in the DB for a brain
+    for abbreviation in abbreviations:
         try:
             structure_info = structure_dict[abbreviation]
             color = structure_info[1]
-            segment_properties[abbreviation] = color
+            desc = structure_info[0]
+            abbrev = abbreviation.replace('_L','').replace('_R','')
+            k = f'{abbrev}: {desc}'
+            segment_properties[k] = color
         except KeyError:
+            print('key error for', abbreviation)
             continue
-        rows = sqlController.get_annotations_by_structure(animal, 1, label, FK_structure_id)
+        rows = sqlController.get_annotations_by_structure(animal, 1, abbreviation, POLYGON_ID)
         polygons = defaultdict(list)
         
-  
         for row in rows:
             xy = (row.x/scale_xy, row.y/scale_xy)
             z = int(np.round(row.z/z_scale))
             polygons[z].append(xy)
             
         #### loop through all the sections and write to a template, then add that template to the volume
+        structure_volume = np.zeros((aligned_shape[1], aligned_shape[0], num_sections), dtype=np.uint8)
+
         for section, points in tqdm(polygons.items()):
             template = np.zeros((aligned_shape[1], aligned_shape[0]), dtype=np.uint8)
             points = np.array(points)
             points = np.round(points*SCALING_FACTOR)
             points = points.astype(np.int32)
-            # cv2.polylines(template, [points], True, color, 8, lineType=cv2.LINE_AA)
             cv2.fillPoly(template, pts = [points], color = color)
         
             volume[:, :, section - 1] += template
+            structure_volume[:, :, section - 1] += template
             
+        if debug:
+            print(abbreviation, structure_volume.shape, np.amax(structure_volume))
+    
+    """
     offset = (0, 0, 0)
     layer_type = 'segmentation'
     chunks = [64, 64, 64]
     num_channels = 1
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, label)
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'structures')
     
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
@@ -118,11 +130,11 @@ def create_segmentation(animal, label, debug=False):
     info = {
         "@type": "neuroglancer_segment_properties",
         "inline": {
-            "ids": [str(number) for number, label in segment_properties.items()],
+            "ids": [str(v) for k, v in segment_properties.items()],
             "properties": [{
                 "id": "label",
                 "type": "label",
-                "values":  [str(label) for number, label in segment_properties.items()]
+                "values":  [str(k) for k, v in segment_properties.items()]
             }]
         }
     }
@@ -130,7 +142,7 @@ def create_segmentation(animal, label, debug=False):
         json.dump(info, file, indent=2)
 
     #### 1st create mesh
-    mse = 40
+    mse = 40 # default value 
     tq = LocalTaskQueue(parallel=1)
     mesh_dir = f'mesh_mip_0_err_{mse}'
     cv.info['mesh'] = mesh_dir
@@ -143,18 +155,16 @@ def create_segmentation(animal, label, debug=False):
     tasks = tc.create_mesh_manifest_tasks(cv.layer_cloudpath, mesh_dir=mesh_dir)
     tq.insert(tasks)
     tq.execute()
-    
+    """
         
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--label', help='Enter the layer label', required=True)
     parser.add_argument('--debug', help='Enter true or false', required=False, default='false')
     
 
     args = parser.parse_args()
     animal = args.animal
-    label = args.label
     debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-    create_segmentation(animal, label, debug)
+    create_segmentation(animal, debug)

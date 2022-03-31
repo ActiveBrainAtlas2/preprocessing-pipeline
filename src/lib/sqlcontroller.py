@@ -276,6 +276,28 @@ class SqlController(object):
 
         return ids
 
+    def get_distinct_labels(self, animal):
+        '''
+        Query the polygon data from the foundation brains. We want all the data
+        that was imported from the CSV files for each animal
+        INFO: 
+            54 is the id for polygons
+            52 everything below 52 is an Atlas brain region
+        :param animal: AKA prep_id, string for animal name
+        '''
+        labels = []
+        subquery = self.session.query(BrainRegion.abbreviation).filter(BrainRegion.id < 52).subquery()
+        query = self.session.query(AnnotationPoint.label)\
+            .filter(AnnotationPoint.label.in_(subquery))\
+            .filter(AnnotationPoint.prep_id==animal)\
+            .filter(AnnotationPoint.FK_structure_id==54)\
+            .order_by(AnnotationPoint.label.asc())\
+            .distinct()
+        
+        for label in query:
+            labels.append(label[0])
+            
+        return labels
 
     def get_coordinates_from_query_result(self,query_result):
         coord = []
