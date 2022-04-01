@@ -10,6 +10,7 @@ from model.urlModel import UrlModel
 from model.task import Task, ProgressLookup
 from model.annotations_points import AnnotationPoint
 from model.brain_region import BrainRegion
+from model.brain_shape import BrainShape
 from model.slide_czi_to_tif import SlideCziTif
 from model.slide import Slide
 from model.section import Section
@@ -473,6 +474,38 @@ class SqlController(object):
             .filter(AnnotationPoint.FK_structure_id==FK_structure_id)\
             .all()
         return rows
+    
+    def get_structure_min_max(self, prep_id, label, FK_structure_id):
+        values = self.session.query(
+            func.min(AnnotationPoint.x),
+            func.max(AnnotationPoint.x),
+            func.min(AnnotationPoint.y),
+            func.max(AnnotationPoint.y),
+            func.min(AnnotationPoint.z),
+            func.max(AnnotationPoint.z))\
+                .filter(AnnotationPoint.prep_id == prep_id)\
+                .filter(AnnotationPoint.label == label)\
+                .filter(AnnotationPoint.FK_structure_id == FK_structure_id).all() 
+        
+        minx = values[0][0]
+        maxx = values[0][1]
+        miny = values[0][2]
+        maxy = values[0][3]
+        minz = values[0][4]
+        maxz = values[0][5]
+        return minx, maxx, miny, maxy, minz, maxz
+
+    def get_brain_shape(self, prep_id, FK_structure_id):
+        try:
+            brain_shape = self.session.query(BrainShape)\
+                                .filter(BrainShape.FK_structure_id == FK_structure_id)\
+                                .filter(BrainShape.prep_id == prep_id)\
+                                .one()
+        except NoResultFound:
+            print(f'No brain shape for {prep_id} structure ID {FK_structure_id}')
+            brain_shape = None
+        return brain_shape
+
 
     def get_atlas_centers(self):
         PERSON_ID_LAUREN = 16
