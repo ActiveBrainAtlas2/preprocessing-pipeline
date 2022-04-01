@@ -76,7 +76,7 @@ class SqlController(object):
         results = self.session.query(AnnotationPoint)\
             .filter(AnnotationPoint.active.is_(True))\
             .filter(AnnotationPoint.FK_input_id == 1)\
-            .filter(AnnotationPoint.owner_id == 2)\
+            .filter(AnnotationPoint.FK_owner_id == 2)\
             .filter(AnnotationPoint.label == 'COM').all()
         return np.unique([ri.prep_id for ri in results])
 
@@ -400,13 +400,13 @@ class SqlController(object):
             .filter(AnnotationPoint.active.is_(active))\
             .filter(AnnotationPoint.prep_id == prep_id)\
             .filter(AnnotationPoint.FK_input_id == input_id)\
-            .filter(AnnotationPoint.owner_id == person_id)\
+            .filter(AnnotationPoint.FK_owner_id == person_id)\
             .filter(AnnotationPoint.label == label)\
             .all()
         row_dict = {}
         for row in rows:
-            structure = row.structure.abbreviation
-            row_dict[structure] = [row.x, row.y, row.section]
+            structure = row.brain_region.abbreviation
+            row_dict[structure] = [row.x, row.y, row.z]
         return row_dict
     
     def get_annotations(self, prep_id, input_id, label):
@@ -532,7 +532,7 @@ class SqlController(object):
     def annotation_points_row_exists(self,animal, person_id, input_id, structure_id, label):
         row_exists = bool(self.session.query(AnnotationPoint).filter(
             AnnotationPoint.prep_id == animal, 
-            AnnotationPoint.owner_id == person_id, 
+            AnnotationPoint.FK_owner_id == person_id, 
             AnnotationPoint.FK_input_id == input_id, 
             AnnotationPoint.brain_region_id == structure_id,
             AnnotationPoint.label == label).first())
@@ -550,7 +550,7 @@ class SqlController(object):
             .filter(AnnotationPoint.active.is_(True))\
             .filter(AnnotationPoint.prep_id == animal)\
             .filter(AnnotationPoint.FK_input_id == input_id)\
-            .filter(AnnotationPoint.owner_id == person_id)\
+            .filter(AnnotationPoint.FK_owner_id == person_id)\
             .filter(AnnotationPoint.brain_region_id == structure_id)\
             .filter(AnnotationPoint.label == label).delete()
         self.session.commit()

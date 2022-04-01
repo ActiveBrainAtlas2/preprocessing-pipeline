@@ -13,7 +13,6 @@ from cloudvolume.lib import touch
 from matplotlib import colors
 from pylab import cm
 from collections import defaultdict
-
 from lib.sqlcontroller import SqlController, file_processed, set_file_completed
 from lib.utilities_process import get_cpus
 
@@ -284,10 +283,7 @@ class NumpyToNeuroglancer():
             return
 
         img = io.imread(infile)
-        #img = np.rot90(img, 2)
-        #img = np.flip(img)
         img = img.reshape(img.shape[0], img.shape[1], 1)
-        #print(index, infile, img.shape, img.dtype, self.precomputed_vol.dtype, self.precomputed_vol.shape)
         self.precomputed_vol[:, :, index] = img
         touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
         touch(touchfile)
@@ -413,4 +409,3 @@ def mask_to_shell(mask):
     shell = np.array(sub_shells).sum(axis=0)
     del sub_shells
     return shell
-

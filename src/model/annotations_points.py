@@ -20,6 +20,7 @@ class AnnotationPoint(Base):
     z = Column(Float, nullable=False)
     ordering = Column(Integer)
     brain_region = relationship('BrainRegion', lazy=True)
+    active = Column(Integer)
 
 
 

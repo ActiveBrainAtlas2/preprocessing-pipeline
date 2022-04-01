@@ -45,7 +45,7 @@ class NgConverter(NumpyToNeuroglancer):
         
         
 class NgSegmentMaker(NgConverter):
-    def __init__(self, debug = False,out_folder = 'atlas_test',offset = None):
+    def __init__(self, debug = False,out_folder = 'atlas_test',offset = [0, 0, 0]):
         self.layer_type='segmentation'
         self.offset = offset
         self.start = timer()
@@ -75,7 +75,7 @@ class NgSegmentMaker(NgConverter):
 
 
 class AtlasNgMaker(Atlas,NgSegmentMaker):
-    def __init__(self,atlas_name,debug = False,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0,offset = None):
+    def __init__(self,atlas_name,debug = False,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0,offset = [0, 0, 0]):
         Atlas.__init__(self,atlas_name)
         NgSegmentMaker.__init__(self, debug,out_folder=out_folder,offset=offset)
         self.assembler = AtlasAssembler(atlas_name, threshold=threshold,sigma = sigma)
@@ -83,6 +83,7 @@ class AtlasNgMaker(Atlas,NgSegmentMaker):
     
     def create_atlas_neuroglancer(self):
         self.volume = self.assembler.combined_volume
+        self.scales = [self.resolution,self.resolution,20* 32 * 1000]
         segment_properties = self.get_segment_properties()
         self.create_neuroglancer_files(self.OUTPUT_DIR,segment_properties)
 

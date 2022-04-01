@@ -20,7 +20,6 @@ class ExampleFinder(CellDetectorBase):
         self.max_segment_size = 100000
         self.cell_counter = 0
         self.Examples=[]
-        self.diff_list=[]
 
     def find_examples(self):    
         self.load_manual_annotation()
@@ -117,7 +116,7 @@ class ExampleFinder(CellDetectorBase):
         self.ch1_image = self.get_tilei(tile,channel = 1)
         self.difference_ch3 = self.subtract_blurred_image(self.ch3_image)
         self.difference_ch1 = self.subtract_blurred_image(self.ch1_image)
-        self.diff_list.append(self.difference_ch3)
+        del self.ch3_image,self.ch1_image
 
     def find_cloest_connected_segment_to_manual_label(self,manual_label):
         self.segment_distance_to_label=norm(self.segment_location-manual_label,axis=1)
