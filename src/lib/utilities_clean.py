@@ -52,7 +52,7 @@ def fix_ntb(file_key):
         
     del img
     if channel == 1:
-        fixed = scaled(fixed, mask, epsilon=0.01)
+        fixed = scaled(fixed, mask)
         fixed = equalized(fixed)
     del mask
     if rotation > 0:

@@ -6,11 +6,11 @@ filled out for each animal to use
 """
 import sys
 from lib.sql_setup import session, pooledsession
-from model.file_log import FileLog
 from model.urlModel import UrlModel
 from model.task import Task, ProgressLookup
 from model.annotations_points import AnnotationPoint
 from model.brain_region import BrainRegion
+from model.brain_shape import BrainShape
 from model.slide_czi_to_tif import SlideCziTif
 from model.slide import Slide
 from model.section import Section
@@ -18,6 +18,7 @@ from model.scan_run import ScanRun
 from model.histology import Histology
 from model.animal import Animal
 from model.elastix_transformation import ElastixTransformation
+from model.file_log import FileLog
 import json
 import pandas as pd
 from collections import OrderedDict
@@ -25,7 +26,9 @@ from datetime import datetime
 import numpy as np
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
-import os,binascii
+import binascii
+import os
+
 
 class SqlController(object):
     """ Create a class for processing the pipeline,
@@ -74,7 +77,6 @@ class SqlController(object):
     
     def get_annotated_animals(self):
         results = self.session.query(AnnotationPoint)\
-            .filter(AnnotationPoint.active.is_(True))\
             .filter(AnnotationPoint.FK_input_id == 1)\
             .filter(AnnotationPoint.FK_owner_id == 2)\
             .filter(AnnotationPoint.label == 'COM').all()
@@ -258,6 +260,46 @@ class SqlController(object):
             query_start = eval(f'query_start.filter(AnnotationPoint.{key}=="{value}")')
         return self.get_coordinates_from_query_result(query_start.all())
 
+
+    def get_distinct_structures(self, label):
+        """
+        Get list of distinct structures in a layer. Used mostly for recreating atlas
+        Args:
+            label: the label/layer to query
+
+        Returns: list of structure IDs
+
+        """
+        ids = []
+        
+        for FK_structure_id in self.session.query(AnnotationPoint.FK_structure_id).distinct():
+            ids.append(FK_structure_id[0])
+
+        return ids
+
+    def get_distinct_labels(self, animal):
+        '''
+        Query the polygon data from the foundation brains. We want all the data
+        that was imported from the CSV files for each animal
+        INFO: 
+            54 is the id for polygons
+            52 everything below 52 is an Atlas brain region
+        :param animal: AKA prep_id, string for animal name
+        '''
+        labels = []
+        subquery = self.session.query(BrainRegion.abbreviation).filter(BrainRegion.id < 52).subquery()
+        query = self.session.query(AnnotationPoint.label)\
+            .filter(AnnotationPoint.label.in_(subquery))\
+            .filter(AnnotationPoint.prep_id==animal)\
+            .filter(AnnotationPoint.FK_structure_id==54)\
+            .order_by(AnnotationPoint.label.asc())\
+            .distinct()
+        
+        for label in query:
+            labels.append(label[0])
+            
+        return labels
+
     def get_coordinates_from_query_result(self,query_result):
         coord = []
         resolution = self.scan_run.resolution
@@ -275,6 +317,14 @@ class SqlController(object):
         row = self.session.query(BrainRegion).filter(
             BrainRegion.abbreviation == func.binary(abbrv)).one()
         return int(row.color)
+
+    def get_structure_from_id(self, FK_structure_id):
+        """
+        Sometimes you need the abbr from the ID
+        """
+        row = self.session.query(BrainRegion).filter(
+            BrainRegion.id == func.binary(FK_structure_id)).one()
+        return row.abbreviation
 
     def get_structure_color_rgb(self, abbrv):
         """
@@ -300,7 +350,7 @@ class SqlController(object):
         structures_dict = {}
         for structure in rows:
             structures_dict[structure.abbreviation] = [
-                structure.description, structure.color]
+                structure.description, structure.color, structure.id]
 
         return structures_dict
 
@@ -397,7 +447,6 @@ class SqlController(object):
     
     def get_annotation_points_entry(self, prep_id, input_id=1, person_id=2,active = True,label = 'COM'):
         rows = self.session.query(AnnotationPoint)\
-            .filter(AnnotationPoint.active.is_(active))\
             .filter(AnnotationPoint.prep_id == prep_id)\
             .filter(AnnotationPoint.FK_input_id == input_id)\
             .filter(AnnotationPoint.FK_owner_id == person_id)\
@@ -416,6 +465,47 @@ class SqlController(object):
             .filter(AnnotationPoint.label == label)\
             .all()
         return rows
+    
+    def get_annotations_by_structure(self, prep_id, input_type_id, label, FK_structure_id):
+        rows = self.session.query(AnnotationPoint)\
+            .filter(AnnotationPoint.prep_id == prep_id)\
+            .filter(AnnotationPoint.FK_input_id == input_type_id)\
+            .filter(AnnotationPoint.label == label)\
+            .filter(AnnotationPoint.FK_structure_id==FK_structure_id)\
+            .all()
+        return rows
+    
+    def get_structure_min_max(self, prep_id, label, FK_structure_id):
+        values = self.session.query(
+            func.min(AnnotationPoint.x),
+            func.max(AnnotationPoint.x),
+            func.min(AnnotationPoint.y),
+            func.max(AnnotationPoint.y),
+            func.min(AnnotationPoint.z),
+            func.max(AnnotationPoint.z))\
+                .filter(AnnotationPoint.prep_id == prep_id)\
+                .filter(AnnotationPoint.label == label)\
+                .filter(AnnotationPoint.FK_structure_id == FK_structure_id).all() 
+        
+        minx = values[0][0]
+        maxx = values[0][1]
+        miny = values[0][2]
+        maxy = values[0][3]
+        minz = values[0][4]
+        maxz = values[0][5]
+        return minx, maxx, miny, maxy, minz, maxz
+
+    def get_brain_shape(self, prep_id, FK_structure_id):
+        try:
+            brain_shape = self.session.query(BrainShape)\
+                                .filter(BrainShape.FK_structure_id == FK_structure_id)\
+                                .filter(BrainShape.prep_id == prep_id)\
+                                .one()
+        except NoResultFound:
+            print(f'No brain shape for {prep_id} structure ID {FK_structure_id}')
+            brain_shape = None
+        return brain_shape
+
 
     def get_atlas_centers(self):
         PERSON_ID_LAUREN = 16
@@ -484,7 +574,7 @@ class SqlController(object):
             ElastixTransformation.section == section).first())
         return row_exists
 
-    def add_row(self,data):
+    def add_row(self, data):
         try:
             self.session.add(data)
             self.session.commit()
@@ -510,10 +600,10 @@ class SqlController(object):
             created=datetime.utcnow(), active=True)
         self.add_row(data)
 
-    def add_annotation_point_row(self,animal,owner_id,input_id,coordinates,structure_id,label,ordering=0,segment_id = None):
-        x,y,z = coordinates
-        data = AnnotationPoint(prep_id = animal, FK_owner_id = owner_id, FK_input_id = input_id, x=x, y=y, \
-            z=z,FK_structure_id=structure_id,label=label,ordering = ordering,segment_id=segment_id)
+    def add_annotation_point_row(self, animal, owner_id, input_id, coordinates, structure_id, label, ordering=0, segment_id=None):
+        x, y, z = coordinates
+        data = AnnotationPoint(prep_id=animal, FK_owner_id=owner_id, FK_input_id=input_id, x=x, y=y, \
+            z=z, FK_structure_id=structure_id, label=label, ordering=ordering, segment_id=segment_id)
         self.add_row(data)
     
     def add_com(self, prep_id, abbreviation, coordinates, person_id=2 , input_id = 1):
@@ -534,7 +624,7 @@ class SqlController(object):
             AnnotationPoint.prep_id == animal, 
             AnnotationPoint.FK_owner_id == person_id, 
             AnnotationPoint.FK_input_id == input_id, 
-            AnnotationPoint.brain_region_id == structure_id,
+            AnnotationPoint.FK_structure_id == structure_id,
             AnnotationPoint.label == label).first())
         return row_exists
     
@@ -547,11 +637,14 @@ class SqlController(object):
  
     def delete_annotation_points_row(self,animal,person_id,input_id,structure_id,label):
         self.session.query(AnnotationPoint)\
-            .filter(AnnotationPoint.active.is_(True))\
             .filter(AnnotationPoint.prep_id == animal)\
             .filter(AnnotationPoint.FK_input_id == input_id)\
             .filter(AnnotationPoint.FK_owner_id == person_id)\
+<<<<<<< HEAD
             .filter(AnnotationPoint.brain_region_id == structure_id)\
+=======
+            .filter(AnnotationPoint.FK_structure_id == structure_id)\
+>>>>>>> 3516de7d3f47f3c7eae99630ebbb834080bd80ad
             .filter(AnnotationPoint.label == label).delete()
         self.session.commit()
 

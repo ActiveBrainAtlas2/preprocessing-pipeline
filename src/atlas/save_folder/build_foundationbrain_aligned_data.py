@@ -99,7 +99,7 @@ def create_volumes(animal):
     hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
     structures = sqlController.get_structures_dict()
     for structure, values in structures.items():
-        contour_annotations, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=4)
+        contour_annotations, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=0)
         for section in contour_annotations:
             section_structure_vertices[section][structure] = contour_annotations[section][structure]
 
@@ -118,7 +118,7 @@ def create_volumes(animal):
         for structure in section_structure_vertices[section]:
 
             points = np.array(section_structure_vertices[section][structure]) / DOWNSAMPLE_FACTOR
-            points = interpolate(points, max(500, len(points)))
+            # points = interpolate(points, max(500, len(points)))
             original_structures[structure][section] = points
             offset = section_offsets[section]
             if animal == 'MD585' and section in md585_fixes.keys():
@@ -134,6 +134,7 @@ def create_volumes(animal):
 
     OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    """
     jsonpath1 = os.path.join(OUTPUT_DIR,  'original_structures.json')
     with open(jsonpath1, 'w') as f:
         json.dump(original_structures, f, sort_keys=True)
@@ -141,7 +142,7 @@ def create_volumes(animal):
     jsonpath2 = os.path.join(OUTPUT_DIR,  'unaligned_padded_structures.json')
     with open(jsonpath2, 'w') as f:
         json.dump(unaligned_padded_structures, f, sort_keys=True)
-        
+    """ 
     jsonpath3 = os.path.join(OUTPUT_DIR,  'aligned_padded_structures.json')
     with open(jsonpath3, 'w') as f:
         json.dump(aligned_padded_structures, f, sort_keys=True)
