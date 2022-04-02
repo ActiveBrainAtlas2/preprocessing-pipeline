@@ -441,21 +441,21 @@ class SqlController(object):
             return
         return structure.id
 
-    def get_com_dict(self, prep_id, input_id=1, person_id=2,active = True):
-        return self.get_annotation_points_entry( prep_id = prep_id, input_id=input_id,\
-             person_id=person_id,active = active,label = 'COM')
+    def get_com_dict(self, prep_id, FK_input_id=1, person_id=2):
+        return self.get_annotation_points_entry(prep_id=prep_id, FK_input_id=FK_input_id, \
+             person_id=person_id, label='COM')
     
-    def get_annotation_points_entry(self, prep_id, input_id=1, person_id=2,active = True,label = 'COM'):
+    def get_annotation_points_entry(self, prep_id, FK_input_id=1, person_id=2, label='COM'):
         rows = self.session.query(AnnotationPoint)\
             .filter(AnnotationPoint.prep_id == prep_id)\
-            .filter(AnnotationPoint.FK_input_id == input_id)\
+            .filter(AnnotationPoint.FK_input_id == FK_input_id)\
             .filter(AnnotationPoint.FK_owner_id == person_id)\
             .filter(AnnotationPoint.label == label)\
             .all()
         row_dict = {}
         for row in rows:
-            structure = row.structure.abbreviation
-            row_dict[structure] = [row.x, row.y, row.section]
+            structure = row.brain_region.abbreviation
+            row_dict[structure] = [row.x, row.y, row.z]
         return row_dict
     
     def get_annotations(self, prep_id, input_id, label):
@@ -498,8 +498,8 @@ class SqlController(object):
     def get_brain_shape(self, prep_id, FK_structure_id):
         try:
             brain_shape = self.session.query(BrainShape)\
-                                .filter(BrainShape.FK_structure_id == FK_structure_id)\
                                 .filter(BrainShape.prep_id == prep_id)\
+                                .filter(BrainShape.FK_structure_id == FK_structure_id)\
                                 .one()
         except NoResultFound:
             print(f'No brain shape for {prep_id} structure ID {FK_structure_id}')

@@ -9,19 +9,20 @@ from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 import shutil
 from tqdm import tqdm
+import pickle
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
+from lib.utilities_process import SCALING_FACTOR
 POLYGON_ID = 54
 
 
 def create_segmentation(animal, debug=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
-    from lib.utilities_process import SCALING_FACTOR
     # vars
     sections = sqlController.get_sections(animal, 1)
     if len(sections) < 10:
@@ -37,67 +38,54 @@ def create_segmentation(animal, debug=False):
     scale_xy = sqlController.scan_run.resolution
     z_scale = sqlController.scan_run.zresolution
     scales = np.array([int(scale_xy*32*1000), int(scale_xy*32*1000), int(z_scale*1000)])
-    if debug:
-        print('scales', scales)
+    print('Scaling to downsampled Neuroglancer with scales', scales)
 
     width = int(width * SCALING_FACTOR)
     height = int(height * SCALING_FACTOR)
     aligned_shape = np.array((width, height))
-    if debug:
-        print('aligned shape', aligned_shape)
     
     volume = np.zeros((aligned_shape[1], aligned_shape[0], num_sections), dtype=np.uint8)
+    print('Creating a 3D numpy volume with shape', volume.shape)
     
     # get all distinct structures in DB
     abbreviations = sqlController.get_distinct_labels(animal)
-    if debug:
-        print(f'Working with {len(abbreviations)} structures')
+    print(f'Working with {len(abbreviations)} structures')
     structure_dict = sqlController.get_structures_dict()
     segment_properties = {}
-    # We loop through every structure from the CSV data in the DB for a brain
-    for abbreviation in abbreviations:
+    # We loop through every structure in the DB for a brain
+    for abbreviation in tqdm(abbreviations):
         try:
             structure_info = structure_dict[abbreviation]
             color = structure_info[1]
             desc = structure_info[0]
             FK_structure_id = structure_info[2]
+            brain_shape = sqlController.get_brain_shape(animal, FK_structure_id)
             abbrev = abbreviation.replace('_L','').replace('_R','')
             k = f'{abbrev}: {desc}'
             segment_properties[k] = color
         except KeyError:
             print('key error for', abbreviation)
             continue
-        rows = sqlController.get_annotations_by_structure(animal, 1, abbreviation, POLYGON_ID)
-        polygons = defaultdict(list)
         
-        for row in rows:
-            xy = (row.x/scale_xy, row.y/scale_xy)
-            z = int(np.round(row.z/z_scale))
-            polygons[z].append(xy)
-            
-        #### loop through all the sections and write to a template, then add that template to the volume
-        # structure_volume = np.zeros((aligned_shape[1], aligned_shape[0], num_sections), dtype=np.uint8)
+        arr = pickle.loads(brain_shape.numpy_data)
+        arr = arr * color
+        row_start = int(round((brain_shape.yoffset/scale_xy)*SCALING_FACTOR))
+        col_start = int(round((brain_shape.xoffset/scale_xy)*SCALING_FACTOR))
+        z_start = int(round(brain_shape.zoffset/z_scale))
         
-        minx, maxx, miny, maxy, minz, maxz = sqlController.get_structure_min_max(animal, abbreviation, POLYGON_ID)
-        minx = int(round((minx/scale_xy)*SCALING_FACTOR))
-        maxx = int(round((maxx/scale_xy)*SCALING_FACTOR))
-        miny = int(round((miny/scale_xy)*SCALING_FACTOR))
-        maxy = int(round((maxy/scale_xy)*SCALING_FACTOR))
-        top_left = (minx, miny)
-        bottom_right = (maxx, maxy)
+        row_end = row_start + arr.shape[0]
+        col_end = col_start + arr.shape[1]
+        z_end = z_start + arr.shape[2]
         
-        for section, points in tqdm(polygons.items()):
-            template = np.zeros((aligned_shape[1], aligned_shape[0]), dtype=np.uint8)
-            points = np.array(points)
-            points = np.round(points*SCALING_FACTOR)
-            points = points.astype(np.int32)
-            cv2.fillPoly(template, pts = [points], color = color)
-            cv2.rectangle(template, top_left, bottom_right, color, 1)
+        if debug:
+            print(abbreviation, arr.shape, end="\t")
+            print(f'rows {row_start} to {row_end}', end="\t")
+            print(f'cols {col_start} to {col_end}', end="\t")
+            print(f'z {z_start} to {z_end}')
+        volume[row_start:row_end, col_start:col_end, z_start:z_end] = arr
         
-            volume[:, :, section - 1] += template
-            # structure_volume[:, :, section - 1] += template
-                
-    offset = (0, 0, 0)
+    # take the 3D numpy volume and use CloudVolume to convert to precomputed
+    offset = (0, 0, 0) # this is just the upper left of the neuroglancer viewer
     layer_type = 'segmentation'
     chunks = [64, 64, 64]
     num_channels = 1
@@ -161,7 +149,7 @@ def create_segmentation(animal, debug=False):
     tasks = tc.create_mesh_manifest_tasks(cv.layer_cloudpath, mesh_dir=mesh_dir)
     tq.insert(tasks)
     tq.execute()
-        
+    
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description='Work on Animal')
