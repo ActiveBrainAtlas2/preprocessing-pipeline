@@ -1,8 +1,6 @@
 import argparse
 import os, sys
 import numpy as np
-from collections import defaultdict
-import cv2
 import json
 from cloudvolume import CloudVolume
 from taskqueue import LocalTaskQueue

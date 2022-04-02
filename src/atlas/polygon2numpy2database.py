@@ -76,44 +76,38 @@ def create_segmentation(animal, transform=False):
         abbreviations = [a for a in abbreviations if a in atlas_centers.keys()]
         
     print(f'Working with {len(abbreviations)} structures')
-    
-    for abbreviation in abbreviations:
+    for abbreviation in tqdm(abbreviations):
         rows = sqlController.get_annotations_by_structure(animal, 1, abbreviation, POLYGON_ID)
         polygons = defaultdict(list)
-        
+        # xyz in the DB is in micrometers
         for row in rows:
-            x, y , z = row.x, row.y, row.z
+            x, y, z = row.x, row.y, row.z
             if transform:
                 x, y, z = brain_to_atlas_transform((x, y, z), R, t)
 
             xy = (x/scale_xy, y/scale_xy)
             z = int(np.round(z/z_scale))
             polygons[z].append(xy)
+        # xyz is now in full resolution Neuroglancer coordinates
         #### loop through all the sections and write to a template, then add that template to the volume
         structure_volume = np.zeros((aligned_shape[1], aligned_shape[0], num_sections), dtype=np.uint8)
         
         # Get the min and max for x,y, and z for each structure
-        # They need to be scaled and downsampled. If you didn't downsample, the array would be far too large
-        minx, maxx, miny, maxy, minz, maxz = sqlController.get_structure_min_max(animal, abbreviation, POLYGON_ID)
-        # [[y for y in x] for x in l]
-        # minx2 =  [[[point for point in points] for points in polygon] for polygon in polygons.values()] 
-        minx2 = [ [ point for point in points for points in polygon] for polygon in polygons.values()]
-        #print(*[c for a in polygons.values() for b in a for c in b], sep='\n')
-        #minx2 = [c for a in polygons.values() for b in a for c in b]
-        #minx2 = [c for a in polygons.values() for b in a for c in b]
-        #miny2 = min([[y for y in x] for x in polygons.values()])
-        #minz2 = min([[y for y in x] for x in polygons.values()])
-        print('x', minx, minx2, len(minx2))
-        #print('y', miny,miny2)
-        #print('z', minz,minz2)
+        minx = min([ min([points[0] for points in polygon])  for polygon in polygons.values()])
+        miny = min([ min([points[1] for points in polygon])  for polygon in polygons.values()])
+        minz = min(polygons.keys()) * z_scale
         
-        sys.exit()
+        maxx = max([ max([points[0] for points in polygon])  for polygon in polygons.values()])
+        maxy = max([ max([points[1] for points in polygon])  for polygon in polygons.values()])
+        maxz = max(polygons.keys()) * z_scale
         
-        minx = int(round((minx/scale_xy)*SCALING_FACTOR))
-        maxx = int(round((maxx/scale_xy)*SCALING_FACTOR))
-        miny = int(round((miny/scale_xy)*SCALING_FACTOR))
-        maxy = int(round((maxy/scale_xy)*SCALING_FACTOR))
+        # put xyz in downsampled Neuroglancer coordinates
+        minx = int(round(minx*SCALING_FACTOR))
+        miny = int(round(miny*SCALING_FACTOR))
         minz = int(round(minz/z_scale))
+        
+        maxx = int(round(maxx*SCALING_FACTOR))
+        maxy = int(round(maxy*SCALING_FACTOR))
         maxz = int(round(maxz/z_scale))
         
         midz = maxz - (maxz - minz)//2
@@ -132,10 +126,12 @@ def create_segmentation(animal, transform=False):
         
             structure_volume[:, :, section] += template
             
-                
+        
+        # xyz offsets are in downsampled Neuroglancer coords
         arr = structure_volume[miny:maxy, minx:maxx, minz:maxz]
         saveme = np.ndarray.dumps(arr)
         brain_region = sqlController.get_structure(abbreviation)
+        # we want the xyz coords back in micrometers
         brain_shape = BrainShape(prep_id = animal, FK_structure_id = brain_region.id, 
                                  dimensions=str(arr.shape), 
                                  xoffset = (minx*scale_xy)/SCALING_FACTOR,
