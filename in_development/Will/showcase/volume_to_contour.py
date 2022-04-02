@@ -1,7 +1,7 @@
 #%%
 import numpy as np
 import sys
-sys.path.append('/home/zhw272/programming/pipeline_utility/src')
+sys.path.append('/scratch/programming/preprocessing-pipeline/src')
 from atlas.Atlas import Atlas
 import cv2
 import matplotlib.pyplot as plt
@@ -10,7 +10,9 @@ controller = SqlController('DK39')
 
 atlas = Atlas(atlas = 'atlasV7')
 atlas.load_volumes()
-atlas.load_origins()
+atlas.load_com()
+atlas.convert_unit_of_com_dictionary(atlas.COM, atlas.fixed_brain.um_to_pixel)
+atlas.origins = atlas.get_origin_from_coms()
 structure,volume = list(atlas.volumes.items())[0]
 # %%
 def volume_to_contours(volume):
@@ -39,7 +41,7 @@ for str,polygons in contours.items():
     print(str)
     origin = atlas.origins[str]
     for polygoni in polygons:
-        polygon_points = polygoni+origin
+        polygon_points = (polygoni+origin)*atlas.fixed_brain.pixel_to_um
         segment_id = controller.get_new_segment_id()
         for pointi in polygon_points:
             controller.add_annotation_point_row('Atlas',34,1,pointi,54,str,ordering=0,segment_id=segment_id)

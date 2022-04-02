@@ -50,7 +50,7 @@ class Brain:
     
     def set_structures(self):
         self.load_com()
-        self.structures = self.COM.keys()
+        self.structures = list(self.COM.keys())
     
     def get_structures_from_attribute(self, attribute):
         return list(getattr(self, attribute).keys())

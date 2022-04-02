@@ -4,7 +4,6 @@ from atlas.VolumeUtilities import VolumeUtilities
 from Brain import Brain
 from atlas.Atlas import AtlasInitiator
 
-
 class Assembler:
 
     def __init__(self):
@@ -151,7 +150,7 @@ class BrainAssembler(BrainStructureManager, Assembler):
 class AtlasAssembler(AtlasInitiator, Assembler):
 
     def __init__(self, atlas, com_function=None, threshold=0.9, sigma=3.0, conversion_factor=None):
-        AtlasInitiator.__init__(self, com_function=com_function, threshold=threshold, sigma=sigma, conversion_factor=conversion_factor)
+        AtlasInitiator.__init__(self,atlas=atlas, com_function=com_function, threshold=threshold, sigma=sigma, conversion_factor=conversion_factor)
         self.standardize_volumes()
         self.origins = self.get_origin_from_coms()
         Assembler.__init__(self)    

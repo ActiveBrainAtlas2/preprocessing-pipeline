@@ -640,7 +640,11 @@ class SqlController(object):
             .filter(AnnotationPoint.prep_id == animal)\
             .filter(AnnotationPoint.FK_input_id == input_id)\
             .filter(AnnotationPoint.FK_owner_id == person_id)\
+<<<<<<< HEAD
+            .filter(AnnotationPoint.brain_region_id == structure_id)\
+=======
             .filter(AnnotationPoint.FK_structure_id == structure_id)\
+>>>>>>> 3516de7d3f47f3c7eae99630ebbb834080bd80ad
             .filter(AnnotationPoint.label == label).delete()
         self.session.commit()
 

@@ -5,7 +5,6 @@ from skimage.filters import gaussian
 
 class VolumeUtilities:
         
-
     def gaussian_filter_volumes(self, sigma):
         for structure, volume in self.volumes.items():
             self.volumes[structure] = gaussian(volume, sigma)
