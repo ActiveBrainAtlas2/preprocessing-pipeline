@@ -18,7 +18,7 @@ from lib.utilities_process import SCALING_FACTOR
 POLYGON_ID = 54
 
 
-def create_segmentation(animal, debug=False):
+def create_segmentation(animal, transform=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     # vars
@@ -30,6 +30,11 @@ def create_segmentation(animal, debug=False):
     if num_sections < 10:
         print('no sections')
         sys.exit()
+        
+    if transform:
+        outdir = 'transformed'
+    else:
+        outdir = 'structures'
     
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
@@ -57,7 +62,7 @@ def create_segmentation(animal, debug=False):
             color = structure_info[1]
             desc = structure_info[0]
             FK_structure_id = structure_info[2]
-            brain_shape = sqlController.get_brain_shape(animal, FK_structure_id)
+            brain_shape = sqlController.get_brain_shape(animal, FK_structure_id, transform)
             abbrev = abbreviation.replace('_L','').replace('_R','')
             k = f'{abbrev}: {desc}'
             segment_properties[k] = color
@@ -75,11 +80,6 @@ def create_segmentation(animal, debug=False):
         col_end = col_start + arr.shape[1]
         z_end = z_start + arr.shape[2]
         
-        if debug:
-            print(abbreviation, arr.shape, end="\t")
-            print(f'rows {row_start} to {row_end}', end="\t")
-            print(f'cols {col_start} to {col_end}', end="\t")
-            print(f'z {z_start} to {z_end}')
         volume[row_start:row_end, col_start:col_end, z_start:z_end] = arr
         
     # take the 3D numpy volume and use CloudVolume to convert to precomputed
@@ -87,7 +87,7 @@ def create_segmentation(animal, debug=False):
     layer_type = 'segmentation'
     chunks = [64, 64, 64]
     num_channels = 1
-    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'structures')
+    OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, outdir)
     
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
@@ -152,10 +152,10 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--debug', help='Enter true or false', required=False, default='false')
+    parser.add_argument('--transform', help='Enter true or false', required=False, default='false')
     
 
     args = parser.parse_args()
     animal = args.animal
-    debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
-    create_segmentation(animal, debug)
+    transform = bool({'true': True, 'false': False}[str(args.transform).lower()])
+    create_segmentation(animal, transform)

@@ -495,11 +495,12 @@ class SqlController(object):
         maxz = values[0][5]
         return minx, maxx, miny, maxy, minz, maxz
 
-    def get_brain_shape(self, prep_id, FK_structure_id):
+    def get_brain_shape(self, prep_id, FK_structure_id, transformed):
         try:
             brain_shape = self.session.query(BrainShape)\
                                 .filter(BrainShape.prep_id == prep_id)\
                                 .filter(BrainShape.FK_structure_id == FK_structure_id)\
+                                .filter(BrainShape.transformed == transformed)\
                                 .one()
         except NoResultFound:
             print(f'No brain shape for {prep_id} structure ID {FK_structure_id}')
