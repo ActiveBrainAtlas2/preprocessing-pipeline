@@ -630,7 +630,7 @@ class SqlController(object):
     
     def get_new_segment_id(self):
         new_id = binascii.b2a_hex(os.urandom(20)).decode('ascii')
-        used_ids = [i.segment_id for i in self.session.query(AnnotationPoint.segment_id).distinct().all()]
+        used_ids = [i.segment_id for i in self.session.query(AnnotationPoint.polygon_id).distinct().all()]
         while new_id in used_ids:
             new_id = binascii.b2a_hex(os.urandom(20)).decode('ascii')
         return new_id
@@ -640,11 +640,7 @@ class SqlController(object):
             .filter(AnnotationPoint.prep_id == animal)\
             .filter(AnnotationPoint.FK_input_id == input_id)\
             .filter(AnnotationPoint.FK_owner_id == person_id)\
-<<<<<<< HEAD
-            .filter(AnnotationPoint.brain_region_id == structure_id)\
-=======
             .filter(AnnotationPoint.FK_structure_id == structure_id)\
->>>>>>> 3516de7d3f47f3c7eae99630ebbb834080bd80ad
             .filter(AnnotationPoint.label == label).delete()
         self.session.commit()
 
