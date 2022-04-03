@@ -1,3 +1,12 @@
+'''
+Part two of the annotations to polygons to numpy arrays to Neuroglancer program.
+This program will fetch the pickled numpy arrays and the offsets from the DB
+and create a precomputed Neuroglancer volume. We use Cloudvolume to create
+the neuroglancer data.
+Run program from root dir of the project:
+    python src/atlas/database2segmentation.py --animal MD594 --transform false
+
+'''
 import argparse
 import os, sys
 import numpy as np
@@ -8,10 +17,10 @@ import igneous.task_creation as tc
 import shutil
 from tqdm import tqdm
 import pickle
+from pathlib import Path
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
 
-HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
-sys.path.append(PATH)
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
 from lib.utilities_process import SCALING_FACTOR
@@ -19,6 +28,12 @@ POLYGON_ID = 54
 
 
 def create_segmentation(animal, transform=False):
+    '''
+    This fetches the numpy arrays, either the non-aligned version or the atlas-aligned
+    version, then creates the 3D atlas volume with all the structures.
+    :param animal: string of the animal to fetch and create
+    :param transform: boolean, to transform or not transform, that is the question.
+    '''
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     # vars
@@ -148,13 +163,10 @@ def create_segmentation(animal, transform=False):
     tq.insert(tasks)
     tq.execute()
     
-if __name__ == '__main__':
-    
+if __name__ == '__main__':    
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--transform', help='Enter true or false', required=False, default='false')
-    
-
     args = parser.parse_args()
     animal = args.animal
     transform = bool({'true': True, 'false': False}[str(args.transform).lower()])

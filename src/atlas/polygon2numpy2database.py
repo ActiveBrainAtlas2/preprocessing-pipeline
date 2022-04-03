@@ -1,13 +1,27 @@
+'''
+Part one of the two step program to create Neuroglancer data from
+hand drawn annotations.
+This program will take the polygons (x,y,z) data in the DB, and creates
+numpy 3D volume masks. All data in the numpy array is binary: 0,1. 
+After creating the numpy volume, it pickles it and puts in the brain_shape
+table. It also puts in the numpy shape (dimensions) and x,y,z offsets
+in micrometers. There is also an option to create the atlas aligned version.
+This calls the umeyama method which creates the rigid transformation of
+the data. Each x,y,z coordinate is transformed by the 'brain_to_atlas_transform'
+method. Minimums of each of the x,y,z coodinates are stored as the offsets.
+Run program from root dir of the project:
+    python src/atlas/polygon2numpy2database.py --animal MD594 --transform false
+'''
 import argparse
 import os, sys
 import numpy as np
 from collections import defaultdict
 import cv2
 from tqdm import tqdm
+from pathlib import Path
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
 
-HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
-sys.path.append(PATH)
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
 from lib.utilities_process import SCALING_FACTOR
@@ -16,6 +30,11 @@ POLYGON_ID = 54
 from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
 
 def get_common_structure(brains):
+    '''
+    Finds the common structures between a brain and the atlas. These are used
+    for the inputs to the rigid transformation.
+    :param brains: a list (usually just one brain) of brain names
+    '''
     sqlController = SqlController('MD594') # just to declare var
     common_structures = set()
     for brain in brains:
@@ -25,6 +44,12 @@ def get_common_structure(brains):
 
 
 def get_transformation(animal):
+    '''
+    Fetches the common structures between the atlas and and animal and creates
+    the rigid transformation with the umemeya method. Returns the rotation
+    and translation matrices.
+    :param animal: string of the brain name
+    '''
     sqlController = SqlController(animal) # just to declare var
     pointdata = sqlController.get_annotation_points_entry(animal)
     atlas_centers = sqlController.get_annotation_points_entry('Atlas', FK_input_id=1, person_id=16)
@@ -37,12 +62,16 @@ def get_transformation(animal):
     R, t = umeyama(point_set, dst_point_set)
     return R, t 
 
-
-
-
-
 def create_segmentation(animal, transform=False):
+    '''
+    This method will fetch all the polygon data from the database
+    and creates the numpy arrays
+    :param animal: string of the animal name
+    :param transform: boolean on whether to create a aligned set of structures
+    '''
     fileLocationManager = FileLocationManager(animal)
+    # this is the path used to create the snapshot of the midsection image
+    # this will be displayed on the admin page in the portal
     OUTPATH = os.path.join(fileLocationManager.thumbnail_web, 'structures')
     os.makedirs(OUTPATH, exist_ok=True)
     sqlController = SqlController(animal)
@@ -56,6 +85,7 @@ def create_segmentation(animal, transform=False):
         print('no sections')
         sys.exit()
     
+    # get data from the DB
     width = sqlController.scan_run.width
     height = sqlController.scan_run.height
     scale_xy = sqlController.scan_run.resolution
@@ -64,7 +94,6 @@ def create_segmentation(animal, transform=False):
     width = int(width * SCALING_FACTOR)
     height = int(height * SCALING_FACTOR)
     aligned_shape = np.array((width, height))
-    
     
     # get all distinct structures in DB
     abbreviations = sqlController.get_distinct_labels(animal)
@@ -89,8 +118,6 @@ def create_segmentation(animal, transform=False):
             z = int(np.round(z/z_scale))
             polygons[z].append(xy)
         # xyz is now in full resolution Neuroglancer coordinates
-        #### loop through all the sections and write to a template, then add that template to the volume
-        structure_volume = np.zeros((aligned_shape[1], aligned_shape[0], num_sections), dtype=np.uint8)
         
         # Get the min and max for x,y, and z for each structure
         minx = min([ min([points[0] for points in polygon])  for polygon in polygons.values()])
@@ -111,7 +138,11 @@ def create_segmentation(animal, transform=False):
         maxz = int(round(maxz/z_scale))
         
         midz = maxz - (maxz - minz)//2
+
+        # create an empty array in which we will stuff the mask with opencv polyfill        
+        structure_volume = np.zeros((aligned_shape[1], aligned_shape[0], num_sections), dtype=np.uint8)
         
+        #### loop through all the sections and write to the structure_volume arr
         for section, points in polygons.items():
             template = np.zeros((aligned_shape[1], aligned_shape[0]), dtype=np.uint8)
             points = np.array(points)
@@ -129,7 +160,7 @@ def create_segmentation(animal, transform=False):
         
         # xyz offsets are in downsampled Neuroglancer coords
         arr = structure_volume[miny:maxy, minx:maxx, minz:maxz]
-        saveme = np.ndarray.dumps(arr)
+        saveme = np.ndarray.dumps(arr) # store as pickle
         brain_region = sqlController.get_structure(abbreviation)
         # we want the xyz coords back in micrometers
         brain_shape = BrainShape(prep_id = animal, FK_structure_id = brain_region.id, 
