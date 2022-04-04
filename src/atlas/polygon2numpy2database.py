@@ -25,42 +25,11 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
 from lib.utilities_process import SCALING_FACTOR
+from lib.utilities_atlas import get_transformation
+from abakit.registration.algorithm import brain_to_atlas_transform
 from model.brain_shape import BrainShape
 POLYGON_ID = 54
-from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
 
-def get_common_structure(brains):
-    '''
-    Finds the common structures between a brain and the atlas. These are used
-    for the inputs to the rigid transformation.
-    :param brains: a list (usually just one brain) of brain names
-    '''
-    sqlController = SqlController('MD594') # just to declare var
-    common_structures = set()
-    for brain in brains:
-        common_structures = common_structures | set(sqlController.get_annotation_points_entry(brain).keys())
-    common_structures = list(sorted(common_structures))
-    return common_structures
-
-
-def get_transformation(animal):
-    '''
-    Fetches the common structures between the atlas and and animal and creates
-    the rigid transformation with the umemeya method. Returns the rotation
-    and translation matrices.
-    :param animal: string of the brain name
-    '''
-    sqlController = SqlController(animal) # just to declare var
-    pointdata = sqlController.get_annotation_points_entry(animal)
-    atlas_centers = sqlController.get_annotation_points_entry('Atlas', FK_input_id=1, person_id=16)
-    common_structures = get_common_structure(['Atlas', animal])
-    point_structures = sorted(pointdata.keys())
-    
-    dst_point_set = np.array([atlas_centers[s] for s in point_structures if s in common_structures and s in atlas_centers]).T
-    point_set = np.array([pointdata[s] for s in point_structures if s in common_structures and s in atlas_centers]).T
-    
-    R, t = umeyama(point_set, dst_point_set)
-    return R, t 
 
 def create_segmentation(animal, transform=False):
     '''

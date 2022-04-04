@@ -10,6 +10,7 @@ Run program from root dir of the project:
 import argparse
 import os, sys
 import numpy as np
+from scipy.ndimage import affine_transform
 import json
 from cloudvolume import CloudVolume
 from taskqueue import LocalTaskQueue
@@ -24,6 +25,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
 from lib.utilities_process import SCALING_FACTOR
+from lib.utilities_atlas import get_transformation
 POLYGON_ID = 54
 
 
@@ -77,7 +79,7 @@ def create_segmentation(animal, transform=False):
             color = structure_info[1]
             desc = structure_info[0]
             FK_structure_id = structure_info[2]
-            brain_shape = sqlController.get_brain_shape(animal, FK_structure_id, transform)
+            brain_shape = sqlController.get_brain_shape(animal, FK_structure_id, False)
             abbrev = abbreviation.replace('_L','').replace('_R','')
             k = f'{abbrev}: {desc}'
             segment_properties[k] = color
@@ -95,9 +97,18 @@ def create_segmentation(animal, transform=False):
         col_end = col_start + arr.shape[1]
         z_end = z_start + arr.shape[2]
         
-        volume[row_start:row_end, col_start:col_end, z_start:z_end] = arr
+        volume[row_start:row_end, col_start:col_end, z_start:z_end] += arr
         
+    R, t = get_transformation(animal)
+    M = np.empty((4, 4))
+    M[:3, :3] = R
+    M[:3, 3] = t.T
+    M[3, :] = [0, 0, 0, 1]
+    print('pre', volume.shape, volume.dtype, np.mean(volume), np.amax(volume))
+    #volume = affine_transform(volume, M)
     # take the 3D numpy volume and use CloudVolume to convert to precomputed
+    print('post', volume.shape, volume.dtype, np.mean(volume), np.amax(volume))
+    sys.exit()
     offset = (0, 0, 0) # this is just the upper left of the neuroglancer viewer
     layer_type = 'segmentation'
     chunks = [64, 64, 64]

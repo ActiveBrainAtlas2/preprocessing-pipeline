@@ -19,14 +19,13 @@ import vtk
 import mcubes # https://github.com/pmneila/PyMCubes
 from skimage.transform import resize
 from vtkmodules.util import numpy_support
-from pathlib import Path
 
-#PIPELINE_ROOT = Path('.').absolute().parent
-#sys.path.append(PIPELINE_ROOT.as_posix())
 from lib.sqlcontroller import SqlController
 from lib.utilities_alignment import load_hdf, one_liner_to_arr, convert_resolution_string_to_um
 from lib.file_location import FileLocationManager, DATA_PATH
 from lib.coordinates_converter import CoordinatesConverter
+from abakit.registration.algorithm import umeyama
+
 SECTION_THICKNESS = 20. # in um
 
 REGISTRATION_PARAMETERS_ROOTDIR = '/net/birdstore/Active_Atlas_Data/data_root/CSHL/CSHL_registration_parameters'
@@ -42,6 +41,39 @@ paired_structures = ['5N', '6N', '7N', '7n', 'Amb',
 singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
 singular_structures_with_side_suffix = ['AP_S', '12N_S', 'RtTg_S', 'SC_S', 'IC_S']
 all_known_structures = paired_structures + singular_structures
+
+def get_common_structure(brains):
+    '''
+    Finds the common structures between a brain and the atlas. These are used
+    for the inputs to the rigid transformation.
+    :param brains: a list (usually just one brain) of brain names
+    '''
+    sqlController = SqlController('MD594') # just to declare var
+    common_structures = set()
+    for brain in brains:
+        common_structures = common_structures | set(sqlController.get_annotation_points_entry(brain).keys())
+    common_structures = list(sorted(common_structures))
+    return common_structures
+
+
+def get_transformation(animal):
+    '''
+    Fetches the common structures between the atlas and and animal and creates
+    the rigid transformation with the umemeya method. Returns the rotation
+    and translation matrices.
+    :param animal: string of the brain name
+    '''
+    sqlController = SqlController(animal) # just to declare var
+    pointdata = sqlController.get_annotation_points_entry(animal)
+    atlas_centers = sqlController.get_annotation_points_entry('Atlas', FK_input_id=1, person_id=16)
+    common_structures = get_common_structure(['Atlas', animal])
+    point_structures = sorted(pointdata.keys())
+    
+    dst_point_set = np.array([atlas_centers[s] for s in point_structures if s in common_structures and s in atlas_centers]).T
+    point_set = np.array([pointdata[s] for s in point_structures if s in common_structures and s in atlas_centers]).T
+    
+    R, t = umeyama(point_set, dst_point_set)
+    return R, t 
 
 
 def create_alignment_specs(stack, detector_id):
