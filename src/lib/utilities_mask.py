@@ -231,7 +231,7 @@ def place_image(img, file, max_width, max_height, bgcolor=None):
             new_img[startr:endr, startc:endc,1] = img[:,:,1]
             new_img[startr:endr, startc:endc,2] = img[:,:,2]
         except:
-            print('Could not place {} with width:{}, height:{} in {}x{}'
+            print('Could not place 3DIM image {} with width:{}, height:{} in {}x{}'
                   .format(file, img.shape[1], img.shape[0], max_width, max_height))
     del img
     return new_img.astype(dt)
@@ -286,7 +286,6 @@ def scaled(img, mask, epsilon=0.05, scale=45000):
         _range = 2 ** 8 - 1 # 8bit
         data_type = np.uint8        
     scaled = img * (scale / _max) # scale the image from original values to e.g., 30000/10000
-    print(f'max is {int(_max)} scale / max {scale//_max}')
     scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
     scaled = scaled * (mask > 10) # just work on the non masked values
     del img

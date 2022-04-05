@@ -22,7 +22,7 @@ grad_f = None
 grad_f_origin = None
 
 class Aligner(object):
-    def __init__(self, fixed, moving=None, nzvoxels_m_=None, centroid_f=None, centroid_m=None, \
+    def __init__(self, volume_f_, volume_m_=None, nzvoxels_m_=None, centroid_f=None, centroid_m=None, \
                 labelIndexMap_m2f=None, label_weights=None, reg_weights=None, zrange=None, nz_thresh=0, init_T=None, init_transform_type='affine',
                 invalid_voxel_penalty=1., verbose=False):
         """None
@@ -55,13 +55,13 @@ class Aligner(object):
 
         self.labelIndexMap_m2f = labelIndexMap_m2f
 
-        if isinstance(moving, dict): # probabilistic volume
-            labels_in_volume_m = set(np.unique(list(moving.keys())))
+        if isinstance(volume_m_, dict): # probabilistic volume
+            labels_in_volume_m = set(np.unique(list(volume_m_.keys())))
         else:
             raise Exception("volume_m_ must be a dict.")
 
-        if isinstance(fixed, dict): # probabilistic volume
-            labels_in_volume_f = set(np.unique(list(fixed.keys())))
+        if isinstance(volume_f_, dict): # probabilistic volume
+            labels_in_volume_f = set(np.unique(list(volume_f_.keys())))
         else:
             raise Exception("volume_m_ must be a dict.")
 
@@ -75,15 +75,15 @@ class Aligner(object):
 
         global volume_f, volume_f_origin
 
-        if isinstance(fixed, dict): # probabilistic volume
-            volume_f = {i: fixed[i][0] for i in self.all_indices_f}
-            volume_f_origin = {i: fixed[i][1].astype(np.int) for i in self.all_indices_f}
+        if isinstance(volume_f_, dict): # probabilistic volume
+            volume_f = {i: volume_f_[i][0] for i in self.all_indices_f}
+            volume_f_origin = {i: volume_f_[i][1].astype(np.int) for i in self.all_indices_f}
 
         global volume_m, volume_m_origin
 
-        if isinstance(moving, dict): # probabilistic volume
-            volume_m = {i: moving[i][0] for i in self.all_indices_m}
-            volume_m_origin = {i: moving[i][1].astype(np.int) for i in self.all_indices_m}
+        if isinstance(volume_m_, dict): # probabilistic volume
+            volume_m = {i: volume_m_[i][0] for i in self.all_indices_m}
+            volume_m_origin = {i: volume_m_[i][1].astype(np.int) for i in self.all_indices_m}
 
         assert volume_f is not None, 'Fixed volume is not specified.'
         assert volume_m is not None, 'Moving volume is not specified.'
@@ -114,17 +114,6 @@ class Aligner(object):
 
 
         self.inv_covar_mats_all_indices = {ind_m: np.eye(3) for ind_m in self.all_indices_m}
-
-
-    # def set_initial_transform(self, params=None, centroid_m=(0,0,0), centroid_f=(0,0,0)):
-#         """
-#         Set the initial transform.
-
-#         Set member variable `init_T`.
-#         """
-
-#         self.init_T = consolidate(params=params, centroid_m=centroid_m, centroid_f=centroid_f)[:3].flatten()
-#         sys.stderr.write('Set initial transform to %s.\n' % self.init_T)
 
     def set_initial_transform(self, transform):
         """
@@ -187,35 +176,10 @@ class Aligner(object):
                                                                          test_points=test_pts[:,1]/float(interval))
             NwPz_allTestPts = compute_bspline_cp_contribution_to_test_pts(control_points=ctrl_z_intervals_centered/float(interval),
                                                                          test_points=test_pts[:,2]/float(interval))
-
-            # NuPx_allTestPts = np.array([[N(ctrl_x/float(interval), x/float(interval))
-            #                              for testPt_i, (x, y, z) in enumerate(test_pts)]
-            #                             for ctrlXInterval_i, ctrl_x in enumerate(ctrl_x_intervals_centered)])
-            # (n_ctrlx, n_all_nz_m)
-            # NvPy_allTestPts = np.array([[N(ctrl_y/float(interval), y/float(interval))
-            #                              for testPt_i, (x, y, z) in enumerate(test_pts)]
-            #                             for ctrlYInterval_i, ctrl_y in enumerate(ctrl_y_intervals_centered)])
-            # (n_ctrly, n_all_nz_m)
-            # NwPz_allTestPts = np.array([[N(ctrl_z/float(interval), z/float(interval))
-            #                              for testPt_i, (x, y, z) in enumerate(test_pts)]
-            #                             for ctrlZInterval_i, ctrl_z in enumerate(ctrl_z_intervals_centered)])
-            # (n_ctrlz, n_all_nz_m)
-            # print 'NwPz_allTestPts', NwPz_allTestPts.shape
-
             sys.stderr.write("Compute NuPx/NvPy/NwPz: %.2f seconds.\n" % (time.time()-t) )
 
             t = time.time()
-
-            # self.NuNvNw_allTestPts[ind_m] = np.array([np.ravel(np.tensordot(np.tensordot(NuPx_allTestPts[:,testPt_i],
-            #                                                                       NvPy_allTestPts[:,testPt_i], 0),
-            #                                                          NwPz_allTestPts[:,testPt_i], 0))
-            #                       for testPt_i in range(len(test_pts))])
-
             self.NuNvNw_allTestPts[ind_m] = np.einsum('it,jt,kt->ijkt', NuPx_allTestPts, NvPy_allTestPts, NwPz_allTestPts).reshape((-1, NuPx_allTestPts.shape[-1])).T
-
-            # print 'self.NuNvNw_allTestPts', self.NuNvNw_allTestPts[ind_m].shape
-            # (n_all_nz_m, n_ctrl)
-
             sys.stderr.write("Compute every control point's contribution to every nonzero test point, 3 dimensions: %.2f seconds.\n" % (time.time()-t) )
 
     def set_centroid(self, centroid_m=None, centroid_f=None, indices_m=None):
@@ -230,16 +194,10 @@ class Aligner(object):
 
         if indices_m is None:
             indices_m = self.all_indices_m
-
-        #print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'
-        #print nzvoxels_m
-        #print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'
-
         if isinstance(centroid_m, str):
             if centroid_m == 'structure_centroid':
                 self.centroid_m = np.concatenate([nzvoxels_m[i] for i in indices_m]).mean(axis=0)
             elif centroid_m == 'volume_centroid':
-                # bboxes = np.array([volume_origin_to_bbox(volume_m[i], volume_m_origin[i]) for i in indices_m])
                 bboxes = np.array([convert_volume_forms((volume_m[i], volume_m_origin[i]), out_form=('volume','bbox'))[1] for i in indices_m])
                 xc = (bboxes[:,0].min(axis=0) + bboxes[:,1].max(axis=0)) / 2
                 yc = (bboxes[:,2].min(axis=0) + bboxes[:,3].max(axis=0)) / 2
@@ -260,7 +218,6 @@ class Aligner(object):
             elif centroid_f == 'structure_centroid':
                 self.centroid_f = np.array([np.mean(np.where(volume_f[self.labelIndexMap_m2f[i]]), axis=1)[[1,0,2]] + volume_f_origin[self.labelIndexMap_m2f[i]] for i in indices_m]).mean(axis=0)
             elif centroid_f == 'volume_centroid':
-                # bboxes = np.array([volume_origin_to_bbox(volume_f[self.labelIndexMap_m2f[i]], volume_f_origin[self.labelIndexMap_m2f[i]]) for i in indices_m])
                 bboxes = np.array([convert_volume_forms((volume_f[self.labelIndexMap_m2f[i]], volume_f_origin[self.labelIndexMap_m2f[i]]), out_form=('volume', 'bbox'))[1] for i in indices_m])
                 xc = (bboxes[:,0].min(axis=0) + bboxes[:,1].max(axis=0)) / 2
                 yc = (bboxes[:,2].min(axis=0) + bboxes[:,3].max(axis=0)) / 2
@@ -272,21 +229,11 @@ class Aligner(object):
                 raise Exception('centroid_f not recognized.')
         else:
             self.centroid_f = centroid_f
-
-        #sys.stderr.write("centroid_m: %s, centroid_f: %s\n" % (self.centroid_m, self.centroid_f))
-
-        # global nzvoxels_centered_m
-        # nzvoxels_centered_m = {ind_m: nzvs - self.centroid_m for ind_m, nzvs in nzvoxels_m.items()}
-
-        # global nzvoxels_m_after_init_T
         nzvoxels_m_after_init_T = {ind_m: np.round(transform_points_affine(T=self.init_T, pts=p)).astype(np.int)
-                                   for ind_m, p in nzvoxels_m.items()} # p' = T0(p)
+                                   for ind_m, p in nzvoxels_m.items()} 
         global nzvoxels_centered_m_after_init_T
         nzvoxels_centered_m_after_init_T =  {ind_m: nzvs - self.centroid_m
-                                             for ind_m, nzvs in nzvoxels_m_after_init_T.items()} # T0(p)-T0(cp) = T0(p-cp)
-
-        # print nzvoxels_centered_m_after_init_T[1].mean(axis=0)
-
+                                             for ind_m, nzvs in nzvoxels_m_after_init_T.items()} 
 
     def compute_gradient(self, smooth_first=True):
         tuples_f = {ind_f: (vol_f, volume_f_origin[ind_f]) for ind_f, vol_f in volume_f.items()}
@@ -305,7 +252,6 @@ class Aligner(object):
 
         if indices_f is None:
             indices_f = set([self.labelIndexMap_m2f[ind_m] for ind_m in self.all_indices_m])
-            #sys.stderr.write('indices_f: %s\n' % indices_f)
 
         global grad_f, grad_f_origin
 
@@ -326,7 +272,6 @@ class Aligner(object):
 
         ind_f = self.labelIndexMap_m2f[ind_m]
 
-        # t = time.time()
         if n_sample is not None:
 
             num_nz = len(nzvoxels_m[ind_m])
@@ -334,11 +279,7 @@ class Aligner(object):
 
             valid_moving_voxel_indicator = np.zeros((num_nz,), np.bool)
 
-            # t = time.time()
             random_indices = np.array(sorted(random.sample(range(num_nz), min(num_nz, n_sample))))
-            # NOTE: sorted is important
-            # sys.stderr.write('random_indices: %.2f seconds\n' % (time.time() - t))
-
             if tf_type == 'affine' or tf_type == 'rigid':
                 pts_prime_sampled = transform_points_affine(np.array(T),
                                             pts_centered=nzvoxels_centered_m_after_init_T[ind_m][random_indices],
@@ -356,9 +297,6 @@ class Aligner(object):
                 raise
 
             xs_prime_sampled, ys_prime_sampled, zs_prime_sampled = pts_prime_sampled.T
-
-            # print 'origin=', volume_f_origin[ind_f], 'volume_shape=', [volume_f[ind_f].shape[1], volume_f[ind_f].shape[0], volume_f[ind_f].shape[2]]
-
             valid_indicator_within_sampled = (xs_prime_sampled - volume_f_origin[ind_f][0] >= 0) & \
             (ys_prime_sampled - volume_f_origin[ind_f][1] >= 0) & \
             (zs_prime_sampled - volume_f_origin[ind_f][2] >= 0) & \
@@ -394,16 +332,9 @@ class Aligner(object):
             (xs_prime - volume_f_origin[ind_f][0] < volume_f[ind_f].shape[1]) & \
             (ys_prime - volume_f_origin[ind_f][1] < volume_f[ind_f].shape[0]) & \
             (zs_prime - volume_f_origin[ind_f][2] < volume_f[ind_f].shape[2])
-
-#             (xs_prime >= 0) & (ys_prime >= 0) & (zs_prime >= 0) & \
-#                     (xs_prime < self.xdim_f) & (ys_prime < self.ydim_f) & (zs_prime < self.zdim_f)
-
             xs_prime_valid = xs_prime[valid_moving_voxel_indicator]
             ys_prime_valid = ys_prime[valid_moving_voxel_indicator]
             zs_prime_valid = zs_prime[valid_moving_voxel_indicator]
-
-        # sys.stderr.write("transform all points: %.2f s\n" % (time.time() - t))
-
         if return_valid:
             return xs_prime_valid, ys_prime_valid, zs_prime_valid, valid_moving_voxel_indicator
         else:
@@ -420,40 +351,17 @@ class Aligner(object):
             ind_m (int): index of a structure.
             num_samples (int): if given, score is computed based on only the set of sampled voxels; if not given, use all non-zero voxels.
         """
-
-        # t = time.time()
-
         score, xs_prime_valid, ys_prime_valid, zs_prime_valid, valid_moving_voxel_indicators = \
         self.compute_score_one(T, tf_type=tf_type, ind_m=ind_m, return_valid=True, n_sample=num_samples)
-
-        # sys.stderr.write('Valid voxels: %d\n' % np.count_nonzero(valid_moving_voxel_indicators))
-
-        # sys.stderr.write("compute_score_one: %.2f s\n" % (time.time() - t))
-
-        # Moving volume's valid voxel coordinates (not centralized).
-        # t = time.time()
         xyzs_valid = nzvoxels_m[ind_m][valid_moving_voxel_indicators]
-        # sys.stderr.write("fancy indexing into moving volume nz voxels: %.2f s\n" % (time.time() - t))
-        # Moving volume's value at valid voxels. (n_valid_nz_m, )
-        # t = time.time()
         S_m_valid_scores = volume_m[ind_m][xyzs_valid[:,1] - volume_m_origin[ind_m][1],
                                            xyzs_valid[:,0] - volume_m_origin[ind_m][0],
                                            xyzs_valid[:,2] - volume_m_origin[ind_m][2]]
-        # sys.stderr.write("fancy indexing into moving volume: %.2f s\n" % (time.time() - t))
-
-        # Moving volume's valid voxel coordinates (centralized).
-        # t = time.time()
         dxs, dys, dzs = nzvoxels_centered_m_after_init_T[ind_m][valid_moving_voxel_indicators].T # T0(p)-T0(cp)
-        # sys.stderr.write("fancy indexing into centralized moving volume nzvoxels: %.2f s\n" % (time.time() - t))
-
         if tf_type == 'bspline':
             NuNvNw_allTestPts = self.NuNvNw_allTestPts[ind_m][valid_moving_voxel_indicators].copy()
 
         ind_f = self.labelIndexMap_m2f[ind_m]
-
-        # Fixed volume's gradients at valid voxels.
-
-        # t = time.time()
         Sx = grad_f[ind_f][0, ys_prime_valid - grad_f_origin[ind_f][1],
                            xs_prime_valid - grad_f_origin[ind_f][0],
                            zs_prime_valid - grad_f_origin[ind_f][2]]
@@ -465,16 +373,11 @@ class Aligner(object):
                            zs_prime_valid - grad_f_origin[ind_f][2]]
         if np.all(Sx == 0) and np.all(Sy == 0) and np.all(Sz == 0):
             raise Exception("Image gradient at all valid voxel is zero.")
-        # sys.stderr.write("fancy indexing into fixed volume gradient: %.2f s\n" % (time.time() - t))
-
         xs_prime_valid = xs_prime_valid.astype(np.float)
         ys_prime_valid = ys_prime_valid.astype(np.float)
         zs_prime_valid = zs_prime_valid.astype(np.float)
 
         if tf_type == 'rigid' or tf_type == 'affine':
-
-            # t = time.time()
-            # q is dF/dp for a single voxel, where p is a transform parameter.
             if tf_type == 'rigid':
                 q = np.c_[Sx, Sy, Sz,
                         -Sy*zs_prime_valid + Sz*ys_prime_valid,
@@ -482,60 +385,31 @@ class Aligner(object):
                         -Sx*ys_prime_valid + Sy*xs_prime_valid]
             elif tf_type == 'affine':
                 q = np.c_[Sx*dxs, Sx*dys, Sx*dzs, Sx, Sy*dxs, Sy*dys, Sy*dzs, Sy, Sz*dxs, Sz*dys, Sz*dzs, Sz]
-            # sys.stderr.write("compute gradient, all voxels: %.2f s\n" % (time.time() - t))
 
             # Whether to scale gradient to match the scores' scale depends on whether AdaGrad is used;
             # if used, then the scale will be automatically adapted so the scaling does not matter
-            # t = time.time()
             grad = (S_m_valid_scores[:,None] * q).sum(axis=0)
             if np.all(grad == 0):
                 raise Exception("Gradient is zero.")
-            # sys.stderr.write("compute gradient, sum: %.2f s\n" % (time.time() - t))
 
         elif tf_type == 'bspline':
-
             dqxdbuvwx_allTestPts = NuNvNw_allTestPts
-            # (n_valid_nz_m, n_ctrl)
             dqydbuvwy_allTestPts = NuNvNw_allTestPts
             dqzdbuvwz_allTestPts = NuNvNw_allTestPts
-
             dSdbuvwx_allTestPts = Sx[:,None] * dqxdbuvwx_allTestPts
             dSdbuvwy_allTestPts = Sy[:,None] * dqydbuvwy_allTestPts
             dSdbuvwz_allTestPts = Sz[:,None] * dqzdbuvwz_allTestPts
-            # print 'dSdbuvwz_allTestPts', dSdbuvwz_allTestPts.shape
-            # (n_valid_nz_m, n_ctrl)
-
             dFdbuvwx = np.dot(S_m_valid_scores, dSdbuvwx_allTestPts) # (n_ctrl, )
             dFdbuvwy = np.dot(S_m_valid_scores, dSdbuvwy_allTestPts) # (n_ctrl, )
             dFdbuvwz = np.dot(S_m_valid_scores, dSdbuvwz_allTestPts) # (n_ctrl, )
-            # print 'dFdbuvwz', dFdbuvwz.shape
-
             grad = np.concatenate([dFdbuvwx, dFdbuvwy, dFdbuvwz]) # (n_ctrl*3, )
-            # print 'grad', grad.shape
             sys.stderr.write('grad_min: %.2f, grad_max: %.2f\n' % (grad.min(), grad.max()))
-
             q = None
-
-
-        # t = time.time()
-
         # regularized version
         if tf_type == 'rigid' or tf_type == 'affine':
             tx = T[3]
             ty = T[7]
             tz = T[11]
-
-            # if tf_type == 'rigid':
-            #     grad[0] = grad[0] - 2*self.reg_weights[0] * tx
-            #     # print grad[0], 2*self.reg_weights[0] * tx
-            #     grad[1] = grad[1] - 2*self.reg_weights[1] * ty
-            #     grad[2] = grad[2] - 2*self.reg_weights[2] * tz
-            # elif tf_type == 'affine':
-            #     grad[3] = grad[3] - 2*self.reg_weights[0] * tx
-            #     # print grad[3], 2*self.reg_weights[0] * tx
-            #     grad[7] = grad[7] - 2*self.reg_weights[1] * ty
-            #     grad[11] = grad[11] - 2*self.reg_weights[2] * tz
-
             # ref: https://math.stackexchange.com/questions/222894/how-to-take-the-gradient-of-the-quadratic-form
             if tf_type == 'rigid':
                 # print grad[:3], - self.reg_weight * np.dot((self.inv_covar_mats_all_indices[ind_m] + self.inv_covar_mats_all_indices[ind_m].T), [tx,ty,tz])
@@ -545,12 +419,8 @@ class Aligner(object):
         elif tf_type == 'bspline':
             pass
 
-        # sys.stderr.write("3: %.2f s\n" % (time.time() - t))
-
         if tf_type == 'rigid' or tf_type == 'affine':
-            # del q, Sx, Sy, Sz, dxs, dys, dzs, xs_prime_valid, ys_prime_valid, zs_prime_valid
             del q, Sx, Sy, Sz, dxs, dys, dzs, xs_prime_valid, ys_prime_valid, zs_prime_valid, S_m_valid_scores
-            # del xs_valid, ys_valid, zs_valid
 
 
         return score, grad
@@ -588,30 +458,14 @@ class Aligner(object):
 
         # serial
         for ind_m in indices_m:
-            # t = time.time()
             try:
                 score_one, grad_one = self.compute_score_and_gradient_one(T, tf_type=tf_type, num_samples=num_samples, ind_m=ind_m)
-                # sys.stderr.write("compute_score_and_gradient_one: %.2f s\n" % (time.time()-t))
-                # sys.stderr.write("%d, %f\n" % (ind_m, score_one))
-                # print "grad_one", grad_one.shape
                 grad += self.label_weights[ind_m] * grad_one
                 score += self.label_weights[ind_m] * score_one
 
             except Exception as e:
-                # raise e
                 sys.stderr.write('Error computing score/gradient for %d: %s\n' % (ind_m, e))
-
-        # # parallel
-        ## Parallel does not save time, maybe because the computation for each subprocess is too short.
-        # pool = Pool(12)
-        # score_grad_tuples = pool.map(lambda ind_m: self.compute_score_and_gradient_one(T, num_samples, wrt_v, ind_m), indices_m)
-        # pool.close()
-        # pool.join()
-        # for s, g in score_grad_tuples:
-        #     score += s
-        #     grad += g
-
-        return score, grad
+            return score, grad
 
 
     def compute_score_one(self, T, tf_type, ind_m, return_valid=False, n_sample=None):
@@ -634,10 +488,8 @@ class Aligner(object):
             - valid (boolean array):
         """
 
-        # t = time.time()
         xs_prime_valid, ys_prime_valid, zs_prime_valid, valid_moving_voxel_indicator = \
         self.get_valid_voxels_after_transform(T, tf_type=tf_type, ind_m=ind_m, return_valid=True, n_sample=n_sample)
-        # sys.stderr.write("Timing 2: get_valid_voxels_after_transform: %.2f seconds.\n" % (time.time()-t))
 
         if n_sample is None:
             n_total = len(nzvoxels_m[ind_m])
@@ -645,8 +497,6 @@ class Aligner(object):
             n_total = min(n_sample, len(nzvoxels_m[ind_m]))
         n_valid = np.count_nonzero(valid_moving_voxel_indicator)
         n_invalid = n_total - n_valid
-        # n_invalid = 0
-        # print valid_moving_voxel_indicator
         if n_invalid > 0:
             if self.verbose:
                 sys.stderr.write('%d: %d valid, %d out-of-bound voxels after transform.\n' % (ind_m, n_valid, n_invalid))
@@ -656,7 +506,6 @@ class Aligner(object):
         ind_f = self.labelIndexMap_m2f[ind_m]
 
         # Reducing the scale of voxel value is important for keeping the sum (i.e. the following line) in the represeantable range of the chosen data type.
-        # t = time.time()
 
         xs_valid, ys_valid, zs_valid = nzvoxels_m[ind_m].astype(np.int16)[valid_moving_voxel_indicator].T
         voxel_probs_valid = volume_m[ind_m][ys_valid - volume_m_origin[ind_m][1],
@@ -665,9 +514,6 @@ class Aligner(object):
         volume_f[ind_f][ys_prime_valid - volume_f_origin[ind_f][1],
                         xs_prime_valid - volume_f_origin[ind_f][0],
                         zs_prime_valid - volume_f_origin[ind_f][2]] / 1e6
-
-        # sys.stderr.write("Timing 2: fancy indexing valid voxels into fixed volume: %.2f seconds.\n" % (time.time()-t))
-
         # Penalize out-of-bound voxels, minus 1 for each such voxel
         s = voxel_probs_valid.sum() - self.invalid_voxel_penalty * np.sign(self.label_weights[ind_m]) * n_invalid / 1e6
 
@@ -676,7 +522,6 @@ class Aligner(object):
             tx = T[3]
             ty = T[7]
             tz = T[11]
-            # s_reg = self.reg_weights[0]*tx**2 + self.reg_weights[1]*ty**2 + self.reg_weights[2]*tz**2
             s_reg = self.reg_weight * np.dot([tx,ty,tz], np.dot(self.inv_covar_mats_all_indices[ind_m], [tx,ty,tz]))
         else:
             s_reg = 0
@@ -704,9 +549,6 @@ class Aligner(object):
             except Exception as e:
                 sys.stderr.write('Error computing score for %d: %s\n' % (ind_m, e))
                 score_all_landmarks[ind_m] = 0
-
-        # score = np.sum(score_all_landmarks.values())
-
         score = 0
         for ind_m, score_one in score_all_landmarks.items():
             score += self.label_weights[ind_m] * score_one
@@ -756,23 +598,12 @@ class Aligner(object):
         if parallel:
             #parallel
             pool = Pool(processes=12)
-            # if dtheta_xys is None:
             scores = pool.map(lambda dx, dy, dz: self.compute_score(params + np.array([0.,0.,0., dx, 0.,0.,0., dy, 0.,0.,0., dz]), indices_m=indices_m),
                             product(dxs, dys, dzs))
-            # else:
-            #     scores = pool.map(lambda (tx, ty, tz, theta_xy): self.compute_score(affine_components_to_vector(tx,ty,tz,theta_xy), indices_m=indices_m), product(dxs, dys, dzs, dtheta_xys))
             pool.close()
             pool.join()
         else:
             raise
-            # scores = np.reshape([self.compute_score(params + (0.,0.,0., dx, 0.,0.,0., dy, 0.,0.,0., dz), indices_m=indices_m)
-            #                 for dx, dy, dz in product(dxs, dys, dzs)],
-            #                 (dxs.size, dys.size, dzs.size))
-
-        # scores = np.reshape(Parallel(n_jobs=12)(delayed(compute_score)(params + (0.,0.,0., dx, 0.,0.,0., dy, 0.,0.,0., dz))
-        #                                         for dx, dy, dz in product(dxs, dys, dzs)),
-        #                     (dxs.size, dys.size, dzs.size))
-
         return scores
 
     def compute_scores_neighborhood_random_rotation(self, params, n, std_theta_xy=0, std_theta_xz=0, std_theta_yz=0, indices_m=None):
@@ -780,34 +611,23 @@ class Aligner(object):
         random_theta_xys = np.random.uniform(-1., 1., (n,)) * std_theta_xy
         random_theta_yzs = np.random.uniform(-1., 1., (n,)) * std_theta_yz
         random_theta_xzs = np.random.uniform(-1., 1., (n,)) * std_theta_xz
-
-        # scores = [self.compute_score(params + dp, indices_m=indices_m) for dp in dparams]
-
         random_params = [rotate_transform_vector(params, theta_xy=theta_xy, theta_yz=theta_yz, theta_xz=theta_xz)
                         for theta_xy, theta_yz, theta_xz in zip(random_theta_xys, random_theta_yzs, random_theta_xzs)]
-
-        #parallel
         pool = Pool(4)
         scores = pool.map(lambda p: self.compute_score(p, indices_m=indices_m), random_params)
         pool.close()
         pool.join()
-
         return scores
 
     def compute_scores_neighborhood_random(self, params, n, stds, indices_m=None):
 
         dparams = np.random.uniform(-1., 1., (n, len(stds))) * stds
-        # scores = [self.compute_score(params + dp, indices_m=indices_m) for dp in dparams]
-
         #parallel
         pool = Pool(processes=12)
         scores = pool.map(lambda dp: self.compute_score(params + dp, indices_m=indices_m), dparams)
         pool.close()
         pool.join()
-
         # parallelism not working yet, unless put large instance members in global variable
-    #     scores = Parallel(n_jobs=12)(delayed(aligner.compute_score)(params + dp) for dp in dparams)
-
         return scores
 
     def compute_hessian(self, T, indices_m=None, step=None):
@@ -815,7 +635,6 @@ class Aligner(object):
 
         if indices_m is None:
             indices_m = self.all_indices_m
-
 
         if step is None:
             step = np.r_[1e-1, 1e-1, 1e-1, 10, 1e-1, 1e-1, 1e-1, 10, 1e-1, 1e-1, 1e-1, 10]
@@ -839,13 +658,7 @@ class Aligner(object):
          Returns:
              params_best_upToNow ((12,) float array): found parameters
         """
-
-        # dx_best, dy_best, dz_best, dthetaxy_best = (0, 0, 0, 0)
         score_best_upToNow = -np.inf
-
-        # dx_best, dy_best, dz_best, dthetaxy_best = ds_best_upToNow
-        # d_best_mat = np.vstack([affine_components_to_vector(dx_best, dy_best, dz_best, dthetaxy_best).reshape((3,4)), (0,0,0,1)])
-
         if init_T is None:
             init_T = np.array([1,0,0,0,0,1,0,0,0,0,1,0])
 
@@ -856,11 +669,6 @@ class Aligner(object):
 
         for iteration in range(grid_search_iteration_number):
 
-            # self.logger.info('grid search iteration %d', iteration)
-
-            # init_tx, init_ty, init_tz, init_theta_xy = affine_components_to_vector(dx_best, dy_best, dz_best, dthetaxy_best)
-
-            # n = int(init_n*np.exp(-iteration/eta))
             n = init_n
 
             sigma_tx = std_tx*np.exp(-iteration/eta)
@@ -875,15 +683,8 @@ class Aligner(object):
             dx_grid = sigma_tx * np.linspace(-1,1,n)
             dy_grid = sigma_ty * np.linspace(-1,1,n)
             dz_grid = sigma_tz * np.linspace(-1,1,n)
-            # theta_xy_grid = init_theta_xy + sigma_theta_xy * np.linspace(-1,1,n)
             dthetaxy_grid = [0]
-
-            # samples = np.c_[tx_grid, ty_grid, tz_grid, theta_xy_grid]
-
-            #############
-
             t = time.time()
-
             scores = self.compute_scores_neighborhood_grid(T_best_upToNow,
                                                    dxs=dx_grid, dys=dy_grid, dzs=dz_grid, dtheta_xys=dthetaxy_grid,
                                                    indices_m=indices_m, parallel=parallel)
@@ -894,32 +695,20 @@ class Aligner(object):
             dy_best = dy_grid[i_ty]
             dz_best = dz_grid[i_tz]
             dthetaxy_best = dthetaxy_grid[i_thetaxy]
-
             sys.stderr.write('grid search: %f seconds\n' % (time.time() - t)) # ~23s
 
             if score_best > score_best_upToNow:
-                # self.logger.info('%f %f', score_best_upToNow, score_best)
                 sys.stderr.write('New best: %f %f\n' % (score_best_upToNow, score_best))
-
                 score_best_upToNow = score_best
-                # ds_best_upToNow = dx_best, dy_best, dz_best, dthetaxy_best
                 d_best_mat = np.vstack([affine_components_to_vector(dx_best, dy_best, dz_best, dthetaxy_best).reshape((3,4)), (0,0,0,1)])
                 T_best_upToNow_mat = np.vstack([np.reshape(T_best_upToNow, (3,4)), [0,0,0,1]])
                 T_best_upToNow = np.dot(d_best_mat, T_best_upToNow_mat)[:3].flatten()
-
-                # sys.stderr.write('dx_best: %.2f (voxel), dy_best: %.2f, dz_best: %.2f, dthetaxy_best: %.2f (deg), score=%f\n' % (dx_best, dy_best, dz_best, np.rad2deg(dthetaxy_best), score_best))
-
                 sys.stderr.write('T_best_upToNow: %s\n' % str(np.reshape(T_best_upToNow, (3,4))))
 
             if sigma_tx < stop_radius_voxel and sigma_ty < stop_radius_voxel and sigma_tz < stop_radius_voxel:
-                # if sigma is reduced to smaller than 10 voxels, abort
                 break
 
             sys.stderr.write('\n')
-
-                # self.logger.info('%f %f %f', tx_best, ty_best, tz_best)
-        # sys.stderr.write('deviations_best_upToNow: %f %f %f %f\n' % (dx_best, dy_best, dz_best, dthetaxy_best))
-
         T_best_upToNow = compose_alignment_parameters([convert_transform_forms(transform={'parameters': T_best_upToNow, 'centroid_m_wrt_wholebrain': self.centroid_m, 'centroid_f_wrt_wholebrain': self.centroid_f}, out_form=(3,4)),
                                                        convert_transform_forms(transform=self.init_T, out_form=(3,4))])[:3].flatten()
 
@@ -945,14 +734,11 @@ class Aligner(object):
         return T, grid_search_score
 
     def optimize(self, tf_type, init_T=None, label_weights=None, \
-                # grid_search_iteration_number=0, grid_search_sample_number=1000,
                 grad_computation_sample_number=None,
                 max_iter_num=1000, history_len=200,
                 terminate_thresh_rot=.005, \
                 terminate_thresh_trans=.4, \
                 indices_m=None, lr1=None, lr2=None, full_lr=None,
-                # std_tx=100, std_ty=100, std_tz=30, std_theta_xy=np.deg2rad(30),
-                 # grid_search_eta=3.,
                 reg_weights=None,
                 epsilon=1e-8,
                 affine_scaling_limits=None,
@@ -1016,15 +802,12 @@ class Aligner(object):
 
         for iteration in range(max_iter_num):
 
-            # t = time.time()
-
             if self.verbose:
                 sys.stderr.write('\niteration %d\n' % iteration)
 
             t = time.time()
 
             if tf_type == 'rigid':
-                # lr1, lr2 = (.1, 1e-2) # lr2 cannot be zero, otherwise causes error in computing scores.
 
                 if full_lr is not None:
                     lr = full_lr
@@ -1068,7 +851,6 @@ class Aligner(object):
                 sys.stderr.write('current score: %f\n' % s)
 
             if tf_type == 'rigid' or tf_type == 'affine':
-                # sys.stderr.write('new_T: %s\n' % new_T[[3,7,11]])
                 if self.verbose:
                     sys.stderr.write('new_T: %s\n' % new_T)
                     sys.stderr.write('det: %.2f\n' % np.linalg.det(new_T.reshape((3,4))[:3, :3]))
@@ -1082,14 +864,10 @@ class Aligner(object):
 
             self.Ts.append(new_T)
 
-            # sys.stderr.write('%f seconds\n' % (time.time()-t)) # 1.77s/iteration
-
             Ts = np.array(self.Ts)
 
             if tf_type == 'affine' or tf_type == 'rigid':
                 if iteration > history_len:
-                    # if np.all([np.std(Ts[iteration-history_len:iteration, [3,7,11]], axis=0) < terminate_thresh_trans]) and \
-                    # np.all([np.std(Ts[iteration-history_len:iteration, [0,1,2,4,5,6,8,9,10]], axis=0) < terminate_thresh_rot]):
                     if np.all([np.max(Ts[iteration-history_len:iteration, [3,7,11]], axis=0) - np.min(Ts[iteration-history_len:iteration, [3,7,11]], axis=0) < terminate_thresh_trans]) and \
                     np.all([np.max(Ts[iteration-history_len:iteration, [0,1,2,4,5,6,8,9,10]], axis=0) - np.min(Ts[iteration-history_len:iteration, [0,1,2,4,5,6,8,9,10]], axis=0) < terminate_thresh_rot]):
                         break
@@ -1103,11 +881,6 @@ class Aligner(object):
                 score_best = s
 
             T = new_T
-
-        # if grid_search_iteration_number > 0:
-        #     if scores[-1] <= grid_search_score:
-        #         sys.stderr.write('Gradient descent does not converge to higher than grid search score. Likely stuck at local minima.\n')
-
         return best_gradient_descent_params, self.scores
 
     def step_lie(self, T, lr, grad_historical, sq_updates_historical, num_samples=1000, indices_m=None,
