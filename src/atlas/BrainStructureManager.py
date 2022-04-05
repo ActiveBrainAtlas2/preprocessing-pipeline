@@ -5,8 +5,8 @@ from lib.utilities_atlas import ATLAS
 import numpy as np
 from Brain import Brain
 from atlas.VolumeUtilities import VolumeUtilities
-from lib.utilities_atlas_lite import volume_to_polygon
-from lib.utilities_atlas_lite import save_mesh
+from lib.utilities_atlas import volume_to_polygon
+from lib.utilities_atlas import save_mesh
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 class BrainStructureManager(Brain, VolumeUtilities):
