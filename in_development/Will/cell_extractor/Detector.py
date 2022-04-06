@@ -3,7 +3,7 @@ import numpy as np
 import xgboost as xgb
 
 class Detector():
-    def __init__(self,model=None,predictor:Predictor=None):
+    def __init__(self,model=None,predictor:Predictor=Predictor()):
         self.model = model
         self.predictor = predictor
 

@@ -130,6 +130,26 @@ contra=[]
 is_category = []
 for i in sets:
     if int(All.iloc[i,2]) in sections:
+        if check(set_names[i],yes=['computer_sure','manual_train']):
+            for j in sets[i]:
+                contra.append(j)
+            is_category.append((i,dict(All.iloc[i,:])))
+train_sections['train cell detected as sure']=is_category
+
+contra=[]
+is_category = []
+for i in sets:
+    if int(All.iloc[i,2]) in sections:
+        if check(set_names[i],yes=['computer_unsure','manual_train']):
+            for j in sets[i]:
+                contra.append(j)
+            is_category.append((i,dict(All.iloc[i,:])))
+train_sections['train cell detected as unsure']=is_category
+
+contra=[]
+is_category = []
+for i in sets:
+    if int(All.iloc[i,2]) in sections:
         if check(set_names[i],yes=['manual_train'],no=['manual_negative']):
             for j in sets[i]:
                 contra.append(j)
@@ -141,7 +161,13 @@ is_category = []
 for i in sets:
     if  check(set_names[i],yes=['manual_positive'],no=['computer_sure','computer_unsure'],size_max=1):
         is_category.append((i,dict(All.iloc[i,:])))
-test_counts['computer missed, human detected']=is_category
+test_counts['computer missed, human detected in QC']=is_category
+
+is_category = []
+for i in sets:
+    if  check(set_names[i],yes=['manual_train'],no=['computer_sure','computer_unsure'],size_max=1):
+        is_category.append((i,dict(All.iloc[i,:])))
+test_counts['computer missed, human detected in training']=is_category
 
 label="detected by computer as sure, marked by human as negative"
 is_category = []

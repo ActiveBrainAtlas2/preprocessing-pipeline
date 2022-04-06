@@ -19,7 +19,7 @@ def make_volumes():
     # assembler.plotter.plot_3d_image_stack(assembler.combined_volume,axis=2) 
     offset = vmaker.origins['SpV_L']
     # offset = [10,10,10]
-    maker = BrainNgMaker(animal = 'DK55',out_folder='DK55_trigeminal',offset = list(offset))
+    maker = BrainNgMaker(animal = 'DK55',out_folder='DK55_trigeminal_test',offset = list(offset))
     maker.resolution = 2600
     maker.create_neuroglancer_files(assembler.combined_volume)
 

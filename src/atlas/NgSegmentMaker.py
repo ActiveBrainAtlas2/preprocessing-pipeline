@@ -42,8 +42,7 @@ class NgConverter(NumpyToNeuroglancer):
         self.add_segment_properties(segment_properties)
         self.add_downsampled_volumes()
         self.add_segmentation_mesh()
-        
-        
+            
 class NgSegmentMaker:
     def __init__(self, debug = False,out_folder = 'atlas_test',offset = None):
         self.offset = offset
@@ -72,7 +71,6 @@ class NgSegmentMaker:
         segment_properties = [(number, f'{structure}: {label}') for structure, (label, number) in db_structure_infos.items()]
         return segment_properties
 
-
 class AtlasNgMaker(Atlas,NgSegmentMaker):
     def __init__(self,atlas_name,debug = False,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0,offset = None):
         Atlas.__init__(self,atlas_name)
@@ -84,7 +82,6 @@ class AtlasNgMaker(Atlas,NgSegmentMaker):
         self.volume = self.assembler.combined_volume
         segment_properties = self.get_segment_properties()
         self.create_neuroglancer_files(self.OUTPUT_DIR,segment_properties)
-
 
 class BrainNgMaker(BrainStructureManager,NgSegmentMaker):
     def __init__(self,animal,debug = False,out_folder = 'animal_folder',threshold = 0.9, *args, **kwargs):

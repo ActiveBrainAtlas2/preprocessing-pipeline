@@ -1,8 +1,9 @@
 import os
+DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
 class FileLocationManager(object):
     """ Create a class for processing the pipeline,
     """
-    def __init__(self, stack,DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'):
+    def __init__(self, stack,DATA_PATH = DATA_PATH):
         """ setup the directory, file locations
             Args:
                 stack: the animal brain name, AKA prep_id

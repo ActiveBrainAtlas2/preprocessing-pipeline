@@ -7,6 +7,8 @@ class CellAnnotationUtilities:
             if len(celli)==3:
                 section = celli[2]
                 in_section = all_points[:,2]==section
+                if np.any(in_section) == False:
+                    continue
                 segments_in_section = all_points[in_section,:2]
                 diff = segments_in_section[:,:2]-celli[:2]
             elif len(celli)==2:
