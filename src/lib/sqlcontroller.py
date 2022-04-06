@@ -382,7 +382,7 @@ class SqlController(object):
         try:
             count = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).count()
         except:
-            count = 666
+            count = 0
         return count
 
     def get_current_task(self, animal):

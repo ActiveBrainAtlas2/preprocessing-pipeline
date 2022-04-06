@@ -93,6 +93,8 @@ def test_dir(animal, directory, downsample=True, same_size=False):
     # so 3000 is a good min size
     # min size on NTB is 8.8K
     starting_size = 3000
+    NO_FILES = 100 # arbitray number of files to check for. There should
+    # always be more than this
     min_size = starting_size * SCALING_FACTOR * 1000
     if downsample:
         min_size = starting_size
@@ -104,7 +106,7 @@ def test_dir(animal, directory, downsample=True, same_size=False):
     except:
         return f'{directory} does not exist'
         
-    if section_count == 0:
+    if section_count < NO_FILES:
         section_count = len(files)
     widths = set()
     heights = set()
@@ -117,7 +119,7 @@ def test_dir(animal, directory, downsample=True, same_size=False):
         if size < min_size:
             error += f"{size} is less than min: {min_size} {filepath} \n"
     # picked 100 as an arbitrary number. the min file count is usually around 380 or so
-    if len(files) > 100:
+    if len(files) > NO_FILES:
         min_width = min(widths)
         max_width = max(widths)
         min_height = min(heights)
@@ -129,6 +131,7 @@ def test_dir(animal, directory, downsample=True, same_size=False):
         max_height = 0
     if section_count != len(files):
         error += f"Number of files in {directory} is incorrect.\n"
+        error += f"Section count={section_count} len files = {len(files)}.\n"
     if min_width != max_width and min_width > 0 and same_size:
         error += f"Widths are not of equal size, min is {min_width} and max is {max_width}.\n"
     if min_height != max_height and min_height > 0 and same_size:
