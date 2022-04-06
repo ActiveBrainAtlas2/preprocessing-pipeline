@@ -25,20 +25,75 @@ NON-RELEVANT [TO PORTAL] TABLES (1):
  *      A) IF LATENCY -> DB MODIFICATIONS MAY BE QUEUED AND MADE VIA CRON JOB (DURING OFF-PEAK)
  *      B) annotations_points_archive, archive_sets WILL NOT BE STORED ON LIVE DB
  */
+ 
+/* proposed new table - prev. included in annotations_points /*
+CREATE TABLE `polygon_sequences` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL,
+  `FK_session_id` INT(11) NOT NULL COMMENT 'CREATION/EDIT OF POLYGONS',
+  `FK_input_id` int(11) NOT NULL,
+  `label` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  
+  `x` float DEFAULT NULL, /* COMMENT in microns */
+  `y` float DEFAULT NULL, /* COMMENT in microns */
+  `z` float NOT NULL DEFAULT 0, /* COMMENT in microns */
+  `active` tinyint(1) DEFAULT NULL,
+  `polygon_index` char(40) DEFAULT NULL, /* integer */
+  `point_order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_session_id`) REFERENCES annotation_session(id),
+  KEY `K__AP_AID` (`prep_id`),
+  KEY `K__AP_BRID` (`FK_structure_id`),
+  KEY `K__AP_ITID` (`FK_input_id`),
+  CONSTRAINT `FK__AP_AID` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK__AP_BRID` FOREIGN KEY (`FK_structure_id`) REFERENCES `structure` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK__AP_ITID` FOREIGN KEY (`FK_input_id`) REFERENCES `com_type` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK__AP_OID` FOREIGN KEY (`FK_owner_id`) REFERENCES `auth_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
+
+/* WIP1 */
+CREATE TABLE `marked_cells` ( 
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `prep_id` varchar(20) NOT NULL,
+  
+  `label` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  
+  input_type (? machine sure/unsure, human positive,negative) ENUM
+ 
+   FK_session_id /* meta about the new/edit/draw TODO */
+  `x` float DEFAULT NULL, /* COMMENT in microns */
+  `y` float DEFAULT NULL, /* COMMENT in microns */
+  `z` float NOT NULL DEFAULT 0, /* COMMENT in microns */
+ 
+ `active` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `K__AP_AID` (`prep_id`),
+  KEY `K__AP_BRID` (`FK_structure_id`),
+  KEY `K__AP_OID` (`FK_owner_id`),
+  KEY `K__AP_ITID` (`FK_input_id`),
+  CONSTRAINT `FK__AP_AID` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK__AP_BRID` FOREIGN KEY (`FK_structure_id`) REFERENCES `structure` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK__AP_ITID` FOREIGN KEY (`FK_input_id`) REFERENCES `com_type` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK__AP_OID` FOREIGN KEY (`FK_owner_id`) REFERENCES `auth_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
+
+/* needs revised sync w/ current schema -> structure_com*/
 DROP TABLE IF EXISTS `annotations_points` ;
 CREATE TABLE `annotations_points` (
   `id` INT(20) NOT NULL AUTO_INCREMENT,
   `prep_id` VARCHAR(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
-  `label` VARCHAR(255) COLLATE utf8_bin DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
+  
   `x` FLOAT DEFAULT NULL,
   `y` FLOAT DEFAULT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
-  `vetted` ENUM('yes','no') DEFAULT NULL COMMENT 'good enough for public',
-  `FK_structure_id` INT(11) NOT NULL,
-  `FK_owner_id` INT(11) NOT NULL COMMENT 'ORG ANNOTATIONS CREATOR/OWNER',
+  `FK_session_id` INT(11) NOT NULL COMMENT 'CREATION/EDIT OF POLYGONS',
+  
+  
   `FK_animal_id` INT(11) NOT NULL,
-  `FK_input_id` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual person, corrected person, detected computer',
+  `source` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual, computer', ENUM***
+  
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id) ON UPDATE CASCADE,
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
@@ -69,11 +124,24 @@ CREATE TABLE `annotations_points_archive` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
+DROP TABLE IF EXISTS `annotation_session` ;
+CREATE TABLE `annotation_session` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `FK_annotator_id`
+   ``
+   
+   timestamp
+  `FK_structure_id` int(11) NOT NULL, /* structure table should only contain biological structures */ 
+)
+
+
+/* archived_sessions */
 DROP TABLE IF EXISTS `archive_sets`;
 CREATE TABLE `archive_sets` (
  `id` int(20) NOT NULL AUTO_INCREMENT,
  `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
  `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',  
+ `annotation_type` int(11), /* (1=polygonseq, 2=marked cell, 3=structure COM) */
  `FK_animal_id` INT(11) NOT NULL,
  `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
  `FK_owner_id` int(11) NOT NULL COMMENT 'USER WHO MADE REVISIONS',
