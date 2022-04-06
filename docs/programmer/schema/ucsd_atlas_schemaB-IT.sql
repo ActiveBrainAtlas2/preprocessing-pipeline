@@ -1,112 +1,68 @@
 /* TABLE OF CONTENTS - OVERALL ORGANIZATION STRUCTURE (IT - OR 'NON-BIOLOGICAL'):
-   TOTAL TABLES (63): annotations_points,	annotations_points_archive,	archive_sets,	auth_group,	auth_group_permissions,	auth_permission,	auth_user,	auth_user_groups,	auth_user_user_permissions,	authtoken_token, django_admin_log,	django_content_type,	django_migrations,	django_plotly_dash_dashapp,	django_plotly_dash_statelessapp,	django_session,	django_site,	elastix_transformation,	engine_attributespec,	engine_clientfile,	engine_data,	engine_image,	engine_job,	engine_jobcommit,	engine_label,	engine_labeledimage,	engine_labeledimageattributeval,	engine_labeledshape,	engine_labeledshapeattributeval,	engine_labeledtrack,	engine_labeledtrackattributeval,	engine_plugin,	engine_pluginoption,	engine_project,	engine_remotefile,	engine_segment,	engine_serverfile,	engine_task,	engine_trackedshape,	engine_trackedshapeattributeval,	engine_video,	file_log,	file_operation,	git_gitdata,	input_type,	journals,	logs,	neuroglancer_state,	neuroglancer_urls,	performance_center,	problem_category,	progress_lookup,	sections,	slide, slide_czi_to_tif, socialaccount_socialaccount,	socialaccount_socialapp,	socialaccount_socialapp_sites,	socialaccount_socialtoken,	task,	task_resources,	task_roles,	task_view, transformation
-
-NON-RELEVANT [TO PORTAL] TABLES (1):
-   resource
+   TOTAL TABLES (64): annotations_points,	annotations_points_archive,	archive_sets,	auth_group,	auth_group_permissions,	auth_permission,	auth_user,	auth_user_groups,	auth_user_user_permissions,	authtoken_token, django_admin_log,	django_content_type,	django_migrations,	django_plotly_dash_dashapp,	django_plotly_dash_statelessapp,	django_session,	django_site,	elastix_transformation,	engine_attributespec,	engine_clientfile,	engine_data,	engine_image,	engine_job,	engine_jobcommit,	engine_label,	engine_labeledimage,	engine_labeledimageattributeval,	engine_labeledshape,	engine_labeledshapeattributeval,	engine_labeledtrack,	engine_labeledtrackattributeval,	engine_plugin,	engine_pluginoption,	engine_project,	engine_remotefile,	engine_segment,	engine_serverfile,	engine_task,	engine_trackedshape,	engine_trackedshapeattributeval,	engine_video,	file_log,	file_operation,	git_gitdata,	input_type,	journals,	logs,	neuroglancer_state,	neuroglancer_urls,	performance_center,	problem_category,	polygon_sequences, progress_lookup,	sections,	slide, slide_czi_to_tif, socialaccount_socialaccount,	socialaccount_socialapp,	socialaccount_socialapp_sites,	socialaccount_socialtoken,	task,	task_resources,	task_roles,	task_view, transformation
 
 */
 
-/* DR - modified field "section" to "z" with comment in annotations_points and annotations_point_archive.
-   DR - we do not need annotations_point_archive table if archived versions are stored on disk and referenced with archive_set.id (perhaps filename); this is for versioning of annotated Neuroglancer points (org. proposal was to store in file rather than live in database)
-   DR - "layer" is related to Neuroglancer layer (user can name layer for superimposition of annotated points), "FK_archive_set_id" is for versioning of Neuroglancer annotated points (i.e., if points are added/removed/edited user can restore from previous version), "FK_input_type_id" is used to store point annotations input source: 'manual person', 'corrected person', 'detected computer', "FK_owner_id" is user who initially created/uploaded/input annotations
-   DR - I believe data is stored in "structure" table is for each brain region (table renamed to brain_region)
-   ZW - modified layer to label
-*/
 
-/*
- * PRIOR NAME: `layer_data` TO annotations_points
- *
- * ANTICIPATED OPERATION:
- * 1) USER SAVES ANNOTATION POINTS IN NEUROGLANCER
- * 2) NEW ENTRY IN archive_set TABLE (PARENT 'archive_id' - 0 IF FIRST; UPDATE USER; TIMESTAMP )
- * 3) ALL CURRENT POINTS FOR USER ARE MOVED TO annotations_points_archive
- * 4) NEW POINTS ARE ADDED TO annotations_points
- *    - CONSIDERATIONS:
- *      A) IF LATENCY -> DB MODIFICATIONS MAY BE QUEUED AND MADE VIA CRON JOB (DURING OFF-PEAK)
- *      B) annotations_points_archive, archive_sets WILL NOT BE STORED ON LIVE DB
- */
- 
-/* proposed new table - prev. included in annotations_points /*
+/* USED FOR ANNOTATION STORAGE */
+DROP TABLE IF EXISTS `polygon_sequences` ;
 CREATE TABLE `polygon_sequences` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL,
-  `FK_session_id` INT(11) NOT NULL COMMENT 'CREATION/EDIT OF POLYGONS',
-  `FK_input_id` int(11) NOT NULL,
-  `label` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-  
-  `x` float DEFAULT NULL, /* COMMENT in microns */
-  `y` float DEFAULT NULL, /* COMMENT in microns */
-  `z` float NOT NULL DEFAULT 0, /* COMMENT in microns */
+  `prep_id` varchar(20) COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+  `label` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin,
+  `source` ENUM('NA') COMMENT 'PLACEHOLDER FIELD',
+  `x` float DEFAULT NULL COMMENT 'UNIT: MICRONS',
+  `y` float DEFAULT NULL COMMENT 'UNIT: MICRONS',
+  `z` float NOT NULL DEFAULT 0 COMMENT 'UNIT: MICRONS',
   `active` tinyint(1) DEFAULT NULL,
-  `polygon_index` char(40) DEFAULT NULL, /* integer */
+  `polygon_index` int(11) DEFAULT NULL COMMENT 'ORDERING OF POLYGONS ACROSS VOLUMES',
   `point_order` int(11) NOT NULL DEFAULT 0,
+  `FK_session_id` INT(11) NOT NULL COMMENT 'CREATOR/EDITOR',
   PRIMARY KEY (`id`),
   FOREIGN KEY (`FK_session_id`) REFERENCES annotation_session(id),
-  KEY `K__AP_AID` (`prep_id`),
-  KEY `K__AP_BRID` (`FK_structure_id`),
-  KEY `K__AP_ITID` (`FK_input_id`),
-  CONSTRAINT `FK__AP_AID` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `FK__AP_BRID` FOREIGN KEY (`FK_structure_id`) REFERENCES `structure` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `FK__AP_ITID` FOREIGN KEY (`FK_input_id`) REFERENCES `com_type` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `FK__AP_OID` FOREIGN KEY (`FK_owner_id`) REFERENCES `auth_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
-
-
-/* WIP1 */
-CREATE TABLE `marked_cells` ( 
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `prep_id` varchar(20) NOT NULL,
-  
-  `label` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-  
-  input_type (? machine sure/unsure, human positive,negative) ENUM
- 
-   FK_session_id /* meta about the new/edit/draw TODO */
-  `x` float DEFAULT NULL, /* COMMENT in microns */
-  `y` float DEFAULT NULL, /* COMMENT in microns */
-  `z` float NOT NULL DEFAULT 0, /* COMMENT in microns */
- 
- `active` tinyint(1) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `K__AP_AID` (`prep_id`),
-  KEY `K__AP_BRID` (`FK_structure_id`),
-  KEY `K__AP_OID` (`FK_owner_id`),
-  KEY `K__AP_ITID` (`FK_input_id`),
-  CONSTRAINT `FK__AP_AID` FOREIGN KEY (`prep_id`) REFERENCES `animal` (`prep_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `FK__AP_BRID` FOREIGN KEY (`FK_structure_id`) REFERENCES `structure` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `FK__AP_ITID` FOREIGN KEY (`FK_input_id`) REFERENCES `com_type` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `FK__AP_OID` FOREIGN KEY (`FK_owner_id`) REFERENCES `auth_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
-
-
-/* needs revised sync w/ current schema -> structure_com*/
-DROP TABLE IF EXISTS `annotations_points` ;
-CREATE TABLE `annotations_points` (
-  `id` INT(20) NOT NULL AUTO_INCREMENT,
-  `prep_id` VARCHAR(20) NOT NULL COMMENT 'LEGACY: Name for lab animal, max 20 chars',
-  
-  `x` FLOAT DEFAULT NULL,
-  `y` FLOAT DEFAULT NULL,
-  `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',
-  `FK_session_id` INT(11) NOT NULL COMMENT 'CREATION/EDIT OF POLYGONS',
-  
-  
-  `FK_animal_id` INT(11) NOT NULL,
-  `source` INT(11) NOT NULL DEFAULT 1 COMMENT 'manual, computer', ENUM***
-  
-  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id) ON UPDATE CASCADE,
-  FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
-  FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_structure_id`) REFERENCES brain_region(id) ON UPDATE CASCADE,
-  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
+/* USED FOR ANNOTATION STORAGE */
+DROP TABLE IF EXISTS `marked_cells` ;
+CREATE TABLE `marked_cells` (
+ `id` int(11) NOT NULL AUTO_INCREMENT,
+ `prep_id` varchar(20) COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+ `label` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin,
+ `source` ENUM('MACHINE-SURE', 'MACHINE-UNSURE', 'HUMAN-POSITIVE', 'HUMAN-NEGATIVE'),
+ `x` float DEFAULT NULL COMMENT 'UNIT: MICRONS',
+ `y` float DEFAULT NULL COMMENT 'UNIT: MICRONS',
+ `z` float NOT NULL DEFAULT 0 COMMENT 'UNIT: MICRONS',
+ `active` tinyint(1) DEFAULT NULL,
+ `FK_session_id` INT(11) NOT NULL COMMENT 'CREATOR/EDITOR',
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_session_id`) REFERENCES annotation_session(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+/* USED FOR ANNOTATION STORAGE */
+DROP TABLE IF EXISTS `structure_com` ;
+CREATE TABLE `structure_com` (
+ `id` INT(20) NOT NULL AUTO_INCREMENT,
+ `prep_id` varchar(20) COMMENT 'LEGACY: Name for lab animal, max 20 chars',
+ `label` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin,
+ `source` ENUM('MANUAL', 'COMPUTER'),
+ `x` float DEFAULT NULL COMMENT 'UNIT: MICRONS',
+ `y` float DEFAULT NULL COMMENT 'UNIT: MICRONS',
+ `z` float NOT NULL DEFAULT 0 COMMENT 'UNIT: MICRONS',
+ `active` tinyint(1) DEFAULT NULL,
+ `FK_session_id` INT(11) NOT NULL COMMENT 'CREATOR/EDITOR',
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`FK_session_id`) REFERENCES annotation_session(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+/* DR - WE NEED TO CREATE MIRROR STRUCTURE FOR ARCHIVE OF ANNOTATIONS */
 DROP TABLE IF EXISTS `annotations_points_archive`;
 CREATE TABLE `annotations_points_archive` (
   `id` int(20) NOT NULL,
   `prep_id` VARCHAR(20) NOT NULL COMMENT '*LEGACY COMPATABILITY*',
-  `label` VARCHAR(255) COLLATE utf8_bin DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
+  `label` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin,
   `x` FLOAT DEFAULT NULL,
   `y` FLOAT DEFAULT NULL,
   `z` double NOT NULL COMMENT 'a.k.a. section (slicing)',  
@@ -119,20 +75,27 @@ CREATE TABLE `annotations_points_archive` (
   FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id),
   FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
   FOREIGN KEY (`FK_input_id`) REFERENCES input_type(id),
-  FOREIGN KEY (`FK_structure_id`) REFERENCES brain_region(id),
+  FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id),
   FOREIGN KEY (`FK_archive_set_id`) REFERENCES archive_sets(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
+/* DR - CAN WE CONSOLIDATE WITH archive_sets TABLE (REPLACE)? */
+
 DROP TABLE IF EXISTS `annotation_session` ;
 CREATE TABLE `annotation_session` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `FK_annotator_id`
-   ``
-   
-   timestamp
-  `FK_structure_id` int(11) NOT NULL, /* structure table should only contain biological structures */ 
-)
+ `id` int(11) NOT NULL AUTO_INCREMENT,
+ `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+ `annotation_type` ENUM('POLYGON_SEQUENCE', 'MARKED_CELL', 'STRUCTURE_COM'),
+ `FK_annotator_id` int(11) NOT NULL,
+ `FK_animal_id` INT(11) NOT NULL,
+ `FK_parent` INT(11) NOT NULL COMMENT 'SELF-REFERENCES id [IN THIS TABLE]',
+ `FK_structure_id` int(11) NOT NULL COMMENT 'TABLE structure SHOULD ONLY CONTAIN BIOLOGICAL STRUCTURES',
+ PRIMARY KEY (`id`),
+ FOREIGN KEY (`FK_annotator_id`) REFERENCES auth_user(id),
+ FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id),
+ FOREIGN KEY (`FK_structure_id`) REFERENCES structure(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 /* archived_sessions */
@@ -140,14 +103,14 @@ DROP TABLE IF EXISTS `archive_sets`;
 CREATE TABLE `archive_sets` (
  `id` int(20) NOT NULL AUTO_INCREMENT,
  `created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
- `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',  
- `annotation_type` int(11), /* (1=polygonseq, 2=marked cell, 3=structure COM) */
+ `label` VARCHAR(255) DEFAULT NULL COMMENT 'freeform name/label the layer[annotation]',
+ `annotation_type` ENUM('POLYGON_SEQUENCE', 'MARKED_CELL', 'STRUCTURE_COM'),
  `FK_animal_id` INT(11) NOT NULL,
  `FK_parent` INT(11) NOT NULL COMMENT 'REFERENCES archive_id IN THIS TABLE',
  `FK_owner_id` int(11) NOT NULL COMMENT 'USER WHO MADE REVISIONS',
+ PRIMARY KEY (`id`),
  FOREIGN KEY (`FK_animal_id`) REFERENCES animal(id),
- FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id),
- PRIMARY KEY (`id`)
+ FOREIGN KEY (`FK_owner_id`) REFERENCES auth_user(id)
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -1156,24 +1119,4 @@ CREATE TABLE `transformation` (
   CONSTRAINT `transformation_ibfk_2` FOREIGN KEY (`FK_destination_id`) REFERENCES `animal` (`id`) ON DELETE CASCADE,
   CONSTRAINT `transformation_ibfk_3` FOREIGN KEY (`FK_transformation_type_id`) REFERENCES `transformation_type` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=266 DEFAULT CHARSET=utf8;
-
-/*
-    8) TABLES NOT RELEVANT TO PORTAL (CONFIRM): location, location_primary_people, resource, schedule
-*/
-
-
-/*
-   COMMENTS RELATED TO TABLE: resource
-   Unknown contrib - What is the role of this table?
-*/
-DROP TABLE IF EXISTS `resource`;
-CREATE TABLE `resource` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `first_name` varchar(30) NOT NULL,
-  `last_name` varchar(30) NOT NULL,
-  `role_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `K__RESOURCE_role_id` (`role_id`),
-  CONSTRAINT `FK__RESOURCE_role_id` FOREIGN KEY (`role_id`) REFERENCES `task_roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
