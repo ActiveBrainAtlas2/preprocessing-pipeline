@@ -10,15 +10,12 @@ import cv2
 import numpy as np
 import gc
 from skimage.transform import rescale
-from concurrent.futures.process import ProcessPoolExecutor
-# from fixes.split_save import img
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
 from lib.sql_setup import QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN, CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1
-from lib.logger import get_logger
 SCALING_FACTOR = 0.03125
 
 Image.MAX_IMAGE_PIXELS = None

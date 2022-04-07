@@ -265,7 +265,7 @@ def check_contour(contours, area, lc):
         return contours, lc
 
 
-def scaled(img, mask, epsilon=0.05, scale=45000):
+def scaled(img, mask, epsilon=0.01, scale=45000):
     """
     This scales the image to the limit specified. You can get this value
     by looking at the combined histogram of the image stack. It is quite
@@ -277,7 +277,6 @@ def scaled(img, mask, epsilon=0.05, scale=45000):
     :param limit: max value we wish to scale to
     :return: scaled image in 16bit format
     """
-    epsilon = 0.4
     _max = np.quantile(img[mask > 0], 1 - epsilon) # gets almost the max value of img
     # print('thr=%d, index=%d'%(vals[ind],index))
     if img.dtype == np.uint8:
