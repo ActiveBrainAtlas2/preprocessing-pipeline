@@ -74,14 +74,14 @@ class Pipeline:
     def get_nworkers(self, downsample=True):
         '''
         get the number of cpus/processes to spawn. By default
-        we work with the downsampled version so get the lower/first
+        we work with the downsampled version so get the higher/2nd
         # of CPUS
         :param downsample: boolean, True for downsampled images
         '''
         nworkers = self.parallel_settings
-        workers = nworkers[0]
+        workers = nworkers[1]
         if not downsample:
-            workers = nworkers[1]
+            workers = nworkers[0]
         print(f'working with workers {workers}')
         return workers
 
