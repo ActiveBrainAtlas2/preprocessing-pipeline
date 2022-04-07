@@ -60,9 +60,8 @@ def create_segmentation(animal, transform=False):
     scale_xy = sqlController.scan_run.resolution
     z_scale = sqlController.scan_run.zresolution
 
-    width = int(width * SCALING_FACTOR)
-    height = int(height * SCALING_FACTOR)
-    aligned_shape = np.array((width, height))
+    width = int(round(width * SCALING_FACTOR))
+    height = int(round(height * SCALING_FACTOR))
     
     # get all distinct structures in DB
     abbreviations = sqlController.get_distinct_labels(animal)
@@ -91,35 +90,35 @@ def create_segmentation(animal, transform=False):
         # Get the min and max for x,y, and z for each structure
         minx = min([ min([points[0] for points in polygon])  for polygon in polygons.values()])
         miny = min([ min([points[1] for points in polygon])  for polygon in polygons.values()])
-        minz = min(polygons.keys()) * z_scale
+        minz = min(polygons.keys())
         
         maxx = max([ max([points[0] for points in polygon])  for polygon in polygons.values()])
         maxy = max([ max([points[1] for points in polygon])  for polygon in polygons.values()])
-        maxz = max(polygons.keys()) * z_scale
+        maxz = max(polygons.keys())
         
         # put xyz in downsampled Neuroglancer coordinates
         minx = int(round(minx*SCALING_FACTOR))
         miny = int(round(miny*SCALING_FACTOR))
-        minz = int(round(minz/z_scale))
+        minz = int(round(minz))
         
         maxx = int(round(maxx*SCALING_FACTOR))
         maxy = int(round(maxy*SCALING_FACTOR))
-        maxz = int(round(maxz/z_scale))
+        maxz = int(round(maxz))
         
         midz = maxz - (maxz - minz)//2
 
         # create an empty array in which we will stuff the mask with opencv polyfill        
-        structure_volume = np.zeros((aligned_shape[1], aligned_shape[0], num_sections), dtype=np.uint8)
+        structure_volume = np.zeros((width, height, num_sections), dtype=np.uint8)
         
         #### loop through all the sections and write to the structure_volume arr
         for section, points in polygons.items():
-            template = np.zeros((aligned_shape[1], aligned_shape[0]), dtype=np.uint8)
+            template = np.zeros((width, height), dtype=np.uint8)
             points = np.array(points)
             points = np.round(points*SCALING_FACTOR)
             points = points.astype(np.int32)
             cv2.fillPoly(template, pts = [points], color = 1)
             if section == midz:
-                img = np.zeros((aligned_shape[1], aligned_shape[0]), dtype=np.uint8)
+                img = np.zeros((width, height), dtype=np.uint8)
                 cv2.fillPoly(img, pts = [points], color = 255)
                 outfile = os.path.join(OUTPATH, f'{abbreviation}.png')
                 cv2.imwrite(outfile, img)

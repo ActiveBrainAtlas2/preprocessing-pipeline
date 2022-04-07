@@ -5,10 +5,7 @@ import pandas as pd
 from skimage import io
 from collections import OrderedDict
 from concurrent.futures.process import ProcessPoolExecutor
-from sqlalchemy import false
 from sqlalchemy.orm.exc import NoResultFound
-import tifffile as tiff
-from lib.utilities_mask import  place_image
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.file_location import FileLocationManager
