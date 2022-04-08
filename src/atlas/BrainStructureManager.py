@@ -1,6 +1,5 @@
 import os
 import json
-from lib.FileLocationManager import DATA_PATH
 from lib.utilities_atlas import ATLAS
 import numpy as np
 from Brain import Brain
@@ -9,6 +8,7 @@ from lib.utilities_atlas_lite import volume_to_polygon
 from lib.utilities_atlas_lite import save_mesh
 import xml.etree.ElementTree as ET
 from collections import defaultdict
+from lib.FileLocationManager import DATA_PATH
 class BrainStructureManager(Brain, VolumeUtilities):
 
     def __init__(self, animal,atlas = ATLAS,downsample_factor = 32):

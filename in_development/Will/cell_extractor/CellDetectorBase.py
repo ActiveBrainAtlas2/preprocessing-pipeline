@@ -42,8 +42,8 @@ class CellDetectorBase(Brain):
         self.CH1_SECTION_DIR=os.path.join(self.CH1,f"{self.section:03}")
         self.ALL_FEATURES = os.path.join(self.ANIMAL_PATH,'all_features.csv')
         self.QUALIFICATIONS = os.path.join(self.FEATURE_PATH,f'categories_round{self.round}.pkl')
-        self.POSITIVE_LABELS = os.path.join(self.FEATURE_PATH,f'positive_labels_for_{self.round+1}.pkl')
-        self.DETECTOR_PATH = os.path.join(self.DETECTOR,f'detector_round_{self.round}.pkl')
+        self.POSITIVE_LABELS = os.path.join(self.FEATURE_PATH,f'positive_labels_for_round_{self.round}_threshold_{self.segmentation_threshold}.pkl')
+        self.DETECTOR_PATH = os.path.join(self.DETECTOR,f'detector_round_{self.round}_threshold_{self.segmentation_threshold}.pkl')
         self.DETECTION_RESULT_DIR = os.path.join(self.DETECTION,f'detections_{self.animal}.{str(self.round)}_threshold_{self.segmentation_threshold}.csv')
         self.ALL_FEATURES = os.path.join(self.FEATURE_PATH,f'all_features_threshold_{self.segmentation_threshold}.csv')
 
@@ -208,7 +208,7 @@ class CellDetectorBase(Brain):
         dirs=['/'.join(d.split('/')[:-1]) for d in dirs]
         df_list=[]
         for dir in dirs:
-            filename=glob(dir + '/puntas*.csv')[0]
+            filename=glob(dir + '/puntas*{self.segmentation_threshold}*.csv')[0]
             df=pd.read_csv(filename)
             print(filename,df.shape)
             df_list.append(df)
@@ -217,23 +217,26 @@ class CellDetectorBase(Brain):
         drops = ['animal', 'section', 'index', 'row', 'col'] 
         full_df=full_df.drop(drops,axis=1)
         return full_df
-
-    def get_combined_features_for_detection(self):
+    
+    def get_combined_features(self):
         if not os.path.exists(self.ALL_FEATURES):
             self.create_combined_features()
-        all_features = pd.read_csv(self.ALL_FEATURES,index_col=False)
+        return pd.read_csv(self.ALL_FEATURES,index_col=False)
+
+    def get_combined_features_for_detection(self):
+        all_features = self.get_combined_features()
         drops = ['animal', 'section', 'index', 'row', 'col'] 
         all_features=all_features.drop(drops,axis=1)
         return all_features
     
     def create_combined_features(self):
+        print('creating combined features')
         files=glob(self.CH3+f'/*/punta*{self.segmentation_threshold}.csv')  
         df_list=[]
         for filei in files:
             if os.path.getsize(filei) == 1:
                 continue
             df=pd.read_csv(filei)
-            print(filei,df.shape)
             df_list.append(df)
         full_df=pd.concat(df_list)
         full_df.index=list(range(full_df.shape[0]))

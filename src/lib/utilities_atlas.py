@@ -25,7 +25,7 @@ from pathlib import Path
 #sys.path.append(PIPELINE_ROOT.as_posix())
 from lib.SqlController import SqlController
 from lib.utilities_alignment import load_hdf, one_liner_to_arr, convert_resolution_string_to_um
-from lib.FileLocationManager import FileLocationManager, DATA_PATH
+from lib.FileLocationManager import FileLocationManager,DATA_PATH
 from lib.coordinates_converter import CoordinatesConverter
 SECTION_THICKNESS = 20. # in um
 

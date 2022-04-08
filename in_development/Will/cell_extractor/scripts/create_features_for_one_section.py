@@ -15,5 +15,5 @@ if __name__ =='__main__':
     animal = args.animal
     section = args.section
     disk = args.disk
-    for threshold in [2000,3000,4000]:
+    for threshold in [2100,2200,2300,2700]:
         calculate_one_section(animal,section,disk=disk,segmentation_threshold = threshold)
