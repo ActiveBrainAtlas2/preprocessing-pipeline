@@ -20,11 +20,12 @@ class MetaUtilities:
         self.check_czi_file_exists()
         self.scan_id = self.get_user_entered_scan_id()
         czi_files = self.get_czi_files()
-        if not self.slide_meta_data_exists(czi_files):
+        if not self.all_slide_meta_data_exists_in_database(czi_files):
             for _, czi_file in enumerate(tqdm(czi_files)):
                 if self.is_czi_file(czi_file):
-                    self.add_slide_information_to_database(czi_file)
-                    self.add_to_slide_czi_tiff_table(czi_file)
+                    if not self.slide_meta_data_exists(czi_file):
+                        self.add_slide_information_to_database(czi_file)
+                        self.add_to_slide_czi_tiff_table(czi_file)
             self.update_database()
 
     def get_czi_files(self):
@@ -86,9 +87,12 @@ class MetaUtilities:
         extension = os.path.splitext(czi_file)[1]
         return extension.endswith('czi')
     
-    def slide_meta_data_exists(self,czi_files):
+    def all_slide_meta_data_exists_in_database(self,czi_files):
         nslides = session.query(Slide).filter(Slide.scan_run_id == self.scan_id).count()
         return nslides == len(czi_files)
+
+    def slide_meta_data_exists(self,czi_file_name):
+        return bool(session.query(Slide).filter(Slide.scan_run_id == self.scan_id).filter(Slide.file_name==czi_file_name).first())
     
     def check_czi_file_exists(self):
         INPUT = self.fileLocationManager.czi

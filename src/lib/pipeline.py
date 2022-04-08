@@ -78,48 +78,43 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
             sys.exit()
         end = timer()
         print(f'Check programs took {end - start} seconds')    
+    
+    def run_program_and_time(self,function,function_name):
+        print(function_name)
+        time = timer()
+        function()
+        print(f'{function_name} took {timer()-time} seconds') 
 
     def prepare_image_for_quality_control(self):
         self.check_programs()
-        start = timer()
-        self.extract_slide_meta_data_and_insert_to_database()
-        end = timer()
-        print(f'Create meta took {end - start} seconds') 
-        start = timer()
-        self.extract_tifs_from_czi()
+        self.run_program_and_time(self.extract_slide_meta_data_and_insert_to_database,'Creating meta')
+        self.run_program_and_time(self.extract_tifs_from_czi,'Extracting Tiffs')
         if self.channel == 1 and self.downsample:
-            self.create_web_friendly_image()
-        end = timer()
-        print(f'Create tifs took {end - start} seconds') 
+            self.run_program_and_time(self.create_web_friendly_image,'create web friendly image')
 
     def apply_qc_and_prepare_image_masks(self):
-        self.make_full_resolution()
-        self.make_low_resolution()
+        self.run_program_and_time(self.make_full_resolution,'Making full resolution copies')
+        self.run_program_and_time(self.make_low_resolution,'Making downsampled copies')
         self.set_task_preps()
         if self.channel == 1 and self.downsample:
             self.create_normalization()
+            self.run_program_and_time(self.create_normalization,'Creating normalization')
         if self.channel == 1:
             self.create_mask()
+            self.run_program_and_time(self.make_low_resolution,'Creating masks')
         
     def clean_images_and_create_histogram(self):
-        start = timer()
         if self.channel == 1 and self.downsample:
-            self.apply_user_mask_edits()
-        print('\tFinished applying user mask edits')    
-        self.create_cleaned_images()
-        print('\tFinished clean')    
+            self.run_program_and_time(self.apply_user_mask_edits,'Applying masks')
+        self.run_program_and_time(self.create_cleaned_images,'Creating cleaned image')  
         if self.downsample:
-            self.make_histogram()
-            print('\tFinished histogram single')    
-            self.make_combined_histogram()
-        print('\tFinished histograms combined')    
-        end = timer()
-        print(f'Creating masks, cleaning and histograms took {end - start} seconds')    
+            self.run_program_and_time(self.make_histogram,'Making histogram')  
+            self.run_program_and_time(self.make_combined_histogram,'Making combined histogram')  
     
     def align_images_within_stack(self):
         start = timer()
         if self.channel == 1 and self.downsample:
-            self.create_elastix()
+            self.run_program_and_time(self.create_elastix,'Creating elastics transform')  
         transforms = self.parse_elastix()
         if self.downsample:
             self.align_downsampled_images(transforms)

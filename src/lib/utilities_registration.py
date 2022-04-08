@@ -143,19 +143,33 @@ def register_test(INPUT, fixed_index, moving_index):
 
 
 
-def register_simple(INPUT, fixed_index, moving_index):
+def resample(image, transform):
+    # Output image Origin, Spacing, Size, Direction are taken from the reference
+    # image in this call to Resample
+    reference_image = image
+    interpolator = sitk.sitkCosineWindowedSinc
+    default_value = 100.0
+    return sitk.Resample(image, reference_image, transform,
+                         interpolator, default_value)
+
+def register_simple(INPUT, fixed_index, moving_index,debug=False):
     pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
     moving_file = os.path.join(INPUT, f'{moving_index}.tif')
     fixed = sitk.ReadImage(fixed_file, pixelType)
     moving = sitk.ReadImage(moving_file, pixelType)
 
+
+
+    initial_transform = sitk.CenteredTransformInitializer(fixed, 
+                                                        moving, 
+                                                        sitk.Euler2DTransform(), 
+                                                        sitk.CenteredTransformInitializerFilter.GEOMETRY)
+    moving = resample(moving,initial_transform)
     elastixImageFilter = sitk.ElastixImageFilter()
     elastixImageFilter.SetFixedImage(fixed)
     elastixImageFilter.SetMovingImage(moving)
     rigid_params = elastixImageFilter.GetDefaultParameterMap("rigid")
-
-
     rigid_params['AutomaticTransformInitializationMethod']=['GeometricalCenter']
     rigid_params['ShowExactMetricValue']=['false']
     rigid_params['CheckNumberOfSamples']=['true']
@@ -341,13 +355,18 @@ def register_simple(INPUT, fixed_index, moving_index):
     ## The pixel type and format of the resulting deformed moving image
     rigid_params['ResultImagePixelType']=['unsigned char']
     rigid_params['ResultImageFormat']=['tif']
-
-
-
+    rigid_params['RequiredRatioOfValidSamples'] = ['0.05']
     elastixImageFilter.SetParameterMap(rigid_params)
-    elastixImageFilter.LogToConsoleOff()
+    if debug:
+        elastixImageFilter.LogToConsoleOn()
+    else:
+        elastixImageFilter.LogToConsoleOff()
 
-
+    initial_transform = parse_sitk_rigid_transform(initial_transform)
     elastixImageFilter.Execute()
-    return elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"]
+    return elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"],initial_transform
 
+def parse_sitk_rigid_transform(sitk_rigid_transform):
+    rotation,xshift,yshift = sitk_rigid_transform.GetParameters()
+    center = sitk_rigid_transform.GetFixedParameters()
+    return rotation,xshift,yshift,center

@@ -16,7 +16,9 @@ from model.elastix_transformation import ElastixTransformation
 from lib.sql_setup import session
 from lib.PipelineUtilities import PipelineUtilities
 class ElastixManager(PipelineUtilities):
-    def create_elastix_transformation(self,rotation, xshift, yshift, center):
+    def parameters_to_rigid_transform(self,rotation, xshift, yshift, center):
+        rotation, xshift, yshift = np.array([rotation, xshift, yshift]).astype(np.float16)
+        center = np.array(center).astype(np.float16)
         R = np.array([[np.cos(rotation), -np.sin(rotation)],
                         [np.sin(rotation), np.cos(rotation)]])
         shift = center + (xshift, yshift) - np.dot(R, center)
@@ -30,8 +32,22 @@ class ElastixManager(PipelineUtilities):
             fixed_index = os.path.splitext(files[i-1])[0]
             moving_index = os.path.splitext(files[i])[0]        
             if not self.sqlController.check_elastix_row(self.animal,moving_index):
-                rotation, xshift, yshift = register_simple(INPUT, fixed_index, moving_index)
+                second_transform_parameters,initial_transform_parameters = \
+                    register_simple(INPUT, fixed_index, moving_index,self.debug)
+                T1 = self.parameters_to_rigid_transform(*initial_transform_parameters)
+                T2 = self.parameters_to_rigid_transform(*second_transform_parameters, self.get_rotation_center())
+                T = T1@T2     
+                xshift,yshift,rotation,_ = self.rigid_transform_to_parmeters(T)           
                 self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
+    
+    def rigid_transform_to_parmeters(self,transform):
+        R = transform[:2,:2]
+        shift = transform[:2,2]
+        tan= R[1,0]/R[0,0]
+        center = self.get_rotation_center()
+        rotation = np.arctan(tan)
+        xshift,yshift = shift-center +np.dot(R, center)
+        return xshift,yshift,rotation,center
 
     def load_elastix_transformation(self,animal, moving_index):
         try:
@@ -46,6 +62,15 @@ class ElastixManager(PipelineUtilities):
         yshift = elastixTransformation.yshift
         return R, xshift, yshift
 
+    def get_rotation_center(self):
+        INPUT = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
+        files = sorted(os.listdir(INPUT))
+        midpoint = len(files) // 2
+        midfilepath = os.path.join(INPUT, files[midpoint])
+        width,height = self.get_image_size(midfilepath)
+        center = np.array([width, height]) / 2
+        return center
+
     def parse_elastix(self):
         """
         After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
@@ -57,13 +82,11 @@ class ElastixManager(PipelineUtilities):
         files = sorted(os.listdir(INPUT))
         midpoint = len(files) // 2
         transformation_to_previous_sec = {}
-        midfilepath = os.path.join(INPUT, files[midpoint])
-        width,height = self.get_image_size(midfilepath)
-        center = np.array([width, height]) / 2
+        center = self.get_rotation_center()
         for i in range(1, len(files)):
             moving_index = os.path.splitext(files[i])[0]
             rotation, xshift, yshift = self.load_elastix_transformation(self.animal, moving_index)
-            T = self.create_elastix_transformation(rotation, xshift, yshift, center)
+            T = self.create_rigid_transformation_elastics(rotation, xshift, yshift, center)
             transformation_to_previous_sec[i] = T
         transformations = {}
         for moving_index in range(len(files)):
