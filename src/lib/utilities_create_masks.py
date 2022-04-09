@@ -8,7 +8,7 @@ from concurrent.futures.process import ProcessPoolExecutor
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-from abakit.utilities.file_location import FileLocationManager 
+from lib.file_location import FileLocationManager 
 from abakit.utilities.shell_tools import get_image_size
 from abakit.utilities.masking import combine_dims, merge_mask
 from lib.sql_setup import CREATE_FULL_RES_MASKS
