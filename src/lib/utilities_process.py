@@ -185,6 +185,8 @@ def resize_and_save_tif(file_key):
     """
     This does not work. PIL just can't open large TIF files (18 Oct 2021)
     """
+    print('Error, this method does not work: resize_and_save_tif')
+    sys.exit()
     filepath, png_path = file_key
     image = io.imread(filepath)
     image = Image.fromarray(image, "I;16L")

@@ -53,13 +53,12 @@ class Pipeline:
         done lots of testing with full and downsampled images, don't change them!
         Feel free to add another host/workstation.
         '''
-        nmax = 4
-        usecpus = (nmax,nmax)
+        usecpus = 4
         cpus = {}
-        cpus['mothra'] = (1,1)
-        cpus['muralis'] = (10,20)
-        cpus['basalis'] = (4,12)
-        cpus['ratto'] = (4,8)
+        cpus['mothra'] = 1
+        cpus['muralis'] = 12
+        cpus['basalis'] = 6
+        cpus['ratto'] = 6
         host = self.hostname
         if host in cpus.keys():
             usecpus = cpus[host]
@@ -73,17 +72,14 @@ class Pipeline:
 
     def get_nworkers(self, downsample=True):
         '''
-        get the number of cpus/processes to spawn. By default
-        we work with the downsampled version so get the higher/2nd
-        # of CPUS
+        get the number of cpus/processes to spawn. There is only one number
+        per machine. The downsampled get processed so quickly, that there is
+        no real reason to set a higher number for the downsampled.
         :param downsample: boolean, True for downsampled images
         '''
         nworkers = self.parallel_settings
-        workers = nworkers[1]
-        if not downsample:
-            workers = nworkers[0]
-        print(f'working with workers {workers}')
-        return workers
+        print(f'working with workers {nworkers}')
+        return nworkers
 
     def create_meta(self):
         """
