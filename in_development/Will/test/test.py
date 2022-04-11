@@ -1,4 +1,6 @@
-from lib.SqlController import SqlController
-controller = SqlController('DK52')
-a = controller.get_com_dict('DK52')
-print(a)
+import sys
+sys.path.append('/home/zhw272/programming/pipeline_utility/in_development/Will')
+sys.path.append('/home/zhw272/programming/pipeline_utility/src')
+from cell_extractor.CellDetectorTrainer import CellDetectorTrainer
+trainer = CellDetectorTrainer('DK55',round=2,segmentation_threshold=2700)
+features = trainer.load_new_features()
