@@ -180,7 +180,7 @@ def register_simple(INPUT, fixed_index, moving_index,debug=False,tries = 10):
             rigid_params['NumberOfBandStructureSamples']=['10']
             rigid_params['UseAdaptiveStepSizes']=['true']
             rigid_params['AutomaticParameterEstimation']=['true']
-            rigid_params['MaximumStepLength']=['1']
+            rigid_params['MaximumStepLength']=['10']
             rigid_params['NumberOfGradientMeasurements']=['0']
             rigid_params['NumberOfJacobianMeasurements']=['1000']
             rigid_params['NumberOfSamplesForExactGradient']=['100000']
@@ -324,7 +324,7 @@ def register_simple(INPUT, fixed_index, moving_index,debug=False,tries = 10):
                 elastixImageFilter.LogToConsoleOn()
             else:
                 elastixImageFilter.LogToConsoleOff()
-        except:
+        except RuntimeError:
             continue
         break
     initial_transform = parse_sitk_rigid_transform(initial_transform)

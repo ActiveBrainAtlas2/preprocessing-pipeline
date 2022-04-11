@@ -86,7 +86,7 @@ class ElastixManager(PipelineUtilities):
         for i in range(1, len(files)):
             moving_index = os.path.splitext(files[i])[0]
             rotation, xshift, yshift = self.load_elastix_transformation(self.animal, moving_index)
-            T = self.create_rigid_transformation_elastics(rotation, xshift, yshift, center)
+            T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
             transformation_to_previous_sec[i] = T
         transformations = {}
         for moving_index in range(len(files)):
