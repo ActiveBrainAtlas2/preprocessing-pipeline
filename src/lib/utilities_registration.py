@@ -20,7 +20,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import SimpleITK as sitk
 from IPython.display import clear_output
-
+import cv2
+from scipy.stats import skew
 
 
 def create_matrix(final_transform):
@@ -97,10 +98,6 @@ def command_iteration(method):
                                            method.GetMetricValue(),
                                            method.GetOptimizerPosition()))
 
-
-
-
-
 def register_test(INPUT, fixed_index, moving_index):
     pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
@@ -141,8 +138,6 @@ def register_test(INPUT, fixed_index, moving_index):
     return final_transform, fixed, moving, R
     
 
-
-
 def resample(image, transform):
     # Output image Origin, Spacing, Size, Direction are taken from the reference
     # image in this call to Resample
@@ -152,16 +147,49 @@ def resample(image, transform):
     return sitk.Resample(image, reference_image, transform,
                          interpolator, default_value)
 
+def find_principle_vector(mask):
+    moments = cv2.moments(mask)
+    x = moments['m10']/moments['m00']
+    y = moments['m01']/moments['m00']
+    u20 = moments['m20']/moments['m00'] - x**2
+    u11 = moments['m11']/moments['m00'] - x*y
+    u02 = moments['m02']/moments['m00'] - y**2
+    theta = 0.5*np.arctan(2*u11/(u20-u02)) + (u20<u02)*np.pi/2
+    x = moments['m10']/moments['m00']
+    y = moments['m01']/moments['m00']
+    center = np.array([x,y]).astype(int)
+    return theta,center
+
+def find_skewness_along_X(image):
+    inds = np.argwhere(image>np.mean(image))
+    return skew(inds[:,1])
+
+def rotate_and_align_image(moving,fixed):
+    moving_mask = np.array((np.array(moving)>np.mean(moving))*255).astype('uint8')
+    fixed_mask = np.array((np.array(fixed)>np.mean(fixed))*255).astype('uint8')
+    theta_moving,center_moving = find_principle_vector(moving_mask)
+    theta_fixed,center_fixed = find_principle_vector(fixed_mask)
+    straight_moving = moving.rotate(((theta_moving+2*np.pi)%(2*np.pi))/np.pi*180,center =list(center_moving))
+    straight_fixed = fixed.rotate(((theta_fixed+2*np.pi)%(2*np.pi))/np.pi*180,center =list(center_fixed))
+    skewness_moving = find_skewness_along_X(straight_moving)
+    skewness_fixed = find_skewness_along_X(straight_fixed)
+    if np.sign(skewness_fixed) != np.sign(skewness_moving):
+        theta_moving = (theta_moving+np.pi)%(2*np.pi)
+    rotation_angle = theta_fixed-theta_moving
+    offset = center_fixed - center_moving
+    rotation_angle = (theta_fixed-theta_moving+np.pi)%(2*np.pi)
+    return rotation_angle,offset,center_moving
+
 def register_simple(INPUT, fixed_index, moving_index,debug=False,tries = 10):
     pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f'{fixed_index}.tif')
     moving_file = os.path.join(INPUT, f'{moving_index}.tif')
     fixed = sitk.ReadImage(fixed_file, pixelType)
     moving = sitk.ReadImage(moving_file, pixelType)
-    initial_transform = sitk.CenteredTransformInitializer(fixed, 
-                                                        moving, 
-                                                        sitk.Euler2DTransform(), 
-                                                        sitk.CenteredTransformInitializerFilter.GEOMETRY)
+    rotation_angle,offset,center_moving = rotate_and_align_image(moving,fixed)
+    initial_transform = sitk.Euler2DTransform()
+    initial_transform.SetParameters(rotation_angle,*offset)
+    initial_transform.SetFixedParameters(center_moving)
     moving = resample(moving,initial_transform)
     for _ in range(tries):
         try:
@@ -169,6 +197,7 @@ def register_simple(INPUT, fixed_index, moving_index,debug=False,tries = 10):
             elastixImageFilter.SetFixedImage(fixed)
             elastixImageFilter.SetMovingImage(moving)
             rigid_params = elastixImageFilter.GetDefaultParameterMap("rigid")
+            
             rigid_params['AutomaticTransformInitializationMethod']=['GeometricalCenter']
             rigid_params['ShowExactMetricValue']=['false']
             rigid_params['CheckNumberOfSamples']=['true']
