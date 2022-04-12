@@ -15,9 +15,9 @@ from scipy.ndimage.measurements import center_of_mass
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
-from lib.FileLocationManager import DATA_PATH
-from lib.utilities_atlas import ATLAS
-from lib.SqlController import SqlController
+from abakit.lib.FileLocationManager import DATA_PATH
+from abakit.lib.utilities_atlas import ATLAS
+from abakit.lib.SqlController import SqlController
 
 DOWNSAMPLE_FACTOR = 32
 

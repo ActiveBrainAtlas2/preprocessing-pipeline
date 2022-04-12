@@ -5,10 +5,10 @@ from skimage import io
 import numpy as np
 import cv2
 from concurrent.futures.process import ProcessPoolExecutor
-from lib.FileLocationManager import FileLocationManager
+from abakit.lib.FileLocationManager import FileLocationManager
 from lib.logger import get_logger
-from lib.SqlController import SqlController
-from lib.utilities_process import test_dir, get_cpus
+from abakit.lib.SqlController import SqlController
+from abakit.lib.utilities_process import test_dir, get_cpus
 COLORS = {1: 'b', 2: 'r', 3: 'g'}
 from lib.PipelineUtilities import PipelineUtilities
 

@@ -1,7 +1,7 @@
-from lib.FileLocationManager import FileLocationManager
+from abakit.lib.FileLocationManager import FileLocationManager
 from glob import glob
 from multiprocessing.pool import Pool
-from lib.utilities_process import workernoshell
+from abakit.lib.utilities_process import workernoshell
 import os
 animal = 'DK55'
 manager = FileLocationManager('DK55')

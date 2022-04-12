@@ -1,4 +1,4 @@
-from lib.SqlController import SqlController
+from abakit.lib.SqlController import SqlController
 import pandas as pd
 import numpy as np
 animal = 'DK55'

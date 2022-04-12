@@ -9,7 +9,7 @@ All imports are listed by the order in which they are used in the pipeline.
 import os
 import sys
 from shutil import which
-from lib.FileLocationManager import FileLocationManager
+from abakit.lib.FileLocationManager import FileLocationManager
 from lib.MetaUtilities import MetaUtilities
 from lib.PrepCreater import PrepCreater
 from lib.NgPrecomputedMaker import NgPrecomputedMaker
@@ -17,7 +17,7 @@ from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
 from timeit import default_timer as timer
-from lib.SqlController import SqlController
+from abakit.lib.SqlController import SqlController
 from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
 from lib.Normalizer import Normalizer

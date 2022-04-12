@@ -3,8 +3,8 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
 from shutil import copyfile
-from lib.SqlController import SqlController
-from lib.utilities_process import test_dir, create_downsample
+from abakit.lib.SqlController import SqlController
+from abakit.lib.utilities_process import test_dir, create_downsample
 from lib.PipelineUtilities import PipelineUtilities
 class PrepCreater(PipelineUtilities):
 

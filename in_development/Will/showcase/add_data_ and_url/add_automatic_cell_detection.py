@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from lib.SqlController import SqlController
+from abakit.lib.SqlController import SqlController
 csv_path = '/data/cell_segmentation/DK55.Predicted.csv'
 data = pd.read_csv(csv_path)
 predictions = np.array(data['predictions'].to_list())

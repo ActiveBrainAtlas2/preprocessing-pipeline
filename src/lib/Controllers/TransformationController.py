@@ -1,5 +1,5 @@
 from lib.Controllers.Controller import Controller
-from model.transformation import Transformation
+from abakit.model.transformation import Transformation
 
 class TransformationController(Controller):
 

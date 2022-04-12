@@ -3,7 +3,7 @@ import os
 path = os.path.abspath(os.path.join( os.path.dirname( __file__ ), '..' ,'..'))
 sys.path.append(path)
 from lib.UrlGenerator import UrlGenerator
-from lib.SqlController import SqlController
+from abakit.lib.SqlController import SqlController
 animal = 'DK55'
 urlGen = UrlGenerator()
 sqlController = SqlController(animal)

@@ -2,7 +2,7 @@ import os
 import cv2
 import numpy as np
 from skimage import io
-from lib.utilities_mask import equalized
+from abakit.lib.utilities_mask import equalized
 
 class Normalizer:
     def create_normalization(self):

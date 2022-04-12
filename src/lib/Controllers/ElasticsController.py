@@ -1,4 +1,4 @@
-from model.elastix_transformation import ElastixTransformation
+from abakit.model.elastix_transformation import ElastixTransformation
 from datetime import datetime
 from lib.Controllers.Controller import Controller
 

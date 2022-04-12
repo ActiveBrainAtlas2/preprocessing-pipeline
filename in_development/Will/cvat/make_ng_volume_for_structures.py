@@ -1,7 +1,7 @@
-from atlas.BrainStructureManager import BrainStructureManager
-from atlas.VolumeMaker import VolumeMaker
-from atlas.Assembler import BrainAssembler
-from atlas.NgSegmentMaker import BrainNgMaker
+from abakit.atlas.BrainStructureManager import BrainStructureManager
+from abakit.atlas.VolumeMaker import VolumeMaker
+from abakit.atlas.Assembler import BrainAssembler
+from abakit.atlas.NgSegmentMaker import BrainNgMaker
 import numpy as np
 def make_volumes():
     vmaker = VolumeMaker('DK55',downsample_factor=8)

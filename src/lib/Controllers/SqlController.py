@@ -10,15 +10,15 @@ from lib.Controllers.LayerDataController import LayerDataController
 from lib.Controllers.StructuresController import StructuresController
 from lib.Controllers.TransformationController import TransformationController
 
-from lib.sql_setup import  pooledsession
-from model.file_log import FileLog
-from model.task import Task, ProgressLookup
-from model.slide_czi_to_tif import SlideCziTif
-from model.slide import Slide
-from model.section import Section
-from model.scan_run import ScanRun
-from model.histology import Histology
-from model.animal import Animal
+from abakit.lib.sql_setup import  pooledsession
+from abakit.model.file_log import FileLog
+from abakit.model.task import Task, ProgressLookup
+from abakit.model.slide_czi_to_tif import SlideCziTif
+from abakit.model.slide import Slide
+from abakit.model.section import Section
+from abakit.model.scan_run import ScanRun
+from abakit.model.histology import Histology
+from abakit.model.animal import Animal
 from collections import OrderedDict
 from datetime import datetime
 import numpy as np

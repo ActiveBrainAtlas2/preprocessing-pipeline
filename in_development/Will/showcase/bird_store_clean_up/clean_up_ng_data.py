@@ -1,9 +1,9 @@
-from lib.SqlController import SqlController
+from abakit.lib.SqlController import SqlController
 from lib.UrlGenerator import UrlGenerator
 from collections import Counter
 import numpy as np
 import os
-from lib.utilities_process import workernoshell
+from abakit.lib.utilities_process import workernoshell
 
 controller = SqlController('DK55')
 id_list = controller.get_url_id_list()
