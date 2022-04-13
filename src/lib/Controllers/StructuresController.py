@@ -1,4 +1,4 @@
-from model.structure import Structure
+from abakit.model.structure import Structure
 from sqlalchemy import func
 from lib.Controllers.Controller import Controller
 

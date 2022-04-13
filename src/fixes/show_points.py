@@ -13,9 +13,9 @@ HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(DIR)
 
-from lib.FileLocationManager import FileLocationManager
-from lib.utilities_process import get_image_size
-from model.layer_data import LayerData
+from abakit.lib.FileLocationManager import FileLocationManager
+from abakit.lib.utilities_process import get_image_size
+from abakit.model.layer_data import LayerData
 from sql_setup import session
 
 RESOLUTION = 0.325

@@ -5,7 +5,7 @@ import multiprocessing
 import socket
 import sys
 from multiprocessing.pool import Pool
-from lib.utilities_process import workernoshell
+from abakit.lib.utilities_process import workernoshell
 from concurrent.futures.process import ProcessPoolExecutor
 from multiprocessing import Pool
 import copy

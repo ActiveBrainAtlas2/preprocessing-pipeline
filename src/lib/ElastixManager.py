@@ -8,22 +8,15 @@ from concurrent.futures.process import ProcessPoolExecutor
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-from lib.FileLocationManager import FileLocationManager
-from lib.utilities_alignment import (create_downsampled_transforms, process_image)
-from lib.utilities_registration import register_simple
-from lib.utilities_process import get_cpus 
-from model.elastix_transformation import ElastixTransformation
-from lib.sql_setup import session
+from abakit.lib.FileLocationManager import FileLocationManager
+from abakit.lib.utilities_alignment import (create_downsampled_transforms, process_image)
+from abakit.lib.utilities_registration import register_simple,parameters_to_rigid_transform
+from abakit.lib.utilities_process import get_cpus 
+from abakit.model.elastix_transformation import ElastixTransformation
+from abakit.lib.sql_setup import session
 from lib.PipelineUtilities import PipelineUtilities
 class ElastixManager(PipelineUtilities):
-    def parameters_to_rigid_transform(self,rotation, xshift, yshift, center):
-        rotation, xshift, yshift = np.array([rotation, xshift, yshift]).astype(np.float16)
-        center = np.array(center).astype(np.float16)
-        R = np.array([[np.cos(rotation), -np.sin(rotation)],
-                        [np.sin(rotation), np.cos(rotation)]])
-        shift = center + (xshift, yshift) - np.dot(R, center)
-        T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
-        return T
+
 
     def create_elastix(self):
         INPUT = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
@@ -48,6 +41,9 @@ class ElastixManager(PipelineUtilities):
         rotation = np.arctan(tan)
         xshift,yshift = shift-center +np.dot(R, center)
         return xshift,yshift,rotation,center
+
+    def parameters_to_rigid_transform(self,rotation, xshift, yshift, center):
+        return parameters_to_rigid_transform(rotation, xshift, yshift, center)
 
     def load_elastix_transformation(self,animal, moving_index):
         try:
@@ -86,7 +82,7 @@ class ElastixManager(PipelineUtilities):
         for i in range(1, len(files)):
             moving_index = os.path.splitext(files[i])[0]
             rotation, xshift, yshift = self.load_elastix_transformation(self.animal, moving_index)
-            T = self.create_rigid_transformation_elastics(rotation, xshift, yshift, center)
+            T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
             transformation_to_previous_sec[i] = T
         transformations = {}
         for moving_index in range(len(files)):
@@ -105,6 +101,7 @@ class ElastixManager(PipelineUtilities):
         return transformations
 
     def align_full_size_image(self,transforms):
+        transforms = create_downsampled_transforms(self.animal, transforms, downsample = False)
         INPUT = self.fileLocationManager.get_full_cleaned(self.channel)
         OUTPUT = self.fileLocationManager.get_full_aligned(self.channel)
         self.align_images(INPUT,OUTPUT,transforms)

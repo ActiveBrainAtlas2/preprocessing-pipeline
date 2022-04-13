@@ -1,4 +1,4 @@
-from lib.sql_setup import session, pooledsession
+from abakit.lib.sql_setup import session, pooledsession
 
 class Controller(object):
     def __init__(self):

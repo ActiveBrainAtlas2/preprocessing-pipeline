@@ -1,5 +1,5 @@
 import pandas as pd
-from lib.SqlController import SqlController
+from abakit.lib.SqlController import SqlController
 import inspect
 import numpy as np
 def varName(var):

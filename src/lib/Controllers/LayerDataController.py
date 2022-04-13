@@ -1,5 +1,5 @@
 import numpy as np
-from model.layer_data import LayerData
+from abakit.model.layer_data import LayerData
 import json
 import pandas as pd
 from lib.Controllers.Controller import Controller

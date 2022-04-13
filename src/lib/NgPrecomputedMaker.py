@@ -1,9 +1,9 @@
 import os
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
-from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
-from lib.SqlController import SqlController
-from lib.utilities_process import get_cpus, SCALING_FACTOR, test_dir
+from abakit.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
+from abakit.lib.SqlController import SqlController
+from abakit.lib.utilities_process import get_cpus, SCALING_FACTOR, test_dir
 
 class NgPrecomputedMaker:
     def get_scales(self):

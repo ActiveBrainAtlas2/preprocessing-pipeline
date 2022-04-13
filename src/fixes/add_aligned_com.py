@@ -18,10 +18,10 @@ PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 
-from model.structure import Structure
-from model.layer_data import LayerData
-from model.scan_run import ScanRun
-from lib.sql_setup import session
+from abakit.model.structure import Structure
+from abakit.model.layer_data import LayerData
+from abakit.model.scan_run import ScanRun
+from abakit.lib.sql_setup import session
 
 
 MANUAL = 1
@@ -29,7 +29,7 @@ CORRECTED = 2
 DETECTED = 3
 
 """
-    The provided r, t is the affine transformation from brain to atlas such that:
+    The provided r, t is the affine transformation from atlas.lib.Brain to atlas such that:
         t_phys = atlas_scale @ t
         atlas_coord_phys = r @ brain_coord_phys + t_phys
 

@@ -8,7 +8,7 @@ import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from abakit.utilities.masking import combine_dims, merge_mask
-from lib.utilities_process import get_cpus, test_dir
+from abakit.lib.utilities_process import get_cpus, test_dir
 import warnings
 warnings.filterwarnings("ignore")
 from lib.PipelineUtilities import PipelineUtilities

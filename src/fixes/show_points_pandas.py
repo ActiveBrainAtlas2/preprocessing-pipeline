@@ -12,9 +12,9 @@ HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility')
 sys.path.append(DIR)
 
-from lib.FileLocationManager import FileLocationManager
-from model.layer_data import LayerData
-from lib.sql_setup import session
+from abakit.lib.FileLocationManager import FileLocationManager
+from abakit.model.layer_data import LayerData
+from abakit.lib.sql_setup import session
 SCALE = 10000/325.0
 
 

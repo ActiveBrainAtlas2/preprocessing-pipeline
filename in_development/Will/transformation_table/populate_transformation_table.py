@@ -1,10 +1,10 @@
 from lib.Controllers.SqlController import SqlController
 from DKLabInformation import DKLabInformation
-from lib.Transformation import Transformation
+from abakit.lib.Transformation import Transformation
 import SimpleITK as sitk
 from abakit.registration.algorithm import umeyama
 import numpy as np
-from Plotter.Plotter import Plotter
+from abakit.Plotter.Plotter import Plotter
 import pickle
 
 controller = SqlController('Atlas')

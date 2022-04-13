@@ -9,7 +9,7 @@ All imports are listed by the order in which they are used in the pipeline.
 import os
 import sys
 from shutil import which
-from lib.FileLocationManager import FileLocationManager
+from abakit.lib.FileLocationManager import FileLocationManager
 from lib.MetaUtilities import MetaUtilities
 from lib.PrepCreater import PrepCreater
 from lib.NgPrecomputedMaker import NgPrecomputedMaker
@@ -17,7 +17,7 @@ from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
 from timeit import default_timer as timer
-from lib.SqlController import SqlController
+from abakit.lib.SqlController import SqlController
 from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
 from lib.Normalizer import Normalizer
@@ -50,6 +50,7 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
         self.logger = get_logger(animal)
+        self.check_programs()
 
     @staticmethod
     def check_programs():
@@ -86,7 +87,6 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
         print(f'{function_name} took {timer()-time} seconds') 
 
     def prepare_image_for_quality_control(self):
-        self.check_programs()
         self.run_program_and_time(self.extract_slide_meta_data_and_insert_to_database,'Creating meta')
         self.run_program_and_time(self.extract_tifs_from_czi,'Extracting Tiffs')
         if self.channel == 1 and self.downsample:

@@ -23,24 +23,24 @@ from lib.pipeline import Pipeline
 
 def run_pipeline(animal, channel, downsample,step,DATA_PATH):
     pipeline = Pipeline(animal, channel, downsample,DATA_PATH=DATA_PATH,debug=False)
-    # pipeline.prepare_image_for_quality_control()
-    # if step > 0:
-    #     pipeline.apply_qc_and_prepare_image_masks()
-    # if step > 1:
-    #     pipeline.clean_images_and_create_histogram()
+    pipeline.prepare_image_for_quality_control()
+    if step > 0:
+        pipeline.apply_qc_and_prepare_image_masks()
+    if step > 1:
+        pipeline.clean_images_and_create_histogram()
     if step > 2:
         pipeline.align_images_within_stack()
     if step > 3:
         pipeline.create_neuroglancer_cloud_volume()
 
 if __name__ == '__main__':
-    animal = 'DK73'
+    animal = 'test'
     channel = 1
     downsample = True
-    step = 3
+    step = 4
     DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root/'
     run_pipeline(animal, 1, downsample,step,DATA_PATH)
     # run_pipeline(animal, 2, downsample, step)
     # run_pipeline(animal, 3, downsample, step)
     downsample = False
-    # run_pipeline(animal, 1, downsample,step,DATA_PATH)
+    run_pipeline(animal, 1, downsample,step,DATA_PATH)
