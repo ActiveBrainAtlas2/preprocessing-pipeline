@@ -2,6 +2,7 @@
 *.log
 parameters.yaml
 cvat.yaml
+parallel_settings.yaml
 
 # pycharm stuff
 .idea/
