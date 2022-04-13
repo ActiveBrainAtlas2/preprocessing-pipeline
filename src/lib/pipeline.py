@@ -50,6 +50,7 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
         self.logger = get_logger(animal)
+        self.check_programs()
 
     @staticmethod
     def check_programs():
@@ -86,7 +87,6 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
         print(f'{function_name} took {timer()-time} seconds') 
 
     def prepare_image_for_quality_control(self):
-        self.check_programs()
         self.run_program_and_time(self.extract_slide_meta_data_and_insert_to_database,'Creating meta')
         self.run_program_and_time(self.extract_tifs_from_czi,'Extracting Tiffs')
         if self.channel == 1 and self.downsample:
