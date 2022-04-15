@@ -601,10 +601,10 @@ class SqlController(object):
             created=datetime.utcnow(), active=True)
         self.add_row(data)
 
-    def add_annotation_point_row(self, animal, owner_id, input_id, coordinates, structure_id, label, ordering=0, segment_id=None):
+    def add_annotation_point_row(self, animal, owner_id, input_id, coordinates, structure_id, label, ordering=0, polygon_id=None,volume_id = None):
         x, y, z = coordinates
         data = AnnotationPoint(prep_id=animal, FK_owner_id=owner_id, FK_input_id=input_id, x=x, y=y, \
-            z=z, FK_structure_id=structure_id, label=label, ordering=ordering, segment_id=segment_id)
+            z=z, FK_structure_id=structure_id, label=label, ordering=ordering, polygon_id=polygon_id,volume_id = volume_id,active = 1)
         self.add_row(data)
     
     def add_com(self, prep_id, abbreviation, coordinates, person_id=2 , input_id = 1):
@@ -631,7 +631,7 @@ class SqlController(object):
     
     def get_new_segment_id(self):
         new_id = binascii.b2a_hex(os.urandom(20)).decode('ascii')
-        used_ids = [i.segment_id for i in self.session.query(AnnotationPoint.polygon_id).distinct().all()]
+        used_ids = [i.polygon_id for i in self.session.query(AnnotationPoint.polygon_id).distinct().all()]
         while new_id in used_ids:
             new_id = binascii.b2a_hex(os.urandom(20)).decode('ascii')
         return new_id

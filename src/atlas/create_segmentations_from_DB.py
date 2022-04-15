@@ -21,7 +21,7 @@ POLYGON_ID = 54
 def create_segmentation(animal, debug=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
-    from lib.utilities_process import SCALING_FACTOR
+    from  abakit.lib.utilities_process import SCALING_FACTOR
     # vars
     sections = sqlController.get_sections(animal, 1)
     if len(sections) < 10:

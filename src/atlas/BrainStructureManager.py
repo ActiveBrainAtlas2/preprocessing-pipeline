@@ -1,12 +1,12 @@
 import os
 import json
 from lib.file_location import DATA_PATH
-from lib.utilities_atlas import ATLAS
+from  abakit.lib.utilities_atlas import ATLAS
 import numpy as np
 from Brain import Brain
 from atlas.VolumeUtilities import VolumeUtilities
-from lib.utilities_atlas import volume_to_polygon
-from lib.utilities_atlas import save_mesh
+from  abakit.lib.utilities_atlas import volume_to_polygon
+from  abakit.lib.utilities_atlas import save_mesh
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 class BrainStructureManager(Brain, VolumeUtilities):

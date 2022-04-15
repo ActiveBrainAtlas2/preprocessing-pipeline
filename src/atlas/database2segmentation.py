@@ -24,8 +24,8 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
-from lib.utilities_process import SCALING_FACTOR
-from lib.utilities_atlas import get_transformation
+from  abakit.lib.utilities_process import SCALING_FACTOR
+from  abakit.lib.utilities_atlas import get_transformation
 POLYGON_ID = 54
 
 

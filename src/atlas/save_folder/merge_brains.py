@@ -29,9 +29,9 @@ from model.structure import Structure
 from model.layer_data import LayerData
 from lib.sql_setup import session
 from lib.file_location import DATA_PATH
-from lib.utilities_atlas import singular_structures
+from  abakit.lib.utilities_atlas import singular_structures
 from lib.sqlcontroller import SqlController
-from lib.utilities_atlas import convert_vol_bbox_dict_to_overall_vol, symmetricalize_volume, \
+from  abakit.lib.utilities_atlas import convert_vol_bbox_dict_to_overall_vol, symmetricalize_volume, \
     volume_to_polydata, save_mesh_stl
 
 MANUAL = 1
