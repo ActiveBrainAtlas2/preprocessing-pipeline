@@ -81,6 +81,9 @@ class CellDetectorBase(Brain):
             assert (tile_information == self.get_tile_information()).all().all()
         else:
             self.save_tile_information()
+    
+    def list_detectors(self):
+        return os.listdir(self.DETECTOR)
         
     def get_tile_and_image_dimensions(self):
         self.width,self.height = self.get_image_dimension()
