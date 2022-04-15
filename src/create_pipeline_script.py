@@ -34,13 +34,13 @@ def run_pipeline(animal, channel, downsample,step,DATA_PATH):
         pipeline.create_neuroglancer_cloud_volume()
 
 if __name__ == '__main__':
-    animal = 'test'
-    channel = 1
+    animal = 'DK73'
+    channel = 2
     downsample = True
     step = 4
     DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root/'
-    run_pipeline(animal, 1, downsample,step,DATA_PATH)
+    run_pipeline(animal, channel, downsample,step,DATA_PATH)
     # run_pipeline(animal, 2, downsample, step)
     # run_pipeline(animal, 3, downsample, step)
     downsample = False
-    run_pipeline(animal, 1, downsample,step,DATA_PATH)
+    run_pipeline(animal, channel, downsample,step,DATA_PATH)
