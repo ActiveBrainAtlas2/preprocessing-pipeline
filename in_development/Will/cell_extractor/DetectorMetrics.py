@@ -20,6 +20,7 @@ class AnnotationProximityTool(CellDetectorBase):
         self.pair_distance = 30
 
     def calculate_distance_matrix(self):
+        print('calculating distance matrix')
         df = self.annotations_to_compare.copy()
         df['section']*=1000
         self.distances=distance_matrix(np.array(df.iloc[:,:3]),np.array(df.iloc[:,:3]))
@@ -50,12 +51,14 @@ class AnnotationProximityTool(CellDetectorBase):
         return True
     
     def find_close_pairs(self):
+        print('finding points that are close to each other')
         very_close=self.distances<self.pair_distance
         close_pairs=np.transpose(np.nonzero(very_close))
         self.close_pairs=close_pairs[close_pairs[:,0]< close_pairs[:,1],:]
         self.npairs = len(self.close_pairs)
     
     def group_and_label_close_pairs(self):
+        print('grouping and labeling points that are close to each other')
         def group_close_paris():
             self.pairs={}
             for i in range(self.nannotations):
@@ -102,6 +105,12 @@ class AnnotationProximityTool(CellDetectorBase):
            name:    category of the annotation. str
         '''
         self.annotations_to_compare = annotations
+        self.nannotations = len(annotations)
+    
+    def find_equivalent_points(self):
+        self.calculate_distance_matrix()
+        self.find_close_pairs()
+        self.group_and_label_close_pairs()
 
 
 class DetectorMetricsDK55Round1(AnnotationProximityTool):
@@ -171,8 +180,7 @@ class DetectorMetricsDK55Round1(AnnotationProximityTool):
             'Total computer UNsure'             :lambda pair_categories : self.check(pair_categories,include=['computer_unsure'],size_max=2),
             'computer UNsure, human unmarked'   :lambda pair_categories : self.check(pair_categories,include=['computer_unsure'],size_max=1),
             'computer sure, human unmarked'     :lambda pair_categories : self.check(pair_categories,include=['computer_sure'],size_max=1),
-            'More than 2 labels'                :lambda pair_categories : self.check(pair_categories,exclude=['manual_train'],size_min=3)
-        }
+            'More than 2 labels'                :lambda pair_categories : self.check(pair_categories,exclude=['manual_train'],size_min=3)}
         for category,criteria in category_name_and_criteria.items():
             self.all_section_quantifications[category] = self.get_pairs_in_category(pair_category_criteria = criteria)
 
