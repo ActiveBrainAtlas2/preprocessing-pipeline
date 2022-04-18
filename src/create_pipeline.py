@@ -20,7 +20,13 @@ see: src/python/create_pipeline.py -h
 for more information.
 """
 import argparse
+import sys
+from pathlib import Path
 from timeit import default_timer as timer
+
+PIPELINE_ROOT = Path('.').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
+
 from lib.pipeline import Pipeline
 from lib.logger import get_logger
 
