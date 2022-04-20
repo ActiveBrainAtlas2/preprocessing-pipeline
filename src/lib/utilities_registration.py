@@ -153,9 +153,8 @@ def register_simple(INPUT, fixed_index, moving_index):
     elastixImageFilter = sitk.ElastixImageFilter()
     elastixImageFilter.SetFixedImage(fixed)
     elastixImageFilter.SetMovingImage(moving)
+
     rigid_params = elastixImageFilter.GetDefaultParameterMap("rigid")
-
-
     rigid_params['AutomaticTransformInitializationMethod']=['GeometricalCenter']
     rigid_params['ShowExactMetricValue']=['false']
     rigid_params['CheckNumberOfSamples']=['true']
@@ -176,10 +175,6 @@ def register_simple(INPUT, fixed_index, moving_index):
     rigid_params['UseMultiThreadingForMetrics']=['true']
     rigid_params['SP_A']=['20']
     rigid_params['UseConstantStep']=['false']
-    ## end 30 Dec 2020
-
-
-
 
     ## The internal pixel type, used for internal computations
     ## Leave to float in general.
@@ -290,7 +285,7 @@ def register_simple(INPUT, fixed_index, moving_index):
     ## 80 good results, 7 minutes on basalis with 4 jobs
     ## 200 good results except for 1st couple were not aligned, 12 minutes
     ## 500 is best, including first sections, basalis took 21 minutes
-    rigid_params['MaximumNumberOfIterations']=['700']
+    rigid_params['MaximumNumberOfIterations']=['2000']
 
     ## The step size of the optimizer, in mm. By default the voxel size is used.
     ## which usually works well. In case of unusual high-resolution images
@@ -340,6 +335,7 @@ def register_simple(INPUT, fixed_index, moving_index):
 
     ## The pixel type and format of the resulting deformed moving image
     rigid_params['ResultImagePixelType']=['unsigned char']
+
     rigid_params['ResultImageFormat']=['tif']
 
 
@@ -349,5 +345,6 @@ def register_simple(INPUT, fixed_index, moving_index):
 
 
     elastixImageFilter.Execute()
-    return elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"]
+    params = elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"]
+    return params
 
