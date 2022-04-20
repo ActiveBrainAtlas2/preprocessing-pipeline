@@ -70,9 +70,9 @@ if __name__ == '__main__':
     # logger.info(f'Create tifs took {end - start} seconds')
     if step > 0:
         start = timer()
-        #####TODOpipeline.create_preps()
-        #####TODOpipeline.create_normalized()
-        #####TODOpipeline.create_masks()
+        pipeline.create_preps()
+        pipeline.create_normalized()
+        pipeline.create_masks()
         end = timer()
         print(f'Creating normalized and masks took {end - start} seconds')    
         # logger.info(f'Create preps, normalized and masks took {end - start} seconds')

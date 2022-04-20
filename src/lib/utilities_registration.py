@@ -223,9 +223,10 @@ def register_simple(INPUT, fixed_index, moving_index):
     rigid_params['Optimizer']=['AdaptiveStochasticGradientDescent']
     rigid_params['Transform']=['EulerTransform']
     ##(Metric "AdvancedMattesMutualInformation")
+    ##rigid_params['Metric']=['AdvancedMattesMutualInformation']
     ## testing 17 dec
     rigid_params['Metric']=['AdvancedNormalizedCorrelation']
-
+ 
     ## ***************** Transformation **************************
 
     ## Scales the rotations compared to the translations, to make
