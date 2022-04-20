@@ -10,8 +10,8 @@ DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK73/preps
 ALIGNED_PATH = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK73/preps/CH1/thumbnail_stack_aligned/'
 os.makedirs(ALIGNED_PATH, exist_ok=True)
 files = sorted(os.listdir(DATA_PATH))
-w = 2484
-h = 1734
+h = 2484
+w = 1734
 #files = files[0:10]
 f = len(files)
 img0 = np.zeros([f, w, h], dtype=np.uint16)
