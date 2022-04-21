@@ -69,7 +69,7 @@ class SqlController(object):
         return bool(self.session.query(Slide).filter(Slide.scan_run_id == scan_id).filter(Slide.slide_physical_id == slide_id).first())
 
     def get_animal_list(self):
-        results = self.session.query(Animal).all()
+        results = self.session.query(Animal).filter(Animal.active==1).all()
         animals = []
         for resulti in results:
             animals.append(resulti.prep_id)
