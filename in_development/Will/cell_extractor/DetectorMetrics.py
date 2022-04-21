@@ -113,9 +113,11 @@ class AnnotationProximityTool(CellDetectorBase):
         self.group_and_label_close_pairs()
 
 
-class DetectorMetricsDK55Round1(AnnotationProximityTool):
-    def __init__(self,animal = 'DK55', *args,**kwrds):
+class DetectorMetricsDK55(AnnotationProximityTool):
+    def __init__(self,animal = 'DK55',sure_file_name = '/DK55_premotor_sure_detection_2021-12-09.csv',unsure_file_name = '/DK55_premotor_unsure_detection_2021-12-09.csv', *args,**kwrds):
         super().__init__(animal,*args,**kwrds)
+        self.sure_file_name = sure_file_name
+        self.unsure_file_name = unsure_file_name
         self.qc_annotation_input_path = '/scratch/programming/preprocessing-pipeline/in_development/yoav/marked_cell_detector/data2/'
 
     def load_annotations_to_compare(self):
@@ -140,8 +142,8 @@ class DetectorMetricsDK55Round1(AnnotationProximityTool):
     
     def load_machine_detection(self):
         self.machine_detection_filepath ={
-            'computer_sure':      self.qc_annotation_input_path+'/DK55_premotor_sure_detection_2021-12-09.csv',
-            'computer_unsure':    self.qc_annotation_input_path+'/DK55_premotor_unsure_detection_2021-12-09.csv'}
+            'computer_sure':      self.qc_annotation_input_path+self.sure_file_name,
+            'computer_unsure':    self.qc_annotation_input_path+self.unsure_file_name}
         dfs=[]
         for name,path in self.machine_detection_filepath.items():
             df= pd.read_csv(path,header=None)
@@ -149,7 +151,7 @@ class DetectorMetricsDK55Round1(AnnotationProximityTool):
             dfs.append(df)
         return dfs
     
-    def calculate_and_save_quantification(self):
+    def calculate_qualification(self):
         self.load_annotations_to_compare()
         self.calculate_distance_matrix()
         self.find_close_pairs()
@@ -158,6 +160,9 @@ class DetectorMetricsDK55Round1(AnnotationProximityTool):
         self.get_all_section_quantification()
         self.print_quantification(self.all_section_quantifications)
         self.print_quantification(self.train_section_quantifications)
+    
+    def calculate_and_save_quantification(self):
+        self.calculate_qualification()
         pk.dump((self.all_section_quantifications,self.train_section_quantifications),open(self.quantification,'wb'))
 
     def get_train_section_quantification(self):
@@ -186,5 +191,5 @@ class DetectorMetricsDK55Round1(AnnotationProximityTool):
 
 
 if __name__=='__main__':
-    mec = DetectorMetricsDK55Round1('DK55',round =1)
-    mec.calculate_and_save_quantification()
+    mec = DetectorMetricsDK55('DK55',round =1)
+    mec.calculate_qualification()
