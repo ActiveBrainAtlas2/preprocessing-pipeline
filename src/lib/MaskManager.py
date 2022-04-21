@@ -79,8 +79,8 @@ class MaskManager(PipelineUtilities):
                 print(f'Could not open {infile}')
             size = int(width), int(height)
             file_keys.append([thumbfile, outpath, size])
-        workers, _ = get_cpus()
-        self.run_commands_in_parallel_with_executor(file_keys,workers,self.resize_tif)
+        workers = self.get_nworkers()
+        self.run_commands_in_parallel_with_executor([file_keys],workers,self.resize_tif)
 
     def create_downsampled_mask(self):
         self.load_machine_learning_model()

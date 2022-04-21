@@ -43,9 +43,8 @@ class PrepCreater(PipelineUtilities):
             output_paths.append(output_path)
             width, height = self.get_image_size(input_path)
             self.sqlController.update_tif(section.id, width, height)
-        workers = 10
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            _ = executor.map(copyfile, input_paths,output_paths)
+        workers = self.get_nworkers()
+        self.run_commands_in_parallel_with_executor([input_paths,output_paths],workers,copyfile)
 
 
     def make_low_resolution(self):
@@ -69,5 +68,5 @@ class PrepCreater(PipelineUtilities):
             if os.path.exists(outpath):
                 continue
             file_keys.append([infile, outpath])
-        workers = 10
-        self.run_commands_in_parallel_with_executor(file_keys,workers,create_downsample)
+        workers = self.get_nworkers()
+        self.run_commands_in_parallel_with_executor([file_keys],workers,create_downsample)

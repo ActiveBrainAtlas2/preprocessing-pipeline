@@ -5,7 +5,7 @@ from skimage import io
 from abakit.lib.utilities_mask import equalized
 
 class Normalizer:
-    def create_normalization(self):
+    def create_normalized_image(self):
         INPUT = self.fileLocationManager.thumbnail
         OUTPUT = self.fileLocationManager.get_normalized(self.channel)
         os.makedirs(OUTPUT, exist_ok=True)

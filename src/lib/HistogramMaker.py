@@ -43,8 +43,8 @@ class HistogramMaker(PipelineUtilities):
             if os.path.exists(output_path):
                 continue
             file_keys.append([input_path, mask_path, self.channel, file, output_path])
-        workers, _ = get_cpus() 
-        self.run_commands_in_parallel_with_executor(file_keys,workers,self.make_single_histogram)    
+        workers = self.get_nworkers()
+        self.run_commands_in_parallel_with_executor([file_keys],workers,self.make_single_histogram)    
 
     def make_single_histogram(self,file_key):
         input_path, mask_path, channel, file, output_path = file_key

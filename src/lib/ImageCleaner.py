@@ -9,9 +9,10 @@ import tifffile as tiff
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.PipelineUtilities import PipelineUtilities
+from copy import copy 
 class ImageCleaner(PipelineUtilities):
 
-    def fix_ntb(self,file_key):
+    def clean_image(self,file_key):
         """
         This method clean all NTB images in the specified channel. For channel one it also scales
         and does an adaptive histogram equalization.
@@ -105,5 +106,5 @@ class ImageCleaner(PipelineUtilities):
                 continue
             maskfile = os.path.join(MASKS, file)
             file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, self.channel])
-        workers, _ = get_cpus() 
-        self.run_commands_in_parallel_with_executor(file_keys,workers,self.fix_ntb)
+        workers = self.get_nworkers()
+        self.run_commands_in_parallel_with_executor([file_keys],workers,self.clean_image)

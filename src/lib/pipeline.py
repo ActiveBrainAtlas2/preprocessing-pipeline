@@ -97,11 +97,9 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
         self.run_program_and_time(self.make_low_resolution,'Making downsampled copies')
         self.set_task_preps()
         if self.channel == 1 and self.downsample:
-            self.create_normalization()
-            self.run_program_and_time(self.create_normalization,'Creating normalization')
+            self.run_program_and_time(self.create_normalized_image,'Creating normalization')
         if self.channel == 1:
-            self.create_mask()
-            self.run_program_and_time(self.make_low_resolution,'Creating masks')
+            self.run_program_and_time(self.create_mask,'Creating masks')
         
     def clean_images_and_create_histogram(self):
         if self.channel == 1 and self.downsample:
@@ -114,12 +112,12 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
     def align_images_within_stack(self):
         start = timer()
         if self.channel == 1 and self.downsample:
-            self.run_program_and_time(self.create_elastix,'Creating elastics transform')  
-        transforms = self.parse_elastix()
+            self.run_program_and_time(self.create_within_stack_transformations,'Creating elastics transform')  
+        transformations = self.get_transformations()
         if self.downsample:
-            self.align_downsampled_images(transforms)
+            self.align_downsampled_images(transformations)
         else:
-            self.align_full_size_image(transforms)
+            self.align_full_size_image(transformations)
         end = timer()
         print(f'Creating elastix and alignment took {end - start} seconds')   
         
