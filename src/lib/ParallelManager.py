@@ -19,32 +19,37 @@ class ParallelManager:
                 self.parallel_settings = yaml.load(file, Loader=yaml.FullLoader)
             assert self.parallel_settings['name'] == self.hostname
         else:
-            ncpu = multiprocessing.cpu_count()
             host = self.hostname
-            self.parallel_settings = dict(   name = host,
-                                        create_tifs= (ncpu,ncpu),
-                                        create_preps = (ncpu,ncpu),
-                                        create_mask = (ncpu,ncpu),
-                                        create_clean = (ncpu,ncpu),
-                                        create_aligned = (ncpu,ncpu),
-                                        create_histograms = (ncpu,ncpu),
-                                        create_neuroglancer = (ncpu,ncpu),
-                                        create_downsamples = (ncpu,ncpu))
+            self.parallel_settings = dict(name = host,
+                                        extract_tifs_from_czi= 4,
+                                        create_web_friendly_image = 4,
+                                        make_full_resolution = 4,
+                                        make_low_resolution = 12,
+                                        make_histogram = 12,
+                                        create_full_resolution_mask = 4,
+                                        create_downsampled_mask = 12,
+                                        parallel_create_cleaned = (4,12),
+                                        align_images = (4,12),
+                                        create_neuroglancer = (4,12))
+
             with open(r'E:\data\store_file.yaml', 'w') as file:
-                documents = yaml.dump(self.parallel_settings, file_path)
+                documents = yaml.dump(self.parallel_settings, file)
             
     def get_hostname(self):
         hostname = socket.gethostname()
         hostname = hostname.split(".")[0]
         return hostname
 
-    def get_nworkers(self,downsample = True):
+    def get_nworkers(self):
         function_name = sys._getframe(1).f_code.co_name
-        nworkers = eval(self.parallel_settings[function_name])
-        if downsample:
-            return nworkers[1]
+        nworkers = self.parallel_settings[function_name]
+        if type(nworkers) != int:
+            if self.downsample:
+                return nworkers[0]
+            else:
+                return nworkers[1]
         else:
-            return nworkers[0]
+            return nworkers
     
     def run_commands_in_parallel_with_shell(self,commands,workers):
         if self.debug:
@@ -60,11 +65,11 @@ class ParallelManager:
             function = self.make_picklable_copy_of_function(function)
         if self.debug:
             print('debugging with single core')
-            for file_key in file_keys:
-                function(file_key)
+            for file_key in zip(*file_keys):
+                function(*file_key)
         else:
             with ProcessPoolExecutor(max_workers=workers) as executor:
-                executor.map(function, sorted(file_keys))
+                executor.map(function, *file_keys)
 
     def function_belongs_to_a_pipeline_object(self,function):
         if not hasattr(function,'__self__'):

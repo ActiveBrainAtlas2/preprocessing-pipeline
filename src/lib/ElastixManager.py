@@ -9,7 +9,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from abakit.lib.FileLocationManager import FileLocationManager
-from abakit.lib.utilities_alignment import (create_downsampled_transforms, process_image)
+from abakit.lib.utilities_alignment import (create_downsampled_transforms, clean_image)
 from abakit.lib.utilities_registration import register_simple,parameters_to_rigid_transform
 from abakit.lib.utilities_process import get_cpus 
 from abakit.model.elastix_transformation import ElastixTransformation
@@ -18,7 +18,7 @@ from lib.PipelineUtilities import PipelineUtilities
 class ElastixManager(PipelineUtilities):
 
 
-    def create_elastix(self):
+    def create_within_stack_transformations(self):
         INPUT = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
         files = sorted(os.listdir(INPUT))
         for i in range(1, len(files)):
@@ -67,7 +67,7 @@ class ElastixManager(PipelineUtilities):
         center = np.array([width, height]) / 2
         return center
 
-    def parse_elastix(self):
+    def get_transformations(self):
         """
         After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
         Args:
@@ -132,9 +132,8 @@ class ElastixManager(PipelineUtilities):
             if os.path.exists(outfile):
                 continue
             file_keys.append([i,infile, outfile, T])
-        workers, _ = get_cpus()
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(process_image, sorted(file_keys))
+        workers = self.get_nworkers()
+        self.run_commands_in_parallel_with_executor([file_keys],workers,clean_image)
 
     def create_csv_data(self,animal, file_keys):
         data = []
