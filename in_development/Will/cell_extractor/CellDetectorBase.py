@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from cell_extractor.DetectionPlotter import DetectionPlotter
 from cell_extractor.Predictor import Predictor
+import concurrent.futures
 
 class CellDetectorBase(Brain):
     def __init__(self,animal='DK55',section = 0,disk = '/net/birdstore/Active_Atlas_Data/',round = 1,segmentation_threshold=2000,replace=False):
@@ -102,8 +103,11 @@ class CellDetectorBase(Brain):
         self.check_attributes(['tile_origins'])
         return np.array(self.tile_origins[tilei],dtype=np.int32)
     
+    def get_all_sections(self):
+        return os.listdir(self.CH3)
+    
     def get_sections_with_string(self,search_string):
-        sections = os.listdir(self.CH3)
+        sections = self.get_all_sections()
         sections_with_string = []
         for sectioni in sections:
             if glob(os.path.join(self.CH3,sectioni,search_string)):
@@ -111,7 +115,7 @@ class CellDetectorBase(Brain):
         return sorted(sections_with_string)
 
     def get_sections_without_string(self,search_string):
-        sections = os.listdir(self.CH3)
+        sections = self.get_all_sections()
         sections_with_string = []
         for sectioni in sections:
             if not glob(os.path.join(self.CH3,sectioni,search_string)):
@@ -278,6 +282,8 @@ class CellDetectorBase(Brain):
                 print(e)
             self.average_image_ch1 = average_image['CH1']
             self.average_image_ch3 = average_image['CH3']
+    
+
 
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)
@@ -286,3 +292,38 @@ def get_sections_with_annotation_for_animali(animal):
 def get_sections_without_annotation_for_animali(animal):
     base = CellDetectorBase(animal)
     return base.get_sections_without_csv()
+
+def get_all_sections_for_animali(animal):
+    base = CellDetectorBase(animal)
+    return base.get_all_sections()
+
+def list_available_animals(disk = '/net/birdstore/Active_Atlas_Data/',has_example = True,has_feature = True):
+    base = CellDetectorBase(disk = disk)
+    animals = os.listdir(base.DATA_PATH)
+    animals = [os.path.isdir(i) for i in animals]
+    animals.remove('detectors')
+    animals.remove('models')
+    for animali in animals:
+        base = CellDetectorBase(disk = disk,animal = animali)
+        nsections = len(base.get_all_sections())
+        remove = False
+        if has_example:
+            nexamples = len(base.get_sections_with_example())
+            if not nexamples == nsections:
+                remove = True
+        if has_feature:
+            nfeatures = len(base.get_sections_with_features())
+            if not nfeatures == nsections:
+                remove = True
+        if remove:
+            animals.remove(animali)
+    return animals
+
+def parallel_process_all_sections(animal,processing_function,*args,njobs = 10,**kwargs):
+    sections = get_all_sections_for_animali(animal)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=njobs) as executor:
+        results = []
+        for sectioni in sections:
+            print(sectioni)
+            results.append(executor.submit(processing_function,animal,sectioni,*args,**kwargs))
+        print('done')

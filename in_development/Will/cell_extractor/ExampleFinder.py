@@ -1,4 +1,3 @@
-import sys
 import cv2
 import pandas as pd
 import numpy as np
@@ -6,14 +5,13 @@ import os
 from numpy.linalg import norm
 from time import time
 import glob
-import pickle as pkl
-from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_with_annotation_for_animali,\
-    get_sections_without_annotation_for_animali
+from cell_extractor.CellDetectorBase import CellDetectorBase,get_all_sections_for_animali,parallel_process_all_sections
 import concurrent.futures
 
 class ExampleFinder(CellDetectorBase):
     def __init__(self,animal,section, *args, **kwargs):
         super().__init__(animal,section, *args, **kwargs)
+        del self.sqlController
         self.t0=time()
         print('section=%d, SECTION_DIR=%s, threshold=%d'%(self.section,self.CH3_SECTION_DIR,self.segmentation_threshold))
         self.radius=40
@@ -123,41 +121,10 @@ class ExampleFinder(CellDetectorBase):
         self.cloest_segment_id=np.argmin(self.segment_distance_to_label)  
         return self.cloest_segment_id
 
-def process_all_sections_with_annotation(animal):
-    sections_with_csv = get_sections_with_annotation_for_animali(animal)
-    process_all_sections_in_list(animal,sections_with_csv)
+def create_examples_for_all_sections(animal,*args,njobs = 10,**kwargs):
+    parallel_process_all_sections(animal,create_examples_for_one_section,*args,njobs = njobs,**kwargs)
 
-def process_all_sections_without_annotation(animal):
-    sections_without_csv = get_sections_without_annotation_for_animali(animal)
-    process_all_sections_in_list(animal,sections_without_csv)
-
-def process_all_sections_in_list(animal,section_list):
-    for sectioni in section_list:
-        print(f'processing section {sectioni}')
-        extractor = ExampleFinder(animal,sectioni)
-        extractor.find_examples()
-        extractor.save_examples()
-
-def parallel_process_all_sections(animal,njobs = 40):
-    sections_with_csv = get_sections_without_annotation_for_animali(animal)
-    with concurrent.futures.ProcessPoolExecutor(max_workers=njobs) as executor:
-        results = []
-        for sectioni in sections_with_csv:
-            print(sectioni)
-            results.append(executor.submit(test_one_section,animal,sectioni))
-        print('done')
-
-def test_one_section(animal,section,disk):
-    extractor = ExampleFinder(animal=animal,section=section,disk=disk)
+def create_examples_for_one_section(animal,section,*args,**kwargs):
+    extractor = ExampleFinder(animal=animal,section=section,*args,**kwargs)
     extractor.find_examples()
     extractor.save_examples()
-
-if __name__ == '__main__':
-    animal = 'DK52'
-    base = CellDetectorBase(animal)
-    section_list = base.get_sections_without_example()
-    process_all_sections_in_list(animal,section_list)
-    # test_one_section('DK55',180)
-    # process_all_sections_with_annotation('DK52')
-    # process_all_sections_without_annotation('DK52')
-    
