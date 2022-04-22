@@ -36,7 +36,8 @@ def make_meta(animal):
         return
     else:
         print('Slides in DB and #slides on filesystem differ, please check.')
-        session.commit()
+        sys.exit()
+        #session.commit()
 
     section_number = 1
     for i, czi_file in enumerate(tqdm(czi_files)):
