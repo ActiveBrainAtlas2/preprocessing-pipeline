@@ -1,10 +1,5 @@
-from cell_extractor.FeatureFinder import FeatureFinder
+from cell_extractor.FeatureFinder import create_features_for_one_section
 import argparse
-
-def calculate_one_section(animal,section,disk,segmentation_threshold):
-    finder = FeatureFinder(animal,section = section,disk = disk,segmentation_threshold = segmentation_threshold)
-    finder.calculate_features()
-    finder.save_features()
 
 if __name__ =='__main__':
     parser = argparse.ArgumentParser()
@@ -15,5 +10,5 @@ if __name__ =='__main__':
     animal = args.animal
     section = args.section
     disk = args.disk
-    for threshold in [2100,2200,2300,2700]:
-        calculate_one_section(animal,section,disk=disk,segmentation_threshold = threshold)
+    # for threshold in [2100,2200,2300,2700]:
+    create_features_for_one_section(animal,section,disk=disk,segmentation_threshold = 2000)

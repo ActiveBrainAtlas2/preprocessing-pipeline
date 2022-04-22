@@ -45,12 +45,11 @@ class NgPrecomputedMaker:
         scales = self.get_scales()
         ng = NumpyToNeuroglancer(self.animal, None, scales, 'image', midfile.dtype, num_channels=num_channels, chunk_size=chunks)
         ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=progress_id)
-        workers, _ = get_cpus()
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            if num_channels == 1:
-                executor.map(ng.process_image, sorted(file_keys))
-            else:
-                executor.map(ng.process_3channel, sorted(file_keys))
+        workers = self.get_nworkers()
+        if num_channels == 1:
+            self.run_commands_in_parallel_with_executor([file_keys],workers,ng.process_image)
+        else:
+            self.run_commands_in_parallel_with_executor([file_keys],workers,ng.process_3channel)
         ng.precomputed_vol.cache.flush()
 
     def create_neuroglancer_lite(self,INPUT,OUTPUT_DIR):

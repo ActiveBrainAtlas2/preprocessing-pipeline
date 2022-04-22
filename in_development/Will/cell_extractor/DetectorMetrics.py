@@ -20,6 +20,7 @@ class AnnotationProximityTool(CellDetectorBase):
         self.pair_distance = 30
 
     def calculate_distance_matrix(self):
+        print('calculating distance matrix')
         df = self.annotations_to_compare.copy()
         df['section']*=1000
         self.distances=distance_matrix(np.array(df.iloc[:,:3]),np.array(df.iloc[:,:3]))
@@ -50,12 +51,14 @@ class AnnotationProximityTool(CellDetectorBase):
         return True
     
     def find_close_pairs(self):
+        print('finding points that are close to each other')
         very_close=self.distances<self.pair_distance
         close_pairs=np.transpose(np.nonzero(very_close))
         self.close_pairs=close_pairs[close_pairs[:,0]< close_pairs[:,1],:]
         self.npairs = len(self.close_pairs)
     
     def group_and_label_close_pairs(self):
+        print('grouping and labeling points that are close to each other')
         def group_close_paris():
             self.pairs={}
             for i in range(self.nannotations):
@@ -102,11 +105,19 @@ class AnnotationProximityTool(CellDetectorBase):
            name:    category of the annotation. str
         '''
         self.annotations_to_compare = annotations
+        self.nannotations = len(annotations)
+    
+    def find_equivalent_points(self):
+        self.calculate_distance_matrix()
+        self.find_close_pairs()
+        self.group_and_label_close_pairs()
 
 
-class DetectorMetricsDK55Round1(AnnotationProximityTool):
-    def __init__(self,animal = 'DK55', *args,**kwrds):
+class DetectorMetricsDK55(AnnotationProximityTool):
+    def __init__(self,animal = 'DK55',sure_file_name = '/DK55_premotor_sure_detection_2021-12-09.csv',unsure_file_name = '/DK55_premotor_unsure_detection_2021-12-09.csv', *args,**kwrds):
         super().__init__(animal,*args,**kwrds)
+        self.sure_file_name = sure_file_name
+        self.unsure_file_name = unsure_file_name
         self.qc_annotation_input_path = '/scratch/programming/preprocessing-pipeline/in_development/yoav/marked_cell_detector/data2/'
 
     def load_annotations_to_compare(self):
@@ -131,8 +142,8 @@ class DetectorMetricsDK55Round1(AnnotationProximityTool):
     
     def load_machine_detection(self):
         self.machine_detection_filepath ={
-            'computer_sure':      self.qc_annotation_input_path+'/DK55_premotor_sure_detection_2021-12-09.csv',
-            'computer_unsure':    self.qc_annotation_input_path+'/DK55_premotor_unsure_detection_2021-12-09.csv'}
+            'computer_sure':      self.qc_annotation_input_path+self.sure_file_name,
+            'computer_unsure':    self.qc_annotation_input_path+self.unsure_file_name}
         dfs=[]
         for name,path in self.machine_detection_filepath.items():
             df= pd.read_csv(path,header=None)
@@ -140,7 +151,7 @@ class DetectorMetricsDK55Round1(AnnotationProximityTool):
             dfs.append(df)
         return dfs
     
-    def calculate_and_save_quantification(self):
+    def calculate_qualification(self):
         self.load_annotations_to_compare()
         self.calculate_distance_matrix()
         self.find_close_pairs()
@@ -149,6 +160,9 @@ class DetectorMetricsDK55Round1(AnnotationProximityTool):
         self.get_all_section_quantification()
         self.print_quantification(self.all_section_quantifications)
         self.print_quantification(self.train_section_quantifications)
+    
+    def calculate_and_save_quantification(self):
+        self.calculate_qualification()
         pk.dump((self.all_section_quantifications,self.train_section_quantifications),open(self.quantification,'wb'))
 
     def get_train_section_quantification(self):
@@ -171,12 +185,11 @@ class DetectorMetricsDK55Round1(AnnotationProximityTool):
             'Total computer UNsure'             :lambda pair_categories : self.check(pair_categories,include=['computer_unsure'],size_max=2),
             'computer UNsure, human unmarked'   :lambda pair_categories : self.check(pair_categories,include=['computer_unsure'],size_max=1),
             'computer sure, human unmarked'     :lambda pair_categories : self.check(pair_categories,include=['computer_sure'],size_max=1),
-            'More than 2 labels'                :lambda pair_categories : self.check(pair_categories,exclude=['manual_train'],size_min=3)
-        }
+            'More than 2 labels'                :lambda pair_categories : self.check(pair_categories,exclude=['manual_train'],size_min=3)}
         for category,criteria in category_name_and_criteria.items():
             self.all_section_quantifications[category] = self.get_pairs_in_category(pair_category_criteria = criteria)
 
 
 if __name__=='__main__':
-    mec = DetectorMetricsDK55Round1('DK55',round =1)
-    mec.calculate_and_save_quantification()
+    mec = DetectorMetricsDK55('DK55',round =1)
+    mec.calculate_qualification()

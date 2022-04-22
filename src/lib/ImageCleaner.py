@@ -8,55 +8,9 @@ from abakit.lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
 import tifffile as tiff
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-from lib.PipelineUtilities import PipelineUtilities
-class ImageCleaner(PipelineUtilities):
-
-    def fix_ntb(self,file_key):
-        """
-        This method clean all NTB images in the specified channel. For channel one it also scales
-        and does an adaptive histogram equalization.
-        The masks have 3 dimenions since we are using the torch process.
-        The 3rd channel has what we want for the mask.
-        file_keys is a tuple of the following:
-            :param infile: file path of image to read
-            :param outpath: file path of image to write
-            :param mask: binary mask image of the image
-            :param rotation: amount of rotation. 1 = rotate by 90degrees
-            :param flip: either flip or flop
-            :param max_width: width of image
-            :param max_height: height of image
-            :param scale: used in scaling. Gotten from the histogram
-        :return: nothing. we write the image to disk
-        """
-        infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
-        img = self.read_image(infile)
-        mask = self.read_image(maskfile)
-        cleaned = self.apply_mask(img,mask,infile)
-        if channel == 1:
-            cleaned = scaled(cleaned, mask, epsilon=0.01)
-            cleaned = equalized(cleaned)
-        del img
-        del mask
-        if rotation > 0:
-            cleaned = rotate_image(cleaned, infile, rotation)
-        if flip == 'flip':
-            cleaned = np.flip(cleaned)
-        if flip == 'flop':
-            cleaned = np.flip(cleaned, axis=1)
-        cleaned = pad_image(cleaned, infile, max_width, max_height, 0)
-        tiff.imsave(outpath, cleaned)
-        del cleaned
-        return
-
-    def apply_mask(self,img,mask,infile):
-        try:
-            cleaned = cv2.bitwise_and(img, img, mask=mask)
-        except:
-            print(f'Error in masking {infile} with mask shape {mask.shape} img shape {img.shape}')
-            print('Are the shapes exactly the same?')
-            print("Unexpected error:", sys.exc_info()[0])
-            raise
-        return cleaned
+from lib.pipeline_utilities import read_image,get_max_image_size
+from copy import copy 
+class ImageCleaner:
 
     def create_cleaned_images(self):
         """
@@ -90,7 +44,7 @@ class ImageCleaner(PipelineUtilities):
         self.parallel_create_cleaned(INPUT,CLEANED,MASKS)
 
     def parallel_create_cleaned(self,INPUT,CLEANED,MASKS):
-        max_width,max_height = self.get_max_imagze_size(INPUT)
+        max_width,max_height = get_max_image_size(INPUT)
         rotation = self.sqlController.scan_run.rotation
         flip = self.sqlController.scan_run.flip
         test_dir(self.animal, INPUT, self.downsample, same_size=False)
@@ -105,5 +59,53 @@ class ImageCleaner(PipelineUtilities):
                 continue
             maskfile = os.path.join(MASKS, file)
             file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, self.channel])
-        workers, _ = get_cpus() 
-        self.run_commands_in_parallel_with_executor(file_keys,workers,self.fix_ntb)
+        workers = self.get_nworkers()
+        self.run_commands_in_parallel_with_executor([file_keys],workers,clean_image)
+
+
+def clean_image(file_key):
+    """
+    This method clean all NTB images in the specified channel. For channel one it also scales
+    and does an adaptive histogram equalization.
+    The masks have 3 dimenions since we are using the torch process.
+    The 3rd channel has what we want for the mask.
+    file_keys is a tuple of the following:
+        :param infile: file path of image to read
+        :param outpath: file path of image to write
+        :param mask: binary mask image of the image
+        :param rotation: amount of rotation. 1 = rotate by 90degrees
+        :param flip: either flip or flop
+        :param max_width: width of image
+        :param max_height: height of image
+        :param scale: used in scaling. Gotten from the histogram
+    :return: nothing. we write the image to disk
+    """
+    infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
+    img = read_image(infile)
+    mask = read_image(maskfile)
+    cleaned = apply_mask(img,mask,infile)
+    if channel == 1:
+        cleaned = scaled(cleaned, mask, epsilon=0.01)
+        cleaned = equalized(cleaned)
+    del img
+    del mask
+    if rotation > 0:
+        cleaned = rotate_image(cleaned, infile, rotation)
+    if flip == 'flip':
+        cleaned = np.flip(cleaned)
+    if flip == 'flop':
+        cleaned = np.flip(cleaned, axis=1)
+    cleaned = pad_image(cleaned, infile, max_width, max_height, 0)
+    tiff.imsave(outpath, cleaned)
+    del cleaned
+    return
+
+def apply_mask(img,mask,infile):
+    try:
+        cleaned = cv2.bitwise_and(img, img, mask=mask)
+    except:
+        print(f'Error in masking {infile} with mask shape {mask.shape} img shape {img.shape}')
+        print('Are the shapes exactly the same?')
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
+    return cleaned
