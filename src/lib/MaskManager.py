@@ -11,8 +11,8 @@ from abakit.utilities.masking import combine_dims, merge_mask
 from abakit.lib.utilities_process import get_cpus, test_dir
 import warnings
 warnings.filterwarnings("ignore")
-from lib.PipelineUtilities import PipelineUtilities
-class MaskManager(PipelineUtilities):
+from lib.pipeline_utilities import get_image_size
+class MaskManager:
     def apply_user_mask_edits(self):
         COLORED = self.fileLocationManager.thumbnail_colored
         MASKS = self.fileLocationManager.thumbnail_masked
@@ -74,13 +74,13 @@ class MaskManager(PipelineUtilities):
             if os.path.exists(outpath):
                 continue
             try:
-                width, height = self.get_image_size(infile)
+                width, height = get_image_size(infile)
             except:
                 print(f'Could not open {infile}')
             size = int(width), int(height)
             file_keys.append([thumbfile, outpath, size])
         workers = self.get_nworkers()
-        self.run_commands_in_parallel_with_executor([file_keys],workers,self.resize_tif)
+        self.run_commands_in_parallel_with_executor([file_keys],workers,resize_tif)
 
     def create_downsampled_mask(self):
         self.load_machine_learning_model()
@@ -113,11 +113,11 @@ class MaskManager(PipelineUtilities):
             del mask
             cv2.imwrite(maskpath, merged_img)
 
-    def resize_tif(self,file_key):
-        thumbfile, outpath, size = file_key
-        try:
-            im = Image.open(thumbfile)
-            im = im.resize(size, Image.LANCZOS)
-            im.save(outpath)
-        except IOError:
-            print("cannot resize", thumbfile)
+def resize_tif(file_key):
+    thumbfile, outpath, size = file_key
+    try:
+        im = Image.open(thumbfile)
+        im = im.resize(size, Image.LANCZOS)
+        im.save(outpath)
+    except IOError:
+        print("cannot resize", thumbfile)

@@ -1,7 +1,7 @@
 import os
 from time import time
 from glob import glob
-from atlas.lib.Brain import Brain
+from abakit.lib.Brain import Brain
 import pickle as pkl
 import pandas as pd
 import numpy as np
