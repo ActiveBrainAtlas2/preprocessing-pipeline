@@ -35,8 +35,7 @@ def make_meta(animal):
     if slide_count == len(czi_files):
         return
     else:
-        print('Slides in DB and #slides on filesystem differ, redoing slide DB update.')
-        session.query(Slide).filter(Slide.scan_run_id == scan_id).delete(synchronize_session=False)
+        print('Slides in DB and #slides on filesystem differ, please check.')
         session.commit()
 
     section_number = 1
