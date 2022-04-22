@@ -14,6 +14,7 @@ class ParallelManager:
     def load_parallel_settings(self):
         dirname = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','..'))
         file_path = os.path.join(dirname, 'parallel_settings.yaml')
+        ncores = os.cpu_count()
         if os.path.exists(file_path):
             with open(file_path) as file:
                 self.parallel_settings = yaml.load(file, Loader=yaml.FullLoader)
@@ -24,15 +25,15 @@ class ParallelManager:
                                         extract_tifs_from_czi= 4,
                                         create_web_friendly_image = 4,
                                         make_full_resolution = 4,
-                                        make_low_resolution = 12,
-                                        make_histogram = 12,
+                                        make_low_resolution = ncores,
+                                        make_histogram = ncores,
                                         create_full_resolution_mask = 4,
-                                        create_downsampled_mask = 12,
-                                        parallel_create_cleaned = (4,12),
-                                        align_images = (4,12),
-                                        create_neuroglancer = (4,12))
+                                        create_downsampled_mask = ncores,
+                                        parallel_create_cleaned = (4,ncores),
+                                        align_images = (4,ncores),
+                                        create_neuroglancer = (4,ncores))
 
-            with open(r'E:\data\store_file.yaml', 'w') as file:
+            with open(file_path, 'w') as file:
                 documents = yaml.dump(self.parallel_settings, file)
             
     def get_hostname(self):
