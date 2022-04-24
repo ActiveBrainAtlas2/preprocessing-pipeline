@@ -55,6 +55,7 @@ def fix_ntb(file_key):
         fixed = scaled(fixed, mask)
         fixed = equalized(fixed)
     del mask
+    fixed = crop_image(fixed, infile, maskfile)
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
     if flip == 'flip':
@@ -62,7 +63,6 @@ def fix_ntb(file_key):
     if flip == 'flop':
         fixed = np.flip(fixed, axis=1)
 
-    fixed = crop_image(fixed, infile, maskfile)
     fixed = place_image(fixed, infile, max_width, max_height, 0)
     # cv2.imwrite(outpath, fixed)
     try:

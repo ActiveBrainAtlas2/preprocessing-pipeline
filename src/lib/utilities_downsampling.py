@@ -14,7 +14,7 @@ def create_downsamples(animal, channel, downsample):
     #mips = [0,1,2,3,4,5,6,7]
     # DK73 is proving to be a pain in the butt. I am limiting
     # the chunks to 64,64,64 and the mips to 0,1,2,3
-    mips = [0,1,2,3]
+    mips = [0,1,2]
     first_chunk = [64,64,64]
 
     if downsample:

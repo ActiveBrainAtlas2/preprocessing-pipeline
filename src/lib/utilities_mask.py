@@ -177,6 +177,7 @@ def make_mask(img):
 
 
 def crop_image(img, infile, mask_path):
+    BUFFER = 2
     #img_path = os.path.join(self.root, 'normalized', self.imgs[idx])
     #mask_path = os.path.join(self.root, 'thumbnail_masked', self.masks[idx])
     #img = Image.open(img_path).convert("L")
@@ -195,14 +196,13 @@ def crop_image(img, infile, mask_path):
             xmax = int(round(x+w))
             ymax = int(round(y+h))
             boxes.append([xmin, ymin, xmax, ymax])
-    x1 = min(x[0] for x in boxes)
-    y1 = min(x[1] for x in boxes)
-    x2 = max(x[2] for x in boxes)
-    y2 = max(x[3] for x in boxes)
-    print(x1,y1, x2, y2, img.shape)
-    cropped = cv2.rectangle(img, (x1, y1), (x2, y2), 255, 5)
-    print(x1,y1, x2, y2, img.shape, cropped.shape)
-    #cropped = img[y1:y2, x1:x2] #  gray[y1:y2, x1:x2]
+    x1 = min(x[0] for x in boxes) - BUFFER
+    y1 = min(x[1] for x in boxes) - BUFFER
+    x2 = max(x[2] for x in boxes) + BUFFER
+    y2 = max(x[3] for x in boxes) + BUFFER
+    img = np.ascontiguousarray(img, dtype=np.uint16)
+    #cropped = cv2.rectangle(img, (x1, y1), (x2, y2), 60000, 5)
+    cropped = img[y1:y2, x1:x2] #  gray[y1:y2, x1:x2]
     return cropped
 
 
