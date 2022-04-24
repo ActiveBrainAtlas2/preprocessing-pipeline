@@ -15,8 +15,11 @@ from lib.utilities_process import get_cpus
 def create_downsample(animal, channel, mip, transfer):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = f'C{channel}'
-    first_chunk = [64,64,64]
- 
+    chunks = [64,64,64]
+    factors = [2,2,1]
+    if mip > 3:
+        chunks = [64, 64, 32]
+
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
     outpath = f'file://{OUTPUT_DIR}'
 
@@ -33,13 +36,11 @@ def create_downsample(animal, channel, mip, transfer):
 
     if transfer:
         tasks = tc.create_transfer_tasks(cloudpath, dest_layer_path=outpath, 
-            chunk_size=first_chunk, mip=0, skip_downsamples=True)
+            chunk_size=chunks, mip=0, skip_downsamples=True)
         tq.insert(tasks)
         tq.execute()
 
     cv = CloudVolume(outpath, mip)
-    chunks = [64,64,64]
-    factors = [2,2,1]
     tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors,
         compress=True, chunk_size=chunks)
     tq.insert(tasks)
