@@ -12,13 +12,11 @@ from lib.utilities_process import get_cpus
 
 
 
-def create_downsample(animal, channel, mip, transfer):
+def create_downsample(animal, channel, transfer):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = f'C{channel}'
     chunks = [64,64,64]
     factors = [2,2,1]
-    if mip > 3:
-        chunks = [64, 64, 32]
 
     OUTPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'{channel_outdir}')
     outpath = f'file://{OUTPUT_DIR}'
@@ -40,11 +38,15 @@ def create_downsample(animal, channel, mip, transfer):
         tq.insert(tasks)
         tq.execute()
 
-    cv = CloudVolume(outpath, mip)
-    tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors,
-        compress=True, chunk_size=chunks)
-    tq.insert(tasks)
-    tq.execute()
+    mips = [1,2,3]
+    for mip in mips:
+        if mip > 3:
+            chunks = [64, 64, 32]
+        cv = CloudVolume(outpath, mip)
+        tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors,
+            compress=True, chunk_size=chunks)
+        tq.insert(tasks)
+        tq.execute()
 
 
 
@@ -52,12 +54,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=True)
-    parser.add_argument('--mip', help='Enter mip', required=True)
     parser.add_argument('--transfer', help='Enter bool transfer', required=True)
     args = parser.parse_args()
     animal = args.animal
     channel = args.channel
-    mip = int(args.mip)
     transfer = bool({'true': True, 'false': False}[str(args.transfer).lower()])
-    create_downsample(animal, channel, mip, transfer)
+    create_downsample(animal, channel, transfer)
 
