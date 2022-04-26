@@ -12,7 +12,8 @@ os.makedirs(ALIGNED_PATH, exist_ok=True)
 files = sorted(os.listdir(DATA_PATH))
 h = 2484
 w = 1734
-#files = files[0:10]
+#w, h = 1796,2703
+#files = files[110:-1]
 f = len(files)
 img0 = np.zeros([f, w, h], dtype=np.uint16)
 
@@ -22,11 +23,11 @@ for i, f in enumerate(files):
     img0[i, :, :] = infile
 
 print(img0.shape, img0.dtype)
-
 #img0 = io.imread(stack) # 3 dimensions : frames x width x height
 
 sr = StackReg(StackReg.RIGID_BODY)
 reg = sr.register_transform_stack(img0 - img0.min())
+"""
 # register each frame to the previous (already registered) one
 # this is what the original StackReg ImageJ plugin uses
 out_previous = sr.register_transform_stack(img0, reference='previous')
@@ -38,24 +39,26 @@ out_first = sr.register_transform_stack(img0, reference='first')
 print('register to first image')
 print(out_first.dtype, out_first.shape)
 
-# register to mean image
-out_mean = sr.register_transform_stack(img0, reference='mean')
-print('register to mean image')
-print(out_mean.dtype, out_mean.shape)
 
 # register to mean of first 10 images
 out_first10 = sr.register_transform_stack(img0, reference='first', n_frames=10)
 print('register to mean of first 10 images')
 print(out_first10.dtype, out_first10.shape)
-
 # calculate a moving average of 10 images, then register the moving average to the mean of
 # the first 10 images and transform the original image (not the moving average)
-out_moving10 = sr.register_transform_stack(img0, reference='first', n_frames=10, moving_average = 10)
+out_moving10 = sr.register_transform_stack(img0, reference='mean', n_frames=5, moving_average = 5)
 print('calculate a moving average of 10 images')
 print(out_moving10.dtype, out_moving10.shape)
+"""
 
-for i in range(0, out_moving10.shape[0]):
+# register to mean image
+out_mean = sr.register_transform_stack(img0, reference='mean')
+print('register to mean image')
+print(out_mean.dtype, out_mean.shape)
+
+
+for i in range(0, out_mean.shape[0]):
     outpath = os.path.join(ALIGNED_PATH, f'{str(i).zfill(3)}.tif')
-    img = out_moving10[i,:,:]
+    img = out_mean[i,:,:]
     reg_int = to_uint16(img)
     io.imsave(outpath, reg_int)
