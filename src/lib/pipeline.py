@@ -48,39 +48,38 @@ class Pipeline:
         self.load_parallel_settings()
         
     def load_parallel_settings(self):
-        dirname = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..','..'))
-        file_path = os.path.join(dirname, 'parallel_settings.yaml')
-        if os.path.exists(file_path):
-            with open(file_path) as file:
-                self.parallel_settings = yaml.load(file, Loader=yaml.FullLoader)
-            assert self.parallel_settings['name'] == self.hostname
-        else:
-            ncpu = multiprocessing.cpu_count()
-            host = self.hostname
-            self.parallel_settings = dict(   name = host,
-                                        create_tifs= (ncpu,ncpu),
-                                        create_preps = (ncpu,ncpu),
-                                        create_mask = (ncpu,ncpu),
-                                        create_clean = (ncpu,ncpu),
-                                        create_aligned = (ncpu,ncpu),
-                                        create_histograms = (ncpu,ncpu),
-                                        create_neuroglancer = (ncpu,ncpu),
-                                        create_downsamples = (ncpu,ncpu))
-            with open(r'E:\data\store_file.yaml', 'w') as file:
-                documents = yaml.dump(self.parallel_settings, file_path)
+        '''
+        There was a LOT of effort in getting the numbers below. Unless you have
+        done lots of testing with full and downsampled images, don't change them!
+        Feel free to add another host/workstation.
+        '''
+        usecpus = 4
+        cpus = {}
+        cpus['mothra'] = 1
+        cpus['muralis'] = 12
+        cpus['basalis'] = 6
+        cpus['ratto'] = 6
+        host = self.hostname
+        if host in cpus.keys():
+            usecpus = cpus[host]
+            
+        self.parallel_settings = usecpus
             
     def get_hostname(self):
         hostname = socket.gethostname()
         hostname = hostname.split(".")[0]
         return hostname
 
-    def get_nworkers(self,downsample = True):
-        function_name = sys._getframe(1).f_code.co_name
-        nworkers = eval(self.parallel_settings[function_name])
-        if downsample:
-            return nworkers[1]
-        else:
-            return nworkers[0]
+    def get_nworkers(self, downsample=True):
+        '''
+        get the number of cpus/processes to spawn. There is only one number
+        per machine. The downsampled get processed so quickly, that there is
+        no real reason to set a higher number for the downsampled.
+        :param downsample: boolean, True for downsampled images
+        '''
+        nworkers = self.parallel_settings
+        print(f'working with workers {nworkers}')
+        return nworkers
 
     def create_meta(self):
         """

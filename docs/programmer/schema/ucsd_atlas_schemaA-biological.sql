@@ -1,6 +1,6 @@
 /* TABLE OF CONTENTS - OVERALL ORGANIZATION STRUCTURE (BIOLOGICAL):
 
-   TOTAL TABLES (12): alias, animal, brain_region, breeder_line, genotype, histology, injection, injection_virus, organic_label, scan_run, virus, vendor_strain
+   TOTAL TABLES (12): alias, animal, structure, breeder_line, genotype, histology, injection, injection_virus, organic_label, scan_run, virus, vendor_strain
 
 FOR REVIEW (27-JAN-2022):
 -animal [NORMALIZATION]
@@ -8,6 +8,8 @@ FOR REVIEW (27-JAN-2022):
 -genotype [NEW - NORMALIZATION]
 -vendor_strain
 
+   UPDATE (6-APR-2022):
+   renamed 'brain_region' to 'structure'
 
    TABLES MODIFIED FROM schema2.sql [WITH JUSTIFICATION]
    alias [NORMALIZATION] *APPROVED 26-JAN-2022
@@ -70,14 +72,8 @@ CREATE TABLE `animal` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
-/*
-   COMMENTS RELATED TO TABLE: brain_region
-   DR - RENAMED TABLE 'structure' to 'brain_region'
-   Unknown contrib - Does not include the 3D shape information?
-*/
-
-DROP TABLE IF EXISTS `brain_region`;
-CREATE TABLE `brain_region` (
+DROP TABLE IF EXISTS `structure`;
+CREATE TABLE `structure` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `created` datetime DEFAULT current_timestamp(),

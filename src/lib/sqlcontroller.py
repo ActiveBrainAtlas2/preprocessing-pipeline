@@ -69,7 +69,7 @@ class SqlController(object):
         return bool(self.session.query(Slide).filter(Slide.scan_run_id == scan_id).filter(Slide.slide_physical_id == slide_id).first())
 
     def get_animal_list(self):
-        results = self.session.query(Animal).all()
+        results = self.session.query(Animal).filter(Animal.active==1).all()
         animals = []
         for resulti in results:
             animals.append(resulti.prep_id)
@@ -382,7 +382,7 @@ class SqlController(object):
         try:
             count = self.session.query(Section).filter(Section.prep_id == animal).filter(Section.channel == 1).count()
         except:
-            count = 666
+            count = 0
         return count
 
     def get_current_task(self, animal):
@@ -406,7 +406,9 @@ class SqlController(object):
     def set_task(self, animal, lookup_id):
         """
         Look up the lookup up from the step. Check if the animal already exists,
-        if not, insert, otherwise, update
+        if not, insert, otherwise, update. Also, lots of times we rerun steps
+        as they fail or for some other reason. In that case, we need to delete
+        any existing progress that is ahead.
         Args:
             animal: string of the animal you are working on
             lookup_id: current lookup ID
@@ -418,7 +420,21 @@ class SqlController(object):
                 .filter(ProgressLookup.id == lookup_id) \
                 .limit(1).one()
         except NoResultFound:
-            print('No lookup for {} so we will enter one.'.format(lookup_id))
+            print(f'There is no lookup ID = {lookup_id}. Make sure the number is correct and retry.')
+            return
+        
+        # delete any existing progress that are greater than what we are working on.
+        # https://github.com/ActiveBrainAtlas2/activebrainatlasadmin/issues/30
+        try:
+            self.session.query(Task)\
+                .filter(Task.lookup_id > lookup_id)\
+                .filter(Task.prep_id == animal).delete()
+            self.session.commit()
+        except Exception as e:
+            print(f'Exception occurred during delete of progress tasks {e}')
+            return
+
+        
         try:
             task = self.session.query(Task).filter(Task.lookup_id == lookup.id) \
                 .filter(Task.prep_id == animal).one()
