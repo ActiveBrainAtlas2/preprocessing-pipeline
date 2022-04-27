@@ -1,3 +1,4 @@
-from lib.sqlcontroller import SqlController
-controller = SqlController('DK39')
-controller.get_new_segment_id()
+from abakit.atlas.Assembler import AtlasAssembler
+
+assembler = AtlasAssembler('atlasV7', threshold=0.01,sigma = 1)
+assembler.assemble_all_structure_volume()

@@ -10,7 +10,7 @@ from timeit import default_timer as timer
 import shutil
 from cloudvolume import CloudVolume
 from atlas.Atlas import Atlas
-from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from  abakit.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 from atlas.Assembler import AtlasAssembler, BrainAssembler
 from atlas.BrainStructureManager import BrainStructureManager
 

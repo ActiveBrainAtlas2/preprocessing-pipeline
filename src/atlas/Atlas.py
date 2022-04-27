@@ -1,5 +1,5 @@
 from atlas.BrainStructureManager import BrainStructureManager
-from lib.utilities_atlas import ATLAS
+from  abakit.lib.utilities_atlas import ATLAS
 from lib.file_location import DATA_PATH
 import os
 from abakit.registration.utilities import get_similarity_transformation_from_dicts
