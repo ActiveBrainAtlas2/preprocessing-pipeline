@@ -37,8 +37,7 @@ def create_stack(animal, debug):
         infile = io.imread(inpath)
         img0[i, :, :] = infile
 
-    print(img0.shape, img0.dtype)
-    #img0 = io.imread(stack) # 3 dimensions : frames x width x height
+    print(f'Working on a stack with shape: {img0.shape} and dtype: {img0.dtype}')
 
     sr = StackReg(StackReg.RIGID_BODY)
     reg = sr.register_transform_stack(img0 - img0.min())
