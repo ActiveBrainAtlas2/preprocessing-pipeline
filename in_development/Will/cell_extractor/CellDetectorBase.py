@@ -283,7 +283,8 @@ class CellDetectorBase(Brain):
             self.average_image_ch1 = average_image['CH1']
             self.average_image_ch3 = average_image['CH3']
     
-
+    def load_detections(self):
+        return pd.read_csv(self.DETECTION_RESULT_DIR)
 
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)

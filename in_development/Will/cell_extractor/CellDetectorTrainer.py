@@ -217,9 +217,6 @@ class CellDetectorTrainer(Detector,DataLoader,CellDetectorBase):
         detection_df = detection_df[['animal', 'section', 'row', 'col','label', 'mean_score','std_score', 'predictions']]
         detection_df.to_csv(self.DETECTION_RESULT_DIR,index=False)
     
-    def load_detections(self):
-        return pd.read_csv(self.DETECTION_RESULT_DIR)
-    
     def add_detection_to_database(self):
         detection_df = trainer.load_detections()
         points = np.array([detection_df.col,detection_df.row,detection_df.section]).T

@@ -34,7 +34,7 @@ def run_pipeline(animal, channel, downsample,step,DATA_PATH):
         pipeline.create_neuroglancer_cloud_volume()
 
 if __name__ == '__main__':
-    animal = 'DK73'
+    animal = 'DK37'
     channel = 1
     downsample = True
     step = 4
