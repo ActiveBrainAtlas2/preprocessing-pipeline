@@ -118,7 +118,7 @@ class DetectorMetricsDK55(AnnotationProximityTool):
         super().__init__(animal,*args,**kwrds)
         self.sure_file_name = sure_file_name
         self.unsure_file_name = unsure_file_name
-        self.qc_annotation_input_path = '/scratch/programming/preprocessing-pipeline/in_development/yoav/marked_cell_detector/data2/'
+        self.qc_annotation_input_path = '/home/zhw272/programming/pipeline_utility/in_development/yoav/marked_cell_detector/data2/'
 
     def load_annotations_to_compare(self):
         dfs=self.load_human_qc()+self.load_machine_detection()
