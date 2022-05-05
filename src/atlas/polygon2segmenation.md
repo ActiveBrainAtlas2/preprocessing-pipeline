@@ -14,6 +14,8 @@
    * What is the dtype of the 3D-mesh? should be unsigned int 8.
    * What is stored in the database? a pickled 3D mask? That can be pretty large for large structures.
 
+
+
     2. The 2nd part of the process fetches the pickled data from the DB (a 3D mesh for each struccture) 
 and creates the Neuroglancer segmentation layer. Each different structure is then multiplied by a 'color' number taken from the database to give it a different color in Nueroglancer. Each array then is a mask filled with mostly zeros and some color number.  
 
