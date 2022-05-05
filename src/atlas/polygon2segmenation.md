@@ -18,8 +18,7 @@
 
     2. The 2nd part of the process fetches the pickled data from the DB (a 3D mesh for each struccture) 
 and creates the Neuroglancer segmentation layer. Each different structure is then multiplied by a 'color' number taken from the database to give it a different color in Nueroglancer. Each array then is a mask filled with mostly zeros and some color number.  
-
- This array is then processed with the [Seung Lab Cloudvolume software](https://github.com/seung-lab/igneous). To process the numpy arrays into the segmentation layer, the following steps are taken:
+This array is then processed with the [Seung Lab Cloudvolume software](https://github.com/seung-lab/igneous). To process the numpy arrays into the segmentation layer, the following steps are taken:
         1. Fetches metadata from the DB to determine what shape the entire 3D volume will be. The width and height are taken from the width and height of the full scale images. These values are then downsampled by 32 (this is our universal downsampling factor). The numpy array would be too large with the full scale resolution. The z shape is taken from the number of sections.
         1. All structures (numpy arrays and x,y,z offsets) for that particular brain for that brain are fetched from the DB. The offsets are the distance in um taken from the top left origin of the Neuroglancer view.
         1. Each structure is then placed in the entire 3D volume we created with the width, height, section number data fetched earlier. Now we have a 3D volume with all the structures and this numpy array is then passed onto the Cloudvolume library to process into the segmentation layer.
@@ -31,7 +30,8 @@ and creates the Neuroglancer segmentation layer. Each different structure is the
 
 Both scripts are well documented and should be readable and reproducible. They can be run on either ratto, basalis, or muralis. Activate the virtualenv with: `source /usr/local/share/pipeline/bin/activate` and then run the programs with python.
 
-**Yoav:**  There are no currently no tests for either of these modues. 
+**Yoav:**  I am not sure what you mean by *reproducible*, does it mean running without crashing? does reproduction identify errors or inconsistencies with user parts of the code or the database?  
+What we need are **tests** that check the code against the specifications, and that can be perform on each module independently, regardless of changes made to other modules, to the database, or to the file system.
 * Each function/method that is public, i.e. called from code outside the module, needs to have a separate test.
 * Methods need to be partitioned into *core* and *IO* that are  seperately tested. 
     * The *IO* defines how data that is *not* in the parameters passed in calls to the module is collected. 
