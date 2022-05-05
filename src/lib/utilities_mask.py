@@ -3,32 +3,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.figure
 from skimage import exposure, io
+from PIL import Image
 
 from lib.utilities_process import get_last_2d
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 fontScale = 1
 thickness = 2
-
-"""
-def create_xcf(tif_path,mask_path,xcf_path):
-    interface = GimpInterface()
-    gimp_tool_path = os.path.join(os.getcwd(),'src','lib')
-    interface.import_custome_library(gimp_tool_path,'gimp_tools')
-    interface.create_xcf(tif_path,mask_path,xcf_path)
-    interface.add_batch_script()
-    report = interface.execute()
-    return report
-
-def save_mask_after_edit(modsav,xcf_path):
-    interface = GimpInterface()
-    gimp_tool_path = os.path.join(os.getcwd(),'src','lib')
-    interface.import_custome_library(gimp_tool_path,'gimp_tools')
-    interface.save_mask(modsav,xcf_path)
-    interface.add_batch_script()
-    report = interface.execute()
-    return report
-"""
 
 def rotate_image(img, file, rotation):
     """
@@ -193,6 +174,36 @@ def make_mask(img):
     scaled, _max = scale_and_mask(img, closing)
 
     return closing, scaled
+
+
+def crop_image(img, infile, mask_path):
+    BUFFER = 2
+    #img_path = os.path.join(self.root, 'normalized', self.imgs[idx])
+    #mask_path = os.path.join(self.root, 'thumbnail_masked', self.masks[idx])
+    #img = Image.open(img_path).convert("L")
+    mask = Image.open(mask_path) # 
+    mask = np.array(mask)
+    mask[mask > 0] = 255
+    ret, thresh = cv2.threshold(mask, 200, 255, 0)
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    boxes = []
+    for contour in contours:
+        x,y,w,h = cv2.boundingRect(contour)
+        area = cv2.contourArea(contour)
+        if area > 100:
+            xmin = int(round(x))
+            ymin = int(round(y))
+            xmax = int(round(x+w))
+            ymax = int(round(y+h))
+            boxes.append([xmin, ymin, xmax, ymax])
+    x1 = min(x[0] for x in boxes) - BUFFER
+    y1 = min(x[1] for x in boxes) - BUFFER
+    x2 = max(x[2] for x in boxes) + BUFFER
+    y2 = max(x[3] for x in boxes) + BUFFER
+    img = np.ascontiguousarray(img, dtype=np.uint16)
+    #cropped = cv2.rectangle(img, (x1, y1), (x2, y2), 60000, 5)
+    cropped = img[y1:y2, x1:x2] #  gray[y1:y2, x1:x2]
+    return cropped
 
 
 def place_image(img, file, max_width, max_height, bgcolor=None):

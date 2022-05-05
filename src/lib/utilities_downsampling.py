@@ -10,8 +10,12 @@ from lib.utilities_process import get_cpus
 def create_downsamples(animal, channel, downsample):
     fileLocationManager = FileLocationManager(animal)
     channel_outdir = f'C{channel}'
-    first_chunk = calculate_chunks(downsample, 0)
-    mips = [0,1,2,3,4,5,6,7]
+    #first_chunk = calculate_chunks(downsample, 0)
+    #mips = [0,1,2,3,4,5,6,7]
+    # DK73 is proving to be a pain in the butt. I am limiting
+    # the chunks to 64,64,64 and the mips to 0,1,2,3
+    mips = [0,1,2]
+    first_chunk = [64,64,64]
 
     if downsample:
         channel_outdir += 'T'
@@ -44,7 +48,8 @@ def create_downsamples(animal, channel, downsample):
     #mips = 7 shows good results in neuroglancer
     for mip in mips:
         cv = CloudVolume(outpath, mip)
-        chunks = calculate_chunks(downsample, mip)
+        #chunks = calculate_chunks(downsample, mip)
+        chunks = [64,64,64]
         factors = calculate_factors(downsample, mip)
         tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors, preserve_chunk_size=False,
             compress=True, chunk_size=chunks)

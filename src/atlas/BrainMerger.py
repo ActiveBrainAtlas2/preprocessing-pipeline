@@ -9,9 +9,9 @@ into the database if given a layer name.
 import numpy as np
 from collections import defaultdict
 from abakit.registration.algorithm import brain_to_atlas_transform
-from lib.utilities_atlas import singular_structures
+from  abakit.lib.utilities_atlas import singular_structures
 from lib.sqlcontroller import SqlController
-from lib.utilities_atlas import  symmetricalize_volume
+from  abakit.lib.utilities_atlas import  symmetricalize_volume
 from atlas.Atlas import Atlas,BrainStructureManager
 from Registration.StackRegistration.AffineRegistration import AffineRegistration
 MANUAL = 1

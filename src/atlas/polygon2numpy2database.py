@@ -24,8 +24,8 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 from lib.sqlcontroller import SqlController
 from lib.file_location import FileLocationManager
-from lib.utilities_process import SCALING_FACTOR
-from lib.utilities_atlas import get_transformation
+from  abakit.lib.utilities_process import SCALING_FACTOR
+from  abakit.lib.utilities_atlas import get_transformation
 from abakit.registration.algorithm import brain_to_atlas_transform
 from model.brain_shape import BrainShape
 POLYGON_ID = 54
@@ -70,6 +70,7 @@ def create_segmentation(animal, transform=False):
     if transform:
         atlas_centers = sqlController.get_annotation_points_entry('Atlas', FK_input_id=1, person_id=16)
         R, t = get_transformation(animal)
+        ## Yoav: Where is the transformation defined by (R,t) used ?
         abbreviations = [a for a in abbreviations if a in atlas_centers.keys()]
         
     print(f'Working with {len(abbreviations)} structures')

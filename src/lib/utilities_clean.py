@@ -6,14 +6,14 @@ from concurrent.futures.process import ProcessPoolExecutor
 from lib.sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from lib.file_location import FileLocationManager
 from lib.sqlcontroller import SqlController
-from lib.utilities_mask import rotate_image, place_image, scaled, equalized
+from lib.utilities_mask import rotate_image, crop_image, place_image, scaled, equalized
 from lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
 import tifffile as tiff
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 def fix_ntb(file_key):
     """
-    This method clean all NTB images in the specified channel. For channel one it also scales
+    This method cleans all NTB images in the specified channel. For channel one it also scales
     and does an adaptive histogram equalization.
     The masks have 3 dimenions since we are using the torch process.
     The 3rd channel has what we want for the mask.
@@ -55,6 +55,7 @@ def fix_ntb(file_key):
         fixed = scaled(fixed, mask)
         fixed = equalized(fixed)
     del mask
+    fixed = crop_image(fixed, infile, maskfile)
     if rotation > 0:
         fixed = rotate_image(fixed, infile, rotation)
     if flip == 'flip':

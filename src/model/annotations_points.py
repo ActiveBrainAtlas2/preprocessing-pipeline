@@ -15,6 +15,7 @@ class AnnotationPoint(Base):
     FK_structure_id = Column(Integer, ForeignKey('structure.id'), nullable=True)
     label = Column(String, nullable=False)
     polygon_id = Column(String, nullable=True)
+    volume_id = Column(String, nullable=True)
     ordering = Column(Integer, nullable=False, default=0)
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
