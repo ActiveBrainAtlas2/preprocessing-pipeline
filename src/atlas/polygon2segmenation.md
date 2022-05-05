@@ -1,6 +1,6 @@
 ## Converting polygons to segmentation layers
 1. After the anatomist has entered the polygon data, the process is broken into two steps:
-    1. The first part involves fetching the polygon data from the database, transforming it to atlas space, and creating the numpy arrays, and finally storing the data in the DB as pickled data. The script to perform [this step is named:polygon2numpy2database.py](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/src/atlas/polygon2numpy2database.py)
+    1. The first part involves fetching the polygon data from the database, transforming it to atlas space, and creating the numpy arrays, and finally storing the data in the DB as pickled data. The module to perform [this step is named:polygon2numpy2database.py](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/src/atlas/polygon2numpy2database.py)
 
 **Yoav:**
 * Terminology:  Lets refer to a "numpy array" as a "3D mask", it is more specific.
