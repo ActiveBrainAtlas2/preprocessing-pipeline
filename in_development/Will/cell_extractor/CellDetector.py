@@ -26,6 +26,6 @@ class CellDetector(CellDetectorBase):
         detection_df = detection_df[['animal', 'section', 'row', 'col','label', 'mean_score','std_score', 'predictions']]
         detection_df.to_csv(self.DETECTION_RESULT_DIR,index=False)
 
-if __name__ == '__main__':
-    detector = CellDetector('DK52')
+def detect_cell(animal,round,*args,**kwargs):
+    detector = CellDetector(*args,animal = animal,round=round,**kwargs)
     detector.calculate_and_save_detection_results()

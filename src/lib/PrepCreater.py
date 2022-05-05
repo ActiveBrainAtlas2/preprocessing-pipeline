@@ -5,8 +5,9 @@ from concurrent.futures.process import ProcessPoolExecutor
 from shutil import copyfile
 from abakit.lib.SqlController import SqlController
 from abakit.lib.utilities_process import test_dir, create_downsample
-from lib.PipelineUtilities import PipelineUtilities
-class PrepCreater(PipelineUtilities):
+from lib.pipeline_utilities import get_image_size
+
+class PrepCreater:
 
     def set_task_preps(self):
         self.sqlController = SqlController(self.animal)
@@ -41,7 +42,7 @@ class PrepCreater(PipelineUtilities):
                 continue
             input_paths.append(input_path)
             output_paths.append(output_path)
-            width, height = self.get_image_size(input_path)
+            width, height = get_image_size(input_path)
             self.sqlController.update_tif(section.id, width, height)
         workers = self.get_nworkers()
         self.run_commands_in_parallel_with_executor([input_paths,output_paths],workers,copyfile)

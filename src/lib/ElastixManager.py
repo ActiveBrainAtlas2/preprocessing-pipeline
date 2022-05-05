@@ -1,21 +1,17 @@
 import os 
-import sys
 import numpy as np
 import pandas as pd
-from skimage import io
 from collections import OrderedDict
-from concurrent.futures.process import ProcessPoolExecutor
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from abakit.lib.FileLocationManager import FileLocationManager
 from abakit.lib.utilities_alignment import (create_downsampled_transforms, clean_image)
 from abakit.lib.utilities_registration import register_simple,parameters_to_rigid_transform
-from abakit.lib.utilities_process import get_cpus 
 from abakit.model.elastix_transformation import ElastixTransformation
 from abakit.lib.sql_setup import session
-from lib.PipelineUtilities import PipelineUtilities
-class ElastixManager(PipelineUtilities):
+from lib.pipeline_utilities import get_image_size
+class ElastixManager:
 
 
     def create_within_stack_transformations(self):
@@ -63,7 +59,7 @@ class ElastixManager(PipelineUtilities):
         files = sorted(os.listdir(INPUT))
         midpoint = len(files) // 2
         midfilepath = os.path.join(INPUT, files[midpoint])
-        width,height = self.get_image_size(midfilepath)
+        width,height = get_image_size(midfilepath)
         center = np.array([width, height]) / 2
         return center
 
