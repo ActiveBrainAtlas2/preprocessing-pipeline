@@ -8,13 +8,11 @@
    * Lets refer to python files that are imported as *modules*, files that are executed from the command line as *scripts*.
    * It is preferable to wrap related functions into a class. Classes can have internal state, and that makes the code more modular.
    * Each function method and class should have a descriptive docstring.
-   * I am not sure if and how [polygon2numpy2database.py](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/src/atlas/polygon2numpy2database.py) takes into account the transformation. Was this module tested?
-   * Is the order of operations 1: transform polygons to atlas space 2: transform polygons into 3D mask.  
+* I am not sure if and how [polygon2numpy2database.py](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/src/atlas/polygon2numpy2database.py) takes into account the transformation. Was this module tested?
+* Is the order of operations 1: transform polygons to atlas space 2: transform polygons into 3D mask.  
   or: 1. transform polygon into 3D mask, 2: transform 3D mask into atlas space.
-   * What is the dtype of the 3D-mesh? should be unsigned int 8.
-   * What is stored in the database? a pickled 3D mask? That can be pretty large for large structures.
-
-
+* What is the dtype of the 3D-mesh? should be unsigned int 8.
+* What is stored in the database? a pickled 3D mask? That can be pretty large for large structures.
 
     2. The 2nd part of the process fetches the pickled data from the DB (a 3D mesh for each struccture) 
 and creates the Neuroglancer segmentation layer. Each different structure is then multiplied by a 'color' number taken from the database to give it a different color in Nueroglancer. Each array then is a mask filled with mostly zeros and some color number.  
