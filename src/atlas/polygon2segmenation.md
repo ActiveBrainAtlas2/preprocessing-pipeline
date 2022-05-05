@@ -4,7 +4,7 @@
 
 **Yoav:**
 * Terminology:  Lets refer to a "numpy array" as a "3D mask", it is more specific.
-* Is there existing software for transforming the polygon data into 3D masks? What is the name of the module?
+* I am not sure if and how [polygon2numpy2database.py](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/src/atlas/polygon2numpy2database.py) takes into account the transformation. Was this module tested?
 * Is the order of operations 1: transform polygons to atlas space 2: transform polygons into 3D mask.  
   or: 1. transform polygon into 3D mask, 2: transform 3D mask into atlas space.
 * What is the dtype of the 3D-mesh? should be unsigned int 8.
