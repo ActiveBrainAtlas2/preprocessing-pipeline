@@ -215,6 +215,6 @@ def move_detected_cells():
     controller.session.commit()
 
 # move_manual_cells()
-move_detected_cells()
+move_polygons()
 
 print()
