@@ -1,8 +1,9 @@
 ## Converting polygons to segmentation layers
 ### Fetching the data
-1. Data is stored in the polygon_sequences table.
-1. Each row contains an x,y,z vertex and has metadata describing the data point.
-1. All data is stored in micrometers.
+1. Information regarding the database polygon data.
+    1. Data is stored in the polygon_sequences table.
+    1. Each row contains an x,y,z coordinate and has metadata describing the data point.
+    1. All data is stored in micrometers.
 1. Fetching the data involves importing the abakit module. This module uses the process described below:
 
     The [PolygonSequenceController](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/PolygonSequenceController.py) class querys the polygon sequence table by calling the `get_volume(prep_id,annotator_id,structure_id)` function.  The [PolygonSequenceController](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/PolygonSequenceController.py) class initiates a sqalchemy session through the constructor of it's parent class [Controller](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/Controller.py).
