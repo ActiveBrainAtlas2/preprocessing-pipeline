@@ -1,7 +1,7 @@
 ## Converting polygons to segmentation layers
 ### Fetching the data
 1. Information regarding the database polygon data.
-    1. Data is stored in the polygon_sequences table.
+    1. Data is stored in the `polygon_sequences` table.
     1. Each row contains an x,y,z coordinate and has metadata describing the data point.
     1. All data is stored in micrometers.
 1. Fetching the data involves importing the abakit module. This module uses the process described below:
@@ -24,13 +24,54 @@
 
      The [VolumeMaker](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/atlas/VolumeMaker.py) class has the parent class [BrainStructureManager](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/atlas/BrainStructureManager.py) which inherits from the [Brain](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/lib/Brain.py) class and [VolumeUtilities](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/atlas/VolumeUtilities.py) class.  The Brain class has a multitude of functions that handle the file path and database access. VolumeUtilities has functions to threshold volumes and for smoothing the 3D mask with a gaussian filter.  Most of the function of the Brain class is not that useful to the VolumeMaker in this context.  We should add the ability to toggle these part of the functions so that a connection to the database would not be required to run this step.
 
+     Once the 3D mask has been created, it will then be stored in the `brain_shape` table. Each row in this table will hold metadata describing the row and also two blob columns. One column will hold the transformation. This transformation is pickled using the pickle module. The 2nd blob column will hold the pickled 3D mask. 
 
-    1. The 2nd part of the process fetches the pickled data from the DB (the numpy arrays) and creates the Neuroglancer segmentation layer. Each numpy array is simply a 3D mask of zeros and ones. Each different structure is then multiplied by a 'color' number taken from the database to give it a different color in Nueroglancer. Each array then is a mask filled with mostly zeros and some color number. This array is then processed with the [Seung Lab Cloudvolume software](https://github.com/seung-lab/igneous). To process the numpy arrays into the segmentation layer, the following steps are taken:
+1. Creating the Neuroglancer segmentation layer from the 3D masks
+    1. The 2nd part of the process fetches the pickled data from the DB and creates the Neuroglancer segmentation layer. Each numpy array is simply a 3D mask of zeros and ones. Each different structure is then multiplied by a 'color' number taken from the database to give it a different color in Nueroglancer. Each array then is a mask filled with mostly zeros and some color number. This array is then processed with the [Seung Lab Cloudvolume software](https://github.com/seung-lab/igneous). To process the numpy arrays into the segmentation layer, the following steps are taken:
         1. Fetches metadata from the DB to determine what shape the entire 3D volume will be. The width and height are taken from the width and height of the full scale images. These values are then downsampled by 32 (this is our universal downsampling factor). The numpy array would be too large with the full scale resolution. The z shape is taken from the number of sections.
-        1. All structures (numpy arrays and x,y,z offsets) for that particular brain for that brain are fetched from the DB. The offsets are the distance in um taken from the top left origin of the Neuroglancer view.
+        1. All structures (3D masks and x,y,z offsets) for that particular brain for that brain are fetched from the DB. The offsets are the distance in um taken from the top left origin of the Neuroglancer view.
         1. Each structure is then placed in the entire 3D volume we created with the width, height, section number data fetched earlier. Now we have a 3D volume with all the structures and this numpy array is then passed onto the Cloudvolume library to process into the segmentation layer.
+        1. We can also create a single structure within the 3D volume space.
         1. The Cloudvolume process creates the precomputed data directory which can then be placed on Birdstore and can be accessed by the web server.
         
-        1. The script to perform this step is: [database2segmentation.py](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/src/atlas/database2segmentation.py)
+    Below is a description of the Seung Lab Cloudvolume module implementation:
+    
+1. The Cloudvolume module takes:
+    1. A 3d mask of integers 
+    1. A dictionary that contains the color and text related to each integer
+    1. Units and origins (information regarding the scales and offsets)
+1. The code implementation is as follows:
+   The [NgConverter](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/atlas/NgSegmentMaker.py) class converts the 3d mask to the segmentation layer.  The segmentation layer consists of a set of folders living on the file system. inhereits from the [NumpyToNeuroglancer](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/lib/utilities_cvat_neuroglancer.py).  The [NumpyToNeuroglancer](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/lib/utilities_cvat_neuroglancer.py) was produced by Yungcong and is able to produce eith Image layers or Segmentation layers from numpy arrays.
 
-Both scripts are well documented and should be readable and reproducible. They can be run on either ratto, basalis, or muralis. Activate the virtualenv with: `source /usr/local/share/pipeline/bin/activate` and then run the programs with python.
+   The NumpyToNeuroglancer class uses the function `init_precomputed` to initiate the creation of a neuroglancer layer using the Seung lab CloudVolume package.  The specific calls to the package looks like:
+   ```
+   info = CloudVolume.create_new_info(
+            num_channels=self.num_channels,
+            layer_type=self.layer_type,  # 'image' or 'segmentation'
+            data_type=self.data_type,  #
+            encoding='raw',  # other options: 'jpeg', 'compressed_segmentation' (req. uint32 or uint64)
+            resolution=self.scales,  # Size of X,Y,Z pixels in nanometers,
+            voxel_offset=self.offset,  # values X,Y,Z values in voxels
+            chunk_size=self.chunk_size,  # rechunk of image X,Y,Z in voxels
+            volume_size=volume_size,  # X,Y,Z size in voxels
+        )
+    self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
+    self.precomputed_vol.commit_info()
+    self.precomputed_vol.commit_provenance()
+   ```
+   Where the `path` variable is the output path.  Then the information of each segment(in this case brain regions), including the color value and text descriptions are set using the `add_segment_properties` function.
+
+   The volume is passed to NgConverter by 
+
+   ```self.precomputed_vol[:, :, :] = self.volume```
+
+   And the segmentation layer is created by 
+   ```
+   self.add_downsampled_volumes()
+    self.add_segmentation_mesh()
+   ```
+
+1. The Cloudvolume module creates:
+    
+    1. The segmentation layer viewable in Neuroglancer. This is a directory containing a JSON file which has the scales, chunk sizes and directory locations that Neuroglancer needs to display the data.
+
