@@ -173,3 +173,15 @@ path to your PYTHONPATH in your IDE
 2. install elastix, though we are using the SimpleITK version that includes elastix.
 If you install this on your local machine, it takes a while to compile.
 
+### Configuring imagemagick
+Because imagemagick is not configured by default to work with large images, we need to modify the policy file for imagemagick using the following steps:
+after install imagemagick, use `identify -list policy | head` to find out the path of the policy files
+do sudo vim <path to policy.xml}/policy.xml and change the following settings:
+  <policy domain="resource" name="memory" value="10GiB"/>
+  <policy domain="resource" name="map" value="10GiB"/>
+  <policy domain="resource" name="width" value="500KP"/>
+  <policy domain="resource" name="height" value="500KP"/>
+  <policy domain="resource" name="area" value="10Gib"/>
+  <policy domain="resource" name="disk" value="10GiB"/>
+10 GB memory/disk limit and 500KP image size limits seem to be sufficient for microscopy images, but you can adjust them depending on your image size and computational resources
+
