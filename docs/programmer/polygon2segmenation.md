@@ -41,6 +41,7 @@
     1. A dictionary that contains the color and text related to each integer
     1. Units and origins (information regarding the scales and offsets)
 1. The code implementation is as follows:
+
    The [NgConverter](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/atlas/NgSegmentMaker.py) class converts the 3d mask to the segmentation layer.  The segmentation layer consists of a set of folders living on the file system. inhereits from the [NumpyToNeuroglancer](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/lib/utilities_cvat_neuroglancer.py).  The [NumpyToNeuroglancer](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/lib/utilities_cvat_neuroglancer.py) was produced by Yungcong and is able to produce eith Image layers or Segmentation layers from numpy arrays.
 
    The NumpyToNeuroglancer class uses the function `init_precomputed` to initiate the creation of a neuroglancer layer using the Seung lab CloudVolume package.  The specific calls to the package looks like:
