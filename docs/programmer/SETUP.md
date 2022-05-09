@@ -21,11 +21,16 @@ and install the required packages:
     pip install . --extra-index-url --trusted-host
     cd ../preprocessing-pipeline
     pip install -r requirements.txt
+    sudo apt install imagemagick
+    cd /usr/local/share/
+    sudo wget https://downloads.openmicroscopy.org/bio-formats/5.6/artifacts/bftools.zip
+    sudo unzip bftools.zip
     ```
     ```bash
     sudo yum groupinstall 'Development Tools'
     sudo yum install mariadb-devel
     sudo yum install python3
+    sudo yum install imagemagick
     git clone https://github.com/ActiveBrainAtlas2/preprocessing-pipeline.git
     sudo python3 -m venv /usr/local/share/pipeline
     sudo chown -R $(id -u):$(id -g) /usr/local/share/pipeline
@@ -41,6 +46,9 @@ and install the required packages:
     pip install . --extra-index-url --trusted-host
     cd ../preprocessing-pipeline
     pip install -r requirements.txt
+    cd /usr/local/share/
+    sudo wget https://downloads.openmicroscopy.org/bio-formats/5.6/artifacts/bftools.zip
+    sudo unzip bftools.zip
     ```    
     change the version as needed in the requirements.txt file
 1. We are currently using Ubuntu 18.04 as of December 2021 (20.04 is on muralis). Either install this 
