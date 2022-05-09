@@ -11,15 +11,15 @@ This document will describe the process of converting polygons that are drawn by
 
     The [PolygonSequenceController](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/PolygonSequenceController.py) class querys the polygon sequence table by calling the `get_volume(prep_id,annotator_id,structure_id)` function.  The [PolygonSequenceController](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/PolygonSequenceController.py) class initiates a sqalchemy session through the constructor of it's parent class [Controller](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/Controller.py).
 
-    The [Controller](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/Controller.py) class contains method to start the sql session with the right credentials, and the ability to add, delete, insert, and checking if a row exists.
+    The [Controller](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/Controller.py) class contains methods to start the sql session with the right credentials, and the ability to add, delete, insert, and checking if a row exists.
 
-    The `get_volume(prep_id,annotator_id,structure_id)` function queries the `annotation_session` table to find any active session matching the prep_id,annotator_id,structure_id.  If a session is found, it queries the PolygonSequence table for the polygon points, and parses them into dictionaries.  Finally, the function returns the dictionary of polygon points for a specific structure.
+    The `get_volume(prep_id,annotator_id,structure_id)` function queries the `annotation_session` table to find any active session matching the prep_id, annotator_id, structure_id. If a session is found, it queries the PolygonSequence table for the polygon points, and parses them into dictionaries.  Finally, the function returns the dictionary of polygon points for a specific structure.
 
 1. Ater the data has been fetched, we can transform the polygon data to atlas space with the following process:
    
     The [TransformationController](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/lib/Controllers/TransformationController.py) class pulls the transformation stored in the transformation table using the `get_transformation` function.  The TransformationController class inherits from the same parent class Controller.
     
-    We transform the points from the stack space to the atlas space using the `forward_transform_points` function. `forward_transform_points` takes a list of point coordinates and outputs the result of the points after the transformation. The function will be run on all of the points in all the polygons and apply the affine or rigid transformation calculated from the structure coms to the atlas coms.
+    We transform the points from the stack space to the atlas space using the `forward_transform_points` function. This function: `forward_transform_points` takes a list of point coordinates and outputs the result of the points after the transformation. The function will be run on all of the points in all the polygons and apply the affine or rigid transformation calculated from the structure coms to the atlas coms.
 
 1. After the transformation, we create the 3D masks from polygon data
  
@@ -42,9 +42,9 @@ This document will describe the process of converting polygons that are drawn by
     Below is a description of the Seung Lab Cloudvolume module implementation:
     
 1. The Cloudvolume module takes:
-    1. A 3d mask of integers 
-    1. A dictionary that contains the color and text related to each integer
-    1. Units and origins (information regarding the scales and offsets)
+    1. A 3D mask of integers.
+    1. A dictionary that contains the color and text related to each integer.
+    1. Units and origins (information regarding the scales and offsets).
 1. The code implementation is as follows:
 
    The [NgConverter](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/atlas/NgSegmentMaker.py) class converts the 3D mask to the segmentation layer.  The segmentation layer consists of a set of folders living on the file system. This class inherits from the [NumpyToNeuroglancer](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/lib/utilities_cvat_neuroglancer.py) class.  The [NumpyToNeuroglancer](https://github.com/ActiveBrainAtlas2/abakit/blob/master/src/abakit/lib/utilities_cvat_neuroglancer.py) was produced by Litao and is able to produce both Image layers and Segmentation layers from the 3D masks.
