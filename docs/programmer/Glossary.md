@@ -24,5 +24,13 @@ Python code repository defining the Django API and Admin Portal
 Application Programming Interface, In this case refers to the set of commands a user or a program can enter into the browser to interact with our database.
 The API calls can be used to check existing rows in tables, insert and update as well as delete rows.
 
-API calls are structured as:<API End Point>/name_of_function_to_perform/parameters
+API calls are structured as:`API End Point/name_of_function_to_perform/parameters`
+
+There are two version of Django APIs running on public servers right now, providing two Django End Points:
+active brain atlas: https://activebrainatlas.ucsd.edu/activebrainatlas
+web dev: https://webdev.dk.ucsd.edu/activebrainatlas/
+
+An example of API function would be landmark_list, where the list of all active structures are returned:
+
+https://activebrainatlas.ucsd.edu/activebrainatlas/landmark_list
  
