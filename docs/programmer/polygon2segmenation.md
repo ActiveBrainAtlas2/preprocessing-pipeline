@@ -2,8 +2,7 @@
 
 This document will describe the process of converting polygons that are drawn by an anatomist onto a Neuroglancer layer, into a separate 3D segmentation layer for Neuroglancer. The process described below starts after the anatomist has finished drawing all polygons and has saved this data into Neuroglancer.  
 
-1. Fetching the data saved by the anatomist
-1. Information regarding the database polygon data.
+1. Information regarding the database polygon data saved by the anatomist:
     1. Data is stored in the `polygon_sequences` table.
     1. Each row contains an x,y,z coordinate (as floats) and has metadata describing the data point.
     1. All data is stored in micrometers.
