@@ -14,6 +14,8 @@ warnings.filterwarnings("ignore")
 from lib.pipeline_utilities import get_image_size
 class MaskManager:
     def apply_user_mask_edits(self):
+        """Apply the edits made on the image masks to extract the tissue from the surround debre to create the final
+        masks used to clean the images"""
         COLORED = self.fileLocationManager.thumbnail_colored
         MASKS = self.fileLocationManager.thumbnail_masked
         test_dir(self.animal, COLORED, True, same_size=False)
@@ -44,12 +46,16 @@ class MaskManager:
         return model
 
     def create_mask(self):
+        """Create the images masks for extracting the tissue from the surrounding debres using a CNN based machine learning algorithm
+        """        
         if not self.downsample:
             self.create_full_resolution_mask()
         else:
             self.create_downsampled_mask()
     
     def load_machine_learning_model(self):
+        """Load the CNN model used to generate image masks
+        """        
         modelpath = os.path.join('/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth')
         self.loaded_model = self.get_model_instance_segmentation(num_classes=2)
         if os.path.exists(modelpath):
@@ -59,6 +65,8 @@ class MaskManager:
             return
 
     def create_full_resolution_mask(self):
+        """Upsample the masks created for the downsampled images to the full resolution
+        """        
         self.sqlController.set_task(self.animal, self.progress_lookup.CREATE_FULL_RES_MASKS)
         FULLRES = self.fileLocationManager.get_full(self.channel)
         THUMBNAIL = self.fileLocationManager.thumbnail_masked
@@ -83,6 +91,7 @@ class MaskManager:
         self.run_commands_in_parallel_with_executor([file_keys],workers,resize_tif)
 
     def create_downsampled_mask(self):
+        """Create masks for the downsampled images using a machine learning algorism"""
         self.load_machine_learning_model()
         transform = torchvision.transforms.ToTensor()
         FULLRES = self.fileLocationManager.get_normalized()
@@ -114,6 +123,14 @@ class MaskManager:
             cv2.imwrite(maskpath, merged_img)
 
 def resize_tif(file_key):
+    """Function to upsample mask images
+
+    Args:
+        file_key (list): list of inputs to the upsampling program including:
+        1. path to thumbnail file
+        2. The output directory of upsampled image
+        3. resulting size after upsampling
+    """    
     thumbfile, outpath, size = file_key
     try:
         im = Image.open(thumbfile)

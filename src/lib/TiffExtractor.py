@@ -5,13 +5,13 @@ class TiffExtractor(ParallelManager):
     def extract_tifs_from_czi(self):
         """
         This method will:
-            1. Fetch the sections from the database
-            2. Yank the tif out of the czi file according to the index and channel with the bioformats tool.
-            3. Then updates the database with updated meta information
+            1. Fetch the meta information of each slide and czi files from the database
+            2. Extract the images from the czi file and store them as tiff format with the bioformats tool.
+            3. Then updates the database with meta information about the sections in each slide
         Args:
             animal: the prep id of the animal
-            channel: the channel of the stack to process
-            compression: default is LZW compression
+            channel: the channel of the stack image to process
+            compression: Compression used to store the tiff files default is LZW compression
 
         Returns:
             nothing
@@ -37,10 +37,15 @@ class TiffExtractor(ParallelManager):
         self.update_database()
     
     def update_database(self):
+        """Updating the file log table in the databased about the completion of the QC preparation steps
+        """        
         self.sqlController.set_task(self.animal, self.progress_lookup.QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN)
         self.sqlController.set_task(self.animal, self.progress_lookup.CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1)
 
     def create_web_friendly_image(self):
+        """Create downsampled version of full size tiff images that can be viewed on the Django admin portal
+           These images are used for Quality Control
+        """        
         INPUT = self.fileLocationManager.tif
         OUTPUT = self.fileLocationManager.thumbnail_web
         os.makedirs(OUTPUT, exist_ok=True)

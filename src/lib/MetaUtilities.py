@@ -12,10 +12,6 @@ class MetaUtilities:
     def extract_slide_meta_data_and_insert_to_database(self):
         """
         Scans the czi dir to extract the meta information for each tif file
-        Args:
-            animal: the animal as primary key
-
-        Returns: nothing
         """
         self.check_czi_file_exists()
         self.scan_id = self.get_user_entered_scan_id()
@@ -29,6 +25,8 @@ class MetaUtilities:
             self.update_database()
 
     def get_czi_files(self):
+        """Get the list of czi files in the directory
+        """        
         try:
             czi_files = sorted(os.listdir(self.fileLocationManager.czi))
         except OSError as e:
@@ -37,6 +35,7 @@ class MetaUtilities:
         return czi_files
     
     def add_slide_information_to_database(self,czi_file):
+        '''Add the meta information about image slides that are extracted from the czi file and add them to the database'''
         self.slide = Slide()
         self.slide.scan_run_id = self.scan_id
         self.slide.slide_physical_id = int(re.findall(r'\d+', czi_file)[1])
@@ -55,6 +54,7 @@ class MetaUtilities:
         session.commit()
     
     def add_to_slide_czi_tiff_table(self,czi_file):
+        """Add entry to the table that prepares the user Quality Controll interface"""        
         for j, series_index in enumerate(self.series):
             scene_number = j + 1
             channels = range(self.metadata[series_index]['channels'])
@@ -81,20 +81,26 @@ class MetaUtilities:
         session.commit()
     
     def get_user_entered_scan_id(self):
+        """Get id in the "scan run" table for the current microspy scan that was entered by the user in the preparation phase"""
         return self.sqlController.scan_run.id   
 
     def is_czi_file(self,czi_file):
+        """Check if a file has the .czi extension"""
         extension = os.path.splitext(czi_file)[1]
         return extension.endswith('czi')
     
     def all_slide_meta_data_exists_in_database(self,czi_files):
+        """Check if the number of czi files in the directory matches the number of entries in the database table 'Slide'"""        
         nslides = session.query(Slide).filter(Slide.scan_run_id == self.scan_id).count()
         return nslides == len(czi_files)
 
     def slide_meta_data_exists(self,czi_file_name):
+        """Checks if a specific CZI file has been logged in the database"""
         return bool(session.query(Slide).filter(Slide.scan_run_id == self.scan_id).filter(Slide.file_name==czi_file_name).first())
     
     def check_czi_file_exists(self):
+        """Check that the CZI files are placed in the correct location
+        """        
         INPUT = self.fileLocationManager.czi
         if not os.path.exists(INPUT):
             print(f'{INPUT} does not exist, we are exiting.')
@@ -107,6 +113,7 @@ class MetaUtilities:
         print(f'create meta is working with {nfiles} files.')
     
     def update_database(self):
+        """Updates the "file log" table in the database that tracks the progress of the pipeline """
         self.sqlController.set_task(self.animal, SLIDES_ARE_SCANNED)
         self.sqlController.set_task(self.animal, CZI_FILES_ARE_PLACED_ON_BIRDSTORE)
         self.sqlController.set_task(self.animal, CZI_FILES_ARE_SCANNED_TO_GET_METADATA)
