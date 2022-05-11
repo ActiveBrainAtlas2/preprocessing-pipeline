@@ -43,4 +43,3 @@ for braini in info.Jun_brains:
     controller.add_transformation_row(source = braini,destination = 'Atlas',transformation_type = 2,transformation = affine_transform)
     controller.add_transformation_row(source = braini,destination = 'Atlas',transformation_type = 4,transformation = similarity_transform)
 
-breakpoint()

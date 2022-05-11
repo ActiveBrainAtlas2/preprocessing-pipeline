@@ -64,7 +64,7 @@ def get_beth_coms_aligned_to_atlas(com_getter):
         prepicom = com_getter(prepi)
         # print(prepi)
         # if prepi =='DK55':
-        #     Breakpoint()
+        #     
         rigid_transformation = get_rigid_transformation_from_dicts(prepicom,atlas_com)
         transformed_com = apply_rigid_transformation_to_com_dict(prepicom,rigid_transformation)
         transformed_com_list.append(transformed_com)
