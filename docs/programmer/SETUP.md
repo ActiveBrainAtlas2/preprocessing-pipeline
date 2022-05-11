@@ -21,11 +21,16 @@ and install the required packages:
     pip install . --extra-index-url --trusted-host
     cd ../preprocessing-pipeline
     pip install -r requirements.txt
+    sudo apt install imagemagick
+    cd /usr/local/share/
+    sudo wget https://downloads.openmicroscopy.org/bio-formats/5.6/artifacts/bftools.zip
+    sudo unzip bftools.zip
     ```
     ```bash
     sudo yum groupinstall 'Development Tools'
     sudo yum install mariadb-devel
     sudo yum install python3
+    sudo yum install imagemagick
     git clone https://github.com/ActiveBrainAtlas2/preprocessing-pipeline.git
     sudo python3 -m venv /usr/local/share/pipeline
     sudo chown -R $(id -u):$(id -g) /usr/local/share/pipeline
@@ -41,6 +46,9 @@ and install the required packages:
     pip install . --extra-index-url --trusted-host
     cd ../preprocessing-pipeline
     pip install -r requirements.txt
+    cd /usr/local/share/
+    sudo wget https://downloads.openmicroscopy.org/bio-formats/5.6/artifacts/bftools.zip
+    sudo unzip bftools.zip
     ```    
     change the version as needed in the requirements.txt file
 1. We are currently using Ubuntu 18.04 as of December 2021 (20.04 is on muralis). Either install this 
@@ -164,4 +172,16 @@ path to your PYTHONPATH in your IDE
 1. install list of packages in requirements.txt
 2. install elastix, though we are using the SimpleITK version that includes elastix.
 If you install this on your local machine, it takes a while to compile.
+
+### Configuring imagemagick
+Because imagemagick is not configured by default to work with large images, we need to modify the policy file for imagemagick using the following steps:
+after install imagemagick, use `identify -list policy | head` to find out the path of the policy files
+do sudo vim <path to policy.xml}/policy.xml and change the following settings:
+  <policy domain="resource" name="memory" value="10GiB"/>
+  <policy domain="resource" name="map" value="10GiB"/>
+  <policy domain="resource" name="width" value="500KP"/>
+  <policy domain="resource" name="height" value="500KP"/>
+  <policy domain="resource" name="area" value="10Gib"/>
+  <policy domain="resource" name="disk" value="10GiB"/>
+10 GB memory/disk limit and 500KP image size limits seem to be sufficient for microscopy images, but you can adjust them depending on your image size and computational resources
 

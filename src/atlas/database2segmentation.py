@@ -39,12 +39,15 @@ def create_segmentation(animal, transform=False):
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     # vars
+    # I chose 10 as limit check to make sure there is some data to work with.
+    # If not, we exit.
+    limit = 10
     sections = sqlController.get_sections(animal, 1)
-    if len(sections) < 10:
+    if len(sections) < limit:
         sections = os.listdir( os.path.join(fileLocationManager.prep, 'CH1/thumbnail_aligned'))
         
     num_sections = len(sections)
-    if num_sections < 10:
+    if num_sections < limit:
         print('no sections')
         sys.exit()
         
@@ -57,7 +60,9 @@ def create_segmentation(animal, transform=False):
     height = sqlController.scan_run.height
     scale_xy = sqlController.scan_run.resolution
     z_scale = sqlController.scan_run.zresolution
-    scales = np.array([int(scale_xy*32*1000), int(scale_xy*32*1000), int(z_scale*1000)])
+    um2nm = 1000 
+    downsample_factor = 32
+    scales = np.array([int(scale_xy*downsample_factor*um2nm), int(scale_xy*downsample_factor*um2nm), int(z_scale*un2nm)])
     print('Scaling to downsampled Neuroglancer with scales', scales)
 
     width = int(width * SCALING_FACTOR)
@@ -108,7 +113,7 @@ def create_segmentation(animal, transform=False):
     #volume = affine_transform(volume, M)
     # take the 3D numpy volume and use CloudVolume to convert to precomputed
     print('post', volume.shape, volume.dtype, np.mean(volume), np.amax(volume))
-    sys.exit()
+    
     offset = (0, 0, 0) # this is just the upper left of the neuroglancer viewer
     layer_type = 'segmentation'
     chunks = [64, 64, 64]
@@ -138,6 +143,8 @@ def create_segmentation(animal, transform=False):
     vol.commit_info()
     vol[:, :, :] = volume[:, :, :]
     #### create json for neuroglancer info files
+    #### This json file will have all the color IDs, names of the structures
+    #### and other info that Neuroglancer needs to display the segmentation layer
     cv = CloudVolume(cloudpath, 0)
     cv.info['segment_properties'] = 'names'
     cv.commit_info()
@@ -160,7 +167,7 @@ def create_segmentation(animal, transform=False):
         json.dump(info, file, indent=2)
 
     #### 1st create mesh
-    mse = 40 # default value 
+    mse = 40 # default value, higher values are not as smooth, but the process faster 
     tq = LocalTaskQueue(parallel=1)
     mesh_dir = f'mesh_mip_0_err_{mse}'
     cv.info['mesh'] = mesh_dir
