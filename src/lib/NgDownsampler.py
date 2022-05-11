@@ -8,6 +8,8 @@ from abakit.lib.utilities_cvat_neuroglancer import calculate_chunks, calculate_f
 from abakit.lib.utilities_process import get_cpus
 class NgDownsampler:
     def create_downsamples(self):
+        """Downsamples the neuroglancer cloudvolume this step is needed to make the files viewable in neuroglancer
+        """        
         first_chunk = calculate_chunks(self.downsample, 0)
         mips = [0,1,2,3,4,5,6,7]
         if self.downsample:

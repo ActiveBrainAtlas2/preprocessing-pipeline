@@ -29,16 +29,28 @@ from lib.ElastixManager import ElastixManager
 class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalizer,MaskManager,\
     ImageCleaner,HistogramMaker,ElastixManager,NgPrecomputedMaker,NgDownsampler):
     '''
-    A class that sets the methods and attributes for the Active Brain Atlas
-    image processing pipeline
+    This is the main class that handles the preprocessing pipeline responsible for converting Zeiss microscopy images (.czi) into neuroglancer
+    viewable formats.  The Zeiss module can be swapped out to make the pipeline compatible with other microscopy setups
     '''
     def __init__(self, animal, channel=1, downsample=True,DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root',debug=False):
-        '''
-        Set i[ the pipeline. Only required parameter is animal
-        :param animal: string, usually something like DKXX
-        :param channel: integer defaults to 1, user enters 2 or 3 otherwise
-        :param downsample: boolean, default to true for creating the smaller images
-        '''
+        """Setting up the pipeline and the processing configurations
+           The pipeline performst the following steps:
+           1. extracting the images from the microscopy formats (eg czi) to tiff format
+           2. Prepare thumbnails of images for quality control
+           3. clean the images
+           4. align the images
+           5. convert to Seung lab neuroglancer cloudvolume format
+
+           step 3 and 4 are first performed on downsampled images, and the image masks(for step 3) and the within stack alignments(for step 4) are 
+           upsampled for use in the full resolution images
+
+        Args:
+            animal (str): Animal Id
+            channel (int, optional): channel number.  This tells the program which channel to work on and which channel to extract from the czis. Defaults to 1.
+            downsample (bool, optional): Determine if we are working on the full resolution or downsampled version. Defaults to True.
+            DATA_PATH (str, optional): path to where the images and intermediate steps are stored. Defaults to '/net/birdstore/Active_Atlas_Data/data_root'.
+            debug (bool, optional): determine if we are in debug mode.  This is used for development purposes. Defaults to False.
+        """
         self.animal = animal
         self.channel = channel
         self.ch_dir = f'CH{self.channel}'
@@ -55,10 +67,11 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
     @staticmethod
     def check_programs():
         '''
-        Make sure the necessary tools are installed on the machine.
-        And the java heap size is big enough 10GB seems to work
-        If it doesn't work, check the workernoshell.err.log
-        for more info in the base directory of this program
+        Make sure the necessary tools are installed on the machine and configures the memory of involving tools to work with
+        big images.
+        Some tools we use are based on java so we adjust the java heap size limit to 10 GB.  This is big enough for our purpose but should
+        be increased accordingly if your images are bigger
+        If the check failed, check the workernoshell.err.log in your project directory for more information
         '''
         start = timer()
         os.environ["_JAVA_OPTIONS"] = "-Xmx10g"
@@ -81,19 +94,38 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
         print(f'Check programs took {end - start} seconds')    
     
     def run_program_and_time(self,function,function_name):
+        """utility to run a specific function and time it
+
+        Args:
+            function (function): funtion to run
+            function_name (str): name of the function used to report timing result
+        """        
         print(function_name)
         time = timer()
         function()
         print(f'{function_name} took {timer()-time} seconds') 
 
     def prepare_image_for_quality_control(self):
+        """This is the first step of the pipeline.  The images are extracted from the CZI files,
+           logged in the database, and downsampled to a web friendly size.  These preparations makes
+           it possible to preview the images on the django database admin portal, allowing the user to 
+           perform quality control on the images.  The user can determine to mark slides or sections 
+           on a slide as insufficient in quality, and replace them with adjuscent slide or sections
+        """        
         self.run_program_and_time(self.extract_slide_meta_data_and_insert_to_database,'Creating meta')
         self.run_program_and_time(self.extract_tifs_from_czi,'Extracting Tiffs')
         if self.channel == 1 and self.downsample:
             self.run_program_and_time(self.create_web_friendly_image,'create web friendly image')
 
     def apply_qc_and_prepare_image_masks(self):
-        self.run_program_and_time(self.make_full_resolution,'Making full resolution copies')
+        """This function performs 2 steps:
+           1. Applies the QC result that the user provides on the Django database admin portal and prepares a copy
+           of the tiff files that reflects the image/slide exclusion and replacement decisions made by user.
+           Following steps in the pipeline then uses this copy as the input
+           2. Use a CNN based machine learning algorism to create masks around the tissue.
+              These masks will be used to crop out the tissue from the surrounding debres.
+        """        
+        self.run_program_and_time(self.apply_QC_to_full_resolution_images,'Making full resolution copies')
         self.run_program_and_time(self.make_low_resolution,'Making downsampled copies')
         self.set_task_preps()
         if self.channel == 1 and self.downsample:
@@ -102,6 +134,11 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
             self.run_program_and_time(self.create_mask,'Creating masks')
         
     def clean_images_and_create_histogram(self):
+        """This function performs the following steps:
+        1. apply the Edits of images masks made by user
+        2. create the cleaned images using the image masks
+        3. making a histogram of pixel intensity for view in the Django admin portal
+        """        
         if self.channel == 1 and self.downsample:
             self.run_program_and_time(self.apply_user_mask_edits,'Applying masks')
         self.run_program_and_time(self.create_cleaned_images,'Creating cleaned image')  
@@ -110,6 +147,8 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
             self.run_program_and_time(self.make_combined_histogram,'Making combined histogram')  
     
     def align_images_within_stack(self):
+        """This function calculates the rigid transformation used to align the images within stack and applies them to the image
+        """        
         start = timer()
         if self.channel == 1 and self.downsample:
             self.run_program_and_time(self.create_within_stack_transformations,'Creating elastics transform')  
@@ -122,6 +161,8 @@ class Pipeline(MetaUtilities,TiffExtractor,PrepCreater,ParallelManager,Normalize
         print(f'Creating elastix and alignment took {end - start} seconds')   
         
     def create_neuroglancer_cloud_volume(self):
+        """This function creates the Seung lab neuroglancer cloud volume folders that is required to view the images in neuroglancer
+        """        
         start = timer()
         self.create_neuroglancer()
         self.create_downsamples()

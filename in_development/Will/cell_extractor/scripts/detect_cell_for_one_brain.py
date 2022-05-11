@@ -1,4 +1,4 @@
-from cell_extractor.CellDetector import CellDetector
+from cell_extractor.CellDetector import detect_cell
 import argparse
 
 def run_from_terminal():
@@ -10,13 +10,10 @@ def run_from_terminal():
     braini = args.animal
     disk = args.disk
     round = args.round
-    detector = CellDetector(braini,disk = disk,round=round)
-    detector.calculate_and_save_detection_results()
+    detect_cell(braini,disk = disk,round=round)
 
 def run_as_script():
-    for threshold in [2000,3000,4000]:
-        detector = CellDetector('DK55',disk = '/net/birdstore/Active_Atlas_Data',round=2,segmentation_threshold=threshold)
-        detector.calculate_and_save_detection_results()
+    detect_cell('DK52',disk = '/net/birdstore/Active_Atlas_Data',round=2,segmentation_threshold=2000)
 
 if __name__ =='__main__':
     # run_from_terminal()

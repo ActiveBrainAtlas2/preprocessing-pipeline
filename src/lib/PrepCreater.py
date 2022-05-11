@@ -5,8 +5,9 @@ from concurrent.futures.process import ProcessPoolExecutor
 from shutil import copyfile
 from abakit.lib.SqlController import SqlController
 from abakit.lib.utilities_process import test_dir, create_downsample
-from lib.PipelineUtilities import PipelineUtilities
-class PrepCreater(PipelineUtilities):
+from lib.pipeline_utilities import get_image_size
+
+class PrepCreater:
 
     def set_task_preps(self):
         self.sqlController = SqlController(self.animal)
@@ -18,13 +19,10 @@ class PrepCreater(PipelineUtilities):
         self.sqlController.set_task(self.animal, progress_id)
 
 
-    def make_full_resolution(self):
+    def apply_QC_to_full_resolution_images(self):
         """
-        Args:
-            animal: the prep id of the animal
-            channel: the channel of the stack to process
-        Returns:
-            list of commands
+        Applies the inclusion and replacement results defined by the user on the Django admin portal for the Quality Controll step
+        to the full resolution images.  The result is stored in the animal_folder/preps/full directory
         """
         INPUT = self.fileLocationManager.tif
         OUTPUT = self.fileLocationManager.get_full(self.channel)
@@ -41,7 +39,7 @@ class PrepCreater(PipelineUtilities):
                 continue
             input_paths.append(input_path)
             output_paths.append(output_path)
-            width, height = self.get_image_size(input_path)
+            width, height = get_image_size(input_path)
             self.sqlController.update_tif(section.id, width, height)
         workers = self.get_nworkers()
         self.run_commands_in_parallel_with_executor([input_paths,output_paths],workers,copyfile)
@@ -49,12 +47,8 @@ class PrepCreater(PipelineUtilities):
 
     def make_low_resolution(self):
         """
-        Args:
-            takes the full resolution tifs and downsamples them.
-            animal: the prep id of the animal
-            channel: the channel of the stack to process
-        Returns:
-            list of commands
+        Making low resolution version of the full resolution images with QC applied.  These images are used to
+        create image masks and within stack alignments
         """
         file_keys = []
         INPUT = self.fileLocationManager.get_full(self.channel)

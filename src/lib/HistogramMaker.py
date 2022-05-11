@@ -10,9 +10,9 @@ from lib.logger import get_logger
 from abakit.lib.SqlController import SqlController
 from abakit.lib.utilities_process import test_dir, get_cpus
 COLORS = {1: 'b', 2: 'r', 3: 'g'}
-from lib.PipelineUtilities import PipelineUtilities
+from lib.pipeline_utilities import read_image
 
-class HistogramMaker(PipelineUtilities):
+class HistogramMaker:
     def make_histogram(self):
         """
         This method creates an individual histogram for each tif file by channel.
@@ -44,35 +44,7 @@ class HistogramMaker(PipelineUtilities):
                 continue
             file_keys.append([input_path, mask_path, self.channel, file, output_path])
         workers = self.get_nworkers()
-        self.run_commands_in_parallel_with_executor([file_keys],workers,self.make_single_histogram)    
-
-    def make_single_histogram(self,file_key):
-        input_path, mask_path, channel, file, output_path = file_key
-        img = self.read_image(input_path)
-        mask = self.read_image(mask_path)
-        img = cv2.bitwise_and(img, img, mask=mask)
-        if img.shape[0] * img.shape[1] > 1000000000:
-            scale = 1 / float(2)
-            img = img[::int(1. / scale), ::int(1. / scale)]
-        try:
-            flat = img.flatten()
-        except:
-            print(f'Could not flatten {input_path}')
-            return
-        del img
-        del mask
-        fig = plt.figure()
-        plt.rcParams['figure.figsize'] = [10, 6]
-        plt.hist(flat, flat.max(), [0, 10000], color=COLORS[channel])
-        plt.style.use('ggplot')
-        plt.yscale('log')
-        plt.grid(axis='y', alpha=0.75)
-        plt.xlabel('Value')
-        plt.ylabel('Frequency')
-        plt.title(f'{file.file_name} @16bit')
-        plt.close()
-        fig.savefig(output_path, bbox_inches='tight')
-        return
+        self.run_commands_in_parallel_with_executor([file_keys],workers,make_single_histogram)    
 
     def make_combined_histogram(self):
         """
@@ -149,3 +121,31 @@ class HistogramMaker(PipelineUtilities):
             plt.ylabel('Frequency')
             plt.title(f'{self.animal} channel {self.channel} @{bits}bit with {lfiles} tif files')
             fig.savefig(outpath, bbox_inches='tight')
+
+def make_single_histogram(file_key):
+    input_path, mask_path, channel, file, output_path = file_key
+    img = read_image(input_path)
+    mask = read_image(mask_path)
+    img = cv2.bitwise_and(img, img, mask=mask)
+    if img.shape[0] * img.shape[1] > 1000000000:
+        scale = 1 / float(2)
+        img = img[::int(1. / scale), ::int(1. / scale)]
+    try:
+        flat = img.flatten()
+    except:
+        print(f'Could not flatten {input_path}')
+        return
+    del img
+    del mask
+    fig = plt.figure()
+    plt.rcParams['figure.figsize'] = [10, 6]
+    plt.hist(flat, flat.max(), [0, 10000], color=COLORS[channel])
+    plt.style.use('ggplot')
+    plt.yscale('log')
+    plt.grid(axis='y', alpha=0.75)
+    plt.xlabel('Value')
+    plt.ylabel('Frequency')
+    plt.title(f'{file.file_name} @16bit')
+    plt.close()
+    fig.savefig(output_path, bbox_inches='tight')
+    return
