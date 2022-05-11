@@ -38,12 +38,3 @@ Methods
 * inverse transformPoints (points) transforms points from destination to source.
 * forward transform3DMask (3Dobject) transforms 3Dmask from source to destination.
 * inverse transform3DMask (3Dobject) transforms 3Dmask from destination to source.
-
-## Class: BrainStructureManager
-  A collection of information and functions that is used to process brain region volumes from that brain
-  
-## Class: Pipeline
-  An instance of pipeline run that processes the data collected from one scan
-
-## Class: CellDetector
-  A collection of information and functions that is used to train and test one iteration of the cell detector
