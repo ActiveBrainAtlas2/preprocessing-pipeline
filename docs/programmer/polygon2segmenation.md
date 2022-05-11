@@ -4,15 +4,22 @@ This document will describe the process of converting polygons that are drawn by
 
 1. Information regarding the database polygon data saved by the anatomist:
     1. Data is stored in the `polygon_sequences` table.
-    1. Each row contains an x,y,z coordinate (as floats) and has metadata describing the data point.
-    1. All data is stored in micrometers.
-1. Fetching the data involves importing the abakit module. This module uses the process described below:
+    1. Each row contains an x,y,z coordinate (as floats) and has metadata describing the data point.  
+    `yoav` I don't think there is a reason to store x,y,z in float. float does not imply more precision, just the ability to represent both very small or very large numbers. If we use 16 bit ints and set the unit distance to be a micrometer, we can represent offsets up to 65.536 mm. When computing distances between points or offsets, we should first convert to float64 and then, when storing, back to int16.  
+    1. All offsets are measured in micrometers. micrometer.
+    
+
+`Yoav` I don't follow the description below. A class is not just a wrapper around a function, and instance of a class has state, i.e. variables that are maintained throughout the life of the instance. A description of a class should start with "this class defined an object that represents XXXX" and then be followed by the public methods and public variables. (the API defined by the class).   
+
+1. Fetching the data involves importing the abakit module. This module uses the process described below:  
 
     The [PolygonSequenceController](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/PolygonSequenceController.py) class querys the polygon sequence table by calling the `get_volume(prep_id,annotator_id,structure_id)` function.  The [PolygonSequenceController](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/PolygonSequenceController.py) class initiates a sqalchemy session through the constructor of it's parent class [Controller](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/Controller.py).
 
     The [Controller](https://github.com/ActiveBrainAtlas2/abakit/blob/dev/src/abakit/lib/Controllers/Controller.py) class contains methods to start the sql session with the right credentials, and the ability to add, delete, insert, and checking if a row exists.
+    
+`yoav` If I understand correctly, `controller` and it's subclasses are responsible for the connection with the database through sqlalchemy. The API should not depend on the fact that sqlalchemy is used. Initiating a session, with all of the associated parameters by importing a module called `session.py` is non-standard. Parameters should be read from a parameter file using a standard such as yaml. I would replace the name `controller` with something like `database_bridge` which better represents its function.
 
-    The `get_volume(prep_id,annotator_id,structure_id)` function queries the `annotation_session` table to find any active session matching the prep_id, annotator_id, structure_id. If a session is found, it queries the PolygonSequence table for the polygon points, and parses them into dictionaries.  Finally, the function returns the dictionary of polygon points for a specific structure.
+The `get_volume(prep_id,annotator_id,structure_id)` function queries the `annotation_session` table to find any active session matching the prep_id, annotator_id, structure_id. If a session is found, it queries the PolygonSequence table for the polygon points, and parses them into dictionaries.  Finally, the function returns the dictionary of polygon points for a specific structure.
 
 1. Ater the data has been fetched, we can transform the polygon data to atlas space with the following process:
    
