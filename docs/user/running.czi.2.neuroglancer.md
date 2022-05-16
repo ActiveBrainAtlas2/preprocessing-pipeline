@@ -1,5 +1,5 @@
 ### Setup
-1. To install the software prerequisites, [look here.](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/SETUP.md) 
+1. To install the software prerequisites, [look here.](../programmer/preprocessing-pipeline/software.installation.md) 
 Or use the installed virtual environment on ratto, basalis and muralis by running: 
 ```source /usr/local/share/pipeline/bin/activate```
 
