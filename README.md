@@ -1,6 +1,6 @@
 ### Table of contents for the pipeline process
 1. [Active Brain Atlas home page](https://github.com/ActiveBrainAtlas2)
-1. [Documentation heirarchy](documentation.tree.md)
+1. [Documentation TOC](docs/README.md)
 
 ## A high level description of the Active Brain Atlas pipeline process
 
