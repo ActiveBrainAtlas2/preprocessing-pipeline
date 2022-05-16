@@ -19,7 +19,7 @@
             1.  Section - An abstract class describing the stack of images that will represent the 3D volume of a brain.
 
         1. Views
-            1. (Taken care of by Neuroglancer)
+            1. (Taken care of by the Django CRUD (create, retrieve, update and delete) framework: https://activebrainatlas.ucsd.edu/activebrainatlas/admin)
         1. Controllers
             1. Animal
     1. Neuroglancer
@@ -35,9 +35,8 @@
             1. BrainRegion - Formerly called structure, this represents an area of the brain.
             1. BrainShape - class for the numpy 3D masks
             1. UrlModel - This is the class that takes care of the Neuroglancer JSON state.
-
         1. Views
-            1. (Taken care of by Neuroglancer)
+            1. (Taken care of by the REST API < - > Neuroglancer)
         1. Controllers (REST API)
             1. UrlViewSet - allows creation, retrieval, updating of Neuroglancer JSON data 
             1. AlignAtlasView - used by the alignment process to create a rigid transformation
