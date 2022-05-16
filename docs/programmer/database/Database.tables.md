@@ -9,7 +9,7 @@ To view the datajoint Princeton lightsheet schema,
 [click here](schema/princeton_lightsheet.py).
 
 For a full listing of all tables in the active_atlas_production database sorted by category, 
-[see here](schema/table_names_reorganized.md)
+[see here](schema/table_names_reorganized.txt)
 
 The following prefixes are used to mark the appropriate key:
 1. Foreign keys =  `FK__`
