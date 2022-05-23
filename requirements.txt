@@ -180,7 +180,7 @@ nest-asyncio==1.5.1
 networkx==2.6.2
 neuroglancer==2.22
 nibabel==3.2.1
-notebook==6.4.0
+notebook==6.4.10
 numdifftools==0.9.40
 numpy==1.21.0
 oauth2client==4.1.3
