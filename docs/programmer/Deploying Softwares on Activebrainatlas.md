@@ -65,5 +65,8 @@ To copy everything from development to production:
 1. login a computer that has database credentials setup
 2. make a copy of production `mysqldump active_atlas_production > production.bck`
 3. make a copy of development `mysqldump active_atlas_development> development.bck`
+3. delete all data and table in production
 4. populate the active_brain_production server with data from production `mysql active_atlas_production < development.bck`
+5. TODO check table and content is correct after transfer
+                                                                                                                          
 
