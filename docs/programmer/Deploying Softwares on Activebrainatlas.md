@@ -17,7 +17,7 @@ Ask Kelvin to obtain ssh access to activebrainatlas.ucsd.edu
 7. try python manage.py runserver at /var/www/activebrainatlas folder see if django runs propperly
 8. run sudo systemctl restart httpd and check the https://activebrainatlas.ucsd.edu/activebrainatlas portal
 9. if Error occurs, check the /etc/httpd/logs/error_log
-   - You might need to change permission of django folder and subfolders
+   - You might need to change permission of django folder and subfolders (group apache)
 
 ###  Deploying Neuroglancer
 
