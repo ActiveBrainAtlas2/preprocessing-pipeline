@@ -25,7 +25,7 @@ Ask Kelvin to obtain ssh access to activebrainatlas.ucsd.edu
 2. clone and checkout the version of neuroglancer you want in your folder
 3. compile the neuroglancer version you have with npm run <build script>
 4. Make a copy of contents in activebrainatlas:/var/www/activebrainatlas/html/ng
-4. copy all the files in neuroglancer/dist/dev to activebrainatlas:/var/www/activebrainatlas/html/ng with scp
+4. copy all the files in neuroglancer/dist/dev to activebrainatlas.ucsd.edu:/var/www/activebrainatlas/html/ng with scp
 5. ssh into activebrainatlas
 6. run sudo systemctl restart httpd and check the https://activebrainatlas.ucsd.edu/ng portal
 
