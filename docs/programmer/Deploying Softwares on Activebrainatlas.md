@@ -53,6 +53,7 @@ Here is a list of things to check after deploying any of these softwares
 3. Check each link in the neuroglancer and brain app and confirm they are working
 4. access https://activebrainatlas.ucsd.edu/ng and check if you can save/load url and annotations.  
 5. Save some test annotations and see if you can find them in the database or database portal.
+6. Create new neuroglancer state, save some annotations and try to retrive them. 
 
 ### Transferring data from active_atlas_development to active_atlas_production
 
