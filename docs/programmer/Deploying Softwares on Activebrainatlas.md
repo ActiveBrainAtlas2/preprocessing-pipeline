@@ -21,7 +21,7 @@ Ask Kelvin to obtain ssh access to activebrainatlas.ucsd.edu
 
 ###  Deploying Neuroglancer
 
-1. login to a computer with node setup, if non exists, checkout the setup guide on the neuroglancer github
+1. login to a computer with node setup, if non exists, checkout the setup guide on the [neuroglancer github](https://github.com/ActiveBrainAtlas2/neuroglancer)
 2. clone and checkout the version of neuroglancer you want in your folder
 3. compile the neuroglancer version you have with npm run <build script>
 4. Make a copy of contents in activebrainatlas:/var/www/activebrainatlas/html/ng
