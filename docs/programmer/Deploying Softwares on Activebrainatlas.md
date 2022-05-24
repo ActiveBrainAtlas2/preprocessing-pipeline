@@ -1,4 +1,4 @@
-## Deploying Softwares on Activebrainatlas
+## Deploying Softwares on Activebrainatlas.ucsd.edu
 
 this document covers the procedure for deploying softwares on the activebrainatlas.ucsd.edu server.  activebrainatlas.ucsd.edu is a virtual machine running on a computer at the Physics department at UCSD, currently configured as an apache server
 
@@ -26,14 +26,14 @@ Ask Kelvin to obtain ssh access to activebrainatlas.ucsd.edu
 3. compile the neuroglancer version you have with npm run <build script>
 4. Make a copy of contents in activebrainatlas:/var/www/activebrainatlas/html/ng
 4. copy all the files in neuroglancer/dist/dev to activebrainatlas.ucsd.edu:/var/www/activebrainatlas/html/ng with scp
-5. ssh into activebrainatlas
+5. ssh into activebrainatlas.ucsd.edu
 6. run sudo systemctl restart httpd and check the https://activebrainatlas.ucsd.edu/ng portal
 
 
 
 ### Deploying Abakit
 
-1. ssh into activebrainatlas
+1. ssh into activebrainatlas.ucsd.edu
 2. clone/checkout the version of abakit you want
 3. run `pip install . --extra-index-url --trusted-host`
 4. you might need to change file permissions
