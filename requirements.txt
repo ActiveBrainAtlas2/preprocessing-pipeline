@@ -222,7 +222,7 @@ pycparser==2.20
 pyfaidx==0.6.2
 pyflakes==2.3.1
 Pygments==2.10.0
-PyJWT==1.7.1
+PyJWT==2.4.0
 PyMCubes==0.1.2
 PyMySQL==1.0.2
 pynrrd==0.4.2
