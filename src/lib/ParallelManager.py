@@ -31,7 +31,8 @@ class ParallelManager:
                                         create_downsampled_mask = ncores,
                                         parallel_create_cleaned = (4,ncores),
                                         align_images = (4,ncores),
-                                        create_neuroglancer = (4,ncores))
+                                        create_neuroglancer = (4,ncores),
+                                        apply_QC_to_full_resolution_images = 4)
 
             with open(file_path, 'w') as file:
                 documents = yaml.dump(self.parallel_settings, file)
