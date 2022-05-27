@@ -107,13 +107,14 @@ def clean_and_rotate_image(file_key):
     del cropped
     return
 
-def crop_image(img, mask):
+def crop_image(cleaned, mask):
     BUFFER = 2
     mask = np.array(mask)
     mask[mask > 0] = 255
     ret, thresh = cv2.threshold(mask, 200, 255, 0)
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     boxes = []
+    areas = [cv2.contourArea(contour) for contour in contours]
     for contour in contours:
         x,y,w,h = cv2.boundingRect(contour)
         area = cv2.contourArea(contour)
@@ -127,8 +128,11 @@ def crop_image(img, mask):
     y1 = min(x[1] for x in boxes) - BUFFER
     x2 = max(x[2] for x in boxes) + BUFFER
     y2 = max(x[3] for x in boxes) + BUFFER
-    img = np.ascontiguousarray(img, dtype=np.uint16)
-    cropped = img[y1:y2, x1:x2] 
+    box = np.array([x1,y1,x2,y2])
+    box[box<0] = 0
+    x1,y1,x2,y2 = box
+    cleaned = np.ascontiguousarray(cleaned, dtype=np.uint16)
+    cropped = cleaned[y1:y2, x1:x2] 
     return cropped
 
 def apply_mask(img,mask,infile):
