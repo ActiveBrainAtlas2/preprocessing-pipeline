@@ -90,10 +90,10 @@ def clean_and_rotate_image(file_key):
     img = read_image(infile)
     mask = read_image(maskfile)
     cleaned = apply_mask(img,mask,infile)
-    cropped = crop_image(cleaned,mask)
     if channel == 1:
         cropped = scaled(cropped, mask, epsilon=0.01)
         cropped = equalized(cropped)
+    cropped = crop_image(cleaned,mask)
     del img
     del mask
     if rotation > 0:

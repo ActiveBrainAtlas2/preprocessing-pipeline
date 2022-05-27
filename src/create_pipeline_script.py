@@ -22,7 +22,7 @@ for more information.
 from lib.pipeline import Pipeline
 
 def run_pipeline(animal, channel, downsample,step,DATA_PATH):
-    pipeline = Pipeline(animal, channel, downsample,DATA_PATH=DATA_PATH,debug=False)
+    pipeline = Pipeline(animal, channel, downsample,DATA_PATH=DATA_PATH,debug=True)
     pipeline.prepare_image_for_quality_control()
     if step > 0:
         pipeline.apply_qc_and_prepare_image_masks()
