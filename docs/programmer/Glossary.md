@@ -10,8 +10,8 @@ A python code reposity containg the common tools used in Preprocessing Pipeline 
 Python code repository that takes microscopy images in a proprietary format (for example CZI from Zeiss microscope) and convert it to be viewable in neuroglancer.  The neuroglancer viewable files are created using Seung lab CloudVolume format.
 
 The pipeline performs the following steps:
- - Extract the scan images from proprietary formats (CZI)
- - Prepare previews of the image for Quality Controll
+ - Extract the scan images from proprietary formats (e.g. CZI)
+ - Prepare previews of the image for Quality Control
  - Clean the images by cropping it from surround debres
  - align the images within a scan so that brain regions adjescent slides are in the same location and orientation in the image
  - Convert the image to the Seung lab CloudVolume Format

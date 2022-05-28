@@ -8,7 +8,7 @@ The ability to view and share high resolution microsopy data among different lab
 is an impending challenge of today's neuroscience research.  Our recent capacity to measure and store data on a 
 large scale has given rise to the need for a set of tools that enables seemless sharing of large data sets. 
 Going from biological samples to data that can be viewed, edited and shared is a nontrivial task. The challenges 
-presented by handling big data is clear as a set of complete section images with reasonable resolution could take
+presented by handling big data are clear as a set of complete section images with reasonable resolution could take
 around 5TB per mouse. On top of that, many copies of the data need to be created in order to visualize the image set
 at variable resolution through the internet. The processed data set also needs to be stored in an efficient and secure format 
 that is accessible by web servers. 
