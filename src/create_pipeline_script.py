@@ -23,12 +23,8 @@ Note: Setting debug=True will force single core
 """
 from lib.pipeline import Pipeline
 
-<<<<<<< HEAD
-def run_pipeline(animal, channel, downsample,step,DATA_PATH):
-=======
 
 def run_pipeline(animal, channel, downsample, step, DATA_PATH):
->>>>>>> 6e8701cc8c05042fd1ef437e6fd9968ca718c3aa
     pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, debug=False)
     pipeline.prepare_image_for_quality_control()
 
@@ -46,10 +42,6 @@ if __name__ == "__main__":
     animal = "DK73"
     channel = 1
     downsample = True
-<<<<<<< HEAD
-    step = 4
-=======
     step = 1
->>>>>>> 6e8701cc8c05042fd1ef437e6fd9968ca718c3aa
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(animal, channel, downsample, step, DATA_PATH)
