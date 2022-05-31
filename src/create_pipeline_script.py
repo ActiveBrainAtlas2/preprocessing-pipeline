@@ -21,14 +21,9 @@ for more information.
 """
 from lib.pipeline import Pipeline
 
-
-def run_pipeline(animal, channel, downsample, step, DATA_PATH):
-    pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, debug=False)
-
-    # CREATES tif FOLDER AND POPULATES WITH FULL-RESOLUTION IMAGES FROM czi FILES; POPULATES DB W/ META INFO
-    # CREATES www FOLDER AND POPULATES WITH DOWNSAMPLED png IMAGES FROM FULL-RESOLUTION tif FILES
-    pipeline.prepare_image_for_quality_control()  
-     
+def run_pipeline(animal, channel, downsample,step,DATA_PATH):
+    pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, debug=True)
+    pipeline.prepare_image_for_quality_control()
     if step > 0:
         pipeline.apply_qc_and_prepare_image_masks() 
     if step > 1:
