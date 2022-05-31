@@ -13,16 +13,16 @@ class FileLogger:
         -CHECK FOR PRESENCE OF LOG FILE (RW PERMISSION)
         -SET CONFIG FOR LOGGING
         """
-
+        LOGFILE = os.path.join(LOGFILE_PATH, 'process.log')
         try:
-            with open(LOGFILE_PATH, "a") as f:
+            with open(LOGFILE, "a") as f:
                 pass
         except FileNotFoundError:
-            print("CREATED LOGFILE @ ", LOGFILE_PATH)
-            Path(LOGFILE_PATH).touch()
+            print("CREATED LOGFILE @ ", LOGFILE)
+            Path(LOGFILE).touch()
 
         logging.basicConfig(
-            filename=LOGFILE_PATH, level=logging.INFO, format="%(message)s", force=True
+            filename=LOGFILE, level=logging.INFO, format="%(message)s", force=True
         )
 
     def logevent(self, msg: str):
@@ -31,7 +31,7 @@ class FileLogger:
         return timestamp
 
 
-##PREVIOUS VERSION BELOW (LOG TO DB)
+# PREVIOUS VERSION BELOW (LOG TO DB)
 class DatabaseHandler(logging.Handler):
     def emit(self, record):
         log = Log(
