@@ -1,4 +1,6 @@
 import os
+import glob
+import hashlib
 from lib.ParallelManager import ParallelManager
 
 
@@ -52,7 +54,6 @@ class TiffExtractor(ParallelManager):
         self.run_commands_in_parallel_with_shell(commands, workers)
         self.update_database()
 
-
     def update_database(self):
         """Updating the file log table in the databased about the completion of the QC preparation steps"""
         self.sqlController.set_task(
@@ -62,6 +63,27 @@ class TiffExtractor(ParallelManager):
             self.animal,
             self.progress_lookup.CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1,
         )
+
+    def create_filechecksums(self):
+        stdout = ""
+        sha256_hash = hashlib.sha256()
+        files = glob.glob(os.path.join(self.fileLocationManager.tif, "*.tif"))
+        output_path = os.path.join(self.fileLocationManager.tif, "sha256sums.txt")
+        for filename in files:
+            with open(filename, "rb") as f:
+                # Read and update hash string value in blocks of 4K
+                for byte_block in iter(lambda: f.read(4096), b""):
+                    sha256_hash.update(byte_block)
+                stdout += (
+                    str(sha256_hash.hexdigest())
+                    + "\t"
+                    + os.path.basename(filename)
+                    + "\n"
+                )
+                print(sha256_hash.hexdigest(), "\t", os.path.basename(filename), "\n")
+
+        with open(output_path, "w") as f:
+            f.write(stdout)
 
     def create_web_friendly_image(self):
         """Create downsampled version of full size tiff images that can be viewed on the Django admin portal

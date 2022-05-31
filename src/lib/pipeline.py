@@ -136,10 +136,10 @@ class Pipeline(
             starting_files = glob.glob(
                 os.path.join(self.fileLocationManager.tif, "*.tif")
             )
-            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.stack}/tif/")
+            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.tif}")
             self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
         elif function_name == "create web friendly image":
-            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.stack}/www/scene/")
+            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.thumbnail_web}")
         else:
             pass
 
@@ -153,11 +153,20 @@ class Pipeline(
                 os.path.join(self.fileLocationManager.tif, "*.tif")
             )
             self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
-            self.logevent(f"AGGREGATE: {function_name} took {timer()-time} seconds")
-            unitary_calc = (timer() - time) / ending_files
-            self.logevent(
-                f"TIME PER FILE CREATION (seconds): {str(unitary_calc)}\n{sep}"
-            )
+
+            if ending_files != starting_files:
+                endtime = timer()
+                self.logevent(f"AGGREGATE: {function_name} took {endtime-time} seconds")
+                print(type(ending_files),ending_files)
+                unitary_calc = (endtime - time) / len(ending_files)
+                self.logevent(
+                    f"TIME PER FILE CREATION (seconds): {str(unitary_calc)}\n{sep}"
+                )
+            else:
+                self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
+                self.logevent(f"CALCULATE FILE CHECKSUMS\n{sep}")
+                self.create_filechecksums()
+
         else:
             self.logevent(f"{function_name} took {timer()-time} seconds\n{sep}")
 
