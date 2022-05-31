@@ -87,7 +87,7 @@ class Pipeline(
         self.logger = get_logger(animal)
         self.check_programs()
 
-        super().__init__(self.fileLocationManager.get_logdir())
+        # super().__init__(self.fileLocationManager.get_logdir())
 
     @staticmethod
     def check_programs():

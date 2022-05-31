@@ -22,7 +22,7 @@ for more information.
 from lib.pipeline import Pipeline
 
 def run_pipeline(animal, channel, downsample,step,DATA_PATH):
-    pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, debug=True)
+    pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, debug=False)
     pipeline.prepare_image_for_quality_control()
     if step > 0:
         pipeline.apply_qc_and_prepare_image_masks() 
@@ -35,9 +35,9 @@ def run_pipeline(animal, channel, downsample,step,DATA_PATH):
 
 
 if __name__ == "__main__":
-    animal = "DK77-DUANE"
+    animal = "DK73"
     channel = 1
     downsample = True
-    step = 0
+    step = 4
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(animal, channel, downsample, step, DATA_PATH)

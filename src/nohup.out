@@ -1,0 +1,90 @@
+  0%|          | 0/56 [00:00<?, ?it/s]Picked up _JAVA_OPTIONS: -Xmx10g
+  7%|▋         | 4/56 [00:00<00:05,  8.82it/s]
+Check programs took 0.00013451999984681606 seconds
+Creating meta
+create meta is working with 56 files.
+Traceback (most recent call last):
+  File "create_pipeline_script.py", line 42, in <module>
+    run_pipeline(animal, channel, downsample,step,DATA_PATH)
+  File "create_pipeline_script.py", line 26, in run_pipeline
+    pipeline.prepare_image_for_quality_control()
+  File "/home/zhw272/programming/pipeline_utility/src/lib/pipeline.py", line 90, in prepare_image_for_quality_control
+    self.run_program_and_time(self.extract_slide_meta_data_and_insert_to_database,'Creating meta')
+  File "/home/zhw272/programming/pipeline_utility/src/lib/pipeline.py", line 86, in run_program_and_time
+    function()
+  File "/home/zhw272/programming/pipeline_utility/src/lib/MetaUtilities.py", line 27, in extract_slide_meta_data_and_insert_to_database
+    self.add_slide_information_to_database(czi_file)
+  File "/home/zhw272/programming/pipeline_utility/src/lib/MetaUtilities.py", line 50, in add_slide_information_to_database
+    self.metadata = get_czi_metadata(czi_file_path)
+  File "/usr/local/share/pipeline/lib/python3.6/site-packages/abakit/lib/utilities_bioformats.py", line 11, in get_czi_metadata
+    metadata = subprocess.check_output(command).decode('utf-8')
+  File "/usr/lib/python3.6/subprocess.py", line 356, in check_output
+    **kwargs).stdout
+  File "/usr/lib/python3.6/subprocess.py", line 425, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+  File "/usr/lib/python3.6/subprocess.py", line 850, in communicate
+    stdout = self.stdout.read()
+KeyboardInterrupt
+  0%|          | 0/56 [00:00<?, ?it/s]Picked up _JAVA_OPTIONS: -Xmx10g
+  9%|▉         | 5/56 [00:25<04:24,  5.19s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 11%|█         | 6/56 [00:54<08:43, 10.48s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 12%|█▎        | 7/56 [01:31<13:47, 16.88s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 14%|█▍        | 8/56 [02:04<16:47, 20.98s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 16%|█▌        | 9/56 [02:35<18:29, 23.61s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 18%|█▊        | 10/56 [03:05<19:19, 25.20s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 20%|█▉        | 11/56 [03:34<19:44, 26.33s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 21%|██▏       | 12/56 [04:04<20:08, 27.46s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 23%|██▎       | 13/56 [04:34<20:13, 28.22s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 25%|██▌       | 14/56 [05:06<20:27, 29.21s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 27%|██▋       | 15/56 [05:39<20:44, 30.35s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 29%|██▊       | 16/56 [06:12<20:45, 31.13s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 30%|███       | 17/56 [06:44<20:30, 31.54s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 32%|███▏      | 18/56 [07:15<19:49, 31.29s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 34%|███▍      | 19/56 [07:45<19:03, 30.89s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 36%|███▌      | 20/56 [08:18<18:55, 31.54s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 38%|███▊      | 21/56 [08:59<20:00, 34.31s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 39%|███▉      | 22/56 [09:34<19:40, 34.72s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 41%|████      | 23/56 [10:10<19:17, 35.06s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 43%|████▎     | 24/56 [10:49<19:21, 36.29s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 45%|████▍     | 25/56 [11:26<18:51, 36.50s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 46%|████▋     | 26/56 [12:11<19:29, 38.99s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 48%|████▊     | 27/56 [13:00<20:15, 41.93s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 57%|█████▋    | 32/56 [13:46<07:50, 19.61s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 59%|█████▉    | 33/56 [14:33<09:13, 24.07s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 61%|██████    | 34/56 [15:20<10:24, 28.41s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 62%|██████▎   | 35/56 [16:03<11:01, 31.52s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 64%|██████▍   | 36/56 [16:49<11:36, 34.84s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 66%|██████▌   | 37/56 [17:39<12:15, 38.70s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 68%|██████▊   | 38/56 [18:40<13:21, 44.52s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 70%|██████▉   | 39/56 [19:27<12:50, 45.31s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 71%|███████▏  | 40/56 [20:26<13:06, 49.17s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 73%|███████▎  | 41/56 [21:27<13:06, 52.45s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 75%|███████▌  | 42/56 [22:40<13:35, 58.27s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 77%|███████▋  | 43/56 [23:55<13:41, 63.20s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 79%|███████▊  | 44/56 [24:55<12:29, 62.46s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 80%|████████  | 45/56 [25:58<11:29, 62.67s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 82%|████████▏ | 46/56 [27:07<10:44, 64.43s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 84%|████████▍ | 47/56 [28:43<11:05, 73.96s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 86%|████████▌ | 48/56 [29:37<09:03, 67.91s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 88%|████████▊ | 49/56 [30:29<07:22, 63.22s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 89%|████████▉ | 50/56 [31:10<05:38, 56.41s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 91%|█████████ | 51/56 [32:09<04:45, 57.15s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 93%|█████████▎| 52/56 [33:07<03:49, 57.39s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 95%|█████████▍| 53/56 [34:17<03:03, 61.28s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 96%|█████████▋| 54/56 [34:39<01:39, 49.51s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+ 98%|█████████▊| 55/56 [35:05<00:42, 42.40s/it]Picked up _JAVA_OPTIONS: -Xmx10g
+100%|██████████| 56/56 [35:19<00:00, 33.85s/it]100%|██████████| 56/56 [35:19<00:00, 37.84s/it]Check programs took 0.0001280689612030983 seconds
+Creating meta
+create meta is working with 56 files.
+No step for 10, so creating new task.
+No step for 20, so creating new task.
+No step for 30, so creating new task.
+Creating meta took 2119.3238521709573 seconds
+Extracting Tiffs
+
+Extracting Tiffs took 13771.863230724004 seconds
+Making full resolution copies
+Making full resolution copies took 3281.9703908939846 seconds
+Making downsampled copies
+Number of files in /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK73/preps/CH2/full is incorrect.
+
