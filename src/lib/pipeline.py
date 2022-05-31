@@ -10,7 +10,10 @@ All imports are listed by the order in which they are used in the pipeline.
 import os
 import sys
 from shutil import which
-from abakit.lib.FileLocationManager import FileLocationManager
+import glob
+
+# from abakit.lib.FileLocationManager import FileLocationManager
+from lib.FileLocationManager import FileLocationManager
 from lib.MetaUtilities import MetaUtilities
 from lib.PrepCreater import PrepCreater
 from lib.NgPrecomputedMaker import NgPrecomputedMaker
@@ -72,7 +75,7 @@ class Pipeline(
             channel (int, optional): channel number.  This tells the program which channel to work on and which channel to extract from the czis. Defaults to 1.
             downsample (bool, optional): Determine if we are working on the full resolution or downsampled version. Defaults to True.
             DATA_PATH (str, optional): path to where the images and intermediate steps are stored. Defaults to '/net/birdstore/Active_Atlas_Data/data_root'.
-            debug (bool, optional): determine if we are in debug mode.  This is used for development purposes. Defaults to False.
+            debug (bool, optional): determine if we are in debug mode.  This is used for development purposes. Defaults to False. (forces processing on single core)
         """
         self.animal = animal
         self.channel = channel
@@ -127,11 +130,36 @@ class Pipeline(
         """
         print(function_name)
         time = timer()
-        function()
 
-        self.logevent(function_name)
+        self.logevent("START " + str(function_name))
+        if function_name == "Extracting Tiffs":
+            starting_files = glob.glob(
+                os.path.join(self.fileLocationManager.tif, "*.tif")
+            )
+            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.stack}/tif/")
+            self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+        elif function_name == "create web friendly image":
+            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.stack}/www/scene/")
+        else:
+            pass
+
+        function()  # RUN FUNCTION
+
         print(f"{function_name} took {timer()-time} seconds")
-        self.logevent(f"{function_name} took {timer()-time} seconds")
+
+        sep = "*" * 40 + "\n"
+        if function_name == "Extracting Tiffs":
+            ending_files = glob.glob(
+                os.path.join(self.fileLocationManager.tif, "*.tif")
+            )
+            self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
+            self.logevent(f"AGGREGATE: {function_name} took {timer()-time} seconds")
+            unitary_calc = (timer() - time) / ending_files
+            self.logevent(
+                f"TIME PER FILE CREATION (seconds): {str(unitary_calc)}\n{sep}"
+            )
+        else:
+            self.logevent(f"{function_name} took {timer()-time} seconds\n{sep}")
 
     def prepare_image_for_quality_control(self):
         """This is the first step of the pipeline.  The images are extracted from the CZI files,
@@ -143,6 +171,7 @@ class Pipeline(
         self.run_program_and_time(
             self.extract_slide_meta_data_and_insert_to_database, "Creating meta"
         )
+
         self.run_program_and_time(self.extract_tifs_from_czi, "Extracting Tiffs")
         if self.channel == 1 and self.downsample:
             self.run_program_and_time(
@@ -153,7 +182,7 @@ class Pipeline(
         """This function performs 2 steps:
         1. Applies the QC result that the user provides on the Django database admin portal and prepares a copy
         of the tiff files that reflects the image/slide exclusion and replacement decisions made by user.
-        Following steps in the pipeline then uses this copy as the input
+        Following steps in the pipeline then use this copy as the input
         2. Use a CNN based machine learning algorism to create masks around the tissue.
            These masks will be used to crop out the tissue from the surrounding debres.
         """

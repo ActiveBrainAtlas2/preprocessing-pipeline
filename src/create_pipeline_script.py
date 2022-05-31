@@ -18,14 +18,22 @@ and possible dilate or crop them.
 increasing the step size will make the pipeline move forward in the process.
 see: src/python/create_pipeline.py -h
 for more information.
+
+Note: Setting debug=True will force single core
 """
 from lib.pipeline import Pipeline
 
+<<<<<<< HEAD
 def run_pipeline(animal, channel, downsample,step,DATA_PATH):
+=======
+
+def run_pipeline(animal, channel, downsample, step, DATA_PATH):
+>>>>>>> 6e8701cc8c05042fd1ef437e6fd9968ca718c3aa
     pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, debug=False)
     pipeline.prepare_image_for_quality_control()
+
     if step > 0:
-        pipeline.apply_qc_and_prepare_image_masks() 
+        pipeline.apply_qc_and_prepare_image_masks()
     if step > 1:
         pipeline.clean_images_and_create_histogram()
     if step > 2:
@@ -38,6 +46,10 @@ if __name__ == "__main__":
     animal = "DK73"
     channel = 1
     downsample = True
+<<<<<<< HEAD
     step = 4
+=======
+    step = 1
+>>>>>>> 6e8701cc8c05042fd1ef437e6fd9968ca718c3aa
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(animal, channel, downsample, step, DATA_PATH)
