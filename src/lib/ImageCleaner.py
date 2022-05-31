@@ -10,6 +10,11 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.pipeline_utilities import read_image,get_max_image_size
 from copy import copy 
+from abakit.model.slide_czi_to_tif import SlideCziTif
+from abakit.model.slide import Slide
+from abakit.model.section import Section
+
+
 class ImageCleaner:
 
     def create_cleaned_images(self):
@@ -40,6 +45,13 @@ class ImageCleaner:
         MASKS = self.fileLocationManager.full_masked
         self.parallel_create_cleaned(INPUT,CLEANED,MASKS)
 
+    def get_section_rotation(self,section:Section):
+        sections = self.sqlController.session.query(SlideCziTif).filter(SlideCziTif.slide_id==section.slide_id)
+        indices = np.sort(np.unique([i.scene_index for i in sections]))
+        scene = np.where(indices==section.scene_index)[0][0]+1
+        slide = self.sqlController.session.query(Slide).get(section.slide_id)
+        return getattr(slide,f'scene_rotation_{scene}')
+
     def parallel_create_cleaned(self,INPUT,CLEANED,MASKS):
         """Clean the images (downsampled or full size) in parallel"""
         max_width,max_height = get_max_image_size(INPUT)
@@ -47,16 +59,18 @@ class ImageCleaner:
         flip = self.sqlController.scan_run.flip
         test_dir(self.animal, INPUT, self.downsample, same_size=False)
         files = sorted(os.listdir(INPUT))
+        sections = self.sqlController.get_sections(self.animal, self.channel)
+        rotations_per_section = [self.get_section_rotation(i) for i in sections]
         progress_id = self.sqlController.get_progress_id(self.downsample, self.channel, 'CLEAN')
         self.sqlController.set_task(self.animal, progress_id)
         file_keys = []
-        for file in files:
+        for i,file in enumerate(files):
             infile = os.path.join(INPUT, file)
             outpath = os.path.join(CLEANED, file)
             if os.path.exists(outpath):
                 continue
             maskfile = os.path.join(MASKS, file)
-            file_keys.append([infile, outpath, maskfile, rotation, flip, max_width, max_height, self.channel])
+            file_keys.append([infile, outpath, maskfile, rotation+rotations_per_section[i], flip, max_width, max_height, self.channel])
         workers = self.get_nworkers()
         self.run_commands_in_parallel_with_executor([file_keys],workers,clean_and_rotate_image)
 
