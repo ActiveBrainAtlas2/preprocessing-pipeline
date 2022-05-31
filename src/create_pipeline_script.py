@@ -21,11 +21,16 @@ for more information.
 """
 from lib.pipeline import Pipeline
 
-def run_pipeline(animal, channel, downsample,step,DATA_PATH):
-    pipeline = Pipeline(animal, channel, downsample,DATA_PATH=DATA_PATH,debug=False)
-    pipeline.prepare_image_for_quality_control()
+
+def run_pipeline(animal, channel, downsample, step, DATA_PATH):
+    pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, debug=False)
+
+    # CREATES tif FOLDER AND POPULATES WITH FULL-RESOLUTION IMAGES FROM czi FILES; POPULATES DB W/ META INFO
+    # CREATES www FOLDER AND POPULATES WITH DOWNSAMPLED png IMAGES FROM FULL-RESOLUTION tif FILES
+    pipeline.prepare_image_for_quality_control()  
+     
     if step > 0:
-        pipeline.apply_qc_and_prepare_image_masks()
+        pipeline.apply_qc_and_prepare_image_masks() 
     if step > 1:
         pipeline.clean_images_and_create_histogram()
     if step > 2:
@@ -33,10 +38,11 @@ def run_pipeline(animal, channel, downsample,step,DATA_PATH):
     if step > 3:
         pipeline.create_neuroglancer_cloud_volume()
 
-if __name__ == '__main__':
-    animal = 'DK73'
+
+if __name__ == "__main__":
+    animal = "DK77-DUANE"
     channel = 1
     downsample = True
-    step = 3
-    DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root/'
-    run_pipeline(animal, channel, downsample,step,DATA_PATH)
+    step = 0
+    DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
+    run_pipeline(animal, channel, downsample, step, DATA_PATH)
