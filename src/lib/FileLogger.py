@@ -2,6 +2,7 @@ import os
 import subprocess
 from pathlib import Path
 import logging
+import socket
 from datetime import datetime
 from abakit.lib.sql_setup import session
 from abakit.model.log import Log
@@ -13,7 +14,8 @@ class FileLogger:
         -CHECK FOR PRESENCE OF LOG FILE (RW PERMISSION)
         -SET CONFIG FOR LOGGING
         """
-        LOGFILE = os.path.join(LOGFILE_PATH, 'process.log')
+        hostname = socket.gethostname()
+        LOGFILE = os.path.join(LOGFILE_PATH, 'process-' + str(hostname) + '.log')
         try:
             with open(LOGFILE, "a") as f:
                 pass
