@@ -42,6 +42,6 @@ if __name__ == "__main__":
     animal = "DK73"
     channel = 1
     downsample = True
-    step = 1
+    step = 4
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(animal, channel, downsample, step, DATA_PATH)
