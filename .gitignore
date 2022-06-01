@@ -139,3 +139,5 @@ dmypy.json
 *.tif
 
 tests/
+# junk files
+*.out
