@@ -1,6 +1,6 @@
 from notebooks.Will.toolbox.IOs.TransformCom import TransformCom
 from notebooks.Will.toolbox.IOs.LoadComDatabase import LoadComDatabase
-from lib.sqlcontroller import SqlController
+from abakit.lib.SqlController import SqlController
 getcom = LoadComDatabase()
 gettc = TransformCom(getcom)
 prep_list = getcom.get_prep_list_for_rough_alignment_test()

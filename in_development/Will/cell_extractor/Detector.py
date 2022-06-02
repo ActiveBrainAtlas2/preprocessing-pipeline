@@ -1,13 +1,19 @@
 from cell_extractor.Predictor import Predictor
 import numpy as np
+import xgboost as xgb
 
 class Detector():
-    def __init__(self,model=None,predictor:Predictor=None):
+    def __init__(self,model=None,predictor:Predictor=Predictor()):
         self.model = model
         self.predictor = predictor
+
+    def createDM(self,df):
+        labels=df['label']
+        features=df.drop('label',axis=1)
+        return xgb.DMatrix(features, label=labels)
     
     def calculate_scores(self,features):
-        _,_,all=self.get_train_and_test(features)
+        all=self.createDM(features)
         labels=all.get_label()
         scores=np.zeros([features.shape[0],len(self.model)])
         for i in range(len(self.model)):

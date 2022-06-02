@@ -1,11 +1,7 @@
-from atlas.BrainStructureManager import BrainStructureManager
-from atlas.VolumeMaker import VolumeMaker
-from atlas.Assembler import BrainAssembler
-from atlas.NgSegmentMaker import BrainNgMaker
-from scipy.ndimage import gaussian_filter
-from skimage.filters import gaussian
-from scipy.ndimage.morphology import distance_transform_edt
-
+from abakit.atlas.BrainStructureManager import BrainStructureManager
+from abakit.atlas.VolumeMaker import VolumeMaker
+from abakit.atlas.Assembler import BrainAssembler
+from abakit.atlas.NgSegmentMaker import BrainNgMaker
 import numpy as np
 
 def find_average_of_two_masks(mask1,mask2):
@@ -41,9 +37,12 @@ def make_volumes():
     assembler.volumes['SpV_L'] = assembler.volumes['SpV_L']
     assembler.assemble_all_structure_volume()
     offset = vmaker.origins['SpV_L']
+    # offset = [10,10,10]
     maker = BrainNgMaker(animal = 'DK55',out_folder='DK55_trigeminal_test',offset = list(offset))
-    maker.scales = [2600,2600,10000]
-    maker.assembler.combined_volume = gaussian(interpolate_once(assembler.combined_volume),3)
-    maker.create_brain_neuroglancer()
+    maker.resolution = 2600
+    maker.create_neuroglancer_files(assembler.combined_volume)
+
 
 make_volumes()
+
+

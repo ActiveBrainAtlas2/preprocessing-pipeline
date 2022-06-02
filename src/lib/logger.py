@@ -1,7 +1,7 @@
 import logging
 
-from lib.sql_setup import session
-from model.log import Log
+from abakit.lib.sql_setup import session
+from abakit.model.log import Log
 
 
 

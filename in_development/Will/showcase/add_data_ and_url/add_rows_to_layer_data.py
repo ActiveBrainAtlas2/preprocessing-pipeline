@@ -1,4 +1,4 @@
-from lib.sqlcontroller import SqlController
+from abakit.lib.SqlController import SqlController
 animal = 'DK39'
 controller = SqlController(animal)
 abbreviation = ''

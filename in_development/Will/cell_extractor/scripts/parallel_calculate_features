@@ -1,5 +1,6 @@
 #!/bin/bash
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 channel=3
 root="/$2/cell_segmentation/$1"
@@ -22,7 +23,7 @@ done
 for file in "${files_to_process[@]}"
 do
    ((i=i%10)); ((i++==0)) && wait
-   python /scratch/programming/preprocessing-pipeline/in_development/Will/cell_extractor/scripts/calculate_features_for_one_section.py --animal "$1" --section "$file" --disk "$2"&
+   python $SCRIPT_DIR/create_features_for_one_section.py --animal "$1" --section "$file" --disk "$2"&
 done
 )
 }

@@ -53,7 +53,7 @@ def get_brain_count_per_structure(offset_table,landmark_list):
 
 def get_offset_table(com1,com2,prep_list_function,landmark_list_function,offset_function):
     # if type(com2) == list:
-    #     breakpoint()
+    #     
     prep_list = prep_list_function()
     landmarks = landmark_list_function(prep_list)
     offset_table = pd.DataFrame()

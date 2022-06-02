@@ -8,9 +8,9 @@ from time import time
 class IOTest:
     max_workers = 10
     max_lines = 10000000
-    #file_location = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/IOTEST'
-    file_location = '/tmp/IOTEST'
-    os.makedirs(file_location, exist_ok=True)
+    #FileLocationManager = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/IOTEST'
+    FileLocationManager = '/tmp/IOTEST'
+    os.makedirs(FileLocationManager, exist_ok=True)
     
     worker_model = None
     
@@ -20,7 +20,7 @@ class IOTest:
     
     def write(self, pid):
         p = self.__class__.__name__ + str(pid)
-        filename = '%s/%s.txt' % (self.file_location, p)
+        filename = '%s/%s.txt' % (self.FileLocationManager, p)
         with open(filename, 'w') as f:
             for x in range(self.max_lines):
                 f.write('Nothing signed "THE MGT." would ever be challenged; the Midget could always pass himself off as the Management.\n')

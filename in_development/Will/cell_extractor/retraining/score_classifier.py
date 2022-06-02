@@ -7,7 +7,7 @@ from numpy import *
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-from lib import XGBHelper as xgbh
+from abakit.lib import XGBHelper as xgbh
 import pandas as pd
 from glob import glob
 import pickle as pk

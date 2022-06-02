@@ -17,8 +17,8 @@ from pathlib import Path
 PIPELINE_ROOT = Path('.').absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from utilities.sqlcontroller import SqlController
-from utilities.file_location import FileLocationManager
+from utilities.SqlController import SqlController
+from utilities.FileLocationManager import FileLocationManager
 from utilities.utilities_process import make_tif
 from sql_setup import session
 

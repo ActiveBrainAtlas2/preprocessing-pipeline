@@ -1,18 +1,20 @@
 import os
 from time import time
 from glob import glob
-from Brain import Brain
+from abakit.lib.Brain import Brain
 import pickle as pkl
 import pandas as pd
 import numpy as np
 from cell_extractor.DetectionPlotter import DetectionPlotter
 from cell_extractor.Predictor import Predictor
+import concurrent.futures
 
 class CellDetectorBase(Brain):
-    def __init__(self,animal='DK55',section = 0,disk = '/net/birdstore/Active_Atlas_Data/',round = 1,segmentation_threshold=2000):
+    def __init__(self,animal='DK55',section = 0,disk = '/net/birdstore/Active_Atlas_Data/',round = 1,segmentation_threshold=2000,replace=False):
         self.attribute_functions = dict(
             tile_origins = self.get_tile_origins)
         super().__init__(animal)
+        self.replace = replace
         self.disk = disk
         self.round = round
         self.plotter = DetectionPlotter()
@@ -39,12 +41,12 @@ class CellDetectorBase(Brain):
         self.CH1 = os.path.join(self.ANIMAL_PATH,"CH1")
         self.CH3_SECTION_DIR=os.path.join(self.CH3,f"{self.section:03}")
         self.CH1_SECTION_DIR=os.path.join(self.CH1,f"{self.section:03}")
-        self.COMBINED_FEATURES = os.path.join(self.ANIMAL_PATH,'all_features.csv')
+        self.ALL_FEATURES = os.path.join(self.ANIMAL_PATH,'all_features.csv')
         self.QUALIFICATIONS = os.path.join(self.FEATURE_PATH,f'categories_round{self.round}.pkl')
-        self.POSITIVE_LABELS = os.path.join(self.FEATURE_PATH,f'positive_labels_for_{self.round+1}.pkl')
-        self.DETECTOR_PATH = os.path.join(self.DETECTOR,f'detector_round_{self.round}.pkl')
-        self.DETECTION_RESULT_DIR = os.path.join(self.DETECTION,'detections_'+self.animal+'.'+str(self.round)+'.csv')
-        self.ALL_FEATURES = os.path.join(self.FEATURE_PATH,'all_features.csv')
+        self.POSITIVE_LABELS = os.path.join(self.FEATURE_PATH,f'positive_labels_for_round_{self.round}_threshold_{self.segmentation_threshold}.pkl')
+        self.DETECTOR_PATH = os.path.join(self.DETECTOR,f'detector_round_{self.round}_threshold_{self.segmentation_threshold}.pkl')
+        self.DETECTION_RESULT_DIR = os.path.join(self.DETECTION,f'detections_{self.animal}.{str(self.round)}_threshold_{self.segmentation_threshold}.csv')
+        self.ALL_FEATURES = os.path.join(self.FEATURE_PATH,f'all_features_threshold_{self.segmentation_threshold}.csv')
 
     def check_path_exists(self):
         check_paths = [self.ANIMAL_PATH,self.FEATURE_PATH,self.DETECTION,self.DETECTOR]
@@ -80,6 +82,9 @@ class CellDetectorBase(Brain):
             assert (tile_information == self.get_tile_information()).all().all()
         else:
             self.save_tile_information()
+    
+    def list_detectors(self):
+        return os.listdir(self.DETECTOR)
         
     def get_tile_and_image_dimensions(self):
         self.width,self.height = self.get_image_dimension()
@@ -98,21 +103,24 @@ class CellDetectorBase(Brain):
         self.check_attributes(['tile_origins'])
         return np.array(self.tile_origins[tilei],dtype=np.int32)
     
+    def get_all_sections(self):
+        return os.listdir(self.CH3)
+    
     def get_sections_with_string(self,search_string):
-        sections = os.listdir(self.CH3)
+        sections = self.get_all_sections()
         sections_with_string = []
         for sectioni in sections:
             if glob(os.path.join(self.CH3,sectioni,search_string)):
                 sections_with_string.append(int(sectioni))
-        return sections_with_string
+        return sorted(sections_with_string)
 
     def get_sections_without_string(self,search_string):
-        sections = os.listdir(self.CH3)
+        sections = self.get_all_sections()
         sections_with_string = []
         for sectioni in sections:
             if not glob(os.path.join(self.CH3,sectioni,search_string)):
                 sections_with_string.append(int(sectioni))
-        return sections_with_string
+        return sorted(sections_with_string)
 
     def get_sections_with_csv(self):
         return self.get_sections_with_string('*.csv')
@@ -120,17 +128,17 @@ class CellDetectorBase(Brain):
     def get_sections_without_csv(self):
         return self.get_sections_without_string('*.csv')
 
-    def get_sections_with_example(self):
-        return self.get_sections_with_string('extracted_cells*')
+    def get_sections_with_example(self,threshold=2000):
+        return self.get_sections_with_string(f'extracted_cells*{threshold}*')
 
-    def get_sections_without_example(self):
-        return self.get_sections_without_string('extracted_cells*')
+    def get_sections_without_example(self,threshold=2000):
+        return self.get_sections_without_string(f'extracted_cells*{threshold}*')
     
-    def get_sections_with_features(self):
-        return self.get_sections_with_string('puntas_*')
+    def get_sections_with_features(self,threshold=2000):
+        return self.get_sections_with_string(f'puntas_*{threshold}*')
 
-    def get_sections_without_features(self):
-        return self.get_sections_without_string('puntas_*')
+    def get_sections_without_features(self,threshold=2000):
+        return self.get_sections_without_string(f'puntas_*{threshold}*')
 
     def get_example_save_path(self):
         return self.CH3_SECTION_DIR+f'/extracted_cells_{self.section}_threshold_{self.segmentation_threshold}.pkl'
@@ -207,7 +215,7 @@ class CellDetectorBase(Brain):
         dirs=['/'.join(d.split('/')[:-1]) for d in dirs]
         df_list=[]
         for dir in dirs:
-            filename=glob(dir + '/puntas*.csv')[0]
+            filename=glob(dir + '/puntas*{self.segmentation_threshold}*.csv')[0]
             df=pd.read_csv(filename)
             print(filename,df.shape)
             df_list.append(df)
@@ -216,31 +224,30 @@ class CellDetectorBase(Brain):
         drops = ['animal', 'section', 'index', 'row', 'col'] 
         full_df=full_df.drop(drops,axis=1)
         return full_df
-
+    
     def get_combined_features(self):
-        files=glob(self.CH3+'/*/punta*.csv')  
+        if not os.path.exists(self.ALL_FEATURES):
+            self.create_combined_features()
+        return pd.read_csv(self.ALL_FEATURES,index_col=False)
+
+    def get_combined_features_for_detection(self):
+        all_features = self.get_combined_features()
+        drops = ['animal', 'section', 'index', 'row', 'col'] 
+        all_features=all_features.drop(drops,axis=1)
+        return all_features
+    
+    def create_combined_features(self):
+        print('creating combined features')
+        files=glob(self.CH3+f'/*/punta*{self.segmentation_threshold}.csv')  
         df_list=[]
         for filei in files:
             if os.path.getsize(filei) == 1:
                 continue
             df=pd.read_csv(filei)
-            print(filei,df.shape)
             df_list.append(df)
         full_df=pd.concat(df_list)
         full_df.index=list(range(full_df.shape[0]))
-        return full_df
-    
-    def create_combined_features(self):
-        full_df = self.get_combined_features()
-        full_df.to_csv(self.COMBINED_FEATURES)
-
-    def load_combined_features(self):
-        if not os.path.exists(self.COMBINED_FEATURES):
-            self.create_combined_features()
-        self.combined_features = pd.read_csv(self.COMBINED_FEATURES,index_col=0)
-        drops = ['animal', 'section', 'index', 'row', 'col'] 
-        self.combined_features=self.combined_features.drop(drops,axis=1)
-        self.nfeatures = len(self.combined_features)
+        full_df.to_csv(self.ALL_FEATURES,index=False)
 
     def get_qualifications(self):
         return pkl.load(open(self.QUALIFICATIONS,'rb'))
@@ -275,6 +282,9 @@ class CellDetectorBase(Brain):
                 print(e)
             self.average_image_ch1 = average_image['CH1']
             self.average_image_ch3 = average_image['CH3']
+    
+    def load_detections(self):
+        return pd.read_csv(self.DETECTION_RESULT_DIR)
 
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)
@@ -283,3 +293,38 @@ def get_sections_with_annotation_for_animali(animal):
 def get_sections_without_annotation_for_animali(animal):
     base = CellDetectorBase(animal)
     return base.get_sections_without_csv()
+
+def get_all_sections_for_animali(animal):
+    base = CellDetectorBase(animal)
+    return base.get_all_sections()
+
+def list_available_animals(disk = '/net/birdstore/Active_Atlas_Data/',has_example = True,has_feature = True):
+    base = CellDetectorBase(disk = disk)
+    animals = os.listdir(base.DATA_PATH)
+    animals = [os.path.isdir(i) for i in animals]
+    animals.remove('detectors')
+    animals.remove('models')
+    for animali in animals:
+        base = CellDetectorBase(disk = disk,animal = animali)
+        nsections = len(base.get_all_sections())
+        remove = False
+        if has_example:
+            nexamples = len(base.get_sections_with_example())
+            if not nexamples == nsections:
+                remove = True
+        if has_feature:
+            nfeatures = len(base.get_sections_with_features())
+            if not nfeatures == nsections:
+                remove = True
+        if remove:
+            animals.remove(animali)
+    return animals
+
+def parallel_process_all_sections(animal,processing_function,*args,njobs = 10,**kwargs):
+    sections = get_all_sections_for_animali(animal)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=njobs) as executor:
+        results = []
+        for sectioni in sections:
+            print(sectioni)
+            results.append(executor.submit(processing_function,animal,sectioni,*args,**kwargs))
+        print('done')

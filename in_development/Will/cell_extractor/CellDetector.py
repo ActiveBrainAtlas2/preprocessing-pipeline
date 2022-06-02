@@ -16,7 +16,7 @@ class CellDetector(CellDetectorBase):
         self.detector = self.load_detector()
     
     def calculate_and_save_detection_results(self):
-        features = self.get_combined_features()
+        features = self.get_combined_features_for_detection()
         scores,labels,_mean,_std = self.detector.calculate_scores(features)
         predictions=self.get_prediction(_mean,_std)
         detection_df['mean_score'],detection_df['std_score'] = _mean,_std
@@ -26,6 +26,6 @@ class CellDetector(CellDetectorBase):
         detection_df = detection_df[['animal', 'section', 'row', 'col','label', 'mean_score','std_score', 'predictions']]
         detection_df.to_csv(self.DETECTION_RESULT_DIR,index=False)
 
-if __name__ == '__main__':
-    detector = CellDetector('DK52')
+def detect_cell(animal,round,*args,**kwargs):
+    detector = CellDetector(*args,animal = animal,round=round,**kwargs)
     detector.calculate_and_save_detection_results()

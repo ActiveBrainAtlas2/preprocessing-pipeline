@@ -6,7 +6,7 @@ from pathlib import Path
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from lib.sqlcontroller import SqlController
+from abakit.lib.SqlController import SqlController
 from lib.UrlGenerator import UrlGenerator
 
 controller = SqlController('DK55')

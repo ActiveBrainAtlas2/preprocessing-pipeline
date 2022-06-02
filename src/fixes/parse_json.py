@@ -4,7 +4,7 @@ import os
 import sys
 import pandas as pd
 from sqlalchemy.orm.exc import NoResultFound
-from lib.sqlcontroller import SqlController
+from abakit.lib.SqlController import SqlController
 MANUAL=1
 BETH=2
 HOME = os.path.expanduser("~")

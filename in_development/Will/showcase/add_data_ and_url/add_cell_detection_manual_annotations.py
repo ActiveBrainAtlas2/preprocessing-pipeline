@@ -1,4 +1,4 @@
-from lib.sqlcontroller import SqlController
+from abakit.lib.SqlController import SqlController
 from lib.UrlGenerator import UrlGenerator
 import numpy as np
 url = 377

@@ -10,18 +10,17 @@ import numpy as np
 import xgboost as xgb
 import matplotlib.pyplot as plt
 import pandas as pd
-from lib.logger import logger
 from sklearn.metrics import roc_curve
 import pickle as pk
 from collections import Counter
 from cell_extractor.CellDetectorBase import CellDetectorBase
 print(xgb.__version__)
 from glob import glob
-# %load lib/Logger.py
+from cell_extractor.retraining.lib.logger  import logger
 import pandas as pd
 from cell_extractor.Predictor import Predictor
 from cell_extractor.CellAnnotationUtilities import CellAnnotationUtilities
-
+import os
 from cell_extractor.Detector import Detector   
 
 class DataLoader(CellAnnotationUtilities):
@@ -41,12 +40,10 @@ class DataLoader(CellAnnotationUtilities):
         oog=oog.drop(drops,axis=1)
         return oog
     
-    def load_new_features_with_coordinate(self):
-        dir = '/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/all_features.csv'
-        df = pd.read_csv(dir,index_col = 0)
-        base = CellDetectorBase('DK55',round=1)
-        test_counts,train_sections = pk.load(open(base.QUALIFICATIONS,'rb'))
-        all_segment = np.array([df.col,df.row,df.section]).T
+    def create_positive_labels(self):
+        combined_features = self.get_combined_features()
+        test_counts,train_sections = pk.load(open(self.last_round.QUALIFICATIONS,'rb'))
+        all_segment = np.array([combined_features.col,combined_features.row,combined_features.section]).T
 
         cells = test_counts['computer sure, human unmarked']
         cells = np.array([[ci[1]['x'],ci[1]['y'],ci[1]['section']] for ci in cells])
@@ -56,7 +53,7 @@ class DataLoader(CellAnnotationUtilities):
         original = np.array([[ci[1]['x'],ci[1]['y'],ci[1]['section']] for ci in original])
         original_index = self.find_cloest_neighbor_among_points(all_segment,original)
 
-        qc_annotation_input_path = '/scratch/programming/preprocessing-pipeline/in_development/yoav/marked_cell_detector/data2/'
+        qc_annotation_input_path = os.path.join(os.path.dirname(__file__),'retraining')
         neg = qc_annotation_input_path+'/DK55_premotor_manual_negative_round1_2021-12-09.csv'
         pos = qc_annotation_input_path+'/DK55_premotor_manual_positive_round1_2021-12-09.csv'
         neg = pd.read_csv(neg,header=None).to_numpy()
@@ -65,14 +62,23 @@ class DataLoader(CellAnnotationUtilities):
         negative = self.find_cloest_neighbor_among_points(all_segment,neg)
         dirs=glob('/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/CH3/*/DK55*.csv') 
         manual_sections = [int(i.split('/')[-2]) for i in dirs]
-        labels = np.zeros(len(df))
+        labels = np.zeros(len(combined_features))
         positive_index = cells_index+original_index+positive
         for i in positive_index:
             labels[i] = 1
-        df['label'] = labels
-        include = [labels[i]==1 or i in negative or all_segment[i,2] in manual_sections for i in range(len(df))]
-        df_in_section = df[include]
-        return df_in_section
+        include = [labels[i]==1 or i in negative or all_segment[i,2] in manual_sections for i in range(len(combined_features))]
+        pk.dump((labels,include),open(self.POSITIVE_LABELS,'wb'))    
+
+    def get_positive_labels(self):
+        if not os.path.exists(self.POSITIVE_LABELS):
+            self.create_positive_labels()
+        return pk.load(open(self.POSITIVE_LABELS,'rb'))
+    
+    def load_new_features_with_coordinate(self):
+        labels,include = self.get_positive_labels()
+        combined_features = self.get_combined_features()
+        combined_features['label'] = labels
+        return combined_features[include]
 
     def load_new_features(self):
         df_in_section = self.load_new_features_with_coordinate()
@@ -83,8 +89,7 @@ class DataLoader(CellAnnotationUtilities):
     def load_refined_original_feature(self):
         dir = '/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/all_features.csv'
         df = pd.read_csv(dir,index_col = 0)
-        base = CellDetectorBase('DK55',round=1)
-        test_counts,train_sections = pk.load(open(base.QUALIFICATIONS,'rb'))
+        test_counts,train_sections = pk.load(open(self.QUALIFICATIONS,'rb'))
         all_segment = np.array([df.col,df.row,df.section]).T
 
         original = train_sections['original training set after mind change']
@@ -103,10 +108,10 @@ class DataLoader(CellAnnotationUtilities):
         df_in_section = df[include]
         return df_in_section
 
-class CellDetectorTrainer(Detector,DataLoader):
-    def __init__(self,animal,round =2):
-        super().__init__(animal,round = round)
-        self.last_round = CellDetectorBase(animal,round = round-1)
+class CellDetectorTrainer(Detector,DataLoader,CellDetectorBase):
+    def __init__(self,animal,round =2,segmentation_threshold=2000):
+        CellDetectorBase.__init__(self,animal,round = round,segmentation_threshold=segmentation_threshold)
+        self.last_round = CellDetectorBase(animal,round = round-1,segmentation_threshold=segmentation_threshold)
         self.init_parameter()
         self.predictor = Predictor()
 
@@ -120,11 +125,6 @@ class CellDetectorTrainer(Detector,DataLoader):
         if reverse:
             s=s[-1::-1]
         return s
-
-    def createDM(self,df):
-        labels=df['label']
-        features=df.drop('label',axis=1)
-        return xgb.DMatrix(features, label=labels)
 
     def get_train_and_test(self,df,frac=0.5):
         train = pd.DataFrame(df.sample(frac=frac))
@@ -187,8 +187,8 @@ class CellDetectorTrainer(Detector,DataLoader):
         print(depth)
         return bst,Logger
     
-    def plot_score_scatter(self,df,bst_tree):
-        scores,labels,_mean,_std = self.calculate_scores(df,bst_tree)
+    def plot_score_scatter(self,df):
+        scores,labels,_mean,_std = self.calculate_scores(df)
         plt.figure(figsize=[15,10])
         plt.scatter(_mean,_std,c=labels,s=3)
         plt.title('mean and std of scores for 30 classifiers')
@@ -196,8 +196,8 @@ class CellDetectorTrainer(Detector,DataLoader):
         plt.ylabel('std')
         plt.grid()
     
-    def plot_decision_scatter(self,features,model):
-        scores,labels,_mean,_std = self.calculate_scores(features,model)
+    def plot_decision_scatter(self,features):
+        scores,labels,_mean,_std = self.calculate_scores(features)
         predictions=self.get_prediction(_mean,_std)
         plt.figure(figsize=[15,10])
         plt.scatter(_mean,_std,c=predictions+labels,s=5)
@@ -206,9 +206,9 @@ class CellDetectorTrainer(Detector,DataLoader):
         plt.ylabel('std')
         plt.grid()
     
-    def save_predictions(self,features,bst_list):
+    def save_predictions(self,features):
         detection_df = self.load_new_features_with_coordinate()
-        scores,labels,_mean,_std = self.calculate_scores(features,bst_list)
+        scores,labels,_mean,_std = self.calculate_scores(features)
         predictions=self.get_prediction(_mean,_std)
         detection_df['mean_score'],detection_df['std_score'] = _mean,_std
         detection_df['label'] = labels
@@ -217,15 +217,21 @@ class CellDetectorTrainer(Detector,DataLoader):
         detection_df = detection_df[['animal', 'section', 'row', 'col','label', 'mean_score','std_score', 'predictions']]
         detection_df.to_csv(self.DETECTION_RESULT_DIR,index=False)
     
-    def load_detections(self):
-        return pd.read_csv(self.DETECTION_RESULT_DIR)
-    
     def add_detection_to_database(self):
         detection_df = trainer.load_detections()
         points = np.array([detection_df.col,detection_df.row,detection_df.section]).T
         for pointi in points:
             pointi = pointi*np.array([0.325,0.325,20])
             trainer.sqlController.add_layer_data_row(trainer.animal,34,1,pointi,52,f'detected_soma_round_{self.round}')
+    
+    def save_detector(self):
+        detector = Detector(self.model,self.predictor)
+        return super().save_detector(detector)
+    
+    def load_detector(self):
+        detector = super().load_detector()
+        self.model = detector.model
+        self.predictor = detector.predictor
 
 if __name__=='__main__':
     trainer = CellDetectorTrainer('DK55',round = 2)

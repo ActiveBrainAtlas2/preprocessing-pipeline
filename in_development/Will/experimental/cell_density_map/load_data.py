@@ -1,5 +1,5 @@
 import pandas as pd
-from lib.sqlcontroller import SqlController
+from abakit.lib.SqlController import SqlController
 import numpy as np
 
 class DataLoader:

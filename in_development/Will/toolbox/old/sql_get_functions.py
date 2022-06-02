@@ -1,4 +1,4 @@
-from utilities.sqlcontroller import SqlController
+from utilities.SqlController import SqlController
 import sys
 from pathlib import Path
 PIPELINE_ROOT = Path('.').absolute().parents[2]

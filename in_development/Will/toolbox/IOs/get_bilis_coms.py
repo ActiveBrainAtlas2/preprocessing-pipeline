@@ -1,4 +1,4 @@
-from utilities.sqlcontroller import SqlController
+from utilities.SqlController import SqlController
 import numpy as np
 from utilities.model.center_of_mass import CenterOfMass
 from sql_setup import session

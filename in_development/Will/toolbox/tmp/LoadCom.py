@@ -1,5 +1,5 @@
 from lib.UrlGenerator import UrlGenerator
-from lib.sqlcontroller import SqlController
+from abakit.lib.SqlController import SqlController
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt

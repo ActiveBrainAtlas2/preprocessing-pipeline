@@ -1,5 +1,5 @@
-from model.layer_data import LayerData
-from lib.sql_setup import session
+from abakit.model.layer_data import LayerData
+from abakit.lib.sql_setup import session
 from utilities.brain_specimens.get_com import get_atlas_com_dict
 
 def get_shared_landmarks_between_specimens(prep_ids):

@@ -15,8 +15,8 @@ from sqlalchemy.orm.exc import NoResultFound
 HOME = os.path.expanduser("~")
 DIR = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(DIR)
-from model.urlModel import UrlModel
-from lib.sqlcontroller import SqlController
+from abakit.model.urlModel import UrlModel
+from abakit.lib.SqlController import SqlController
 
 def create_task(animal, filepath, debug):
     layer = 'detected_soma'

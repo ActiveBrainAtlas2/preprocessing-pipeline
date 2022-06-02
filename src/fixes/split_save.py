@@ -5,7 +5,7 @@ import cv2
 from skimage import io
 
 
-from lib.utilities_mask import place_image, equalized, remove_strip
+from abakit.lib.utilities_mask import pad_image, equalized, remove_strip
 
 BASEINPUT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/CHATM2/preps'
 
@@ -58,6 +58,6 @@ for channel in [2]:
         os.makedirs(BASEOUTPUT, exist_ok=True)
         fixed = np.rot90(fixed, 3, axes=(1,0))
         fixed = np.flip(fixed, axis=1)
-        fixed = place_image(fixed, file, max_width, max_height, 0)
+        fixed = pad_image(fixed, file, max_width, max_height, 0)
 
         cv2.imwrite(outpath, fixed.astype(np.uint16))

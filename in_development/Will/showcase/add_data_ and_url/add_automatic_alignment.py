@@ -1,5 +1,5 @@
 from Will.toolbox.tmp.LoadCom import ComLoader
-from lib.sqlcontroller import SqlController
+from abakit.lib.SqlController import SqlController
 loader = ComLoader()
 loader.load_detected_com()
 loader.load_data()

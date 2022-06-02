@@ -2,13 +2,14 @@ import numpy as np
 import pickle as pkl
 from cell_extractor import compute_image_features 
 import cv2
-from cell_extractor.CellDetectorBase import CellDetectorBase,get_sections_without_annotation_for_animali
+from cell_extractor.CellDetectorBase import CellDetectorBase,parallel_process_all_sections
 import os
 class FeatureFinder(CellDetectorBase):
     """class to calculate feature vector for each extracted image pair (CH1, CH3)
     """
     def __init__(self,animal,section, *args, **kwargs):
         super().__init__(animal,section, *args, **kwargs)
+        del self.sqlController
         self.features = []
         print('DATA_DIR=%s'%(self.CH3))
         print(f'working on section {self.section}')
@@ -37,6 +38,7 @@ class FeatureFinder(CellDetectorBase):
             return dict(zip([keyi + post_fix for keyi in dictionary.keys()],dictionary.values()))
         
         def calc_moments_of_mask(mask):
+            mask = mask.astype(np.float32)
             moments = cv2.moments(mask)
             huMoments = cv2.HuMoments(moments)
             moments = append_string_to_every_key(moments,f'_mask')
@@ -70,27 +72,10 @@ class FeatureFinder(CellDetectorBase):
                     self.features_using_center_connectd_components(example)
                     self.features.append(self.featurei)
 
-def calculate_all_sections_of_animali(animal):
-    sections_with_csv = get_sections_without_annotation_for_animali(animal)
-    for sectioni in sections_with_csv:
-        print(f'processing section {sectioni}')
-        finder = FeatureFinder(animal,sectioni)
-        finder.calculate_features()
-        finder.save_features()
+def create_features_for_all_sections(animal,*args,njobs = 10,**kwargs):
+    parallel_process_all_sections(animal,create_features_for_one_section,*args,njobs = njobs,**kwargs)
 
-def test_one_section(animal,section,disk):
-    finder = FeatureFinder(animal,section = section,disk = disk)
+def create_features_for_one_section(animal,section,*args,**kwargs):
+    finder = FeatureFinder(animal,section = section,*args,**kwargs)
     finder.calculate_features()
     finder.save_features()
-
-def parallel_process_all_sections(animal,njobs = 40):
-    base = CellDetectorBase(animal)
-    sections_with_csv = base.get_sections_with_csv()
-    with concurrent.futures.ProcessPoolExecutor(max_workers=njobs) as executor:
-        for sectioni in sections_with_csv:
-            results = executor.submit(test_one_section,animal,sectioni) 
-
-if __name__ == '__main__':
-    # parallel_process_all_sections('DK55')
-    calculate_all_sections_of_animali('DK55')
-    # test_one_section('DK55',180)

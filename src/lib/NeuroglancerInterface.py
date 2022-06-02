@@ -1,10 +1,10 @@
 import neuroglancer
-from lib.sqlcontroller import SqlController
-from lib.file_location import FileLocationManager
+from abakit.lib.SqlController import SqlController
+from abakit.lib.FileLocationManager import FileLocationManager
 from pathlib import Path
 import SimpleITK as sitk
 import numpy as np
-from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from abakit.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 class NeuroglancerInterface:
     def __init__(self,dimensions):
         self.viewer = neuroglancer.Viewer()
@@ -62,8 +62,8 @@ class BrainViewer(NeuroglancerInterface):
         return image
 
     def load_prepi_image(self,prepi):
-        sqlcontroller = SqlController(prepi)
-        resolution = sqlcontroller.scan_run.resolution
+        SqlController = SqlController(prepi)
+        resolution = SqlController.scan_run.resolution
         dimensions = (resolution,resolution,20)
         image = self.get_prepi_thumbnail(prepi)
         self.load_image_layer(prepi,image,dimensions)

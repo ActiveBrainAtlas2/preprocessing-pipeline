@@ -1,5 +1,5 @@
 import pickle
-from lib.sqlcontroller import SqlController
+from abakit.lib.SqlController import SqlController
 import numpy as np
 path = '/home/zhw272/Downloads/AtlasCOMsStack.pkl'
 file = open(path,'rb')
