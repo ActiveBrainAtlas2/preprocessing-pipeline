@@ -131,5 +131,5 @@ dmypy.json
 *.tif
 
 tests/
-
-**/nohup.out*
+# junk files
+*.out
