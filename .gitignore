@@ -133,3 +133,4 @@ dmypy.json
 tests/
 # junk files
 *.out
+src/settings.py
