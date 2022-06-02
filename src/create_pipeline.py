@@ -31,11 +31,13 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--channel', help='Enter channel', required=False, default=1)
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
+    parser.add_argument('--debug', help='Enter true or false', required=False, default='false')
     parser.add_argument('--step', help=steps, required=False, default=0)
     args = parser.parse_args()
     animal = args.animal
     channel = int(args.channel)
     downsample = bool({'true': True, 'false': False}[str(args.downsample).lower()])
+    debug = bool({'true': True, 'false': False}[str(args.debug).lower()])
     step = int(args.step)
     pipeline = Pipeline(animal, channel, downsample)
     pipeline.prepare_image_for_quality_control()

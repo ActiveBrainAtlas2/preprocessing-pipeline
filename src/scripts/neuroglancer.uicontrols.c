@@ -1,4 +1,6 @@
-/* channel 1 */
+void main() {}
+/*
+// channel 1
 #uicontrol invlerp normalized
 #uicontrol float gamma slider(min=0.05, max=2.5, default=1.0, step=0.05)
 
@@ -8,7 +10,7 @@ void main() {
       emitGrayscale(pix) ;
 }
 
-/* channel 2 */
+// channel 2 
 #uicontrol invlerp normalized  (range=[0,45000])
 #uicontrol float gamma slider(min=0.05, max=2.5, default=1.0, step=0.05)
 #uicontrol bool colour checkbox(default=true)
@@ -26,7 +28,7 @@ void main() {
 
 }
 
-/* channel 3 */
+// channel 3 
 #uicontrol invlerp normalized  (range=[0,5000])
 #uicontrol float gamma slider(min=0.05, max=2.5, default=1.0, step=0.05)
 #uicontrol bool colour checkbox(default=true)
@@ -42,3 +44,4 @@ void main() {
     }
 
 }
+*/

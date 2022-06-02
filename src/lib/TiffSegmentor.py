@@ -1,6 +1,5 @@
 import os
 from multiprocessing.pool import Pool
-import sys
 import numpy as np
 from datetime import datetime
 from abakit.lib.utilities_process import workernoshell
@@ -51,7 +50,7 @@ class TiffSegmentor(CellDetectorBase):
     def generate_tiff_segments(self,channel,create_csv=False):
         print(f'generate segment for channel: {channel}')
         self.create_directories_for_channeli(channel)
-        tif_directory = os.path.join(self.ORIGINAL_IMAGE,f'CH{channel}')
+        tif_directory = self.path.get_full_aligned(channel)
         commands = []
         for save_folder in self.save_folders:
             filei = '/'+save_folder[-3:]+'.tif'
@@ -84,7 +83,6 @@ class TiffSegmentor(CellDetectorBase):
             search_dictionary = {'prep_id':self.animal,'input_type_id':1,\
                 'person_id':self.person_id,'layer':'Premotor','section':int(sectioni*20)}
             premotor = self.sqlController.get_layer_data(search_dictionary)
-            premotor = self.sqlController.get_coordinates_from_query_result(premotor)
             if premotor != []:
                 print('creating '+ csv_path)
                 np.savetxt(csv_path,premotor,delimiter=',',header='x,y,Section',comments = '',fmt = '%f')
@@ -94,7 +92,10 @@ class TiffSegmentor(CellDetectorBase):
         for channeli in [1,3]:
             self.tif_directory = self.path.get_full_aligned(channeli)
             ch_dir = os.path.join(self.ORIGINAL_IMAGE,f'CH{channeli}')
-            if not os.path.exists(ch_dir):
+            nfiles_birdstore = len(os.listdir(self.tif_directory))
+            nfiles_disk = len(os.listdir(ch_dir))
+            if not os.path.exists(ch_dir) or nfiles_disk != nfiles_birdstore:
+                shutil.rmtree(ch_dir)
                 shutil.copytree(self.tif_directory,ch_dir)
     
     def delete_full_aligned(self):
