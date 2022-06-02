@@ -78,7 +78,7 @@ class ElastixManager:
             float: y translation
         """        
         try:
-            elastixTransformation = self.session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
+            elastixTransformation = self.sqlController.session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
                 .filter(ElastixTransformation.section == moving_index).one()
         except NoResultFound as nrf:
             print('No value for {} {} error: {}'.format(animal, moving_index, nrf))
