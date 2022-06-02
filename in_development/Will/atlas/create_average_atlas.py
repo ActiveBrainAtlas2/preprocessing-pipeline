@@ -18,7 +18,7 @@ PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
 
 surface_level = 0.9
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from abakit.lib.FileLocationManager import DATA_PATH
 from abakit.lib.utilities_atlas import load_original_volume_all_known_structures_v3, get_centroid_3d, \
     load_alignment_results_v3, transform_points, average_location, \

@@ -6,7 +6,6 @@ from abakit.lib.utilities_bioformats import get_czi_metadata, get_fullres_series
 from abakit.model.slide import Slide
 from abakit.model.slide_czi_to_tif import SlideCziTif
 from abakit.lib.sql_setup import (
-    session,
     SLIDES_ARE_SCANNED,
     CZI_FILES_ARE_PLACED_ON_BIRDSTORE,
     CZI_FILES_ARE_SCANNED_TO_GET_METADATA,
@@ -57,9 +56,9 @@ class MetaUtilities:
         self.metadata = get_czi_metadata(czi_file_path)
         self.series = get_fullres_series_indices(self.metadata)
         self.slide.scenes = len(self.series)
-        session.add(self.slide)
-        session.flush()
-        session.commit()
+        self.sqlController.session.add(self.slide)
+        self.sqlController.session.flush()
+        self.sqlController.session.commit()
 
     def add_to_slide_czi_tiff_table(self, czi_file):
         """Add entry to the table that prepares the user Quality Controll interface"""
@@ -87,8 +86,8 @@ class MetaUtilities:
                 tif.channel = channel_counter
                 tif.processing_duration = 0
                 tif.created = time.strftime("%Y-%m-%d %H:%M:%S")
-                session.add(tif)
-        session.commit()
+                self.sqlController.session.add(tif)
+        self.sqlController.session.commit()
 
     def get_user_entered_scan_id(self):
         """Get id in the "scan run" table for the current microspy scan that was entered by the user in the preparation phase"""
@@ -101,13 +100,13 @@ class MetaUtilities:
 
     def all_slide_meta_data_exists_in_database(self, czi_files):
         """Check if the number of czi files in the directory matches the number of entries in the database table 'Slide'"""
-        nslides = session.query(Slide).filter(Slide.scan_run_id == self.scan_id).count()
+        nslides = self.sqlController.session.query(Slide).filter(Slide.scan_run_id == self.scan_id).count()
         return nslides == len(czi_files)
 
     def slide_meta_data_exists(self, czi_file_name):
         """Checks if a specific CZI file has been logged in the database"""
         return bool(
-            session.query(Slide)
+            self.sqlController.session.query(Slide)
             .filter(Slide.scan_run_id == self.scan_id)
             .filter(Slide.file_name == czi_file_name)
             .first()

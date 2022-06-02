@@ -3,7 +3,7 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
 from shutil import copyfile
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from abakit.lib.utilities_process import test_dir, create_downsample
 from lib.pipeline_utilities import get_image_size
 

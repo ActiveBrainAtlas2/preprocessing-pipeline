@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from datetime import datetime
 from abakit.lib.utilities_process import workernoshell
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from cell_extractor.CellDetectorBase import CellDetectorBase
 from multiprocessing.pool import Pool
 import tqdm

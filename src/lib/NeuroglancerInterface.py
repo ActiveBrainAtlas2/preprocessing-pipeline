@@ -1,5 +1,5 @@
 import neuroglancer
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from abakit.lib.FileLocationManager import FileLocationManager
 from pathlib import Path
 import SimpleITK as sitk

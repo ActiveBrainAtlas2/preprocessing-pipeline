@@ -7,7 +7,7 @@ import cv2
 from concurrent.futures.process import ProcessPoolExecutor
 from abakit.lib.FileLocationManager import FileLocationManager
 from lib.logger import get_logger
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from abakit.lib.utilities_process import test_dir, get_cpus
 COLORS = {1: 'b', 2: 'r', 3: 'g'}
 from lib.pipeline_utilities import read_image

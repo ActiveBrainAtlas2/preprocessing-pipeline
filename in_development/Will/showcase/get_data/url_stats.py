@@ -1,4 +1,4 @@
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 import sys
 import numpy as np
 import matplotlib.pyplot as plt

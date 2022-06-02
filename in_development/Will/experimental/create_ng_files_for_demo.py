@@ -5,7 +5,7 @@ from abakit.lib.utilities_neuroglancer_image import create_neuroglancer_lite
 from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform
 from notebooks.Will.toolbox.IOs.LoadComDatabase import LoadComDatabase
 from notebooks.Will.toolbox.IOs.TransformCom import TransformCom
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from notebooks.Will.toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
 import SimpleITK as sitk
 import neuroglancer

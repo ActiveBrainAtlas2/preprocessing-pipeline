@@ -1,5 +1,5 @@
 import enum
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from abakit.model.annotation_points import AnnotationPoint,MarkedCell,PolygonSequence,StructureCOM,COMSources,PolygonSources,CellSources
 from abakit.model.annotation_session import AnnotationSession,AnnotationType
 import numpy as np

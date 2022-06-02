@@ -1,4 +1,4 @@
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from abakit.lib. import UrlGenerator
 import json
 import numpy as np

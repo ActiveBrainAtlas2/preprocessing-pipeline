@@ -21,7 +21,7 @@ from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
 from timeit import default_timer as timer
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from lib.FileLogger import FileLogger
 from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
@@ -165,7 +165,7 @@ class Pipeline(
             else:
                 self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
                 self.logevent(f"CALCULATE FILE CHECKSUMS\n{sep}")
-                self.create_filechecksums()
+                # self.create_filechecksums()
 
         else:
             self.logevent(f"{function_name} took {timer()-time} seconds\n{sep}")

@@ -1,4 +1,4 @@
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from abakit.registration.algorithm import align_point_dictionary
 import numpy as np
 

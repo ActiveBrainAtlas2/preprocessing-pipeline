@@ -2,7 +2,7 @@ import os
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from abakit.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from abakit.lib.utilities_process import get_cpus, SCALING_FACTOR, test_dir
 
 class NgPrecomputedMaker:
@@ -46,6 +46,8 @@ class NgPrecomputedMaker:
         for i, f in enumerate(files):
             filepath = os.path.join(INPUT, f)
             file_keys.append([i,filepath])
+        orientation = self.sqlController.histology.orientation
+        file_keys.append(orientation)
         return midfile,file_keys,volume_size,num_channels
 
     def create_neuroglancer(self):
@@ -53,7 +55,7 @@ class NgPrecomputedMaker:
         """        
         INPUT = self.fileLocationManager.get_thumbnail_aligned(channel=self.channel)
         progress_id = self.sqlController.get_progress_id(self.downsample, self.channel, 'NEUROGLANCER')
-        self.sqlController.session.close()
+        # self.sqlController.session.close()
         if not self.downsample:
             INPUT = self.fileLocationManager.get_full_aligned(channel=self.channel)
             self.sqlController.set_task(self.animal, progress_id)
@@ -80,7 +82,7 @@ class NgPrecomputedMaker:
         import numpy as np
         INPUT = self.fileLocationManager.get_thumbnail_aligned(channel=self.channel)
         progress_id = self.sqlController.get_progress_id(self.downsample, self.channel, 'NEUROGLANCER')
-        self.sqlController.session.close()
+        # self.sqlController.session.close()
         if not self.downsample:
             INPUT = self.fileLocationManager.get_full_aligned(channel=self.channel)
             self.sqlController.set_task(self.animal, progress_id)
