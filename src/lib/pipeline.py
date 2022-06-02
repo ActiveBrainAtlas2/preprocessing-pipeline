@@ -58,6 +58,8 @@ class Pipeline(
         downsample=True,
         DATA_PATH="/net/birdstore/Active_Atlas_Data/data_root",
         debug=False,
+        host="db.dk.ucsd.edu",
+        schema="active_atlas_production",
     ):
         """Setting up the pipeline and the processing configurations
            The pipeline performst the following steps:
@@ -83,7 +85,7 @@ class Pipeline(
         self.downsample = downsample
         self.debug = debug
         self.fileLocationManager = FileLocationManager(animal, DATA_PATH=DATA_PATH)
-        self.sqlController = SqlController(animal)
+        self.sqlController = SqlController(animal, host, schema)
         self.hostname = self.get_hostname()
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
@@ -157,7 +159,7 @@ class Pipeline(
             if ending_files != starting_files:
                 endtime = timer()
                 self.logevent(f"AGGREGATE: {function_name} took {endtime-time} seconds")
-                print(type(ending_files),ending_files)
+                print(type(ending_files), ending_files)
                 unitary_calc = (endtime - time) / len(ending_files)
                 self.logevent(
                     f"TIME PER FILE CREATION (seconds): {str(unitary_calc)}\n{sep}"
@@ -176,6 +178,10 @@ class Pipeline(
         it possible to preview the images on the django database admin portal, allowing the user to
         perform quality control on the images.  The user can determine to mark slides or sections
         on a slide as insufficient in quality, and replace them with adjuscent slide or sections
+
+        1) extract meta info
+        2) extract tiffs from czi
+        3) create png files (downsampled)
         """
         self.run_program_and_time(
             self.extract_slide_meta_data_and_insert_to_database, "Creating meta"

@@ -54,6 +54,7 @@ def get_active_folders():
         url = controller.get_urlModel(id)
         generator.parse_url(url.url)
         image_layers = generator.get_image_layers()
+        print(image_layers)
         active_folder,print_id = extract_active_ng_folders(image_layers)
         active_folders+=active_folder
         if print_id:
