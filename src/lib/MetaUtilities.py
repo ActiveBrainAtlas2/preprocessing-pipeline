@@ -62,7 +62,7 @@ class MetaUtilities:
         session.commit()
 
     def add_to_slide_czi_tiff_table(self, czi_file):
-        """Add entry to the table that prepares the user Quality Controll interface"""
+        """Add entry to the table that prepares the user Quality Control interface"""
         for j, series_index in enumerate(self.series):
             scene_number = j + 1
             channels = range(self.metadata[series_index]["channels"])
