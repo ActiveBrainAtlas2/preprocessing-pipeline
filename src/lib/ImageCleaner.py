@@ -10,9 +10,9 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.pipeline_utilities import read_image,get_max_image_size
 from copy import copy 
-from abakit.model.slide_czi_to_tif import SlideCziTif
+from abakit.model.slide import SlideCziTif
 from abakit.model.slide import Slide
-from abakit.model.section import Section
+from abakit.model.slide import Section
 
 
 class ImageCleaner:

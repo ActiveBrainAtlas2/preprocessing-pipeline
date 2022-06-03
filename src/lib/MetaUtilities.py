@@ -4,12 +4,7 @@ from tqdm import tqdm
 import re
 from abakit.lib.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
 from abakit.model.slide import Slide
-from abakit.model.slide_czi_to_tif import SlideCziTif
-from abakit.lib.sql_setup import (
-    SLIDES_ARE_SCANNED,
-    CZI_FILES_ARE_PLACED_ON_BIRDSTORE,
-    CZI_FILES_ARE_SCANNED_TO_GET_METADATA,
-)
+from abakit.model.slide import SlideCziTif
 
 
 class MetaUtilities:
@@ -128,6 +123,9 @@ class MetaUtilities:
 
     def update_database(self):
         """Updates the "file log" table in the database that tracks the progress of the pipeline"""
+        SLIDES_ARE_SCANNED = self.sqlController.get_progress_id(downsample=0,channel=0,action='SCAN')
+        CZI_FILES_ARE_PLACED_ON_BIRDSTORE = self.sqlController.get_progress_id(downsample=0,channel=0,action='BIRDSTORE')
+        CZI_FILES_ARE_SCANNED_TO_GET_METADATA = self.sqlController.get_progress_id(downsample=0,channel=0,action='META')
         self.sqlController.set_task(self.animal, SLIDES_ARE_SCANNED)
         self.sqlController.set_task(self.animal, CZI_FILES_ARE_PLACED_ON_BIRDSTORE)
         self.sqlController.set_task(self.animal, CZI_FILES_ARE_SCANNED_TO_GET_METADATA)
