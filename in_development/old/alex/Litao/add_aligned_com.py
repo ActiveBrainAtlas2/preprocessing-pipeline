@@ -16,12 +16,6 @@ PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 
-from abakit.model.structure import Structure
-from abakit.model.layer_data import LayerData
-from abakit.model.scan_run import ScanRun
-from abakit.lib.sql_setup import session
-
-
 MANUAL = 1
 CORRECTED = 2
 DETECTED = 3

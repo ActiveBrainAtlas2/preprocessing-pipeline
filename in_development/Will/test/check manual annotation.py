@@ -1,4 +1,4 @@
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 import os
 import pandas as pd
 import numpy as np

@@ -13,7 +13,7 @@ intersect_id = idr1.intersection(idr2)
 intersect = r1[is1_in2]
 
 
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 animal = 'DK55'
 
 controller = SqlController(animal)

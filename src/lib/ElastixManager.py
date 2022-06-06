@@ -9,7 +9,6 @@ from abakit.lib.FileLocationManager import FileLocationManager
 from abakit.lib.utilities_alignment import (create_downsampled_transforms, clean_image)
 from abakit.lib.utilities_registration import register_simple,parameters_to_rigid_transform
 from abakit.model.elastix_transformation import ElastixTransformation
-from abakit.lib.sql_setup import session
 from lib.pipeline_utilities import get_image_size
 class ElastixManager:
     """Class for generating, storing and applying the within stack alignment with the Elastix package
@@ -79,7 +78,7 @@ class ElastixManager:
             float: y translation
         """        
         try:
-            elastixTransformation = session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
+            elastixTransformation = self.sqlController.session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
                 .filter(ElastixTransformation.section == moving_index).one()
         except NoResultFound as nrf:
             print('No value for {} {} error: {}'.format(animal, moving_index, nrf))

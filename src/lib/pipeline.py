@@ -21,7 +21,7 @@ from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
 from timeit import default_timer as timer
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from lib.FileLogger import FileLogger
 from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
@@ -89,10 +89,8 @@ class Pipeline(
         self.hostname = self.get_hostname()
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
-        self.logger = get_logger(animal)
+        # self.logger = get_logger(animal,self.sqlController.session)
         self.check_programs()
-
-        super().__init__(self.fileLocationManager.get_logdir())
 
     @staticmethod
     def check_programs():

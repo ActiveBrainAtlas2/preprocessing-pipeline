@@ -1,5 +1,5 @@
 from lib.UrlGenerator import UrlGenerator
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 controller = SqlController('DK52')
 animals = controller.get_annotated_animals()
 for animali in animals:

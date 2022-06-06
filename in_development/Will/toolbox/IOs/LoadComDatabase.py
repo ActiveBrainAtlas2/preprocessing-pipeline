@@ -4,7 +4,7 @@ import os
 import pickle
 import sys
 import numpy as np
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 controller = SqlController('DK52')
 
 class LoadComDatabase(LoadCom):

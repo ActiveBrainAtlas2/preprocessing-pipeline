@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 controller = SqlController('DK52')
 
 def get_prep_list_for_rough_alignment_test():
