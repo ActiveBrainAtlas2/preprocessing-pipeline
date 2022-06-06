@@ -9,11 +9,9 @@ import tifffile as tiff
 from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None
-from lib.pipeline_utilities import read_image,get_max_image_size
-from copy import copy 
-from abakit.model.slide import SlideCziTif
-from abakit.model.slide import Slide
-from abakit.model.slide import Section
+from lib.pipeline_utilities import read_image, get_max_image_size
+from copy import copy
+from abakit.model.slide import Slide, SlideCziTif, Section
 
 
 class ImageCleaner:
@@ -49,7 +47,7 @@ class ImageCleaner:
 
     def get_section_rotation(self, section: Section):
         sections = self.sqlController.session.query(SlideCziTif).filter(
-            SlideCziTif.slide_id == section.slide_id
+            SlideCziTif.FK_slide_id == section.slide_id
         )
         indices = np.sort(np.unique([i.scene_index for i in sections]))
         scene = np.where(indices == section.scene_index)[0][0] + 1
@@ -129,14 +127,13 @@ def clean_and_rotate_image(file_key):
     cropped = crop_image(cleaned, mask)
     del img
     del mask
-    cropped = pad_image(cropped, infile, max_height, max_width, 0)
     if rotation > 0:
         cropped = rotate_image(cropped, infile, rotation)
     if flip == "flip":
         cropped = np.flip(cropped)
     if flip == "flop":
         cropped = np.flip(cropped, axis=1)
-
+    cropped = pad_image(cropped, infile, max_width, max_height, 0)
     tiff.imsave(outpath, cropped)
     del cropped
     return
