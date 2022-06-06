@@ -4,7 +4,6 @@ from pathlib import Path
 import logging
 import socket
 from datetime import datetime
-from abakit.lib.sql_setup import session
 from abakit.model.log import Log
 
 
@@ -35,6 +34,10 @@ class FileLogger:
 
 # PREVIOUS VERSION BELOW (LOG TO DB)
 class DatabaseHandler(logging.Handler):
+    def __init__(self,session):
+        super().__init__()
+        self.session = session
+
     def emit(self, record):
         log = Log(
             prep_id=record.name,
@@ -42,13 +45,12 @@ class DatabaseHandler(logging.Handler):
             logger=record.module,
             msg=record.msg,
         )
-        session.add(log)
-        session.commit()
+        self.session.add(log)
+        self.session.commit()
 
 
-def get_logger(prep_id, level=logging.INFO):
-    handler = DatabaseHandler()
-
+def get_logger(prep_id, session,level=logging.INFO):
+    handler = DatabaseHandler(session)
     logger = logging.getLogger(prep_id)
     logger.setLevel(level)
     logger.addHandler(handler)
