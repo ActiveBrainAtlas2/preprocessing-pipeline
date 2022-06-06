@@ -34,15 +34,16 @@ from lib.pipeline import Pipeline
 def run_pipeline(animal, channel, downsample, step, DATA_PATH):
     pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, host=settings.host, schema=settings.schema, debug=False)
     
+
     pipeline.prepare_image_for_quality_control()
 
-    if step > 0:
+    if step >= 1:
         pipeline.apply_qc_and_prepare_image_masks()
-    if step > 1:
+    if step >= 2:
         pipeline.clean_images_and_create_histogram()
-    if step > 2:
+    if step >= 3:
         pipeline.align_images_within_stack()
-    if step > 3:
+    if step >= 4:
         pipeline.create_neuroglancer_cloud_volume()
 
 
@@ -50,6 +51,6 @@ if __name__ == "__main__":
     animal = "DK77-DUANE"
     channel = 1
     downsample = True
-    step = 1
+    step = 0
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(animal, channel, downsample, step, DATA_PATH)

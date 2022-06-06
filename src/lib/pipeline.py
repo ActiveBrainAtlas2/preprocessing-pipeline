@@ -92,7 +92,7 @@ class Pipeline(
         self.logger = get_logger(animal)
         self.check_programs()
 
-        # super().__init__(self.fileLocationManager.get_logdir())
+        super().__init__(self.fileLocationManager.get_logdir())
 
     @staticmethod
     def check_programs():
@@ -131,7 +131,7 @@ class Pipeline(
             function_name (str): name of the function used to report timing result
         """
         print(function_name)
-        time = timer()
+        start_time = timer()
 
         self.logevent("START " + str(function_name))
         if function_name == "Extracting Tiffs":
@@ -147,22 +147,33 @@ class Pipeline(
 
         function()  # RUN FUNCTION
 
-        print(f"{function_name} took {timer()-time} seconds")
+        end_time = timer()
+        print(f"{function_name} took {end_time - start_time} seconds")
+        
 
         sep = "*" * 40 + "\n"
-        if function_name == "Extracting Tiffs":
+        if function_name == "Creating meta": #TODO clean up dup code w/ extracting tiff
+            ending_files = glob.glob(
+                os.path.join(self.fileLocationManager.czi, "*.czi")
+            )
+            self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
+
+            unitary_calc = (end_time - start_time) / len(ending_files)
+            self.logevent(
+                    f"TIME PER FILE CREATION (seconds): {str(round(unitary_calc, 1))}\n{sep}"
+            )
+        elif function_name == "Extracting Tiffs":
             ending_files = glob.glob(
                 os.path.join(self.fileLocationManager.tif, "*.tif")
             )
             self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
 
             if ending_files != starting_files:
-                endtime = timer()
-                self.logevent(f"AGGREGATE: {function_name} took {endtime-time} seconds")
+                self.logevent(f"AGGREGATE: {function_name} took {end_time - start_time} seconds")
                 print(type(ending_files), ending_files)
-                unitary_calc = (endtime - time) / len(ending_files)
+                unitary_calc = (end_time - start_time) / len(ending_files)
                 self.logevent(
-                    f"TIME PER FILE CREATION (seconds): {str(unitary_calc)}\n{sep}"
+                    f"AVERAGE TIME PER FILE CREATION (seconds): {str(round(unitary_calc, 1))}\n{sep}"
                 )
             else:
                 self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
@@ -170,7 +181,7 @@ class Pipeline(
                 self.create_filechecksums()
 
         else:
-            self.logevent(f"{function_name} took {timer()-time} seconds\n{sep}")
+            self.logevent(f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}")
 
     def prepare_image_for_quality_control(self):
         """This is the first step of the pipeline.  The images are extracted from the CZI files,
