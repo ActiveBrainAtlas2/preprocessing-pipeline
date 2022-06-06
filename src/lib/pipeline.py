@@ -89,7 +89,7 @@ class Pipeline(
         self.hostname = self.get_hostname()
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
-        self.logger = get_logger(animal,self.sqlController.session)
+        # self.logger = get_logger(animal,self.sqlController.session)
         self.check_programs()
 
     @staticmethod
@@ -146,7 +146,7 @@ class Pipeline(
         function()  # RUN FUNCTION
         message = f"{function_name} took {timer()-time} seconds"
         print(message)
-        self.logger.info(message)
+        # self.logger.info(message)
 
         sep = "*" * 40 + "\n"
         if function_name == "Extracting Tiffs":
