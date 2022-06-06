@@ -178,7 +178,6 @@ class Pipeline(
             else:
                 self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
                 self.logevent(f"CALCULATE FILE CHECKSUMS\n{sep}")
-                self.create_filechecksums()
 
         else:
             self.logevent(f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}")

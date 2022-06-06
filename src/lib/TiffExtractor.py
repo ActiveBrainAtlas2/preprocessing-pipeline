@@ -64,26 +64,30 @@ class TiffExtractor(ParallelManager):
             self.progress_lookup.CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1,
         )
 
-    def create_filechecksums(self):
-        stdout = ""
+    def calc_filechecksum(self, filename, channel):
         sha256_hash = hashlib.sha256()
-        files = glob.glob(os.path.join(self.fileLocationManager.tif, "*.tif"))
-        output_path = os.path.join(self.fileLocationManager.tif, "sha256sums.txt")
-        for filename in files:
-            with open(filename, "rb") as f:
-                # Read and update hash string value in blocks of 4K
-                for byte_block in iter(lambda: f.read(4096), b""):
-                    sha256_hash.update(byte_block)
-                stdout += (
-                    str(sha256_hash.hexdigest())
-                    + "\t"
-                    + os.path.basename(filename)
-                    + "\n"
-                )
-                print(sha256_hash.hexdigest(), "\t", os.path.basename(filename), "\n")
 
-        with open(output_path, "w") as f:
-            f.write(stdout)
+        if filename.find("_") != -1:
+            path_to_full_resolution_tiff = os.path.join(
+                self.fileLocationManager.tif, filename
+            )
+        else:
+            path_to_full_resolution_tiff = os.path.join(
+                self.fileLocationManager.prep, "CH" + str(channel), filename
+            )
+            
+        with open(path_to_full_resolution_tiff, "rb") as f:
+            # Read and update hash string value in blocks of 4K
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+            checksum = str(sha256_hash.hexdigest())
+        print(
+            sha256_hash.hexdigest(),
+            "\t",
+            os.path.basename(path_to_full_resolution_tiff),
+            "\n",
+        )
+        return checksum
 
     def create_web_friendly_image(self):
         """Create downsampled version of full size tiff images that can be viewed on the Django admin portal
