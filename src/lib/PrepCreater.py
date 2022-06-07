@@ -42,16 +42,8 @@ class PrepCreater:
             output_paths.append(output_path)
             width, height = get_image_size(input_path)
             self.sqlController.update_tif(section.id, width, height)
-        workers = self.get_nworkers()
-
         for file_key in zip(input_paths, output_paths):
             os.symlink(*file_key)
-
-        # os.symlink(
-        #     input_paths, output_paths
-        # )  # Do we need multiple cores? Do we need to check filechecksums?
-
-        # self.run_commands_in_parallel_with_executor([input_paths, output_paths], workers, copyfile)
 
     def make_low_resolution(self):
         """
