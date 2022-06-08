@@ -4,7 +4,6 @@ from skimage import io
 from abakit.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
 from abakit.lib.Controllers.SqlController import SqlController
 from abakit.lib.utilities_process import get_cpus, SCALING_FACTOR, test_dir
-
 class NgPrecomputedMaker:
     """Class to convert a tiff image stack to the precomputed neuroglancer format deviced in Seung lab
     """    
@@ -44,10 +43,11 @@ class NgPrecomputedMaker:
         file_keys = []
         volume_size = (width, height, len(files))
         orientation = self.sqlController.histology.orientation
-        session = self.sqlController.pooledsession
+        host = self.sqlController.host
+        schema = self.sqlController.schema
         for i, f in enumerate(files):
             filepath = os.path.join(INPUT, f)
-            file_keys.append([i,filepath,session,orientation])
+            file_keys.append([i,filepath,host,schema,orientation])
         return midfile,file_keys,volume_size,num_channels
 
     def create_neuroglancer(self):
