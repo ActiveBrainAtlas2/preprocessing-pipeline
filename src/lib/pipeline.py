@@ -90,8 +90,15 @@ class Pipeline(
         self.hostname = self.get_hostname()
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
+
         # self.logger = get_logger(animal,self.sqlController.session)
         self.check_programs()
+
+    def get_chunk_size(self):
+        if self.downsample==True:
+            return [256,256,1]
+        if self.downsample==False:
+            return [4096,4096,1]
 
     @staticmethod
     def check_programs():

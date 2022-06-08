@@ -63,7 +63,7 @@ class NgPrecomputedMaker:
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         test_dir(self.animal, INPUT, self.downsample, same_size=True)
         midfile,file_keys,volume_size,num_channels = self.get_file_information(INPUT)
-        chunks = calculate_chunks(self.downsample, -1)
+        chunks = self.get_chunk_size()
         scales = self.get_scales()
         ng = NumpyToNeuroglancer(self.animal, None, scales, 'image', midfile.dtype, num_channels=num_channels, chunk_size=chunks)
         ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=progress_id)
