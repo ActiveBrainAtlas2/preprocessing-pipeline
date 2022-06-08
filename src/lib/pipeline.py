@@ -11,9 +11,7 @@ import os
 import sys
 from shutil import which
 import glob
-
-# from abakit.lib.FileLocationManager import FileLocationManager
-from lib.FileLocationManager import FileLocationManager
+from abakit.lib.FileLocationManager import FileLocationManager
 from lib.MetaUtilities import MetaUtilities
 from lib.PrepCreater import PrepCreater
 from lib.NgPrecomputedMaker import NgPrecomputedMaker
