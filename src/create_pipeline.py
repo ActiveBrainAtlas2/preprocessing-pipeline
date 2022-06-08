@@ -30,12 +30,14 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, debug):
 
     pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug)
     
-    pipeline.prepare_image_for_quality_control()
+    #pipeline.prepare_image_for_quality_control()
 
     if step > 0:
-        pipeline.apply_qc_and_prepare_image_masks()
+        print('Step 0')
+        #pipeline.apply_qc_and_prepare_image_masks()
     if step > 1:
-        pipeline.clean_images_and_create_histogram()
+        print('Step 1')
+        #pipeline.clean_images_and_create_histogram()
     if step > 2:
         pipeline.align_images_within_stack()
     if step > 3:
