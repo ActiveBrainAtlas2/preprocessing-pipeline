@@ -43,11 +43,11 @@ class NgPrecomputedMaker:
         num_channels = midfile.shape[2] if len(midfile.shape) > 2 else 1
         file_keys = []
         volume_size = (width, height, len(files))
+        orientation = self.sqlController.histology.orientation
+        session = self.sqlController.pooledsession
         for i, f in enumerate(files):
             filepath = os.path.join(INPUT, f)
-            file_keys.append([i,filepath])
-        orientation = self.sqlController.histology.orientation
-        file_keys.append(orientation)
+            file_keys.append([i,filepath,session,orientation])
         return midfile,file_keys,volume_size,num_channels
 
     def create_neuroglancer(self):
