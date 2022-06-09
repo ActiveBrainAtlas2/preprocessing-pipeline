@@ -95,10 +95,10 @@ class Pipeline(
         self.check_programs()
 
     def get_chunk_size(self):
-        if self.downsample==True:
-            return [256,256,1]
-        if self.downsample==False:
-            return [4096,4096,1]
+        if self.downsample == True:
+            return [256, 256, 1]
+        if self.downsample == False:
+            return [4096, 4096, 1]
 
     @staticmethod
     def check_programs():
@@ -155,10 +155,11 @@ class Pipeline(
 
         end_time = timer()
         print(f"{function_name} took {end_time - start_time} seconds")
-        
 
         sep = "*" * 40 + "\n"
-        if function_name == "Creating meta": #TODO clean up dup code w/ extracting tiff
+        if (
+            function_name == "Creating meta"
+        ):  # TODO clean up dup code w/ extracting tiff
             ending_files = glob.glob(
                 os.path.join(self.fileLocationManager.czi, "*.czi")
             )
@@ -166,7 +167,7 @@ class Pipeline(
 
             unitary_calc = (end_time - start_time) / len(ending_files)
             self.logevent(
-                    f"TIME PER FILE CREATION (seconds): {str(round(unitary_calc, 1))}\n{sep}"
+                f"TIME PER FILE CREATION (seconds): {str(round(unitary_calc, 1))}\n{sep}"
             )
         elif function_name == "Extracting Tiffs":
             ending_files = glob.glob(
@@ -175,7 +176,9 @@ class Pipeline(
             self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
 
             if ending_files != starting_files:
-                self.logevent(f"AGGREGATE: {function_name} took {end_time - start_time} seconds")
+                self.logevent(
+                    f"AGGREGATE: {function_name} took {end_time - start_time} seconds"
+                )
                 print(type(ending_files), ending_files)
                 unitary_calc = (end_time - start_time) / len(ending_files)
                 self.logevent(
@@ -184,9 +187,15 @@ class Pipeline(
             else:
                 self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
                 self.logevent(f"CALCULATE FILE CHECKSUMS\n{sep}")
-
+        elif function_name == "create web friendly image":
+            ending_files = glob.glob(
+                os.path.join(self.fileLocationManager.thumbnail_web, "*.png")
+            )
+            self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
         else:
-            self.logevent(f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}")
+            self.logevent(
+                f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}"
+            )
 
     def prepare_image_for_quality_control(self):
         """This is the first step of the pipeline.  The images are extracted from the CZI files,
