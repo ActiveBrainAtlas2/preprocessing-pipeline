@@ -57,7 +57,8 @@ class Pipeline(
         DATA_PATH="/net/birdstore/Active_Atlas_Data/data_root",
         host="db.dk.ucsd.edu",
         schema="active_atlas_production",
-        debug=False,padding_margin=1
+        debug=False,
+        padding_margin=1,
     ):
         """Setting up the pipeline and the processing configurations
         Here is how the Class is instantiated:
@@ -90,10 +91,10 @@ class Pipeline(
         self.hostname = self.get_hostname()
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
-        self.padding_margin=padding_margin
-
-        # self.logger = get_logger(animal,self.sqlController.session)
+        # self.logger = get_logger(animal, self.sqlController.session)
+        self.padding_margin = padding_margin
         self.check_programs()
+        super().__init__(self.fileLocationManager.get_logdir())
 
     def get_chunk_size(self):
         if self.downsample == True:
