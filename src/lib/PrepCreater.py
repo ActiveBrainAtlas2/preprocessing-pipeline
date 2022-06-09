@@ -5,9 +5,9 @@ Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
 
 # from shutil import copyfile
-from abakit.lib.SqlController import SqlController
+from abakit.lib.Controllers.SqlController import SqlController
 from abakit.lib.utilities_process import test_dir, create_downsample
-from lib.pipeline_utilities import get_image_size
+from abakit.utilities.shell_tools import get_image_size
 
 
 class PrepCreater:
@@ -42,13 +42,8 @@ class PrepCreater:
             output_paths.append(output_path)
             width, height = get_image_size(input_path)
             self.sqlController.update_tif(section.id, width, height)
-        workers = self.get_nworkers()
-
-        os.symlink(
-            input_paths, output_paths
-        )  # Do we need multiple cores? Do we need to check filechecksums?
-
-        # self.run_commands_in_parallel_with_executor([input_paths, output_paths], workers, copyfile)
+        for file_key in zip(input_paths, output_paths):
+            os.symlink(*file_key)
 
     def make_low_resolution(self):
         """

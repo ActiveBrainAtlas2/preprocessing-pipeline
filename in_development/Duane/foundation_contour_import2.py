@@ -23,7 +23,7 @@ from tqdm import tqdm
 from lib.utilities_alignment import transform_points,create_downsampled_transforms
 from lib.utilities_create_alignment import parse_elastix
 import numpy as np
-from abakit.utilities.shell_tools import get_image_size
+from abakit.lib.utilities_process import get_image_size
 from atlas.FoundationContourAligner import FoundationContourAligner
 from lib.sql_setup import session
 from model.structure import Structure

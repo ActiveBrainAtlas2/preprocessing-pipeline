@@ -11,9 +11,7 @@ import os
 import sys
 from shutil import which
 import glob
-
-# from abakit.lib.FileLocationManager import FileLocationManager
-from lib.FileLocationManager import FileLocationManager
+from abakit.lib.FileLocationManager import FileLocationManager
 from lib.MetaUtilities import MetaUtilities
 from lib.PrepCreater import PrepCreater
 from lib.NgPrecomputedMaker import NgPrecomputedMaker
@@ -57,11 +55,14 @@ class Pipeline(
         channel=1,
         downsample=True,
         DATA_PATH="/net/birdstore/Active_Atlas_Data/data_root",
-        debug=False,
         host="db.dk.ucsd.edu",
         schema="active_atlas_production",
+        debug=False,
     ):
         """Setting up the pipeline and the processing configurations
+        Here is how the Class is instantiated:
+            pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug)
+
            The pipeline performst the following steps:
            1. extracting the images from the microscopy formats (eg czi) to tiff format
            2. Prepare thumbnails of images for quality control
@@ -89,8 +90,15 @@ class Pipeline(
         self.hostname = self.get_hostname()
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
+
         # self.logger = get_logger(animal,self.sqlController.session)
         self.check_programs()
+
+    def get_chunk_size(self):
+        if self.downsample==True:
+            return [256,256,1]
+        if self.downsample==False:
+            return [4096,4096,1]
 
     @staticmethod
     def check_programs():

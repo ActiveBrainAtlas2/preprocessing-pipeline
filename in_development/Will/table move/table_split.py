@@ -1,7 +1,7 @@
 import enum
 from abakit.lib.Controllers.SqlController import SqlController
 from abakit.model.annotation_points import AnnotationPoint,MarkedCell,PolygonSequence,StructureCOM,COMSources,PolygonSources,CellSources
-from abakit.model.annotation_session import AnnotationSession,AnnotationType
+from abakit.model.annotation_points import AnnotationSession,AnnotationType
 from abakit.model.brain_region import BrainRegion
 from abakit.model.cell_type import CellType
 import numpy as np

@@ -1,7 +1,7 @@
 import enum
 from abakit.lib.Controllers.Controller import Controller
 from abakit.model.annotation_points import AnnotationPoint,MarkedCell,PolygonSequence,StructureCOM,COMSources,PolygonSources,CellSources
-from abakit.model.annotation_session import AnnotationSession,AnnotationType
+from abakit.model.annotation_points import AnnotationSession,AnnotationType
 import numpy as np
 import pandas as pd
 controller = Controller()

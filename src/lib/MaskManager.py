@@ -2,19 +2,16 @@ import os, sys
 import numpy as np
 import torch
 from PIL import Image
-
 Image.MAX_IMAGE_PIXELS = None
 import cv2
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-from abakit.utilities.masking import combine_dims, merge_mask
-from abakit.lib.utilities_process import get_cpus, test_dir
+from abakit.lib.utilities_mask import combine_dims, merge_mask
+from abakit.lib.utilities_process import test_dir
 import warnings
-
 warnings.filterwarnings("ignore")
 from lib.pipeline_utilities import get_image_size
-
 
 class MaskManager:
     def apply_user_mask_edits(self):

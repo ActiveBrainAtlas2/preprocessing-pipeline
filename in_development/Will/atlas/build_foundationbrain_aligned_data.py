@@ -17,7 +17,7 @@ import pandas as pd
 import ast
 import json
 from tqdm import tqdm
-from abakit.utilities.shell_tools import get_image_size
+from abakit.lib.utilities_process import get_image_size
 from scipy.interpolate import splprep, splev
 
 HOME = os.path.expanduser("~")
@@ -27,7 +27,8 @@ from abakit.lib.utilities_contour import get_contours_from_annotations
 from abakit.lib.Controllers.SqlController import SqlController
 from abakit.lib.FileLocationManager import DATA_PATH, FileLocationManager
 from abakit.lib.utilities_alignment import parse_elastix, \
-    transform_create_alignment, create_warp_transforms
+    transform_create_alignment
+from abakit.lib.utilities_alignment import create_downsampled_transforms
 from abakit.lib.utilities_atlas import ATLAS
 
 DOWNSAMPLE_FACTOR = 32
@@ -74,7 +75,7 @@ def create_volumes(animal):
     sqlController = SqlController(animal)
     section_offsets = create_clean_transform(animal)
     transforms = parse_elastix(animal)
-    warp_transforms = create_warp_transforms(animal, transforms, downsample=True)
+    warp_transforms = create_downsampled_transforms(animal, transforms, downsample=True)
     ordered_transforms = sorted(warp_transforms.items())
     section_structure_vertices = defaultdict(dict)
     csvfile = os.path.join(DATA_PATH, 'atlas_data/foundation_brain_annotations',\
