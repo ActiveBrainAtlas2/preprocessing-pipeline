@@ -83,8 +83,8 @@ class ImageCleaner:
                     maskfile,
                     rotation + rotations_per_section[i],
                     flip,
-                    max_width,
-                    max_height,
+                    int(max_width*self.padding_margin),
+                    int(max_height*self.padding_margin),
                     self.channel,
                 ]
             )

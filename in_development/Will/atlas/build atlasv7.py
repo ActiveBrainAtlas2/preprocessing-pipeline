@@ -3,9 +3,7 @@ import numpy as np
 import os
 from abakit.atlas.Atlas import Atlas
 from abakit.lib.Controllers.SqlController import SqlController
-from scipy.ndimage.measurements import center_of_mass
 from abakit.atlas.NgSegmentMaker import NgConverter
-from skimage.filters import gaussian
 from abakit.atlas.Assembler import Assembler,get_v7_volume_and_origin
 
 controller = SqlController('DK39')
