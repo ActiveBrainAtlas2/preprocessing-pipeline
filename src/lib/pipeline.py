@@ -57,7 +57,7 @@ class Pipeline(
         DATA_PATH="/net/birdstore/Active_Atlas_Data/data_root",
         host="db.dk.ucsd.edu",
         schema="active_atlas_production",
-        debug=False,
+        debug=False,padding_margin=1
     ):
         """Setting up the pipeline and the processing configurations
         Here is how the Class is instantiated:
@@ -90,6 +90,7 @@ class Pipeline(
         self.hostname = self.get_hostname()
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
+        self.padding_margin=padding_margin
 
         # self.logger = get_logger(animal,self.sqlController.session)
         self.check_programs()
