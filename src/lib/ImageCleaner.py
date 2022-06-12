@@ -126,7 +126,8 @@ def clean_and_rotate_image(file_key):
     if channel == 1:
         cleaned = scaled(cleaned, mask, epsilon=0.01)
         cleaned = equalized(cleaned)
-    cropped = crop_image(cleaned, mask)
+    #cropped = crop_image(cleaned, mask)
+    cropped = cleaned
     del img
     del mask
     cropped = pad_image(cropped, infile, max_height, max_width, 0)
