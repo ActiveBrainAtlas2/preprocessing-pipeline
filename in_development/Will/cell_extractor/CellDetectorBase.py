@@ -11,8 +11,6 @@ import concurrent.futures
 
 class CellDetectorBase(Brain):
     def __init__(self,animal='DK55',section = 0,disk = '/net/birdstore/Active_Atlas_Data/',round = 1,segmentation_threshold=2000,replace=False):
-        self.attribute_functions = dict(
-            tile_origins = self.get_tile_origins)
         super().__init__(animal)
         self.replace = replace
         self.disk = disk
@@ -54,7 +52,7 @@ class CellDetectorBase(Brain):
             os.makedirs(path,exist_ok = True)
     
     def get_tile_information(self):
-        self.check_attributes(['tile_origins'])
+        self.get_tile_origins()
         ntiles = len(self.tile_origins)
         tile_information = pd.DataFrame(columns = ['id','tile_origin','ncol','nrow','width','height'])
         for tilei in range(ntiles):
@@ -92,15 +90,16 @@ class CellDetectorBase(Brain):
         self.tile_width=int(self.width/self.ncol )
     
     def get_tile_origins(self):
-        self.check_attributes(['width'])
-        self.tile_origins={}
-        for i in range(self.nrow*self.ncol):
-            row=int(i/self.ncol)
-            col=i%self.ncol
-            self.tile_origins[i] = (row*self.tile_height,col*self.tile_width)
+        if not hasattr(self,'tile_origins'):
+            assert hasattr(self,'width')
+            self.tile_origins={}
+            for i in range(self.nrow*self.ncol):
+                row=int(i/self.ncol)
+                col=i%self.ncol
+                self.tile_origins[i] = (row*self.tile_height,col*self.tile_width)
 
     def get_tile_origin(self,tilei):
-        self.check_attributes(['tile_origins'])
+        self.get_tile_origins()
         return np.array(self.tile_origins[tilei],dtype=np.int32)
     
     def get_all_sections(self):

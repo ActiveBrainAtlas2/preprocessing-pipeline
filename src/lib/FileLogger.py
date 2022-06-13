@@ -13,8 +13,8 @@ class FileLogger:
         -CHECK FOR PRESENCE OF LOG FILE (RW PERMISSION)
         -SET CONFIG FOR LOGGING
         """
-        hostname = socket.gethostname()
-        LOGFILE = os.path.join(LOGFILE_PATH, 'process-' + str(hostname) + '.log')
+        
+        LOGFILE = os.path.join(LOGFILE_PATH, "pipelilne-process.log")
         try:
             with open(LOGFILE, "a") as f:
                 pass
@@ -34,7 +34,7 @@ class FileLogger:
 
 # PREVIOUS VERSION BELOW (LOG TO DB)
 class DatabaseHandler(logging.Handler):
-    def __init__(self,session):
+    def __init__(self, session):
         super().__init__()
         self.session = session
 
@@ -49,7 +49,7 @@ class DatabaseHandler(logging.Handler):
         self.session.commit()
 
 
-def get_logger(prep_id, session,level=logging.INFO):
+def get_logger(prep_id, session, level=logging.INFO):
     handler = DatabaseHandler(session)
     logger = logging.getLogger(prep_id)
     logger.setLevel(level)

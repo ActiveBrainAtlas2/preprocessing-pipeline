@@ -30,11 +30,13 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, debug):
 
     pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug)
     
-    #pipeline.prepare_image_for_quality_control()
+    print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:", "prep_id: " + animal, "channel: " + str(channel), "downsample: " + str(downsample), "host: " + host, "schema: " + schema, "debug: " + str(debug), sep="\n")
+    
+    pipeline.prepare_image_for_quality_control()
 
     if step > 0:
         print('Step 0')
-        #pipeline.apply_qc_and_prepare_image_masks()
+        pipeline.apply_qc_and_prepare_image_masks()
     if step > 1:
         print('Step 1')
         pipeline.clean_images_and_create_histogram()
@@ -56,8 +58,8 @@ if __name__ == '__main__':
     parser.add_argument('--downsample', help='Enter true or false', required=False, default='true')
     parser.add_argument('--step', help=steps, required=False, default=0)
     parser.add_argument('--debug', help='Enter true or false', required=False, default='false')
-    parser.add_argument('--host', help='Enter the DB host', required=True, default=settings.host)
-    parser.add_argument('--schema', help='Enter the DB schema', required=True, default=settings.schema)
+    parser.add_argument('--host', help='Enter the DB host', required=False, default=settings.host)
+    parser.add_argument('--schema', help='Enter the DB schema', required=False, default=settings.schema)
 
     args = parser.parse_args()
 
