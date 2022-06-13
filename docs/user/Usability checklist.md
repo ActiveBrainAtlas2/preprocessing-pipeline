@@ -8,14 +8,45 @@ Here is a list of things to check after deploying software to the server
 3. After new page loads, Search for **test_save_annotation**. 
 4. Click 'test_save_annotation' link under 'NEUGOLANCER' heading [to open Neuroglancer with this view]
 5. Click 'New' in Neuroglancer window [to create a new "view"]
-6. create a new volume,add, remove and move points, test duplication and delete. 
-7. create a com and cell and delete them, test the color options for these points. 
-8. move the points around and click save annotation
-9. open a new annotation layer and import the saved annotations from the drop down
-10. locate the saved annotations in the admin portal.  Confirm that the coordinate match the data in neuroglancer and that the Animal ID, structure and annotator information is correct.
-11. Delete the added test point after checking
-12. Check https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/urlmodel/ and search for **test save annotations**. Find the new entry you created and delete it using the action drop down. 
-13. Open one neuroglancer state with multisection annotation, click save and check for successful save message and database entry
+6. create a new volume (Landmark optional)
+  6a. switch to edit mode [for volume]
+  6b. add points to volume
+  6c. move points around [that belong to volume]
+  6d. remove some points from volume
+  6e. move entire contour around [shift left click]
+  6f. duplicate entire contour [select contour + CTRL-C] *New pology should appear in annotations section with z value incremented by 1
+  6g. delete entire volume
+  6h. close current active volume session
+7. Create new cell session (Description and category optional)
+  7a. add point on image
+  7b. swith to edit mode [CTRL X]
+  7c. move point on image
+  7d. remove point from image ((Ctrl + Alt + right click) or Trash can) 
+  7e. close the session
+8. Create new com session ('Description' optional)
+  7a. add point on image
+  7b. swith to edit mode [CTRL X]
+  7c. move point on image
+  7d. remove point from image ((Ctrl + Alt + right click) or Trash can) 
+  7e. close the session
+9. click 'save annotations' (under drop downs)
+10. Create new annotation layer (tab) with [Ctrl + left click on plus sign]
+11. Import the saved annotations from the drop down [the same volume, cell, com from steps 6-8]
+12. Verify volume, cell, com are same as previous (locations)
+  12a. Open one neuroglancer state with multisection annotation, click save and check for successful save message and database entry
+
+### CLEANUP * check and delete stored annotations from admin portal
+13. Return to Admin portal (leave Neuroglancer page open)
+14. Click 'Annotation sessions' link under 'NEUGOLANCER' heading
+15. Search for name of annimal and user name [steps 6-8].
+16. Confirm the volume, cell and com sessions exist (3 entries) on page (Click 'Data' under 'SHOW POINTS' column for detail)
+17. Select annotations checkboxes and select 'Delete selected Annotations sessions' from action dropdown; click 'Go'
+    * You will see 'Successfully deleted {#} Annotations sessions' at top of screen (in green)  
+18. Under 'NEUROGLANCER', Click 'Neuroglancer states'
+19. Search for **test_save_annotation** (select recently created Neuroglancer states)
+20. Select annotations checkboxes and select 'Delete selected Neuroglancer state' from action dropdown; click 'Go'
+    * You will see 'Successfully deleted {#} Neuroglancer state' at top of screen (in green)  
+
 
 ## Test Slide QC
 1. open the slide option in the brain app
