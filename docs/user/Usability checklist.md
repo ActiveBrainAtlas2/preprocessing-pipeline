@@ -6,15 +6,16 @@ Here is a list of things to check after deploying software to the server
 1. login to https://activebrainatlas.ucsd.edu/activebrainatlas/admin
 2. Under 'NEUROGLANCER', Click 'Neuroglancer states' or click following link: https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/urlmodel/ 
 3. After new page loads, Search for **test_save_annotation**. 
-4. Clock 'test_save_annotation' link under 'NEUGOLANCER' heading [to open Neuroglancer with this view
-5. create a new volume,add, remove and move points, test duplication and delete. 
-6. create a com and cell and delete them, test the color options for these points. 
-7. move the points around and click save annotation
-8. open a new annotation layer and import the saved annotations from the drop down
-9. locate the saved annotations in the admin portal.  Confirm that the coordinate match the data in neuroglancer and that the Animal ID, structure and annotator information is correct.
-10. Delete the added test point after checking
-11. Check https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/urlmodel/ and search for **test save annotations**. Find the new entry you created and delete it using the action drop down. 
-12. Open one neuroglancer state with multisection annotation, click save and check for successful save message and database entry
+4. Click 'test_save_annotation' link under 'NEUGOLANCER' heading [to open Neuroglancer with this view]
+5. Click 'New' in Neuroglancer window [to create a new "view"]
+6. create a new volume,add, remove and move points, test duplication and delete. 
+7. create a com and cell and delete them, test the color options for these points. 
+8. move the points around and click save annotation
+9. open a new annotation layer and import the saved annotations from the drop down
+10. locate the saved annotations in the admin portal.  Confirm that the coordinate match the data in neuroglancer and that the Animal ID, structure and annotator information is correct.
+11. Delete the added test point after checking
+12. Check https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/urlmodel/ and search for **test save annotations**. Find the new entry you created and delete it using the action drop down. 
+13. Open one neuroglancer state with multisection annotation, click save and check for successful save message and database entry
 
 ## Test Slide QC
 1. open the slide option in the brain app
