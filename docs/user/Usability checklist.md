@@ -4,8 +4,8 @@ Here is a list of things to check after deploying software to the server
 
 ## Test Neurogolancer-Django interaction
 1. login to https://activebrainatlas.ucsd.edu/activebrainatlas/admin
-2. Under 'NEUROGLANCER', Click 'Neuroglancer states'
-(Check https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/urlmodel/ and search for **test_save_annotation**. Open the neuroglancer link and create a copy of it by clicking new. )
+2. Under 'NEUROGLANCER', Click 'Neuroglancer states' or click following link: https://activebrainatlas.ucsd.edu/activebrainatlas/admin/neuroglancer/urlmodel/ 
+3. After new page loads, Search for **test_save_annotation**. Open the neuroglancer link and create a copy of it by clicking new. )
 4. create a new volume,add, remove and move points, test duplication and delete. 
 5. create a com and cell and delete them, test the color options for these points. 
 6. move the points around and click save annotation
