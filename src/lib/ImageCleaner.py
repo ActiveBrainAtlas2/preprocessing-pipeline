@@ -49,11 +49,11 @@ class ImageCleaner:
 
     def get_section_rotation(self, section: Section):
         sections = self.sqlController.session.query(SlideCziTif).filter(
-            SlideCziTif.slide_id == section.slide_id
+            SlideCziTif.FK_slide_id == section.FK_slide_id
         )
         indices = np.sort(np.unique([i.scene_index for i in sections]))
         scene = np.where(indices == section.scene_index)[0][0] + 1
-        slide = self.sqlController.session.query(Slide).get(section.slide_id)
+        slide = self.sqlController.session.query(Slide).get(section.FK_slide_id)
         return getattr(slide, f"scene_rotation_{scene}")
 
     def parallel_create_cleaned(self, INPUT, CLEANED, MASKS):
@@ -126,7 +126,7 @@ def clean_and_rotate_image(file_key):
     if channel == 1:
         cleaned = scaled(cleaned, mask, epsilon=0.01)
         cleaned = equalized(cleaned)
-    cropped = crop_image(cleaned, mask)
+    # cropped = crop_image(cleaned, mask)
     del img
     del mask
     cropped = pad_image(cropped, infile, max_height, max_width, 0)
