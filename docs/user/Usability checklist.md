@@ -52,10 +52,14 @@ Here is a list of things to check after deploying software to the server
 1. open the slide option in the brain app
 2. search for "test"
 3. click into a test entry
-4. disable scene one and click "save and continue"
-5. enable scene one again and duplicate it, click "save and continue"
-6. set scene one duplication to 0 again and click "save and continue"
-check that the right QC result is applied for each step
+4. Mark 'Scene 1 QC' as 'bad tissue' (dropdown); click "save and continue editing"
+  * When page refreshes, Scene 1 should not be visible
+5. enable scene one again (select 'ok' from dropdown) click "save and continue"
+  * When page refreshes, Scene 1 should be visible
+6. Change 'Replicate S1' to '3'; click "save and continue editing"
+  * When page refreshes, Check scene is duplicated 3 times
+8. set scene one duplication to 0 again and click "save and continue"
+  * When page refreshes, Check scene should appear only once
 
 ## Test Image Load:
 1. Opening at 3 different DK brains and scroll through z stacks, check on channel color widget and intensity rendering.  Note down slow down in performances or crashes.
