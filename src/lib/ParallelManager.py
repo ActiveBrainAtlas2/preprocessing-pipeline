@@ -32,9 +32,9 @@ class ParallelManager:
                 make_histogram=ncores,
                 create_full_resolution_mask=4,
                 create_downsampled_mask=ncores,
-                parallel_create_cleaned=(4, ncores),
-                align_images=(4, ncores),
-                create_neuroglancer=(4, ncores),
+                parallel_create_cleaned=(ncores, 4),
+                align_images=(ncores, 4),
+                create_neuroglancer=(ncores, 4),
                 apply_QC_to_full_resolution_images=4,
             )
 
