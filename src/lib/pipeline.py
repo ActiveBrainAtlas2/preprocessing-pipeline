@@ -184,7 +184,11 @@ class Pipeline(
             else:
                 self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
                 self.logevent(f"CALCULATE FILE CHECKSUMS\n{sep}")
-
+        elif function_name == "create web friendly image":
+            ending_files = glob.glob(
+                os.path.join(self.fileLocationManager.thumbnail_web, "*.png")
+            )
+            self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
         else:
             self.logevent(f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}")
 
