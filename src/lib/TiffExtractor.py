@@ -1,9 +1,7 @@
 import os
-import glob
 import hashlib
 from lib.ParallelManager import ParallelManager
-
-
+from abakit.lib.CZIManager import extract_image_from_czi
 class TiffExtractor(ParallelManager):
     def extract_tifs_from_czi(self):
         """
@@ -26,7 +24,8 @@ class TiffExtractor(ParallelManager):
         sections = self.sqlController.get_distinct_section_filenames(
             self.animal, self.channel
         )
-        commands = []
+        czi_file = []
+        tif_file = []
         for section in sections:
             input_path = os.path.join(INPUT, section.czi_file)
             output_path = os.path.join(OUTPUT, section.file_name)
@@ -34,24 +33,14 @@ class TiffExtractor(ParallelManager):
                 continue
             if os.path.exists(output_path):
                 continue
-            cmd = [
-                "/usr/local/share/bftools/bfconvert",
-                "-bigtiff",
-                "-separate",
-                "-series",
-                str(section.scene_index),
-                "-compression",
-                "LZW",
-                "-channel",
-                str(section.channel_index),
-                "-nooverwrite",
-                input_path,
-                output_path,
-            ]
-            commands.append(cmd)
+            czi_file.append(input_path)
+            tif_file.append(output_path)
         workers = self.get_nworkers()
+        nfiles = len(czi_file)
+        channel = [self.channel for _ in range(nfiles)]
+        scale = [1 for _ in range(nfiles)]
         self.logevent(f"ALLOCATED CORES: {workers}")
-        self.run_commands_in_parallel_with_shell(commands, workers)
+        self.run_commands_in_parallel_with_executor([czi_file,tif_file,channel,scale],workers,extract_image_from_czi)
         self.update_database()
 
     def update_database(self):
@@ -93,29 +82,29 @@ class TiffExtractor(ParallelManager):
         """Create downsampled version of full size tiff images that can be viewed on the Django admin portal
         These images are used for Quality Control
         """
-        INPUT = self.fileLocationManager.tif
+        INPUT = self.fileLocationManager.czi
         OUTPUT = self.fileLocationManager.thumbnail_web
         os.makedirs(OUTPUT, exist_ok=True)
-        file_keys = []
+        czi_file = []
         files = os.listdir(INPUT)
-        for file in files:
-            filepath = os.path.join(INPUT, file)
-            if not file.endswith("_C1.tif"):
+
+        sections = self.sqlController.get_distinct_section_filenames(
+            self.animal, self.channel
+        )
+        czi_file = []
+        png_file = []
+        for section in sections:
+            input_path = os.path.join(INPUT, section.czi_file)
+            output_path = os.path.join(OUTPUT, section.file_name)
+            output_path[-4:]='.png'
+            if not os.path.exists(input_path):
                 continue
-            png_path = os.path.join(OUTPUT, file.replace("tif", "png"))
-            if os.path.exists(png_path):
+            if os.path.exists(output_path):
                 continue
-            file_key = [
-                "convert",
-                filepath,
-                "-resize",
-                "3.125%",
-                "-depth",
-                "8",
-                "-normalize",
-                "-auto-level",
-                png_path,
-            ]
-            file_keys.append(file_key)
+            czi_file.append(input_path)
+            png_file.append(output_path)
         workers = self.get_nworkers()
-        self.run_commands_in_parallel_with_shell(file_keys, workers)
+        nfiles = len(input_path)
+        channel = [1 for _ in range(nfiles)]
+        scale = [0.01 for _ in range(nfiles)]
+        self.run_commands_in_parallel_with_executor([czi_file,png_file,channel,scale],workers,extract_image_from_czi)
