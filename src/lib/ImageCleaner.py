@@ -20,7 +20,7 @@ class ImageCleaner:
     def create_cleaned_images(self):
         """
         This method applies the image masks that has been edited by the user to extract the tissue image from the surrounding
-        debre
+        debris
         """
         if self.channel == 1:
             self.sqlController.set_task(
@@ -129,7 +129,7 @@ def clean_and_rotate_image(file_key):
     # cropped = crop_image(cleaned, mask)
     del img
     del mask
-    cropped = pad_image(cropped, infile, max_height, max_width, 0)
+    cropped = pad_image(cleaned, infile, max_height, max_width, 0)
     if rotation > 0:
         cropped = rotate_image(cropped, infile, rotation)
     if flip == "flip":
