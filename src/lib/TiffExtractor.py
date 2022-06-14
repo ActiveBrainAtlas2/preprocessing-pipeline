@@ -1,7 +1,7 @@
 import os
 import hashlib
 from lib.ParallelManager import ParallelManager
-from abakit.lib.CZIManager import extract_image_from_czi
+from abakit.lib.CZIManager import extract_tiff_from_czi,extract_png_from_czi
 class TiffExtractor(ParallelManager):
     def extract_tifs_from_czi(self):
         """
@@ -17,9 +17,13 @@ class TiffExtractor(ParallelManager):
         Returns:
             nothing
         """
-
+        if not self.downsample:
+            OUTPUT = self.fileLocationManager.tif
+            scale_factor=1
+        else:
+            OUTPUT = self.fileLocationManager.thumbnail_original
+            scale_factor = 0.03125
         INPUT = self.fileLocationManager.czi
-        OUTPUT = self.fileLocationManager.tif
         os.makedirs(OUTPUT, exist_ok=True)
         sections = self.sqlController.get_distinct_section_filenames(
             self.animal, self.channel
@@ -38,9 +42,9 @@ class TiffExtractor(ParallelManager):
         workers = self.get_nworkers()
         nfiles = len(czi_file)
         channel = [self.channel for _ in range(nfiles)]
-        scale = [1 for _ in range(nfiles)]
+        scale = [scale_factor for _ in range(nfiles)]
         self.logevent(f"ALLOCATED CORES: {workers}")
-        self.run_commands_in_parallel_with_executor([czi_file,tif_file,channel,scale],workers,extract_image_from_czi)
+        self.run_commands_in_parallel_with_executor([czi_file,tif_file,channel,scale],workers,extract_tiff_from_czi)
         self.update_database()
 
     def update_database(self):
@@ -107,4 +111,4 @@ class TiffExtractor(ParallelManager):
         nfiles = len(input_path)
         channel = [1 for _ in range(nfiles)]
         scale = [0.01 for _ in range(nfiles)]
-        self.run_commands_in_parallel_with_executor([czi_file,png_file,channel,scale],workers,extract_image_from_czi)
+        self.run_commands_in_parallel_with_executor([czi_file,png_file,channel,scale],workers,extract_png_from_czi)

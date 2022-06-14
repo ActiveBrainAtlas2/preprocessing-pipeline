@@ -223,9 +223,8 @@ class Pipeline(
            These masks will be used to crop out the tissue from the surrounding debres.
         """
         self.run_program_and_time(
-            self.apply_QC_to_full_resolution_images, "Making full resolution copies"
+            self.apply_QC, "applying QC"
         )
-        self.run_program_and_time(self.make_low_resolution, "Making downsampled copies")
         self.set_task_preps()
         if self.channel == 1 and self.downsample:
             self.run_program_and_time(
