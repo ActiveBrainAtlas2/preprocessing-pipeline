@@ -94,13 +94,14 @@ class Pipeline(
         # self.logger = get_logger(animal, self.sqlController.session)
         self.padding_margin = padding_margin
         self.check_programs()
-        # super().__init__(self.fileLocationManager.get_logdir())
+        super().__init__(self.fileLocationManager.get_logdir())
 
     def get_chunk_size(self):
         if self.downsample == True:
             return [256, 256, 1]
         if self.downsample == False:
-            return [4096, 4096, 1]
+            # return [4096, 4096, 1]
+            return [40960, 40960, 1]
 
     @staticmethod
     def check_programs():
@@ -150,13 +151,16 @@ class Pipeline(
             self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
         elif function_name == "create web friendly image":
             self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.thumbnail_web}")
+        elif function_name == "Making downsampled copies":
+            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.thumbnail}")
         else:
             pass
 
         function()  # RUN FUNCTION
 
         end_time = timer()
-        print(f"{function_name} took {end_time - start_time} seconds")
+        total_elapsed_time = end_time - start_time
+        print(f"{function_name} took {round(total_elapsed_time,1)} seconds")
 
         sep = "*" * 40 + "\n"
         if (
@@ -273,7 +277,7 @@ class Pipeline(
     def create_neuroglancer_cloud_volume(self):
         """This function creates the Seung lab neuroglancer cloud volume folders that is required to view the images in neuroglancer"""
         start = timer()
-        self.create_neuroglancer()
-        self.create_downsamples()
+        self.run_program_and_time(self.create_neuroglancer, "Neuroglancer1 single")
+        self.run_program_and_time(self.create_downsamples, "Neuroglancer2 pyramid")
         end = timer()
         print(f"Last step: creating neuroglancer images took {end - start} seconds")
