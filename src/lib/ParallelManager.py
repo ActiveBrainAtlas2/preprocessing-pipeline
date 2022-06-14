@@ -26,15 +26,12 @@ class ParallelManager:
             self.parallel_settings = dict(name = host,
                                         extract_tifs_from_czi= 4,
                                         create_web_friendly_image = 4,
-                                        make_full_resolution = 4,
-                                        make_low_resolution = ncores,
                                         make_histogram = ncores,
                                         create_full_resolution_mask = 4,
                                         create_downsampled_mask = ncores,
                                         parallel_create_cleaned = (4,ncores),
                                         align_images = (4,ncores),
-                                        create_neuroglancer = (4,ncores),
-                                        apply_QC_to_full_resolution_images = 4)
+                                        create_neuroglancer = (4,ncores))
 
             with open(file_path, 'w') as file:
                 documents = yaml.dump(self.parallel_settings, file)

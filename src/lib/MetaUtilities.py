@@ -2,10 +2,8 @@ import os, sys, time
 from datetime import datetime
 from tqdm import tqdm
 import re
-from abakit.lib.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
-from abakit.model.slide import Slide
-from abakit.model.slide import SlideCziTif
-
+from abakit.model.slide import Slide, SlideCziTif
+from abakit.lib.CZIManager import CZIManager
 
 class MetaUtilities:
     def extract_slide_meta_data_and_insert_to_database(self):
@@ -19,9 +17,14 @@ class MetaUtilities:
             for _, czi_file in enumerate(tqdm(czi_files)):
                 if self.is_czi_file(czi_file):
                     if not self.slide_meta_data_exists(czi_file):
+                        self.load_tif_metadata(czi_file)
                         self.add_slide_information_to_database(czi_file)
                         self.add_to_slide_czi_tiff_table(czi_file)
             self.update_database()
+
+    def load_tif_metadata(self,czi_file):
+        czi_file_path = os.path.join(self.fileLocationManager.czi, czi_file)
+        self.czi = CZIManager(czi_file_path)
 
     def get_czi_files(self):
         """Get the list of czi files in the directory"""
@@ -36,7 +39,7 @@ class MetaUtilities:
         """Add the meta information about image slides that are extracted from the czi file and add them to the database"""
         self.slide = Slide()
         self.slide.scan_run_id = self.scan_id
-        self.slide.slide_physical_id = int(re.findall(r"\d+", czi_file)[1])
+        self.slide.slide_physical_id = int(re.findall(r"slide\d+", czi_file)[0][5:])
         self.slide.rescan_number = "1"
         self.slide.slide_status = "Good"
         self.slide.processed = False
@@ -47,10 +50,12 @@ class MetaUtilities:
         self.slide.created = datetime.fromtimestamp(
             os.path.getmtime(os.path.join(self.fileLocationManager.czi, czi_file))
         )
-        czi_file_path = os.path.join(self.fileLocationManager.czi, czi_file)
-        self.metadata = get_czi_metadata(czi_file_path)
-        self.series = get_fullres_series_indices(self.metadata)
-        self.slide.scenes = len(self.series)
+        self.metadata = self.czi.metadata
+        self.slide.scenes = self.czi.get_nscene()
+        self.series = list(range(self.slide.scenes))
+        self.logevent(
+            f"ADD SLIDE INFO TO DB: {czi_file} -> PHYSICAL SLIDE ID: {self.slide.slide_physical_id}"
+        )
         self.sqlController.session.add(self.slide)
         self.sqlController.session.flush()
         self.sqlController.session.commit()
@@ -59,13 +64,12 @@ class MetaUtilities:
         """Add entry to the table that prepares the user Quality Control interface"""
         for j, series_index in enumerate(self.series):
             scene_number = j + 1
-            channels = range(self.metadata[series_index]["channels"])
+            channels = range(self.czi.get_nchannel())
             channel_counter = 0
-            width = self.metadata[series_index]["width"]
-            height = self.metadata[series_index]["height"]
+            _,_,width,height = self.czi.get_scene_dimension(series_index)
             for channel in channels:
                 tif = SlideCziTif()
-                tif.slide_id = self.slide.id
+                tif.FK_slide_id = self.slide.id
                 tif.scene_number = scene_number
                 tif.file_size = 0
                 tif.active = 1
@@ -95,7 +99,11 @@ class MetaUtilities:
 
     def all_slide_meta_data_exists_in_database(self, czi_files):
         """Check if the number of czi files in the directory matches the number of entries in the database table 'Slide'"""
-        nslides = self.sqlController.session.query(Slide).filter(Slide.scan_run_id == self.scan_id).count()
+        nslides = (
+            self.sqlController.session.query(Slide)
+            .filter(Slide.scan_run_id == self.scan_id)
+            .count()
+        )
         return nslides == len(czi_files)
 
     def slide_meta_data_exists(self, czi_file_name):
@@ -123,9 +131,15 @@ class MetaUtilities:
 
     def update_database(self):
         """Updates the "file log" table in the database that tracks the progress of the pipeline"""
-        SLIDES_ARE_SCANNED = self.sqlController.get_progress_id(downsample=0,channel=0,action='SCAN')
-        CZI_FILES_ARE_PLACED_ON_BIRDSTORE = self.sqlController.get_progress_id(downsample=0,channel=0,action='BIRDSTORE')
-        CZI_FILES_ARE_SCANNED_TO_GET_METADATA = self.sqlController.get_progress_id(downsample=0,channel=0,action='META')
+        SLIDES_ARE_SCANNED = self.sqlController.get_progress_id(
+            downsample=0, channel=0, action="SCAN"
+        )
+        CZI_FILES_ARE_PLACED_ON_BIRDSTORE = self.sqlController.get_progress_id(
+            downsample=0, channel=0, action="BIRDSTORE"
+        )
+        CZI_FILES_ARE_SCANNED_TO_GET_METADATA = self.sqlController.get_progress_id(
+            downsample=0, channel=0, action="META"
+        )
         self.sqlController.set_task(self.animal, SLIDES_ARE_SCANNED)
         self.sqlController.set_task(self.animal, CZI_FILES_ARE_PLACED_ON_BIRDSTORE)
         self.sqlController.set_task(self.animal, CZI_FILES_ARE_SCANNED_TO_GET_METADATA)

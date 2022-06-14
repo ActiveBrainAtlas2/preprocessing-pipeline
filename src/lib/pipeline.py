@@ -57,7 +57,8 @@ class Pipeline(
         DATA_PATH="/net/birdstore/Active_Atlas_Data/data_root",
         host="db.dk.ucsd.edu",
         schema="active_atlas_production",
-        debug=False,padding_margin=1
+        debug=False,
+        padding_margin=1,
     ):
         """Setting up the pipeline and the processing configurations
         Here is how the Class is instantiated:
@@ -90,16 +91,16 @@ class Pipeline(
         self.hostname = self.get_hostname()
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
-        self.padding_margin=padding_margin
-
-        # self.logger = get_logger(animal,self.sqlController.session)
+        # self.logger = get_logger(animal, self.sqlController.session)
+        self.padding_margin = padding_margin
         self.check_programs()
+        # super().__init__(self.fileLocationManager.get_logdir())
 
     def get_chunk_size(self):
-        if self.downsample==True:
-            return [256,256,1]
-        if self.downsample==False:
-            return [4096,4096,1]
+        if self.downsample == True:
+            return [256, 256, 1]
+        if self.downsample == False:
+            return [4096, 4096, 1]
 
     @staticmethod
     def check_programs():
@@ -156,10 +157,11 @@ class Pipeline(
 
         end_time = timer()
         print(f"{function_name} took {end_time - start_time} seconds")
-        
 
         sep = "*" * 40 + "\n"
-        if function_name == "Creating meta": #TODO clean up dup code w/ extracting tiff
+        if (
+            function_name == "Creating meta"
+        ):  # TODO clean up dup code w/ extracting tiff
             ending_files = glob.glob(
                 os.path.join(self.fileLocationManager.czi, "*.czi")
             )
@@ -167,7 +169,7 @@ class Pipeline(
 
             unitary_calc = (end_time - start_time) / len(ending_files)
             self.logevent(
-                    f"TIME PER FILE CREATION (seconds): {str(round(unitary_calc, 1))}\n{sep}"
+                f"TIME PER FILE CREATION (seconds): {str(round(unitary_calc, 1))}\n{sep}"
             )
         elif function_name == "Extracting Tiffs":
             ending_files = glob.glob(
@@ -176,7 +178,9 @@ class Pipeline(
             self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
 
             if ending_files != starting_files:
-                self.logevent(f"AGGREGATE: {function_name} took {end_time - start_time} seconds")
+                self.logevent(
+                    f"AGGREGATE: {function_name} took {end_time - start_time} seconds"
+                )
                 print(type(ending_files), ending_files)
                 unitary_calc = (end_time - start_time) / len(ending_files)
                 self.logevent(
@@ -185,9 +189,15 @@ class Pipeline(
             else:
                 self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
                 self.logevent(f"CALCULATE FILE CHECKSUMS\n{sep}")
-
+        elif function_name == "create web friendly image":
+            ending_files = glob.glob(
+                os.path.join(self.fileLocationManager.thumbnail_web, "*.png")
+            )
+            self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
         else:
-            self.logevent(f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}")
+            self.logevent(
+                f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}"
+            )
 
     def prepare_image_for_quality_control(self):
         """This is the first step of the pipeline.  The images are extracted from the CZI files,
@@ -200,15 +210,9 @@ class Pipeline(
         2) extract tiffs from czi
         3) create png files (downsampled)
         """
-        self.run_program_and_time(
-            self.extract_slide_meta_data_and_insert_to_database, "Creating meta"
-        )
-
+        self.run_program_and_time(self.extract_slide_meta_data_and_insert_to_database, "Creating meta")
+        self.run_program_and_time(self.create_web_friendly_image, "create web friendly image")
         self.run_program_and_time(self.extract_tifs_from_czi, "Extracting Tiffs")
-        if self.channel == 1 and self.downsample:
-            self.run_program_and_time(
-                self.create_web_friendly_image, "create web friendly image"
-            )
 
     def apply_qc_and_prepare_image_masks(self):
         """This function performs 2 steps:
@@ -219,9 +223,8 @@ class Pipeline(
            These masks will be used to crop out the tissue from the surrounding debres.
         """
         self.run_program_and_time(
-            self.apply_QC_to_full_resolution_images, "Making full resolution copies"
+            self.apply_QC, "applying QC"
         )
-        self.run_program_and_time(self.make_low_resolution, "Making downsampled copies")
         self.set_task_preps()
         if self.channel == 1 and self.downsample:
             self.run_program_and_time(
