@@ -100,7 +100,7 @@ class TiffExtractor(ParallelManager):
         for section in sections:
             input_path = os.path.join(INPUT, section.czi_file)
             output_path = os.path.join(OUTPUT, section.file_name)
-            output_path[-4:]='.png'
+            output_path = output_path[:-4]+'.png'
             if not os.path.exists(input_path):
                 continue
             if os.path.exists(output_path):
