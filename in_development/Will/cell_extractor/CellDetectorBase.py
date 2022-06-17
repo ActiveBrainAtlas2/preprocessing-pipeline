@@ -25,7 +25,8 @@ class CellDetectorBase(Brain):
         self.get_tile_and_image_dimensions()
         self.get_tile_origins()
         self.check_tile_information()
-        self.predictor = Predictor()
+        self.sqlController.session.close()
+        self.sqlController.pooledsession.close()
     
     def set_folder_paths(self):
         self.DATA_PATH = f"/{self.disk}/cell_segmentation/"
@@ -284,6 +285,29 @@ class CellDetectorBase(Brain):
     
     def load_detections(self):
         return pd.read_csv(self.DETECTION_RESULT_DIR)
+    
+    def has_detection(self):
+        return os.path.exists(self.DETECTION_RESULT_DIR)
+    
+    def get_available_animals(self):
+        path = self.DATA_PATH
+        dirs = os.listdir(path)
+        dirs = [i for i in dirs if os.path.isdir(path+i)]
+        dirs.remove('detectors')
+        dirs.remove('models')
+        return dirs
+    
+    def get_animals_with_examples():
+        ...
+    
+    def get_animals_with_features():
+        ...
+    
+    def get_animals_with_detections():
+        ...
+    
+    def report_detection_status():
+        ...
 
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)
@@ -325,5 +349,5 @@ def parallel_process_all_sections(animal,processing_function,*args,njobs = 10,**
         results = []
         for sectioni in sections:
             print(sectioni)
-            results.append(executor.submit(processing_function,animal,sectioni,*args,**kwargs))
+            results.append(executor.submit(processing_function,animal,int(sectioni),*args,**kwargs))
         print('done')
