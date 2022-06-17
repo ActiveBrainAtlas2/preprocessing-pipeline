@@ -222,16 +222,10 @@ class Pipeline(
         2. Use a CNN based machine learning algorism to create masks around the tissue.
            These masks will be used to crop out the tissue from the surrounding debres.
         """
-        self.run_program_and_time(
-            self.apply_QC, "applying QC"
-        )
+        self.run_program_and_time(self.apply_QC, "applying QC")
         self.set_task_preps()
-        if self.channel == 1 and self.downsample:
-            self.run_program_and_time(
-                self.create_normalized_image, "Creating normalization"
-            )
-        if self.channel == 1:
-            self.run_program_and_time(self.create_mask, "Creating masks")
+        self.run_program_and_time(self.create_normalized_image, "Creating normalization")
+        self.run_program_and_time(self.create_mask, "Creating masks")
 
     def clean_images_and_create_histogram(self):
         """This function performs the following steps:
@@ -239,27 +233,18 @@ class Pipeline(
         2. create the cleaned images using the image masks
         3. making a histogram of pixel intensity for view in the Django admin portal
         """
-        if self.channel == 1 and self.downsample:
-            self.run_program_and_time(self.apply_user_mask_edits, "Applying masks")
+        self.run_program_and_time(self.apply_user_mask_edits, "Applying masks")
         self.run_program_and_time(self.create_cleaned_images, "Creating cleaned image")
-        if self.downsample:
-            self.run_program_and_time(self.make_histogram, "Making histogram")
-            self.run_program_and_time(
-                self.make_combined_histogram, "Making combined histogram"
-            )
+        self.run_program_and_time(self.make_histogram, "Making histogram")
+        self.run_program_and_time(self.make_combined_histogram, "Making combined histogram")
 
     def align_images_within_stack(self):
         """This function calculates the rigid transformation used to align the images within stack and applies them to the image"""
         start = timer()
-        if self.channel == 1 and self.downsample:
-            self.run_program_and_time(
-                self.create_within_stack_transformations, "Creating elastics transform"
-            )
+        self.run_program_and_time(self.create_within_stack_transformations, "Creating elastics transform")
         transformations = self.get_transformations()
-        if self.downsample:
-            self.align_downsampled_images(transformations)
-        else:
-            self.align_full_size_image(transformations)
+        self.align_downsampled_images(transformations)
+        self.align_full_size_image(transformations)
         end = timer()
         print(f"Creating elastix and alignment took {end - start} seconds")
 

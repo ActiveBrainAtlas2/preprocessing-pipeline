@@ -57,14 +57,14 @@ class CellDetectorBase(Brain):
         ntiles = len(self.tile_origins)
         tile_information = pd.DataFrame(columns = ['id','tile_origin','ncol','nrow','width','height'])
         for tilei in range(ntiles):
-            tile_informationi = dict(
-                id = tilei,
-                tile_origin = self.tile_origins[tilei],
-                ncol = self.ncol,
-                nrow = self.nrow,
-                width = self.width,
-                height = self.height) 
-            tile_information = tile_information.append(tile_informationi,ignore_index=True)
+            tile_informationi = pd.DataFrame(dict(
+                id = [tilei],
+                tile_origin = [self.tile_origins[tilei]],
+                ncol = [self.ncol],
+                nrow = [self.nrow],
+                width = [self.width],
+                height = [self.height]) )
+            tile_information = pd.concat([tile_information,tile_informationi],ignore_index=True)
         return tile_information
     
     def save_tile_information(self):
@@ -177,7 +177,7 @@ class CellDetectorBase(Brain):
         for featurei in self.features:
             df_dict = pd.DataFrame(featurei,index = [i])
             i+=1
-            df=df.append(df_dict)
+            df=pd.concat([df,df_dict])
         outfile=self.get_feature_save_path()
         print('df shape=',df.shape,'output_file=',outfile)
         try:
