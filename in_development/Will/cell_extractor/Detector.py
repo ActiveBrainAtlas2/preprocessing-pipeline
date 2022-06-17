@@ -1,7 +1,7 @@
 from cell_extractor.Predictor import Predictor
 import numpy as np
 import xgboost as xgb
-
+import matplotlib.pyplot as plt
 class Detector():
     def __init__(self,model=None,predictor:Predictor=Predictor()):
         self.model = model
@@ -29,3 +29,22 @@ class Detector():
             p=self.predictor.decision(float(mean),float(std))
             predictions.append(p)
         return np.array(predictions)
+
+    def plot_score_scatter(self,df):
+        scores,labels,_mean,_std = self.calculate_scores(df)
+        plt.figure(figsize=[15,10])
+        plt.scatter(_mean,_std,c=labels,s=3)
+        plt.title('mean and std of scores for 30 classifiers')
+        plt.xlabel('mean')
+        plt.ylabel('std')
+        plt.grid()
+    
+    def plot_decision_scatter(self,features):
+        scores,labels,_mean,_std = self.calculate_scores(features)
+        predictions=self.get_prediction(_mean,_std)
+        plt.figure(figsize=[15,10])
+        plt.scatter(_mean,_std,c=predictions+labels,s=5)
+        plt.title('mean and std of scores for 30 classifiers')
+        plt.xlabel('mean')
+        plt.ylabel('std')
+        plt.grid()

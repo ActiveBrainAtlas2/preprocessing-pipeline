@@ -15,15 +15,20 @@ class CellDetector(CellDetectorBase):
         super().__init__(animal,round=round,*args, **kwargs)
         self.detector = self.load_detector()
     
-    def calculate_and_save_detection_results(self):
+    def get_detection_results(self):
         features = self.get_combined_features_for_detection()
         scores,labels,_mean,_std = self.detector.calculate_scores(features)
-        predictions=self.get_prediction(_mean,_std)
+        predictions=self.detector.get_prediction(_mean,_std)
+        detection_df = self.get_combined_features()
         detection_df['mean_score'],detection_df['std_score'] = _mean,_std
         detection_df['label'] = labels
         detection_df['predictions'] = predictions
         detection_df=detection_df[predictions!=-2]
         detection_df = detection_df[['animal', 'section', 'row', 'col','label', 'mean_score','std_score', 'predictions']]
+        return detection_df
+    
+    def calculate_and_save_detection_results(self):
+        detection_df = self.get_detection_results()
         detection_df.to_csv(self.DETECTION_RESULT_DIR,index=False)
 
 def detect_cell(animal,round,*args,**kwargs):

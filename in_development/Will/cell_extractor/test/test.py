@@ -1,7 +1,4 @@
 import sys
-from cell_extractor.CellDetectorTrainer import CellDetectorTrainer
-trainer = CellDetectorTrainer('DK55',round=2,segmentation_threshold=3000)
-features = trainer.load_new_features() 
-
-import os
-os.path.getsize(extractor.get_example_save_path())
+sys.path.append('/home/zhw272/programming/pipeline_utility/in_development/Will')
+from cell_extractor.FeatureFinder import create_features_for_one_section
+create_features_for_one_section('DK54',180,segmentation_threshold = 2000)

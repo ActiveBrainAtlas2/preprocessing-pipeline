@@ -187,25 +187,6 @@ class CellDetectorTrainer(Detector,DataLoader,CellDetectorBase):
         print(depth)
         return bst,Logger
     
-    def plot_score_scatter(self,df):
-        scores,labels,_mean,_std = self.calculate_scores(df)
-        plt.figure(figsize=[15,10])
-        plt.scatter(_mean,_std,c=labels,s=3)
-        plt.title('mean and std of scores for 30 classifiers')
-        plt.xlabel('mean')
-        plt.ylabel('std')
-        plt.grid()
-    
-    def plot_decision_scatter(self,features):
-        scores,labels,_mean,_std = self.calculate_scores(features)
-        predictions=self.get_prediction(_mean,_std)
-        plt.figure(figsize=[15,10])
-        plt.scatter(_mean,_std,c=predictions+labels,s=5)
-        plt.title('mean and std of scores for 30 classifiers')
-        plt.xlabel('mean')
-        plt.ylabel('std')
-        plt.grid()
-    
     def save_predictions(self,features):
         detection_df = self.load_new_features_with_coordinate()
         scores,labels,_mean,_std = self.calculate_scores(features)
