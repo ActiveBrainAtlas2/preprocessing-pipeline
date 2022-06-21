@@ -23,7 +23,7 @@ class MaskManager:
         if self.channel == 1 and self.downsample:
             COLORED = self.fileLocationManager.thumbnail_colored
             MASKS = self.fileLocationManager.thumbnail_masked
-            test_dir(self.animal, COLORED, True, same_size=False)
+            test_dir(self.animal, COLORED,self.section_count, True, same_size=False)
             os.makedirs(MASKS, exist_ok=True)
             files = sorted(os.listdir(COLORED))
             for file in files:
