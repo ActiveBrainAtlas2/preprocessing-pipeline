@@ -4,13 +4,13 @@ import numpy as np
 from skimage import io
 from concurrent.futures.process import ProcessPoolExecutor
 from abakit.lib.utilities_mask import rotate_image, pad_image, scaled, equalized
-from abakit.lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
+from lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
 import tifffile as tiff
 from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None
-from lib.pipeline_utilities import read_image,get_max_image_size
-from copy import copy 
+from lib.pipeline_utilities import read_image, get_max_image_size
+from copy import copy
 from abakit.model.slide import SlideCziTif
 from abakit.model.slide import Slide
 from abakit.model.slide import Section
@@ -83,8 +83,8 @@ class ImageCleaner:
                     maskfile,
                     rotation + rotations_per_section[i],
                     flip,
-                    int(max_width*self.padding_margin),
-                    int(max_height*self.padding_margin),
+                    int(max_width * self.padding_margin),
+                    int(max_height * self.padding_margin),
                     self.channel,
                 ]
             )

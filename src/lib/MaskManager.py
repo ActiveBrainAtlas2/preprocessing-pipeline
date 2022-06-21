@@ -2,16 +2,19 @@ import os, sys
 import numpy as np
 import torch
 from PIL import Image
+
 Image.MAX_IMAGE_PIXELS = None
 import cv2
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from abakit.lib.utilities_mask import combine_dims, merge_mask
-from abakit.lib.utilities_process import test_dir
+from lib.utilities_process import test_dir
 import warnings
+
 warnings.filterwarnings("ignore")
 from lib.pipeline_utilities import get_image_size
+
 
 class MaskManager:
     def apply_user_mask_edits(self):
@@ -29,8 +32,8 @@ class MaskManager:
                 if os.path.exists(maskpath):
                     continue
                 mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
-                mask = mask[:,:,2]
-                mask[mask>0] = 255
+                mask = mask[:, :, 2]
+                mask[mask > 0] = 255
                 cv2.imwrite(maskpath, mask.astype(np.uint8))
 
     def get_model_instance_segmentation(self, num_classes):

@@ -5,7 +5,7 @@ from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from abakit.lib.FileLocationManager import FileLocationManager
 from abakit.lib.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors
-from abakit.lib.utilities_process import get_cpus
+from lib.utilities_process import get_cpus
 
 
 class NgDownsampler:
