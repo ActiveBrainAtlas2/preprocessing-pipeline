@@ -82,7 +82,7 @@ class MaskManager:
         FULLRES = self.fileLocationManager.get_full(self.channel)
         THUMBNAIL = self.fileLocationManager.thumbnail_masked
         MASKED = self.fileLocationManager.full_masked
-        test_dir(self.animal, FULLRES, self.downsample, same_size=False)
+        test_dir(self.animal, FULLRES,self.section_count, self.downsample, same_size=False)
         os.makedirs(MASKED, exist_ok=True)
         files = sorted(os.listdir(FULLRES))
         file_keys = []
@@ -107,7 +107,7 @@ class MaskManager:
         transform = torchvision.transforms.ToTensor()
         FULLRES = self.fileLocationManager.get_normalized()
         COLORED = self.fileLocationManager.thumbnail_colored
-        test_dir(self.animal, FULLRES, self.downsample, same_size=False)
+        test_dir(self.animal, FULLRES,self.section_count, self.downsample, same_size=False)
         os.makedirs(COLORED, exist_ok=True)
         files = sorted(os.listdir(FULLRES))
         for file in files:

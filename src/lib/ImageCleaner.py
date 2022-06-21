@@ -61,7 +61,7 @@ class ImageCleaner:
         max_width, max_height = get_max_image_size(INPUT)
         rotation = self.sqlController.scan_run.rotation
         flip = self.sqlController.scan_run.flip
-        test_dir(self.animal, INPUT, self.downsample, same_size=False)
+        test_dir(self.animal, INPUT, self.section_count,self.downsample, same_size=False)
         files = sorted(os.listdir(INPUT))
         sections = self.sqlController.get_sections(self.animal, self.channel)
         rotations_per_section = [self.get_section_rotation(i) for i in sections]
