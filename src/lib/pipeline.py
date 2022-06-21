@@ -95,6 +95,8 @@ class Pipeline(
         self.padding_margin = padding_margin
         self.check_programs()
         # super().__init__(self.fileLocationManager.get_logdir())
+        self.section_count = self.sqlController.get_section_count(self.animal)
+        
 
     def get_chunk_size(self):
         if self.downsample == True:
