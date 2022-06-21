@@ -17,21 +17,21 @@ class MaskManager:
     def apply_user_mask_edits(self):
         """Apply the edits made on the image masks to extract the tissue from the surround debre to create the final
         masks used to clean the images"""
-        COLORED = self.fileLocationManager.thumbnail_colored
-        MASKS = self.fileLocationManager.thumbnail_masked
-        test_dir(self.animal, COLORED,self.section_count, True, same_size=False)
-        os.makedirs(MASKS, exist_ok=True)
-        files = sorted(os.listdir(COLORED))
-        for file in files:
-            filepath = os.path.join(COLORED, file)
-            maskpath = os.path.join(MASKS, file)
-            if os.path.exists(maskpath):
-                continue
-            mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
-            mask = mask[:,:,2]
-            mask[mask>0] = 255
-            mask[mask<=0]=255
-            cv2.imwrite(maskpath, mask.astype(np.uint8))
+        if self.channel == 1 and self.downsample:
+            COLORED = self.fileLocationManager.thumbnail_colored
+            MASKS = self.fileLocationManager.thumbnail_masked
+            test_dir(self.animal, COLORED, True, same_size=False)
+            os.makedirs(MASKS, exist_ok=True)
+            files = sorted(os.listdir(COLORED))
+            for file in files:
+                filepath = os.path.join(COLORED, file)
+                maskpath = os.path.join(MASKS, file)
+                if os.path.exists(maskpath):
+                    continue
+                mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
+                mask = mask[:,:,2]
+                mask[mask>0] = 255
+                cv2.imwrite(maskpath, mask.astype(np.uint8))
 
     def get_model_instance_segmentation(self, num_classes):
         # load an instance segmentation model pre-trained pre-trained on COCO
@@ -51,10 +51,11 @@ class MaskManager:
 
     def create_mask(self):
         """Create the images masks for extracting the tissue from the surrounding debres using a CNN based machine learning algorithm"""
-        if not self.downsample:
-            self.create_full_resolution_mask()
-        else:
-            self.create_downsampled_mask()
+        if self.channel == 1:
+            if not self.downsample:
+                self.create_full_resolution_mask()
+            else:
+                self.create_downsampled_mask()
 
     def load_machine_learning_model(self):
         """Load the CNN model used to generate image masks"""

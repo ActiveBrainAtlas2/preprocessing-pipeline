@@ -1,4 +1,5 @@
 import sys
-sys.path.append('/home/zhw272/programming/pipeline_utility/in_development/Will')
-from cell_extractor.FeatureFinder import create_features_for_one_section
-create_features_for_one_section('DK54',180,segmentation_threshold = 2000)
+sys.path.append('/home/zhw272/programming/preprocessing-pipeline/in_development/Will')
+from cell_extractor.CellDetectorBase import CellDetectorBase
+from cell_extractor.CellDetector import CellDetector
+detector = CellDetector(animal = 'DK55',round=2)

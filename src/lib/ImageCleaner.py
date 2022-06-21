@@ -20,7 +20,7 @@ class ImageCleaner:
     def create_cleaned_images(self):
         """
         This method applies the image masks that has been edited by the user to extract the tissue image from the surrounding
-        debre
+        debris
         """
         if self.channel == 1:
             self.sqlController.set_task(
