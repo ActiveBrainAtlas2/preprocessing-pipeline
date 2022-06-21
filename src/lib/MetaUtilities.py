@@ -2,9 +2,8 @@ import os, sys, time
 from datetime import datetime
 from tqdm import tqdm
 import re
-from abakit.lib.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
 from abakit.model.slide import Slide, SlideCziTif
-
+from abakit.lib.CZIManager import CZIManager
 
 class MetaUtilities:
     def extract_slide_meta_data_and_insert_to_database(self):
@@ -18,9 +17,14 @@ class MetaUtilities:
             for _, czi_file in enumerate(tqdm(czi_files)):
                 if self.is_czi_file(czi_file):
                     if not self.slide_meta_data_exists(czi_file):
+                        self.load_tif_metadata(czi_file)
                         self.add_slide_information_to_database(czi_file)
                         self.add_to_slide_czi_tiff_table(czi_file)
             self.update_database()
+
+    def load_tif_metadata(self,czi_file):
+        czi_file_path = os.path.join(self.fileLocationManager.czi, czi_file)
+        self.czi = CZIManager(czi_file_path)
 
     def get_czi_files(self):
         """Get the list of czi files in the directory"""
@@ -46,10 +50,9 @@ class MetaUtilities:
         self.slide.created = datetime.fromtimestamp(
             os.path.getmtime(os.path.join(self.fileLocationManager.czi, czi_file))
         )
-        czi_file_path = os.path.join(self.fileLocationManager.czi, czi_file)
-        self.metadata = get_czi_metadata(czi_file_path)
-        self.series = get_fullres_series_indices(self.metadata)
-        self.slide.scenes = len(self.series)
+        self.metadata = self.czi.metadata
+        self.slide.scenes = self.czi.get_nscene()
+        self.series = list(range(self.slide.scenes))
         self.logevent(
             f"ADD SLIDE INFO TO DB: {czi_file} -> PHYSICAL SLIDE ID: {self.slide.slide_physical_id}"
         )
@@ -61,10 +64,9 @@ class MetaUtilities:
         """Add entry to the table that prepares the user Quality Control interface"""
         for j, series_index in enumerate(self.series):
             scene_number = j + 1
-            channels = range(self.metadata[series_index]["channels"])
+            channels = range(self.czi.get_nchannel())
             channel_counter = 0
-            width = self.metadata[series_index]["width"]
-            height = self.metadata[series_index]["height"]
+            _,_,width,height = self.czi.get_scene_dimension(series_index)
             for channel in channels:
                 tif = SlideCziTif()
                 tif.FK_slide_id = self.slide.id

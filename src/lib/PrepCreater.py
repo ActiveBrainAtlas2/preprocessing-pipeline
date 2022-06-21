@@ -20,13 +20,17 @@ class PrepCreater:
         progress_id = self.sqlController.get_progress_id(False, self.channel, "TIF")
         self.sqlController.set_task(self.animal, progress_id)
 
-    def apply_QC_to_full_resolution_images(self):
+    def apply_QC(self):
         """
         Applies the inclusion and replacement results defined by the user on the Django admin portal for the Quality Control step
         to the full resolution images.  The result is stored in the animal_folder/preps/full directory
         """
-        INPUT = self.fileLocationManager.tif
-        OUTPUT = self.fileLocationManager.get_full(self.channel)
+        if not self.downsample:
+            INPUT = self.fileLocationManager.tif
+            OUTPUT = self.fileLocationManager.get_full(self.channel)
+        else:
+            INPUT = self.fileLocationManager.thumbnail_original
+            OUTPUT = self.fileLocationManager.get_thumbnail(self.channel)
         os.makedirs(OUTPUT, exist_ok=True)
         input_paths = []
         output_paths = []
@@ -41,7 +45,8 @@ class PrepCreater:
             input_paths.append(input_path)
             output_paths.append(output_path)
             width, height = get_image_size(input_path)
-            self.sqlController.update_tif(section.id, width, height)
+            if self.downsample:
+                self.sqlController.update_tif(section.id, width, height)
         for file_key in zip(input_paths, output_paths):
             os.symlink(*file_key)
 
