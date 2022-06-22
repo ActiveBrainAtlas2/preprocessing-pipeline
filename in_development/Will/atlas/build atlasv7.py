@@ -4,16 +4,17 @@ import os
 from abakit.atlas.Atlas import Atlas
 from abakit.lib.Controllers.SqlController import SqlController
 from abakit.atlas.NgSegmentMaker import NgConverter
-from abakit.atlas.Assembler import Assembler,get_v7_volume_and_origin
+from abakit.atlas.Assembler import Assembler,get_v7_volume_and_origin,get_assembled_atlas_v7
 
 controller = SqlController('DK39')
 atlas = Atlas(atlas = 'atlasV7')
 atlas.get_com_array()
 assembler = Assembler(check=False,side = '_R')
-assembler.volumes,assembler.origins = get_v7_volume_and_origin(side = '_R')
+assembler.volumes,assembler.origins = get_v7_volume_and_origin()
 assembler.sqlController = atlas.sqlController
 assembler.structures = list(assembler.volumes.keys())
-assembler.assemble_all_structure_volume()
+segment_to_id = controller.get_segment_to_id_where_segment_are_brain_regions()
+assembler.assemble_all_structure_volume(segment_to_id)
 segment_properties = atlas.get_segment_properties()
 folder_name = f'atlas_ogR'
 output_dir = os.path.join(atlas.path.segmentation_layer,folder_name)
