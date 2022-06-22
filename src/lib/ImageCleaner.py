@@ -4,13 +4,13 @@ import numpy as np
 from skimage import io
 from concurrent.futures.process import ProcessPoolExecutor
 from abakit.lib.utilities_mask import rotate_image, pad_image, scaled, equalized
-from abakit.lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
+from lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
 import tifffile as tiff
 from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None
-from lib.pipeline_utilities import read_image,get_max_image_size
-from copy import copy 
+from lib.pipeline_utilities import read_image, get_max_image_size
+from copy import copy
 from abakit.model.slide import SlideCziTif
 from abakit.model.slide import Slide
 from abakit.model.slide import Section
@@ -20,7 +20,7 @@ class ImageCleaner:
     def create_cleaned_images(self):
         """
         This method applies the image masks that has been edited by the user to extract the tissue image from the surrounding
-        debre
+        debris
         """
         if self.channel == 1:
             self.sqlController.set_task(
@@ -61,7 +61,7 @@ class ImageCleaner:
         max_width, max_height = get_max_image_size(INPUT)
         rotation = self.sqlController.scan_run.rotation
         flip = self.sqlController.scan_run.flip
-        test_dir(self.animal, INPUT, self.downsample, same_size=False)
+        test_dir(self.animal, INPUT, self.section_count,self.downsample, same_size=False)
         files = sorted(os.listdir(INPUT))
         sections = self.sqlController.get_sections(self.animal, self.channel)
         rotations_per_section = [self.get_section_rotation(i) for i in sections]
@@ -83,8 +83,8 @@ class ImageCleaner:
                     maskfile,
                     rotation + rotations_per_section[i],
                     flip,
-                    int(max_width*self.padding_margin),
-                    int(max_height*self.padding_margin),
+                    int(max_width * self.padding_margin),
+                    int(max_height * self.padding_margin),
                     self.channel,
                 ]
             )

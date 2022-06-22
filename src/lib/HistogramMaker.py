@@ -8,9 +8,11 @@ from concurrent.futures.process import ProcessPoolExecutor
 from abakit.lib.FileLocationManager import FileLocationManager
 from lib.logger import get_logger
 from abakit.lib.Controllers.SqlController import SqlController
-from abakit.lib.utilities_process import test_dir, get_cpus
-COLORS = {1: 'b', 2: 'r', 3: 'g'}
+from lib.utilities_process import test_dir, get_cpus
+
+COLORS = {1: "b", 2: "r", 3: "g"}
 from lib.pipeline_utilities import read_image
+
 
 class HistogramMaker:
     def make_histogram(self):
@@ -31,21 +33,29 @@ class HistogramMaker:
                 error += " No sections in the database"
             OUTPUT = self.fileLocationManager.get_histogram(self.channel)
             os.makedirs(OUTPUT, exist_ok=True)
-            self.sqlController.set_task_for_step(self.animal,True, self.channel, 'HISTOGRAM')
+            self.sqlController.set_task_for_step(
+                self.animal, True, self.channel, "HISTOGRAM"
+            )
             file_keys = []
             for i, file in enumerate(files):
-                filename = str(i).zfill(3) + '.tif'
+                filename = str(i).zfill(3) + ".tif"
                 input_path = os.path.join(INPUT, filename)
                 mask_path = os.path.join(MASK_INPUT, filename)
-                output_path = os.path.join(OUTPUT, os.path.splitext(file.file_name)[0] + '.png')
+                output_path = os.path.join(
+                    OUTPUT, os.path.splitext(file.file_name)[0] + ".png"
+                )
                 if not os.path.exists(input_path):
-                    print('Input tif does not exist', input_path)
+                    print("Input tif does not exist", input_path)
                     continue
                 if os.path.exists(output_path):
                     continue
-                file_keys.append([input_path, mask_path, self.channel, file, output_path])
+                file_keys.append(
+                    [input_path, mask_path, self.channel, file, output_path]
+                )
             workers = self.get_nworkers()
-            self.run_commands_in_parallel_with_executor([file_keys],workers,make_single_histogram)    
+            self.run_commands_in_parallel_with_executor(
+                [file_keys], workers, make_single_histogram
+            )
 
     def make_combined_histogram(self):
         """
@@ -61,13 +71,13 @@ class HistogramMaker:
             os.makedirs(OUTPUT, exist_ok=True)
             files = os.listdir(INPUT)
             hist_dict = Counter({})
-            outfile = f'{self.animal}.png'
+            outfile = f"{self.animal}.png"
             outpath = os.path.join(OUTPUT, outfile)
             if os.path.exists(outpath):
                 return
             lfiles = len(files)
             midindex = lfiles // 2
-            midfilepath = os.path.join(INPUT, files[midindex] )
+            midfilepath = os.path.join(INPUT, files[midindex])
             img = io.imread(midfilepath)
             bits = img.dtype
             del img
@@ -77,52 +87,57 @@ class HistogramMaker:
                 try:
                     img = io.imread(input_path)
                 except:
-                    self.logger.error(f'Could not read {input_path}')
+                    self.logger.error(f"Could not read {input_path}")
                     lfiles -= 1
                     continue
                 try:
                     mask = io.imread(mask_path)
                 except:
-                    self.logger.error(f'Could not open {mask_path}')
+                    self.logger.error(f"Could not open {mask_path}")
                     continue
                 img = cv2.bitwise_and(img, img, mask=mask)
                 try:
                     flat = img.flatten()
                     del img
                 except:
-                    self.logger.error(f'Could not flatten file {input_path}')
+                    self.logger.error(f"Could not flatten file {input_path}")
                     lfiles -= 1
                     continue
                 try:
                     img_counts = np.bincount(flat)
                 except:
-                    self.logger.error(f'Could not create counts {input_path}')
+                    self.logger.error(f"Could not create counts {input_path}")
                     lfiles -= 1
                     continue
                 try:
-                    img_dict = Counter(dict(zip(np.unique(flat), img_counts[img_counts.nonzero()])))
+                    img_dict = Counter(
+                        dict(zip(np.unique(flat), img_counts[img_counts.nonzero()]))
+                    )
                 except:
-                    self.logger.error(f'Could not create counter {input_path}')
+                    self.logger.error(f"Could not create counter {input_path}")
                     lfiles -= 1
                     continue
                 try:
                     hist_dict = hist_dict + img_dict
                 except:
-                    self.logger.error(f'Could not add files {input_path}')
+                    self.logger.error(f"Could not add files {input_path}")
                     lfiles -= 1
                     continue
             if lfiles > 10:
                 hist_dict = dict(hist_dict)
-                hist_values = [i/lfiles for i in hist_dict.values()]
+                hist_values = [i / lfiles for i in hist_dict.values()]
                 fig = plt.figure()
-                plt.rcParams['figure.figsize'] = [10, 6]
-                plt.bar(list(hist_dict.keys()), hist_values, color = COLORS[self.channel])
-                plt.yscale('log')
-                plt.grid(axis='y', alpha=0.75)
-                plt.xlabel('Value')
-                plt.ylabel('Frequency')
-                plt.title(f'{self.animal} channel {self.channel} @{bits}bit with {lfiles} tif files')
-                fig.savefig(outpath, bbox_inches='tight')
+                plt.rcParams["figure.figsize"] = [10, 6]
+                plt.bar(list(hist_dict.keys()), hist_values, color=COLORS[self.channel])
+                plt.yscale("log")
+                plt.grid(axis="y", alpha=0.75)
+                plt.xlabel("Value")
+                plt.ylabel("Frequency")
+                plt.title(
+                    f"{self.animal} channel {self.channel} @{bits}bit with {lfiles} tif files"
+                )
+                fig.savefig(outpath, bbox_inches="tight")
+
 
 def make_single_histogram(file_key):
     input_path, mask_path, channel, file, output_path = file_key
@@ -131,23 +146,23 @@ def make_single_histogram(file_key):
     img = cv2.bitwise_and(img, img, mask=mask)
     if img.shape[0] * img.shape[1] > 1000000000:
         scale = 1 / float(2)
-        img = img[::int(1. / scale), ::int(1. / scale)]
+        img = img[:: int(1.0 / scale), :: int(1.0 / scale)]
     try:
         flat = img.flatten()
     except:
-        print(f'Could not flatten {input_path}')
+        print(f"Could not flatten {input_path}")
         return
     del img
     del mask
     fig = plt.figure()
-    plt.rcParams['figure.figsize'] = [10, 6]
+    plt.rcParams["figure.figsize"] = [10, 6]
     plt.hist(flat, flat.max(), [0, 10000], color=COLORS[channel])
-    plt.style.use('ggplot')
-    plt.yscale('log')
-    plt.grid(axis='y', alpha=0.75)
-    plt.xlabel('Value')
-    plt.ylabel('Frequency')
-    plt.title(f'{file.file_name} @16bit')
+    plt.style.use("ggplot")
+    plt.yscale("log")
+    plt.grid(axis="y", alpha=0.75)
+    plt.xlabel("Value")
+    plt.ylabel("Frequency")
+    plt.title(f"{file.file_name} @16bit")
     plt.close()
-    fig.savefig(output_path, bbox_inches='tight')
+    fig.savefig(output_path, bbox_inches="tight")
     return

@@ -6,13 +6,12 @@ from concurrent.futures.process import ProcessPoolExecutor
 
 # from shutil import copyfile
 from abakit.lib.Controllers.SqlController import SqlController
-from abakit.lib.utilities_process import test_dir, create_downsample
+from lib.utilities_process import test_dir, create_downsample
 from abakit.utilities.shell_tools import get_image_size
 
 
 class PrepCreater:
     def set_task_preps(self):
-        self.sqlController = SqlController(self.animal)
         if self.channel == 1:
             self.sqlController.update_scanrun(self.sqlController.scan_run.id)
         progress_id = self.sqlController.get_progress_id(True, self.channel, "TIF")
@@ -59,7 +58,7 @@ class PrepCreater:
         INPUT = self.fileLocationManager.get_full(self.channel)
         OUTPUT = self.fileLocationManager.get_thumbnail(self.channel)
         os.makedirs(OUTPUT, exist_ok=True)
-        test_dir(self.animal, INPUT, downsample=False, same_size=False)
+        test_dir(self.animal, INPUT,self.section_count, downsample=False, same_size=False)
         files = sorted(os.listdir(INPUT))
         for file in files:
             infile = os.path.join(INPUT, file)
