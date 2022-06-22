@@ -40,7 +40,7 @@ class TiffExtractor(ParallelManager):
                 continue
             czi_file.append(input_path)
             tif_file.append(output_path)
-            scene_index.append(section.scene_index)
+            scene_index.append(section.scene_number-1)
         workers = self.get_nworkers()
         nfiles = len(czi_file)
         channel = [self.channel for _ in range(nfiles)]
@@ -110,7 +110,7 @@ class TiffExtractor(ParallelManager):
                 continue
             czi_file.append(input_path)
             png_file.append(output_path)
-            scene_index.append(section.scene_index)
+            scene_index.append(section.scene_number-1)
         workers = self.get_nworkers()
         nfiles = len(input_path)
         channel = [1 for _ in range(nfiles)]
