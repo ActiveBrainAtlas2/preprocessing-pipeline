@@ -23,12 +23,12 @@ from scipy.interpolate import splprep, splev
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, "programming/pipeline_utility/src")
 sys.path.append(PATH)
-from abakit.lib.utilities_contour import get_contours_from_annotations
+from lib.utilities_contour import get_contours_from_annotations
 from abakit.lib.Controllers.SqlController import SqlController
-from abakit.lib.FileLocationManager import DATA_PATH, FileLocationManager
-from abakit.lib.utilities_alignment import parse_elastix, transform_create_alignment
-from abakit.lib.utilities_alignment import create_downsampled_transforms
-from abakit.lib.utilities_atlas import ATLAS
+from lib.FileLocationManager import DATA_PATH, FileLocationManager
+from lib.utilities_alignment import parse_elastix, transform_create_alignment
+from lib.utilities_alignment import create_downsampled_transforms
+from lib.utilities_atlas import ATLAS
 
 DOWNSAMPLE_FACTOR = 32
 

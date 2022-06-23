@@ -1,7 +1,7 @@
 import os
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
-from abakit.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
+from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
 from abakit.lib.Controllers.SqlController import SqlController
 from lib.utilities_process import get_cpus, SCALING_FACTOR, test_dir
 
@@ -66,7 +66,7 @@ class NgPrecomputedMaker:
             self.downsample, self.channel
         )
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        test_dir(self.animal, INPUT, self.downsample, same_size=True)
+        test_dir(self.animal, INPUT, self.section_count,self.downsample, same_size=True)
         midfile, file_keys, volume_size, num_channels = self.get_file_information(INPUT)
         chunks = self.get_chunk_size()
         scales = self.get_scales()

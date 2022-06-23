@@ -1,10 +1,10 @@
 import neuroglancer
 from abakit.lib.Controllers.SqlController import SqlController
-from abakit.lib.FileLocationManager import FileLocationManager
+from lib.FileLocationManager import FileLocationManager
 from pathlib import Path
 import SimpleITK as sitk
 import numpy as np
-from abakit.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
+from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 class NeuroglancerInterface:
     def __init__(self,dimensions):
         self.viewer = neuroglancer.Viewer()

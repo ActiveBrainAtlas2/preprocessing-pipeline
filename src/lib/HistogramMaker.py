@@ -5,7 +5,7 @@ from skimage import io
 import numpy as np
 import cv2
 from concurrent.futures.process import ProcessPoolExecutor
-from abakit.lib.FileLocationManager import FileLocationManager
+from lib.FileLocationManager import FileLocationManager
 from lib.logger import get_logger
 from abakit.lib.Controllers.SqlController import SqlController
 from lib.utilities_process import test_dir, get_cpus

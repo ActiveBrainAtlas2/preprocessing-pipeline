@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from skimage import io
 from concurrent.futures.process import ProcessPoolExecutor
-from abakit.lib.utilities_mask import rotate_image, pad_image, scaled, equalized
+from lib.utilities_mask import rotate_image, pad_image, scaled, equalized
 from lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
 import tifffile as tiff
 from PIL import Image

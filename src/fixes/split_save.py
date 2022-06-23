@@ -5,7 +5,7 @@ import cv2
 from skimage import io
 
 
-from abakit.lib.utilities_mask import pad_image, equalized, remove_strip
+from lib.utilities_mask import pad_image, equalized, remove_strip
 
 BASEINPUT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/CHATM2/preps'
 

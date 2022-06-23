@@ -5,9 +5,9 @@ from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-from abakit.lib.FileLocationManager import FileLocationManager
-from abakit.lib.utilities_alignment import (create_downsampled_transforms, clean_image)
-from abakit.lib.utilities_registration import register_simple,parameters_to_rigid_transform
+from lib.FileLocationManager import FileLocationManager
+from lib.utilities_alignment import (create_downsampled_transforms, clean_image)
+from lib.utilities_registration import register_simple,parameters_to_rigid_transform
 from abakit.model.elastix_transformation import ElastixTransformation
 from lib.pipeline_utilities import get_image_size
 class ElastixManager:

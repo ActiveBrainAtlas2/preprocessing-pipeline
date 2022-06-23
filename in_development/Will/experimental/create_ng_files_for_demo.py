@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 sys.path.append('/data/programming/pipeline')
-from abakit.lib.utilities_neuroglancer_image import create_neuroglancer_lite
+from lib.utilities_neuroglancer_image import create_neuroglancer_lite
 from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform
 from notebooks.Will.toolbox.IOs.LoadComDatabase import LoadComDatabase
 from notebooks.Will.toolbox.IOs.TransformCom import TransformCom

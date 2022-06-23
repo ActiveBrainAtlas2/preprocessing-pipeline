@@ -217,8 +217,8 @@ class Pipeline(
         3) create png files (downsampled)
         """
         self.run_program_and_time(self.extract_slide_meta_data_and_insert_to_database, "Creating meta")
-        # self.run_program_and_time(self.create_web_friendly_image, "create web friendly image")
-        # self.run_program_and_time(self.extract_tifs_from_czi, "Extracting Tiffs")
+        self.run_program_and_time(self.create_web_friendly_image, "create web friendly image")
+        self.run_program_and_time(self.extract_tifs_from_czi, "Extracting Tiffs")
 
     def apply_qc_and_prepare_image_masks(self):
         """This function performs 2 steps:
