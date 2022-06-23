@@ -81,9 +81,9 @@ print()
 
 shape = assenbler.combined_volume.shape
 volume = assenbler.combined_volume
-X, Y, Z = eval(f'np.mgrid[  0:{shape[0]}:{shape[0]}j, \
-                            0:{shape[1]}:{shape[1]}j, \
-                            0:{shape[2]}:{shape[2]}j]')
+X, Y, Z = eval(f'np.mgrid[  0:1:{shape[0]}j, \
+                            0:1:{shape[1]}j, \
+                            0:1:{shape[2]}j]')
 data = []
 data.append(go.Scatter3d(x=cells[:,0], y=cells[:,1], z=cells[:,2],marker=dict(size=5,opacity=0.8),
                                    mode='markers'))
