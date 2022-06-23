@@ -6,13 +6,12 @@ from concurrent.futures.process import ProcessPoolExecutor
 
 # from shutil import copyfile
 from abakit.lib.Controllers.SqlController import SqlController
-from abakit.lib.utilities_process import test_dir, create_downsample
+from lib.utilities_process import test_dir, create_downsample
 from abakit.utilities.shell_tools import get_image_size
 
 
 class PrepCreater:
     def set_task_preps(self):
-        self.sqlController = SqlController(self.animal)
         if self.channel == 1:
             self.sqlController.update_scanrun(self.sqlController.scan_run.id)
         progress_id = self.sqlController.get_progress_id(True, self.channel, "TIF")
@@ -20,13 +19,17 @@ class PrepCreater:
         progress_id = self.sqlController.get_progress_id(False, self.channel, "TIF")
         self.sqlController.set_task(self.animal, progress_id)
 
-    def apply_QC_to_full_resolution_images(self):
+    def apply_QC(self):
         """
         Applies the inclusion and replacement results defined by the user on the Django admin portal for the Quality Control step
         to the full resolution images.  The result is stored in the animal_folder/preps/full directory
         """
-        INPUT = self.fileLocationManager.tif
-        OUTPUT = self.fileLocationManager.get_full(self.channel)
+        if not self.downsample:
+            INPUT = self.fileLocationManager.tif
+            OUTPUT = self.fileLocationManager.get_full(self.channel)
+        else:
+            INPUT = self.fileLocationManager.thumbnail_original
+            OUTPUT = self.fileLocationManager.get_thumbnail(self.channel)
         os.makedirs(OUTPUT, exist_ok=True)
         input_paths = []
         output_paths = []
@@ -41,7 +44,8 @@ class PrepCreater:
             input_paths.append(input_path)
             output_paths.append(output_path)
             width, height = get_image_size(input_path)
-            self.sqlController.update_tif(section.id, width, height)
+            if self.downsample:
+                self.sqlController.update_tif(section.id, width, height)
         for file_key in zip(input_paths, output_paths):
             os.symlink(*file_key)
 
@@ -54,7 +58,7 @@ class PrepCreater:
         INPUT = self.fileLocationManager.get_full(self.channel)
         OUTPUT = self.fileLocationManager.get_thumbnail(self.channel)
         os.makedirs(OUTPUT, exist_ok=True)
-        test_dir(self.animal, INPUT, downsample=False, same_size=False)
+        test_dir(self.animal, INPUT,self.section_count, downsample=False, same_size=False)
         files = sorted(os.listdir(INPUT))
         for file in files:
             infile = os.path.join(INPUT, file)

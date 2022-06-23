@@ -17,7 +17,7 @@ HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
 
-# from abakit.lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_properties
+# from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, get_segment_properties
 from abakit.lib.Controllers.SqlController import SqlController
 
 RESOLUTION = 0.325

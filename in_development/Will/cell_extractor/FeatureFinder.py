@@ -77,5 +77,6 @@ def create_features_for_all_sections(animal,*args,njobs = 10,**kwargs):
 
 def create_features_for_one_section(animal,section,*args,**kwargs):
     finder = FeatureFinder(animal,section = section,*args,**kwargs)
-    finder.calculate_features()
-    finder.save_features()
+    if not os.path.exists(finder.get_feature_save_path()):
+        finder.calculate_features()
+        finder.save_features()

@@ -5,9 +5,9 @@ from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-from abakit.lib.FileLocationManager import FileLocationManager
-from abakit.lib.utilities_alignment import (create_downsampled_transforms, clean_image)
-from abakit.lib.utilities_registration import register_simple,parameters_to_rigid_transform
+from lib.FileLocationManager import FileLocationManager
+from lib.utilities_alignment import (create_downsampled_transforms, clean_image)
+from lib.utilities_registration import register_simple,parameters_to_rigid_transform
 from abakit.model.elastix_transformation import ElastixTransformation
 from lib.pipeline_utilities import get_image_size
 class ElastixManager:
@@ -16,19 +16,20 @@ class ElastixManager:
     def create_within_stack_transformations(self):
         """Calculate and store the rigid transformation using elastix.  The transformations are calculated from the next image to the previous
         """        
-        INPUT = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
-        files = sorted(os.listdir(INPUT))
-        for i in range(1, len(files)):
-            fixed_index = os.path.splitext(files[i-1])[0]
-            moving_index = os.path.splitext(files[i])[0]        
-            if not self.sqlController.check_elastix_row(self.animal,moving_index):
-                second_transform_parameters,initial_transform_parameters = \
-                    register_simple(INPUT, fixed_index, moving_index,self.debug)
-                T1 = self.parameters_to_rigid_transform(*initial_transform_parameters)
-                T2 = self.parameters_to_rigid_transform(*second_transform_parameters, self.get_rotation_center())
-                T = T1@T2     
-                xshift,yshift,rotation,_ = self.rigid_transform_to_parmeters(T)           
-                self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
+        if self.channel == 1 and self.downsample:
+            INPUT = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
+            files = sorted(os.listdir(INPUT))
+            for i in range(1, len(files)):
+                fixed_index = os.path.splitext(files[i-1])[0]
+                moving_index = os.path.splitext(files[i])[0]        
+                if not self.sqlController.check_elastix_row(self.animal,moving_index):
+                    second_transform_parameters,initial_transform_parameters = \
+                        register_simple(INPUT, fixed_index, moving_index,self.debug)
+                    T1 = self.parameters_to_rigid_transform(*initial_transform_parameters)
+                    T2 = self.parameters_to_rigid_transform(*second_transform_parameters, self.get_rotation_center())
+                    T = T1@T2     
+                    xshift,yshift,rotation,_ = self.rigid_transform_to_parmeters(T)           
+                    self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
     
     def rigid_transform_to_parmeters(self,transform):
         """convert a 2d transformation matrix (3*3) to the rotation angles, rotation center and translation
@@ -145,12 +146,13 @@ class ElastixManager:
         Args:
             transforms (dict): dictionary of transformations that are index by the id of moving sections
         """        
-        transforms = create_downsampled_transforms(self.animal, transforms, downsample = False)
-        INPUT = self.fileLocationManager.get_full_cleaned(self.channel)
-        OUTPUT = self.fileLocationManager.get_full_aligned(self.channel)
-        self.align_images(INPUT,OUTPUT,transforms)
-        progress_id = self.sqlController.get_progress_id(downsample = False, channel = self.channel, action = 'ALIGN')
-        self.sqlController.set_task(self.animal, progress_id)
+        if not self.downsample:
+            transforms = create_downsampled_transforms(self.animal, transforms, downsample = False)
+            INPUT = self.fileLocationManager.get_full_cleaned(self.channel)
+            OUTPUT = self.fileLocationManager.get_full_aligned(self.channel)
+            self.align_images(INPUT,OUTPUT,transforms)
+            progress_id = self.sqlController.get_progress_id(downsample = False, channel = self.channel, action = 'ALIGN')
+            self.sqlController.set_task(self.animal, progress_id)
 
     def align_downsampled_images(self, transforms):
         """align the downsample tiff images
@@ -158,12 +160,13 @@ class ElastixManager:
         Args:
             transforms (dict): dictionary of transformations indexed by id of moving sections
         """        
-        transforms = create_downsampled_transforms(self.animal, transforms, downsample = True)
-        INPUT = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
-        OUTPUT = self.fileLocationManager.get_thumbnail_aligned(self.channel)
-        self.align_images(INPUT,OUTPUT,transforms)
-        progress_id = self.sqlController.get_progress_id(downsample = True, channel = self.channel, action = 'ALIGN')
-        self.sqlController.set_task(self.animal, progress_id)
+        if self.downsample:
+            transforms = create_downsampled_transforms(self.animal, transforms, downsample = True)
+            INPUT = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
+            OUTPUT = self.fileLocationManager.get_thumbnail_aligned(self.channel)
+            self.align_images(INPUT,OUTPUT,transforms)
+            progress_id = self.sqlController.get_progress_id(downsample = True, channel = self.channel, action = 'ALIGN')
+            self.sqlController.set_task(self.animal, progress_id)
 
     def align_section_masks(self,animal, transforms):
         """function that can be used to align the masks used for cleaning the image.  This not run as part of 
