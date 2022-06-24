@@ -1,6 +1,7 @@
 from abakit.lib.Controllers.SqlController import SqlController
 from abakit.lib.Controllers.MarkedCellController import MarkedCellController
 from abakit.model.annotation_points import CellSources,MarkedCell
+from abakit.atlas.Assembler import get_assembled_atlas_v7
 import plotly.graph_objects as go
 import numpy as np
 animal = 'DK41'
@@ -17,6 +18,27 @@ for i,stepi in enumerate(bin_voxel):
     bins.append(axis_bins)
 count,bins =np.histogramdd(cells,bins = bins)
 
+assenbler  = get_assembled_atlas_v7()
+
+
+import numpy as np
+import os
+from abakit.atlas.Atlas import Atlas
+from abakit.lib.Controllers.SqlController import SqlController
+from abakit.atlas.NgSegmentMaker import NgConverter
+from abakit.atlas.Assembler import Assembler,get_v7_volume_and_origin,get_assembled_atlas_v7
+
+controller = SqlController('DK39')
+atlas = Atlas(atlas = 'atlasV7')
+atlas.get_com_array()
+assembler = Assembler(check=False,side = '_R')
+assembler.volumes,assembler.origins = get_v7_volume_and_origin()
+assembler.sqlController = atlas.sqlController
+assembler.structures = list(assembler.volumes.keys())
+segment_to_id = controller.get_segment_to_id_where_segment_are_brain_regions()
+for i in segment_to_id:
+    segment_to_id[i]=1
+assembler.assemble_all_structure_volume(segment_to_id)
 
 fig = go.Figure(data=[go.Scatter3d(x=cells[:,0], y=cells[:,1], z=cells[:,2],
                                    mode='markers')])
@@ -56,3 +78,25 @@ fig['layout']['scene']['aspectmode'] = "data"
 fig.show()
 
 print()
+
+shape = assenbler.combined_volume.shape
+volume = assenbler.combined_volume
+X, Y, Z = eval(f'np.mgrid[  0:1:{shape[0]}j, \
+                            0:1:{shape[1]}j, \
+                            0:1:{shape[2]}j]')
+data = []
+data.append(go.Scatter3d(x=cells[:,0], y=cells[:,1], z=cells[:,2],marker=dict(size=5,opacity=0.8),
+                                   mode='markers'))
+data.append(go.Volume(
+    x=X.flatten(),
+    y=Y.flatten(),
+    z=Z.flatten(),
+    value=volume.flatten(),
+    isomin=0,
+    isomax=2,
+    opacity=0.5, # needs to be small to see through all surfaces
+    surface_count=5, # needs to be a large number for good volume rendering
+    ))
+fig = go.Figure(data=data)
+fig['layout']['scene']['aspectmode'] = "data"
+fig.show()

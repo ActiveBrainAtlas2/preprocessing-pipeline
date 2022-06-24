@@ -11,7 +11,7 @@ import os
 import sys
 from shutil import which
 import glob
-from abakit.lib.FileLocationManager import FileLocationManager
+from lib.FileLocationManager import FileLocationManager
 from lib.MetaUtilities import MetaUtilities
 from lib.PrepCreater import PrepCreater
 from lib.NgPrecomputedMaker import NgPrecomputedMaker
@@ -95,12 +95,15 @@ class Pipeline(
         self.padding_margin = padding_margin
         self.check_programs()
         # super().__init__(self.fileLocationManager.get_logdir())
+        self.section_count = self.sqlController.get_section_count(self.animal)
+        super().__init__(self.fileLocationManager.get_logdir())
 
     def get_chunk_size(self):
         if self.downsample == True:
             return [256, 256, 1]
         if self.downsample == False:
-            return [4096, 4096, 1]
+            # return [4096, 4096, 1]
+            return [40960, 40960, 1]
 
     @staticmethod
     def check_programs():
@@ -150,13 +153,16 @@ class Pipeline(
             self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
         elif function_name == "create web friendly image":
             self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.thumbnail_web}")
+        elif function_name == "Making downsampled copies":
+            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.thumbnail}")
         else:
             pass
 
         function()  # RUN FUNCTION
 
         end_time = timer()
-        print(f"{function_name} took {end_time - start_time} seconds")
+        total_elapsed_time = end_time - start_time
+        print(f"{function_name} took {round(total_elapsed_time,1)} seconds")
 
         sep = "*" * 40 + "\n"
         if (
@@ -222,16 +228,10 @@ class Pipeline(
         2. Use a CNN based machine learning algorism to create masks around the tissue.
            These masks will be used to crop out the tissue from the surrounding debres.
         """
-        self.run_program_and_time(
-            self.apply_QC, "applying QC"
-        )
+        self.run_program_and_time(self.apply_QC, "applying QC")
         self.set_task_preps()
-        if self.channel == 1 and self.downsample:
-            self.run_program_and_time(
-                self.create_normalized_image, "Creating normalization"
-            )
-        if self.channel == 1:
-            self.run_program_and_time(self.create_mask, "Creating masks")
+        self.run_program_and_time(self.create_normalized_image, "Creating normalization")
+        self.run_program_and_time(self.create_mask, "Creating masks")
 
     def clean_images_and_create_histogram(self):
         """This function performs the following steps:
@@ -239,34 +239,25 @@ class Pipeline(
         2. create the cleaned images using the image masks
         3. making a histogram of pixel intensity for view in the Django admin portal
         """
-        if self.channel == 1 and self.downsample:
-            self.run_program_and_time(self.apply_user_mask_edits, "Applying masks")
+        self.run_program_and_time(self.apply_user_mask_edits, "Applying masks")
         self.run_program_and_time(self.create_cleaned_images, "Creating cleaned image")
-        if self.downsample:
-            self.run_program_and_time(self.make_histogram, "Making histogram")
-            self.run_program_and_time(
-                self.make_combined_histogram, "Making combined histogram"
-            )
+        self.run_program_and_time(self.make_histogram, "Making histogram")
+        self.run_program_and_time(self.make_combined_histogram, "Making combined histogram")
 
     def align_images_within_stack(self):
         """This function calculates the rigid transformation used to align the images within stack and applies them to the image"""
         start = timer()
-        if self.channel == 1 and self.downsample:
-            self.run_program_and_time(
-                self.create_within_stack_transformations, "Creating elastics transform"
-            )
+        self.run_program_and_time(self.create_within_stack_transformations, "Creating elastics transform")
         transformations = self.get_transformations()
-        if self.downsample:
-            self.align_downsampled_images(transformations)
-        else:
-            self.align_full_size_image(transformations)
+        self.align_downsampled_images(transformations)
+        self.align_full_size_image(transformations)
         end = timer()
         print(f"Creating elastix and alignment took {end - start} seconds")
 
     def create_neuroglancer_cloud_volume(self):
         """This function creates the Seung lab neuroglancer cloud volume folders that is required to view the images in neuroglancer"""
         start = timer()
-        self.create_neuroglancer()
-        self.create_downsamples()
+        self.run_program_and_time(self.create_neuroglancer, "Neuroglancer1 single")
+        self.run_program_and_time(self.create_downsamples, "Neuroglancer2 pyramid")
         end = timer()
         print(f"Last step: creating neuroglancer images took {end - start} seconds")

@@ -13,8 +13,8 @@ class FileLogger:
         -CHECK FOR PRESENCE OF LOG FILE (RW PERMISSION)
         -SET CONFIG FOR LOGGING
         """
-        
-        LOGFILE = os.path.join(LOGFILE_PATH, "pipelilne-process.log")
+
+        LOGFILE = os.path.join(LOGFILE_PATH, "pipeline-process.log")
         try:
             with open(LOGFILE, "a") as f:
                 pass
