@@ -10,3 +10,4 @@
    1. Use same scale in all plots.
    2. Use smaller and more transparent dots
    3. Use yellow for the negative and black/blue for positive.
+5. generate QC for Beth

@@ -2,6 +2,18 @@ from numpy import *
 from pylab import plot
 
 class Predictor:
+    def __init__(self,std=1.5):
+        self.std = std
+    
+    def decision(self,mean,std):
+        if mean <= -self.std:
+            return -2
+        elif mean>-self.std and mean <= self.std:
+            return 0
+        elif mean >self.std:
+            return 2
+
+class GreedyPredictor:
     def __init__(self,boundary_points=[[0,3],[3,4.5],[1,6],[-3,4],[-10,7],[10,7]]):
         self.set_boundary_points(boundary_points)
 

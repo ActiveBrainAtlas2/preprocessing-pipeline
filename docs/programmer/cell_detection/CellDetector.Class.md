@@ -19,5 +19,5 @@
 ## Class: DetectorMetrics
   data and function needed to evaluate a specific iteration of detector
   
-## Class: Predictor
+## Class: GreedyPredictor
   Stores boundary points for decision and the decision function
