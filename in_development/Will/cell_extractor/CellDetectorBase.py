@@ -40,7 +40,6 @@ class CellDetectorBase(Brain):
         self.CH1 = os.path.join(self.ANIMAL_PATH,"CH1")
         self.CH3_SECTION_DIR=os.path.join(self.CH3,f"{self.section:03}")
         self.CH1_SECTION_DIR=os.path.join(self.CH1,f"{self.section:03}")
-        self.ALL_FEATURES = os.path.join(self.ANIMAL_PATH,'all_features.csv')
         self.QUALIFICATIONS = os.path.join(self.FEATURE_PATH,f'categories_round{self.round}.pkl')
         self.POSITIVE_LABELS = os.path.join(self.FEATURE_PATH,f'positive_labels_for_round_{self.round}_threshold_{self.segmentation_threshold}.pkl')
         self.DETECTOR_PATH = os.path.join(self.DETECTOR,f'detector_round_{self.round}_threshold_{self.segmentation_threshold}.pkl')
