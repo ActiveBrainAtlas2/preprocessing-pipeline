@@ -33,6 +33,7 @@ class ParallelManager:
                 parallel_create_cleaned=(4, ncores),
                 align_images=(4, ncores),
                 create_neuroglancer=(4, ncores),
+                create_within_stack_transformations = 4
             )
 
             with open(file_path, "w") as file:
@@ -69,12 +70,15 @@ class ParallelManager:
         if self.function_belongs_to_a_pipeline_object(function):
             function = self.make_picklable_copy_of_function(function)
         if self.debug:
+            results = []
             print("debugging with single core")
             for file_key in zip(*file_keys):
-                function(*file_key)
+                result = function(*file_key)
+                results.append(result)
         else:
             with ProcessPoolExecutor(max_workers=workers) as executor:
-                executor.map(function, *file_keys)
+                results = executor.map(function, *file_keys)
+        return results
 
     def run_commands_in_parallel_with_multiprocessing(
         self, file_keys, workers, function

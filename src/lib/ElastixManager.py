@@ -7,7 +7,7 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.FileLocationManager import FileLocationManager
 from lib.utilities_alignment import (create_downsampled_transforms, clean_image)
-from lib.utilities_registration import register_simple,parameters_to_rigid_transform
+from lib.utilities_registration import register_simple,parameters_to_rigid_transform,rigid_transform_to_parmeters
 from abakit.model.elastix_transformation import ElastixTransformation
 from lib.pipeline_utilities import get_image_size
 class ElastixManager:
@@ -19,18 +19,26 @@ class ElastixManager:
         if self.channel == 1 and self.downsample:
             INPUT = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
             files = sorted(os.listdir(INPUT))
-            for i in range(1, len(files)):
+            nfiles = len(files)
+            fixed_indexs = []
+            moving_indexs= []
+            for i in range(1, nfiles):
                 fixed_index = os.path.splitext(files[i-1])[0]
-                moving_index = os.path.splitext(files[i])[0]        
-                if not self.sqlController.check_elastix_row(self.animal,moving_index):
-                    second_transform_parameters,initial_transform_parameters = \
-                        register_simple(INPUT, fixed_index, moving_index,self.debug)
-                    T1 = self.parameters_to_rigid_transform(*initial_transform_parameters)
-                    T2 = self.parameters_to_rigid_transform(*second_transform_parameters, self.get_rotation_center())
-                    T = T1@T2     
-                    xshift,yshift,rotation,_ = self.rigid_transform_to_parmeters(T)           
-                    self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
-    
+                moving_index = os.path.splitext(files[i])[0] 
+                if not self.sqlController.check_elastix_row(self.animal,moving_index):  
+                    fixed_indexs.append(fixed_index)
+                    moving_indexs.append(moving_index) 
+            center = self.get_rotation_center()
+            workers  = self.get_nworkers()
+            INPUTs = [INPUT  for _ in range(1,nfiles)]
+            centers = [center  for _ in range(1,nfiles)]
+            debug = [self.debug  for _ in range(1,nfiles)]
+            results = self.run_commands_in_parallel_with_executor([INPUTs,fixed_indexs,moving_indexs,centers,debug], workers, calculate_elastix_transformation)  
+            for i,result in enumerate(results):  
+                moving_index = moving_indexs[i]
+                rotation, xshift, yshift = result
+                self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
+
     def rigid_transform_to_parmeters(self,transform):
         """convert a 2d transformation matrix (3*3) to the rotation angles, rotation center and translation
 
@@ -44,13 +52,7 @@ class ElastixManager:
             float: rotation angle in arc
             list:  lisf of x and y for rotation center
         """        
-        R = transform[:2,:2]
-        shift = transform[:2,2]
-        tan= R[1,0]/R[0,0]
-        center = self.get_rotation_center()
-        rotation = np.arctan(tan)
-        xshift,yshift = shift-center +np.dot(R, center)
-        return xshift,yshift,rotation,center
+        return rigid_transform_to_parmeters(transform,self.get_rotation_center())
 
     def parameters_to_rigid_transform(self,rotation, xshift, yshift, center):
         """convert a set of rotation parameters to the transformation matrix
@@ -225,3 +227,11 @@ class ElastixManager:
             })
         df = pd.DataFrame(data)
         df.to_csv(f'/tmp/{animal}.section2sectionalignments.csv', index=False)
+
+def calculate_elastix_transformation(INPUT,fixed_index,moving_index,center,debug):
+    second_transform_parameters,initial_transform_parameters = \
+    register_simple(INPUT, fixed_index, moving_index,debug)
+    T1 = parameters_to_rigid_transform(*initial_transform_parameters)
+    T2 = parameters_to_rigid_transform(*second_transform_parameters)
+    T = T1@T2     
+    return rigid_transform_to_parmeters(T,center)
