@@ -7,7 +7,6 @@ from glob import glob
 import pickle as pk
 from  os.path import getsize # get the size of file. 
 from cell_extractor.CellDetectorBase import CellDetectorBase
-from cell_extractor.Detector import Detector
 class CellDetector(CellDetectorBase):
 
     def __init__(self,animal,round = 2, *args, **kwargs):

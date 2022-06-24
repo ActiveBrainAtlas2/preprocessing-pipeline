@@ -18,7 +18,7 @@ print(xgb.__version__)
 from glob import glob
 from cell_extractor.retraining.lib.logger  import logger
 import pandas as pd
-from cell_extractor.Predictor import Predictor
+from cell_extractor.Predictor import GreedyPredictor
 from cell_extractor.CellAnnotationUtilities import CellAnnotationUtilities
 import os
 from cell_extractor.Detector import Detector   
@@ -113,7 +113,7 @@ class CellDetectorTrainer(Detector,DataLoader,CellDetectorBase):
         CellDetectorBase.__init__(self,animal,round = round,segmentation_threshold=segmentation_threshold)
         self.last_round = CellDetectorBase(animal,round = round-1,segmentation_threshold=segmentation_threshold)
         self.init_parameter()
-        self.predictor = Predictor()
+        self.predictor = GreedyPredictor()
 
     def gen_scale(self,n,reverse=False):
         s=np.arange(0,1,1/n)

@@ -6,7 +6,8 @@ import pickle as pkl
 import pandas as pd
 import numpy as np
 from cell_extractor.DetectionPlotter import DetectionPlotter
-from cell_extractor.Predictor import Predictor
+from cell_extractor.Predictor import GreedyPredictor,Predictor
+from cell_extractor.Detector import Detector
 import concurrent.futures
 
 class CellDetectorBase(Brain):
@@ -31,7 +32,8 @@ class CellDetectorBase(Brain):
     def set_folder_paths(self):
         self.DATA_PATH = f"/{self.disk}/cell_segmentation/"
         self.ANIMAL_PATH = os.path.join(self.DATA_PATH,self.animal)
-        self.DETECTOR = os.path.join(self.DATA_PATH,'detectors')
+        self.DETECTOR = os.path.join(self.ANIMAL_PATH,'detectors')
+        self.MODELS = os.path.join(self.DATA_PATH,'models')
         self.FEATURE_PATH = os.path.join(self.ANIMAL_PATH,'features')
         self.DETECTION = os.path.join(self.ANIMAL_PATH,'detections')
         self.AVERAGE_CELL_IMAGE_DIR = os.path.join(self.ANIMAL_PATH,'average_cell_image.pkl')
@@ -45,9 +47,9 @@ class CellDetectorBase(Brain):
         self.DETECTOR_PATH = os.path.join(self.DETECTOR,f'detector_round_{self.round}_threshold_{self.segmentation_threshold}.pkl')
         self.DETECTION_RESULT_DIR = os.path.join(self.DETECTION,f'detections_{self.animal}.{str(self.round)}_threshold_{self.segmentation_threshold}.csv')
         self.ALL_FEATURES = os.path.join(self.FEATURE_PATH,f'all_features_threshold_{self.segmentation_threshold}.csv')
-
+        self.MODEL_PATH = os.path.join(self.MODELS,f'models_from_qc_round_{self.round}_threshold_{self.segmentation_threshold}.pkl')
     def check_path_exists(self):
-        check_paths = [self.ANIMAL_PATH,self.FEATURE_PATH,self.DETECTION,self.DETECTOR]
+        check_paths = [self.ANIMAL_PATH,self.FEATURE_PATH,self.DETECTION,self.DETECTOR,self.MODELS]
         for path in check_paths:
             os.makedirs(path,exist_ok = True)
     
@@ -255,7 +257,8 @@ class CellDetectorBase(Brain):
         pkl.dump(detector,open(self.DETECTOR_PATH,'wb'))
     
     def load_detector(self):
-        detector = pkl.load(open(self.DETECTOR_PATH,'rb'))
+        models = self.load_models()
+        detector = Detector(models,Predictor())
         return detector
     
     def save_custom_features(self,features,file_name):
@@ -308,6 +311,21 @@ class CellDetectorBase(Brain):
     def report_detection_status():
         ...
 
+    def save_models(self,models):
+        try:
+            with open(self.MODEL_PATH,'wb') as pkl_file:
+                pkl.dump(models,pkl_file)
+        except IOError as e:
+            print(e)
+    
+    def load_models(self):
+        try:
+            with open(self.MODEL_PATH,'rb') as pkl_file:
+                models = pkl.load(pkl_file)
+            return models
+        except IOError as e:
+            print(e)
+        
 def get_sections_with_annotation_for_animali(animal):
     base = CellDetectorBase(animal)
     return base.get_sections_with_csv()
