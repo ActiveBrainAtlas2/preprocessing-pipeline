@@ -348,6 +348,5 @@ def parallel_process_all_sections(animal,processing_function,*args,njobs = 10,se
     with concurrent.futures.ProcessPoolExecutor(max_workers=njobs) as executor:
         results = []
         for sectioni in sections:
-            print(sectioni)
             results.append(executor.submit(processing_function,animal,int(sectioni),*args,**kwargs))
         print('done')
