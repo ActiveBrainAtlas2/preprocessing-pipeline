@@ -342,8 +342,9 @@ def list_available_animals(disk = '/net/birdstore/Active_Atlas_Data/',has_exampl
             animals.remove(animali)
     return animals
 
-def parallel_process_all_sections(animal,processing_function,*args,njobs = 10,**kwargs):
-    sections = get_all_sections_for_animali(animal)
+def parallel_process_all_sections(animal,processing_function,*args,njobs = 10,sections=None,**kwargs):
+    if sections is None:
+        sections = get_all_sections_for_animali(animal)
     with concurrent.futures.ProcessPoolExecutor(max_workers=njobs) as executor:
         results = []
         for sectioni in sections:
