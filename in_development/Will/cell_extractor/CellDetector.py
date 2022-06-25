@@ -75,7 +75,9 @@ class MultiThresholdDetector(CellDetector,AnnotationProximityTool):
         does_not_have_cell_type = lambda i: self.check(i,exclude=[f'{threshold}_{type_to_exclude}' for threshold in self.thresholds])
         def find_max_mean_score_of_the_group(score,coords,categories):
             max_id = np.argmax(score.to_numpy()[:,0])
-            row = pd.concat([coords.iloc[max_id],score.iloc[max_id]])
+            max_threshold = categories[max_id].split('_')[0]
+            is_max_threshold = [i.split('_')[0]==max_threshold for i in categories]
+            row = pd.concat([coords.iloc[is_max_threshold],score.iloc[is_max_threshold]])
             return row
         final_cell_detection = self.check_cells(scores,check_function = does_not_have_cell_type,determination_function = find_max_mean_score_of_the_group)
         return final_cell_detection
@@ -89,8 +91,11 @@ class MultiThresholdDetector(CellDetector,AnnotationProximityTool):
             is_sure = np.array([i.split('_')[1]=='sure' for i in categories ])
             score = score[is_sure]
             coords = coords[is_sure]
+            categories = categories[is_sure]
             max_id = np.argmax(score.to_numpy()[:,0])
-            row = pd.concat([coords.iloc[max_id],score.iloc[max_id]])
+            max_threshold = categories[max_id].split('_')[0]
+            is_max_threshold = [i.split('_')[0]==max_threshold for i in categories]
+            row = pd.concat([coords.iloc[is_max_threshold],score.iloc[is_max_threshold]])
             return row
         final_cell_detection = self.check_cells(scores,check_function = mixed_cell_type,determination_function = find_max_mean_score_of_sure_detections_in_group)
         return final_cell_detection
