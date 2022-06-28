@@ -258,9 +258,7 @@ class CellDetectorBase(Brain):
     
     def load_detector(self):
         models = self.load_models()
-        detector = Detector()
-        detector.model = models
-        detector.predictor = Predictor()
+        detector = Detector(models,Predictor())
         return detector
     
     def save_custom_features(self,features,file_name):

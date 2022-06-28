@@ -231,7 +231,7 @@ class ElastixManager:
 def calculate_elastix_transformation(INPUT,fixed_index,moving_index,center,debug):
     second_transform_parameters,initial_transform_parameters = \
     register_simple(INPUT, fixed_index, moving_index,debug)
-    T1 = parameters_to_rigid_transform(*initial_transform_parameters)
-    T2 = parameters_to_rigid_transform(*second_transform_parameters)
+    T1 = parameters_to_rigid_transform(*initial_transform_parameters,center)
+    T2 = parameters_to_rigid_transform(*second_transform_parameters,center)
     T = T1@T2     
     return rigid_transform_to_parmeters(T,center)

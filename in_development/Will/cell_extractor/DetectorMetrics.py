@@ -111,6 +111,12 @@ class AnnotationProximityTool(CellDetectorBase):
         self.calculate_distance_matrix()
         self.find_close_pairs()
         self.group_and_label_close_pairs()
+    
+    def plot_distance_distribution(self):
+        if not hasattr(self,'distances'):
+            self.find_equivalent_points()
+        bins = np.linspace(0,30,20)
+        plt.hist(self.distances.flatten(),bins=bins);
 
 
 class DetectorMetricsDK55(AnnotationProximityTool):
