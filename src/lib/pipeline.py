@@ -255,20 +255,34 @@ class Pipeline(
 
     def align_images_within_stack(self):
         """This function calculates the rigid transformation used to align the images within stack and applies them to the image"""
-        start = timer()
+        start_time = timer()
         self.run_program_and_time(
             self.create_within_stack_transformations, "Creating elastics transform"
         )
         transformations = self.get_transformations()
         self.align_downsampled_images(transformations)
         self.align_full_size_image(transformations)
-        end = timer()
-        print(f"Creating elastix and alignment took {end - start} seconds")
+        end_time = timer()
+        total_elapsed_time = end_time - start_time
+        print(
+            f"Creating elastix and alignment took {round(total_elapsed_time,1)} seconds"
+        )
+        sep = "*" * 40 + "\n"
+        self.logevent(
+            f"'align_images_within_stack' took {round((end_time - start_time), 1)} seconds\n{sep}"
+        )
 
     def create_neuroglancer_cloud_volume(self):
         """This function creates the Seung lab neuroglancer cloud volume folders that is required to view the images in neuroglancer"""
-        start = timer()
+        start_time = timer()
         self.run_program_and_time(self.create_neuroglancer, "Neuroglancer1 single")
         self.run_program_and_time(self.create_downsamples, "Neuroglancer2 pyramid")
-        end = timer()
-        print(f"Last step: creating neuroglancer images took {end - start} seconds")
+        end_time = timer()
+        total_elapsed_time = end_time - start_time
+        print(
+            f"Last step: creating neuroglancer images took {round(total_elapsed_time,1)} seconds"
+        )
+        sep = "*" * 40 + "\n"
+        self.logevent(
+            f"'create_neuroglancer_cloud_volume' took {round((end_time - start_time), 1)} seconds\n{sep}"
+        )
