@@ -91,10 +91,8 @@ class Pipeline(
         self.hostname = self.get_hostname()
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
-        # self.logger = get_logger(animal, self.sqlController.session)
         self.padding_margin = padding_margin
         self.check_programs()
-        # super().__init__(self.fileLocationManager.get_logdir())
         self.section_count = self.sqlController.get_section_count(self.animal)
         super().__init__(self.fileLocationManager.get_logdir())
 
@@ -114,9 +112,11 @@ class Pipeline(
         be increased accordingly if your images are bigger
         If the check failed, check the workernoshell.err.log in your project directory for more information
         """
-        start = timer()
-        os.environ["_JAVA_OPTIONS"] = "-Xmx10g"
-        os.environ["export CV_IO_MAX_IMAGE_PIXELS"] = "21474836480"
+        start_time = timer()
+        os.environ["_JAVA_OPTIONS"] = "-Xmx10g"  # DEPRECATED - JUN-2022?
+        os.environ[
+            "export CV_IO_MAX_IMAGE_PIXELS"
+        ] = "21474836480"  # DEPRECATED - JUN-2022?
 
         error = ""
         if not os.path.exists("/usr/local/share/bftools/showinf"):
@@ -131,8 +131,9 @@ class Pipeline(
         if len(error) > 0:
             print(error)
             sys.exit()
-        end = timer()
-        print(f"Check programs took {end - start} seconds")
+        end_time = timer()
+        total_elapsed_time = end_time - start_time
+        print(f"Check programs took {round(total_elapsed_time,1)} seconds")
 
     def run_program_and_time(self, function, function_name):
         """utility to run a specific function and time it
@@ -216,8 +217,12 @@ class Pipeline(
         2) extract tiffs from czi
         3) create png files (downsampled)
         """
-        self.run_program_and_time(self.extract_slide_meta_data_and_insert_to_database, "Creating meta")
-        self.run_program_and_time(self.create_web_friendly_image, "create web friendly image")
+        self.run_program_and_time(
+            self.extract_slide_meta_data_and_insert_to_database, "Creating meta"
+        )
+        self.run_program_and_time(
+            self.create_web_friendly_image, "create web friendly image"
+        )
         self.run_program_and_time(self.extract_tifs_from_czi, "Extracting Tiffs")
 
     def apply_qc_and_prepare_image_masks(self):
@@ -230,7 +235,9 @@ class Pipeline(
         """
         self.run_program_and_time(self.apply_QC, "applying QC")
         self.set_task_preps()
-        self.run_program_and_time(self.create_normalized_image, "Creating normalization")
+        self.run_program_and_time(
+            self.create_normalized_image, "Creating normalization"
+        )
         self.run_program_and_time(self.create_mask, "Creating masks")
 
     def clean_images_and_create_histogram(self):
@@ -242,12 +249,16 @@ class Pipeline(
         self.run_program_and_time(self.apply_user_mask_edits, "Applying masks")
         self.run_program_and_time(self.create_cleaned_images, "Creating cleaned image")
         self.run_program_and_time(self.make_histogram, "Making histogram")
-        self.run_program_and_time(self.make_combined_histogram, "Making combined histogram")
+        self.run_program_and_time(
+            self.make_combined_histogram, "Making combined histogram"
+        )
 
     def align_images_within_stack(self):
         """This function calculates the rigid transformation used to align the images within stack and applies them to the image"""
         start = timer()
-        self.run_program_and_time(self.create_within_stack_transformations, "Creating elastics transform")
+        self.run_program_and_time(
+            self.create_within_stack_transformations, "Creating elastics transform"
+        )
         transformations = self.get_transformations()
         self.align_downsampled_images(transformations)
         self.align_full_size_image(transformations)

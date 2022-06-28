@@ -35,13 +35,11 @@ class Detector():
         if not hasattr(self,'mean') or not hasattr(self,'std') or not hasattr(self,'labels'):
             _,self.labels,self.mean,self.std = self.calculate_scores(df)
 
-    def set_plot_limits(self,xlim,ylim):
-        if xlim is not None:
-            plt.xlim(xlim)
-        if ylim is not None:
-            plt.xlim(ylim)
+    def set_plot_limits(self,lower,higher):
+        if lower is not None and higher is not None:
+            plt.ylim([lower,higher])
 
-    def plot_score_scatter(self,df,lower_lim = None,upper_lim = None,alpha1 = 0.5,alpha2 = 0.5,color1='teal',color2 = 'orangered',size1=3,size2=3):
+    def plot_score_scatter(self,df,lower_lim = None,upper_lim = None,alpha1 = 0.5,alpha2 = 0.5,color1='teal',color2 = 'orangered',size1=3,size2=3,title = None):
         self.calculate_and_set_scores(df)
         plt.figure(figsize=[15,10])
         mean_has_label = self.mean[self.labels==1]
@@ -54,10 +52,12 @@ class Detector():
         plt.xlabel('mean')
         plt.ylabel('std')
         plt.grid()
+        if title is not None:
+            plt.title(title)
         self.set_plot_limits(lower_lim,upper_lim)
 
 
-    def plot_decision_scatter(self,features,lower_lim = None,upper_lim = None):
+    def plot_decision_scatter(self,features,lower_lim = None,upper_lim = None,title = None):
         self.calculate_and_set_scores(features)
         if not hasattr(self,'predictions'):
             self.predictions=self.get_prediction(self.mean,self.std)
@@ -67,4 +67,6 @@ class Detector():
         plt.xlabel('mean')
         plt.ylabel('std')
         plt.grid()
+        if title is not None:
+            plt.title(title)
         self.set_plot_limits(lower_lim,upper_lim)

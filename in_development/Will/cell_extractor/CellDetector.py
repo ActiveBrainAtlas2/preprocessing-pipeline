@@ -23,7 +23,6 @@ class CellDetector(CellDetectorBase):
         detection_df['mean_score'],detection_df['std_score'] = _mean,_std
         detection_df['label'] = labels
         detection_df['predictions'] = predictions
-        detection_df=detection_df[predictions!=-2]
         detection_df = detection_df[['animal', 'section', 'row', 'col','label', 'mean_score','std_score', 'predictions']]
         return detection_df
     
@@ -38,25 +37,36 @@ class MultiThresholdDetector(CellDetector,AnnotationProximityTool):
         self.MULTI_THRESHOLD_DETECTION_RESULT_DIR = os.path.join(self.DETECTION,f'multithreshold_detections_{self.thresholds}_round_{str(self.round)}.csv')
 
     def get_detections_and_scores_for_all_threshold(self):
+        non_detections = []
         detections = []
         scores = []
+        non_detection_scores = []
         for threshold in self.thresholds:
             print(f'loading threshold {threshold}')
             detector = CellDetector(self.animal,self.round,segmentation_threshold=threshold)
             detection = detector.load_detections()
             sure = detection[detection.predictions == 2]
+            null = detection[detection.predictions == -2]
+            null = null.sample(int(len(null)*0.01))
             unsure = detection[detection.predictions == 0]
             sure_score = pd.DataFrame({'mean':sure.mean_score,'std':sure.std_score,'label':sure.label})
             unsure_score = pd.DataFrame({'mean':unsure.mean_score,'std':unsure.std_score,'label':unsure.label})
+            null_score = pd.DataFrame({'mean':null.mean_score,'std':null.std_score,'label':null.label})
             sure = pd.DataFrame({'x':sure.col,'y':sure.row,'section':sure.section,'name':[f'{threshold}_sure' for _ in range(len(sure))]})
             unsure = pd.DataFrame({'x':unsure.col,'y':unsure.row,'section':unsure.section,'name':[f'{threshold}_unsure' for _ in range(len(unsure))]})
+            null = pd.DataFrame({'x':null.col,'y':null.row,'section':null.section,'name':[f'{threshold}_null' for _ in range(len(null))]})
+            
             detections.append(sure)
             detections.append(unsure)
             scores.append(sure_score)
             scores.append(unsure_score)
+            non_detections.append(null)
+            non_detection_scores.append(null_score)
         detections = pd.concat(detections)
+        non_detections = pd.concat(non_detections)
+        non_detection_scores = pd.concat(non_detection_scores)
         scores = pd.concat(scores)
-        return detections,scores
+        return detections,scores,non_detections,non_detection_scores
 
     def check_cells(self,scores,check_function,determination_function):
         cell =[i for i in self.pair_categories.values() if check_function(i)]
@@ -67,7 +77,7 @@ class MultiThresholdDetector(CellDetector,AnnotationProximityTool):
             coords = self.annotations_to_compare.iloc[pair]
             score = scores.iloc[pair]
             row = determination_function(score,coords,categories)
-            final_cell_detection.append(row)
+            final_cell_detection=final_cell_detection+row
         final_cell_detection = pd.concat(final_cell_detection,axis=1).T
         return final_cell_detection
 
@@ -75,8 +85,10 @@ class MultiThresholdDetector(CellDetector,AnnotationProximityTool):
         does_not_have_cell_type = lambda i: self.check(i,exclude=[f'{threshold}_{type_to_exclude}' for threshold in self.thresholds])
         def find_max_mean_score_of_the_group(score,coords,categories):
             max_id = np.argmax(score.to_numpy()[:,0])
-            row = pd.concat([coords.iloc[max_id],score.iloc[max_id]])
-            return row
+            max_threshold = categories[max_id].split('_')[0]
+            is_max_threshold = [i.split('_')[0]==max_threshold for i in categories]
+            row = coords.iloc[is_max_threshold].join(score.iloc[is_max_threshold])
+            return [i for _,i in row.iterrows()]
         final_cell_detection = self.check_cells(scores,check_function = does_not_have_cell_type,determination_function = find_max_mean_score_of_the_group)
         return final_cell_detection
 
@@ -89,20 +101,26 @@ class MultiThresholdDetector(CellDetector,AnnotationProximityTool):
             is_sure = np.array([i.split('_')[1]=='sure' for i in categories ])
             score = score[is_sure]
             coords = coords[is_sure]
+            categories = np.array(categories)[is_sure]
             max_id = np.argmax(score.to_numpy()[:,0])
-            row = pd.concat([coords.iloc[max_id],score.iloc[max_id]])
-            return row
+            max_threshold = categories[max_id].split('_')[0]
+            is_max_threshold = [i.split('_')[0]==max_threshold for i in categories]
+            row = coords.iloc[is_max_threshold].join(score.iloc[is_max_threshold])
+            return [i for _,i in row.iterrows()]
         final_cell_detection = self.check_cells(scores,check_function = mixed_cell_type,determination_function = find_max_mean_score_of_sure_detections_in_group)
         return final_cell_detection
 
     def calculate_and_save_detection_results(self):
-        detections,scores = self.get_detections_and_scores_for_all_threshold()
+        detections,scores,non_detections,non_detection_scores = self.get_detections_and_scores_for_all_threshold()
         self.set_annotations_to_compare(detections)
         self.find_equivalent_points()
         final_unsure_detection = self.determine_pure_detection(scores,type_to_exclude = 'sure')
         final_sure_detection = self.determine_pure_detection(scores,type_to_exclude = 'unsure')
         final_mixed_detection = self.determine_mixed_detection(scores)
-        final_detection = pd.concat([final_sure_detection,final_unsure_detection,final_mixed_detection])
+        self.set_annotations_to_compare(non_detections)
+        self.find_equivalent_points()
+        final_non_detection = self.determine_pure_detection(non_detection_scores,type_to_exclude = '')
+        final_detection = pd.concat([final_sure_detection,final_unsure_detection,final_mixed_detection,final_non_detection])
         final_detection.to_csv(self.MULTI_THRESHOLD_DETECTION_RESULT_DIR,index=False)
     
     def load_detections(self):

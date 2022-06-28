@@ -65,7 +65,9 @@ class NgPrecomputedMaker:
             self.downsample, self.channel
         )
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        test_dir(self.animal, INPUT, self.section_count,self.downsample, same_size=True)
+        test_dir(
+            self.animal, INPUT, self.section_count, self.downsample, same_size=True
+        )
         midfile, file_keys, volume_size, num_channels = self.get_file_information(INPUT)
         chunks = self.get_chunk_size()
         scales = self.get_scales()
