@@ -32,17 +32,20 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, debug):
     
     print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:", "prep_id: " + animal, "channel: " + str(channel), "downsample: " + str(downsample), "host: " + host, "schema: " + schema, "debug: " + str(debug), sep="\n")
     
+    print('Step 0')
     pipeline.prepare_image_for_quality_control()
 
     if step > 0:
-        print('Step 0')
+        print('Step 1')
         pipeline.apply_qc_and_prepare_image_masks()
     if step > 1:
-        print('Step 1')
+        print('Step 2')
         pipeline.clean_images_and_create_histogram()
     if step > 2:
+        print('Step 3')
         pipeline.align_images_within_stack()
     if step > 3:
+        print('Step 4')
         pipeline.create_neuroglancer_cloud_volume()
 
 
