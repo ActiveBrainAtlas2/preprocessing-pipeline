@@ -51,10 +51,8 @@ class ElastixManager:
             )
             for i, result in enumerate(results):
                 moving_index = moving_indexs[i]
-                rotation, xshift, yshift = result
-                self.sqlController.add_elastix_row(
-                    self.animal, moving_index, rotation, xshift, yshift
-                )
+                rotation, xshift, yshift = result.result()
+                self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
 
     def rigid_transform_to_parmeters(self, transform):
         """convert a 2d transformation matrix (3*3) to the rotation angles, rotation center and translation
@@ -265,14 +263,13 @@ class ElastixManager:
                 }
             )
         df = pd.DataFrame(data)
-        df.to_csv(f"/tmp/{animal}.section2sectionalignments.csv", index=False)
+        df.to_csv(f'/tmp/{animal}.section2sectionalignments.csv', index=False)
 
-
-def calculate_elastix_transformation(INPUT, fixed_index, moving_index, center, debug):
-    second_transform_parameters, initial_transform_parameters = register_simple(
-        INPUT, fixed_index, moving_index, debug
-    )
-    T1 = parameters_to_rigid_transform(*initial_transform_parameters, center)
-    T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
-    T = T1 @ T2
-    return rigid_transform_to_parmeters(T, center)
+def calculate_elastix_transformation(INPUT,fixed_index,moving_index,center,debug):
+    second_transform_parameters,initial_transform_parameters = \
+    register_simple(INPUT, fixed_index, moving_index,debug)
+    T1 = parameters_to_rigid_transform(*initial_transform_parameters)
+    print(second_transform_parameters)
+    T2 = parameters_to_rigid_transform(*second_transform_parameters,center)
+    T = T1@T2     
+    return rigid_transform_to_parmeters(T,center)
