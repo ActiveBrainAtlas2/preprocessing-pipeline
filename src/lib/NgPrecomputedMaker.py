@@ -1,4 +1,5 @@
 import os
+import glob
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from lib.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
@@ -65,6 +66,12 @@ class NgPrecomputedMaker:
             self.downsample, self.channel
         )
         os.makedirs(OUTPUT_DIR, exist_ok=True)
+        self.logevent(f"INPUT FOLDER: {INPUT}")
+        starting_files = glob.glob(
+                os.path.join(INPUT, "*.tif")
+            )
+        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+        self.logevent(f"OUTPUT FOLDER: {OUTPUT_DIR}")
         test_dir(
             self.animal, INPUT, self.section_count, self.downsample, same_size=True
         )
@@ -80,6 +87,7 @@ class NgPrecomputedMaker:
             num_channels=num_channels,
             chunk_size=chunks,
         )
+
         ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=progress_id)
         workers = self.get_nworkers()
         if num_channels == 1:
