@@ -100,8 +100,8 @@ class Pipeline(
         if self.downsample == True:
             return [256, 256, 1]
         if self.downsample == False:
-            # return [4096, 4096, 1]
-            return [40960, 40960, 1]
+            return [4096, 4096, 1]
+            # return [40960, 40960, 1]
 
     @staticmethod
     def check_programs():
