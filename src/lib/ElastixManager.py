@@ -132,7 +132,7 @@ class ElastixManager:
             animal: the animal
         Returns: a dictionary of key=filename, value = coordinates
         """
-        INPUT = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
+        INPUT = self.fileLocationManager.get_thumbnail_cleaned(1)
         files = sorted(os.listdir(INPUT))
         midpoint = len(files) // 2
         transformation_to_previous_sec = {}
