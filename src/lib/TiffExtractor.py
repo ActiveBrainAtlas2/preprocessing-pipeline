@@ -43,7 +43,7 @@ class TiffExtractor(ParallelManager):
             scene_index.append(section.scene_number-1)
         workers = self.get_nworkers()
         nfiles = len(czi_file)
-        channel = [self.channel for _ in range(nfiles)]
+        channel = [self.channel-1 for _ in range(nfiles)]
         scale = [scale_factor for _ in range(nfiles)]
         self.logevent(f"ALLOCATED CORES: {workers}")
         self.run_commands_in_parallel_with_executor([czi_file,tif_file,scene_index,channel,scale],workers,extract_tiff_from_czi)
