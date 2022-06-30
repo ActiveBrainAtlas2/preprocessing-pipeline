@@ -51,7 +51,7 @@ class ElastixManager:
             )
             for i, result in enumerate(results):
                 moving_index = moving_indexs[i]
-                rotation, xshift, yshift = result.result()
+                xshift,yshift,rotation,center = result
                 self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
 
     def rigid_transform_to_parmeters(self, transform):
@@ -269,7 +269,6 @@ def calculate_elastix_transformation(INPUT,fixed_index,moving_index,center,debug
     second_transform_parameters,initial_transform_parameters = \
     register_simple(INPUT, fixed_index, moving_index,debug)
     T1 = parameters_to_rigid_transform(*initial_transform_parameters)
-    print(second_transform_parameters)
     T2 = parameters_to_rigid_transform(*second_transform_parameters,center)
     T = T1@T2     
     return rigid_transform_to_parmeters(T,center)

@@ -35,6 +35,7 @@ class MaskManager:
                 mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
                 mask = mask[:, :, 2]
                 mask[mask > 0] = 255
+                mask[mask <= 0] = 255
                 cv2.imwrite(maskpath, mask.astype(np.uint8))
 
     def get_model_instance_segmentation(self, num_classes):
