@@ -36,6 +36,8 @@ class ImageCleaner:
         CLEANED = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
         INPUT = self.fileLocationManager.get_thumbnail(self.channel)
         MASKS = self.fileLocationManager.thumbnail_masked
+        self.logevent(f"INPUT FOLDER: {INPUT}")
+        self.logevent(f"OUTPUT FOLDER: {CLEANED}")
         os.makedirs(CLEANED, exist_ok=True)
         self.parallel_create_cleaned(INPUT, CLEANED, MASKS)
 
@@ -45,6 +47,10 @@ class ImageCleaner:
         os.makedirs(CLEANED, exist_ok=True)
         INPUT = self.fileLocationManager.get_full(self.channel)
         MASKS = self.fileLocationManager.full_masked
+        self.logevent(f"INPUT FOLDER: {INPUT}")
+        starting_files = os.listdir(INPUT)
+        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+        self.logevent(f"OUTPUT FOLDER: {CLEANED}")
         self.parallel_create_cleaned(INPUT, CLEANED, MASKS)
 
     def get_section_rotation(self, section: Section):
@@ -61,7 +67,9 @@ class ImageCleaner:
         max_width, max_height = get_max_image_size(INPUT)
         rotation = self.sqlController.scan_run.rotation
         flip = self.sqlController.scan_run.flip
-        test_dir(self.animal, INPUT, self.section_count,self.downsample, same_size=False)
+        test_dir(
+            self.animal, INPUT, self.section_count, self.downsample, same_size=False
+        )
         files = sorted(os.listdir(INPUT))
         sections = self.sqlController.get_sections(self.animal, self.channel)
         rotations_per_section = [self.get_section_rotation(i) for i in sections]
