@@ -188,7 +188,7 @@ class Pipeline(
                 self.logevent(
                     f"AGGREGATE: {function_name} took {end_time - start_time} seconds"
                 )
-                print(type(ending_files), ending_files)
+                print("FINAL FILE COUNT:", len(ending_files))
                 unitary_calc = (end_time - start_time) / len(ending_files)
                 self.logevent(
                     f"AVERAGE TIME PER FILE CREATION (seconds): {str(round(unitary_calc, 1))}\n{sep}"
