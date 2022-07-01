@@ -56,11 +56,10 @@ class MaskManager:
 
     def create_mask(self):
         """Create the images masks for extracting the tissue from the surrounding debres using a CNN based machine learning algorithm"""
-        if self.channel == 1:
-            if not self.downsample:
-                self.create_full_resolution_mask()
-            else:
-                self.create_downsampled_mask()
+        if not self.downsample:
+            self.create_full_resolution_mask()
+        else:
+            self.create_downsampled_mask()
 
     def load_machine_learning_model(self):
         """Load the CNN model used to generate image masks"""
@@ -81,7 +80,7 @@ class MaskManager:
         self.sqlController.set_task(
             self.animal, self.progress_lookup.CREATE_FULL_RES_MASKS
         )
-        FULLRES = self.fileLocationManager.get_full(self.channel)
+        FULLRES = self.fileLocationManager.get_full(1)
         THUMBNAIL = self.fileLocationManager.thumbnail_masked
         MASKED = self.fileLocationManager.full_masked
         self.logevent(f"INPUT FOLDER: {FULLRES}")
