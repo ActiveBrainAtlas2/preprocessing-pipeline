@@ -175,7 +175,7 @@ class ElastixManager:
             transforms = create_downsampled_transforms(
                 self.animal, transforms, downsample=False
             )
-            INPUT = self.fileLocationManager.get_full_cleaned(self.channel)
+            INPUT = self.fileLocationManager.get_full_cleaned(1)
             OUTPUT = self.fileLocationManager.get_full_aligned(self.channel)
             self.logevent(f"INPUT FOLDER: {INPUT}")
             starting_files = glob.glob(os.path.join(INPUT, "*.tif"))
