@@ -41,7 +41,9 @@ class PrepCreater:
                 continue
             if os.path.exists(output_path):
                 continue
-            input_paths.append(input_path)
+            input_paths.append(
+                os.path.relpath(input_path, os.path.dirname(output_path))
+            )
             output_paths.append(output_path)
             width, height = get_image_size(input_path)
             if self.downsample:
@@ -58,7 +60,9 @@ class PrepCreater:
         INPUT = self.fileLocationManager.get_full(self.channel)
         OUTPUT = self.fileLocationManager.get_thumbnail(self.channel)
         os.makedirs(OUTPUT, exist_ok=True)
-        test_dir(self.animal, INPUT,self.section_count, downsample=False, same_size=False)
+        test_dir(
+            self.animal, INPUT, self.section_count, downsample=False, same_size=False
+        )
         files = sorted(os.listdir(INPUT))
         for file in files:
             infile = os.path.join(INPUT, file)

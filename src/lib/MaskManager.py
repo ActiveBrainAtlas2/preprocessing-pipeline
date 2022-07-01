@@ -1,5 +1,6 @@
 import os, sys
 import numpy as np
+import glob
 import torch
 from PIL import Image
 
@@ -23,7 +24,7 @@ class MaskManager:
         if self.channel == 1 and self.downsample:
             COLORED = self.fileLocationManager.thumbnail_colored
             MASKS = self.fileLocationManager.thumbnail_masked
-            test_dir(self.animal, COLORED,self.section_count, True, same_size=False)
+            test_dir(self.animal, COLORED, self.section_count, True, same_size=False)
             os.makedirs(MASKS, exist_ok=True)
             files = sorted(os.listdir(COLORED))
             for file in files:
@@ -34,6 +35,7 @@ class MaskManager:
                 mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
                 mask = mask[:, :, 2]
                 mask[mask > 0] = 255
+                mask[mask <= 0] = 255
                 cv2.imwrite(maskpath, mask.astype(np.uint8))
 
     def get_model_instance_segmentation(self, num_classes):
@@ -54,11 +56,10 @@ class MaskManager:
 
     def create_mask(self):
         """Create the images masks for extracting the tissue from the surrounding debres using a CNN based machine learning algorithm"""
-        if self.channel == 1:
-            if not self.downsample:
-                self.create_full_resolution_mask()
-            else:
-                self.create_downsampled_mask()
+        if not self.downsample:
+            self.create_full_resolution_mask()
+        else:
+            self.create_downsampled_mask()
 
     def load_machine_learning_model(self):
         """Load the CNN model used to generate image masks"""
@@ -79,10 +80,16 @@ class MaskManager:
         self.sqlController.set_task(
             self.animal, self.progress_lookup.CREATE_FULL_RES_MASKS
         )
-        FULLRES = self.fileLocationManager.get_full(self.channel)
+        FULLRES = self.fileLocationManager.get_full(1)
         THUMBNAIL = self.fileLocationManager.thumbnail_masked
         MASKED = self.fileLocationManager.full_masked
-        test_dir(self.animal, FULLRES,self.section_count, self.downsample, same_size=False)
+        self.logevent(f"INPUT FOLDER: {FULLRES}")
+        starting_files = glob.glob(os.path.join(FULLRES, "*.tif"))
+        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+        self.logevent(f"OUTPUT FOLDER: {MASKED}")
+        test_dir(
+            self.animal, FULLRES, self.section_count, self.downsample, same_size=False
+        )
         os.makedirs(MASKED, exist_ok=True)
         files = sorted(os.listdir(FULLRES))
         file_keys = []
@@ -107,15 +114,26 @@ class MaskManager:
         transform = torchvision.transforms.ToTensor()
         FULLRES = self.fileLocationManager.get_normalized()
         COLORED = self.fileLocationManager.thumbnail_colored
-        test_dir(self.animal, FULLRES,self.section_count, self.downsample, same_size=False)
+        self.logevent(f"INPUT FOLDER: {FULLRES}")
+        test_dir(
+            self.animal, FULLRES, self.section_count, self.downsample, same_size=False
+        )
         os.makedirs(COLORED, exist_ok=True)
-        files = sorted(os.listdir(FULLRES))
+        files = os.listdir(FULLRES)
         for file in files:
             filepath = os.path.join(FULLRES, file)
-            maskpath = os.path.join(COLORED, file)
+            mask_dest_file = (
+                os.path.splitext(file)[0] + ".tif"
+            )  # colored mask images have .tif extension
+            maskpath = os.path.join(COLORED, mask_dest_file)
+
             if os.path.exists(maskpath):
                 continue
+
             img = Image.open(filepath)
+            # img = np.array(img)
+            # img = img.astype(np.float32)
+            # img = torch.tensor(img)
             torch_input = transform(img)
             torch_input = torch_input.unsqueeze(0)
             self.loaded_model.eval()

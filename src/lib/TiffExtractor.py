@@ -1,7 +1,7 @@
 import os
 import hashlib
 from lib.ParallelManager import ParallelManager
-from abakit.lib.CZIManager import extract_tiff_from_czi,extract_png_from_czi
+from lib.CZIManager import extract_tiff_from_czi, extract_png_from_czi
 class TiffExtractor(ParallelManager):
     def extract_tifs_from_czi(self):
         """

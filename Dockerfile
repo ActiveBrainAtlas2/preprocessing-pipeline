@@ -9,8 +9,7 @@
 # - DOES NOT USE ALPINE (ref: https://pythonspeed.com/articles/alpine-docker-python/)
 # - requirements2.txt GENERATED WITH pipreqs (ref: https://stackoverflow.com/questions/31684375/automatically-create-requirements-txt)
 
-FROM ubuntu:20.04
-FROM aba1
+FROM ubuntu:22.04
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 ENV JAVA_HOME=/bin/java
@@ -38,8 +37,8 @@ RUN python3 -m pip install build numpy
 WORKDIR /app
 
 # CLONE/BUILD/INSTALL abakit FROM git
-RUN git clone https://github.com/ActiveBrainAtlas2/abakit.git && cd abakit && python3 -m build
-RUN python3 setup.py install
+RUN git clone https://github.com/ActiveBrainAtlas2/abakit.git && cd abakit
+RUN pip install .
 RUN cd ..
 
 # JAVABRIDGE CUSTOM CONFIG (REF: https://stackoverflow.com/questions/51756910/cant-pip-install-javabridge)

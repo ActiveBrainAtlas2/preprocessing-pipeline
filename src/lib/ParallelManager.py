@@ -46,7 +46,12 @@ class ParallelManager:
 
     def get_nworkers(self):
         function_name = sys._getframe(1).f_code.co_name
-        nworkers = self.parallel_settings[function_name]
+        try:
+            nworkers = self.parallel_settings[function_name]
+        except:
+            print(f"{function_name} NOT FOUND IN parallel_settings.yaml; USING DEFAULT nworkers=1")
+            nworkers = 1
+        
         if type(nworkers) != int:
             if self.downsample:
                 cores = nworkers[0]

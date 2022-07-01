@@ -23,7 +23,7 @@ class FileLogger:
             Path(LOGFILE).touch()
 
         logging.basicConfig(
-            filename=LOGFILE, level=logging.INFO, format="%(message)s", force=True
+            filename=LOGFILE, level=logging.INFO, format="%(message)s"
         )
 
     def logevent(self, msg: str):
