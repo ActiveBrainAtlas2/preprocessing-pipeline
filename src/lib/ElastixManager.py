@@ -117,7 +117,7 @@ class ElastixManager:
         Returns:
             list: list of x and y for rotation center that set as the midpoint of the section that is in the middle of the stack
         """
-        INPUT = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
+        INPUT = self.fileLocationManager.get_thumbnail_cleaned(1)
         files = sorted(os.listdir(INPUT))
         midpoint = len(files) // 2
         midfilepath = os.path.join(INPUT, files[midpoint])
@@ -175,7 +175,7 @@ class ElastixManager:
             transforms = create_downsampled_transforms(
                 self.animal, transforms, downsample=False
             )
-            INPUT = self.fileLocationManager.get_full_cleaned(1)
+            INPUT = self.fileLocationManager.get_full_cleaned(self.channel)
             OUTPUT = self.fileLocationManager.get_full_aligned(self.channel)
             self.logevent(f"INPUT FOLDER: {INPUT}")
             starting_files = glob.glob(os.path.join(INPUT, "*.tif"))
