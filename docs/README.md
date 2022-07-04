@@ -18,10 +18,11 @@ User and Programmer.
 1. Classes
     1. [Atlas class](programmer/Atlas.Class.md)
     1. [Cell dectector class](programmer/CellDetector.Class.md)
-    1. [Django class](programmer/django/classes.md)
+    1. [Django class](https://activebrainatlasadmin.readthedocs.io)
     1. [Pipeline class](programmer/Pipeline.Class.md)
 1. Database documentation
     1. [A list of the database tables](programmer/database/Database.tables.md)
+    1. [Current database information being used by the REST API with Neuroglancer](https://activebrainatlasadmin.readthedocs.io)
 1. Django documentation
     1. [Releasing a new version of Django on the web server](programmer/django/releasing.new.database.portal.md)
     1. [Running tasks in the background with Supervisord](programmer/django/supervisord.md)
