@@ -80,7 +80,7 @@ class MaskManager:
         self.sqlController.set_task(
             self.animal, self.progress_lookup.CREATE_FULL_RES_MASKS
         )
-        FULLRES = self.fileLocationManager.get_full(1)
+        FULLRES = self.fileLocationManager.get_full(self.channel)
         THUMBNAIL = self.fileLocationManager.thumbnail_masked
         MASKED = self.fileLocationManager.full_masked
         self.logevent(f"INPUT FOLDER: {FULLRES}")

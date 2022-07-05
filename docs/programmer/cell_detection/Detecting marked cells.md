@@ -32,6 +32,8 @@ In almost all cases the detection region is unique. If it is not unique we take 
 
 Different thresholds can create different centroids for the same detection region. The detections used are the ones that correspond to the treshold such that the mean of the detection scores is highest.
 
+for groups with mixed sure and unsure detections, the sure detection with highest mean score is selected
+
 #### Counts
 
 We evaluate the performance by counting the number of machine centroids and human centroids.

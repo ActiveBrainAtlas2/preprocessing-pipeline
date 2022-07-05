@@ -12,12 +12,14 @@ parameters.yaml
 *migrations*
 notebooks/.ipynb_checkpoints*
 </pre>
-1. Login into activebrainatlas.ucsd.edu and backup the current code base that works. Copy the directory to your home folder or another tmp directory: `rsync -auv /var/www/activebrainatlas/ ~/tmp/activebrainatlas/`
-1. On your local machine in the same directory with the excludefiles.txt file, do an rsync `rsync -auvn --exclude-from=exclude.files.txt ./activebrainatlas/ activebrainatlas:/var/www/activebrainatlas/` That will test which files you are sending to the server. When you are happy with what is being sent, remove the n from the options in the command above so it looks like `rsync -auv --exclude-from=exclude.files.txt ./activebrainatlas/ activebrainatlas:/var/www/activebrainatlas/`
+1. Login into activebrainatlas.ucsd.edu and backup the current code base that works. Copy or tarball the existing Django setup to: /var/www/backups/ 
+1. In your home directory on activebrainatlas.ucsd.edu, do a git clone of the project: `git clone git@github.com:ActiveBrainAtlas2/activebrainatlasadmin.git`
+1. Compare the code between the current repo and what is on the server: `diff -rq ~/activebrainatlasadmin /var/www/activebrainatlas/ | grep -v ".git" | grep -v ".pyc"
+1. After everything looks as expected, copy the new files from your home repo into the /var/www/activebrainatlas directory. 
 1. The code is now on the web server.
 1. Login back to activebrainatlas.ucsd.edu and check the code:
     1. `cd /var/www/activebrainatlas`
-    1. `source /var/www/venvs/activebrainatlas/bin/activate`
+    1. `source /usr/local/share/activebrainatlas/bin/activate`
     1. `python manage check`
     1. `python manage runserver`
 1. Those last two commands should report no errors.
