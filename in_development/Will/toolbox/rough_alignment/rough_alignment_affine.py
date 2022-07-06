@@ -1,5 +1,5 @@
-from notebooks.Will.toolbox.rough_alignment.sitk.get_registeration_method_affine import get_affine_transform
-from notebooks.Will.toolbox.rough_alignment.sitk.utility import get_fixed_and_moving_image
+from toolbox.rough_alignment.sitk.get_registeration_method_affine import get_affine_transform
+from toolbox.rough_alignment.sitk.utility import get_fixed_and_moving_image
 import SimpleITK as sitk
 
 def get_rough_alignment_affine_transform(moving_brain = 'DK52',fixed_brain = 'DK43'):

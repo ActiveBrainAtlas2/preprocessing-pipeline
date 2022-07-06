@@ -1,11 +1,11 @@
 import sys
 sys.path.append('/home/zhw272/programming/pipeline_utility/src')
 sys.path.append('/home/zhw272/programming/pipeline_utility/')
-from notebooks.Will.toolbox.IOs.LoadComPickle import LoadComPickle
-from notebooks.Will.toolbox.IOs.LoadComDatabase import LoadComDatabase
-from notebooks.Will.toolbox.plotting.ComBoxPlot import ComBoxPlot
-from notebooks.Will.toolbox.IOs.TransformCom import TransformCom
-from notebooks.Will.toolbox.IOs.get_landmark_lists import get_all_landmarks_in_specimens
+from toolbox.IOs.LoadComPickle import LoadComPickle
+from toolbox.IOs.LoadComDatabase import LoadComDatabase
+from toolbox.plotting.ComBoxPlot import ComBoxPlot
+from toolbox.IOs.TransformCom import TransformCom
+from toolbox.IOs.get_landmark_lists import get_all_landmarks_in_specimens
 
 # getcom = LoadComPickle()
 getcom = LoadComDatabase()

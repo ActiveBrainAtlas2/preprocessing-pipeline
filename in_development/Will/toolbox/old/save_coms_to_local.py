@@ -1,9 +1,9 @@
 #%%
 import sys
 sys.path.append('/home/zhw272/programming/pipeline_utility')
-from notebooks.Will.toolbox.IOs.get_specimen_lists import get_list_of_all_dk_brains
+from toolbox.IOs.get_specimen_lists import get_list_of_all_dk_brains
 from utilities.brain_specimens.get_com import *
-from notebooks.Will.toolbox.IOs.pickle_io import *
+from toolbox.IOs.pickle_io import *
 from utilities.model.center_of_mass import CenterOfMass
 #%%
 atlas_com = get_atlas_com_dict()

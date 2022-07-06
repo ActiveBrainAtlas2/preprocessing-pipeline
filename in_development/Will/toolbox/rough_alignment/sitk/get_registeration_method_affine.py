@@ -1,4 +1,4 @@
-import notebooks.Will.toolbox.rough_alignment.sitk.registration_method_util as regutil
+import toolbox.rough_alignment.sitk.registration_method_util as regutil
 def get_affine_transform(fixed_image, moving_image, transform):
     """get_affine_transform [using the registeration framework to find the best Affine transformation that alignes two sitk image ]
 

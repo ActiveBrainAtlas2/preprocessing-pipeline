@@ -2,15 +2,15 @@ from bdb import Breakpoint
 import sys
 import numpy as np
 sys.path.append('/home/zhw272/programming/pipeline_utility/')
-from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transform_dict_affine
-from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_dict_demons
-from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
+from toolbox.rough_alignment.apply_affine_transform import transform_dict_affine
+from toolbox.rough_alignment.apply_demons_transform import transform_dict_demons
+from toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
 from utilities.alignment.align_point_sets import get_rigid_transformation_from_dicts,apply_rigid_transformation_to_com_dict
 
 import notebooks.Will.experimental.old.get_coms_from_pickle as getcom
 # import notebooks.Will.experimental.get_coms_from_database as getcom
 
-from notebooks.Will.toolbox.IOs.get_bilis_json_file import get_tranformation
+from toolbox.IOs.get_bilis_json_file import get_tranformation
 
 def get_DK52_rigid_transformation():
     DK52_com = getcom.get_dk52_com()

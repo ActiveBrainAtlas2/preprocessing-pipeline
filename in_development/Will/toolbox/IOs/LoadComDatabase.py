@@ -1,5 +1,5 @@
 import sys
-from notebooks.Will.toolbox.IOs.LoadCom import LoadCom
+from toolbox.IOs.LoadCom import LoadCom
 import os
 import pickle
 import sys

@@ -1,6 +1,6 @@
 import SimpleITK as sitk
 from math import floor
-from notebooks.Will.toolbox.rough_alignment.sitk.optimization_status_report_functions import *
+from toolbox.rough_alignment.sitk.optimization_status_report_functions import *
 
 def init_regerstration_method():
     """init_regerstration_method [creates the ImageRegistrationMethod object and setting the interpolator as linear]

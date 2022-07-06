@@ -2,12 +2,12 @@ from bdb import Breakpoint
 import sys
 import numpy as np
 sys.path.append('/home/zhw272/programming/pipeline_utility/')
-from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transform_dict_affine
-from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_dict_demons
-from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
-from notebooks.Will.toolbox.IOs.LoadCom import LoadCom
+from toolbox.rough_alignment.apply_affine_transform import transform_dict_affine
+from toolbox.rough_alignment.apply_demons_transform import transform_dict_demons
+from toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
+from toolbox.IOs.LoadCom import LoadCom
 from abakit.registration.utilities import get_rigid_transformation_from_dicts,apply_rigid_transformation_to_com_dict,apply_rigid_transformation_to_com_dict_list
-from notebooks.Will.toolbox.IOs.get_bilis_json_file import get_tranformation
+from toolbox.IOs.get_bilis_json_file import get_tranformation
 
 class TransformCom:
     def __init__(self,load_com_class:LoadCom):

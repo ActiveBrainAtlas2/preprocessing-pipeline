@@ -19,12 +19,12 @@ sys.path.append('/path_to_github_folder/pipeline_utility')
 ## Calculate image to image Affine and Demons transfomation from DK52 to DKXX.
 * To find the image to image affine transformation:
 ``` python
-from notebooks.Will.toolbox.rough_alignment.rough_alignment_affine import get_rough_alignment_affine_transform
+from toolbox.rough_alignment.rough_alignment_affine import get_rough_alignment_affine_transform
 transformi = get_rough_alignment_affine_transform(moving_brain ='DK52',fixed_brain = 'DKXX')
 ```
 * To find the image to image demons transformation:
 ``` python
-from notebooks.Will.toolbox.rough_alignment.rough_alignment_demons import get_rough_alignment_demons_transform
+from toolbox.rough_alignment.rough_alignment_demons import get_rough_alignment_demons_transform
 transformi = get_rough_alignment_demons_transform(moving_brain ='DK52',fixed_brain = 'DKXX')
 ```
 Examples for finding the image to image Affine and Demons transformation can be found in the showcase
@@ -40,19 +40,19 @@ and
 ```
 * To load the computed Affine transformation:
 ``` python
-from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform
+from toolbox.IOs.get_calculated_transforms import get_affine_transform
 affine_transform = get_affine_transform('DKXX')
 ```
 * To load the computed Demons transformation:
 ``` python
-from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_demons_transform
+from toolbox.IOs.get_calculated_transforms import get_demons_transform
 demons_transform = get_demons_transform('DKXX')
 ```
 These utility function handles the save path and loading the transformation files
 * To apply the computed transformation to an image stack:
 ```python
 import Simpleitk as sitk
-from notebooks.Will.toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
+from toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
 moving_image = load_stack_from_prepi('DK52')
 fixed_image = load_stack_from_prepi('DKXX')
 transformed_image = sitk.Resample(
@@ -61,12 +61,12 @@ transformed_image = sitk.Resample(
 ```
 * To apply the computed Affine transformation to a list or array of coms:
 ```python
-from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transform_point_affine
+from toolbox.rough_alignment.apply_affine_transform import transform_point_affine
 transformed_com = transform_point_affine(com_list)
 ```
 * To apply the computed Demons transformation to a list or array of coms:
 ```python
-from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_point_demons
+from toolbox.rough_alignment.apply_demons_transform import transform_point_demons
 transformed_com = transform_point_demons(com_list)
 ```
 These two functions calls
@@ -82,8 +82,8 @@ toolbox\plotting\plot_com_offset.py
 
 To plot offset between two set of coms:
 ```python
-from notebooks.Will.toolbox.plotting.plot_com_offset import *
-from notebooks.Will.toolbox.IOs.get_landmark_lists import get_all_landmarks_in_specimens
+from toolbox.plotting.plot_com_offset import *
+from toolbox.IOs.get_landmark_lists import get_all_landmarks_in_specimens
 
 def get_prep_list_for_rough_alignment_test():
     return ['DK39', 'DK41', 'DK43', 'DK54', 'DK55']
