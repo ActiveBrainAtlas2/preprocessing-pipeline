@@ -6,8 +6,8 @@
 add it to the conf file below:
 <pre>
 [program:backgrounder]
-user=REPLACEMEWITHREALUSER
-command=/usr/local/share/pipeline/bin/python PATHTOVIRTUALENV/activebrainatlas/manage.py process_tasks
+user=apache
+command=/usr/local/share/activebrainatlas/bin/python /var/www/activebrainatlas/manage.py process_tasks
 autostart=true
 autorestart=true
 startretries=5

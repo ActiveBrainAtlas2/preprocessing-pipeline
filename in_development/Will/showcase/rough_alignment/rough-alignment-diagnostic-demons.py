@@ -2,9 +2,9 @@
 import sys
 sys.path.append('/home/zhw272/programming/pipeline_utility')
 import SimpleITK as sitk
-from notebooks.Will.toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
-from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_demons_transform
-from notebooks.Will.toolbox.IOs.save_diagnostic_pdfs import save_diagnostic_pdf
+from toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
+from toolbox.IOs.get_calculated_transforms import get_demons_transform
+from toolbox.IOs.save_diagnostic_pdfs import save_diagnostic_pdf
 mov_brain = 'DK52'
 fix_brain = 'DK43'
 thumb_spacing = (10.4, 10.4, 20.0)

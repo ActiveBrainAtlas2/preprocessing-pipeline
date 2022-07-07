@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from notebooks.Will.toolbox.IOs.save_figures_to_pdf import save_figures_to_pdf
+from toolbox.IOs.save_figures_to_pdf import save_figures_to_pdf
 
 class ComBoxPlot:
     """ [This class generate com offset boxplots in three ways:

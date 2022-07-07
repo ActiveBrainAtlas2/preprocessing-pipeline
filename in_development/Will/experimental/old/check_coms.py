@@ -6,10 +6,10 @@ sys.path.append('/home/zhw272/programming/pipeline_utility')
 sys.path.append('/home/zhw272/programming/pipeline_utility/src')
 from abakit.lib.sql_setup import session
 from abakit.model.center_of_mass import CenterOfMass
-from notebooks.Will.toolbox.IOs.LoadComPickle import LoadComPickle
-from notebooks.Will.toolbox.IOs.LoadComDatabase import LoadComDatabase
-from notebooks.Will.toolbox.IOs.TransformCom import TransformCom
-from notebooks.Will.toolbox.plotting import com_scatter_plot
+from toolbox.IOs.LoadComPickle import LoadComPickle
+from toolbox.IOs.LoadComDatabase import LoadComDatabase
+from toolbox.IOs.TransformCom import TransformCom
+from toolbox.plotting import com_scatter_plot
 import numpy as np
 from lib.comparison_tools import compare_lists
 getcomp = LoadComPickle()

@@ -2,7 +2,7 @@ import sys
 sys.path.append('/home/zhw272/programming/pipeline_utility')
 sys.path.append('/home/zhw272/programming/pipeline_utility/src')
 from utilities.alignment.align_point_sets import get_rigid_transformation_from_dicts
-from notebooks.Will.toolbox.IOs.LoadComDatabase import LoadComDatabase
+from toolbox.IOs.LoadComDatabase import LoadComDatabase
 if __name__ == '__main__':
     prepi = 'DK63'
     get_com = LoadComDatabase()

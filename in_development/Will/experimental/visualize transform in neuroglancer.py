@@ -2,10 +2,10 @@
 import sys
 import numpy as np
 sys.path.append('/home/zhw272/programming/pipeline_utility')
-from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform
-from notebooks.Will.toolbox.IOs.LoadComPickle import LoadComPickle
-from notebooks.Will.toolbox.IOs.TransformCom import TransformCom
-from notebooks.Will.toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
+from toolbox.IOs.get_calculated_transforms import get_affine_transform
+from toolbox.IOs.LoadComPickle import LoadComPickle
+from toolbox.IOs.TransformCom import TransformCom
+from toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
 import SimpleITK as sitk
 import neuroglancer
 getcom = LoadComPickle()

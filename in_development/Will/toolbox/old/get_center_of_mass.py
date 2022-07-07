@@ -1,6 +1,6 @@
 import numpy as np
-from notebooks.Will.toolbox.IOs.get_specimen_lists import get_list_of_brains_to_align
-from notebooks.Will.toolbox.IOs.sql_get_functions import get_atlas_centers,get_center_of_mass
+from toolbox.IOs.get_specimen_lists import get_list_of_brains_to_align
+from toolbox.IOs.sql_get_functions import get_atlas_centers,get_center_of_mass
 
 
 def get_atlas_centers_in_physical_coord():

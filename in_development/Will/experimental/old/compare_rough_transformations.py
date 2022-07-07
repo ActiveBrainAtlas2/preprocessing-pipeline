@@ -1,15 +1,15 @@
 import sys
 import numpy as np
 sys.path.append('/home/zhw272/programming/pipeline_utility')
-# from notebooks.Will.toolbox.rough_alignment.apply_affine_transform import transform_point_affine
-# from notebooks.Will.toolbox.rough_alignment.apply_demons_transform import transform_point_demons
-# from notebooks.Will.toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
-from notebooks.Will.toolbox.IOs.get_bilis_json_file import *
-from notebooks.Will.toolbox.plotting.plot_com_offset import * 
-from notebooks.Will.toolbox.plotting.plot_coms import *
+# from toolbox.rough_alignment.apply_affine_transform import transform_point_affine
+# from toolbox.rough_alignment.apply_demons_transform import transform_point_demons
+# from toolbox.IOs.get_calculated_transforms import get_affine_transform,get_demons_transform
+from toolbox.IOs.get_bilis_json_file import *
+from toolbox.plotting.plot_com_offset import * 
+from toolbox.plotting.plot_coms import *
 from notebooks.Will.experimental.get_coms_from_pickle import *
-from notebooks.Will.toolbox.IOs.get_landmark_lists import get_all_landmarks_in_specimens
-# from notebooks.Will.toolbox.IOs.get_bilis_coms import *
+from toolbox.IOs.get_landmark_lists import get_all_landmarks_in_specimens
+# from toolbox.IOs.get_bilis_coms import *
 # from utilities.alignment.align_point_sets import get_and_apply_transform
 from matplotlib.backends.backend_pdf import PdfPages
 import os
