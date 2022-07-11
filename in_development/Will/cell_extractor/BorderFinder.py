@@ -1,4 +1,4 @@
-from CellDetectorBase import CellDetectorBase
+from .CellDetectorBase import CellDetectorBase
 import os
 import matplotlib.pyplot as plt
 from tifffile import imread
@@ -6,34 +6,27 @@ import numpy as np
 from scipy.signal import argrelextrema,find_peaks
 import cv2
 from concurrent.futures.process import ProcessPoolExecutor
+import pickle
+import pandas as pd
 
 class BorderFinder(CellDetectorBase):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         self.BORDER_INFO = os.path.join(self.ANIMAL_PATH,'border_info.pkl')
-        self.folder = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{self.animal}/preps/CH1/thumbnail/'
+        self.folder = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{self.animal}/preps/CH1/thumbnail_aligned/'
         self.SCALING_FACTOR = 0.03125
 
     def load_images(self):
-        files = os.listdir(self.folder)
+        files = sorted(os.listdir(self.folder))
         self.imgs = []
         for file in files:
             img = imread(self.folder+file)
             self.imgs.append(img)
 
-    def find_thresholds(self):
-        self.thresholds = []
-        bins = np.linspace(0,2000,100)
-        for img in self.imgs:
-            data = img.flatten()
-            line,bins = np.histogram(data,bins)
-            peaks = find_peaks(-line,prominence=10)[0][0]
-            self.thresholds.append(peaks)
-
     def find_max_contour(self):
         self.max_contours = []
-        for i,threshold in enumerate(self.thresholds):
-            mask = self.imgs[i]>threshold
+        for i,image in enumerate(self.imgs):
+            mask = image>5000
             mask = np.array(mask*255).astype('uint8')
             _, thresh = cv2.threshold(mask, 200, 255, 0)
             contours = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[0]
@@ -44,19 +37,49 @@ class BorderFinder(CellDetectorBase):
             self.max_contours.append(max_con)
 
     def find_border_regions(self):
+        file_keys = [self.max_contours,[i.shape for i in self.imgs]]
+        with ProcessPoolExecutor(max_workers=5) as executor:
+            results = executor.map(find_border, *file_keys)
         self.borders = []
-        for i,max_con in enumerate(self.max_contours):
-            self.borders.append(find_border(max_con,self.imgs[i].shape))
-
-    def find_border_cells(self):
-        detections = self.load_detections()
-        is_border_cell = np.zeros(len(detections))==1
-        for sectioni in detections.section.unique():
-            in_section = detections.section==sectioni
-            detection_in_section = detections[in_section]
-            coords = np.array([[i.col*self.SCALING_FACTOR,i.row*self.SCALING_FACTOR] for i in detection_in_section.iterrow()]).astype(int)
-            in_border = np.array([self.borders[sectioni][i] for i in coords])
-            is_border_cell[in_section]=in_border
+        for i in results:
+            self.borders.append(i)
+        
+    def calculate_border_regions(self):
+        print('calculating borders for '+self.animal)
+        self.load_images()
+        print('image loaded')
+        self.find_max_contour()
+        print('contours found')
+        self.find_border_regions()
+        print('borders calculated')
+        pickle.dump(self.borders,open(self.BORDER_INFO,'wb'))
+    
+    def load_border_regions(self):
+        if os.path.isfile(self.BORDER_INFO):
+            self.borders = pickle.load(open(self.BORDER_INFO,'rb'))
+        else:
+            self.calculate_border_regions()
+            
+    def find_border_cells(self,cells):
+        self.load_border_regions()
+        border_cell =[]
+        good_cell = []
+        for sectioni in cells.section.unique():
+            df = cells[cells.section==sectioni]
+            scale_factor = 0.03125
+            data = np.array([df.row.to_list(),df.col.to_list()])*scale_factor
+            border = self.borders[sectioni]
+            npoints = data.shape[1]
+            on_border = []
+            for i in range(npoints):
+                point = data[:,i].astype(int)
+                on_border.append(border[point[0],point[1]]>0)
+            on_border = np.array(on_border)
+            border_cell.append(df[on_border])
+            good_cell.append(df[np.logical_not(on_border)])
+        border_cell = pd.concat(border_cell)
+        good_cell = pd.concat(good_cell)
+        return border_cell,good_cell
 
     def run_commands_in_parallel_with_executor(self, file_keys, workers, function):
         if self.function_belongs_to_a_pipeline_object(function):
