@@ -38,7 +38,7 @@ repeat with slurm
 tar --bzip -x -f slurm*tar.bz2
   
 slurm config:
-./configure --prefix==/ --sysconfdir=/etc
+./configure --prefix=/ --sysconfdir=/etc
   
 make, make install
   
