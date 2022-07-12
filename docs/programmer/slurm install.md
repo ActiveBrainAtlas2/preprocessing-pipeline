@@ -1,12 +1,6 @@
 slurm installation
-
-export MUNGEUSER=9911
-groupadd -g $MUNGEUSER munge
-useradd  -m -c "MUNGE Uid 'N' Gid Emporium" -d /var/lib/munge -u $MUNGEUSER -g munge  -s /sbin/nologin munge
-export SLURMUSER=9912
-groupadd -g $SLURMUSER slurm
-useradd  -m -c "SLURM workload manager" -d /var/lib/slurm -u $SLURMUSER -g slurm  -s /bin/bash slurm
-
+useradd  -u 9911 munge
+useradd  -u 9912 slurm
 download munge, unpack and cd into directory
 /configure \
 --prefix=/ \
