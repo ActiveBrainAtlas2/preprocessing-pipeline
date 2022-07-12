@@ -12,8 +12,7 @@ useradd  -u 9912 slurm
 
 download munge, unpack and cd into directory
 
-/configure \
---prefix=/ \
+/configure --prefix=/ \
 --sysconfdir=/etc \
 --localstatedir=/var \
 --runstatedir=/run
