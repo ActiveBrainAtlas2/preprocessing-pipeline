@@ -20,22 +20,34 @@ download munge, unpack and cd into directory
 do make and make install
 
 systemctl enable munge
+
 system start munge
+
 if failed do
 system status munge
+
 create directory as needed, the directories should be owned by munge user
 if system status munge was not informative, run sudo -u munge /sbin/munged to debug
 copy munge.key from activebrainatlas:/var/munge/munge.key, set access to the same as activebrainatlas
+
 test:
 munge -n | ssh <to activebrainatlas> unmunge
 
 repeat with slurm
+
+tar --bzip -x -f slurm*tar.bz2
+  
 slurm config:
 ./configure --prefix==/ --sysconfdir=/etc
+  
 make, make install
+  
 copy /etc/systemd/system/slurmctld.service from activebrainatlas
+  
 run systemctl enable slurmctl for control nodes and slurmd for compute nodes
+  
 copy slurm config from activebrainatlas:/etc/slurm.conf add new computer as needed and update conf file for all computers in the cluster
+  
 test:
 /sbin/slurmctld -D
 or
