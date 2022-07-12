@@ -15,7 +15,7 @@ from pylab import cm
 from collections import defaultdict
 import pickle
 from abakit.Controllers.SqlController import SqlController, file_processed, set_file_completed
-from lib.utilities_process import get_cpus
+from utilities.utilities_process import get_cpus
 from abakit.Controllers.Controller import create_pooled_session
 
 def calculate_chunks(downsample, mip):

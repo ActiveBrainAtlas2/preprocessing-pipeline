@@ -8,8 +8,8 @@ from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None
 from lib.FileLocationManager import FileLocationManager
-from lib.utilities_alignment import create_downsampled_transforms, clean_image
-from lib.utilities_registration import (
+from utilities.utilities_alignment import create_downsampled_transforms, clean_image
+from utilities.utilities_registration import (
     register_simple,
     parameters_to_rigid_transform,
     rigid_transform_to_parmeters,

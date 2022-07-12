@@ -4,7 +4,7 @@ from tqdm import tqdm
 import re
 from lib.FileLocationManager import FileLocationManager
 from abakit.lib.sqlcontroller import SqlController
-from lib.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
+from utilities.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
 from model.scan_run import ScanRun
 from model.slide import Slide
 from model.slide_czi_to_tif import SlideCziTif

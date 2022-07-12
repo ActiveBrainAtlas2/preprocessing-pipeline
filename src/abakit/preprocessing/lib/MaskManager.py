@@ -9,8 +9,8 @@ import cv2
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-from lib.utilities_mask import combine_dims, merge_mask
-from lib.utilities_process import test_dir
+from utilities.utilities_mask import combine_dims, merge_mask
+from utilities.utilities_process import test_dir
 import warnings
 
 warnings.filterwarnings("ignore")

@@ -3,8 +3,8 @@ import cv2
 import numpy as np
 from skimage import io
 from concurrent.futures.process import ProcessPoolExecutor
-from lib.utilities_mask import rotate_image, pad_image, scaled, equalized
-from lib.utilities_process import test_dir, SCALING_FACTOR, get_cpus
+from utilities.utilities_mask import rotate_image, pad_image, scaled, equalized
+from utilities.utilities_process import test_dir, SCALING_FACTOR, get_cpus
 import tifffile as tiff
 from PIL import Image
 

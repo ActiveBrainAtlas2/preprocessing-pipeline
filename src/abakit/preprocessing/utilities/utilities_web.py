@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from lib.FileLocationManager import FileLocationManager
 from abakit.lib.sqlcontroller import SqlController
-from lib.utilities_process import test_dir
+from utilities.utilities_process import test_dir
 
 
 def make_web_thumbnails(animal):

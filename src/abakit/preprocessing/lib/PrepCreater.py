@@ -6,7 +6,7 @@ from concurrent.futures.process import ProcessPoolExecutor
 
 # from shutil import copyfile
 from abakit.Controllers.SqlController import SqlController
-from lib.utilities_process import test_dir, create_downsample
+from utilities.utilities_process import test_dir, create_downsample
 from abakit.utilities.shell_tools import get_image_size
 
 

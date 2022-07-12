@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from skimage import io
 from lib.FileLocationManager import FileLocationManager
-from lib.utilities_mask import equalized
+from utilities.utilities_mask import equalized
 
 
 def create_normalization(animal, channel):

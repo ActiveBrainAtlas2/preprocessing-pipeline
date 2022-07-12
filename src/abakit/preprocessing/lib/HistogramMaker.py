@@ -9,7 +9,7 @@ from concurrent.futures.process import ProcessPoolExecutor
 from lib.FileLocationManager import FileLocationManager
 from lib.logger import get_logger
 from abakit.Controllers.SqlController import SqlController
-from lib.utilities_process import test_dir, get_cpus
+from utilities.utilities_process import test_dir, get_cpus
 
 COLORS = {1: "b", 2: "r", 3: "g"}
 from lib.pipeline_utilities import read_image

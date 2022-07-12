@@ -8,13 +8,13 @@ from concurrent.futures.process import ProcessPoolExecutor
 from sqlalchemy import false
 from sqlalchemy.orm.exc import NoResultFound
 import tifffile as tiff
-from lib.utilities_mask import  place_image
+from utilities.utilities_mask import  place_image
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.FileLocationManager import FileLocationManager
 from abakit.Controllers.SqlController import SqlController
-from lib.utilities_alignment import (create_downsampled_transforms, process_image)
-from lib.utilities_process import test_dir, get_cpus
+from utilities.utilities_alignment import (create_downsampled_transforms, process_image)
+from utilities.utilities_process import test_dir, get_cpus
 from abakit.model.elastix_transformation import ElastixTransformation
 from abakit.lib.sql_setup import session
 

@@ -3,7 +3,7 @@ import glob
 import cv2
 import numpy as np
 from skimage import io
-from lib.utilities_mask import equalized
+from utilities.utilities_mask import equalized
 from abakit.utilities.shell_tools import get_image_size
 
 

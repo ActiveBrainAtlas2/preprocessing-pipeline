@@ -13,7 +13,7 @@ from abakit.utilities.shell_tools import get_image_size
 from abakit.utilities.masking import combine_dims, merge_mask
 from abakit.lib.sql_setup import CREATE_FULL_RES_MASKS
 from abakit.lib.sqlcontroller import SqlController
-from lib.utilities_process import get_cpus, test_dir
+from utilities.utilities_process import get_cpus, test_dir
 import warnings
 warnings.filterwarnings("ignore")
 
