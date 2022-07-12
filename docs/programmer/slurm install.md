@@ -1,3 +1,9 @@
+slurm download:
+https://download.schedmd.com/slurm/slurm-22.05.2.tar.bz2
+
+munge download:
+https://github.com/dun/munge/tarball/master
+
 slurm installation
 
 useradd  -u 9911 munge
