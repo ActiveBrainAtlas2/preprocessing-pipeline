@@ -1,12 +1,17 @@
 slurm installation
+
 useradd  -u 9911 munge
+
 useradd  -u 9912 slurm
+
 download munge, unpack and cd into directory
+
 /configure \
 --prefix=/ \
 --sysconfdir=/etc \
 --localstatedir=/var \
 --runstatedir=/run
+
 do make and make install
 
 systemctl enable munge
