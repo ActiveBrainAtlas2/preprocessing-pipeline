@@ -298,10 +298,10 @@ class NumpyToNeuroglancer():
         return
 
     def process_image(self, file_key):
-        index, infile,host,schema,orientation = file_key
-        session = create_pooled_session(host,schema)
+        index, infile, host, schema, orientation = file_key
+        session = create_pooled_session(host, schema)
         basefile = os.path.basename(infile)
-        completed = file_processed(self.animal, self.progress_id, basefile,session)
+        completed = file_processed(self.animal, self.progress_id, basefile, session)
         if completed:
             print(f"Section {index} already processed, skipping ")
             return

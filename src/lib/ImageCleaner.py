@@ -14,6 +14,14 @@ from copy import copy
 from abakit.model.slide import SlideCziTif
 from abakit.model.slide import Slide
 from abakit.model.slide import Section
+from pathlib import Path
+import operator
+import gc
+import math
+from timeit import default_timer as timer
+
+from multiprocessing import Semaphore
+from multiprocessing import Manager
 
 
 class ImageCleaner:
@@ -37,6 +45,11 @@ class ImageCleaner:
         INPUT = self.fileLocationManager.get_thumbnail(self.channel)
         MASKS = self.fileLocationManager.thumbnail_masked
         self.logevent(f"INPUT FOLDER: {INPUT}")
+        starting_files = os.listdir(INPUT)
+        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+        self.logevent(f"MASK FOLDER: {MASKS}")
+        starting_files = os.listdir(INPUT)
+        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
         self.logevent(f"OUTPUT FOLDER: {CLEANED}")
         os.makedirs(CLEANED, exist_ok=True)
         self.parallel_create_cleaned(INPUT, CLEANED, MASKS)
@@ -49,7 +62,10 @@ class ImageCleaner:
         MASKS = self.fileLocationManager.full_masked
         self.logevent(f"INPUT FOLDER: {INPUT}")
         starting_files = os.listdir(INPUT)
-        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+        self.logevent(f"FILE COUNT: {len(starting_files)}")
+        self.logevent(f"MASK FOLDER: {MASKS}")
+        starting_files = os.listdir(INPUT)
+        self.logevent(f"FILE COUNT: {len(starting_files)}")
         self.logevent(f"OUTPUT FOLDER: {CLEANED}")
         self.parallel_create_cleaned(INPUT, CLEANED, MASKS)
 
@@ -70,7 +86,21 @@ class ImageCleaner:
         test_dir(
             self.animal, INPUT, self.section_count, self.downsample, same_size=False
         )
-        files = sorted(os.listdir(INPUT))
+
+        files = os.listdir(INPUT)
+        dict_target_filesizes = {}  # dict for symlink <-> target file size
+        for filename in files:
+            symlink = os.path.join(INPUT, filename)
+            target_file = Path(symlink).resolve()  # taget of symbolic link
+            file_size = os.path.getsize(target_file)
+            dict_target_filesizes[filename] = file_size
+
+        files_ordered_by_filesize_desc = dict(
+            sorted(
+                dict_target_filesizes.items(), key=operator.itemgetter(1), reverse=True
+            )
+        )
+
         sections = self.sqlController.get_sections(self.animal, self.channel)
         rotations_per_section = [self.get_section_rotation(i) for i in sections]
         progress_id = self.sqlController.get_progress_id(
@@ -78,9 +108,17 @@ class ImageCleaner:
         )
         self.sqlController.set_task(self.animal, progress_id)
         file_keys = []
-        for i, file in enumerate(files):
+        for i, file in enumerate(files_ordered_by_filesize_desc.keys()):
+
             infile = os.path.join(INPUT, file)
-            outpath = os.path.join(CLEANED, file)
+            # print(f"FILE:{file}")
+            # print(f"INFILE:{infile}")
+            # target_file = Path(infile).resolve()  # taget of symbolic link
+            # print(f"TARGET_FILE:{target_file}")
+
+            # outpath = os.path.join("/", "tmp", self.animal, file)  # local NVMe
+            outpath = os.path.join(CLEANED, file)  # regular-birdstore
+
             if os.path.exists(outpath):
                 continue
             maskfile = os.path.join(MASKS, file)
@@ -97,9 +135,16 @@ class ImageCleaner:
                 ]
             )
         workers = self.get_nworkers()
+
+        # self.run_commands_in_parallel_with_multiprocessing(
+        #     [file_keys], workers, clean_and_rotate_image
+        # )
+
+        # ORG - START
         self.run_commands_in_parallel_with_executor(
             [file_keys], workers, clean_and_rotate_image
         )
+        # ORD - END
 
 
 def clean_and_rotate_image(file_key):
@@ -131,21 +176,35 @@ def clean_and_rotate_image(file_key):
     img = read_image(infile)
     mask = read_image(maskfile)
     cleaned = apply_mask(img, mask, infile)
+    print(f"MEM SIZE OF img {infile}: {sys.getsizeof(img)}")
+    print(f"MEM SIZE OF mask: {sys.getsizeof(mask)}")
+    print(f"MEM SIZE OF cleaned: {sys.getsizeof(cleaned)}")
+    print(
+        f"TOTAL MEMORY SIZE FOR AGGREGATE (img, mask, cleaned): {convert_size(sys.getsizeof(img)+sys.getsizeof(mask)+sys.getsizeof(cleaned))}"
+    )
     if channel == 1:
         cleaned = scaled(cleaned, mask, epsilon=0.01)
         cleaned = equalized(cleaned)
     # cropped = crop_image(cleaned, mask)
     del img
     del mask
+    gc.collect()
+    print("START PAD IMAGE")
     cropped = pad_image(cleaned, infile, max_height, max_width, 0)
+    print("START ROTATION")
     if rotation > 0:
         cropped = rotate_image(cropped, infile, rotation)
     if flip == "flip":
         cropped = np.flip(cropped)
     if flip == "flop":
         cropped = np.flip(cropped, axis=1)
+    print("START PAD IMAGE2")
     cropped = pad_image(cropped, infile, max_width, max_height, 0)
+    start_time = timer()
+    print("START FILESAVE ", outpath)
     tiff.imsave(outpath, cropped)
+    end_time = timer()
+    print(f"SAVE TIME: {round((end_time - start_time), 1)} s")
     del cropped
     return
 

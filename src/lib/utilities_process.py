@@ -31,7 +31,6 @@ def get_cpus():
     nmax = 4
     usecpus = (nmax, nmax)
     cpus = {}
-    cpus["mothra"] = (1, 1)
     cpus["muralis"] = (10, 20)
     cpus["basalis"] = (4, 12)
     cpus["ratto"] = (4, 8)
@@ -106,6 +105,7 @@ def test_dir(animal, directory, section_count, downsample=True, same_size=False)
 
     if section_count == 0:
         section_count = len(files)
+
     widths = set()
     heights = set()
     for f in files:
@@ -128,12 +128,7 @@ def test_dir(animal, directory, section_count, downsample=True, same_size=False)
         min_height = 0
         max_height = 0
     if section_count != len(files):
-        print(
-            "[EXPECTED] SECTION COUNT:",
-            section_count,
-            "[ACTUAL] FILES:",
-            len(files),
-        )
+        print(f"[EXPECTED] SECTION COUNT: {section_count} [ACTUAL] FILES: {len(files)}")
         error += f"Number of files in {directory} is incorrect.\n"
     if min_width != max_width and min_width > 0 and same_size:
         error += f"Widths are not of equal size, min is {min_width} and max is {max_width}.\n"
@@ -335,3 +330,14 @@ def create_downsample(file_key):
     del img
     gc.collect()
     return
+
+
+def submit_proxy(function, semaphore, executor, *args, **kwargs):
+    def task_complete_callback(future):
+        semaphore.release()
+
+    semaphore.acquire() # acquire the semaphore, blocks if occupied
+
+    future = executor.submit(function, *args, **kwargs)
+    future.add_done_callback(task_complete_callback)
+    return future

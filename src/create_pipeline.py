@@ -22,6 +22,7 @@ for more information.
 import argparse
 import settings
 from lib.pipeline import Pipeline
+import os
 
 
 def run_pipeline(animal, channel, downsample, data_path, host, schema, debug):
@@ -57,15 +58,42 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, debug):
 
 
 def qc_rerun(animal, channel, downsample, data_path, host, schema, debug):
-    # if step > 2:
-    #     '''
-    #     THIS STEP IS POST QC (MASKING):
-    #     DELETE FOLDERS: thumbnail_masked, thumbnail_aligned, thumbnail_cleaned, neuroglancer_data
-    #     DELETE DB ENTRIES FROM file_log TABLE
-    #     '''
-    #     print("Step 3 (REVISED JUN-2022)")
-    #     #pipeline.clean_images_and_create_histogram()
-    pass
+    """
+    THIS STEP IS POST QC (MASKING):
+    DELETE FOLDERS: thumbnail_masked, thumbnail_aligned, thumbnail_cleaned
+    """
+    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug)
+    print(
+        "RUNNING POST-QC CLEANUP AND RE-RUN WITH THE FOLLOWING SETTINGS:",
+        "prep_id: " + animal,
+        "channel: " + str(channel),
+        "downsample: " + str(downsample),
+        "host: " + host,
+        "schema: " + schema,
+        "debug: " + str(debug),
+        sep="\n",
+    )
+    pipeline.qc_cleanup()
+
+
+def ng_rerun(animal, channel, downsample, data_path, host, schema, debug):
+    """
+    THIS STEP IS RE-RUN NEUROGLANCER:
+    DELETE FOLDERS: neuroglancer_data
+    DELETE DB ENTRIES FROM file_log TABLE
+    """
+    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug)
+    print(
+        "RUNNING POST-QC CLEANUP AND RE-RUN WITH THE FOLLOWING SETTINGS:",
+        "prep_id: " + animal,
+        "channel: " + str(channel),
+        "downsample: " + str(downsample),
+        "host: " + host,
+        "schema: " + schema,
+        "debug: " + str(debug),
+        sep="\n",
+    )
+    pipeline.ng_cleanup()
 
 
 if __name__ == "__main__":
@@ -102,3 +130,5 @@ if __name__ == "__main__":
 
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(animal, channel, downsample, DATA_PATH, host, schema, debug)
+    # qc_rerun(animal, channel, downsample, DATA_PATH, host, schema, debug)
+    # ng_rerun(animal, channel, downsample, DATA_PATH, host, schema, debug)
