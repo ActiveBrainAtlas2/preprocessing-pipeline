@@ -118,7 +118,7 @@ class ElastixManager:
         Returns:
             list: list of x and y for rotation center that set as the midpoint of the section that is in the middle of the stack
         """
-        INPUT = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
+        INPUT = self.fileLocationManager.get_thumbnail_cleaned(1)
         files = sorted(os.listdir(INPUT))
         midpoint = len(files) // 2
         midfilepath = os.path.join(INPUT, files[midpoint])
@@ -133,7 +133,7 @@ class ElastixManager:
             animal: the animal
         Returns: a dictionary of key=filename, value = coordinates
         """
-        INPUT = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
+        INPUT = self.fileLocationManager.get_thumbnail_cleaned(1)
         files = sorted(os.listdir(INPUT))
         midpoint = len(files) // 2
         transformation_to_previous_sec = {}

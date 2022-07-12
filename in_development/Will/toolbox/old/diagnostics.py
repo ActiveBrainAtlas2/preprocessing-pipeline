@@ -1,6 +1,6 @@
 from utilities.brain_specimens.get_com import get_atlas_com_dict,get_manual_annotation_from_beth
-from notebooks.Will.toolbox.IOs.get_landmark_lists import get_shared_landmarks_between_specimens
-from notebooks.Will.toolbox.brain_lists import get_prep_list_for_rough_alignment_test
+from toolbox.IOs.get_landmark_lists import get_shared_landmarks_between_specimens
+from toolbox.brain_lists import get_prep_list_for_rough_alignment_test
 import numpy as np
 
 def get_common_land_marks():

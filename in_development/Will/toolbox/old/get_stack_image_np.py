@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from notebooks.Will.toolbox.IOs.get_path import get_subpath_to_tif_files,get_subpath_to_affine_transformed_thumbnails
+from toolbox.IOs.get_path import get_subpath_to_tif_files,get_subpath_to_affine_transformed_thumbnails
 import os
 import numpy as np
 import glob

@@ -4,7 +4,7 @@ import SimpleITK as sitk
 import sys
 import os
 sys.path.append('/home/zhw272/programming/pipeline_utility')
-from notebooks.Will.toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
+from toolbox.IOs.get_stack_image_sitk import load_stack_from_prepi
 
 def command_iteration(method, bspline_transform) :
     if method.GetOptimizerIteration() == 0:
