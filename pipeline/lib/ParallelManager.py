@@ -5,7 +5,7 @@ import multiprocessing
 import socket
 import sys
 from multiprocessing.pool import Pool
-from utilities.utilities_process import workernoshell
+from utilities.utilities_process import workernoshell, submit_proxy
 from concurrent.futures.process import ProcessPoolExecutor
 from multiprocessing import Pool,Manager
 import copy

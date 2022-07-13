@@ -170,12 +170,12 @@ def clean_and_rotate_image(file_key):
     img = read_image(infile)
     mask = read_image(maskfile)
     cleaned = apply_mask(img, mask, infile)
-    print(f"MEM SIZE OF img {infile}: {sys.getsizeof(img)}")
-    print(f"MEM SIZE OF mask: {sys.getsizeof(mask)}")
-    print(f"MEM SIZE OF cleaned: {sys.getsizeof(cleaned)}")
-    print(
-        f"TOTAL MEMORY SIZE FOR AGGREGATE (img, mask, cleaned): {convert_size(sys.getsizeof(img)+sys.getsizeof(mask)+sys.getsizeof(cleaned))}"
-    )
+    # print(f"MEM SIZE OF img {infile}: {sys.getsizeof(img)}")
+    # print(f"MEM SIZE OF mask: {sys.getsizeof(mask)}")
+    # print(f"MEM SIZE OF cleaned: {sys.getsizeof(cleaned)}")
+    # print(
+    #     f"TOTAL MEMORY SIZE FOR AGGREGATE (img, mask, cleaned): {convert_size(sys.getsizeof(img)+sys.getsizeof(mask)+sys.getsizeof(cleaned))}"
+    # )
     if channel == 1:
         cleaned = scaled(cleaned, mask, epsilon=0.01)
         cleaned = equalized(cleaned)

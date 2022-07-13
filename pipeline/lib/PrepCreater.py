@@ -1,5 +1,6 @@
 import os
 from PIL import Image
+from debugpy import breakpoint
 
 Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor

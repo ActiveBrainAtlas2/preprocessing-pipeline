@@ -335,3 +335,14 @@ def create_downsample(file_key):
     del img
     gc.collect()
     return
+
+
+def submit_proxy(function, semaphore, executor, *args, **kwargs):
+    def task_complete_callback(future):
+        semaphore.release()
+
+    semaphore.acquire() # acquire the semaphore, blocks if occupied
+
+    future = executor.submit(function, *args, **kwargs)
+    future.add_done_callback(task_complete_callback)
+    return future
