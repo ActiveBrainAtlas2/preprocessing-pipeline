@@ -1,4 +1,3 @@
-
 """
 This program will create everything.
 The only required argument is the animal. By default it will work on channel=1
@@ -9,6 +8,7 @@ and downsample = True. Run them in this sequence:
     python src/create_pipeline.py --animal DKXX --channel 1 --downsample false
     python src/create_pipeline.py --animal DKXX --channel 2 --downsample false
     python src/create_pipeline.py --animal DKXX --channel 3 --downsample false
+
 Human intervention is required at several points in the process:
 1. After create meta - the user needs to check the database and verify the images 
 are in the correct order and the images look good.
@@ -22,12 +22,11 @@ for more information.
 import argparse
 import settings
 from lib.pipeline import Pipeline
-import os
 
 
-def run_pipeline(animal, channel, downsample, data_path, host, schema, debug):
+def run_pipeline(animal, channel, downsample, data_path, host, schema, debug,padding_margin):
 
-    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug)
+    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug,padding_margin)
 
     print(
         "RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:",
@@ -58,42 +57,15 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, debug):
 
 
 def qc_rerun(animal, channel, downsample, data_path, host, schema, debug):
-    """
-    THIS STEP IS POST QC (MASKING):
-    DELETE FOLDERS: thumbnail_masked, thumbnail_aligned, thumbnail_cleaned
-    """
-    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug)
-    print(
-        "RUNNING POST-QC CLEANUP AND RE-RUN WITH THE FOLLOWING SETTINGS:",
-        "prep_id: " + animal,
-        "channel: " + str(channel),
-        "downsample: " + str(downsample),
-        "host: " + host,
-        "schema: " + schema,
-        "debug: " + str(debug),
-        sep="\n",
-    )
-    pipeline.qc_cleanup()
-
-
-def ng_rerun(animal, channel, downsample, data_path, host, schema, debug):
-    """
-    THIS STEP IS RE-RUN NEUROGLANCER:
-    DELETE FOLDERS: neuroglancer_data
-    DELETE DB ENTRIES FROM file_log TABLE
-    """
-    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug)
-    print(
-        "RUNNING POST-QC CLEANUP AND RE-RUN WITH THE FOLLOWING SETTINGS:",
-        "prep_id: " + animal,
-        "channel: " + str(channel),
-        "downsample: " + str(downsample),
-        "host: " + host,
-        "schema: " + schema,
-        "debug: " + str(debug),
-        sep="\n",
-    )
-    pipeline.ng_cleanup()
+    # if step > 2:
+    #     '''
+    #     THIS STEP IS POST QC (MASKING):
+    #     DELETE FOLDERS: thumbnail_masked, thumbnail_aligned, thumbnail_cleaned, neuroglancer_data
+    #     DELETE DB ENTRIES FROM file_log TABLE
+    #     '''
+    #     print("Step 3 (REVISED JUN-2022)")
+    #     #pipeline.clean_images_and_create_histogram()
+    pass
 
 
 if __name__ == "__main__":
@@ -107,7 +79,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--downsample", help="Enter true or false", required=False, default="true"
     )
-    parser.add_argument("--step", help=steps, required=False, default=0)
+    parser.add_argument("--step", help="steps", required=False, default=0)
+    parser.add_argument("--pad", help="padding factor",type = float, required=False, default=1)
     parser.add_argument(
         "--debug", help="Enter true or false", required=False, default="false"
     )
@@ -129,6 +102,4 @@ if __name__ == "__main__":
     schema = args.schema
 
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
-    run_pipeline(animal, channel, downsample, DATA_PATH, host, schema, debug)
-    # qc_rerun(animal, channel, downsample, DATA_PATH, host, schema, debug)
-    # ng_rerun(animal, channel, downsample, DATA_PATH, host, schema, debug)
+    run_pipeline(animal, channel, downsample, DATA_PATH, host, schema, debug,args.pad)

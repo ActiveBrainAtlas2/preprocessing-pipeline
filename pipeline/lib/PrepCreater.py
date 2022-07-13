@@ -30,6 +30,10 @@ class PrepCreater:
         else:
             INPUT = self.fileLocationManager.thumbnail_original
             OUTPUT = self.fileLocationManager.get_thumbnail(self.channel)
+        starting_files = os.listdir(INPUT)
+        self.logevent(f"INPUT FOLDER: {INPUT}")
+        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+        self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
         os.makedirs(OUTPUT, exist_ok=True)
         input_paths = []
         output_paths = []

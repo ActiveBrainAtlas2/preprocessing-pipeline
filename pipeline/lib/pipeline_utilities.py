@@ -1,7 +1,8 @@
 from skimage import io
-import os 
+import os, math
 import numpy as np
 from subprocess import check_output
+
 
 def read_image(file_path):
     try:
@@ -24,3 +25,13 @@ def get_max_image_size(folder_path):
         width,height = get_image_size(filepath)
         size.append([int(width),int(height)])
     return np.array(size).max(axis = 0)
+
+
+def convert_size(size_bytes):
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])

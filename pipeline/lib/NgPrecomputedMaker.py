@@ -67,9 +67,7 @@ class NgPrecomputedMaker:
         )
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         self.logevent(f"INPUT FOLDER: {INPUT}")
-        starting_files = glob.glob(
-                os.path.join(INPUT, "*.tif")
-            )
+        starting_files = os.listdir(INPUT)
         self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
         self.logevent(f"OUTPUT FOLDER: {OUTPUT_DIR}")
         test_dir(
@@ -78,6 +76,7 @@ class NgPrecomputedMaker:
         midfile, file_keys, volume_size, num_channels = self.get_file_information(INPUT)
         chunks = self.get_chunk_size()
         scales = self.get_scales()
+        self.logevent(f"CHUNK SIZE: {chunks}; SCALES: {scales}")
         ng = NumpyToNeuroglancer(
             self.animal,
             None,

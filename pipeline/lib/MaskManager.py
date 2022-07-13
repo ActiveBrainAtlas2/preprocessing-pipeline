@@ -27,6 +27,9 @@ class MaskManager:
             test_dir(self.animal, COLORED, self.section_count, True, same_size=False)
             os.makedirs(MASKS, exist_ok=True)
             files = sorted(os.listdir(COLORED))
+            self.logevent(f"INPUT FOLDER: {COLORED}")
+            self.logevent(f"FILE COUNT: {len(files)}")
+            self.logevent(f"MASKS FOLDER: {MASKS}")
             for file in files:
                 filepath = os.path.join(COLORED, file)
                 maskpath = os.path.join(MASKS, file)
@@ -84,8 +87,8 @@ class MaskManager:
         THUMBNAIL = self.fileLocationManager.thumbnail_masked
         MASKED = self.fileLocationManager.full_masked
         self.logevent(f"INPUT FOLDER: {FULLRES}")
-        starting_files = glob.glob(os.path.join(FULLRES, "*.tif"))
-        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+        starting_files = os.listdir(FULLRES)
+        self.logevent(f"FILE COUNT: {len(starting_files)}")
         self.logevent(f"OUTPUT FOLDER: {MASKED}")
         test_dir(
             self.animal, FULLRES, self.section_count, self.downsample, same_size=False
@@ -109,17 +112,20 @@ class MaskManager:
         self.run_commands_in_parallel_with_executor([file_keys], workers, resize_tif)
 
     def create_downsampled_mask(self):
-        """Create masks for the downsampled images using a machine learning algorism"""
+        """Create masks for the downsampled images using a machine learning algorithm"""
         self.load_machine_learning_model()
         transform = torchvision.transforms.ToTensor()
         FULLRES = self.fileLocationManager.get_normalized()
         COLORED = self.fileLocationManager.thumbnail_colored
         self.logevent(f"INPUT FOLDER: {FULLRES}")
+        
         test_dir(
             self.animal, FULLRES, self.section_count, self.downsample, same_size=False
         )
         os.makedirs(COLORED, exist_ok=True)
         files = os.listdir(FULLRES)
+        self.logevent(f"FILE COUNT: {len(files)}")
+        self.logevent(f"OUTPUT FOLDER: {COLORED}")
         for file in files:
             filepath = os.path.join(FULLRES, file)
             mask_dest_file = (

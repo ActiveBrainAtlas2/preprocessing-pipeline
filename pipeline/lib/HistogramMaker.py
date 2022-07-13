@@ -75,7 +75,7 @@ class HistogramMaker:
             MASK_INPUT = self.fileLocationManager.thumbnail_masked
             OUTPUT = self.fileLocationManager.get_histogram(self.channel)
             self.logevent(f"INPUT FOLDER: {INPUT}")
-            files = glob.glob(os.path.join(INPUT, "*.tif"))
+            files = os.listdir(INPUT)
             files = [os.path.basename(i) for i in files]
             lfiles = len(files)
             self.logevent(f"CURRENT FILE COUNT: {lfiles}")

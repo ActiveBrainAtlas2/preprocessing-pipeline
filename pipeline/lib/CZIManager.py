@@ -1,12 +1,14 @@
 import os
+import sys
 from PIL import Image
 from aicspylibczi import CziFile
 from aicsimageio import AICSImage, imread
 from tifffile import imsave
-from utilities.utilities_mask import equalized
+from abakit.lib.utilities_mask import equalized
+from lib.FileLogger import FileLogger
 
 
-class CZIManager:
+class CZIManager(FileLogger):
     def __init__(self, czi_file):
         self.czi_file = czi_file
         self.file = CziFile(czi_file)
@@ -36,18 +38,15 @@ class CZIManager:
         czi_meta_dict[czi_file] = scenes
         return czi_meta_dict
 
-
     def get_nscene(self):  # soon to be deprecated - JUN2022
         if not hasattr(self, "nscene"):
             self.nscene = int(self.file.meta[0][4][3][7].text)
         return self.nscene
 
-    def get_nchannel(self):# soon to be deprecated - JUN2022
+    def get_nchannel(self):  # soon to be deprecated - JUN2022
         if not hasattr(self, "nchannel"):
             self.nchannel = int(self.file.meta[0][4][3][1].text)
         return self.nchannel
-
-
 
     def get_scene_dimension(self, scene_index):
         scene = self.file.get_scene_bounding_box(scene_index)
@@ -60,16 +59,32 @@ class CZIManager:
 
 def extract_tiff_from_czi(czi_file, file_name, scenei, channel=1, scale=1):
     czi = CZIManager(czi_file)
-    data = czi.get_scene(scale=scale, scene_index=scenei, channel=channel)
-    imsave(file_name, data)
+    try:
+        data = czi.get_scene(scale=scale, scene_index=scenei, channel=channel)
+        imsave(file_name, data)
+    except Exception as e:
+        print(
+            f"ERROR READING SCENE - [extract_tiff_from_czi] IN FILE {czi_file} ... SKIPPING"
+        )
+        czi.logevent(
+            f"ERROR READING SCENE - [extract_tiff_from_czi] FROM FILE {czi_file} -> {file_name}; SCENE: {scenei}; CHANNEL: {channel} ... SKIPPING - ERR: {e}"
+        )
 
 
 def extract_png_from_czi(
     czi_file, file_name, scenei, channel=1, scale=1, normalize=True
 ):
     czi = CZIManager(czi_file)
-    data = czi.get_scene(scale=scale, scene_index=scenei, channel=channel)
-    if normalize:
-        data = equalized(data)
-    im = Image.fromarray(data)
-    im.save(file_name)
+    try:
+        data = czi.get_scene(scale=scale, scene_index=scenei, channel=channel)
+        if normalize:
+            data = equalized(data)
+        im = Image.fromarray(data)
+        im.save(file_name)
+    except Exception as e:
+        print(
+            f"ERROR READING SCENE - [extract_png_from_czi] IN FILE {czi_file} ... SKIPPING"
+        )
+        czi.logevent(
+            f"ERROR READING SCENE - [extract_png_from_czi] IN FILE {czi_file} ... SKIPPING - ERR: {e}"
+        )

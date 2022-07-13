@@ -1,7 +1,7 @@
-import os
+import glob
+import os, psutil
 import numpy as np
 import pandas as pd
-import glob
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
@@ -30,7 +30,7 @@ class ElastixManager:
             files = sorted(os.listdir(INPUT))
             nfiles = len(files)
             self.logevent(f"INPUT FOLDER: {INPUT}")
-            self.logevent(f"CURRENT FILE COUNT: {nfiles}")
+            self.logevent(f"FILE COUNT: {nfiles}")
             fixed_indexs = []
             moving_indexs = []
             for i in range(1, nfiles):
@@ -51,8 +51,10 @@ class ElastixManager:
             )
             for i, result in enumerate(results):
                 moving_index = moving_indexs[i]
-                xshift,yshift,rotation,center = result
-                self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
+                xshift, yshift, rotation, center = result
+                self.sqlController.add_elastix_row(
+                    self.animal, moving_index, rotation, xshift, yshift
+                )
 
     def rigid_transform_to_parmeters(self, transform):
         """convert a 2d transformation matrix (3*3) to the rotation angles, rotation center and translation
@@ -178,8 +180,8 @@ class ElastixManager:
             INPUT = self.fileLocationManager.get_full_cleaned(self.channel)
             OUTPUT = self.fileLocationManager.get_full_aligned(self.channel)
             self.logevent(f"INPUT FOLDER: {INPUT}")
-            starting_files = glob.glob(os.path.join(INPUT, "*.tif"))
-            self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+            starting_files = os.listdir(INPUT)
+            self.logevent(f"FILE COUNT: {len(starting_files)}")
             self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
             self.align_images(INPUT, OUTPUT, transforms)
             progress_id = self.sqlController.get_progress_id(
@@ -225,18 +227,40 @@ class ElastixManager:
             INPUT (str): directory of images to be aligned
             OUTPUT (str): directory output the aligned images
             transforms (dict): dictionary of transformations indexed by id of moving sections
+
+        Note: image alignment is memory intensive (but all images are same size)
+        6 factor of est. RAM per image for clean/transform needs firmed up but safe
+
         """
         os.makedirs(OUTPUT, exist_ok=True)
         transforms = OrderedDict(sorted(transforms.items()))
+        ram_coefficient = 6
+
+        first_file_name = list(transforms.keys())[0]
+        infile = os.path.join(INPUT, first_file_name)
+        single_file_size = os.path.getsize(infile)
+        mem_avail = psutil.virtual_memory().available
+        batch_size = mem_avail // (single_file_size * ram_coefficient)
+        print(
+            f"MEM AVAILABLE: {convert_size(mem_avail)}; SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
+        )
+        self.logevent(
+            f"MEM AVAILABLE: {convert_size(mem_avail)}; SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
+        )
         file_keys = []
+        workers = batch_size
+
         for i, (file, T) in enumerate(transforms.items()):
             infile = os.path.join(INPUT, file)
             outfile = os.path.join(OUTPUT, file)
             if os.path.exists(outfile):
                 continue
             file_keys.append([i, infile, outfile, T])
-        workers = self.get_nworkers()
-        self.run_commands_in_parallel_with_executor([file_keys], workers, clean_image)
+
+        self.run_commands_in_parallel_with_executor(
+            [file_keys], workers, clean_image, batch_size=batch_size
+        )
+
 
     def create_csv_data(self, animal, file_keys):
         """legacy code, I don't think this is used in the pipeline and should be depricated
@@ -263,12 +287,17 @@ class ElastixManager:
                 }
             )
         df = pd.DataFrame(data)
-        df.to_csv(f'/tmp/{animal}.section2sectionalignments.csv', index=False)
+        df.to_csv(f"/tmp/{animal}.section2sectionalignments.csv", index=False)
 
-def calculate_elastix_transformation(INPUT,fixed_index,moving_index,center,debug):
-    second_transform_parameters,initial_transform_parameters = \
-    register_simple(INPUT, fixed_index, moving_index,debug)
+
+def calculate_elastix_transformation(INPUT, fixed_index, moving_index, center, debug):
+    second_transform_parameters, initial_transform_parameters = register_simple(
+        INPUT, fixed_index, moving_index, debug
+    )
     T1 = parameters_to_rigid_transform(*initial_transform_parameters)
-    T2 = parameters_to_rigid_transform(*second_transform_parameters,center)
-    T = T1@T2     
-    return rigid_transform_to_parmeters(T,center)
+    T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
+    T = T1 @ T2
+    return rigid_transform_to_parmeters(T, center)
+
+
+

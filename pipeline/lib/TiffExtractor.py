@@ -2,6 +2,8 @@ import os
 import hashlib
 from lib.ParallelManager import ParallelManager
 from lib.CZIManager import extract_tiff_from_czi, extract_png_from_czi
+
+
 class TiffExtractor(ParallelManager):
     def extract_tifs_from_czi(self):
         """
@@ -19,7 +21,7 @@ class TiffExtractor(ParallelManager):
         """
         if not self.downsample:
             OUTPUT = self.fileLocationManager.tif
-            scale_factor=1
+            scale_factor = 1
         else:
             OUTPUT = self.fileLocationManager.thumbnail_original
             scale_factor = 0.03125
@@ -28,9 +30,10 @@ class TiffExtractor(ParallelManager):
         sections = self.sqlController.get_distinct_section_filenames(
             self.animal, self.channel
         )
+        
         czi_file = []
         tif_file = []
-        scene_index  = []
+        scene_index = []
         for section in sections:
             input_path = os.path.join(INPUT, section.czi_file)
             output_path = os.path.join(OUTPUT, section.file_name)
@@ -40,13 +43,17 @@ class TiffExtractor(ParallelManager):
                 continue
             czi_file.append(input_path)
             tif_file.append(output_path)
-            scene_index.append(section.scene_number-1)
+            scene_index.append(section.scene_number - 1)
         workers = self.get_nworkers()
         nfiles = len(czi_file)
         channel = [self.channel for _ in range(nfiles)]
         scale = [scale_factor for _ in range(nfiles)]
-        self.logevent(f"ALLOCATED CORES: {workers}")
-        self.run_commands_in_parallel_with_executor([czi_file,tif_file,scene_index,channel,scale],workers,extract_tiff_from_czi)
+
+        self.run_commands_in_parallel_with_executor(
+            [czi_file, tif_file, scene_index, channel, scale],
+            workers,
+            extract_tiff_from_czi,
+        )
         self.update_database()
 
     def update_database(self):
@@ -70,7 +77,6 @@ class TiffExtractor(ParallelManager):
             path_to_full_resolution_tiff = os.path.join(
                 self.fileLocationManager.prep, "CH" + str(channel), filename
             )
-            
         with open(path_to_full_resolution_tiff, "rb") as f:
             # Read and update hash string value in blocks of 4K
             for byte_block in iter(lambda: f.read(4096), b""):
@@ -103,16 +109,20 @@ class TiffExtractor(ParallelManager):
         for section in sections:
             input_path = os.path.join(INPUT, section.czi_file)
             output_path = os.path.join(OUTPUT, section.file_name)
-            output_path = output_path[:-4]+'.png'
+            output_path = output_path[:-4] + ".png"
             if not os.path.exists(input_path):
                 continue
             if os.path.exists(output_path):
                 continue
             czi_file.append(input_path)
             png_file.append(output_path)
-            scene_index.append(section.scene_number-1)
+            scene_index.append(section.scene_number - 1)
         workers = self.get_nworkers()
         nfiles = len(input_path)
         channel = [1 for _ in range(nfiles)]
         scale = [0.01 for _ in range(nfiles)]
-        self.run_commands_in_parallel_with_executor([czi_file,png_file,scene_index,channel,scale],workers,extract_png_from_czi)
+        self.run_commands_in_parallel_with_executor(
+            [czi_file, png_file, scene_index, channel, scale],
+            workers,
+            extract_png_from_czi,
+        )

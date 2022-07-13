@@ -10,7 +10,9 @@ All imports are listed by the order in which they are used in the pipeline.
 import os
 import sys
 from shutil import which
-import glob
+import shutil
+import threading
+from xml.dom.pulldom import START_DOCUMENT
 from lib.FileLocationManager import FileLocationManager
 from lib.MetaUtilities import MetaUtilities
 from lib.PrepCreater import PrepCreater
@@ -21,6 +23,7 @@ from lib.TiffExtractor import TiffExtractor
 from timeit import default_timer as timer
 from pipeline.Controllers.SqlController import SqlController
 from lib.FileLogger import FileLogger
+from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
 from lib.Normalizer import Normalizer
 from lib.MaskManager import MaskManager
@@ -95,12 +98,11 @@ class Pipeline(
         self.section_count = self.sqlController.get_section_count(self.animal)
         super().__init__(self.fileLocationManager.get_logdir())
 
-    def get_chunk_size(self):
+    def get_chunk_size(self):  # for max resolution
         if self.downsample == True:
             return [256, 256, 1]
         if self.downsample == False:
-            return [4096, 4096, 1]
-            # return [40960, 40960, 1]
+            return [2048, 2048, 1]
 
     @staticmethod
     def check_programs():
@@ -145,12 +147,23 @@ class Pipeline(
         start_time = timer()
 
         self.logevent("START " + str(function_name))
+        if self.downsample == False and (
+            function_name == "Creating normalization"
+            or function_name == "Applying masks"
+            or function_name == "Making histogram"
+            or function_name == "Making combined histogram"
+            or function_name == "Creating elastics transform"
+        ):
+            self.logevent(f"N/A - FULL RESOLUTION")
         if function_name == "Extracting Tiffs":
-            starting_files = glob.glob(
-                os.path.join(self.fileLocationManager.tif, "*.tif")
-            )
-            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.tif}")
-            self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+            if not self.downsample:
+                OUTPUT = self.fileLocationManager.tif
+            else:
+                OUTPUT = self.fileLocationManager.thumbnail_original
+            if os.path.exists(OUTPUT):
+                starting_files = os.listdir(OUTPUT)
+                self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
+                self.logevent(f"FILE COUNT: {len(starting_files)}")
         elif function_name == "create web friendly image":
             self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.thumbnail_web}")
         elif function_name == "Making downsampled copies":
@@ -168,38 +181,38 @@ class Pipeline(
         if (
             function_name == "Creating meta"
         ):  # TODO clean up dup code w/ extracting tiff
-            ending_files = glob.glob(
-                os.path.join(self.fileLocationManager.czi, "*.czi")
-            )
-            self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
+            ending_files = os.listdir(self.fileLocationManager.czi)
+            self.logevent(f"FILE COUNT: {len(ending_files)}")
 
             unitary_calc = (end_time - start_time) / len(ending_files)
             self.logevent(
                 f"TIME PER FILE CREATION (seconds): {str(round(unitary_calc, 1))}\n{sep}"
             )
         elif function_name == "Extracting Tiffs":
-            ending_files = glob.glob(
-                os.path.join(self.fileLocationManager.tif, "*.tif")
-            )
-            self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
-
-            if ending_files != starting_files:
+            if not self.downsample:
+                OUTPUT = self.fileLocationManager.tif
+            else:
+                OUTPUT = self.fileLocationManager.thumbnail_original
+            ending_files = os.listdir(OUTPUT)
+            if ending_files != starting_files and len(ending_files) > 0:
                 self.logevent(
                     f"AGGREGATE: {function_name} took {end_time - start_time} seconds"
                 )
-                print("FINAL FILE COUNT:", len(ending_files))
                 unitary_calc = (end_time - start_time) / len(ending_files)
                 self.logevent(
-                    f"AVERAGE TIME PER FILE CREATION (seconds): {str(round(unitary_calc, 1))}\n{sep}"
+                    f"AVERAGE TIME PER FILE CREATION (seconds): {round(unitary_calc, 1)}\n{sep}"
                 )
-            else:
+            elif ending_files == starting_files and len(ending_files) > 0:
                 self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
-                self.logevent(f"CALCULATE FILE CHECKSUMS\n{sep}")
+
+            if len(ending_files) == 0:
+                print("NO FILES EXTRACTED - CRITICAL ERROR...EXITING")
+                self.logevent(f"NO FILES EXTRACTED - CRITICAL ERROR...EXITING\n{sep}")
+                sys.exit(1)
+
         elif function_name == "create web friendly image":
-            ending_files = glob.glob(
-                os.path.join(self.fileLocationManager.thumbnail_web, "*.png")
-            )
-            self.logevent(f"CURRENT (FINAL) FILE COUNT: {len(ending_files)}")
+            ending_files = os.listdir(self.fileLocationManager.thumbnail_web)
+            self.logevent(f"FILE COUNT: {len(ending_files)}\n{sep}")
         else:
             self.logevent(
                 f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}"
@@ -254,11 +267,21 @@ class Pipeline(
 
     def align_images_within_stack(self):
         """This function calculates the rigid transformation used to align the images within stack and applies them to the image"""
-        start_time = timer()
+
         self.run_program_and_time(
             self.create_within_stack_transformations, "Creating elastics transform"
         )
+        self.logevent("START get_transformations (PREREQUISITE FOR align_images)")
+        start_time = timer()
         transformations = self.get_transformations()
+        end_time = timer()
+        total_elapsed_time = end_time - start_time
+        print(f"'get_transformations' took {round(total_elapsed_time,1)} seconds")
+        sep = "*" * 40 + "\n"
+
+        print("START align_images")
+        self.logevent("START align_images")
+        start_time = timer()
         self.align_downsampled_images(transformations)
         self.align_full_size_image(transformations)
         end_time = timer()
@@ -285,3 +308,61 @@ class Pipeline(
         self.logevent(
             f"'create_neuroglancer_cloud_volume' took {round((end_time - start_time), 1)} seconds\n{sep}"
         )
+
+    def qc_cleanup(self):
+        """Post QC to clean up filesystem prior to re-running mask edits"""
+
+        def background_del(org_path):
+            try:
+                basename = os.path.basename(os.path.normpath(org_path))
+                new_path = os.path.join(org_path, "..", "." + str(basename))
+                if os.path.exists(basename):
+                    os.rename(org_path, new_path)
+                    threading.Thread(target=lambda: shutil.rmtree(new_path)).start()
+                else:
+                    print(f"FOLDER ALREADY DELETED: {basename}")
+            except OSError as e:
+                print(f"FOLDER ALREADY DELETED: {new_path}")
+
+        sep = "*" * 40 + "\n"
+        msg = f"DELETE MASKED FILES FROM {self.fileLocationManager.thumbnail_masked}"
+        self.logevent(f"{msg} \n{sep}")
+        background_del(self.fileLocationManager.thumbnail_masked)
+
+        thumbnail_aligned_dir = self.fileLocationManager.get_thumbnail_aligned()
+        msg = f"DELETE ALIGNED THUMBNAILS FILES FROM {thumbnail_aligned_dir}"
+        self.logevent(f"{msg} \n{sep}")
+        background_del(thumbnail_aligned_dir)
+
+        thumbnail_cleaned_dir = self.fileLocationManager.get_thumbnail_cleaned()
+        msg = f"DELETE CLEANED THUMBNAILS FILES FROM {thumbnail_cleaned_dir}"
+        self.logevent(f"{msg} \n{sep}")
+        background_del(thumbnail_cleaned_dir)
+
+    def ng_cleanup(self):
+        """
+        THIS STEP IS RE-RUN NEUROGLANCER:
+        DELETE FOLDERS: neuroglancer_data
+        DELETE DB ENTRIES FROM file_log TABLE
+        """
+
+        def background_del(org_path):
+            try:
+                basename = os.path.basename(os.path.normpath(org_path))
+                new_path = os.path.join(org_path, "..", "." + str(basename))
+                if os.path.exists(basename):
+                    os.rename(org_path, new_path)
+                    threading.Thread(target=lambda: shutil.rmtree(new_path)).start()
+                else:
+                    print(f"FOLDER ALREADY DELETED: {basename}")
+            except OSError as e:
+                print(f"FOLDER ALREADY DELETED: {new_path}")
+
+        sep = "*" * 40 + "\n"
+        neuroglancer_dir = self.fileLocationManager.neuroglancer_data
+        msg = f"DELETE NEUROGLANCER FILES FROM {neuroglancer_dir}"
+        self.logevent(f"{msg} \n{sep}")
+        background_del(neuroglancer_dir)
+
+        db_output = self.sqlController.clear_file_log(self.animal)
+        print(f"DB RESULTS: {db_output}")
