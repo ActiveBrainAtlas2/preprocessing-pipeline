@@ -14,7 +14,7 @@ from django.template import Origin
 import numpy as np
 from tqdm import tqdm
 from scipy.ndimage.measurements import center_of_mass
-from pipeline.atlas.VolumeToContour import average_masks
+from atlas.VolumeToContour import average_masks
 class VolumeMaker:
 
     def calculate_origin_and_volume_for_one_segment(self,segmenti,interpolate=0):

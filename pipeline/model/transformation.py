@@ -1,7 +1,7 @@
 from .atlas_model import Base, AtlasModel
 from sqlalchemy import Column, String, Integer,LargeBinary,ForeignKey,DateTime
 from sqlalchemy.orm import relationship
-from pipeline.model.animal import Animal
+from model.animal import Animal
 class Transformation(Base, AtlasModel):
     __tablename__ = 'transformation'
     id =  Column(Integer, primary_key=True, nullable=False)

@@ -1,7 +1,7 @@
-from pipeline.Controllers.AnnotationSessionController import AnnotationSessionController
-from pipeline.model.annotation_points import CellSources,MarkedCell
-from pipeline.model.cell_type import CellType
-from pipeline.Controllers.Controller import Controller
+from Controllers.AnnotationSessionController import AnnotationSessionController
+from model.annotation_points import CellSources,MarkedCell
+from model.cell_type import CellType
+from Controllers.Controller import Controller
 import numpy as np
 
 class MarkedCellController(AnnotationSessionController):

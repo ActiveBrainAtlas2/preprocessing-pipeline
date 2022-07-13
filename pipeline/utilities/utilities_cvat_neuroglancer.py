@@ -14,9 +14,9 @@ from matplotlib import colors
 from pylab import cm
 from collections import defaultdict
 import pickle
-from pipeline.Controllers.SqlController import SqlController, file_processed, set_file_completed
+from Controllers.SqlController import SqlController, file_processed, set_file_completed
 from utilities.utilities_process import get_cpus
-from pipeline.Controllers.Controller import create_pooled_session
+from Controllers.Controller import create_pooled_session
 
 def calculate_chunks(downsample, mip):
     """

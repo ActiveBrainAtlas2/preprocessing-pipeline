@@ -4,8 +4,8 @@ from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from lib.FileLocationManager import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
-from pipeline.lib.sqlcontroller import SqlController
-from pipeline.lib.sql_setup import RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
+from lib.sqlcontroller import SqlController
+from lib.sql_setup import RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_2_FULL_RES, RUN_PRECOMPUTE_NEUROGLANCER_CHANNEL_3_FULL_RES
 from utilities.utilities_process import get_cpus, SCALING_FACTOR, test_dir
 
 def get_scales(animal,downsample):

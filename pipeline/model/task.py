@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy.sql import func
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean
 from .atlas_model import Base, AtlasModel
-from pipeline.model.animal import Animal
+from model.animal import Animal
 
 
 class Task(Base, AtlasModel):

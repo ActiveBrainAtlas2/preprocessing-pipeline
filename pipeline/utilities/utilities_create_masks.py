@@ -8,11 +8,11 @@ from concurrent.futures.process import ProcessPoolExecutor
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-from pipeline.utilities.file_location import FileLocationManager 
-from pipeline.utilities.shell_tools import get_image_size
-from pipeline.utilities.masking import combine_dims, merge_mask
-from pipeline.lib.sql_setup import CREATE_FULL_RES_MASKS
-from pipeline.lib.sqlcontroller import SqlController
+from utilities.file_location import FileLocationManager 
+from utilities.shell_tools import get_image_size
+from utilities.masking import combine_dims, merge_mask
+from lib.sql_setup import CREATE_FULL_RES_MASKS
+from lib.sqlcontroller import SqlController
 from utilities.utilities_process import get_cpus, test_dir
 import warnings
 warnings.filterwarnings("ignore")

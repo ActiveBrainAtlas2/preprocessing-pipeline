@@ -3,12 +3,12 @@ from datetime import datetime
 from tqdm import tqdm
 import re
 from lib.FileLocationManager import FileLocationManager
-from pipeline.lib.sqlcontroller import SqlController
+from lib.sqlcontroller import SqlController
 from utilities.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
 from model.scan_run import ScanRun
 from model.slide import Slide
 from model.slide_czi_to_tif import SlideCziTif
-from pipeline.lib.sql_setup import session, SLIDES_ARE_SCANNED, CZI_FILES_ARE_PLACED_ON_BIRDSTORE, CZI_FILES_ARE_SCANNED_TO_GET_METADATA
+from lib.sql_setup import session, SLIDES_ARE_SCANNED, CZI_FILES_ARE_PLACED_ON_BIRDSTORE, CZI_FILES_ARE_SCANNED_TO_GET_METADATA
 
 
 def make_meta(animal):

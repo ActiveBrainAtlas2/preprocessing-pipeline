@@ -1,5 +1,5 @@
-from pipeline.model.urlModel import UrlModel
-from pipeline.Controllers.Controller import Controller
+from model.urlModel import UrlModel
+from Controllers.Controller import Controller
 class UrlController(Controller):
     """The sqlalchemy controller to query the neuroglancer url table
     """    

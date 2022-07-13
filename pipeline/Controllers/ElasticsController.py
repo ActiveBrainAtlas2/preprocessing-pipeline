@@ -1,6 +1,6 @@
-from pipeline.model.elastix_transformation import ElastixTransformation
+from model.elastix_transformation import ElastixTransformation
 from datetime import datetime
-from pipeline.Controllers.Controller import Controller
+from Controllers.Controller import Controller
 
 class ElasticsController(Controller):
     """Controller class for the elastix table

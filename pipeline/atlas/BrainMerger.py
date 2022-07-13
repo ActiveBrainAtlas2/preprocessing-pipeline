@@ -8,11 +8,11 @@ into the database if given a layer name.
 
 import numpy as np
 from collections import defaultdict
-from pipeline.registration.algorithm import brain_to_atlas_transform,umeyama
-from pipeline.lib.utilities_atlas import singular_structures
-from pipeline.Controllers.SqlController import SqlController
-from pipeline.lib.utilities_atlas import  symmetricalize_volume, find_merged_bounding_box,crop_and_pad_volumes
-from pipeline.atlas.Atlas import Atlas,BrainStructureManager
+from registration.algorithm import brain_to_atlas_transform,umeyama
+from lib.utilities_atlas import singular_structures
+from Controllers.SqlController import SqlController
+from lib.utilities_atlas import  symmetricalize_volume, find_merged_bounding_box,crop_and_pad_volumes
+from atlas.Atlas import Atlas,BrainStructureManager
 from Registration.StackRegistration.RigidRegistration import RigidRegistration
 from Registration.StackRegistration.AffineRegistration import AffineRegistration
 MANUAL = 1

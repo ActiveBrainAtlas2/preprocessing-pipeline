@@ -1,6 +1,6 @@
-from pipeline.model.structure import Structure
+from model.structure import Structure
 from sqlalchemy import func
-from pipeline.Controllers.Controller import Controller
+from Controllers.Controller import Controller
 from sqlalchemy.orm.exc import NoResultFound
 
 class StructuresController(Controller):

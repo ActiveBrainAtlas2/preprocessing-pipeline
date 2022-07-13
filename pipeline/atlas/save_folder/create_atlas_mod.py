@@ -15,13 +15,13 @@ import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 from pathlib import Path
 from scipy.ndimage.measurements import center_of_mass
-from pipeline.settings import DATA_PATH
+from settings import DATA_PATH
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 
-from pipeline.Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 
 RESOLUTION = 0.325
 

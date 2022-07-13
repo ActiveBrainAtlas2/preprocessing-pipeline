@@ -6,7 +6,7 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import pickle
 import re
-from pipeline.Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 from lib.FileLocationManager import FileLocationManager
 import tifffile as tiff
 from scipy.ndimage import affine_transform

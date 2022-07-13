@@ -1,8 +1,8 @@
 import numpy as np
-from pipeline.model.annotation_points import AnnotationPoint
+from model.annotation_points import AnnotationPoint
 import json
 import pandas as pd
-from pipeline.Controllers.Controller import Controller
+from Controllers.Controller import Controller
 
 
 class AnnotationPointController(Controller):

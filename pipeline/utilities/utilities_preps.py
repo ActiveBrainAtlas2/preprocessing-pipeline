@@ -5,10 +5,10 @@ Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
 
 from shutil import copyfile
-from pipeline.lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
+from lib.sql_setup import CREATE_CHANNEL_3_FULL_RES, \
     CREATE_CHANNEL_2_FULL_RES, CREATE_CHANNEL_3_THUMBNAILS, CREATE_CHANNEL_2_THUMBNAILS
 from lib.FileLocationManager import FileLocationManager
-from pipeline.lib.sqlcontroller import SqlController
+from lib.sqlcontroller import SqlController
 from utilities.utilities_process import create_downsample, test_dir, \
     get_image_size, resize_and_save_tif
 

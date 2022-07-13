@@ -1,5 +1,5 @@
-from pipeline.Controllers.Controller import Controller
-from pipeline.model.animal import Animal
+from Controllers.Controller import Controller
+from model.animal import Animal
 class AnimalController(Controller):
     def __init__(self,*args,**kwargs):
         """initiates the controller class

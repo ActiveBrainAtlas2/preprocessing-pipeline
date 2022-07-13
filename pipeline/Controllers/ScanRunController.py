@@ -1,7 +1,7 @@
-from pipeline.Controllers.Controller import Controller
-from pipeline.model.scan_run import ScanRun
-from pipeline.model.slide import SlideCziTif
-from pipeline.model.slide import Slide
+from Controllers.Controller import Controller
+from model.scan_run import ScanRun
+from model.slide import SlideCziTif
+from model.slide import Slide
 from sqlalchemy import func
 
 class ScanRunController(Controller):

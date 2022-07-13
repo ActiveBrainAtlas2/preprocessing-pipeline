@@ -17,9 +17,9 @@ from scipy.ndimage.measurements import center_of_mass
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
-from pipeline.settings import DATA_PATH
-from pipeline.settings import ATLAS
-from pipeline.Controllers.SqlController import SqlController
+from settings import DATA_PATH
+from settings import ATLAS
+from Controllers.SqlController import SqlController
 
 DOWNSAMPLE_FACTOR = 32
 

@@ -1,9 +1,9 @@
 import numpy as np
-from pipeline.model.annotation_points import StructureCOM
+from model.annotation_points import StructureCOM
 import json
 import pandas as pd
-from pipeline.Controllers.Controller import Controller
-from pipeline.model.annotation_points import AnnotationSession
+from Controllers.Controller import Controller
+from model.annotation_points import AnnotationSession
 
 class StructureComController(Controller):
     '''The class that queries and addes entry to the StructureCom table'''

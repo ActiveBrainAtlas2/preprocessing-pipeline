@@ -3,7 +3,7 @@ from multiprocessing.pool import Pool
 import numpy as np
 from datetime import datetime
 from utilities.utilities_process import workernoshell
-from pipeline.Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 from cell_extractor.CellDetectorBase import CellDetectorBase
 from multiprocessing.pool import Pool
 import tqdm

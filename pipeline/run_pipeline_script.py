@@ -6,12 +6,12 @@ ALL DEFAULT CONSTANTS FOR PIPELINE IN settings.py (git ignore)
 This program will create everything.
 The only required argument is the animal. By default it will work on channel=1
 and downsample = True. Run them in this sequence:
-    python src/create_pipeline.py --animal DKXX
-    python src/create_pipeline.py --animal DKXX --channel 2
-    python src/create_pipeline.py --animal DKXX --channel 3
-    python src/create_pipeline.py --animal DKXX --channel 1 --downsample false
-    python src/create_pipeline.py --animal DKXX --channel 2 --downsample false
-    python src/create_pipeline.py --animal DKXX --channel 3 --downsample false
+    python src/create_py --animal DKXX
+    python src/create_py --animal DKXX --channel 2
+    python src/create_py --animal DKXX --channel 3
+    python src/create_py --animal DKXX --channel 1 --downsample false
+    python src/create_py --animal DKXX --channel 2 --downsample false
+    python src/create_py --animal DKXX --channel 3 --downsample false
 
 Human intervention is required at several points in the process:
 1. "QC Step" - After create meta - the user needs to check the database and verify the images 
@@ -21,7 +21,7 @@ are in the correct order and the images look good. (prepare_image_for_quality_co
 and possible dilate or crop them. 
 3. After the alignment process - the user needs to verify the alignment looks good. 
 increasing the step size will make the pipeline move forward in the process.
-see: src/python/create_pipeline.py -h
+see: src/python/create_py -h
 for more information.
 
 Note: Setting debug=True will force single core
@@ -32,7 +32,7 @@ from lib.pipeline import Pipeline
 
 
 def run_pipeline(animal, channel, downsample, step, DATA_PATH):
-    pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, host=settings.host, schema=settings.schema, debug=False)
+    pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, host=settings.host, schema=settings.schema, debug=True)
     
 
     pipeline.prepare_image_for_quality_control()
@@ -48,9 +48,9 @@ def run_pipeline(animal, channel, downsample, step, DATA_PATH):
 
 
 if __name__ == "__main__":
-    animal = "DK77"
+    animal = "DK73"
     channel = 1
-    downsample = False
+    downsample = True
     step = 4
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(animal, channel, downsample, step, DATA_PATH)

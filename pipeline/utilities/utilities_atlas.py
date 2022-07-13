@@ -5,9 +5,9 @@ import numpy as np
 import vtk
 import mcubes # https://github.com/pmneila/PyMCubes
 
-from pipeline.Controllers.SqlController import SqlController
-from pipeline.registration.algorithm import umeyama
-from pipeline.settings import ATLAS
+from Controllers.SqlController import SqlController
+from registration.algorithm import umeyama
+from settings import ATLAS
 singular_structures = ['AP', '12N', 'RtTg', 'SC', 'IC']
 ATLAS = 'atlasV8'
 

@@ -10,7 +10,8 @@ create_web_friendly_image: 4
 create_within_stack_transformations: 4
 extract_tifs_from_czi: 4
 make_histogram: 12
-name: basalis
+name: pons
 parallel_create_cleaned: !!python/tuple
 - 4
 - 12
+prepare_image_for_quality_control: 4

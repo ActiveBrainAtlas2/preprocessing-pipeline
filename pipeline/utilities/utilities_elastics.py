@@ -1,7 +1,7 @@
 import os
 
 from utilities.utilities_registration import register_simple
-from pipeline.lib.sqlcontroller import SqlController
+from lib.sqlcontroller import SqlController
 
 def create_elastix(animal):
 
