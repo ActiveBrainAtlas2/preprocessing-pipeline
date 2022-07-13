@@ -1,4 +1,4 @@
-from pipeline.atlas.VolumeMaker import VolumeMaker
+from atlas.VolumeMaker import VolumeMaker
 import numpy as np
 def get_test_volume_maker():
     '''Creates a VolumeMaker Instance that contains the test contour and creates the volumes'''

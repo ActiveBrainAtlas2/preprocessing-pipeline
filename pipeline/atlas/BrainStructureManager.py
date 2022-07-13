@@ -1,16 +1,16 @@
 from grp import struct_group
 import os
 import json
-from pipeline.settings import ATLAS,DATA_PATH
+from settings import ATLAS,DATA_PATH
 from attr import has
 import numpy as np
-from pipeline.lib.Brain import Brain
-from pipeline.atlas.VolumeUtilities import VolumeUtilities
-from pipeline.lib.utilities_atlas import volume_to_polygon
-from pipeline.lib.utilities_atlas import save_mesh
+from lib.Brain import Brain
+from atlas.VolumeUtilities import VolumeUtilities
+from lib.utilities_atlas import volume_to_polygon
+from lib.utilities_atlas import save_mesh
 import xml.etree.ElementTree as ET
 from collections import defaultdict
-from pipeline.settings import DATA_PATH
+from settings import DATA_PATH
 class BrainStructureManager(Brain,VolumeUtilities):
 
     def __init__(self, animal,atlas = ATLAS,downsample_factor = 32,check_path = True,sql = False):

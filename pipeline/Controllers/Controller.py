@@ -1,4 +1,4 @@
-from pipeline.settings import user,password,host,schema
+from settings import user,password,host,schema
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker

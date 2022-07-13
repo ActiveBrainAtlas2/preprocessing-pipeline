@@ -2,7 +2,7 @@ import os, sys, time
 from datetime import datetime
 from tqdm import tqdm
 import re
-from pipeline.model.slide import Slide, SlideCziTif
+from model.slide import Slide, SlideCziTif
 from lib.CZIManager import CZIManager
 
 

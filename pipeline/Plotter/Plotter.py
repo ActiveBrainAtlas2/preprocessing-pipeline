@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 from matplotlib.widgets import Slider
-from pipeline.Plotter.VtkPlotter import VtkPlotter
+from Plotter.VtkPlotter import VtkPlotter
 class Plotter:
     def __init__(self):
         self.vtk = VtkPlotter()

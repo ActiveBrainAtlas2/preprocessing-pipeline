@@ -20,14 +20,14 @@ import numpy as np
 import pandas as pd
 import ast
 from tqdm import tqdm
-from pipeline.lib.utilities_process import get_image_size
+from lib.utilities_process import get_image_size
 from scipy.interpolate import splprep, splev
-from pipeline.lib.utilities_contour_lite import get_contours_from_annotations
-from pipeline.settings import DATA_PATH
-from pipeline.lib.utilities_alignment import transform_points, create_downsampled_transforms
-from pipeline.lib.utilities_create_alignment import parse_elastix
+from lib.utilities_contour_lite import get_contours_from_annotations
+from settings import DATA_PATH
+from lib.utilities_alignment import transform_points, create_downsampled_transforms
+from lib.utilities_create_alignment import parse_elastix
 DOWNSAMPLE_FACTOR = 32
-from pipeline.atlas.BrainStructureManager import BrainStructureManager
+from atlas.BrainStructureManager import BrainStructureManager
 
 class FoundationContourAligner(BrainStructureManager):
     def __init__(self,animal):

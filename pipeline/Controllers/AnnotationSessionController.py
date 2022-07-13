@@ -1,5 +1,5 @@
-from pipeline.Controllers.Controller import Controller
-from pipeline.model.annotation_points import AnnotationSession,AnnotationType
+from Controllers.Controller import Controller
+from model.annotation_points import AnnotationSession,AnnotationType
 class AnnotationSessionController(Controller):
     def __init__(self,*args,**kwargs):
         """initiates the controller class

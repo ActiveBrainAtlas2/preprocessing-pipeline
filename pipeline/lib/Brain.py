@@ -1,6 +1,6 @@
-from pipeline.Controllers.SqlController import SqlController
-from pipeline.lib.FileLocationManager import FileLocationManager
-from pipeline.Plotter.Plotter import Plotter
+from Controllers.SqlController import SqlController
+from lib.FileLocationManager import FileLocationManager
+from Plotter.Plotter import Plotter
 import numpy as np
 
 

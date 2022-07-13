@@ -1,9 +1,9 @@
 from Registration.PointSetRegistration.PointSetAlignment import AffinePointSetAlignment,\
     get_shared_key_and_array
-from pipeline.atlas.Plotter import Plotter
-from pipeline.Controllers.SqlController import SqlController
+from atlas.Plotter import Plotter
+from Controllers.SqlController import SqlController
 import pickle
-from pipeline.registration.utilities import get_similarity_transformation_from_dicts,apply_similarity_transformation_to_com_dict,umeyama
+from registration.utilities import get_similarity_transformation_from_dicts,apply_similarity_transformation_to_com_dict,umeyama
 import numpy as np
 
 def get_transformed_atlas_points(prepi):

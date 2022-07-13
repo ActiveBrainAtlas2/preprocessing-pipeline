@@ -1,5 +1,5 @@
 import neuroglancer
-from pipeline.Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 from lib.FileLocationManager import FileLocationManager
 from pathlib import Path
 import SimpleITK as sitk

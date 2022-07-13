@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, Boolean, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from pipeline.model.atlas_model import Base, AtlasModel
+from model.atlas_model import Base, AtlasModel
 
 class SlideCziTif(Base, AtlasModel):
     __tablename__ = 'slide_czi_to_tif'

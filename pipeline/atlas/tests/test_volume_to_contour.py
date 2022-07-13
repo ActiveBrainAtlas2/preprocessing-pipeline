@@ -1,5 +1,5 @@
 from util import get_test_origin_and_volume,get_test_contours_and_origin
-from pipeline.atlas.VolumeToContour import VolumeToContour
+from atlas.VolumeToContour import VolumeToContour
 import numpy as np
 
 def test_volume_to_contour():

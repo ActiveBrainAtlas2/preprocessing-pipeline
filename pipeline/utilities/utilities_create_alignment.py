@@ -12,11 +12,11 @@ from utilities.utilities_mask import  place_image
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.FileLocationManager import FileLocationManager
-from pipeline.Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 from utilities.utilities_alignment import (create_downsampled_transforms, process_image)
 from utilities.utilities_process import test_dir, get_cpus
-from pipeline.model.elastix_transformation import ElastixTransformation
-from pipeline.lib.sql_setup import session
+from model.elastix_transformation import ElastixTransformation
+from lib.sql_setup import session
 
 
 def create_elastix_transformation(rotation, xshift, yshift, center):

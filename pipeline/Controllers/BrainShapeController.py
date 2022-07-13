@@ -1,4 +1,4 @@
-from pipeline.Controllers.Controller import Controller
+from Controllers.Controller import Controller
 class BrainShapeController(Controller):
     def __init__(self,*args,**kwargs):
         """initiates the controller class

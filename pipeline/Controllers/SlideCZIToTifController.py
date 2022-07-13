@@ -1,6 +1,6 @@
-from pipeline.Controllers.Controller import Controller
-from pipeline.model.slide import SlideCziTif
-from pipeline.model.slide import Slide
+from Controllers.Controller import Controller
+from model.slide import SlideCziTif
+from model.slide import Slide
 class SlideCZIToTifController(Controller):
 
     def __init__(self,*args,**kwargs):

@@ -2,12 +2,12 @@
 This program will create everything.
 The only required argument is the animal. By default it will work on channel=1
 and downsample = True. Run them in this sequence:
-    python src/create_pipeline.py --animal DKXX
-    python src/create_pipeline.py --animal DKXX --channel 2
-    python src/create_pipeline.py --animal DKXX --channel 3
-    python src/create_pipeline.py --animal DKXX --channel 1 --downsample false
-    python src/create_pipeline.py --animal DKXX --channel 2 --downsample false
-    python src/create_pipeline.py --animal DKXX --channel 3 --downsample false
+    python src/create_py --animal DKXX
+    python src/create_py --animal DKXX --channel 2
+    python src/create_py --animal DKXX --channel 3
+    python src/create_py --animal DKXX --channel 1 --downsample false
+    python src/create_py --animal DKXX --channel 2 --downsample false
+    python src/create_py --animal DKXX --channel 3 --downsample false
 
 Human intervention is required at several points in the process:
 1. After create meta - the user needs to check the database and verify the images 
@@ -16,7 +16,7 @@ are in the correct order and the images look good.
 and possible dilate or crop them.
 1. After the alignment process - the user needs to verify the alignment looks good. 
 increasing the step size will make the pipeline move forward in the process.
-see: src/python/create_pipeline.py -h
+see: src/python/create_py -h
 for more information.
 """
 import argparse
@@ -64,7 +64,7 @@ def qc_rerun(animal, channel, downsample, data_path, host, schema, debug):
     #     DELETE DB ENTRIES FROM file_log TABLE
     #     '''
     #     print("Step 3 (REVISED JUN-2022)")
-    #     #pipeline.clean_images_and_create_histogram()
+    #     #clean_images_and_create_histogram()
     pass
 
 

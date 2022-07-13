@@ -1,11 +1,11 @@
 import numpy as np
-from pipeline.atlas.Atlas import BrainStructureManager
-from pipeline.atlas.VolumeUtilities import VolumeUtilities
-from pipeline.lib.Brain import Brain
-from pipeline.atlas.Atlas import AtlasInitiator,Atlas
+from atlas.Atlas import BrainStructureManager
+from atlas.VolumeUtilities import VolumeUtilities
+from lib.Brain import Brain
+from atlas.Atlas import AtlasInitiator,Atlas
 from scipy.ndimage import center_of_mass
 from skimage.filters import gaussian
-from pipeline.Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 
 class Assembler(BrainStructureManager):
 

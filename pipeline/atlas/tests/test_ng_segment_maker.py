@@ -1,10 +1,10 @@
-from pipeline.atlas.NgSegmentMaker import NgConverter
+from atlas.NgSegmentMaker import NgConverter
 import numpy as np
 import os
 import shutil
 import pytest
 from util import get_test_volume_maker
-from pipeline.lib.python_util import read_file
+from lib.python_util import read_file
 
 def run_ng_segment_maker_on_test_volume(vmaker,output_dir):
     structure = 'test'

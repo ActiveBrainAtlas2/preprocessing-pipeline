@@ -1,7 +1,7 @@
-from pipeline.model.annotation_points import PolygonSequence
-from pipeline.model.annotation_points import AnnotationSession,AnnotationType
+from model.annotation_points import PolygonSequence
+from model.annotation_points import AnnotationSession,AnnotationType
 import pandas as pd
-from pipeline.Controllers.Controller import Controller
+from Controllers.Controller import Controller
 
 class PolygonSequenceController(Controller):
     '''The class that queries and addes entry to the PolygonSequence table'''

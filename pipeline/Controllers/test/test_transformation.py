@@ -1,4 +1,4 @@
-from pipeline.Controllers.TransformationController import TransformationController
+from Controllers.TransformationController import TransformationController
 import numpy as np
 def test_transformation():
     '''Tests the transformation class used to store the Stack to Atlas or

@@ -1,9 +1,9 @@
-from pipeline.atlas.BrainStructureManager import BrainStructureManager
-from pipeline.settings import ATLAS
-from pipeline.settings import DATA_PATH
+from atlas.BrainStructureManager import BrainStructureManager
+from settings import ATLAS
+from settings import DATA_PATH
 import os
-from pipeline.registration.utilities import get_similarity_transformation_from_dicts
-from pipeline.registration.algorithm import brain_to_atlas_transform, umeyama
+from registration.utilities import get_similarity_transformation_from_dicts
+from registration.algorithm import brain_to_atlas_transform, umeyama
 import numpy as np 
 
 class Atlas(BrainStructureManager):

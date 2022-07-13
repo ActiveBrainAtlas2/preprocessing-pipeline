@@ -2,9 +2,9 @@
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, String, Integer, ForeignKey,Enum
 from sqlalchemy.sql.sqltypes import Float
-from pipeline.model.atlas_model import Base
-from pipeline.model.brain_region import BrainRegion
-from pipeline.model.user import User
+from model.atlas_model import Base
+from model.brain_region import BrainRegion
+from model.user import User
 import enum
 
 class AnnotationType(enum.Enum):

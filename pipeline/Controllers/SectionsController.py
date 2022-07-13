@@ -1,5 +1,5 @@
-from pipeline.Controllers.Controller import Controller
-from pipeline.model.slide import Section
+from Controllers.Controller import Controller
+from model.slide import Section
 class SectionsController(Controller):
     def __init__(self,*args,**kwargs):
         """initiates the controller class

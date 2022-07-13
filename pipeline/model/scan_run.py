@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, Date, ForeignKey, Enum, String, Float
 from sqlalchemy.orm import relationship
 from .atlas_model import Base, AtlasModel
-from pipeline.model.slide import Slide
+from model.slide import Slide
 
 class ScanRun(Base, AtlasModel):
     __tablename__ = 'scan_run'

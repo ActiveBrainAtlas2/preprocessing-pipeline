@@ -9,8 +9,17 @@ create_neuroglancer: !!python/tuple
 create_web_friendly_image: 4
 create_within_stack_transformations: 4
 extract_tifs_from_czi: 4
+<<<<<<< HEAD
 make_histogram: 16
 name: basalis
 parallel_create_cleaned: !!python/tuple
 - 4
 - 16
+=======
+make_histogram: 12
+name: pons
+parallel_create_cleaned: !!python/tuple
+- 4
+- 12
+prepare_image_for_quality_control: 4
+>>>>>>> 8cc914e9375eb574a758ccf5541bf90669cf609d

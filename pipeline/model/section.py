@@ -1,9 +1,9 @@
 from inspect import getargs
 from sqlalchemy import Column, String, Integer, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-# from pipeline.model.slide_czi_to_tif import SlideCziTif
-from pipeline.model.atlas_model import Base, AtlasModel
-# from pipeline.model.slide import Slide
+# from model.slide_czi_to_tif import SlideCziTif
+from model.atlas_model import Base, AtlasModel
+# from model.slide import Slide
 
 class Section(Base, AtlasModel):
     __tablename__ = 'sections'

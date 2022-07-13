@@ -1,5 +1,5 @@
-from pipeline.Controllers.Controller import Controller
-from pipeline.model.slide import Slide
+from Controllers.Controller import Controller
+from model.slide import Slide
 class SlideController(Controller):
 
     def __init__(self,*args,**kwargs):

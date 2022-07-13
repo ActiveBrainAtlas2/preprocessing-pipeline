@@ -3,9 +3,9 @@ import cv2
 import numpy as np
 from skimage import io
 from concurrent.futures.process import ProcessPoolExecutor
-from pipeline.lib.sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
+from lib.sql_setup import CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
 from lib.FileLocationManager import FileLocationManager
-from pipeline.lib.sqlcontroller import SqlController
+from lib.sqlcontroller import SqlController
 from utilities.utilities_mask import rotate_image, place_image, scaled, equalized
 from utilities.utilities_process import test_dir, SCALING_FACTOR, get_cpus
 import tifffile as tiff

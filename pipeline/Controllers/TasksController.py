@@ -1,8 +1,8 @@
-from pipeline.Controllers.Controller import Controller
-from pipeline.model.task import Task,ProgressLookup
+from Controllers.Controller import Controller
+from model.task import Task,ProgressLookup
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
-from pipeline.model.file_log import FileLog
+from model.file_log import FileLog
 from datetime import datetime
 class TasksController(Controller):
     def __init__(self,*args,**kwargs):

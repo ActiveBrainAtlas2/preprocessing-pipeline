@@ -6,10 +6,10 @@ Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
 
 # from shutil import copyfile
-from pipeline.Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 from utilities.utilities_process import test_dir, create_downsample
-from pipeline.utilities.shell_tools import get_image_size
-
+from utilities.shell_tools import get_image_size
+import numpy as np
 
 class PrepCreater:
     def set_task_preps(self):
@@ -39,6 +39,9 @@ class PrepCreater:
         input_paths = []
         output_paths = []
         sections = self.sqlController.get_sections(self.animal, self.channel)
+        sort_ids = np.argsort([i.id for i in sections])
+        sections = [sections[i] for i in sort_ids]
+        sort_ids = np.argsort([i.id for i in sections])
         for section_number, section in enumerate(sections):
             input_path = os.path.join(INPUT, section.file_name)
             output_path = os.path.join(OUTPUT, str(section_number).zfill(3) + ".tif")

@@ -1,6 +1,6 @@
-from pipeline.Controllers.Controller import Controller
-from pipeline.model.transformation import Transformation
-from pipeline.model.transformation_type import TransformationType
+from Controllers.Controller import Controller
+from model.transformation import Transformation
+from model.transformation_type import TransformationType
 import pickle
 class TransformationController(Controller):
 
