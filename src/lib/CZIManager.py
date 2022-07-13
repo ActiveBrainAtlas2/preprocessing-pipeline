@@ -54,12 +54,13 @@ class CZIManager(FileLogger):
 
     def get_scene(self, scene_index, channel, scale=1):
         region = self.get_scene_dimension(scene_index)
-        return self.file.read_mosaic(region=region, scale_factor=scale, C=channel-1)[0]
+        return self.file.read_mosaic(region=region, scale_factor=scale, C=channel - 1)[
+            0
+        ]
 
 
 def extract_tiff_from_czi(czi_file, file_name, scenei, channel=1, scale=1):
     czi = CZIManager(czi_file)
-    channel=0
     try:
         data = czi.get_scene(scale=scale, scene_index=scenei, channel=channel)
         imsave(file_name, data)
@@ -68,7 +69,7 @@ def extract_tiff_from_czi(czi_file, file_name, scenei, channel=1, scale=1):
             f"ERROR READING SCENE - [extract_tiff_from_czi] IN FILE {czi_file} ... SKIPPING"
         )
         czi.logevent(
-            f"ERROR READING SCENE - [extract_tiff_from_czi] FROM FILE {czi_file} -> {file_name}; SCENE: {scenei} ... SKIPPING - ERR: {e}"
+            f"ERROR READING SCENE - [extract_tiff_from_czi] FROM FILE {czi_file} -> {file_name}; SCENE: {scenei}; CHANNEL: {channel} ... SKIPPING - ERR: {e}"
         )
 
 

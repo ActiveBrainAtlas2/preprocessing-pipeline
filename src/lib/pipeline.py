@@ -160,9 +160,10 @@ class Pipeline(
                 OUTPUT = self.fileLocationManager.tif
             else:
                 OUTPUT = self.fileLocationManager.thumbnail_original
-            starting_files = os.listdir(OUTPUT)
-            self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
-            self.logevent(f"FILE COUNT: {len(starting_files)}")
+            if os.path.exists(OUTPUT):
+                starting_files = os.listdir(OUTPUT)
+                self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
+                self.logevent(f"FILE COUNT: {len(starting_files)}")
         elif function_name == "create web friendly image":
             self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.thumbnail_web}")
         elif function_name == "Making downsampled copies":
