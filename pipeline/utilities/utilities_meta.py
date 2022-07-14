@@ -6,8 +6,7 @@ from lib.FileLocationManager import FileLocationManager
 from lib.sqlcontroller import SqlController
 from utilities.utilities_bioformats import get_czi_metadata, get_fullres_series_indices
 from model.scan_run import ScanRun
-from model.slide import Slide
-from model.slide_czi_to_tif import SlideCziTif
+from model.slide import Slide,SlideCziTif
 from lib.sql_setup import session, SLIDES_ARE_SCANNED, CZI_FILES_ARE_PLACED_ON_BIRDSTORE, CZI_FILES_ARE_SCANNED_TO_GET_METADATA
 
 
