@@ -1,6 +1,6 @@
 align_images: !!python/tuple
 - 4
-- 16
+- 5
 create_downsampled_mask: 12
 create_full_resolution_mask: 4
 create_neuroglancer: !!python/tuple

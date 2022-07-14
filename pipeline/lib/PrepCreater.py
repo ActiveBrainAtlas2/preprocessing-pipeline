@@ -39,9 +39,6 @@ class PrepCreater:
         input_paths = []
         output_paths = []
         sections = self.sqlController.get_sections(self.animal, self.channel)
-        sort_ids = np.argsort([i.id for i in sections])
-        sections = [sections[i] for i in sort_ids]
-        sort_ids = np.argsort([i.id for i in sections])
         for section_number, section in enumerate(sections):
             input_path = os.path.join(INPUT, section.file_name)
             output_path = os.path.join(OUTPUT, str(section_number).zfill(3) + ".tif")

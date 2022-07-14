@@ -16,7 +16,16 @@ from utilities.utilities_registration import (
 )
 from model.elastix_transformation import ElastixTransformation
 from lib.pipeline_utilities import get_image_size
+import math
 
+def convert_size(size_bytes):
+   if size_bytes == 0:
+       return "0B"
+   size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+   i = int(math.floor(math.log(size_bytes, 1024)))
+   p = math.pow(1024, i)
+   s = round(size_bytes / p, 2)
+   return "%s %s" % (s, size_name[i])
 
 class ElastixManager:
     """Class for generating, storing and applying the within stack alignment with the Elastix package"""

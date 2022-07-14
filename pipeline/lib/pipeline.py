@@ -194,21 +194,22 @@ class Pipeline(
             else:
                 OUTPUT = self.fileLocationManager.thumbnail_original
             ending_files = os.listdir(OUTPUT)
-            if ending_files != starting_files and len(ending_files) > 0:
-                self.logevent(
-                    f"AGGREGATE: {function_name} took {end_time - start_time} seconds"
-                )
-                unitary_calc = (end_time - start_time) / len(ending_files)
-                self.logevent(
-                    f"AVERAGE TIME PER FILE CREATION (seconds): {round(unitary_calc, 1)}\n{sep}"
-                )
-            elif ending_files == starting_files and len(ending_files) > 0:
-                self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
+            if os.path.exists(OUTPUT):
+                if ending_files != starting_files and len(ending_files) > 0:
+                    self.logevent(
+                        f"AGGREGATE: {function_name} took {end_time - start_time} seconds"
+                    )
+                    unitary_calc = (end_time - start_time) / len(ending_files)
+                    self.logevent(
+                        f"AVERAGE TIME PER FILE CREATION (seconds): {round(unitary_calc, 1)}\n{sep}"
+                    )
+                elif ending_files == starting_files and len(ending_files) > 0:
+                    self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
 
-            if len(ending_files) == 0:
-                print("NO FILES EXTRACTED - CRITICAL ERROR...EXITING")
-                self.logevent(f"NO FILES EXTRACTED - CRITICAL ERROR...EXITING\n{sep}")
-                sys.exit(1)
+                if len(ending_files) == 0:
+                    print("NO FILES EXTRACTED - CRITICAL ERROR...EXITING")
+                    self.logevent(f"NO FILES EXTRACTED - CRITICAL ERROR...EXITING\n{sep}")
+                    sys.exit(1)
 
         elif function_name == "create web friendly image":
             ending_files = os.listdir(self.fileLocationManager.thumbnail_web)
