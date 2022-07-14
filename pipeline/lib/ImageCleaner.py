@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, psutil
 import cv2
 import numpy as np
 from skimage import io
@@ -9,10 +9,11 @@ import tifffile as tiff
 from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None
-from lib.pipeline_utilities import read_image, get_max_image_size
-from model.slide import SlideCziTif
-from model.slide import Slide
-from model.slide import Section
+from lib.pipeline_utilities import read_image, get_max_image_size, convert_size
+from pipeline.model.slide import SlideCziTif
+from pipeline.model.slide import Slide
+from pipeline.model.slide import Section
+from copy import copy
 from pathlib import Path
 import operator
 import gc
@@ -40,10 +41,10 @@ class ImageCleaner:
         MASKS = self.fileLocationManager.thumbnail_masked
         self.logevent(f"INPUT FOLDER: {INPUT}")
         starting_files = os.listdir(INPUT)
-        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+        self.logevent(f"FILE COUNT: {len(starting_files)}")
         self.logevent(f"MASK FOLDER: {MASKS}")
         starting_files = os.listdir(INPUT)
-        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
+        self.logevent(f"FILE COUNT: {len(starting_files)}")
         self.logevent(f"OUTPUT FOLDER: {CLEANED}")
         os.makedirs(CLEANED, exist_ok=True)
         self.parallel_create_cleaned(INPUT, CLEANED, MASKS)
@@ -75,6 +76,9 @@ class ImageCleaner:
     def parallel_create_cleaned(self, INPUT, CLEANED, MASKS):
         """Clean the images (downsampled or full size) in parallel"""
         max_width, max_height = get_max_image_size(INPUT)
+        print(
+            f"max_width {max_width}, max_height {max_height}, padding_margin {self.padding_margin}"
+        )
         rotation = self.sqlController.scan_run.rotation
         flip = self.sqlController.scan_run.flip
         test_dir(
@@ -105,6 +109,9 @@ class ImageCleaner:
         for i, file in enumerate(files_ordered_by_filesize_desc.keys()):
 
             infile = os.path.join(INPUT, file)
+            if i == 0:  # largest file
+                single_file_size = os.path.getsize(infile)
+
             # print(f"FILE:{file}")
             # print(f"INFILE:{infile}")
             # target_file = Path(infile).resolve()  # taget of symbolic link
@@ -128,17 +135,24 @@ class ImageCleaner:
                     self.channel,
                 ]
             )
+        ram_coefficient = 10
+
+        mem_avail = psutil.virtual_memory().available
+        batch_size = mem_avail // (single_file_size * ram_coefficient)
+        print(
+            f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
+        )
+        self.logevent(
+            f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
+        )
+        n_processing_elements = len(file_keys)
+
         workers = self.get_nworkers()
 
-        # self.run_commands_in_parallel_with_multiprocessing(
-        #     [file_keys], workers, clean_and_rotate_image
-        # )
-
-        # ORG - START
+        # batch_size = 1
         self.run_commands_in_parallel_with_executor(
-            [file_keys], workers, clean_and_rotate_image
+            [file_keys], workers, clean_and_rotate_image, batch_size
         )
-        # ORD - END
 
 
 def clean_and_rotate_image(file_key):
@@ -167,15 +181,16 @@ def clean_and_rotate_image(file_key):
         5. int:
     """
     infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
+
     img = read_image(infile)
+    print(f"MEM SIZE OF img {infile}: {convert_size(sys.getsizeof(img))}")
     mask = read_image(maskfile)
+    print(f"MEM SIZE OF mask {maskfile}: {convert_size(sys.getsizeof(mask))}")
     cleaned = apply_mask(img, mask, infile)
-    # print(f"MEM SIZE OF img {infile}: {sys.getsizeof(img)}")
-    # print(f"MEM SIZE OF mask: {sys.getsizeof(mask)}")
-    # print(f"MEM SIZE OF cleaned: {sys.getsizeof(cleaned)}")
-    # print(
-    #     f"TOTAL MEMORY SIZE FOR AGGREGATE (img, mask, cleaned): {convert_size(sys.getsizeof(img)+sys.getsizeof(mask)+sys.getsizeof(cleaned))}"
-    # )
+    print(f"MEM SIZE OF cleaned: {convert_size(sys.getsizeof(cleaned))}")
+    print(
+        f"TOTAL MEMORY SIZE FOR AGGREGATE (img, mask, cleaned): {convert_size(sys.getsizeof(img)+sys.getsizeof(mask)+sys.getsizeof(cleaned))}"
+    )
     if channel == 1:
         cleaned = scaled(cleaned, mask, epsilon=0.01)
         cleaned = equalized(cleaned)

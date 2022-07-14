@@ -4,7 +4,7 @@ from CZI files to a pyramid of tiles that can be viewed in neuroglancer.
 
 Args are animal, channel, and downsample. With animal being
 the only required argument.
-All imports are listed by the order in which they are used in the 
+All imports are listed by the order in which they are used in the pipeline.
 """
 
 import os
@@ -21,7 +21,7 @@ from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
 from timeit import default_timer as timer
-from Controllers.SqlController import SqlController
+from pipeline.Controllers.SqlController import SqlController
 from lib.FileLogger import FileLogger
 from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
@@ -91,6 +91,8 @@ class Pipeline(
         self.fileLocationManager = FileLocationManager(animal, DATA_PATH=DATA_PATH)
         self.sqlController = SqlController(animal, host, schema)
         self.hostname = self.get_hostname()
+        self.dbhost = host
+        self.dbschema = schema
         self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
         self.padding_margin = padding_margin
@@ -155,18 +157,7 @@ class Pipeline(
             or function_name == "Creating elastics transform"
         ):
             self.logevent(f"N/A - FULL RESOLUTION")
-        if function_name == "Extracting Tiffs":
-            if not self.downsample:
-                OUTPUT = self.fileLocationManager.tif
-            else:
-                OUTPUT = self.fileLocationManager.thumbnail_original
-            if os.path.exists(OUTPUT):
-                starting_files = os.listdir(OUTPUT)
-                self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
-                self.logevent(f"FILE COUNT: {len(starting_files)}")
-        elif function_name == "create web friendly image":
-            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.thumbnail_web}")
-        elif function_name == "Making downsampled copies":
+        if function_name == "Making downsampled copies":
             self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.thumbnail}")
         else:
             pass
@@ -178,40 +169,7 @@ class Pipeline(
         print(f"{function_name} took {round(total_elapsed_time,1)} seconds")
 
         sep = "*" * 40 + "\n"
-        if (
-            function_name == "Creating meta"
-        ):  # TODO clean up dup code w/ extracting tiff
-            ending_files = os.listdir(self.fileLocationManager.czi)
-            self.logevent(f"FILE COUNT: {len(ending_files)}")
-
-            unitary_calc = (end_time - start_time) / len(ending_files)
-            self.logevent(
-                f"TIME PER FILE CREATION (seconds): {str(round(unitary_calc, 1))}\n{sep}"
-            )
-        elif function_name == "Extracting Tiffs":
-            if not self.downsample:
-                OUTPUT = self.fileLocationManager.tif
-            else:
-                OUTPUT = self.fileLocationManager.thumbnail_original
-            ending_files = os.listdir(OUTPUT)
-            if os.path.exists(OUTPUT):
-                if ending_files != starting_files and len(ending_files) > 0:
-                    self.logevent(
-                        f"AGGREGATE: {function_name} took {end_time - start_time} seconds"
-                    )
-                    unitary_calc = (end_time - start_time) / len(ending_files)
-                    self.logevent(
-                        f"AVERAGE TIME PER FILE CREATION (seconds): {round(unitary_calc, 1)}\n{sep}"
-                    )
-                elif ending_files == starting_files and len(ending_files) > 0:
-                    self.logevent(f"NOTHING TO PROCESS - ALL TIFF FILES EXTRACTED\n{sep}")
-
-                if len(ending_files) == 0:
-                    print("NO FILES EXTRACTED - CRITICAL ERROR...EXITING")
-                    self.logevent(f"NO FILES EXTRACTED - CRITICAL ERROR...EXITING\n{sep}")
-                    sys.exit(1)
-
-        elif function_name == "create web friendly image":
+        if function_name == "create web friendly image":
             ending_files = os.listdir(self.fileLocationManager.thumbnail_web)
             self.logevent(f"FILE COUNT: {len(ending_files)}\n{sep}")
         else:
@@ -220,7 +178,7 @@ class Pipeline(
             )
 
     def prepare_image_for_quality_control(self):
-        """This is the first step of the   The images are extracted from the CZI files,
+        """This is the first step of the pipeline.  The images are extracted from the CZI files,
         logged in the database, and downsampled to a web friendly size.  These preparations makes
         it possible to preview the images on the django database admin portal, allowing the user to
         perform quality control on the images.  The user can determine to mark slides or sections

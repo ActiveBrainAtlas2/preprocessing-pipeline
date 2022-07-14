@@ -14,18 +14,9 @@ from utilities.utilities_registration import (
     parameters_to_rigid_transform,
     rigid_transform_to_parmeters,
 )
-from model.elastix_transformation import ElastixTransformation
+from pipeline.model.elastix_transformation import ElastixTransformation
 from lib.pipeline_utilities import get_image_size
-import math
 
-def convert_size(size_bytes):
-   if size_bytes == 0:
-       return "0B"
-   size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-   i = int(math.floor(math.log(size_bytes, 1024)))
-   p = math.pow(1024, i)
-   s = round(size_bytes / p, 2)
-   return "%s %s" % (s, size_name[i])
 
 class ElastixManager:
     """Class for generating, storing and applying the within stack alignment with the Elastix package"""
@@ -143,34 +134,40 @@ class ElastixManager:
             animal: the animal
         Returns: a dictionary of key=filename, value = coordinates
         """
-        INPUT = self.fileLocationManager.get_thumbnail_cleaned(1)
-        files = sorted(os.listdir(INPUT))
-        midpoint = len(files) // 2
+
+        sections = self.sqlController.get_sections(self.animal, self.channel)
+
+        midpoint = len(sections) // 2
+        
         transformation_to_previous_sec = {}
         center = self.get_rotation_center()
-        for i in range(1, len(files)):
+
+        for i in range(1, len(sections)):
             moving_index = os.path.splitext(files[i])[0]
             rotation, xshift, yshift = self.load_elastix_transformation(
                 self.animal, moving_index
             )
             T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
             transformation_to_previous_sec[i] = T
+
         transformations = {}
-        for moving_index in range(len(files)):
+
+        for moving_index in range(len(sections)):
+            filename = str(moving_index).zfill(3) + ".tif"
             if moving_index == midpoint:
-                transformations[files[moving_index]] = np.eye(3)
+                transformations[filename] = np.eye(3)
             elif moving_index < midpoint:
                 T_composed = np.eye(3)
                 for i in range(midpoint, moving_index, -1):
                     T_composed = np.dot(
                         np.linalg.inv(transformation_to_previous_sec[i]), T_composed
                     )
-                transformations[files[moving_index]] = T_composed
+                transformations[filename] = T_composed
             else:
                 T_composed = np.eye(3)
                 for i in range(midpoint + 1, moving_index + 1):
                     T_composed = np.dot(transformation_to_previous_sec[i], T_composed)
-                transformations[files[moving_index]] = T_composed
+                transformations[filename] = T_composed
         return transformations
 
     def align_full_size_image(self, transforms):
