@@ -4,7 +4,7 @@ from PIL import Image
 from aicspylibczi import CziFile
 from aicsimageio import AICSImage, imread
 from tifffile import imsave
-from abakit.lib.utilities_mask import equalized
+from utilities.utilities_mask import equalized
 from lib.FileLogger import FileLogger
 
 

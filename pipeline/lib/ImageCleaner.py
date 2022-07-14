@@ -10,9 +10,9 @@ from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None
 from lib.pipeline_utilities import read_image, get_max_image_size, convert_size
-from pipeline.model.slide import SlideCziTif
-from pipeline.model.slide import Slide
-from pipeline.model.slide import Section
+from model.slide import SlideCziTif
+from model.slide import Slide
+from model.slide import Section
 from copy import copy
 from pathlib import Path
 import operator

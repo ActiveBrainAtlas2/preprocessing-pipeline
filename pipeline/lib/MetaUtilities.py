@@ -2,13 +2,13 @@ import os, sys, time, re, psutil
 from datetime import datetime
 from tqdm import tqdm
 import re
-from pipeline.model.slide import Slide, SlideCziTif
+from model.slide import Slide, SlideCziTif
 from lib.CZIManager import CZIManager
 from pathlib import Path
 import operator
 from lib.pipeline_utilities import convert_size
 from concurrent.futures.process import ProcessPoolExecutor
-from abakit.lib.Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 
 
 class MetaUtilities:
