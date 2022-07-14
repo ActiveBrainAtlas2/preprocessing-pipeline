@@ -1,4 +1,4 @@
-from Controllers.SqlController import SqlController
+from pipeline.Controllers.SqlController import SqlController
 import json 
 import numpy as np
 

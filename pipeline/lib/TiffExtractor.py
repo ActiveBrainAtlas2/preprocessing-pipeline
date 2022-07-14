@@ -1,4 +1,4 @@
-import os
+import os, glob
 import hashlib
 from lib.ParallelManager import ParallelManager
 from lib.CZIManager import extract_tiff_from_czi, extract_png_from_czi
@@ -27,10 +27,19 @@ class TiffExtractor(ParallelManager):
             scale_factor = 0.03125
         INPUT = self.fileLocationManager.czi
         os.makedirs(OUTPUT, exist_ok=True)
+        starting_files = glob.glob(
+            os.path.join(OUTPUT, "*_C" + str(self.channel) + ".tif")
+        )
+        total_files = os.listdir(OUTPUT)
+        self.logevent(f"TIFF EXTRACTION FOR CHANNEL: {self.channel}")
+        self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
+        self.logevent(f"FILE COUNT [FOR CHANNEL {self.channel}]: {len(starting_files)}")
+        self.logevent(f"TOTAL FILE COUNT [FOR DIRECTORY]: {len(total_files)}")
+
         sections = self.sqlController.get_distinct_section_filenames(
             self.animal, self.channel
         )
-        
+
         czi_file = []
         tif_file = []
         scene_index = []
@@ -57,7 +66,7 @@ class TiffExtractor(ParallelManager):
         self.update_database()
 
     def update_database(self):
-        """Updating the file log table in the databased about the completion of the QC preparation steps"""
+        """Updating the file log table in the database about the completion of the QC preparation steps"""
         self.sqlController.set_task(
             self.animal, self.progress_lookup.QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN
         )
@@ -93,36 +102,41 @@ class TiffExtractor(ParallelManager):
     def create_web_friendly_image(self):
         """Create downsampled version of full size tiff images that can be viewed on the Django admin portal
         These images are used for Quality Control
+        ONLY 1 CHANNEL CREATED FOR .png FILES
         """
         INPUT = self.fileLocationManager.czi
         OUTPUT = self.fileLocationManager.thumbnail_web
+        channel = 1
         os.makedirs(OUTPUT, exist_ok=True)
         czi_file = []
         files = os.listdir(INPUT)
 
         sections = self.sqlController.get_distinct_section_filenames(
-            self.animal, self.channel
+            self.animal, channel
         )
-        czi_file = []
-        png_file = []
-        scene_index = []
-        for section in sections:
-            input_path = os.path.join(INPUT, section.czi_file)
+        self.logevent(f"SINGLE (FIRST) CHANNEL ONLY - SECTIONS: {len(sections)}")
+        self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
+
+        file_keys = []
+        files_skipped = 0
+        for i, section in enumerate(sections):
+            infile = os.path.join(INPUT, section.czi_file)
             output_path = os.path.join(OUTPUT, section.file_name)
-            output_path = output_path[:-4] + ".png"
-            if not os.path.exists(input_path):
+            outfile = output_path[:-5] + "1.png"  # force "C1" in filename
+            if os.path.exists(outfile):
+                files_skipped += 1
+                print(f"SKIP: {outfile}")
                 continue
-            if os.path.exists(output_path):
-                continue
-            czi_file.append(input_path)
-            png_file.append(output_path)
-            scene_index.append(section.scene_number - 1)
+            scene_index = section.scene_number - 1
+            scale = 0.01
+            file_keys.append([i, infile, outfile, scene_index, scale])
+
+        self.logevent(f"SKIPPED [PRE-EXISTING] FILES: {files_skipped}")
+        n_processing_elements = len(file_keys)
+        self.logevent(f"PROCESSING [NOT PRE-EXISTING] FILES: {n_processing_elements}")
+
         workers = self.get_nworkers()
-        nfiles = len(input_path)
-        channel = [1 for _ in range(nfiles)]
-        scale = [0.01 for _ in range(nfiles)]
+        batch_size = workers  # mem not issue due to filesize
         self.run_commands_in_parallel_with_executor(
-            [czi_file, png_file, scene_index, channel, scale],
-            workers,
-            extract_png_from_czi,
+            [file_keys], workers, extract_png_from_czi, batch_size=batch_size
         )
