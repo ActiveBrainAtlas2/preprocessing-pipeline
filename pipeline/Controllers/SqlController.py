@@ -5,19 +5,19 @@ It also needs for the animal, histology and scan run tables to be
 filled out for each animal to use
 """
 import sys
-from Controllers.Controller import Controller
-from Controllers.ElasticsController import ElasticsController
-from Controllers.StructuresController import StructuresController
-from Controllers.StructureComController import StructureComController
-from Controllers.TransformationController import TransformationController
-from Controllers.AnimalController import AnimalController
-from Controllers.UrlController import UrlController
-from Controllers.ScanRunController import ScanRunController
-from Controllers.SectionsController import SectionsController
-from Controllers.SlideController import SlideController
-from Controllers.SlideCZIToTifController import SlideCZIToTifController
-from Controllers.TasksController import TasksController,file_processed, set_file_completed
-from Controllers.HistologyController import HistologyController
+from .Controller import Controller
+from .ElasticsController import ElasticsController
+from .StructuresController import StructuresController
+from .StructureComController import StructureComController
+from .TransformationController import TransformationController
+from .AnimalController import AnimalController
+from .UrlController import UrlController
+from .ScanRunController import ScanRunController
+from .SectionsController import SectionsController
+from .SlideController import SlideController
+from .SlideCZIToTifController import SlideCZIToTifController
+from .TasksController import TasksController,file_processed, set_file_completed
+from .HistologyController import HistologyController
 from model.scan_run import ScanRun
 from model.histology import Histology
 from collections import OrderedDict

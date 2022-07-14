@@ -19,17 +19,17 @@ import pandas as pd
 import ast
 import json
 from tqdm import tqdm
-from lib.utilities_process import get_image_size
+from utilities.utilities_process import get_image_size
 from scipy.interpolate import splprep, splev
 
 HOME = os.path.expanduser("~")
 PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
 sys.path.append(PATH)
-from lib.utilities_contour import get_contours_from_annotations
+from utilities.utilities_contour import get_contours_from_annotations
 from Controllers.SqlController import SqlController
 from settings import DATA_PATH, FileLocationManager
-from lib.utilities_alignment import create_downsampled_transforms
-from lib.utilities_create_alignment import parse_elastix
+from utilities.utilities_alignment import create_downsampled_transforms
+from utilities.utilities_create_alignment import parse_elastix
 from settings import ATLAS
 
 DOWNSAMPLE_FACTOR = 32

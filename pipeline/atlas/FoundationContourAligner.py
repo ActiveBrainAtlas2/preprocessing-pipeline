@@ -20,12 +20,12 @@ import numpy as np
 import pandas as pd
 import ast
 from tqdm import tqdm
-from lib.utilities_process import get_image_size
+from utilities.utilities_process import get_image_size
 from scipy.interpolate import splprep, splev
-from lib.utilities_contour_lite import get_contours_from_annotations
+from utilities.utilities_contour_lite import get_contours_from_annotations
 from settings import DATA_PATH
-from lib.utilities_alignment import transform_points, create_downsampled_transforms
-from lib.utilities_create_alignment import parse_elastix
+from utilities.utilities_alignment import transform_points, create_downsampled_transforms
+from utilities.utilities_create_alignment import parse_elastix
 DOWNSAMPLE_FACTOR = 32
 from atlas.BrainStructureManager import BrainStructureManager
 

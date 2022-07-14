@@ -6,8 +6,8 @@ from attr import has
 import numpy as np
 from lib.Brain import Brain
 from atlas.VolumeUtilities import VolumeUtilities
-from lib.utilities_atlas import volume_to_polygon
-from lib.utilities_atlas import save_mesh
+from utilities.utilities_atlas import volume_to_polygon
+from utilities.utilities_atlas import save_mesh
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from settings import DATA_PATH

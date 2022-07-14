@@ -21,7 +21,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 surface_level = 0.9
 from Controllers.SqlController import SqlController
 from settings import DATA_PATH
-from lib.utilities_atlas import load_original_volume_all_known_structures_v3, get_centroid_3d, \
+from utilities.utilities_atlas import load_original_volume_all_known_structures_v3, get_centroid_3d, \
     load_alignment_results_v3, transform_points, average_location, \
     load_original_volume_v2, \
     convert_transform_forms, volume_to_polydata, singular_structures, \
