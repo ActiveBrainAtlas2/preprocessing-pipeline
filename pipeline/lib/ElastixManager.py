@@ -17,6 +17,16 @@ from utilities.utilities_registration import (
 from pipeline.model.elastix_transformation import ElastixTransformation
 from lib.pipeline_utilities import get_image_size
 
+import math
+
+def convert_size(size_bytes):
+   if size_bytes == 0:
+       return "0B"
+   size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+   i = int(math.floor(math.log(size_bytes, 1024)))
+   p = math.pow(1024, i)
+   s = round(size_bytes / p, 2)
+   return "%s %s" % (s, size_name[i])
 
 class ElastixManager:
     """Class for generating, storing and applying the within stack alignment with the Elastix package"""
@@ -143,9 +153,8 @@ class ElastixManager:
         center = self.get_rotation_center()
 
         for i in range(1, len(sections)):
-            moving_index = os.path.splitext(files[i])[0]
             rotation, xshift, yshift = self.load_elastix_transformation(
-                self.animal, moving_index
+                self.animal, i
             )
             T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
             transformation_to_previous_sec[i] = T
