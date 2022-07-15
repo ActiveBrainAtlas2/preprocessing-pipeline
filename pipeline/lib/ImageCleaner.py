@@ -135,6 +135,7 @@ class ImageCleaner:
                     self.channel,
                 ]
             )
+            print(file_keys)
         ram_coefficient = 10
 
         mem_avail = psutil.virtual_memory().available
@@ -198,17 +199,15 @@ def clean_and_rotate_image(file_key):
     del img
     del mask
     gc.collect()
-    print("START PAD IMAGE")
-    cropped = pad_image(cleaned, infile, max_height, max_width, 0)
     print("START ROTATION")
     if rotation > 0:
-        cropped = rotate_image(cropped, infile, rotation)
+        cleaned = rotate_image(cleaned, infile, rotation)
     if flip == "flip":
-        cropped = np.flip(cropped)
+        cleaned = np.flip(cleaned)
     if flip == "flop":
-        cropped = np.flip(cropped, axis=1)
-    print("START PAD IMAGE2")
-    cropped = pad_image(cropped, infile, max_width, max_height, 0)
+        cleaned = np.flip(cleaned, axis=1)
+    print("START PAD IMAGE")
+    cropped = pad_image(cleaned, infile, max_width, max_height, 0)
     start_time = timer()
     print("START FILESAVE ", outpath)
     tiff.imsave(outpath, cropped)
