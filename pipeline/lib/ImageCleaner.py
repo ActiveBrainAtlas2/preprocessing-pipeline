@@ -1,4 +1,5 @@
 import os, sys, psutil
+from debugpy import breakpoint
 import cv2
 import numpy as np
 from skimage import io
@@ -119,7 +120,7 @@ class ImageCleaner:
 
             # outpath = os.path.join("/", "tmp", self.animal, file)  # local NVMe
             outpath = os.path.join(CLEANED, file)  # regular-birdstore
-
+            index = int(file.split('.')[0])
             if os.path.exists(outpath):
                 continue
             maskfile = os.path.join(MASKS, file)
@@ -128,14 +129,13 @@ class ImageCleaner:
                     infile,
                     outpath,
                     maskfile,
-                    rotation + rotations_per_section[i],
+                    rotation + rotations_per_section[index],
                     flip,
                     int(max_width * self.padding_margin),
                     int(max_height * self.padding_margin),
                     self.channel,
                 ]
             )
-            print(file_keys)
         ram_coefficient = 10
 
         mem_avail = psutil.virtual_memory().available
@@ -147,9 +147,7 @@ class ImageCleaner:
             f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
         )
         n_processing_elements = len(file_keys)
-
         workers = self.get_nworkers()
-
         # batch_size = 1
         self.run_commands_in_parallel_with_executor(
             [file_keys], workers, clean_and_rotate_image, batch_size

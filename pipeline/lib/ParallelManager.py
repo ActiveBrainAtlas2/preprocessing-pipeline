@@ -13,7 +13,7 @@ from datetime import datetime,timedelta
 class ParallelManager:
     def load_parallel_settings(self):
         """Loads default number of cores to use according to specified function"""
-        dirname = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        dirname = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         file_path = os.path.join(dirname, "parallel_settings.yaml")
         ncores = os.cpu_count()
         if os.path.exists(file_path):
