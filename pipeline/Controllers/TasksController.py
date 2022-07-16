@@ -82,6 +82,15 @@ class TasksController(Controller):
         for resulti in results:
             print(f'action: {resulti.action}, channel: {resulti.channel}, downsample: {resulti.downsample}')
 
+    def clear_file_log(self, animal):
+        result = (
+            self.session.query(FileLog)
+            .filter(FileLog.prep_id == animal)
+            .delete()
+        )
+        self.session.commit()
+        return result
+
 def file_processed(animal, progress_id, filename,pooledsession):
     """
     Args:
