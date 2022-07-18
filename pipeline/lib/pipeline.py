@@ -21,7 +21,11 @@ from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
 from timeit import default_timer as timer
+<<<<<<< HEAD
 from Controllers.SqlController import SqlController
+=======
+Controllers.SqlController import SqlController
+>>>>>>> a2f0c5b1086bb8b8c2925b3fa89a5a5259d85cce
 from lib.FileLogger import FileLogger
 from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager

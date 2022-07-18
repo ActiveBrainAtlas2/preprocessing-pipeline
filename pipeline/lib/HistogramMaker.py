@@ -8,7 +8,11 @@ import cv2
 from concurrent.futures.process import ProcessPoolExecutor
 from lib.FileLocationManager import FileLocationManager
 from lib.logger import get_logger
+<<<<<<< HEAD
 from Controllers.SqlController import SqlController
+=======
+Controllers.SqlController import SqlController
+>>>>>>> a2f0c5b1086bb8b8c2925b3fa89a5a5259d85cce
 from utilities.utilities_process import test_dir, get_cpus
 
 COLORS = {1: "b", 2: "r", 3: "g"}

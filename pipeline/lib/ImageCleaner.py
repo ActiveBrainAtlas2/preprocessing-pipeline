@@ -182,14 +182,14 @@ def clean_and_rotate_image(file_key):
     infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
 
     img = read_image(infile)
-    print(f"MEM SIZE OF img {infile}: {convert_size(sys.getsizeof(img))}")
+    # print(f"MEM SIZE OF img {infile}: {convert_size(sys.getsizeof(img))}")
     mask = read_image(maskfile)
-    print(f"MEM SIZE OF mask {maskfile}: {convert_size(sys.getsizeof(mask))}")
+    # print(f"MEM SIZE OF mask {maskfile}: {convert_size(sys.getsizeof(mask))}")
     cleaned = apply_mask(img, mask, infile)
-    print(f"MEM SIZE OF cleaned: {convert_size(sys.getsizeof(cleaned))}")
-    print(
-        f"TOTAL MEMORY SIZE FOR AGGREGATE (img, mask, cleaned): {convert_size(sys.getsizeof(img)+sys.getsizeof(mask)+sys.getsizeof(cleaned))}"
-    )
+    # print(f"MEM SIZE OF cleaned: {convert_size(sys.getsizeof(cleaned))}")
+    # print(
+        # f"TOTAL MEMORY SIZE FOR AGGREGATE (img, mask, cleaned): {convert_size(sys.getsizeof(img)+sys.getsizeof(mask)+sys.getsizeof(cleaned))}"
+    # )
     if channel == 1:
         cleaned = scaled(cleaned, mask, epsilon=0.01)
         cleaned = equalized(cleaned)
@@ -197,20 +197,20 @@ def clean_and_rotate_image(file_key):
     del img
     del mask
     gc.collect()
-    print("START ROTATION")
+    # print("START ROTATION")
     if rotation > 0:
         cleaned = rotate_image(cleaned, infile, rotation)
     if flip == "flip":
         cleaned = np.flip(cleaned)
     if flip == "flop":
         cleaned = np.flip(cleaned, axis=1)
-    print("START PAD IMAGE")
+    # print("START PAD IMAGE")
     cropped = pad_image(cleaned, infile, max_width, max_height, 0)
     start_time = timer()
-    print("START FILESAVE ", outpath)
+    # print("START FILESAVE ", outpath)
     tiff.imsave(outpath, cropped)
     end_time = timer()
-    print(f"SAVE TIME: {round((end_time - start_time), 1)} s")
+    # print(f"SAVE TIME: {round((end_time - start_time), 1)} s")
     del cropped
     return
 
