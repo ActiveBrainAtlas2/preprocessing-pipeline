@@ -5,9 +5,9 @@ Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
 
 # from shutil import copyfile
-from pipeline.Controllers.SqlController import SqlController
+Controllers.SqlController import SqlController
 from utilities.utilities_process import test_dir, create_downsample
-from pipeline.utilities.shell_tools import get_image_size
+utilities.shell_tools import get_image_size
 
 
 class PrepCreater:
