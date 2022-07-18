@@ -1,4 +1,4 @@
-from pipeline.model.urlModel import UrlModel
+model.urlModel import UrlModel
 
 class UrlController:
         

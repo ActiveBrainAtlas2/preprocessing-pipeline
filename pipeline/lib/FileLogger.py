@@ -4,7 +4,7 @@ from pathlib import Path
 import logging
 import socket
 from datetime import datetime
-from pipeline.model.log import Log
+model.log import Log
 
 
 class FileLogger:
