@@ -4,7 +4,7 @@ from pathlib import Path
 import logging
 import socket
 from datetime import datetime
-from pipeline.model.log import Log
+from model.log import Log
 
 
 class FileLogger:
@@ -22,9 +22,7 @@ class FileLogger:
             print("CREATED LOGFILE @ ", LOGFILE)
             Path(LOGFILE).touch()
 
-        logging.basicConfig(
-            filename=LOGFILE, level=logging.INFO, format="%(message)s"
-        )
+        logging.basicConfig(filename=LOGFILE, level=logging.INFO, format="%(message)s")
 
     def logevent(self, msg: str):
         timestamp = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
