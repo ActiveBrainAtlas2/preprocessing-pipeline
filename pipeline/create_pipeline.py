@@ -56,16 +56,13 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, debug,pad
         pipeline.create_neuroglancer_cloud_volume()
 
 
-def qc_rerun(animal, channel, downsample, data_path, host, schema, debug):
-    # if step > 2:
-    #     '''
-    #     THIS STEP IS POST QC (MASKING):
-    #     DELETE FOLDERS: thumbnail_masked, thumbnail_aligned, thumbnail_cleaned, neuroglancer_data
-    #     DELETE DB ENTRIES FROM file_log TABLE
-    #     '''
-    #     print("Step 3 (REVISED JUN-2022)")
-    #     #clean_images_and_create_histogram()
-    pass
+
+#def qc_cleanup(self):
+    #pass
+
+# def ng_cleanup:
+#     pass
+
 
 
 if __name__ == "__main__":
