@@ -45,7 +45,8 @@ class TiffExtractor(ParallelManager):
         scene_index = []
         for section in sections:
             input_path = os.path.join(INPUT, section.czi_file)
-            output_path = os.path.join(OUTPUT, section.file_name)
+            outfile = os.path.basename(section.file_name)
+            output_path = os.path.join(OUTPUT, outfile)
             if not os.path.exists(input_path):
                 continue
             if os.path.exists(output_path):
@@ -121,7 +122,8 @@ class TiffExtractor(ParallelManager):
         files_skipped = 0
         for i, section in enumerate(sections):
             infile = os.path.join(INPUT, section.czi_file)
-            output_path = os.path.join(OUTPUT, section.file_name)
+            outfile = os.path.basename(section.file_name)
+            output_path = os.path.join(OUTPUT, outfile)
             outfile = output_path[:-5] + "1.png"  # force "C1" in filename
             if os.path.exists(outfile):
                 files_skipped += 1

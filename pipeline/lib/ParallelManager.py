@@ -4,11 +4,12 @@ import multiprocessing
 import socket
 import sys
 from multiprocessing.pool import Pool
-from utilities.utilities_process import workernoshell,submit_proxy
+from utilities.utilities_process import workernoshell, submit_proxy
 from concurrent.futures.process import ProcessPoolExecutor
-from multiprocessing import Pool,Manager
+from multiprocessing import Pool, Manager
 import copy
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
+
 
 class ParallelManager:
     def load_parallel_settings(self):
@@ -16,6 +17,7 @@ class ParallelManager:
         dirname = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
         file_path = os.path.join(dirname, "parallel_settings.yaml")
         ncores = os.cpu_count()
+
         if os.path.exists(file_path):
             with open(file_path) as file:
                 self.parallel_settings = yaml.load(file, Loader=yaml.FullLoader)
@@ -85,8 +87,34 @@ class ParallelManager:
                 result = function(*file_key)
                 results.append(result)
         else:
+<<<<<<< HEAD
+            # ORG - START
+            # with ProcessPoolExecutor(max_workers=workers) as executor:
+            #     results = executor.map(function, *file_keys)
+            # ORG - END
+
+            print(
+                f"PROCESSING ELMENTS: {n_processing_elements}, BATCH SIZE: {batch_size}, CORES: {workers}"
+            )
+            with Manager() as manager:  # create a manager for sharing the semaphore
+                semaphore = manager.Semaphore(
+                    batch_size
+                )  # semaphore to limit the queue size to the pool
+                with ProcessPoolExecutor(workers) as executor:
+
+                    futures = [
+                        submit_proxy(function, semaphore, executor, *file_key)
+                        for file_key in zip(*file_keys)
+                    ]
+
+                    # print([i for i in futures], flush=True)
+                    # wait for all tasks to complete
+                    print("All tasks are submitted, waiting...")
+
+=======
             with ProcessPoolExecutor(max_workers=workers) as executor:
                 results = executor.map(function, *file_keys)
+>>>>>>> 449190e7e8575a2386a621da75095c4f9ea73654
         return results
 
     # def run_commands_in_parallel_with_executor(
