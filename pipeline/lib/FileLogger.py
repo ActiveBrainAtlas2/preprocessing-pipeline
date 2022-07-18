@@ -4,11 +4,7 @@ from pathlib import Path
 import logging
 import socket
 from datetime import datetime
-<<<<<<< HEAD
 from model.log import Log
-=======
-model.log import Log
->>>>>>> a2f0c5b1086bb8b8c2925b3fa89a5a5259d85cce
 
 
 class FileLogger:
