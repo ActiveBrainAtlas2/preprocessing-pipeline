@@ -4,7 +4,11 @@ import cv2
 import numpy as np
 from skimage import io
 from utilities.utilities_mask import equalized
+<<<<<<< HEAD
 from utilities.shell_tools import get_image_size
+=======
+utilities.shell_tools import get_image_size
+>>>>>>> a2f0c5b1086bb8b8c2925b3fa89a5a5259d85cce
 
 
 class Normalizer:
