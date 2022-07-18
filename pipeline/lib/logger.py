@@ -1,5 +1,5 @@
 import logging
-from pipeline.model.log import Log
+model.log import Log
 
 
 

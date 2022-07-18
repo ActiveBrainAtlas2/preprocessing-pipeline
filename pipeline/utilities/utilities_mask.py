@@ -25,6 +25,7 @@ def pad_image(img, file, max_width, max_height, bgcolor=None):
     :param bgcolor: background color of image, 0 for NTB, white for thionin
     :return: placed image centered in the correct size.
     """
+    print('get bg color')
     half_max_width = max_width // 2
     half_max_height = max_height // 2
     startr = half_max_width - (img.shape[0] // 2)
@@ -37,13 +38,16 @@ def pad_image(img, file, max_width, max_height, bgcolor=None):
         bottom_rows = img[start_bottom:img.shape[0], :]
         avg = np.mean(bottom_rows)
         bgcolor = int(round(avg))
+    print('padding')
     new_img = np.zeros([ max_width,max_height]) + bgcolor
+    print('putting image 2d')
     if img.ndim == 2:
         try:
             new_img[startr:endr,startc:endc] = img
         except:
             print('Could not place {} with width:{}, height:{} in {}x{}'
                   .format(file, img.shape[0], img.shape[1], max_width, max_height))
+    print('putting image 3d')
     if img.ndim == 3:
         try:
             new_img = np.zeros([max_height, max_width, 3]) + bgcolor
@@ -69,6 +73,7 @@ def scaled(img, mask, epsilon=0.01):
     :return: scaled image in 16bit format
     """
     scale = 45000
+    print('scaled quantile')
     _max = np.quantile(img[mask > 10], 1 - epsilon) # gets almost the max value of img
     # print('thr=%d, index=%d'%(vals[ind],index))
     if scale > 255:
@@ -77,6 +82,7 @@ def scaled(img, mask, epsilon=0.01):
     else:
         _range = 2 ** 256 - 1 # 8bit
         data_type = np.uint8        
+    print('scaled assign value')
     scaled = img * (scale / _max) # scale the image from original values to e.g., 30000/10000
     scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
     scaled = scaled * (mask > 10) # just work on the non masked values
