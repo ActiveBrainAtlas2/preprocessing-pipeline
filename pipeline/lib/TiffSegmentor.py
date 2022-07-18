@@ -3,11 +3,7 @@ from multiprocessing.pool import Pool
 import numpy as np
 from datetime import datetime
 from utilities.utilities_process import workernoshell
-<<<<<<< HEAD
 from Controllers.SqlController import SqlController
-=======
-Controllers.SqlController import SqlController
->>>>>>> a2f0c5b1086bb8b8c2925b3fa89a5a5259d85cce
 from cell_extractor.CellDetectorBase import CellDetectorBase
 from multiprocessing.pool import Pool
 import tqdm

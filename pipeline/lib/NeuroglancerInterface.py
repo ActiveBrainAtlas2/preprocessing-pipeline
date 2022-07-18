@@ -1,9 +1,5 @@
 import neuroglancer
-<<<<<<< HEAD
 from Controllers.SqlController import SqlController
-=======
-Controllers.SqlController import SqlController
->>>>>>> a2f0c5b1086bb8b8c2925b3fa89a5a5259d85cce
 from lib.FileLocationManager import FileLocationManager
 from pathlib import Path
 import SimpleITK as sitk
