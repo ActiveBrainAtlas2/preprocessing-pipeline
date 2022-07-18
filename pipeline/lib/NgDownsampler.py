@@ -33,7 +33,7 @@ class NgDownsampler:
         cloudpath = f"file://{INPUT_DIR}"
         self.logevent(f"INPUT_DIR: {INPUT_DIR}")
         self.logevent(f"OUTPUT_DIR: {OUTPUT_DIR}")
-        _, workers = get_cpus()
+        workers =self.get_nworkers()
         tq = LocalTaskQueue(parallel=workers)
         tasks = tc.create_transfer_tasks(
             cloudpath,
