@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from model.urlModel import UrlModel
 
+=======
+model.urlModel import UrlModel
+>>>>>>> a2f0c5b1086bb8b8c2925b3fa89a5a5259d85cce
 
 class UrlController:
     def url_exists(self, comments):
