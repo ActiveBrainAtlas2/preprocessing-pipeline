@@ -87,7 +87,6 @@ class ParallelManager:
                 result = function(*file_key)
                 results.append(result)
         else:
-<<<<<<< HEAD
             # ORG - START
             # with ProcessPoolExecutor(max_workers=workers) as executor:
             #     results = executor.map(function, *file_keys)
@@ -111,10 +110,6 @@ class ParallelManager:
                     # wait for all tasks to complete
                     print("All tasks are submitted, waiting...")
 
-=======
-            with ProcessPoolExecutor(max_workers=workers) as executor:
-                results = executor.map(function, *file_keys)
->>>>>>> 449190e7e8575a2386a621da75095c4f9ea73654
         return results
 
     # def run_commands_in_parallel_with_executor(
