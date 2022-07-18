@@ -140,8 +140,8 @@ class MetaUtilities:
                 status = False
         elif db_slides_cnt > 0 and db_slides_cnt < len(czi_files):
             completed_files = []
-            for i, row in enumerate(results):
-               completed_files.append(row[i].file_name)
+            for row in results:
+               completed_files.append(row[0].file_name)
             outstanding_files = set(czi_files).symmetric_difference(set(completed_files))
             czi_files = outstanding_files
             msg = f"OUTSTANDING SLIDES COUNT: {len(czi_files)}"
