@@ -1,7 +1,7 @@
 align_images: !!python/tuple
 - 4
-- 5
-create_downsampled_mask: 12
+- 16
+create_downsampled_mask: 16
 create_full_resolution_mask: 4
 create_neuroglancer: !!python/tuple
 - 4
@@ -9,9 +9,9 @@ create_neuroglancer: !!python/tuple
 create_web_friendly_image: 4
 create_within_stack_transformations: 4
 extract_tifs_from_czi: 4
-make_histogram: 12
-name: basalis
+make_histogram: 16
+name: ratto
 parallel_create_cleaned: !!python/tuple
 - 4
-- 12
-prepare_image_for_quality_control: 4
+- 16
+extract_slide_meta_data_and_insert_to_database: 15

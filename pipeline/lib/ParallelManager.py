@@ -4,11 +4,12 @@ import multiprocessing
 import socket
 import sys
 from multiprocessing.pool import Pool
-from utilities.utilities_process import workernoshell,submit_proxy
+from utilities.utilities_process import workernoshell, submit_proxy
 from concurrent.futures.process import ProcessPoolExecutor
-from multiprocessing import Pool,Manager
+from multiprocessing import Pool, Manager
 import copy
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
+
 
 class ParallelManager:
     def load_parallel_settings(self):
@@ -16,6 +17,7 @@ class ParallelManager:
         dirname = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
         file_path = os.path.join(dirname, "parallel_settings.yaml")
         ncores = os.cpu_count()
+
         if os.path.exists(file_path):
             with open(file_path) as file:
                 self.parallel_settings = yaml.load(file, Loader=yaml.FullLoader)
@@ -117,7 +119,7 @@ class ParallelManager:
             # ORG - END
 
             print(
-                f"PROCESSING ELMENTS: {n_processing_elements}, BATCH SIZE: {batch_size}"
+                f"PROCESSING ELMENTS: {n_processing_elements}, BATCH SIZE: {batch_size}, CORES: {workers}"
             )
             with Manager() as manager:  # create a manager for sharing the semaphore
                 semaphore = manager.Semaphore(

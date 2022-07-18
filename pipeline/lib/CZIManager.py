@@ -40,7 +40,13 @@ class CZIManager(FileLogger):
 
     def get_scene(self, scene_index, channel, scale=1):
         region = self.get_scene_dimension(scene_index)
-        return self.file.read_mosaic(region=region, scale_factor=scale, C=channel-1)[0]
+        return self.file.read_mosaic(region=region, scale_factor=scale, C=channel - 1)[
+            0
+        ]
+
+    def get_scene_dimension(self, scene_index):
+        scene = self.file.get_scene_bounding_box(scene_index)
+        return scene.x, scene.y, scene.w, scene.h
 
 
 def extract_tiff_from_czi(czi_file, file_name, scenei, channel=1, scale=1):
