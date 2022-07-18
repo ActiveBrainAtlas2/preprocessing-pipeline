@@ -14,11 +14,7 @@ from utilities.utilities_registration import (
     parameters_to_rigid_transform,
     rigid_transform_to_parmeters,
 )
-<<<<<<< HEAD
 from model.elastix_transformation import ElastixTransformation
-=======
-model.elastix_transformation import ElastixTransformation
->>>>>>> a2f0c5b1086bb8b8c2925b3fa89a5a5259d85cce
 from lib.pipeline_utilities import get_image_size
 
 import math

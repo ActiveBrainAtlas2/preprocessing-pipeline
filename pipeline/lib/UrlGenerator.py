@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 from Controllers.SqlController import SqlController
 import json
-=======
-Controllers.SqlController import SqlController
-import json 
->>>>>>> a2f0c5b1086bb8b8c2925b3fa89a5a5259d85cce
 import numpy as np
 
 
