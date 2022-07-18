@@ -37,7 +37,11 @@ class CZIManager(FileLogger):
 
         czi_meta_dict[czi_file] = scenes
         return czi_meta_dict
-
+    
+    def get_scene_dimension(self, scene_index):
+        scene = self.file.get_scene_bounding_box(scene_index)
+        return scene.x, scene.y, scene.w, scene.h
+    
     def get_scene(self, scene_index, channel, scale=1):
         region = self.get_scene_dimension(scene_index)
         return self.file.read_mosaic(region=region, scale_factor=scale, C=channel - 1)[
