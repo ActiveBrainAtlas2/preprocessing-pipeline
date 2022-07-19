@@ -4,3 +4,4 @@ parallel_settings.yaml
 pipeline.egg-info
 debug.ipynb
 debug.py
+__pycache__/
