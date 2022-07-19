@@ -3,7 +3,7 @@ import glob
 from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
-Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 from utilities.utilities_process import get_cpus, SCALING_FACTOR, test_dir
 
 

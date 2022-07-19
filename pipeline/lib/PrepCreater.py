@@ -5,9 +5,9 @@ Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
 
 # from shutil import copyfile
-Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 from utilities.utilities_process import test_dir, create_downsample
-utilities.shell_tools import get_image_size
+from utilities.shell_tools import get_image_size
 
 
 class PrepCreater:
@@ -35,25 +35,25 @@ class PrepCreater:
         self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
         self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
         os.makedirs(OUTPUT, exist_ok=True)
-        input_paths = []
-        output_paths = []
         sections = self.sqlController.get_sections(self.animal, self.channel)
         for section_number, section in enumerate(sections):
-            input_path = os.path.join(INPUT, section.file_name)
+            infile = os.path.basename(section.file_name)
+            input_path = os.path.join(INPUT, infile)
             output_path = os.path.join(OUTPUT, str(section_number).zfill(3) + ".tif")
             if not os.path.exists(input_path):
                 continue
             if os.path.exists(output_path):
                 continue
-            input_paths.append(
-                os.path.relpath(input_path, os.path.dirname(output_path))
-            )
-            output_paths.append(output_path)
+            relative_input_path = os.path.relpath(input_path, os.path.dirname(output_path))
             width, height = get_image_size(input_path)
             if self.downsample:
                 self.sqlController.update_tif(section.id, width, height)
-        for file_key in zip(input_paths, output_paths):
-            os.symlink(*file_key)
+
+            try:    
+                os.symlink(relative_input_path, output_path)
+            except Exception as e:
+                print(f"CANNOT CREATE SYMBOLIC LINK (ALREADY EXISTS): {output_path}")
+                
 
     def make_low_resolution(self):
         """
