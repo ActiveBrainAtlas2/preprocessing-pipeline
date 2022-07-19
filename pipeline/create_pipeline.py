@@ -24,9 +24,13 @@ import settings
 from lib.pipeline import Pipeline
 
 
-def run_pipeline(animal, channel, downsample, data_path, host, schema, debug,padding_margin):
+def run_pipeline(
+    animal, channel, downsample, data_path, host, schema, debug, padding_margin, qc_cleanup
+):
 
-    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug,padding_margin)
+    pipeline = Pipeline(
+        animal, channel, downsample, data_path, host, schema, debug, padding_margin
+    )
 
     print(
         "RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:",
@@ -47,6 +51,8 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, debug,pad
         pipeline.apply_qc_and_prepare_image_masks()
     if step > 1:
         print("Step 2")
+        if qc_cleanup == True:
+            pipeline.qc_cleanup()
         pipeline.clean_images_and_create_histogram()
     if step > 2:
         print("Step 3")
@@ -57,12 +63,8 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, debug,pad
 
 
 
-#def qc_cleanup(self):
-    #pass
-
 # def ng_cleanup:
 #     pass
-
 
 
 if __name__ == "__main__":
@@ -77,7 +79,9 @@ if __name__ == "__main__":
         "--downsample", help="Enter true or false", required=False, default="true"
     )
     parser.add_argument("--step", help="steps", required=False, default=0)
-    parser.add_argument("--pad", help="padding factor",type = float, required=False, default=1)
+    parser.add_argument(
+        "--pad", help="padding factor", type=float, required=False, default=1
+    )
     parser.add_argument(
         "--debug", help="Enter true or false", required=False, default="false"
     )
@@ -86,6 +90,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--schema", help="Enter the DB schema", required=False, default=settings.schema
+    )
+    parser.add_argument(
+        "--qc", help="QC masking complete?", required=False, default=False
     )
 
     args = parser.parse_args()
@@ -99,4 +106,4 @@ if __name__ == "__main__":
     schema = args.schema
 
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
-    run_pipeline(animal, channel, downsample, DATA_PATH, host, schema, debug,args.pad)
+    run_pipeline(animal, channel, downsample, DATA_PATH, host, schema, debug, args.pad, args.qc)
