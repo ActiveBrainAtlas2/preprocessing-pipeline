@@ -32,8 +32,15 @@ from lib.pipeline import Pipeline
 
 
 def run_pipeline(animal, channel, downsample, step, DATA_PATH):
-    pipeline = Pipeline(animal, channel, downsample, DATA_PATH=DATA_PATH, host=settings.host, schema=settings.schema, debug=True)
-    
+    pipeline = Pipeline(
+        animal,
+        channel,
+        downsample,
+        DATA_PATH=DATA_PATH,
+        host=settings.host,
+        schema=settings.schema,
+        debug=True,
+    )
 
     pipeline.prepare_image_for_quality_control()
 
@@ -48,9 +55,9 @@ def run_pipeline(animal, channel, downsample, step, DATA_PATH):
 
 
 if __name__ == "__main__":
-    animal = "DK73"
+    animal = "DK59"
     channel = 1
     downsample = True
-    step = 4
+    step = 0
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(animal, channel, downsample, step, DATA_PATH)

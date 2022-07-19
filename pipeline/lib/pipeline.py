@@ -4,7 +4,7 @@ from CZI files to a pyramid of tiles that can be viewed in neuroglancer.
 
 Args are animal, channel, and downsample. With animal being
 the only required argument.
-All imports are listed by the order in which they are used in the pipeline.
+All imports are listed by the order in which they are used in the 
 """
 
 import os
@@ -21,7 +21,7 @@ from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
 from timeit import default_timer as timer
-Controllers.SqlController import SqlController
+from Controllers.SqlController import SqlController
 from lib.FileLogger import FileLogger
 from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
@@ -178,7 +178,7 @@ class Pipeline(
             )
 
     def prepare_image_for_quality_control(self):
-        """This is the first step of the pipeline.  The images are extracted from the CZI files,
+        """This is the first step of the   The images are extracted from the CZI files,
         logged in the database, and downsampled to a web friendly size.  These preparations makes
         it possible to preview the images on the django database admin portal, allowing the user to
         perform quality control on the images.  The user can determine to mark slides or sections
