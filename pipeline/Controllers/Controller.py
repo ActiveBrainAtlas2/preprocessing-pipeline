@@ -4,13 +4,15 @@ from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 from time import sleep
 from sqlalchemy.exc import OperationalError
+
+
 def create_session(host,schema,max_attempt = 50):
     success = False
     attempt=0
     while not success and attempt<max_attempt:
             try:
                 connection_string = f'mysql+pymysql://{user}:{password}@{host}/{schema}?charset=utf8'
-                engine = create_engine(connection_string, echo=False)
+                engine = create_engine(connection_string, pool_pre_ping=True, echo=False)
                 Session = sessionmaker(bind=engine)
                 success  = True
             except OperationalError:
@@ -18,13 +20,14 @@ def create_session(host,schema,max_attempt = 50):
                 sleep(5)
     return Session()
 
+
 def create_pooled_session(host,schema,max_attempt = 50):
     success = False
     attempt=0
     while not success and attempt<max_attempt:
             try:
                 connection_string = f'mysql+pymysql://{user}:{password}@{host}/{schema}?charset=utf8'
-                pooledengine = create_engine(connection_string, pool_size=10, max_overflow=50, pool_recycle=3600)
+                pooledengine = create_engine(connection_string, pool_pre_ping=True, pool_size=10, max_overflow=50, pool_recycle=3600)
                 success  = True
             except OperationalError:
                 attempt+=1

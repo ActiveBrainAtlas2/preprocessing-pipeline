@@ -25,7 +25,7 @@ def pad_image(img, file, max_width, max_height, bgcolor=None):
     :param bgcolor: background color of image, 0 for NTB, white for thionin
     :return: placed image centered in the correct size.
     """
-    print('get bg color')
+    print(f'get bg color for {file}')
     half_max_width = max_width // 2
     half_max_height = max_height // 2
     startr = half_max_width - (img.shape[0] // 2)
