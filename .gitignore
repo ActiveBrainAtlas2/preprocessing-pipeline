@@ -2,3 +2,4 @@ build/
 egg-info/
 parallel_settings.yaml
 pipeline.egg-info
+pipeline/Controllers/__pycache__/Controller.cpython-38.pyc
