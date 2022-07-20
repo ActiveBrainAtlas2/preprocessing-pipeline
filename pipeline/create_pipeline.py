@@ -25,7 +25,16 @@ from lib.pipeline import Pipeline
 
 
 def run_pipeline(
-    animal, channel, downsample, data_path, host, schema, debug, padding_margin, qc_cleanup
+    animal,
+    channel,
+    downsample,
+    data_path,
+    host,
+    schema,
+    debug,
+    padding_margin,
+    qc_cleanup,
+    ng_rerun,
 ):
 
     pipeline = Pipeline(
@@ -39,6 +48,7 @@ def run_pipeline(
         "downsample: " + str(downsample),
         "host: " + host,
         "schema: " + schema,
+        "padding_margin: " + str(padding_margin),
         "debug: " + str(debug),
         sep="\n",
     )
@@ -59,12 +69,9 @@ def run_pipeline(
         pipeline.align_images_within_stack()
     if step > 3:
         print("Step 4")
+        if ng_rerun == "True":
+            pipeline.ng_cleanup(downsample, channel)
         pipeline.create_neuroglancer_cloud_volume()
-
-
-
-# def ng_cleanup:
-#     pass
 
 
 if __name__ == "__main__":
@@ -94,6 +101,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--qc", help="QC masking complete?", required=False, default=False
     )
+    parser.add_argument(
+        "--ngrerun", help="Rerun ng precompute", required=False, default=False
+    )
 
     args = parser.parse_args()
 
@@ -106,4 +116,15 @@ if __name__ == "__main__":
     schema = args.schema
 
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
-    run_pipeline(animal, channel, downsample, DATA_PATH, host, schema, debug, args.pad, args.qc)
+    run_pipeline(
+        animal,
+        channel,
+        downsample,
+        DATA_PATH,
+        host,
+        schema,
+        debug,
+        args.pad,
+        args.qc,
+        args.ngrerun,
+    )

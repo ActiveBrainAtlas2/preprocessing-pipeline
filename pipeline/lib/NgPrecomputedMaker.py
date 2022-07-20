@@ -17,7 +17,9 @@ class NgPrecomputedMaker:
             list: list of converstion factors from pixel to micron for x,y and z
         """
         db_resolution = self.sqlController.scan_run.resolution
+        print(f"DB RESOLUTION:{db_resolution}")
         resolution = int(db_resolution * 1000 / SCALING_FACTOR)
+        print(f"NG RESOLUTION: {resolution}")
         if not self.downsample:
             resolution = int(db_resolution * 1000)
         scales = (resolution, resolution, 20000)
