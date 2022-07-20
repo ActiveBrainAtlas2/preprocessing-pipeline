@@ -2,4 +2,6 @@ build/
 egg-info/
 parallel_settings.yaml
 pipeline.egg-info
-pipeline/Controllers/__pycache__/Controller.cpython-38.pyc
+pipeline/Controllers/__pycache__/
+pipeline/lib/__pycache__/
+pipeline/utilities/__pycache__/
