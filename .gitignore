@@ -1,7 +1,6 @@
+__pycache__/
+*.egg-info/
 build/
-egg-info/
+
 parallel_settings.yaml
 pipeline.egg-info
-debug.ipynb
-debug.py
-__pycache__/
