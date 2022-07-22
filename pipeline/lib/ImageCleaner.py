@@ -146,7 +146,7 @@ class ImageCleaner:
         self.logevent(
             f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
         )
-        print(file_keys)
+        # print(file_keys)
         n_processing_elements = len(file_keys)
         workers = self.get_nworkers()
         # batch_size = 1
