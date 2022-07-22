@@ -12,7 +12,7 @@ class StructureComController(AnnotationSessionController):
     def __init__(self,*args,**kwargs):
         """initiates the controller class
         """        
-        Controller.__init__(self,*args,**kwargs)
+        AnnotationSessionController.__init__(self,*args,**kwargs)
 
     def get_COM(self,prep_id,annotator_id):
         """returns the Center Of Mass of structures for a Animal ID and annotator combination
