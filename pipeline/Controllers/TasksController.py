@@ -1,29 +1,37 @@
 from Controllers.Controller import Controller
-from model.task import Task,ProgressLookup
+from model.task import Task, ProgressLookup
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 from model.file_log import FileLog
 from datetime import datetime
+
+
 class TasksController(Controller):
-    def __init__(self,*args,**kwargs):
-        """initiates the controller class
-        """        
-        Controller.__init__(self,*args,**kwargs)
-        
+    def __init__(self, *args, **kwargs):
+        """initiates the controller class"""
+        Controller.__init__(self, *args, **kwargs)
+
     def get_current_task(self, animal):
         step = None
         try:
-            lookup_id = self.session.query(func.max(Task.lookup_id)).filter(Task.prep_id == animal) \
-                .filter(Task.completed.is_(True)).scalar()
+            lookup_id = (
+                self.session.query(func.max(Task.lookup_id))
+                .filter(Task.prep_id == animal)
+                .filter(Task.completed.is_(True))
+                .scalar()
+            )
         except NoResultFound as nrf:
-            print('No results for {} error: {}'.format(animal, nrf))
+            print("No results for {} error: {}".format(animal, nrf))
             return step
 
         try:
-            lookup = self.session.query(ProgressLookup).filter(
-                ProgressLookup.id == lookup_id).one()
+            lookup = (
+                self.session.query(ProgressLookup)
+                .filter(ProgressLookup.id == lookup_id)
+                .one()
+            )
         except NoResultFound as nrf:
-            print('Bad lookup code for {} error: {}'.format(lookup_id, nrf))
+            print("Bad lookup code for {} error: {}".format(lookup_id, nrf))
             return step
 
         return lookup.description
@@ -39,59 +47,69 @@ class TasksController(Controller):
             nothing, just merges
         """
         try:
-            lookup = self.session.query(ProgressLookup) \
-                .filter(ProgressLookup.id == lookup_id) \
-                .limit(1).one()
+            lookup = (
+                self.session.query(ProgressLookup)
+                .filter(ProgressLookup.id == lookup_id)
+                .limit(1)
+                .one()
+            )
         except NoResultFound:
-            print('No lookup for {} so we will enter one.'.format(lookup_id))
+            print("No lookup for {} so we will enter one.".format(lookup_id))
         try:
-            task = self.session.query(Task).filter(Task.lookup_id == lookup.id) \
-                .filter(Task.prep_id == animal).one()
+            task = (
+                self.session.query(Task)
+                .filter(Task.lookup_id == lookup.id)
+                .filter(Task.prep_id == animal)
+                .one()
+            )
         except NoResultFound:
-            print('No step for {}, so creating new task.'.format(lookup_id))
+            print("No step for {}, so creating new task.".format(lookup_id))
             task = Task(animal, lookup.id, True)
 
         try:
             self.session.merge(task)
             self.session.commit()
         except:
-            print('Bad lookup code for {}'.format(lookup.id))
+            print("Bad lookup code for {}".format(lookup.id))
             self.session.rollback()
-        
-    
+
     def get_progress_id(self, downsample, channel, action):
 
         try:
-            lookup = self.session.query(ProgressLookup) \
-                .filter(ProgressLookup.downsample == downsample) \
-                .filter(ProgressLookup.channel == channel) \
-                .filter(ProgressLookup.action == action).one()
+            lookup = (
+                self.session.query(ProgressLookup)
+                .filter(ProgressLookup.downsample == downsample)
+                .filter(ProgressLookup.channel == channel)
+                .filter(ProgressLookup.action == action)
+                .one()
+            )
         except NoResultFound as nrf:
-            print(
-                f'Bad lookup code for {downsample} {channel} {action} error: {nrf}')
+            print(f"Bad lookup code for {downsample} {channel} {action} error: {nrf}")
             return 0
 
         return lookup.id
-    
-    def set_task_for_step(self,animal,downsample,channel,step):
+
+    def set_task_for_step(self, animal, downsample, channel, step):
         progress_id = self.get_progress_id(downsample, channel, step)
         self.set_task(animal, progress_id)
-    
-    def get_available_actions(self):
-        results = self.session.query(ProgressLookup).filter(ProgressLookup.active==1).all()
-        for resulti in results:
-            print(f'action: {resulti.action}, channel: {resulti.channel}, downsample: {resulti.downsample}')
 
-    def clear_file_log(self, animal):
-        result = (
-            self.session.query(FileLog)
-            .filter(FileLog.prep_id == animal)
-            .delete()
+    def get_available_actions(self):
+        results = (
+            self.session.query(ProgressLookup).filter(ProgressLookup.active == 1).all()
         )
+        for resulti in results:
+            print(
+                f"action: {resulti.action}, channel: {resulti.channel}, downsample: {resulti.downsample}"
+            )
+
+    def clear_file_log(self, animal, downsample, channel):
+        qry = f"DELETE FROM file_log WHERE prep_id='{animal}' AND progress_id IN (SELECT id FROM progress_lookup WHERE ACTION='NEUROGLANCER' AND downsample={downsample} AND CHANNEL={channel})"
+        result = self.session.execute(qry)
         self.session.commit()
         return result
 
-def file_processed(animal, progress_id, filename,pooledsession):
+
+def file_processed(animal, progress_id, filename, pooledsession):
     """
     Args:
         animal: prep_id
@@ -101,10 +119,13 @@ def file_processed(animal, progress_id, filename,pooledsession):
         boolean if file exists or not
     """
     try:
-        file_log = pooledsession.query(FileLog) \
-            .filter(FileLog.prep_id == animal) \
-            .filter(FileLog.progress_id == progress_id) \
-            .filter(FileLog.filename == filename).one()
+        file_log = (
+            pooledsession.query(FileLog)
+            .filter(FileLog.prep_id == animal)
+            .filter(FileLog.progress_id == progress_id)
+            .filter(FileLog.filename == filename)
+            .one()
+        )
     except NoResultFound as nrf:
         return False
     finally:
@@ -112,7 +133,8 @@ def file_processed(animal, progress_id, filename,pooledsession):
 
     return True
 
-def set_file_completed(animal, progress_id, filename,pooledsession):
+
+def set_file_completed(animal, progress_id, filename, pooledsession):
     """
     Args:
         animal: prep_id
@@ -122,14 +144,19 @@ def set_file_completed(animal, progress_id, filename,pooledsession):
         nothing, just merges
     """
 
-    file_log = FileLog(prep_id=animal, progress_id=progress_id, filename=filename,
-                       created=datetime.utcnow(), active=True)
+    file_log = FileLog(
+        prep_id=animal,
+        progress_id=progress_id,
+        filename=filename,
+        created=datetime.utcnow(),
+        active=True,
+    )
 
     try:
         pooledsession.add(file_log)
         pooledsession.commit()
     except Exception as e:
-        print(f'No merge for {animal} {filename} {e}')
+        print(f"No merge for {animal} {filename} {e}")
         pooledsession.rollback()
     finally:
         pooledsession.close()

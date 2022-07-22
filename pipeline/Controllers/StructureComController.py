@@ -1,11 +1,12 @@
 import numpy as np
-from model.annotation_points import StructureCOM
+from model.annotation_points import StructureCOM,COMSources
 import json
 import pandas as pd
 from Controllers.Controller import Controller
 from model.annotation_points import AnnotationSession
+from Controllers.AnnotationSessionController import AnnotationSessionController
 
-class StructureComController(Controller):
+class StructureComController(AnnotationSessionController):
     '''The class that queries and addes entry to the StructureCom table'''
     
     def __init__(self,*args,**kwargs):
@@ -31,9 +32,15 @@ class StructureComController(Controller):
             com = self.session.query(StructureCOM)\
                 .filter(StructureCOM.FK_session_id==sessioni.id).first()   
             coms.append(com)
-        coordinate = [[i.x,i.y,i.z] for i in coms]
-        structure = [i.session.brain_region.abbreviation for i in coms]
+        coordinate = [[i.x,i.y,i.z] for i in coms if i is not None]
+        structure = [i.session.brain_region.abbreviation for i in coms if i is not None]
         return dict(zip(structure,coordinate))
     
     def get_atlas_centers(self):
         return self.get_COM('Atlas',annotator_id=16)
+    
+        
+    def insert_com(self,coordinate,annotator_id,prep_id,structure_id,source):
+        session_id = self.add_structure_com_session(prep_id,annotator_id,structure_id)
+        cell = StructureCOM(x = coordinate[0],y=coordinate[1],z=coordinate[2],source = source,FK_session_id=session_id)
+        self.add_row(cell)
