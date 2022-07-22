@@ -298,7 +298,7 @@ class Pipeline(
         self.logevent(f"{msg} \n{sep}")
         background_del(thumbnail_cleaned_dir)
 
-    def ng_cleanup(self):
+    def ng_cleanup(self, downsample, channel):
         """
         THIS STEP IS RE-RUN NEUROGLANCER:
         DELETE FOLDERS: neuroglancer_data
@@ -309,19 +309,31 @@ class Pipeline(
             try:
                 basename = os.path.basename(os.path.normpath(org_path))
                 new_path = os.path.join(org_path, "..", "." + str(basename))
-                if os.path.exists(basename):
+                if os.path.exists(org_path):
                     os.rename(org_path, new_path)
-                    threading.Thread(target=lambda: shutil.rmtree(new_path)).start()
+                    dirname = os.path.dirname(org_path)
+                    del_path = os.path.join(dirname, "." + str(basename))
+                    threading.Thread(target=lambda: shutil.rmtree(del_path)).start()
                 else:
                     print(f"FOLDER ALREADY DELETED: {basename}")
             except OSError as e:
                 print(f"FOLDER ALREADY DELETED: {new_path}")
 
         sep = "*" * 40 + "\n"
-        neuroglancer_dir = self.fileLocationManager.neuroglancer_data
-        msg = f"DELETE NEUROGLANCER FILES FROM {neuroglancer_dir}"
+        OUTPUT_DIR = self.fileLocationManager.get_neuroglancer(
+            self.downsample, self.channel
+        )
+        msg = f"DELETE NEUROGLANCER FILES FROM {OUTPUT_DIR}"
         self.logevent(f"{msg} \n{sep}")
-        background_del(neuroglancer_dir)
+        print(msg)
+        background_del(OUTPUT_DIR)
 
-        db_output = self.sqlController.clear_file_log(self.animal)
-        print(f"DB RESULTS: {db_output}")
+        # OUTPUT_DIR = self.fileLocationManager.get_neuroglancer("True", self.channel)
+        # msg = f"DELETE NEUROGLANCER FILES FROM {OUTPUT_DIR}"
+        # self.logevent(f"{msg} \n{sep}")
+        # print(msg)
+        # background_del(OUTPUT_DIR)
+
+        db_output = self.sqlController.clear_file_log(
+            self.animal, self.downsample, self.channel
+        )
