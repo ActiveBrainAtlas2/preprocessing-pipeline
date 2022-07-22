@@ -37,3 +37,9 @@ class StructureComController(Controller):
     
     def get_atlas_centers(self):
         return self.get_COM('Atlas',annotator_id=16)
+    
+        
+    def insert_com(self,coordinate,annotator_id,prep_id,structure_id,source):
+        session_id = self.add_structure_com_session(prep_id,annotator_id,structure_id)
+        cell = StructureCOM(x = coordinate[0],y=coordinate[1],z=coordinate[2],source = source,FK_session_id=session_id)
+        self.add_row(cell)
