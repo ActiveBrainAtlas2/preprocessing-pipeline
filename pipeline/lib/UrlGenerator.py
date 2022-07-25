@@ -85,6 +85,9 @@ class UrlGenerator:
         annotation_layer = ",".join(annotation_layer)
         return annotation_layer
 
+    def change_annotation_color_hex(self,annotation_layer,color_hex):
+        ...
+
     def get_url(self):
         if hasattr(self, "dimensions"):
             return json.dumps(
