@@ -35,6 +35,7 @@ class ParallelManager:
                 align_images=(4, ncores),
                 create_neuroglancer=(4, ncores),
                 create_within_stack_transformations=4,
+                create_downsamples=4,
             )
 
             with open(file_path, "w") as file:
