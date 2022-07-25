@@ -53,9 +53,10 @@ class ElastixManager:
                     moving_indexs.append(moving_index)
             center = self.get_rotation_center()
             workers = self.get_nworkers()
-            INPUTs = [INPUT for _ in range(1, nfiles)]
-            centers = [center for _ in range(1, nfiles)]
-            debug = [self.debug for _ in range(1, nfiles)]
+            INPUTs = [INPUT] * nfiles
+            centers = [center] * nfiles
+            debug = [self.debug] * nfiles
+
             results = self.run_commands_in_parallel_with_executor(
                 [INPUTs, fixed_indexs, moving_indexs, centers, debug],
                 workers,

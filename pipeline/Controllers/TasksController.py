@@ -1,3 +1,4 @@
+import os
 from Controllers.Controller import Controller
 from model.task import Task, ProgressLookup
 from sqlalchemy import func
@@ -107,6 +108,54 @@ class TasksController(Controller):
         result = self.session.execute(qry)
         self.session.commit()
         return result
+
+    def set_ng_files_completed(self, animal, progress_id, file_keys):  # rev 21-JUL-2022
+        """
+        Args:
+            animal: prep_id
+            progress_id: ID from progress_lookup table
+            file_keys: all files processed for Ng creation
+        """
+
+        qry = f"INSERT INTO file_log (prep_id, progress_id, filename) VALUES "
+
+        files = []
+        for file in file_keys:
+            filename = os.path.basename(file[1])
+            files.append(f"('{animal}', '{progress_id}', '{filename}')")
+        qry += ",".join(files)
+        qry += ";"
+
+        # WIP BUT WE MAY NOT NEED TO UPDATE DATABASE POST NEUROGLANCER GENERATION
+
+        # result = self.session.execute(qry)
+        # self.session.commit()
+        # return result
+
+        # note: created, active had default values
+        # file_log = FileLog(
+        #     prep_id=animal,
+        #     progress_id=progress_id,
+        #     filename=filename
+        # )
+        # need bulk insert
+
+        # file_log = FileLog(
+        #     prep_id=animal,
+        #     progress_id=progress_id,
+        #     filename=filename,
+        #     created=datetime.utcnow(),
+        #     active=True,
+        # )
+
+        # try:
+        #     pooledsession.add(file_log)
+        #     pooledsession.commit()
+        # except Exception as e:
+        #     print(f"No merge for {animal} {filename} {e}")
+        #     pooledsession.rollback()
+        # finally:
+        #     pooledsession.close()
 
 
 def file_processed(animal, progress_id, filename, pooledsession):
