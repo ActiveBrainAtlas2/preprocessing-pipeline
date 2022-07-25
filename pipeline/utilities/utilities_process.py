@@ -142,6 +142,8 @@ def test_dir(animal, directory, section_count, downsample=True, same_size=False)
     if len(error) > 0:
         print(error)
         sys.exit()
+        
+    return len(files)
 
 
 def get_last_2d(data):
