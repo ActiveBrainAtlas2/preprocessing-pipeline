@@ -21,6 +21,7 @@ class BrainStructureManager(Brain,VolumeUtilities):
             self.pixel_to_um = np.array([to_um, to_um, 20])
             self.um_to_pixel = 1 / self.pixel_to_um
         else:
+            Brain.__init__(self,animal,sql = False)
             self.animal = animal
         self.origins = {}
         self.COM = {}

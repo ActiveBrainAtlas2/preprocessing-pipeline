@@ -55,18 +55,20 @@ class ElastixManager:
             workers = self.get_nworkers()
             INPUTs = [INPUT for _ in range(1, nfiles)]
             centers = [center for _ in range(1, nfiles)]
-            debug = [self.debug for _ in range(1, nfiles)]
-            results = self.run_commands_in_parallel_with_executor(
-                [INPUTs, fixed_indexs, moving_indexs, centers, debug],
-                workers,
-                calculate_elastix_transformation,
-            )
-            for i, result in enumerate(results):
-                moving_index = moving_indexs[i]
-                xshift, yshift, rotation, center = result
-                self.sqlController.add_elastix_row(
-                    self.animal, moving_index, rotation, xshift, yshift
-                )
+            debug = [False for _ in range(1, nfiles)]
+            file_keys = [INPUTs, fixed_indexs, moving_indexs, centers, debug]
+            if not self.debug:
+                results = self.run_commands_in_parallel_with_executor(file_keys,workers,calculate_elastix_transformation,)
+                for i, result in enumerate(results):
+                    moving_index = moving_indexs[i]
+                    xshift, yshift, rotation, center = result
+                    self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
+            else:
+                print("debugging with single core")
+                for file_key in zip(*file_keys):
+                    moving_index= file_key[2]
+                    xshift, yshift, rotation, center = calculate_elastix_transformation(*file_key)
+                    self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
 
     def rigid_transform_to_parmeters(self, transform):
         """convert a 2d transformation matrix (3*3) to the rotation angles, rotation center and translation
@@ -211,9 +213,6 @@ class ElastixManager:
             transforms (dict): dictionary of transformations indexed by id of moving sections
         """
         if self.downsample:
-            transforms = create_downsampled_transforms(
-                self.animal, transforms, downsample=True
-            )
             INPUT = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
             OUTPUT = self.fileLocationManager.get_thumbnail_aligned(self.channel)
             self.align_images(INPUT, OUTPUT, transforms)
@@ -249,21 +248,21 @@ class ElastixManager:
         """
         os.makedirs(OUTPUT, exist_ok=True)
         transforms = OrderedDict(sorted(transforms.items()))
-        ram_coefficient = 6
+        # ram_coefficient = 6
 
         first_file_name = list(transforms.keys())[0]
         infile = os.path.join(INPUT, first_file_name)
-        single_file_size = os.path.getsize(infile)
-        mem_avail = psutil.virtual_memory().available
-        batch_size = mem_avail // (single_file_size * ram_coefficient)
-        print(
-            f"MEM AVAILABLE: {convert_size(mem_avail)}; SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-        )
-        self.logevent(
-            f"MEM AVAILABLE: {convert_size(mem_avail)}; SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-        )
+        # single_file_size = os.path.getsize(infile)
+        # mem_avail = psutil.virtual_memory().available
+        # batch_size = mem_avail // (single_file_size * ram_coefficient)
+        # print(
+        #     f"MEM AVAILABLE: {convert_size(mem_avail)}; SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
+        # )
+        # self.logevent(
+        #     f"MEM AVAILABLE: {convert_size(mem_avail)}; SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
+        # )
         file_keys = []
-        workers = batch_size
+        workers = self.get_nworkers()
 
         for i, (file, T) in enumerate(transforms.items()):
             infile = os.path.join(INPUT, file)
@@ -273,7 +272,7 @@ class ElastixManager:
             file_keys.append([i, infile, outfile, T])
 
         self.run_commands_in_parallel_with_executor(
-            [file_keys], workers, clean_image, batch_size=batch_size
+            [file_keys], workers, clean_image#, batch_size=batch_size
         )
 
     def create_csv_data(self, animal, file_keys):
@@ -312,3 +311,4 @@ def calculate_elastix_transformation(INPUT, fixed_index, moving_index, center, d
     T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
     T = T1 @ T2
     return rigid_transform_to_parmeters(T, center)
+
