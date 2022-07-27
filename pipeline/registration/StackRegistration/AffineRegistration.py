@@ -1,5 +1,5 @@
 import SimpleITK as sitk
-from Registration.StackRegistration.StackRegistration import StackRegistration
+from registration.StackRegistration.StackRegistration import StackRegistration
 
 class AffineRegistration(StackRegistration):
 

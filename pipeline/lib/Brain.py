@@ -17,11 +17,11 @@ class Brain:
         self.animal = animal
         if sql:
             self.sqlController = SqlController(self.animal)
+            to_um = self.get_resolution()
+            self.pixel_to_um = np.array([to_um, to_um, 20])
+            self.um_to_pixel = 1 / self.pixel_to_um
         self.path = FileLocationManager(animal)
         self.plotter = Plotter()
-        to_um = self.get_resolution()
-        self.pixel_to_um = np.array([to_um, to_um, 20])
-        self.um_to_pixel = 1 / self.pixel_to_um
 
     def get_resolution(self):
         """get the scan resolution of the animal from the scan run table

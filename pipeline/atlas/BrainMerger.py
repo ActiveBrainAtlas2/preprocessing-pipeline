@@ -13,8 +13,8 @@ from utilities.utilities_atlas import singular_structures
 from Controllers.SqlController import SqlController
 from utilities.utilities_atlas import  symmetricalize_volume, find_merged_bounding_box,crop_and_pad_volumes
 from atlas.Atlas import Atlas,BrainStructureManager
-from Registration.StackRegistration.RigidRegistration import RigidRegistration
-from Registration.StackRegistration.AffineRegistration import AffineRegistration
+from registration.StackRegistration.RigidRegistration import RigidRegistration
+from registration.StackRegistration.AffineRegistration import AffineRegistration
 MANUAL = 1
 CORRECTED = 2
 DETECTED = 3

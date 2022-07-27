@@ -1,6 +1,6 @@
 import numpy as np
 import SimpleITK as sitk
-from Registration.Registration import Registration
+from registration.Registration import Registration
 class PointSetAlignment(Registration):
     def __init__(self,fixed,moving):
         super().__init__()
