@@ -21,7 +21,7 @@ def create_volume(animal):
     volumemaker.set_aligned_contours(brain.aligned_contours)
     volumemaker.compute_origins_and_volumes_for_all_segments()
     # volumemaker.save_coms()
-    brain.origins,brain.volumes = volumemaker.origins,volumemaker.volumes
+    brain.origins,brain.volumes,brain.structures = volumemaker.origins,volumemaker.volumes,volumemaker.structures
     brain.save_origins()
     brain.save_volumes()
 

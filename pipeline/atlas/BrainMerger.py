@@ -23,8 +23,8 @@ class BrainMerger(Atlas):
 
     def __init__(self,threshold = 0.8, moving_brains = ['MD594', 'MD585']):
         super().__init__()
-        self.fixed_brain = BrainStructureManager('MD589')
-        self.moving_brains = [BrainStructureManager(braini) for braini in moving_brains]
+        self.fixed_brain = BrainStructureManager('MD589',sql=True)
+        self.moving_brains = [BrainStructureManager(braini,sql=True) for braini in moving_brains]
         self.sqlController = SqlController(self.fixed_brain.animal)
         self.threshold = threshold
         self.volumes_to_merge = defaultdict(list)
