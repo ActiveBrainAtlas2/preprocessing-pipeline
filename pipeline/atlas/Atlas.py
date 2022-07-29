@@ -27,6 +27,8 @@ class Atlas(BrainStructureManager):
         os.makedirs(self.origin_path, exist_ok=True)
     
     def get_transform_to_align_brain(self,brain):
+        import pdb
+        pdb.set_trace()
         moving_com = (brain.get_com_array()*self.um_to_pixel).T
         fixed_com = (self.fixed_brain.get_com_array()*self.um_to_pixel).T
         r, t = umeyama(moving_com,fixed_com)
