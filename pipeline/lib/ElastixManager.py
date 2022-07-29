@@ -53,24 +53,6 @@ class ElastixManager:
                     moving_indexs.append(moving_index)
             center = self.get_rotation_center()
             workers = self.get_nworkers()
-<<<<<<< HEAD
-            INPUTs = [INPUT for _ in range(1, nfiles)]
-            centers = [center for _ in range(1, nfiles)]
-            debug = [False for _ in range(1, nfiles)]
-            file_keys = [INPUTs, fixed_indexs, moving_indexs, centers, debug]
-            if not self.debug:
-                results = self.run_commands_in_parallel_with_executor(file_keys,workers,calculate_elastix_transformation,)
-                for i, result in enumerate(results):
-                    moving_index = moving_indexs[i]
-                    xshift, yshift, rotation, center = result
-                    self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
-            else:
-                print("debugging with single core")
-                for file_key in zip(*file_keys):
-                    moving_index= file_key[2]
-                    xshift, yshift, rotation, center = calculate_elastix_transformation(*file_key)
-                    self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
-=======
             INPUTs = [INPUT] * nfiles
             centers = [center] * nfiles
             debug = [self.debug] * nfiles
@@ -86,7 +68,6 @@ class ElastixManager:
                 self.sqlController.add_elastix_row(
                     self.animal, moving_index, rotation, xshift, yshift
                 )
->>>>>>> 0db10221efcd8fb3006a3b4f9d91923c1a73b9d2
 
     def rigid_transform_to_parmeters(self, transform):
         """convert a 2d transformation matrix (3*3) to the rotation angles, rotation center and translation
