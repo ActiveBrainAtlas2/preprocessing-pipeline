@@ -27,6 +27,7 @@ class ParallelManager:
             self.parallel_settings = dict(
                 name=host,
                 extract_tifs_from_czi=4,
+                extract_slide_meta_data_and_insert_to_database=4,
                 create_web_friendly_image=4,
                 make_histogram=ncores,
                 create_full_resolution_mask=4,
@@ -35,6 +36,7 @@ class ParallelManager:
                 align_images=(4, ncores),
                 create_neuroglancer=(4, ncores),
                 create_within_stack_transformations=4,
+                create_downsamples=4,
             )
 
             with open(file_path, "w") as file:

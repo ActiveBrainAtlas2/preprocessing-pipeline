@@ -55,26 +55,30 @@ class NgPrecomputedMaker:
         return midfile, file_keys, volume_size, num_channels
 
     def create_neuroglancer(self):
+
         """create the Seung lab cloud volume format from the image stack"""
-        INPUT = self.fileLocationManager.get_thumbnail_aligned(channel=self.channel)
         progress_id = self.sqlController.get_progress_id(
             self.downsample, self.channel, "NEUROGLANCER"
         )
-        # self.sqlController.session.close()
+        
+        if self.downsample:
+            INPUT = self.fileLocationManager.get_thumbnail_aligned(channel=self.channel)
         if not self.downsample:
             INPUT = self.fileLocationManager.get_full_aligned(channel=self.channel)
             self.sqlController.set_task(self.animal, progress_id)
+
         OUTPUT_DIR = self.fileLocationManager.get_neuroglancer(
             self.downsample, self.channel
         )
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        self.logevent(f"INPUT FOLDER: {INPUT}")
-        starting_files = os.listdir(INPUT)
-        self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
-        self.logevent(f"OUTPUT FOLDER: {OUTPUT_DIR}")
-        test_dir(
+        
+        starting_files = test_dir(
             self.animal, INPUT, self.section_count, self.downsample, same_size=True
         )
+        self.logevent(f"INPUT FOLDER: {INPUT}")
+        self.logevent(f"CURRENT FILE COUNT: {starting_files}")
+        self.logevent(f"OUTPUT FOLDER: {OUTPUT_DIR}")
+
         midfile, file_keys, volume_size, num_channels = self.get_file_information(INPUT)
         chunks = self.get_chunk_size()
         scales = self.get_scales()
@@ -95,11 +99,14 @@ class NgPrecomputedMaker:
             self.run_commands_in_parallel_with_executor(
                 [file_keys], workers, ng.process_image
             )
-        else:
+        else: #only applicable to tif files with multiple channels (should never occur in current workflow)
+            print("ng.process_3channel **SHOULD NOT OCCUR - CHECK CODE**")
             self.run_commands_in_parallel_with_executor(
                 [file_keys], workers, ng.process_3channel
             )
         ng.precomputed_vol.cache.flush()
+        #self.sqlController.set_ng_files_completed(self.animal, progress_id, file_keys) #"ALL OR NOTHING FOR NG FILE CREATION"
+
 
     def create_neuroglancer_zarr(self):
         """Testing with zarr files. I think using zarr files would

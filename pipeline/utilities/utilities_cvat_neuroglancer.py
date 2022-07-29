@@ -298,13 +298,13 @@ class NumpyToNeuroglancer():
         return
 
     def process_image(self, file_key):
-        index, infile,host,schema,orientation = file_key
-        session = create_pooled_session(host,schema)
+        index, infile, host, schema, orientation = file_key
+        #session = create_pooled_session(host, schema)
         basefile = os.path.basename(infile)
-        completed = file_processed(self.animal, self.progress_id, basefile,session)
-        if completed:
-            print(f"Section {index} already processed, skipping ")
-            return
+        #completed = file_processed(self.animal, self.progress_id, basefile,session)
+        # if completed:
+        #     print(f"Section {index} already processed, skipping ")
+        #     return
         try:
             img = io.imread(infile, img_num=0)
         except IOError as ioe:
@@ -326,11 +326,12 @@ class NumpyToNeuroglancer():
         except:
             print(f'could not set {infile} to precomputed')
             return
-        set_file_completed(self.animal, self.progress_id, basefile,session)
+        #set_file_completed(self.animal, self.progress_id, basefile,session)
         del img
         return
 
     def process_3channel(self, file_key):
+        #can we remove? DR 21-JUL-2022
         index, infile = file_key
         basefile = os.path.basename(infile)
         completed = file_processed(self.animal, self.progress_id, basefile)
