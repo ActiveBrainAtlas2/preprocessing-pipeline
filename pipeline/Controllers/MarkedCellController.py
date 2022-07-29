@@ -1,5 +1,5 @@
 from Controllers.AnnotationSessionController import AnnotationSessionController
-from model.annotation_points import CellSources,MarkedCell
+from model.annotation_points import CellSources,MarkedCell,MarkedCellView
 from model.cell_type import CellType
 from Controllers.Controller import Controller
 import numpy as np
@@ -21,9 +21,7 @@ class MarkedCellController(AnnotationSessionController):
         return np.array([[i.x,i.y,i.z] for i in cells])
     
     def get_marked_cells(self,search_dictionary):
-        session = self.get_annotation_session(search_dictionary)
-        self.get_cells_from_sessioni(session.id)
-        
+        return self.query_table(search_dictionary,MarkedCellView)
 
     def print_cell_types(self):
         cell_types = self.query_table({},CellType)
