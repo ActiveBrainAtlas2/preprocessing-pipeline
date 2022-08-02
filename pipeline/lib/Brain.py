@@ -52,8 +52,8 @@ class Brain:
 
     def load_com(self):
         """load the com attribute of this brain indexed by each region"""
-        if not hasattr(self, "COM"):
-            self.COM = self.sqlController.get_COM(self.animal,2)
+        # if not hasattr(self, "COM"):
+        self.COM = self.sqlController.get_COM(self.animal,2)
 
     def get_shared_coms(self, com_dictionary1, com_dictionary2):
         """Get keys that are shared by two dictionaries

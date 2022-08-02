@@ -115,7 +115,7 @@ class BrainStructureManager(Brain,VolumeUtilities):
 
     def save_origins(self):
         assert hasattr(self,'origins')
-        assert hasattr(self,'structures')
+        self.set_structures(list(self.origins.values()))
         os.makedirs(self.origin_path, exist_ok=True)
         for structurei in self.structures:
             x, y, z = self.origins[structurei]
