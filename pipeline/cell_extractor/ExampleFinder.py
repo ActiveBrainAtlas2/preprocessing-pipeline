@@ -5,8 +5,7 @@ import os
 from numpy.linalg import norm
 from time import time
 import glob
-from cell_extractor.CellDetectorBase import CellDetectorBase,get_all_sections_for_animali,parallel_process_all_sections
-import concurrent.futures
+from cell_extractor.CellDetectorBase import CellDetectorBase,parallel_process_all_sections
 
 class ExampleFinder(CellDetectorBase):
     def __init__(self,animal,section, *args, **kwargs):
