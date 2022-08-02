@@ -10,7 +10,7 @@ from cell_extractor.CellDetectorBase import parallel_process_all_sections,CellDe
 
 if __name__ =='__main__':
     # animal = 'DK54'
-    for animal in ['DK54']:
+    for animal in ['DK56']:
         for threshold in [2100,2200,2300,2700]:
             base = CellDetectorBase(animal)
             sections = base.get_sections_without_example(threshold)
