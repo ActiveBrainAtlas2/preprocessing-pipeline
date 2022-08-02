@@ -14,7 +14,7 @@ class StructureComController(AnnotationSessionController):
         """        
         AnnotationSessionController.__init__(self,*args,**kwargs)
 
-    def get_COM(self,prep_id,annotator_id):
+    def get_COM(self,prep_id,annotator_id=2):
         """returns the Center Of Mass of structures for a Animal ID and annotator combination
 
         Args:

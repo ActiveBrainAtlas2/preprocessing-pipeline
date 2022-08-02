@@ -139,4 +139,3 @@ def masker(animal, channel, downsample, debug):
     else:
         with ProcessPoolExecutor(max_workers=workers) as executor:
             executor.map(fix_ntb, sorted(file_keys))
-

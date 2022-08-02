@@ -103,8 +103,8 @@ class Pipeline(
     def get_chunk_size(self):  # for max resolution
         if self.downsample == True:
             return [256, 256, 1]
-        if self.downsample == False:
-            return [2048, 2048, 1]
+        else:
+            return [3072, 3072, 1]
 
     @staticmethod
     def check_programs():
@@ -228,7 +228,7 @@ class Pipeline(
         """This function calculates the rigid transformation used to align the images within stack and applies them to the image"""
 
         self.run_program_and_time(
-            self.create_within_stack_transformations, "Creating elastics transform"
+            self.create_within_stack_transformations, "Creating elastix transform"
         )
         self.logevent("START get_transformations (PREREQUISITE FOR align_images)")
         start_time = timer()
@@ -288,6 +288,27 @@ class Pipeline(
         self.logevent(f"{msg} \n{sep}")
         background_del(self.fileLocationManager.thumbnail_masked)
 
+
+    def align_cleanup(self):
+        """
+        THIS STEP IS RE-RUN IMAGE ALIGNMENT:
+        DELETE FOLDERS: 
+        DELETE DB ENTRIES: 
+        """
+
+        def background_del(org_path):
+            try:
+                basename = os.path.basename(os.path.normpath(org_path))
+                new_path = os.path.join(org_path, "..", "." + str(basename))
+                if os.path.exists(basename):
+                    os.rename(org_path, new_path)
+                    threading.Thread(target=lambda: shutil.rmtree(new_path)).start()
+                else:
+                    print(f"FOLDER ALREADY DELETED: {basename}")
+            except OSError as e:
+                print(f"FOLDER ALREADY DELETED: {new_path}")
+
+        sep = "*" * 40 + "\n"
         thumbnail_aligned_dir = self.fileLocationManager.get_thumbnail_aligned()
         msg = f"DELETE ALIGNED THUMBNAILS FILES FROM {thumbnail_aligned_dir}"
         self.logevent(f"{msg} \n{sep}")
@@ -298,11 +319,12 @@ class Pipeline(
         self.logevent(f"{msg} \n{sep}")
         background_del(thumbnail_cleaned_dir)
 
+
     def ng_cleanup(self, downsample, channel):
         """
         THIS STEP IS RE-RUN NEUROGLANCER:
         DELETE FOLDERS: neuroglancer_data
-        DELETE DB ENTRIES FROM file_log TABLE
+        DELETE DB ENTRIES: file_log
         """
 
         def background_del(org_path):

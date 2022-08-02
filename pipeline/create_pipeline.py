@@ -25,16 +25,7 @@ from lib.pipeline import Pipeline
 
 
 def run_pipeline(
-    animal,
-    channel,
-    downsample,
-    data_path,
-    host,
-    schema,
-    debug,
-    padding_margin,
-    qc_cleanup,
-    ng_rerun,
+    animal, channel, downsample, data_path, host, schema, debug, padding_margin, cleanup
 ):
 
     pipeline = Pipeline(
@@ -61,16 +52,18 @@ def run_pipeline(
         pipeline.apply_qc_and_prepare_image_masks()
     if step > 1:
         print("Step 2")
-        if qc_cleanup == True:
-            pipeline.qc_cleanup()
+        # if cleanup == "True":
+        #     pipeline.qc_cleanup()
         pipeline.clean_images_and_create_histogram()
     if step > 2:
         print("Step 3")
+        # if cleanup == "True":
+        #     pipeline.align_cleanup()
         pipeline.align_images_within_stack()
     if step > 3:
         print("Step 4")
-        if ng_rerun == "True":
-            pipeline.ng_cleanup(downsample, channel)
+        # if cleanup == "True":
+        #     pipeline.ng_cleanup(downsample, channel)
         pipeline.create_neuroglancer_cloud_volume()
 
 
@@ -99,10 +92,10 @@ if __name__ == "__main__":
         "--schema", help="Enter the DB schema", required=False, default=settings.schema
     )
     parser.add_argument(
-        "--qc", help="QC masking complete?", required=False, default=False
-    )
-    parser.add_argument(
-        "--ngrerun", help="Rerun ng precompute", required=False, default=False
+        "--clean",
+        help="Remove prev DB entries and files",
+        required=False,
+        default=False,
     )
 
     args = parser.parse_args()
@@ -125,6 +118,5 @@ if __name__ == "__main__":
         schema,
         debug,
         args.pad,
-        args.qc,
-        args.ngrerun,
+        args.clean,
     )

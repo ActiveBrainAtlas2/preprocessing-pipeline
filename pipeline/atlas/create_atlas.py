@@ -1,9 +1,8 @@
 import sys
-from pathlib import Path
-PIPELINE_ROOT = Path('./src').absolute()
-sys.path.append(PIPELINE_ROOT.as_posix())
-
+import os
+sys.path.append(os.path.abspath('./../'))
 from atlas.FoundationContourAligner import FoundationContourAligner
+from atlas.BrainStructureManager import BrainStructureManager
 from atlas.VolumeMaker import VolumeMaker
 from atlas.BrainMerger import BrainMerger
 from atlas.NgSegmentMaker import AtlasNgMaker
@@ -16,17 +15,21 @@ def align_contour(animal):
 
 
 def create_volume(animal):
-    volumemaker = VolumeMaker(animal)
-    volumemaker.compute_COMs_origins_and_volumes()
-    volumemaker.save_coms()
-    volumemaker.save_origins()
-    volumemaker.save_volumes()
+    brain = BrainStructureManager(animal)
+    brain.load_aligned_contours()
+    volumemaker = VolumeMaker()
+    volumemaker.set_aligned_contours(brain.aligned_contours)
+    volumemaker.compute_origins_and_volumes_for_all_segments()
+    # volumemaker.save_coms()
+    brain.origins,brain.volumes,brain.structures = volumemaker.origins,volumemaker.volumes,volumemaker.structures
+    brain.save_origins()
+    brain.save_volumes()
 
 
 def merge_brains():
     merger = BrainMerger()
     merger.create_average_com_and_volume()
-    merger.save_mesh_files() 
+    # merger.save_mesh_files() 
     merger.save_origins() 
 
 def make_ng_file():

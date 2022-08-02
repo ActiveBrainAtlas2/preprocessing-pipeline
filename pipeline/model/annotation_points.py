@@ -25,6 +25,7 @@ class AnnotationSession(Base):
     active =  Column(Integer,default=1)
 
 class CellSources(enum.Enum):
+    NULL = 'NULL'
     MACHINE_SURE = 'MACHINE-SURE'
     MACHINE_UNSURE = 'MACHINE-UNSURE'
     HUMAN_POSITIVE = 'HUMAN-POSITIVE'
@@ -69,3 +70,20 @@ class PolygonSequence(Base):
     polygon_index = Column(Integer)
     point_order = Column(Integer)
     session = relationship('AnnotationSession', lazy=True)
+
+class MarkedCellView(Base):
+    __tablename__ = 'view_marked_cells'
+    # __table__ = Table(__tablename__, Base.metadata, autoload=True, autoload_with=Engine)
+    # __mapper_args__ = {'primary_key': [__table__.c.MyColumnInTable]} 
+    FK_prep_id = Column(String, nullable=False,primary_key = True)
+    FK_annotator_id = Column(Integer, ForeignKey('auth_user.id'), nullable=True,primary_key = True)
+    FK_cell_type_id = Column(Integer, ForeignKey('cell_type.id'), nullable=True,primary_key = True)
+    FK_structure_id = Column(Integer, ForeignKey('structure.id'), nullable=True,primary_key = True)
+    source = Column(Enum(CellSources), nullable=False,primary_key = True)    
+    active =  Column(Integer,primary_key = True)
+    x = Column(Float, nullable=False,primary_key = True)
+    y = Column(Float, nullable=False,primary_key = True)
+    z = Column(Float, nullable=False,primary_key = True)
+    # __mapper_args__ = {
+    #     "primary_key":[FK_prep_id, field2]
+    # }

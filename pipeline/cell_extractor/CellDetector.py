@@ -125,6 +125,22 @@ class MultiThresholdDetector(CellDetector,AnnotationProximityTool):
     
     def load_detections(self):
         return pd.read_csv(self.MULTI_THRESHOLD_DETECTION_RESULT_DIR)
+    
+    def get_sures(self):
+        detections = self.load_detections()
+        return detections[[string_to_prediction(i) ==2 for i in detections.name]]
+    
+    def get_unsures(self):
+        detections = self.load_detections()
+        return detections[[string_to_prediction(i) ==0 for i in detections.name]]
+    
+def string_to_prediction(string):
+    if string.split('_')[1] == 'sure':
+        return 2
+    elif string.split('_')[1] == 'unsure':
+        return 0
+    elif string.split('_')[1] == 'null':
+        return -2
         
 def detect_cell(animal,round,*args,**kwargs):
     print(f'detecting {animal}')

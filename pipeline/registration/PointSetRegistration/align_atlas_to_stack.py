@@ -1,4 +1,4 @@
-from Registration.PointSetRegistration.PointSetAlignment import AffinePointSetAlignment,\
+from registration.PointSetRegistration.PointSetAlignment import AffinePointSetAlignment,\
     get_shared_key_and_array
 from atlas.Plotter import Plotter
 from Controllers.SqlController import SqlController
