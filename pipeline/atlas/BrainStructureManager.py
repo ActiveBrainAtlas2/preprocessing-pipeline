@@ -21,6 +21,7 @@ class BrainStructureManager(Brain,VolumeUtilities):
             self.pixel_to_um = np.array([to_um, to_um, 20])
             self.um_to_pixel = 1 / self.pixel_to_um
         else:
+            Brain.__init__(self,animal,sql = False)
             self.animal = animal
         self.origins = {}
         self.COM = {}
@@ -114,7 +115,7 @@ class BrainStructureManager(Brain,VolumeUtilities):
 
     def save_origins(self):
         assert hasattr(self,'origins')
-        assert hasattr(self,'structures')
+        self.set_structures(list(self.origins.values()))
         os.makedirs(self.origin_path, exist_ok=True)
         for structurei in self.structures:
             x, y, z = self.origins[structurei]

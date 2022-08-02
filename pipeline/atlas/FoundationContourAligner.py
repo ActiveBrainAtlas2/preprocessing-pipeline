@@ -22,17 +22,18 @@ import ast
 from tqdm import tqdm
 from utilities.utilities_process import get_image_size
 from scipy.interpolate import splprep, splev
-from utilities.utilities_contour_lite import get_contours_from_annotations
+from utilities.utilities_contour import get_contours_from_annotations
 from settings import DATA_PATH
 from utilities.utilities_alignment import transform_points, create_downsampled_transforms
 from utilities.utilities_create_alignment import parse_elastix
 DOWNSAMPLE_FACTOR = 32
 from atlas.BrainStructureManager import BrainStructureManager
-
+from Controllers.SqlController import SqlController
 class FoundationContourAligner(BrainStructureManager):
     def __init__(self,animal):
         super().__init__(animal)
         self.contour_path = os.path.join(DATA_PATH, 'atlas_data','foundation_brain_annotations',f'{self.animal}_annotation.csv')
+        self.sqlController = SqlController(animal)
     
     def create_clean_transform(self):
         section_size = np.array((self.sqlController.scan_run.width, self.sqlController.scan_run.height))
@@ -84,8 +85,9 @@ class FoundationContourAligner(BrainStructureManager):
             .apply(lambda x: x.replace(',,', ',')).apply(lambda x: x.replace(',,', ','))
         hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
         self.contour_per_structure_per_section = defaultdict(dict)
-        structures = self.sqlController.get_structures_dict()
-        for structurei, _ in structures.items():
+        structures = self.sqlController.get_structures()
+        structures = [i.abbreviation for i in structures]
+        for structurei in structures:
             contour_for_structurei, _, _ = get_contours_from_annotations(self.animal, structurei, hand_annotations, densify=4)
             for section in contour_for_structurei:
                 self.contour_per_structure_per_section[structurei][section] = contour_for_structurei[section]

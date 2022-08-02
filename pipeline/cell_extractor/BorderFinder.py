@@ -91,8 +91,8 @@ class BorderFinder(CellDetectorBase):
 def find_border(max_con,shape):
     mask = np.zeros(shape)
     mask = cv2.fillPoly(mask, pts =[max_con.reshape(-1,1,2)], color=(255,255,255))
-    kernel   = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (100,100))
-    morphed  = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    # kernel   = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (100,100))
+    # morphed  = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
     kernel   = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (50,50))
     eroded  = cv2.morphologyEx(mask, cv2.MORPH_ERODE, kernel)
-    return morphed-eroded
+    return np.logical_not(eroded)

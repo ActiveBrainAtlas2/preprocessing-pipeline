@@ -1,9 +1,9 @@
 import SimpleITK as sitk
 from math import floor
-from Registration.StackRegistration.RegistrationStatusReport import RegistrationStatusReport
-from Registration.StackRegistration.SitkIOs import SitkIOs
-from Registration.StackRegistration.ApplyTransform import ApplyTransform
-from Registration.Registration import Registration
+from registration.StackRegistration.RegistrationStatusReport import RegistrationStatusReport
+from registration.StackRegistration.SitkIOs import SitkIOs
+from registration.StackRegistration.ApplyTransform import ApplyTransform
+from registration.Registration import Registration
 
 class StackRegistration(Registration):
 
