@@ -14,9 +14,9 @@ running the cell detector involves the following stages:
 
 ​    These files are generally in the following location:
 
-​    `    /net/birdstore/ActiveBrainAtlas/data_root/pipeline_data/DKXX/CH1/Full_aligned` (Neuro Trace Blue channel)
+​    `    /net/birdstore/ActiveBrainAtlas/data_root/pipeline_data/DKXX/preps/CH1/full_aligned` (Neuro Trace Blue channel)
 
-​    `/net/birdstore/ActiveBrainAtlas/data_root/pipeline_data/DKXX/CH3/Full_aligned` (Fluorescence channel with cells to label)
+​    `/net/birdstore/ActiveBrainAtlas/data_root/pipeline_data/DKXX/preps/CH3/full_aligned` (Fluorescence channel with cells to label)
 
 ​    Also, most of the scripts for generating the following steps are located in the `/pipeline/cell_extractor/scripts/` folder, cd in to that directory in your terminal for the following steps.
 
