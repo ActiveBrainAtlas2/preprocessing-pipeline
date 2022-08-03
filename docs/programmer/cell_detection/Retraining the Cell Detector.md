@@ -17,7 +17,7 @@ use `features = trainer.load_new_features()` to load the features for retraining
 
 use `trainer.test_xgboost(features,depths=[1,3,5,7])` to find the optimal training depth and steps for the detector.  This will generate a plot like this for each depth specified:
 
-![image-20220802162527140](/home/zhw272/.config/Typora/typora-user-images/image-20220802162527140.png)
+<img src="https://cdn.rawgit.com/ActiveBrainAtlas2/preprocessing-pipeline/master/docs/programmer/cell_detection/selecting%20depth%20and%20iteration.png" />
 
 for this step, the final error settles around 0.005 at step 909.  The title specifies the step with the smallest difference between the train and test group, and reasonably low error.  The plot on the right show the same information with a log scale
 
@@ -29,7 +29,7 @@ The detector can be trained once the optimal depth and iteration is selected by 
 
 This function outputs the list of 30 detectors that constitute the model along with a diagnostic plot
 
-![image-20220802162929301](/home/zhw272/.config/Typora/typora-user-images/image-20220802162929301.png)
+<img src="https://cdn.rawgit.com/ActiveBrainAtlas2/preprocessing-pipeline/master/docs/programmer/cell_detection/training%20detector%20metric.png" />
 
 Check that the plot is like the example shown here.  Each curve shows metrics for a single detectors.  Make sure that the two bundles are not too distributed. (forms a narrow with span)
 
@@ -53,9 +53,7 @@ features = trainer.load_new_features()
 trainer.plot_score_scatter(features)
 ```
 
-![image-20220802163405439](/home/zhw272/.config/Typora/typora-user-images/image-20220802163405439.png)
-
-
+<img src="https://cdn.rawgit.com/ActiveBrainAtlas2/preprocessing-pipeline/master/docs/programmer/cell_detection/score%20scatter.png" />
 
 A detector is a combination of model and predictor, two types of predictors are available:
 
@@ -63,13 +61,13 @@ A detector is a combination of model and predictor, two types of predictors are 
 
 Greedy
 
-![image-20220802163846834.png](/home/zhw272/.config/Typora/typora-user-images/image-20220802163846834.png)
+<img src="https://cdn.rawgit.com/ActiveBrainAtlas2/preprocessing-pipeline/master/docs/programmer/cell_detection/predictor%20tunning.png" />
 
 `Predictor` should be used by default
 
 #### Tunning the greedy predictor:
 
-![image-20220802164953135](/home/zhw272/.config/Typora/typora-user-images/image-20220802164953135.png)
+<img src="https://cdn.rawgit.com/ActiveBrainAtlas2/preprocessing-pipeline/master/docs/programmer/cell_detection/greedy%20predictor.png" />
 
 The greedy predictor have 6 points specifying the diamond shape.  Tune and examine the parameter by:
 
