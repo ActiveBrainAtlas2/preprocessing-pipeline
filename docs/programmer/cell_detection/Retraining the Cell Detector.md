@@ -17,8 +17,7 @@ use `features = trainer.load_new_features()` to load the features for retraining
 
 use `trainer.test_xgboost(features,depths=[1,3,5,7])` to find the optimal training depth and steps for the detector.  This will generate a plot like this for each depth specified:
 
-[![image-20220802162527140](/home/zhw272/.config/Typora/typora-user-images/image-20220802162527140.png)
-](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/cell_detection/selecting%20depth%20and%20iteration.png)
+<img src="https://cdn.rawgit.com/ActiveBrainAtlas2/preprocessing-pipeline/master/docs/programmer/cell_detection/selecting%20depth%20and%20iteration.png" />
 
 for this step, the final error settles around 0.005 at step 909.  The title specifies the step with the smallest difference between the train and test group, and reasonably low error.  The plot on the right show the same information with a log scale
 
