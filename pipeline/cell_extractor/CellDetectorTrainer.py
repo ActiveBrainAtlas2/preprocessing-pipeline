@@ -23,7 +23,7 @@ from cell_extractor.CellAnnotationUtilities import CellAnnotationUtilities
 import os
 from cell_extractor.Detector import Detector   
 
-class DataLoader(CellAnnotationUtilities):
+class DK55DataLoader(CellAnnotationUtilities):
     def load_original_training_features(self):
         dirs=glob('/net/birdstore/Active_Atlas_Data/cell_segmentation/DK55/CH3/*/DK55*.csv')  
         dirs=['/'.join(d.split('/')[:-1]) for d in dirs]
@@ -108,7 +108,7 @@ class DataLoader(CellAnnotationUtilities):
         df_in_section = df[include]
         return df_in_section
 
-class CellDetectorTrainer(Detector,DataLoader,CellDetectorBase):
+class CellDetectorTrainer(Detector,CellDetectorBase):
     def __init__(self,animal,round =2,segmentation_threshold=2000):
         CellDetectorBase.__init__(self,animal,round = round,segmentation_threshold=segmentation_threshold)
         self.last_round = CellDetectorBase(animal,round = round-1,segmentation_threshold=segmentation_threshold)
