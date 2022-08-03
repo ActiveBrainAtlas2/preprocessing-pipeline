@@ -1,6 +1,6 @@
 import sys
 import os
-sys.path.append(os.path.abspath('./../'))
+sys.path.append(os.path.abspath('./pipeline'))
 from atlas.FoundationContourAligner import FoundationContourAligner
 from atlas.BrainStructureManager import BrainStructureManager
 from atlas.VolumeMaker import VolumeMaker
