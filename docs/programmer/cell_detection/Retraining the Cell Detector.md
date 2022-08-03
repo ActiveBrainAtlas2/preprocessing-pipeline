@@ -29,7 +29,7 @@ The detector can be trained once the optimal depth and iteration is selected by 
 
 This function outputs the list of 30 detectors that constitute the model along with a diagnostic plot
 
-https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/cell_detection/training%20detector%20metric.png
+<img src="https://cdn.rawgit.com/ActiveBrainAtlas2/preprocessing-pipeline/master/docs/programmer/cell_detection/training%20detector%20metric.png" />
 
 Check that the plot is like the example shown here.  Each curve shows metrics for a single detectors.  Make sure that the two bundles are not too distributed. (forms a narrow with span)
 
@@ -53,9 +53,7 @@ features = trainer.load_new_features()
 trainer.plot_score_scatter(features)
 ```
 
-[![image-20220802163405439](/home/zhw272/.config/Typora/typora-user-images/image-20220802163405439.png)
-](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/cell_detection/score%20scatter.png)
-
+<img src="https://cdn.rawgit.com/ActiveBrainAtlas2/preprocessing-pipeline/master/docs/programmer/cell_detection/score%20scatter.png" />
 
 A detector is a combination of model and predictor, two types of predictors are available:
 
@@ -63,14 +61,14 @@ A detector is a combination of model and predictor, two types of predictors are 
 
 Greedy
 
-[![image-20220802163846834.png](/home/zhw272/.config/Typora/typora-user-images/image-20220802163846834.png)
-](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/cell_detection/greedy%20predictor.png)
+<img src="https://cdn.rawgit.com/ActiveBrainAtlas2/preprocessing-pipeline/master/docs/programmer/cell_detection/predictor%20tunning.png" />
+
 `Predictor` should be used by default
 
 #### Tunning the greedy predictor:
 
-[![image-20220802164953135](/home/zhw272/.config/Typora/typora-user-images/image-20220802164953135.png)
-](https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/programmer/cell_detection/greedy%20predictor.png)
+<img src="https://cdn.rawgit.com/ActiveBrainAtlas2/preprocessing-pipeline/master/docs/programmer/cell_detection/greedy%20predictor.png" />
+
 The greedy predictor have 6 points specifying the diamond shape.  Tune and examine the parameter by:
 
 ```python
