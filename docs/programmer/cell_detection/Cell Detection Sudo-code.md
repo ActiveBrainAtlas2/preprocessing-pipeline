@@ -10,7 +10,7 @@ For Each channel:
 
 ​            if manual annotation exist in the data base for this brain
 
-​                 Create a csv file with manual annotations on each section
+​                 Create a csv file with manual annotations on this section
 ```
 
 ## Step2 Create example:
