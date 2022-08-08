@@ -67,7 +67,8 @@ Group detection from different threshold by doing the following:
 
 Calculating the distance matrix between all points
 
-Get a list of paired points whose distance to each other is within threshold.  If A is close to B there would be two entry: A,B and B,A
+Get a list of paired points whose distance to each other is within threshold.  
+If A is close to B there would be two entry: A,B and B,A
 
 remove duplicate pairs, we should only have A,B now
 
@@ -79,7 +80,8 @@ Each group is treated as a detection.
 
 For Each group:
 
-​    if all detections in group are sures, this is a sure detection, and the coordinate from the threshold with highest mean score is selected for this detection
+​    if all detections in group are sures, this is a sure detection, and the coordinate from the 
+threshold with highest mean score is selected for this detection
 
 ​    If all detection are unsure, the detection is marked unsure
 
