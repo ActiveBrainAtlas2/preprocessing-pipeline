@@ -1,7 +1,7 @@
 # Cell Detection Sudo-code
 
 ## Step1 segment tiff:
-
+```
 For Each channel:
 
 ​      For each section:
@@ -11,9 +11,10 @@ For Each channel:
 ​            if manual annotation exist in the data base for this brain
 
 ​                 Create a csv file with manual annotations on each section
+```
 
 ## Step2 Create example:
-
+```
 For each section:
 
 ​    For each tile:
@@ -33,9 +34,9 @@ For each section:
 ​                        Label an example if a manual annotation lands on the segment
 
 ​        Save all Examples in that section as a pickle file
-
+```
 ## Step3 Create Feature:
-
+```
 For each section:
 
 ​     load all examples of this section from pickle file
@@ -43,9 +44,9 @@ For each section:
 ​     Calculate features for each section
 
 ​      Store all features of this section in a csv file
-
+```
 ## Step4 Detect Cells:
-
+```
 pull all features from different sections to a combined features file and store as a csv
 
 for each connected segment:
@@ -53,13 +54,13 @@ for each connected segment:
 ​       find the mean and std score from 30 models.
 
  Store mean and std score for all segments, along with their coordinates in a csv file
-
+```
 
 
 ## This process is repeated for different thresholds
 
 ### Pulling result of different image thresholds
-
+```
 pull the detection score from all thresholds for an animal.
 
 Group detection from different threshold by doing the following:
@@ -95,3 +96,4 @@ For Each group:
 ​    the coordinate from the threshold with highest mean score is selected for this detection
 
 collect the category (sure/unsure) and coordinates(x,y,z) from each group and store in a csv 
+```
