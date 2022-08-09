@@ -27,7 +27,20 @@ class ElasticsController(Controller):
             ElastixTransformation.prep_id == animal,
             ElastixTransformation.section == section).first())
         return row_exists
-        
+    
+    def delete_elastix_row(self, animal, section):
+        """checks that a given elastix row exists in the database
+
+        Args:
+            animal (str): Animal ID
+            section (int): Section Number
+
+        Returns:
+            bool: if the row in question exists
+        """        
+        search_dictionary = {'prep_id':animal,'section':section}
+        self.delete_row(search_dictionary,ElastixTransformation)
+    
     def add_elastix_row(self, animal, section, rotation, xshift, yshift):
         """adding a row in the elastix table
 

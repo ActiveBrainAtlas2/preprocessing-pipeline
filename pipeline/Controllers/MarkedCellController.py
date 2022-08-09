@@ -1,8 +1,9 @@
 from Controllers.AnnotationSessionController import AnnotationSessionController
-from model.annotation_points import CellSources,MarkedCell
+from model.annotation_points import CellSources,MarkedCell,MarkedCellView
 from model.cell_type import CellType
 from Controllers.Controller import Controller
 import numpy as np
+import pandas as pd
 
 class MarkedCellController(AnnotationSessionController):
     def __init__(self,*args,**kwargs):
@@ -21,11 +22,26 @@ class MarkedCellController(AnnotationSessionController):
         return np.array([[i.x,i.y,i.z] for i in cells])
     
     def get_marked_cells(self,search_dictionary):
-        session = self.get_annotation_session(search_dictionary)
-        self.get_cells_from_sessioni(session.id)
-        
+        return self.query_table(search_dictionary,MarkedCellView)
 
     def print_cell_types(self):
         cell_types = self.query_table({},CellType)
         for i in cell_types:
             print(i.id,i.cell_type)
+
+user_look_up = {38:'Marissa',41:'Julian'}
+
+def get_DataFrame_from_query_result(results,category,factor):
+    values = []
+    for i in results:
+        source = i.source.value
+        if '-' in source:
+            source = source.split('-')[1]    
+        x,y,z = np.array([i.x,i.y,i.z]).astype(float)/factor
+        values.append([x,y,z,f'{category}_{user_look_up[i.FK_annotator_id]}_{source}'])
+    # values = [[eval(f'j.{i}')  for j in results ] for i in attr_names]
+    df = pd.DataFrame(dict(zip(['x','y','section','name'],np.array(values).T)))
+    df["x"] = pd.to_numeric(df["x"])
+    df["y"] = pd.to_numeric(df["y"])
+    df["section"] = pd.to_numeric(df["section"])
+    return df

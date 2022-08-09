@@ -17,11 +17,11 @@ class Brain:
         self.animal = animal
         if sql:
             self.sqlController = SqlController(self.animal)
+            to_um = self.get_resolution()
+            self.pixel_to_um = np.array([to_um, to_um, 20])
+            self.um_to_pixel = 1 / self.pixel_to_um
         self.path = FileLocationManager(animal)
         self.plotter = Plotter()
-        to_um = self.get_resolution()
-        self.pixel_to_um = np.array([to_um, to_um, 20])
-        self.um_to_pixel = 1 / self.pixel_to_um
 
     def get_resolution(self):
         """get the scan resolution of the animal from the scan run table
@@ -52,8 +52,8 @@ class Brain:
 
     def load_com(self):
         """load the com attribute of this brain indexed by each region"""
-        if not hasattr(self, "COM"):
-            self.COM = self.sqlController.get_com_dict(self.animal)
+        # if not hasattr(self, "COM"):
+        self.COM = self.sqlController.get_COM(self.animal,2)
 
     def get_shared_coms(self, com_dictionary1, com_dictionary2):
         """Get keys that are shared by two dictionaries

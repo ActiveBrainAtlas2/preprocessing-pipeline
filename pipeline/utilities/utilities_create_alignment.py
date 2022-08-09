@@ -5,19 +5,18 @@ import pandas as pd
 from skimage import io
 from collections import OrderedDict
 from concurrent.futures.process import ProcessPoolExecutor
-from sqlalchemy import false
 from sqlalchemy.orm.exc import NoResultFound
-import tifffile as tiff
-from utilities.utilities_mask import  place_image
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from lib.FileLocationManager import FileLocationManager
 from Controllers.SqlController import SqlController
-from utilities.utilities_alignment import (create_downsampled_transforms, process_image)
+from utilities.utilities_alignment import create_downsampled_transforms
+from utilities.utilities_mask import  process_image
 from utilities.utilities_process import test_dir, get_cpus
 from model.elastix_transformation import ElastixTransformation
-from lib.sql_setup import session
-
+from Controllers.Controller import create_session
+from settings import user,password,host,schema
+session = create_session(host,schema)
 
 def create_elastix_transformation(rotation, xshift, yshift, center):
     R = np.array([[np.cos(rotation), -np.sin(rotation)],

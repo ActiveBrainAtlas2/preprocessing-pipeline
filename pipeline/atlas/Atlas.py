@@ -27,6 +27,8 @@ class Atlas(BrainStructureManager):
         os.makedirs(self.origin_path, exist_ok=True)
     
     def get_transform_to_align_brain(self,brain):
+        # import pdb
+        # pdb.set_trace()
         moving_com = (brain.get_com_array()*self.um_to_pixel).T
         fixed_com = (self.fixed_brain.get_com_array()*self.um_to_pixel).T
         r, t = umeyama(moving_com,fixed_com)
@@ -73,8 +75,8 @@ class AtlasInitiator(Atlas):
         self.threshold = threshold
         self.threshold_volumes()
         self.volumes = self.thresholded_volumes
-        self.COM = com_function()
-        self.COM,self.volumes = self.get_shared_coms(self.COM, self.volumes)
+        # self.COM = com_function()
+        # self.COM,self.volumes = self.get_shared_coms(self.COM, self.volumes)
         self.structures = list(self.COM.keys())
         self.convert_unit_of_com_dictionary(self.COM,conversion_factor)
         self.origins = self.get_origin_from_coms()
