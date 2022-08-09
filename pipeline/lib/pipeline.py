@@ -104,7 +104,7 @@ class Pipeline(
         if self.downsample == True:
             return [256, 256, 1]
         else:
-            return [3072, 3072, 1]
+            return [512, 512, 1]
 
     @staticmethod
     def check_programs():
@@ -288,12 +288,11 @@ class Pipeline(
         self.logevent(f"{msg} \n{sep}")
         background_del(self.fileLocationManager.thumbnail_masked)
 
-
     def align_cleanup(self):
         """
         THIS STEP IS RE-RUN IMAGE ALIGNMENT:
-        DELETE FOLDERS: 
-        DELETE DB ENTRIES: 
+        DELETE FOLDERS:
+        DELETE DB ENTRIES:
         """
 
         def background_del(org_path):
@@ -318,7 +317,6 @@ class Pipeline(
         msg = f"DELETE CLEANED THUMBNAILS FILES FROM {thumbnail_cleaned_dir}"
         self.logevent(f"{msg} \n{sep}")
         background_del(thumbnail_cleaned_dir)
-
 
     def ng_cleanup(self, downsample, channel):
         """
