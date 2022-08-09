@@ -16,7 +16,8 @@ from atlas.BrainStructureManager import BrainStructureManager
 
 class NgConverter(NumpyToNeuroglancer):
     def __init__(self, volume = None, scales =None, offset=[0, 0, 0], layer_type='segmentation'):
-        self.volume = np.pad(volume,[[1,0],[1,0],[1,0]])
+        if volume is not None:
+            self.volume = np.pad(volume,[[1,0],[1,0],[1,0]])
         self.scales = scales
         self.offset = offset
         self.layer_type = layer_type
@@ -52,7 +53,7 @@ class NgConverter(NumpyToNeuroglancer):
 class NgSegmentMaker(NgConverter):
     def __init__(self, debug = False,out_folder = 'atlas_test',*arg,**kwarg):
         NgConverter.__init__(self,*arg,**kwarg)
-        self.OUTPUT_DIR = os.path.join(self.path.segmentation_layer,out_folder)
+        self.OUTPUT_DIR = os.path.join(self.path.root,'structures',out_folder)
         self.debug = debug
 
     def get_atlas_resolution(self):

@@ -228,7 +228,7 @@ class Pipeline(
         """This function calculates the rigid transformation used to align the images within stack and applies them to the image"""
 
         self.run_program_and_time(
-            self.create_within_stack_transformations, "Creating elastics transform"
+            self.create_within_stack_transformations, "Creating elastix transform"
         )
         self.logevent("START get_transformations (PREREQUISITE FOR align_images)")
         start_time = timer()

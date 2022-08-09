@@ -92,3 +92,66 @@ def volume_to_polygon(volume,origin, times_to_simplify=0,min_vertices=200):
         if polydata.GetNumberOfPoints() < min_vertices:
             break
     return polydata
+
+def find_merged_bounding_box(bounding_box=None):
+    bounding_box = np.array(bounding_box)
+    xmin, ymin, zmin = np.min(bounding_box[:, [0,2,4]], axis=0)
+    xmax, ymax, zmax = np.max(bounding_box[:, [1,3,5]], axis=0)
+    bbox = xmin, xmax, ymin, ymax, zmin, zmax
+    return bbox
+
+def crop_and_pad_volume(volumes, bounding_box, merged_bounding_box):
+    """
+    Crop and pad an volume.
+    in_vol and in_bbox together define the input volume in a underlying space.
+    out_bbox then defines how to crop the underlying space, which generates the output volume.
+    Args:
+        in_bbox ((6,) array): the bounding box that the input volume is defined on. If None, assume origin is at (0,0,0) of the input volume.
+        in_origin ((3,) array): the input volume origin coordinate in the space. Used only if in_bbox is not specified. Default is (0,0,0), meaning the input volume is located at the origin of the underlying space.
+        out_bbox ((6,) array): the bounding box that the output volume is defined on. If not given, each dimension is from 0 to the max reach of any structure.
+    Returns:
+        3d-array: cropped/padded volume
+    """
+    bounding_box = np.array(bounding_box).astype(np.int)
+    xmin, xmax, ymin, ymax, zmin, zmax = bounding_box
+    merged_bounding_box = np.array(merged_bounding_box).astype(np.int)
+    merged_xmin, merged_xmax, merged_ymin, merged_ymax, merged_zmin, merged_zmax = merged_bounding_box
+    merged_xdim = merged_xmax - merged_xmin + 1
+    merged_ydim = merged_ymax - merged_ymin + 1
+    merged_zdim = merged_zmax - merged_zmin + 1
+    if merged_xmin > xmax or merged_xmax < xmin or merged_ymin > ymax or merged_ymax < ymin or merged_zmin > zmax or merged_zmax < zmin:
+        return np.zeros((merged_xdim,merged_ydim, merged_zdim), np.int)
+    if merged_xmax > xmax:
+        volumes = np.pad(volumes, pad_width=[(0,merged_xmax-xmax),(0,0),(0,0)], mode='constant', constant_values=0)
+    if merged_ymax > ymax:
+        volumes = np.pad(volumes, pad_width=[(0,0),(0,merged_ymax-ymax),(0,0)], mode='constant', constant_values=0)
+    if merged_zmax > zmax:
+        volumes = np.pad(volumes, pad_width=[(0,0),(0,0),(0, merged_zmax-zmax)], mode='constant', constant_values=0)
+    out_vol = np.zeros((merged_xdim , merged_ydim, merged_zdim), volumes.dtype)
+    
+    out_vol[xmin-merged_xmin:merged_xmax+1-merged_xmin,
+            ymin-merged_ymin:merged_ymax+1-merged_ymin,
+            zmin-merged_zmin:merged_zmax+1-merged_zmin] = volumes
+    assert out_vol.shape[0] == merged_xdim
+    assert out_vol.shape[1] == merged_ydim
+    assert out_vol.shape[2] == merged_zdim
+    return out_vol
+
+def crop_and_pad_volumes(merged_bounding_box=None, bounding_box_volume=None):
+    """
+    Args:
+        out_bbox ((6,)-array): the output bounding box, must use the same reference system as the vol_bbox input.
+        vol_bbox 
+    Returns:
+        list of 3d arrays or dict {structure name: 3d array}
+    """
+    if isinstance(bounding_box_volume, dict):
+        bounding_box_volume = list(bounding_box_volume.items())
+    vols = [crop_and_pad_volume(volume, bounding_box, merged_bounding_box=merged_bounding_box) for (volume, bounding_box) in bounding_box_volume]
+    # from atlas.BrainStructureManager import Brain
+    # brain = Brain('MD585')
+    # id = 0
+    # axis = 1
+    # brain.plotter.plot_3d_image_stack(bounding_box_volume[id][0],axis)
+    # brain.plotter.plot_3d_image_stack(vols[id],axis)
+    return vols
