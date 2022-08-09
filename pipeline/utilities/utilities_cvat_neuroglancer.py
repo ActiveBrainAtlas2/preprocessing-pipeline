@@ -22,6 +22,8 @@ def calculate_chunks(downsample, mip):
     """
     Chunks default to 64,64,64 so we want different chunks at 
     different resolutions
+
+    #highest resolution tier (mip)  is 0 and increments
     """
     d = defaultdict(dict)
     result = [64,64,64]
@@ -36,10 +38,10 @@ def calculate_chunks(downsample, mip):
     d[False][7] = [64,64,64]
     d[False][8] = [64,64,64]
     d[False][9] = [64,64,64]
+    d[True][-1] = [64,64,1]
 
-    d[True][-1] = [64,64, 1]
-    d[True][0] = [64, 64,64]
-    d[True][1] = [64,64,64]
+    d[True][0] = [256,256,128]
+    d[True][1] = [128,128,64]
     d[True][2] = [64,64,32]
     d[True][3] = [32,32,16]
     try:
@@ -159,6 +161,7 @@ class NumpyToNeuroglancer():
         )
         self.starting_points = starting_points
         self.progress_id = progress_id
+        print(f"init_precomputed: {path}")
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
         self.precomputed_vol.commit_provenance()
