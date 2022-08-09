@@ -9,6 +9,7 @@ from .Controller import Controller
 from .ElasticsController import ElasticsController
 from .StructuresController import StructuresController
 from .StructureComController import StructureComController
+from .MarkedCellController import MarkedCellController
 from .TransformationController import TransformationController
 from .AnimalController import AnimalController
 from .UrlController import UrlController
@@ -27,7 +28,7 @@ import numpy as np
 
 class SqlController(ElasticsController,StructuresController,TransformationController,
     UrlController,AnimalController,ScanRunController,SectionsController,TasksController,
-    SlideController,SlideCZIToTifController,HistologyController,StructureComController):
+    SlideController,SlideCZIToTifController,HistologyController,StructureComController,MarkedCellController):
     """ This is the old sql_controller class.  This is a huge class and we are in the process of breaking it up into smaller
         components.  Each parent class of SqlController would correspond to one table in the database, and include all the 
         methods to interact with that table
