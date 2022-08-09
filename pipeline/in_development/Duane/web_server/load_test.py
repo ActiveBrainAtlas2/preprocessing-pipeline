@@ -8,12 +8,12 @@ import glob
 import sqlite3
 
 
-prep_id = "DK39"
+prep_id = "DK55"
 #in_filename = f'{prep_id}-load_test_target_transfer_list.xlsx'
 in_filename = f'{prep_id}-load_test_target_transfer_list.tsv.gz'
 #out_filename = f'{prep_id}-load_test_results.xlsx'
 out_filename = f'{prep_id}-load_test_results.tsv.gz'
-#base_url = f'https://activebrainatlas.ucsd.edu/data/{prep_id}/neuroglancer_data/C2/325_325_20000/'
+#base_url = f'https://activebrainatlas.ucsd.edu/data/{prep_id}/neuroglancer_data/C1/325_325_20000/'
 base_url = f'https://imageserv.dk.ucsd.edu/data/{prep_id}/neuroglancer_data/C1/325_325_20000/'
 
 
