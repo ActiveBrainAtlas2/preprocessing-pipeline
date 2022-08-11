@@ -60,7 +60,7 @@ class NgPrecomputedMaker:
         progress_id = self.sqlController.get_progress_id(
             self.downsample, self.channel, "NEUROGLANCER"
         )
-        
+
         if self.downsample:
             INPUT = self.fileLocationManager.get_thumbnail_aligned(channel=self.channel)
         if not self.downsample:
@@ -71,7 +71,7 @@ class NgPrecomputedMaker:
             self.downsample, self.channel
         )
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        
+
         starting_files = test_dir(
             self.animal, INPUT, self.section_count, self.downsample, same_size=True
         )
@@ -92,21 +92,20 @@ class NgPrecomputedMaker:
             num_channels=num_channels,
             chunk_size=chunks,
         )
-
+        
         ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=progress_id)
         workers = self.get_nworkers()
         if num_channels == 1:
             self.run_commands_in_parallel_with_executor(
                 [file_keys], workers, ng.process_image
             )
-        else: #only applicable to tif files with multiple channels (should never occur in current workflow)
+        else:  # only applicable to tif files with multiple channels (should never occur in current workflow)
             print("ng.process_3channel **SHOULD NOT OCCUR - CHECK CODE**")
             self.run_commands_in_parallel_with_executor(
                 [file_keys], workers, ng.process_3channel
             )
         ng.precomputed_vol.cache.flush()
-        #self.sqlController.set_ng_files_completed(self.animal, progress_id, file_keys) #"ALL OR NOTHING FOR NG FILE CREATION"
-
+        # self.sqlController.set_ng_files_completed(self.animal, progress_id, file_keys) #"ALL OR NOTHING FOR NG FILE CREATION"
 
     def create_neuroglancer_zarr(self):
         """Testing with zarr files. I think using zarr files would
