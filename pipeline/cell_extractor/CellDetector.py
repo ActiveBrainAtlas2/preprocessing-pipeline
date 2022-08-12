@@ -55,7 +55,6 @@ class MultiThresholdDetector(CellDetector,AnnotationProximityTool):
             sure = pd.DataFrame({'x':sure.col,'y':sure.row,'section':sure.section,'name':[f'{threshold}_sure' for _ in range(len(sure))]})
             unsure = pd.DataFrame({'x':unsure.col,'y':unsure.row,'section':unsure.section,'name':[f'{threshold}_unsure' for _ in range(len(unsure))]})
             null = pd.DataFrame({'x':null.col,'y':null.row,'section':null.section,'name':[f'{threshold}_null' for _ in range(len(null))]})
-            
             detections.append(sure)
             detections.append(unsure)
             scores.append(sure_score)
