@@ -143,16 +143,20 @@ class CellDetectorTrainer(Detector,CellDetectorBase):
         self.default_param['nthread'] = 7 
         print(self.default_param)
 
-    def train_classifier(self,features,depth,niter):
+    def train_classifier(self,features,niter,depth=None,models = None,**kwrds):
         param = self.default_param
-        param['max_depth'] = depth
+        if depth is not None:
+            param['max_depth'] = depth
         df = features
         train,test,all=self.get_train_and_test(df)
         evallist = [(train, 'train'), (test, 'eval')]
         bst_list=[]
-        for _ in range(30):
+        for i in range(30):
             train,test,all=self.get_train_and_test(df)
-            bst = xgb.train(param, train, niter, evallist, verbose_eval=False)
+            if models is None:
+                bst = xgb.train(param, train,niter,evallist, verbose_eval=False,**kwrds)
+            else:
+                bst = xgb.train(param, train,niter,evallist, verbose_eval=False,**kwrds,xgb_model=models[i])
             bst_list.append(bst)
             y_pred = bst.predict(test, iteration_range=[1,bst.best_ntree_limit], output_margin=True)
             y_test=test.get_label()
@@ -164,11 +168,11 @@ class CellDetectorTrainer(Detector,CellDetectorBase):
             plt.plot(neg_preds,self.gen_scale(neg_preds.shape[0],reverse=True))
         return bst_list
     
-    def test_xgboost(self,df,depths = [1,3,5],num_round = 1000):
+    def test_xgboost(self,df,depths = [1,3,5],num_round = 1000,**kwrds):
         for depthi in depths:
-            self.test_xgboost_at_depthi(df,depth = depthi,num_round=num_round)
+            self.test_xgboost_at_depthi(df,depth = depthi,num_round=num_round,**kwrds)
 
-    def test_xgboost_at_depthi(self,features,depth=1,num_round=1000):
+    def test_xgboost_at_depthi(self,features,depth=1,num_round=1000,**kwrds):
         param = self.default_param
         param['max_depth']= depth
         train,test,_=self.get_train_and_test(features)
@@ -180,7 +184,7 @@ class CellDetectorTrainer(Detector,CellDetectorBase):
             Logger=logger()
             logall=Logger.get_logger()  
             param['eval_metric'] = _eval 
-            bst = xgb.train(param, train, num_round, evallist, verbose_eval=False, callbacks=[logall])
+            bst = xgb.train(param, train, num_round, evallist, verbose_eval=False, callbacks=[logall],**kwrds)
             _=Logger.parse_log(ax=axes[i])
             i+=1
         plt.show()
@@ -213,6 +217,10 @@ class CellDetectorTrainer(Detector,CellDetectorBase):
         detector = super().load_detector()
         self.model = detector.model
         self.predictor = detector.predictor
+
+class CellDetectorTrainerDK55(CellDetectorTrainer,DK55DataLoader):
+    def __init__(self,*args,**kwrds):
+        CellDetectorTrainer.__init__(self,*args,**kwrds)
 
 if __name__=='__main__':
     trainer = CellDetectorTrainer('DK55',round = 2)
