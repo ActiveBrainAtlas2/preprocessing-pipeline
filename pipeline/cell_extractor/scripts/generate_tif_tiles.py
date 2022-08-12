@@ -14,4 +14,4 @@ if __name__ =='__main__':
     njobs = args.njobs
     segmentor = TiffSegmentor(animal,disk = disk,n_workers = njobs)
     segmentor.generate_tiff_segments(channel = 1,create_csv = False)
-    segmentor.generate_tiff_segments(channel = 3,create_csv = True)
+    segmentor.generate_tiff_segments(channel = 3,create_csv = False)
