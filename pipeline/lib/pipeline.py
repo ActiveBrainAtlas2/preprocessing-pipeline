@@ -102,9 +102,9 @@ class Pipeline(
 
     def get_chunk_size(self):  # for max resolution
         if self.downsample == True:
-            return [256, 256, 1]
+            return [64, 64, 64]
         else:
-            return [512, 512, 1]
+            return [128, 128, 64]
 
     @staticmethod
     def check_programs():

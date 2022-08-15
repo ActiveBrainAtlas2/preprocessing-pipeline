@@ -79,6 +79,7 @@ class MarkedCellView(Base):
     FK_annotator_id = Column(Integer, ForeignKey('auth_user.id'), nullable=True,primary_key = True)
     FK_cell_type_id = Column(Integer, ForeignKey('cell_type.id'), nullable=True,primary_key = True)
     FK_structure_id = Column(Integer, ForeignKey('structure.id'), nullable=True,primary_key = True)
+    session_id = Column(Integer, ForeignKey('annotation_session.id'), nullable=True,primary_key = True)
     source = Column(Enum(CellSources), nullable=False,primary_key = True)    
     active =  Column(Integer,primary_key = True)
     x = Column(Float, nullable=False,primary_key = True)
