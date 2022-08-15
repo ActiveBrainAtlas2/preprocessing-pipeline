@@ -32,7 +32,6 @@ class TiffSegmentor(CellDetectorBase):
                 self.person_id = person_id
 
     def get_save_folders(self, save_directory):
-        tif_directory = self.path.get_full_aligned()
         files = os.listdir(self.tif_directory)
         self.save_folders = []
         for filei in files:
