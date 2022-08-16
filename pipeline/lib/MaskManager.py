@@ -153,7 +153,6 @@ class MaskManager:
             raw_img = np.array(img)
             mask = mask.astype(np.uint8)
             mask[mask > 0] = 255
-            mask[mask <= 0] = 255
             merged_img = merge_mask(raw_img, mask)
             del mask
             cv2.imwrite(maskpath, merged_img)
