@@ -204,7 +204,7 @@ class Pipeline(
         2. Use a CNN based machine learning algorism to create masks around the tissue.
            These masks will be used to crop out the tissue from the surrounding debres.
         """
-        self.run_program_and_time(self.apply_QC, "applying QC")
+        #####TODO self.run_program_and_time(self.apply_QC, "applying QC")
         self.set_task_preps()
         self.run_program_and_time(
             self.create_normalized_image, "Creating normalization"
@@ -219,10 +219,10 @@ class Pipeline(
         """
         self.run_program_and_time(self.apply_user_mask_edits, "Applying masks")
         self.run_program_and_time(self.create_cleaned_images, "Creating cleaned image")
-        self.run_program_and_time(self.make_histogram, "Making histogram")
-        self.run_program_and_time(
-            self.make_combined_histogram, "Making combined histogram"
-        )
+        #####TODOself.run_program_and_time(self.make_histogram, "Making histogram")
+        #####self.run_program_and_time(
+        #####    self.make_combined_histogram, "Making combined histogram"
+        #####)
 
     def align_images_within_stack(self):
         """This function calculates the rigid transformation used to align the images within stack and applies them to the image"""
