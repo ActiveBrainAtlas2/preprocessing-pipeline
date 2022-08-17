@@ -1,5 +1,6 @@
 from Controllers.Controller import Controller
-from model.annotation_points import AnnotationSession,AnnotationType
+from model.annotation_points import AnnotationSession,AnnotationType,StructureComView
+import numpy as np
 class AnnotationSessionController(Controller):
     def __init__(self,*args,**kwargs):
         """initiates the controller class

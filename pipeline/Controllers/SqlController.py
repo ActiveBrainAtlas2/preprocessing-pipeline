@@ -21,6 +21,7 @@ from .TasksController import TasksController,file_processed, set_file_completed
 from .HistologyController import HistologyController
 from model.scan_run import ScanRun
 from model.histology import Histology
+from model.annotation_points import StructureComView
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from settings import host,schema
@@ -77,6 +78,20 @@ class SqlController(ElasticsController,StructuresController,TransformationContro
         elif histology.orientation == 'sagittal':
             return np.array([scan_run.resolution,scan_run.resolution,scan_run.zresolution])
 
+    def get_slides_from_animal(self,prep_id):
+        scan_run_id = self.get_scan_run(prep_id).id
+        return self.get_slides_from_scan_run_id(scan_run_id)
 
-    
-
+    def get_all_manual_COM(self):
+        coms = self.session.query(StructureComView)\
+            .filter(StructureComView.source == 'MANUAL').all()
+        coms = np.array(coms)
+        animals = np.array([i.FK_prep_id for i in coms])
+        unique_animals = np.unique(animals)
+        all_coms = {}
+        for i in unique_animals:
+            animal_com = coms[animals==i]
+            names = [self.structure_id_to_abbreviation(i.FK_structure_id) for i in animal_com]
+            coords = [np.floor([i.x,i.y,i.z]).astype(int) for i in animal_com]
+            all_coms[i] = dict(zip(names,coords))
+        return all_coms

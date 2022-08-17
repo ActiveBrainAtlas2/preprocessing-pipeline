@@ -91,6 +91,14 @@ class StructuresController(Controller):
             print(f'No structure found for {abbreviation} {nrf}')
             return
         return structure.id
+    
+    def structure_id_to_abbreviation(self,id):
+        try:
+            structure = self.get_row({'id':id},Structure)
+        except NoResultFound as nrf:
+            print(f'No structure found for {id} {nrf}')
+            return
+        return structure.abbreviation
 
     def get_segment_to_id_where_segment_are_brain_regions(self):
         db_structure_infos = self.get_structure_description_and_color()
