@@ -1,5 +1,5 @@
 from cell_extractor.CellDetector import CellDetector
-from cell_extractor.DetectorMetrics import AnnotationProximityTool
+from cell_extractor.AnnotationProximityTool import AnnotationProximityTool
 import numpy as np
 import pandas as pd
 thresholds = [2000,2100,2200,2300,2700]

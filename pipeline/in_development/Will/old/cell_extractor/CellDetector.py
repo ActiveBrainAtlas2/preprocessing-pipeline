@@ -4,7 +4,7 @@ from numpy import *
 import xgboost as xgb
 import pandas as pd
 from cell_extractor.CellDetectorBase import CellDetectorBase
-from cell_extractor.DetectorMetrics import AnnotationProximityTool
+from cell_extractor.AnnotationProximityTool import AnnotationProximityTool
 import os
 class CellDetector(CellDetectorBase):
 

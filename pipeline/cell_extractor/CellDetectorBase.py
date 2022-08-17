@@ -67,6 +67,13 @@ class CellDetectorBase(Brain):
                 height = [self.height]) )
             tile_information = pd.concat([tile_information,tile_informationi],ignore_index=True)
         return tile_information
+
+    def get_detection_by_category(self):
+        detections = self.load_detections()
+        sures = detections[detections.predictions==2]
+        unsures = detections[detections.predictions==0]
+        not_cell = detections[detections.predictions==-2]
+        return sures,unsures,not_cell
     
     def save_tile_information(self):
         tile_information = self.get_tile_information()

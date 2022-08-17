@@ -7,7 +7,7 @@ from sqlalchemy import inspect
 inst = inspect(MarkedCellView)
 attr_names = [c_attr.key for c_attr in inst.mapper.column_attrs]
 import pandas as pd
-from cell_extractor.DetectorMetrics import AnnotationProximityTool
+from cell_extractor.AnnotationProximityTool import AnnotationProximityTool
 from cell_extractor.CellDetector import CellDetector
 from collections import Counter
 import numpy as np
@@ -77,14 +77,6 @@ def find_equivalence(points,distance = 0.1):
     tool.set_annotations_to_compare(points)
     tool.find_equivalent_points()
     return tool
-
-def find_annotation_in_category(tool,category):
-    incategory = []
-    for id,group in tool.pairs.items():
-            if tool.pair_categories[id] in category:
-                    incategory.append(tool.annotations_to_compare.iloc[group[0]])
-    incategory = pd.concat(incategory,axis=1).T
-    return incategory
 
 def find_agreement(tool,agree,disagree):
     agreed = find_annotation_in_category(tool,agree)

@@ -1,6 +1,6 @@
 import sys
 sys.path.append('/home/zhw272/programming/pipeline_utility/in_development/Will')
-from cell_extractor.DetectorMetrics import AnnotationProximityTool
+from cell_extractor.AnnotationProximityTool import AnnotationProximityTool
 from cell_extractor.CellDetector import CellDetector,MultiThresholdDetector
 from cell_extractor.CellDetectorBase import CellDetectorBase
 from pipeline.Controllers.MarkedCellController import MarkedCellController

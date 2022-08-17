@@ -1,6 +1,6 @@
 
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, String, Integer, ForeignKey,Enum
+from sqlalchemy import Column, String, Integer, ForeignKey,Enum,DateTime
 from sqlalchemy.sql.sqltypes import Float
 from model.atlas_model import Base
 from model.brain_region import BrainRegion
@@ -23,4 +23,5 @@ class AnnotationSession(Base):
     brain_region = relationship('BrainRegion', lazy=True)
     user = relationship('User', lazy=True)
     active =  Column(Integer)
+    created =  Column(DateTime)
 

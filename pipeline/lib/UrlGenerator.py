@@ -1,7 +1,7 @@
 from Controllers.SqlController import SqlController
 import json
 import numpy as np
-
+from collections import OrderedDict
 
 class UrlGenerator:
     def __init__(self):
@@ -72,18 +72,8 @@ class UrlGenerator:
         if annotations is not None:
             annotation_layer["annotations"] = annotations
         if color_hex is not None:
-            annotation_layer = self.insert_annotation_color_hex(
-                annotation_layer, color_hex
-            )
+            insert_key_value(annotation_layer,'annotationColor',-2,color_hex)
         self.layers.append(annotation_layer)
-
-    def insert_annotation_color_hex(self, annotation_layer, color_hex):
-        annotation_layer = annotation_layer.split(",")
-        annotation_layer.insert(
-            -2, '\n            "annotationColor": "' + color_hex + '"'
-        )
-        annotation_layer = ",".join(annotation_layer)
-        return annotation_layer
 
     def change_annotation_color_hex(self,annotation_layer,color_hex):
         ...
@@ -135,3 +125,11 @@ class UrlGenerator:
         for annotation in annotations:
             points.append(annotation["point"])
         return np.array(points)
+
+def insert_key_value(a_dict, key, pos_key, value):
+    new_dict = OrderedDict()
+    for k, v in a_dict.items():
+        if k==pos_key:
+            new_dict[key] = value  # insert new key
+        new_dict[k] = v
+    return new_dict
