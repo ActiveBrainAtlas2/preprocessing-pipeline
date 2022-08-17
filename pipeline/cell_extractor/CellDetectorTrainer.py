@@ -177,7 +177,6 @@ class CellDetectorTrainer(Detector,CellDetectorBase):
         param['max_depth']= depth
         train,test,_=self.get_train_and_test(features)
         evallist = [(train, 'train'), (test, 'eval')]
-        train,test,_=self.get_train_and_test(features)
         _, axes = plt.subplots(1,2,figsize=(12,5))
         i=0
         for _eval in ['error','logloss']:

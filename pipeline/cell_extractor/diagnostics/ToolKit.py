@@ -79,8 +79,8 @@ def find_equivalence(points,distance = 0.1):
     return tool
 
 def find_agreement(tool,agree,disagree):
-    agreed = find_annotation_in_category(tool,agree)
-    disagreed = find_annotation_in_category(tool,disagree)
+    agreed = tool.find_annotation_in_category(agree)
+    disagreed = tool.find_annotation_in_category(disagree)
     return agreed,disagreed
 
 def print_unique_combination(tool):
