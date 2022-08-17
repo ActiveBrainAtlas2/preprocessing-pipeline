@@ -102,9 +102,9 @@ class Pipeline(
 
     def get_chunk_size(self):  # for max resolution
         if self.downsample == True:
-            return [256, 256, 1]
+            return [64, 64, 64]
         else:
-            return [512, 512, 1]
+            return [128, 128, 64]
 
     @staticmethod
     def check_programs():
@@ -219,10 +219,10 @@ class Pipeline(
         """
         self.run_program_and_time(self.apply_user_mask_edits, "Applying masks")
         self.run_program_and_time(self.create_cleaned_images, "Creating cleaned image")
-        self.run_program_and_time(self.make_histogram, "Making histogram")
-        self.run_program_and_time(
-            self.make_combined_histogram, "Making combined histogram"
-        )
+        #####TODOself.run_program_and_time(self.make_histogram, "Making histogram")
+        #####self.run_program_and_time(
+        #####    self.make_combined_histogram, "Making combined histogram"
+        #####)
 
     def align_images_within_stack(self):
         """This function calculates the rigid transformation used to align the images within stack and applies them to the image"""
