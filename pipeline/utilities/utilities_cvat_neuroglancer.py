@@ -26,25 +26,25 @@ def calculate_chunks(downsample, mip):
     #highest resolution tier (mip)  is 0 and increments
     """
     d = defaultdict(dict)
-    result = [64,64,64]
-    d[False][-1] = [1024,1024,1]
-    d[False][0] = [128,128,64]
-    d[False][1] = [128,128,64]
-    d[False][2] = [128,128,64]
-    d[False][3] = [128,128,64]
-    d[False][4] = [128,128,64]
-    d[False][5] = [64,64,64]
-    d[False][6] = [64,64,64]
-    d[False][7] = [64,64,64]
-    d[False][8] = [64,64,64]
-    d[False][9] = [64,64,64]
+    result = [64, 64, 64]
+    d[False][-1] = [1024, 1024, 1]
+    d[False][0] = [256, 256, 128]
+    d[False][1] = [128, 128, 64]
+    d[False][2] = [128, 128, 64]
+    d[False][3] = [128, 128, 64]
+    d[False][4] = [128, 128, 64]
+    d[False][5] = [64, 64, 64]
+    d[False][6] = [64, 64, 64]
+    d[False][7] = [64, 64, 64]
+    d[False][8] = [64, 64, 64]
+    d[False][9] = [64, 64, 64]
 
-    d[True][-1] = [64,64, 1]
-    d[True][0] = [64, 64,64]
-    d[True][1] = [64,64,64]
-    d[True][2] = [64,64,32]
-    d[True][3] = [32,32,16]
-      
+    d[True][-1] = [64, 64, 1]
+    d[True][0] = [64, 64, 64]
+    d[True][1] = [64, 64, 64]
+    d[True][2] = [64, 64, 32]
+    d[True][3] = [32, 32, 16]
+
     try:
         result = d[downsample][mip]
     except:
