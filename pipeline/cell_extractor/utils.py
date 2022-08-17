@@ -2,9 +2,9 @@ import sys
 import os
 sys.path.append(os.path.abspath('./../../../..'))
 from cell_extractor.CellDetectorBase import CellDetectorBase
-from pipeline.lib.annotation_layer import Cell,random_string
+from lib.annotation_layer import Cell,random_string
 import numpy as np
-from pipeline.lib.UrlGenerator import UrlGenerator
+from lib.UrlGenerator import UrlGenerator
 from cell_extractor.BorderFinder import BorderFinder
 from cell_extractor.CellDetector import MultiThresholdDetector
 from cell_extractor.CellAnnotationUtilities import CellAnnotationUtilities
