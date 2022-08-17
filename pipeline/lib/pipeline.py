@@ -204,7 +204,7 @@ class Pipeline(
         2. Use a CNN based machine learning algorism to create masks around the tissue.
            These masks will be used to crop out the tissue from the surrounding debres.
         """
-        #####TODO self.run_program_and_time(self.apply_QC, "applying QC")
+        self.run_program_and_time(self.apply_QC, "applying QC")
         self.set_task_preps()
         self.run_program_and_time(
             self.create_normalized_image, "Creating normalization"
