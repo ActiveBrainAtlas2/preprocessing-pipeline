@@ -88,3 +88,13 @@ class MarkedCellView(Base):
     # __mapper_args__ = {
     #     "primary_key":[FK_prep_id, field2]
     # }
+    
+class StructureComView(Base):
+    __tablename__ = 'view_structure_com'
+    FK_prep_id = Column(String, nullable=False,primary_key = True)
+    FK_annotator_id = Column(Integer, ForeignKey('auth_user.id'), nullable=True,primary_key = True)
+    FK_structure_id = Column(Integer, ForeignKey('structure.id'), nullable=True,primary_key = True)
+    source = Column(Enum(COMSources), nullable=False,primary_key = True)    
+    x = Column(Float, nullable=False,primary_key = True)
+    y = Column(Float, nullable=False,primary_key = True)
+    z = Column(Float, nullable=False,primary_key = True)

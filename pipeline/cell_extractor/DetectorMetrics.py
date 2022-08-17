@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import distance_matrix
 import pickle as pk
 from cell_extractor.CellDetectorBase import CellDetectorBase
+from collections import Counter
 
 
 class AnnotationProximityTool(CellDetectorBase):
@@ -117,6 +118,9 @@ class AnnotationProximityTool(CellDetectorBase):
             self.find_equivalent_points()
         bins = np.linspace(lower,upper,upper-lower)
         plt.hist(self.distances.flatten(),bins=bins);
+        
+    def print_grouping(self):
+        print(Counter([tuple(i) for i in self.pair_categories.values()]).most_common())
 
 
 class DetectorMetricsDK55(AnnotationProximityTool):

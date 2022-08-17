@@ -46,18 +46,20 @@ class Atlas(BrainStructureManager):
         self.COM = self.sqlController.get_atlas_centers()
     
     def get_average_coms(self):
-        annotated_animals = self.sqlController.get_annotated_animals()
+        coms = self.sqlController.get_all_manual_COM()
+        annotated_animals = np.array(list(coms.keys()))
         fixed_brain = self.fixed_brain.animal
         annotated_animals = annotated_animals[annotated_animals!=fixed_brain]
-        annotations = [self.sqlController.get_com_dict(fixed_brain)]
+        annotations = [coms[fixed_brain]]
         self.fixed_brain.load_com()
         for prepi in annotated_animals:
-            com = self.sqlController.get_com_dict(prepi)
-            r, t = get_similarity_transformation_from_dicts(fixed = self.fixed_brain.COM,\
-                 moving = com)
+            com = coms[prepi]
+            r, t = get_similarity_transformation_from_dicts(fixed = coms[fixed_brain],\
+                    moving = com)
             transformed = np.array([brain_to_atlas_transform(point, r, t) for point in com.values()])
             annotations.append(dict(zip(com.keys(),transformed)))
         averages = {}
+        self.structures = [i.abbreviation for i in self.sqlController.get_structures()]
         for structurei in self.structures:
             averages[structurei] = np.average([ prepi[structurei] for prepi \
                 in annotations if structurei in prepi],0)
@@ -75,8 +77,7 @@ class AtlasInitiator(Atlas):
         self.threshold = threshold
         self.threshold_volumes()
         self.volumes = self.thresholded_volumes
-        # self.COM = com_function()
-        # self.COM,self.volumes = self.get_shared_coms(self.COM, self.volumes)
+        self.com = com_function()
         self.structures = list(self.COM.keys())
         self.convert_unit_of_com_dictionary(self.COM,conversion_factor)
         self.origins = self.get_origin_from_coms()

@@ -15,3 +15,7 @@ class SlideController(Controller):
         Returns: one slide
         """
         return self.session.query(Slide).filter(Slide.id == ID).one()
+    
+    def get_slides_from_scan_run_id(self,scan_run_id):
+        return self.session.query(Slide).filter(Slide.scan_run_id == scan_run_id).all()
+        
