@@ -13,6 +13,18 @@ class Predictor:
         elif mean >self.std:
             return 2
 
+class BetterPredictor:
+    def __init__(self,std=1.5):
+        self.std = std
+    
+    def decision(self,mean,std):
+        if mean<0:
+            return -2
+        elif mean-std<0 and mean >0:
+            return 0
+        elif mean-std>0:
+            return 2
+
 class GreedyPredictor:
     def __init__(self,boundary_points=[[0,3],[3,4.5],[1,6],[-3,4],[-10,7],[10,7]]):
         self.set_boundary_points(boundary_points)

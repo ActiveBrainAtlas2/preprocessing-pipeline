@@ -80,7 +80,7 @@ class NgPrecomputedMaker:
         self.logevent(f"OUTPUT FOLDER: {OUTPUT_DIR}")
 
         midfile, file_keys, volume_size, num_channels = self.get_file_information(INPUT)
-        chunks = self.get_chunk_size()
+        chunks = calculate_chunks(self.downsample, -1)
         scales = self.get_scales()
         self.logevent(f"CHUNK SIZE: {chunks}; SCALES: {scales}")
         ng = NumpyToNeuroglancer(
