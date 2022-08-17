@@ -16,7 +16,7 @@
 ## Class: CellDetector
   A collection of information and functions that is used to run a cell detector on brain images
 
-## Class: DetectorMetrics
+## Class: AnnotationProximityTool
   data and function needed to evaluate a specific iteration of detector
   
 ## Class: GreedyPredictor

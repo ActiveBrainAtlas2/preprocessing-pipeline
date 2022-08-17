@@ -120,7 +120,16 @@ class AnnotationProximityTool(CellDetectorBase):
         plt.hist(self.distances.flatten(),bins=bins);
         
     def print_grouping(self):
-        print(Counter([tuple(i) for i in self.pair_categories.values()]).most_common())
+        for i in Counter([tuple(i) for i in self.pair_categories.values()]).most_common():
+            print(i)
+    
+    def find_annotation_in_category(self,category):
+        incategory = []
+        for id,group in self.pairs.items():
+                if self.pair_categories[id] in category:
+                        incategory.append(self.annotations_to_compare.iloc[group[0]])
+        incategory = pd.concat(incategory,axis=1).T
+        return incategory
 
 
 class DetectorMetricsDK55(AnnotationProximityTool):
