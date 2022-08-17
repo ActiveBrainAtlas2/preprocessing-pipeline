@@ -11,7 +11,7 @@ from utilities.utilities_process import get_cpus
 class NgDownsampler:
     def create_downsamples(self):
         """Downsamples the neuroglancer cloudvolume this step is needed to make the files viewable in neuroglancer"""
-        chunks = self.get_chunk_size()
+        chunks = calculate_chunks(self.downsample, 0)
         mips = [0, 1, 2, 3, 4, 5, 6, 7]
         if self.downsample:
             mips = [0, 1, 2]
