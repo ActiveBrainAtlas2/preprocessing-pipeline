@@ -57,8 +57,8 @@ class Pipeline(
         channel=1,
         downsample=True,
         DATA_PATH="/net/birdstore/Active_Atlas_Data/data_root",
-        host="db.dk.ucsd.edu",
-        schema="active_atlas_production",
+        host="localhost",
+        schema="active_atlas_development",
         debug=False,
         padding_margin=1,
     ):
