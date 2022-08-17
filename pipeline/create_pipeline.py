@@ -45,7 +45,7 @@ def run_pipeline(
     )
 
     print("Step 0")
-    """
+    
     pipeline.prepare_image_for_quality_control()
 
     if step > 0:
@@ -56,7 +56,7 @@ def run_pipeline(
         # if cleanup == "True":
         #     pipeline.qc_cleanup()
         pipeline.clean_images_and_create_histogram()
-    """
+    
     if step > 2:
         print("Step 3")
         # if cleanup == "True":
