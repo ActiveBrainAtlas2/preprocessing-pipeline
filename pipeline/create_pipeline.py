@@ -25,11 +25,11 @@ from lib.pipeline import Pipeline
 
 
 def run_pipeline(
-    animal, channel, downsample, data_path, host, schema, debug, padding_margin, cleanup
+    animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug
 ):
 
     pipeline = Pipeline(
-        animal, channel, downsample, data_path, host, schema, debug, padding_margin
+        animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug
     )
 
     print(
@@ -39,25 +39,26 @@ def run_pipeline(
         "downsample: " + str(downsample),
         "host: " + host,
         "schema: " + schema,
+        "tg: " + str(tg),
         "padding_margin: " + str(padding_margin),
         "debug: " + str(debug),
         sep="\n",
     )
 
     print("Step 0")
-    """
-    pipeline.prepare_image_for_quality_control()
+    
+    #####TODO pipeline.prepare_image_for_quality_control()
 
     if step > 0:
         print("Step 1")
-        pipeline.apply_qc_and_prepare_image_masks()
+        #####TODO pipeline.apply_qc_and_prepare_image_masks()
     
     if step > 1:
         print("Step 2")
         # if cleanup == "True":
         #     pipeline.qc_cleanup()
         pipeline.clean_images_and_create_histogram()
-    """
+    
     if step > 2:
         print("Step 3")
         # if cleanup == "True":
@@ -101,6 +102,12 @@ if __name__ == "__main__":
         required=False,
         default=False,
     )
+    parser.add_argument(
+        "--tg",
+        help="Extend the mask to expose the entire underside of the brain",
+        required=False,
+        default=False,
+    )
 
     args = parser.parse_args()
 
@@ -111,6 +118,7 @@ if __name__ == "__main__":
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
     host = args.host
     schema = args.schema
+    tg = bool({"true": True, "false": False}[str(args.tg).lower()])
 
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(
@@ -120,7 +128,8 @@ if __name__ == "__main__":
         DATA_PATH,
         host,
         schema,
-        debug,
+        tg,
         args.pad,
         args.clean,
+        debug,
     )
