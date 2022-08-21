@@ -45,23 +45,25 @@ def run_pipeline(
     )
 
     print("Step 0")
-    
+    """
     pipeline.prepare_image_for_quality_control()
 
     if step > 0:
         print("Step 1")
         pipeline.apply_qc_and_prepare_image_masks()
+    
     if step > 1:
         print("Step 2")
         # if cleanup == "True":
         #     pipeline.qc_cleanup()
         pipeline.clean_images_and_create_histogram()
-    
+    """
     if step > 2:
         print("Step 3")
         # if cleanup == "True":
         #     pipeline.align_cleanup()
         pipeline.align_images_within_stack()
+    
     if step > 3:
         print("Step 4")
         # if cleanup == "True":
