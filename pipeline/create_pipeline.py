@@ -47,11 +47,11 @@ def run_pipeline(
 
     print("Step 0")
     
-    #####TODO pipeline.prepare_image_for_quality_control()
+    pipeline.prepare_image_for_quality_control()
 
     if step > 0:
         print("Step 1")
-        #####TODO pipeline.apply_qc_and_prepare_image_masks()
+        pipeline.apply_qc_and_prepare_image_masks()
     
     if step > 1:
         print("Step 2")
