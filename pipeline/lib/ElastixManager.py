@@ -1,10 +1,10 @@
-import glob
-import os, psutil
+import os
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
+from concurrent.futures.process import ProcessPoolExecutor
 
 Image.MAX_IMAGE_PIXELS = None
 from lib.FileLocationManager import FileLocationManager
@@ -34,7 +34,12 @@ class ElastixManager:
     """Class for generating, storing and applying the within stack alignment with the Elastix package"""
 
     def create_within_stack_transformations(self):
-        """Calculate and store the rigid transformation using elastix.  The transformations are calculated from the next image to the previous"""
+        """Calculate and store the rigid transformation using elastix.  
+        The transformations are calculated from the next image to the previous
+        This is done in a simple loop with no workers. Usually takes
+        up to an hour to run for a stack. It only needs to be run once for
+        each brain.
+        """
         if self.channel == 1 and self.downsample:
             INPUT = os.path.join(
                 self.fileLocationManager.prep, "CH1", "thumbnail_cleaned"
@@ -43,31 +48,29 @@ class ElastixManager:
             nfiles = len(files)
             self.logevent(f"INPUT FOLDER: {INPUT}")
             self.logevent(f"FILE COUNT: {nfiles}")
-            fixed_indexs = []
-            moving_indexs = []
+
             for i in range(1, nfiles):
                 fixed_index = os.path.splitext(files[i - 1])[0]
                 moving_index = os.path.splitext(files[i])[0]
                 if not self.sqlController.check_elastix_row(self.animal, moving_index):
-                    fixed_indexs.append(fixed_index)
-                    moving_indexs.append(moving_index)
-            center = self.get_rotation_center()
-            workers = self.get_nworkers()
-            INPUTs = [INPUT] * nfiles
-            centers = [center] * nfiles
-            debug = [self.debug] * nfiles
+                    self.calculate_elastix_transformation(INPUT, fixed_index, moving_index)
+                    
 
-            results = self.run_commands_in_parallel_with_executor(
-                [INPUTs, fixed_indexs, moving_indexs, centers, debug],
-                workers,
-                calculate_elastix_transformation,
-            )
-            for i, result in enumerate(results):
-                moving_index = moving_indexs[i]
-                xshift, yshift, rotation, center = result
-                self.sqlController.add_elastix_row(
-                    self.animal, moving_index, rotation, xshift, yshift
-                )
+
+    def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
+        center = self.get_rotation_center()
+        second_transform_parameters, initial_transform_parameters = register_simple(
+            INPUT, fixed_index, moving_index, self.debug
+        )
+        T1 = parameters_to_rigid_transform(*initial_transform_parameters)
+        T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
+        T = T1 @ T2
+        xshift, yshift, rotation, center = rigid_transform_to_parmeters(T, center)
+        self.sqlController.add_elastix_row(
+            self.animal, moving_index, rotation, xshift, yshift
+        )
+
+
 
     def rigid_transform_to_parmeters(self, transform):
         """convert a 2d transformation matrix (3*3) to the rotation angles, rotation center and translation
@@ -301,8 +304,8 @@ class ElastixManager:
         df = pd.DataFrame(data)
         df.to_csv(f"/tmp/{animal}.section2sectionalignments.csv", index=False)
 
-
-def calculate_elastix_transformation(INPUT, fixed_index, moving_index, center, debug):
+# Deprecated
+def calculate_elastix_transformationXXX(INPUT, fixed_index, moving_index, center, debug):
     second_transform_parameters, initial_transform_parameters = register_simple(
         INPUT, fixed_index, moving_index, debug
     )

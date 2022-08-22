@@ -362,7 +362,7 @@ def align_elastix(fixed,moving, debug,tries=10):
             ## 80 good results, 7 minutes on basalis with 4 jobs
             ## 200 good results except for 1st couple were not aligned, 12 minutes
             ## 500 is best, including first sections, basalis took 21 minutes
-            rigid_params["MaximumNumberOfIterations"] = ["700"]
+            rigid_params["MaximumNumberOfIterations"] = ["1000"]
             ## The step size of the optimizer, in mm. By default the voxel size is used.
             ## which usually works well. In case of unusual high-resolution images
             ## (eg histology) it is necessary to increase this value a bit, to the size
@@ -405,10 +405,7 @@ def align_elastix(fixed,moving, debug,tries=10):
             rigid_params["ResultImageFormat"] = ["tif"]
             rigid_params["RequiredRatioOfValidSamples"] = ["0.05"]
             elastixImageFilter.SetParameterMap(rigid_params)
-            if debug:
-                elastixImageFilter.LogToConsoleOn()
-            else:
-                elastixImageFilter.LogToConsoleOff()
+            elastixImageFilter.LogToConsoleOff()
         except RuntimeError:
             continue
         break
