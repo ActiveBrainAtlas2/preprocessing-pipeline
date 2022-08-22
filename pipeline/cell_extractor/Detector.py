@@ -7,6 +7,8 @@ class Detector():
     def __init__(self,model=None,predictor:GreedyPredictor=GreedyPredictor()):
         self.model = model
         self.predictor = predictor
+        self.depth
+        self.niter
 
     def createDM(self,df):
         labels=df['label']
