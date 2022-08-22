@@ -25,11 +25,11 @@ from lib.pipeline import Pipeline
 
 
 def run_pipeline(
-    animal, channel, downsample, data_path, host, schema, debug, padding_margin, cleanup
+    animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug
 ):
 
     pipeline = Pipeline(
-        animal, channel, downsample, data_path, host, schema, debug, padding_margin
+        animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug
     )
 
     print(
@@ -39,6 +39,7 @@ def run_pipeline(
         "downsample: " + str(downsample),
         "host: " + host,
         "schema: " + schema,
+        "tg: " + str(tg),
         "padding_margin: " + str(padding_margin),
         "debug: " + str(debug),
         sep="\n",
@@ -51,6 +52,7 @@ def run_pipeline(
     if step > 0:
         print("Step 1")
         pipeline.apply_qc_and_prepare_image_masks()
+    
     if step > 1:
         print("Step 2")
         # if cleanup == "True":
@@ -62,6 +64,7 @@ def run_pipeline(
         # if cleanup == "True":
         #     pipeline.align_cleanup()
         pipeline.align_images_within_stack()
+    
     if step > 3:
         print("Step 4")
         # if cleanup == "True":
@@ -99,6 +102,12 @@ if __name__ == "__main__":
         required=False,
         default=False,
     )
+    parser.add_argument(
+        "--tg",
+        help="Extend the mask to expose the entire underside of the brain",
+        required=False,
+        default=False,
+    )
 
     args = parser.parse_args()
 
@@ -109,6 +118,7 @@ if __name__ == "__main__":
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
     host = args.host
     schema = args.schema
+    tg = bool({"true": True, "false": False}[str(args.tg).lower()])
 
     DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(
@@ -118,7 +128,8 @@ if __name__ == "__main__":
         DATA_PATH,
         host,
         schema,
-        debug,
+        tg,
         args.pad,
         args.clean,
+        debug,
     )
