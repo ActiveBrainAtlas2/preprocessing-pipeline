@@ -32,11 +32,11 @@ class FileLocationManager(object):
         self.custom_transform = os.path.join(self.brain_info, "custom_transform")
         self.mouseatlas_tmp = os.path.join(self.brain_info, "mouseatlas_tmp")
         self.elastix_dir = os.path.join(self.prep, "elastix")
-        self.full_masked = os.path.join(self.prep, "full_masked")
         self.full_aligned = os.path.join(self.prep, "full_aligned")
         self.masks = os.path.join(self.prep, "masks")
         self.thumbnail_masked = os.path.join(self.masks, "thumbnail_masked")
         self.thumbnail_colored = os.path.join(self.masks, "thumbnail_colored")
+        self.full_masked = os.path.join(self.masks, "full_masked")
         self.rotated_and_padded_thumbnail_mask = os.path.join(
             self.masks, "thumbnail_rotated_and_padded"
         )
