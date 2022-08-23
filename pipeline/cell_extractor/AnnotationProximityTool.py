@@ -9,7 +9,6 @@ import pickle as pk
 from cell_extractor.CellDetectorBase import CellDetectorBase
 from collections import Counter
 
-
 class AnnotationProximityTool(CellDetectorBase):
     '''
     This tool finds and groups annotations that are really close together.
@@ -62,7 +61,7 @@ class AnnotationProximityTool(CellDetectorBase):
         print('grouping and labeling points that are close to each other')
         def group_close_paris():
             self.pairs={}
-            for i in range(self.nannotations):
+            for i in range(len(self.annotations_to_compare)):
                 self.pairs[i]=[i]
             for i in range(self.npairs):
                 first,second=self.close_pairs[i]
@@ -106,7 +105,6 @@ class AnnotationProximityTool(CellDetectorBase):
            name:    category of the annotation. str
         '''
         self.annotations_to_compare = annotations
-        self.nannotations = len(annotations)
     
     def find_equivalent_points(self):
         self.calculate_distance_matrix()
@@ -131,6 +129,65 @@ class AnnotationProximityTool(CellDetectorBase):
         incategory = pd.concat(incategory,axis=1).T
         return incategory
 
+    def find_group_in_category(self,category):
+        incategory = []
+        for id,group in self.pairs.items():
+                if self.pair_categories[id] in category:
+                        incategory.append(self.annotations_to_compare.iloc[group])
+        return incategory
+
+class AcrossSectionProximity(AnnotationProximityTool):
+    def find_equivalent_points(self):
+        sections = self.annotations_to_compare.section.unique()
+        things_to_add = []
+        unique_name = self.annotations_to_compare.name.unique()
+        assert len(unique_name) ==1
+        name = unique_name[0]
+        for sectioni in sections:
+            next_section = self.annotations_to_compare[self.annotations_to_compare.section==(sectioni+1)]
+            next_section.section = sectioni
+            next_section.name = next_section.name+f'_1_section_over'
+            things_to_add.append(next_section)
+        self.annotations_to_compare = pd.concat([self.annotations_to_compare]+things_to_add)
+        self.calculate_distance_matrix()
+        self.find_close_pairs()
+        self.group_and_label_close_pairs()
+        duplication = {}
+        group_of_more_than_i_detection = self.find_group_in_category([[name, name+'_1_section_over']])
+        if len(group_of_more_than_i_detection)==0:
+            print('no across section duplicates')
+            return
+        print(f'finding cell detection spanning 2 sections')
+        for i in group_of_more_than_i_detection:
+            i.iloc[['1_section_over' in j for j in i.name],2]+=1
+        ind=2
+        duplication[ind] = ([min(i.index) for i in group_of_more_than_i_detection],group_of_more_than_i_detection)
+        while True:
+            duplicate_index = np.array([list(i.index) for i in group_of_more_than_i_detection])
+            id_of_more_than_i_detection = [i for i in duplicate_index[:,-1] if i in duplicate_index[:,:-1] and i !=0]
+            group_of_more_than_i_plus_one_detection = []
+            for id in id_of_more_than_i_detection:
+                index = np.where([id in i.index for i in group_of_more_than_i_detection])[0]
+                assert len(index)==2
+                i = group_of_more_than_i_detection[index[0]]
+                j = group_of_more_than_i_detection[index[1]]
+                new_element = [ind for ind in range(len(i)) if i.section.iloc[ind] not in list(j.section)]
+                new_point = i.iloc[new_element,:].to_numpy()[0]
+                new_point = pd.DataFrame(dict(zip(['x','y','section','name'],[[i] for i in new_point])))
+                new_point.index = i.iloc[new_element,:].index
+                group_of_more_than_i_plus_one_detection.append(pd.concat([j,new_point]).sort_values('section'))
+            if len(group_of_more_than_i_plus_one_detection)==0:
+                break
+            group_of_more_than_i_detection = group_of_more_than_i_plus_one_detection
+            duplication[ind+1] = (id_of_more_than_i_detection,group_of_more_than_i_plus_one_detection)
+            print(f'finding cell detection spanning {ind+1} sections')
+            ind+=1
+        ncells_with_nduplication = [len(i[0]) for i in duplication.values()]
+        ncells_with_nduplication = [ncells_with_nduplication[i]-sum(ncells_with_nduplication[i+1:]) for i in range(len(ncells_with_nduplication))]
+        for id,i in enumerate(ncells_with_nduplication):
+            print(f'found {i} cells spanning {id+2} sections')
+        return duplication
+
 
 class DetectorMetricsDK55(AnnotationProximityTool):
     def __init__(self,animal = 'DK55',sure_file_name = '/DK55_premotor_sure_detection_2021-12-09.csv',unsure_file_name = '/DK55_premotor_unsure_detection_2021-12-09.csv', *args,**kwrds):
@@ -145,7 +202,6 @@ class DetectorMetricsDK55(AnnotationProximityTool):
         self.annotations_to_compare.columns=['x','y','section','name']
         self.annotations_to_compare['x']=np.round(self.annotations_to_compare['x'])
         self.annotations_to_compare['y']=np.round(self.annotations_to_compare['y'])
-        self.nannotations = len( self.annotations_to_compare)
     
     def load_human_qc(self):
         self.annotation_category_and_filepath = {
