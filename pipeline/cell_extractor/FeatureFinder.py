@@ -21,25 +21,40 @@ class FeatureFinder(CellDetectorBase):
         self.featurei['row'] = example['row']+example['origin'][0]
         self.featurei['col'] = example['col']+example['origin'][1]
 
-    def calculate_correlation_and_energy(self,example,channel = 3):
+    def calculate_correlation_and_energy(self,example,channel = 3):  # calculate correlation and energy for channel 1 and 3
         image = example[f'image_CH{channel}']
         average_image = getattr(self, f'average_image_ch{channel}')
         corr,energy = compute_image_features.calc_img_features(image,average_image)
         self.featurei[f'corr_CH{channel}'] = corr
         self.featurei[f'energy_CH{channel}'] = energy
     
-    def features_using_center_connectd_components(self,example):
+    def features_using_center_connectd_components(self,example):   
         def mask_mean(mask,image):
             mean_in=np.mean(image[mask==1])
             mean_all=np.mean(image.flatten())
-            return (mean_in-mean_all)/(mean_in+mean_all)
+            return (mean_in-mean_all)/(mean_in+mean_all)    # calculate the contrast: mean
 
         def append_string_to_every_key(dictionary, post_fix): 
             return dict(zip([keyi + post_fix for keyi in dictionary.keys()],dictionary.values()))
         
-        def calc_moments_of_mask(mask):
+        def calc_moments_of_mask(mask):   # calculate moments (how many) and Hu Moments (7)
             mask = mask.astype(np.float32)
             moments = cv2.moments(mask)
+            """
+ Moments(
+        double m00,
+        double m10,
+        double m01,
+        double m20,
+        double m11,
+        double m02,
+        double m30,
+        double m21,
+        double m12,
+        double m03
+        );
+            Hu Moments are described in this paper: https://www.researchgate.net/publication/224146066_Analysis_of_Hu's_moment_invariants_on_image_scaling_and_rotation
+            """
             huMoments = cv2.HuMoments(moments)
             moments = append_string_to_every_key(moments,f'_mask')
             self.featurei.update(moments)
