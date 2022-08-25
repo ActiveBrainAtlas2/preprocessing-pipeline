@@ -8,7 +8,7 @@ import pickle
 import re
 from Controllers.SqlController import SqlController
 from lib.FileLocationManager import FileLocationManager
-import tifffile as tiff
+import cv2
 from scipy.ndimage import affine_transform
 def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_filepath=None):
     """
@@ -358,14 +358,14 @@ orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
 
 
 
-def clean_image(file_key):
-    index, infile, outfile, T = file_key
-    image = tiff.imread(infile)
+def align_image_to_affine(file_key):
+    _, infile, outfile, T = file_key
+    image = io.imread(infile)
     matrix = T[:2,:2]
     offset = T[:2,2]
     offset = np.flip(offset)
     image1 = affine_transform(image,matrix.T,offset)
-    tiff.imsave(outfile,image1)
+    cv2.imwrite(outfile, image1)
     del image,image1
     return
 

@@ -1,5 +1,6 @@
 import os, glob
 import hashlib
+from concurrent.futures.process import ProcessPoolExecutor
 from lib.ParallelManager import ParallelManager
 from lib.CZIManager import extract_tiff_from_czi, extract_png_from_czi
 
@@ -40,30 +41,22 @@ class TiffExtractor(ParallelManager):
             self.animal, self.channel
         )
 
-        czi_file = []
-        tif_file = []
-        scene_index = []
+        file_keys = [] # czi_file, file_name, scenei, channel=1, scale=1
         for section in sections:
-            input_path = os.path.join(INPUT, section.czi_file)
-            outfile = os.path.basename(section.file_name)
-            output_path = os.path.join(OUTPUT, outfile)
-            if not os.path.exists(input_path):
+            czi_file = os.path.join(INPUT, section.czi_file)
+            tif_file = os.path.basename(section.file_name)
+            output_path = os.path.join(OUTPUT, tif_file)
+            if not os.path.exists(czi_file):
                 continue
             if os.path.exists(output_path):
                 continue
-            czi_file.append(input_path)
-            tif_file.append(output_path)
-            scene_index.append(section.scene_number - 1)
-        workers = self.get_nworkers()
-        nfiles = len(czi_file)
-        channel = [self.channel for _ in range(nfiles)]
-        scale = [scale_factor for _ in range(nfiles)]
+            scenei = section.scene_number - 1
+            file_keys.append([czi_file, output_path, scenei, self.channel, scale_factor])
 
-        self.run_commands_in_parallel_with_executor(
-            [czi_file, tif_file, scene_index, channel, scale],
-            workers,
-            extract_tiff_from_czi,
-        )
+        workers = self.get_nworkers()
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(extract_tiff_from_czi, sorted(file_keys))
+
         self.update_database()
 
     def update_database(self):
@@ -109,8 +102,6 @@ class TiffExtractor(ParallelManager):
         OUTPUT = self.fileLocationManager.thumbnail_web
         channel = 1
         os.makedirs(OUTPUT, exist_ok=True)
-        czi_file = []
-        files = os.listdir(INPUT)
 
         sections = self.sqlController.get_distinct_section_filenames(
             self.animal, channel
@@ -138,7 +129,6 @@ class TiffExtractor(ParallelManager):
         self.logevent(f"PROCESSING [NOT PRE-EXISTING] FILES: {n_processing_elements}")
 
         workers = self.get_nworkers()
-        batch_size = workers  # mem not issue due to filesize
-        self.run_commands_in_parallel_with_executor(
-            [file_keys], workers, extract_png_from_czi, batch_size=batch_size
-        )
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(extract_png_from_czi, sorted(file_keys))
+

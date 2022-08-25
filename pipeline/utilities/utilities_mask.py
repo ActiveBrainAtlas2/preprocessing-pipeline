@@ -3,8 +3,6 @@ import cv2
 import numpy as np
 from lib.pipeline_utilities import read_image
 import os
-from timeit import default_timer as timer
-import tifffile as tiff
 
 def rotate_image(img, file, rotation):
     """
@@ -30,7 +28,6 @@ def pad_image(img, file, max_width, max_height, bgcolor=None):
     :param bgcolor: background color of image, 0 for NTB, white for thionin
     :return: placed image centered in the correct size.
     """
-    print(f'get bg color for {file}')
     half_max_width = max_width // 2
     half_max_height = max_height // 2
     startr = half_max_width - (img.shape[0] // 2)
@@ -43,16 +40,13 @@ def pad_image(img, file, max_width, max_height, bgcolor=None):
         bottom_rows = img[start_bottom:img.shape[0], :]
         avg = np.mean(bottom_rows)
         bgcolor = int(round(avg))
-    print('padding')
     new_img = np.zeros([ max_width,max_height]) + bgcolor
-    print('putting image 2d')
     if img.ndim == 2:
         try:
             new_img[startr:endr,startc:endc] = img
         except:
             print('Could not place {} with width:{}, height:{} in {}x{}'
                   .format(file, img.shape[0], img.shape[1], max_width, max_height))
-    print('putting image 3d')
     if img.ndim == 3:
         try:
             new_img = np.zeros([max_height, max_width, 3]) + bgcolor
@@ -78,16 +72,13 @@ def scaled(img, mask, epsilon=0.01):
     :return: scaled image in 16bit format
     """
     scale = 45000
-    print('scaled quantile')
     _max = np.quantile(img[mask > 10], 1 - epsilon) # gets almost the max value of img
-    # print('thr=%d, index=%d'%(vals[ind],index))
     if scale > 255:
         _range = 2 ** 16 - 1 # 16bit
         data_type = np.uint16
     else:
         _range = 2 ** 256 - 1 # 8bit
         data_type = np.uint8        
-    print('scaled assign value')
     scaled = img * (scale / _max) # scale the image from original values to e.g., 30000/10000
     scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
     scaled = scaled * (mask > 10) # just work on the non masked values
@@ -131,7 +122,7 @@ def clean_and_rotate_image(file_key):
         :param infile: file path of image to read
         :param outpath: file path of image to write
         :param mask: binary mask image of the image
-        :param rotation: amount of rotation. 1 = rotate by 90degrees
+        :param rotation: number of 90 degree rotations
         :param flip: either flip or flop
         :param max_width: width of image
         :param max_height: height of image
@@ -174,11 +165,7 @@ def clean_and_rotate_image(file_key):
         cleaned = np.flip(cleaned, axis=1)
     # print("START PAD IMAGE")
     cropped = pad_image(cleaned, infile, max_width, max_height, 0)
-    start_time = timer()
-    # print("START FILESAVE ", outpath)
-    tiff.imsave(outpath, cropped)
-    end_time = timer()
-    # print(f"SAVE TIME: {round((end_time - start_time), 1)} s")
+    cv2.imwrite(outpath, cropped)
     del cropped
     return
 

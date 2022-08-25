@@ -1,15 +1,11 @@
-import os, sys
-import glob
+import os
 from collections import Counter
 from matplotlib import pyplot as plt
 from skimage import io
 import numpy as np
 import cv2
 from concurrent.futures.process import ProcessPoolExecutor
-from lib.FileLocationManager import FileLocationManager
-from lib.logger import get_logger
-from Controllers.SqlController import SqlController
-from utilities.utilities_process import test_dir, get_cpus
+from utilities.utilities_process import test_dir
 
 COLORS = {1: "b", 2: "r", 3: "g"}
 from lib.pipeline_utilities import read_image
@@ -59,9 +55,10 @@ class HistogramMaker:
             self.logevent(f"UNIQUE PHYSICAL FILE COUNT: {count_physical_files}")
             self.logevent(f"SECTION COUNT IN DATABASE: {len(files)}")
             workers = self.get_nworkers()
-            self.run_commands_in_parallel_with_executor(
-                [file_keys], workers, make_single_histogram
-            )
+
+            with ProcessPoolExecutor(max_workers=workers) as executor:
+                executor.map(make_single_histogram, sorted(file_keys))
+
 
     def make_combined_histogram(self):
         """

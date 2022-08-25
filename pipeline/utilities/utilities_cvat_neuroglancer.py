@@ -13,10 +13,8 @@ from cloudvolume.lib import touch
 from matplotlib import colors
 from pylab import cm
 from collections import defaultdict
-import pickle
 from Controllers.SqlController import SqlController, file_processed, set_file_completed
 from utilities.utilities_process import get_cpus
-from Controllers.Controller import create_pooled_session
 
 def calculate_chunks(downsample, mip):
     """
@@ -162,7 +160,6 @@ class NumpyToNeuroglancer():
         )
         self.starting_points = starting_points
         self.progress_id = progress_id
-        print(f"init_precomputed: {path}")
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
         self.precomputed_vol.commit_provenance()
@@ -302,13 +299,13 @@ class NumpyToNeuroglancer():
         return
 
     def process_image(self, file_key):
-        index, infile, host, schema, orientation = file_key
-        #session = create_pooled_session(host, schema)
+        index, infile, orientation, progress_dir = file_key
         basefile = os.path.basename(infile)
-        #completed = file_processed(self.animal, self.progress_id, basefile,session)
-        # if completed:
-        #     print(f"Section {index} already processed, skipping ")
-        #     return
+        progress_file = os.path.join(progress_dir, basefile)
+        if os.path.exists(progress_file):
+             print(f"Section {index} has already been processed, skipping.")
+             return
+
         try:
             img = io.imread(infile, img_num=0)
         except IOError as ioe:
@@ -321,33 +318,11 @@ class NumpyToNeuroglancer():
             return
         try:
             self.precomputed_vol[:, :, index] = img
-            # if orientation == 'sagittal':
-            #     self.precomputed_vol[:, :, index] = img
-            # elif orientation == 'coronal':
-            #     self.precomputed_vol[index, :, :] = img 
-            # elif orientation == 'horizontal':
-            #     self.precomputed_vol[:, index, :] = img
         except:
             print(f'could not set {infile} to precomputed')
             return
-        #set_file_completed(self.animal, self.progress_id, basefile,session)
-        del img
-        return
 
-    def process_3channel(self, file_key):
-        #can we remove? DR 21-JUL-2022
-        index, infile = file_key
-        basefile = os.path.basename(infile)
-        completed = file_processed(self.animal, self.progress_id, basefile)
-        if completed:
-            print(f"Section {index} already processed, skipping ")
-            return
-        img = io.imread(infile, img_num=0)
-        img = img.reshape(img.shape[0], img.shape[1], 1, img.shape[2])
-        img = np.rot90(img, 1)
-        img = np.flipud(img)
-        self.precomputed_vol[:, :, index] = img
-        set_file_completed(self.animal, self.progress_id, basefile)
+        touch(progress_file)
         del img
         return
 
