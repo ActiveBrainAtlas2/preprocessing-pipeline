@@ -1,20 +1,20 @@
-import os, sys
+import os
 import numpy as np
-import glob
 import torch
 from PIL import Image
-
 Image.MAX_IMAGE_PIXELS = None
+from concurrent.futures.process import ProcessPoolExecutor
 import cv2
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+import warnings
+warnings.filterwarnings("ignore")
+
 from utilities.utilities_mask import combine_dims, merge_mask
 from utilities.utilities_process import test_dir
-import warnings
-
-warnings.filterwarnings("ignore")
 from lib.pipeline_utilities import get_image_size
+
 
 
 class MaskManager:
@@ -124,7 +124,10 @@ class MaskManager:
             size = int(width), int(height)
             file_keys.append([thumbfile, outpath, size])
         workers = self.get_nworkers()
-        self.run_commands_in_parallel_with_executor([file_keys], workers, resize_tif)
+        print(f'Create full resolution masks with {workers} workers')
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(resize_tif, sorted(file_keys))
+
 
     def create_downsampled_mask(self):
         """Create masks for the downsampled images using a machine learning algorithm"""

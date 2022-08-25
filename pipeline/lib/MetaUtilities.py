@@ -68,15 +68,12 @@ class MetaUtilities:
                 self.logevent(
                     f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
                 )
-                n_processing_elements = len(file_keys)
+                
                 workers = self.get_nworkers()
+                with ProcessPoolExecutor(max_workers=workers) as executor:
+                    executor.map(parallel_extract_slide_meta_data_and_insert_to_database, sorted(file_keys))
 
-                self.run_commands_in_parallel_with_executor(
-                    [file_keys],
-                    workers,
-                    parallel_extract_slide_meta_data_and_insert_to_database,
-                    batch_size,
-                )
+
                 self.update_database()  # may/will need revisions for parallel
             else:
                 print("NOTHING TO PROCESS - SKIPPING")

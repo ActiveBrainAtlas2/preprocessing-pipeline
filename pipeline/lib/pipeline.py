@@ -96,7 +96,6 @@ class Pipeline(
         self.dbhost = host
         self.dbschema = schema
         self.tg = tg
-        self.load_parallel_settings()
         self.progress_lookup = ProgressLookup()
         self.padding_margin = padding_margin
         self.clean = clean
@@ -144,7 +143,7 @@ class Pipeline(
             function (function): funtion to run
             function_name (str): name of the function used to report timing result
         """
-        print(function_name)
+        print(function_name, end="")
         start_time = timer()
 
         self.logevent("START " + str(function_name))
@@ -165,7 +164,7 @@ class Pipeline(
 
         end_time = timer()
         total_elapsed_time = end_time - start_time
-        print(f"{function_name} took {round(total_elapsed_time,1)} seconds")
+        print(f" took {round(total_elapsed_time,1)} seconds")
 
         sep = "*" * 40 + "\n"
         if function_name == "create web friendly image":
@@ -175,97 +174,6 @@ class Pipeline(
             self.logevent(
                 f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}"
             )
-
-    def prepare_image_for_quality_control(self):
-        """This is the first step of the   The images are extracted from the CZI files,
-        logged in the database, and downsampled to a web friendly size.  These preparations makes
-        it possible to preview the images on the django database admin portal, allowing the user to
-        perform quality control on the images.  The user can determine to mark slides or sections
-        on a slide as insufficient in quality, and replace them with adjuscent slide or sections
-
-        1) extract meta info
-        2) extract tiffs from czi
-        3) create png files (downsampled)
-        """
-        self.run_program_and_time(
-            self.extract_slide_meta_data_and_insert_to_database, "Creating meta"
-        )
-        self.run_program_and_time(
-            self.create_web_friendly_image, "create web friendly image"
-        )
-        self.run_program_and_time(self.extract_tifs_from_czi, "Extracting Tiffs")
-
-    def apply_qc_and_prepare_image_masks(self):
-        """This function performs 2 steps:
-        1. Applies the QC result that the user provides on the Django database admin portal and prepares a copy
-        of the tiff files that reflects the image/slide exclusion and replacement decisions made by user.
-        Following steps in the pipeline then use this copy as the input
-        2. Use a CNN based machine learning algorism to create masks around the tissue.
-           These masks will be used to crop out the tissue from the surrounding debres.
-        """
-        self.run_program_and_time(self.apply_QC, "applying QC")
-        self.set_task_preps()
-        self.run_program_and_time(
-            self.create_normalized_image, "Creating normalization"
-        )
-        self.run_program_and_time(self.create_mask, "Creating masks")
-
-    def clean_images_and_create_histogram(self):
-        """This function performs the following steps:
-        1. apply the Edits of images masks made by user
-        2. create the cleaned images using the image masks
-        3. making a histogram of pixel intensity for view in the Django admin portal
-        """
-        self.run_program_and_time(self.apply_user_mask_edits, "Applying masks")
-        self.run_program_and_time(self.create_cleaned_images, "Creating cleaned image")
-        #####TODOself.run_program_and_time(self.make_histogram, "Making histogram")
-        #####self.run_program_and_time(
-        #####    self.make_combined_histogram, "Making combined histogram"
-        #####)
-
-    def align_images_within_stack(self):
-        """This function calculates the rigid transformation used to align the images within stack and applies them to the image"""
-
-        self.run_program_and_time(
-            self.create_within_stack_transformations, "Creating elastix transform"
-        )
-        self.logevent("START get_transformations (PREREQUISITE FOR align_images)")
-        start_time = timer()
-        transformations = self.get_transformations()
-        end_time = timer()
-        total_elapsed_time = end_time - start_time
-        print(f"'get_transformations' took {round(total_elapsed_time,1)} seconds")
-        sep = "*" * 40 + "\n"
-
-        print("START align_images")
-        self.logevent("START align_images")
-        start_time = timer()
-        self.align_downsampled_images(transformations)
-        self.align_full_size_image(transformations)
-        end_time = timer()
-        total_elapsed_time = end_time - start_time
-        print(
-            f"Creating elastix and alignment took {round(total_elapsed_time,1)} seconds"
-        )
-        sep = "*" * 40 + "\n"
-        self.logevent(
-            f"'align_images_within_stack' took {round((end_time - start_time), 1)} seconds\n{sep}"
-        )
-
-    def create_neuroglancer_cloud_volume(self):
-        """This function creates the Seung lab neuroglancer cloud volume folders that is required to view the images in neuroglancer"""
-        start_time = timer()
-        self.run_program_and_time(self.create_neuroglancer, "Neuroglancer1 single")
-        self.run_program_and_time(self.create_downsamples, "Neuroglancer2 pyramid")
-        end_time = timer()
-        total_elapsed_time = end_time - start_time
-        print(
-            f"Last step: creating neuroglancer images took {round(total_elapsed_time,1)} seconds"
-        )
-        sep = "*" * 40 + "\n"
-        self.logevent(
-            f"'create_neuroglancer_cloud_volume' took {round((end_time - start_time), 1)} seconds\n{sep}"
-        )
 
     def qc_cleanup(self):
         """Post QC to clean up filesystem prior to re-running mask edits"""

@@ -74,7 +74,8 @@ class PrepCreater:
             if os.path.exists(outpath):
                 continue
             file_keys.append([infile, outpath])
+            
         workers = self.get_nworkers()
-        self.run_commands_in_parallel_with_executor(
-            [file_keys], workers, create_downsample
-        )
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(create_downsample, sorted(file_keys))
+

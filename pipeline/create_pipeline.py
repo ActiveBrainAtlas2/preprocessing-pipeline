@@ -24,13 +24,9 @@ from settings import host as HOST, schema as SCHEMA, DATA_PATH
 from lib.pipeline import Pipeline
 
 
-def run_pipeline(
-    animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug
-):
+def run_pipeline(animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug):
 
-    pipeline = Pipeline(
-        animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug
-    )
+    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug)
 
     print(
         "RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:",
@@ -45,31 +41,39 @@ def run_pipeline(
         sep="\n",
     )
 
-    print("Step 0")
-    
-    pipeline.prepare_image_for_quality_control()
+    if step == 0:
+        print(f"Step {step}: prepare images for quality control.")
+        pipeline.run_program_and_time(pipeline.extract_slide_meta_data_and_insert_to_database, "Creating meta")
+        pipeline.run_program_and_time(pipeline.create_web_friendly_image, "create web friendly image")
+        pipeline.run_program_and_time(pipeline.extract_tifs_from_czi, "Extracting Tiffs")
 
-    if step > 0:
-        print("Step 1")
-        pipeline.apply_qc_and_prepare_image_masks()
+    if step == 1:
+        print(f"Step {step}: apply QC and prepare image masks")
+        pipeline.set_task_preps()
+        pipeline.run_program_and_time(pipeline.create_normalized_image, "Creating normalization")
+        pipeline.run_program_and_time(pipeline.create_mask, "Creating masks")
     
-    if step > 1:
-        print("Step 2")
-        # if cleanup == "True":
-        #     pipeline.qc_cleanup()
-        pipeline.clean_images_and_create_histogram()
+    if step == 2:
+        print(f"Step {step}: clean images")
+        pipeline.run_program_and_time(pipeline.apply_user_mask_edits, "Applying masks")
+        pipeline.run_program_and_time(pipeline.create_cleaned_images, "Creating cleaned image")
     
-    if step > 2:
-        print("Step 3")
-        # if cleanup == "True":
-        #     pipeline.align_cleanup()
-        pipeline.align_images_within_stack()
+    if step == 3:
+        print(f"Step {step}: create histograms")
+        pipeline.run_program_and_time(pipeline.make_histogram, "Making histogram")
+        pipeline.run_program_and_time(pipeline.make_combined_histogram, "Making combined histogram")
+
+    if step == 4:
+        print(f"Step {step}: align images within stack")
+        pipeline.run_program_and_time(pipeline.create_within_stack_transformations, "Creating elastix transform")
+        transformations = pipeline.get_transformations()
+        pipeline.align_downsampled_images(transformations)
+        pipeline.align_full_size_image(transformations)
     
-    if step > 3:
-        print("Step 4")
-        # if cleanup == "True":
-        #     pipeline.ng_cleanup(downsample, channel)
-        pipeline.create_neuroglancer_cloud_volume()
+    if step == 5:
+        print(f"Step {step}: create neuroglancer data")
+        pipeline.run_program_and_time(pipeline.create_neuroglancer, "Neuroglancer1 single")
+        pipeline.run_program_and_time(pipeline.create_downsamples, "Neuroglancer2 pyramid")
 
 
 if __name__ == "__main__":

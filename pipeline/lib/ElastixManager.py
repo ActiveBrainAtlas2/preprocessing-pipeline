@@ -5,10 +5,11 @@ from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
 from concurrent.futures.process import ProcessPoolExecutor
+from concurrent.futures.process import ProcessPoolExecutor
 
 Image.MAX_IMAGE_PIXELS = None
 from lib.FileLocationManager import FileLocationManager
-from utilities.utilities_alignment import create_downsampled_transforms, clean_image
+from utilities.utilities_alignment import align_image_to_affine, create_downsampled_transforms
 from utilities.utilities_registration import (
     register_simple,
     parameters_to_rigid_transform,
@@ -250,19 +251,8 @@ class ElastixManager:
         """
         os.makedirs(OUTPUT, exist_ok=True)
         transforms = OrderedDict(sorted(transforms.items()))
-        # ram_coefficient = 6
-
         first_file_name = list(transforms.keys())[0]
         infile = os.path.join(INPUT, first_file_name)
-        # single_file_size = os.path.getsize(infile)
-        # mem_avail = psutil.virtual_memory().available
-        # batch_size = mem_avail // (single_file_size * ram_coefficient)
-        # print(
-        #     f"MEM AVAILABLE: {convert_size(mem_avail)}; SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-        # )
-        # self.logevent(
-        #     f"MEM AVAILABLE: {convert_size(mem_avail)}; SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-        # )
         file_keys = []
         workers = self.get_nworkers()
 
@@ -273,9 +263,9 @@ class ElastixManager:
                 continue
             file_keys.append([i, infile, outfile, T])
 
-        self.run_commands_in_parallel_with_executor(
-            [file_keys], workers, clean_image#, batch_size=batch_size
-        )
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(align_image_to_affine, sorted(file_keys))
+
 
     def create_csv_data(self, animal, file_keys):
         """legacy code, I don't think this is used in the pipeline and should be depricated

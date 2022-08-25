@@ -1,15 +1,17 @@
 import os, psutil
 import numpy as np
+from concurrent.futures.process import ProcessPoolExecutor
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
+from pathlib import Path
+import operator
+
 from utilities.utilities_mask import clean_and_rotate_image
 from lib.pipeline_utilities import get_max_image_size, convert_size
 from utilities.utilities_process import test_dir
-from PIL import Image
-Image.MAX_IMAGE_PIXELS = None
 from model.slide import SlideCziTif
 from model.slide import Slide
 from model.slide import Section
-from pathlib import Path
-import operator
 
 class ImageCleaner:
     def create_cleaned_images(self):
@@ -69,7 +71,7 @@ class ImageCleaner:
         """Clean the images (downsampled or full size) in parallel"""
         max_width, max_height = get_max_image_size(INPUT)
         print(
-            f"max_width {max_width}, max_height {max_height}, padding_margin {self.padding_margin}"
+            f" max_width {max_width}, max_height {max_height}, padding_margin {self.padding_margin}", end=" "
         )
         rotation = self.sqlController.scan_run.rotation
         flip = self.sqlController.scan_run.flip
@@ -91,27 +93,17 @@ class ImageCleaner:
             )
         )
 
-        sections = self.sqlController.get_sections(self.animal, self.channel)
-        rotations_per_section = [self.get_section_rotation(i) for i in sections]
         progress_id = self.sqlController.get_progress_id(
             self.downsample, self.channel, "CLEAN"
         )
         self.sqlController.set_task(self.animal, progress_id)
         file_keys = []
         for i, file in enumerate(files_ordered_by_filesize_desc.keys()):
-
             infile = os.path.join(INPUT, file)
             if i == 0:  # largest file
                 single_file_size = os.path.getsize(infile)
 
-            # print(f"FILE:{file}")
-            # print(f"INFILE:{infile}")
-            # target_file = Path(infile).resolve()  # taget of symbolic link
-            # print(f"TARGET_FILE:{target_file}")
-
-            # outpath = os.path.join("/", "tmp", self.animal, file)  # local NVMe
             outpath = os.path.join(CLEANED, file)  # regular-birdstore
-            index = int(file.split('.')[0])
             if os.path.exists(outpath):
                 continue
             maskfile = os.path.join(MASKS, file)
@@ -120,7 +112,7 @@ class ImageCleaner:
                     infile,
                     outpath,
                     maskfile,
-                    rotation + rotations_per_section[index],
+                    rotation,
                     flip,
                     int(max_width * self.padding_margin),
                     int(max_height * self.padding_margin),
@@ -132,16 +124,14 @@ class ImageCleaner:
         mem_avail = psutil.virtual_memory().available
         batch_size = mem_avail // (single_file_size * ram_coefficient)
         print(
-            f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
+            f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}", end=" "
         )
         self.logevent(
             f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
         )
-        #print(file_keys)
-        n_processing_elements = len(file_keys)
+        
         workers = self.get_nworkers()
-        # batch_size = 1
-        self.run_commands_in_parallel_with_executor(
-            [file_keys], workers, clean_and_rotate_image, batch_size
-        )
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(clean_and_rotate_image, sorted(file_keys))
+
 
