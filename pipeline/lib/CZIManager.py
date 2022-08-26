@@ -49,7 +49,8 @@ class CZIManager(FileLogger):
         return scene.x, scene.y, scene.w, scene.h
 
 
-def extract_tiff_from_czi(czi_file, output_path, scenei, channel=1, scale=1):
+def extract_tiff_from_czi(file_key):
+    czi_file, output_path, scenei, channel, scale = file_key
     czi = CZIManager(czi_file)
     try:
         data = czi.get_scene(scale=scale, scene_index=scenei, channel=channel)

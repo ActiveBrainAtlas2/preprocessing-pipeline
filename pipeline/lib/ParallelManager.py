@@ -24,6 +24,7 @@ class ParallelManager:
         usecpus = 4
         cpus = {}
         cpus['mothra'] = 2
+        cpus['godzilla'] = 2
         cpus['muralis'] = 10
         cpus['basalis'] = 4
         cpus['ratto'] = 4
@@ -31,6 +32,15 @@ class ParallelManager:
         if hostname in cpus.keys():
             usecpus = cpus[hostname]
         return usecpus
+
+    def run_commands_concurrently(self, function, file_keys, workers):
+        if self.debug:
+            for file_key in file_keys:
+                function(file_key)
+        else:
+            with ProcessPoolExecutor(max_workers=workers) as executor:
+                executor.map(function, sorted(file_keys))
+
 
     def run_commands_in_parallel_with_shell(self, commands, workers):
         if self.debug:

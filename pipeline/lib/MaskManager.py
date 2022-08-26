@@ -3,7 +3,6 @@ import numpy as np
 import torch
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-from concurrent.futures.process import ProcessPoolExecutor
 import cv2
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
@@ -123,10 +122,9 @@ class MaskManager:
                 print(f"Could not open {infile}")
             size = int(width), int(height)
             file_keys.append([thumbfile, outpath, size])
+
         workers = self.get_nworkers()
-        print(f'Create full resolution masks with {workers} workers')
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(resize_tif, sorted(file_keys))
+        self.run_commands_concurrently(resize_tif, file_keys, workers)
 
 
     def create_downsampled_mask(self):

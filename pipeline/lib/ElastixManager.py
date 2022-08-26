@@ -4,8 +4,6 @@ import pandas as pd
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
-from concurrent.futures.process import ProcessPoolExecutor
-from concurrent.futures.process import ProcessPoolExecutor
 
 Image.MAX_IMAGE_PIXELS = None
 from lib.FileLocationManager import FileLocationManager
@@ -254,8 +252,6 @@ class ElastixManager:
         first_file_name = list(transforms.keys())[0]
         infile = os.path.join(INPUT, first_file_name)
         file_keys = []
-        workers = self.get_nworkers()
-
         for i, (file, T) in enumerate(transforms.items()):
             infile = os.path.join(INPUT, file)
             outfile = os.path.join(OUTPUT, file)
@@ -263,8 +259,8 @@ class ElastixManager:
                 continue
             file_keys.append([i, infile, outfile, T])
 
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(align_image_to_affine, sorted(file_keys))
+        workers = self.get_nworkers()
+        self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
 
 
     def create_csv_data(self, animal, file_keys):

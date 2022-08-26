@@ -4,7 +4,6 @@ from tqdm import tqdm
 from model.slide import Slide, SlideCziTif
 from pathlib import Path
 import operator
-from concurrent.futures.process import ProcessPoolExecutor
 from Controllers.SqlController import SqlController
 from lib.CZIManager import CZIManager
 from lib.pipeline_utilities import convert_size
@@ -70,10 +69,7 @@ class MetaUtilities:
                 )
                 
                 workers = self.get_nworkers()
-                with ProcessPoolExecutor(max_workers=workers) as executor:
-                    executor.map(parallel_extract_slide_meta_data_and_insert_to_database, sorted(file_keys))
-
-
+                self.run_commands_concurrently(parallel_extract_slide_meta_data_and_insert_to_database, file_keys, workers)
                 self.update_database()  # may/will need revisions for parallel
             else:
                 print("NOTHING TO PROCESS - SKIPPING")
@@ -176,8 +172,6 @@ class MetaUtilities:
                 sys.exit()
             self.logevent(f"INPUT FOLDER: {INPUT}")
             self.logevent(f"FILE COUNT: {nfiles}")
-            print(f"INPUT FOLDER: {INPUT}")
-            print(f"FILE COUNT: {nfiles}")
         except OSError as e:
             print(e)
             sys.exit()
@@ -224,9 +218,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
             Path(os.path.normpath(czi_org_path)).stat().st_mtime
         )
         slide.scenes = len([elem for elem in czi_metadata.values()][0].keys())
-        print(
-            f"ADD SLIDE INFO TO DB: {slide.file_name} -> PHYSICAL SLIDE ID: {slide.slide_physical_id}"
-        )
+        # print(f"ADD SLIDE INFO TO DB: {slide.file_name} -> PHYSICAL SLIDE ID: {slide.slide_physical_id}")
 
         sqlController = SqlController(animal, dbhost, dbschema)
 
@@ -261,7 +253,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
                 tif.processing_duration = 0
                 tif.created = time.strftime("%Y-%m-%d %H:%M:%S")
                 sqlController.session.add(tif)
-        print(f"CHANNELS: {channel_counter}; SCENES: {scene_number}")
+        # print(f"CHANNELS: {channel_counter}; SCENES: {scene_number}")
         sqlController.session.commit()
 
     infile, scan_id, channel, animal, host, schema = file_key

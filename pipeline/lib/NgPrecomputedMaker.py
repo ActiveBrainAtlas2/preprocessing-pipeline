@@ -1,5 +1,4 @@
 import os
-from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
 from utilities.utilities_process import SCALING_FACTOR, test_dir
@@ -88,9 +87,7 @@ class NgPrecomputedMaker:
         
         ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=progress_id)
         workers = self.get_nworkers()
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(ng.process_image, sorted(file_keys))
-
+        self.run_commands_concurrently(ng.process_image, file_keys, workers)
         ng.precomputed_vol.cache.flush()
 
     def create_neuroglancer_zarr(self):
@@ -148,6 +145,6 @@ class NgPrecomputedMaker:
             num_channels=num_channels,
             chunk_size=chunks,
         )
+        workers = self.get_nworkers()
         ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=None)
-        with ProcessPoolExecutor(max_workers=10) as executor:
-            executor.map(ng.process_image, sorted(file_keys))
+        self.run_commands_concurrently(ng.process_image, file_keys, workers)
