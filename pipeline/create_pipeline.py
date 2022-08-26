@@ -28,18 +28,18 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, tg, paddi
 
     pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug)
 
-    print(
-        "RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:",
-        "prep_id: " + animal,
-        "channel: " + str(channel),
-        "downsample: " + str(downsample),
-        "host: " + host,
-        "schema: " + schema,
-        "tg: " + str(tg),
-        "padding_margin: " + str(padding_margin),
-        "debug: " + str(debug),
-        sep="\n",
-    )
+    print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:")
+    print(f"\tprep_id:".ljust(20), f"{animal}".ljust(20))
+    print(f"\tchannel:".ljust(20), f"{str(channel)}".ljust(20))
+    print(f"\tdownsample:".ljust(20), f"{str(downsample)}".ljust(20))
+    print(f"\thost:".ljust(20), f"{host}".ljust(20))
+    print(f"\tschema:".ljust(20), f"{schema}".ljust(20))
+    print(f"\ttg:".ljust(20), f"{str(tg)}".ljust(20))
+    print(f"\tpadding_margin:".ljust(20), f"{str(padding_margin)}".ljust(20))
+    print(f"\tdebug:".ljust(20), f"{str(debug)}".ljust(20))
+
+
+    print()
 
     if step == 0:
         print(f"Step {step}: prepare images for quality control.")
@@ -50,6 +50,7 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, tg, paddi
     if step == 1:
         print(f"Step {step}: apply QC and prepare image masks")
         pipeline.set_task_preps()
+        pipeline.run_program_and_time(pipeline.apply_QC, "Applying QC")
         pipeline.run_program_and_time(pipeline.create_normalized_image, "Creating normalization")
         pipeline.run_program_and_time(pipeline.create_mask, "Creating masks")
     

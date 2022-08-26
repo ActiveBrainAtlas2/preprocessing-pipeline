@@ -1,6 +1,5 @@
 import os, glob
 import hashlib
-from concurrent.futures.process import ProcessPoolExecutor
 from lib.ParallelManager import ParallelManager
 from lib.CZIManager import extract_tiff_from_czi, extract_png_from_czi
 
@@ -41,7 +40,7 @@ class TiffExtractor(ParallelManager):
             self.animal, self.channel
         )
 
-        file_keys = [] # czi_file, file_name, scenei, channel=1, scale=1
+        file_keys = [] # czi_file, output_path, scenei, channel=1, scale=1
         for section in sections:
             czi_file = os.path.join(INPUT, section.czi_file)
             tif_file = os.path.basename(section.file_name)
@@ -53,9 +52,9 @@ class TiffExtractor(ParallelManager):
             scenei = section.scene_number - 1
             file_keys.append([czi_file, output_path, scenei, self.channel, scale_factor])
 
+
         workers = self.get_nworkers()
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(extract_tiff_from_czi, sorted(file_keys))
+        self.run_commands_concurrently(extract_tiff_from_czi, file_keys, workers)
 
         self.update_database()
 
@@ -118,17 +117,17 @@ class TiffExtractor(ParallelManager):
             outfile = output_path[:-5] + "1.png"  # force "C1" in filename
             if os.path.exists(outfile):
                 files_skipped += 1
-                print(f"SKIP: {outfile}")
                 continue
             scene_index = section.scene_number - 1
             scale = 0.01
             file_keys.append([i, infile, outfile, scene_index, scale])
 
-        self.logevent(f"SKIPPED [PRE-EXISTING] FILES: {files_skipped}")
+        if files_skipped > 0:
+            print(f" SKIPPED [PRE-EXISTING] FILES: {files_skipped}", end=" ")
+            self.logevent(f"SKIPPED [PRE-EXISTING] FILES: {files_skipped}")
         n_processing_elements = len(file_keys)
         self.logevent(f"PROCESSING [NOT PRE-EXISTING] FILES: {n_processing_elements}")
 
         workers = self.get_nworkers()
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(extract_png_from_czi, sorted(file_keys))
+        self.run_commands_concurrently(extract_png_from_czi, file_keys, workers)
 
