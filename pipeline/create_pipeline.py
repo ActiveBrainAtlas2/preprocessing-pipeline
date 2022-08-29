@@ -39,9 +39,9 @@ except ImportError as fe:
 from lib.pipeline import Pipeline
 
 
-def run_pipeline(animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug):
+def run_pipeline(animal, channel, downsample, data_path, host, schema, tg, clean, debug):
 
-    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, tg, padding_margin, clean, debug)
+    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, tg, clean, debug)
 
     print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:")
     print(f"\tprep_id:".ljust(20), f"{animal}".ljust(20))
@@ -50,7 +50,6 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, tg, paddi
     print(f"\thost:".ljust(20), f"{host}".ljust(20))
     print(f"\tschema:".ljust(20), f"{schema}".ljust(20))
     print(f"\ttg:".ljust(20), f"{str(tg)}".ljust(20))
-    print(f"\tpadding_margin:".ljust(20), f"{str(padding_margin)}".ljust(20))
     print(f"\tdebug:".ljust(20), f"{str(debug)}".ljust(20))
 
 
@@ -100,28 +99,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Work on Animal")
     parser.add_argument("--animal", help="Enter the animal", required=True)
     parser.add_argument("--channel", help="Enter channel", required=False, default=1)
-    parser.add_argument(
-        "--downsample", help="Enter true or false", required=False, default="true"
-    )
+    parser.add_argument("--downsample", help="Enter true or false", required=False, default="true")
     parser.add_argument("--step", help="steps", required=False, default=0)
-    parser.add_argument(
-        "--pad", help="padding factor", type=float, required=False, default=1
-    )
-    parser.add_argument(
-        "--debug", help="Enter true or false", required=False, default="false"
-    )
-    parser.add_argument(
-        "--clean",
-        help="Remove prev DB entries and files",
-        required=False,
-        default=False,
-    )
-    parser.add_argument(
-        "--tg",
-        help="Extend the mask to expose the entire underside of the brain",
-        required=False,
-        default=False,
-    )
+    parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
+    parser.add_argument("--clean", help="Remove prev DB entries and files", required=False, default=False)
+    parser.add_argument("--tg", help="Extend the mask to expose the entire underside of the brain", required=False, default=False)
 
     args = parser.parse_args()
 
@@ -140,7 +122,6 @@ if __name__ == "__main__":
         HOST,
         SCHEMA,
         tg,
-        args.pad,
         args.clean,
         debug,
     )

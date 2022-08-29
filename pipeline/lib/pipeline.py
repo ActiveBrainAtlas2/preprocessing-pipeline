@@ -60,7 +60,6 @@ class Pipeline(
         host="localhost",
         schema="active_atlas_development",
         tg=False,
-        padding_margin=1,
         clean=False,
         debug=False,
     ):
@@ -97,7 +96,6 @@ class Pipeline(
         self.dbschema = schema
         self.tg = tg
         self.progress_lookup = ProgressLookup()
-        self.padding_margin = padding_margin
         self.clean = clean
         self.check_programs()
         self.section_count = self.sqlController.get_section_count(self.animal)
