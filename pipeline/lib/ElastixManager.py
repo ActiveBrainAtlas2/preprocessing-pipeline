@@ -4,8 +4,10 @@ import pandas as pd
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
-
 Image.MAX_IMAGE_PIXELS = None
+from timeit import default_timer as timer
+
+
 from lib.FileLocationManager import FileLocationManager
 from utilities.utilities_alignment import align_image_to_affine, create_downsampled_transforms
 from utilities.utilities_registration import (
@@ -259,8 +261,11 @@ class ElastixManager:
                 continue
             file_keys.append([i, infile, outfile, T])
 
-        workers = self.get_nworkers()
+        workers = self.get_nworkers() // 2
+        start = timer()
         self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
+        end = timer()
+        print(f'Align images took {end - start} seconds.')
 
 
     def create_csv_data(self, animal, file_keys):

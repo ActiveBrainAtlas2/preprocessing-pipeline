@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from lib.pipeline_utilities import convert_size, read_image
 import os
+from timeit import default_timer as timer
 
 def rotate_image(img, file, rotation):
     """
@@ -41,13 +42,12 @@ def place_image(img, file, max_width, max_height, bgcolor=None):
         bottom_rows = img[start_bottom:img.shape[0], :]
         avg = np.mean(bottom_rows)
         bgcolor = int(round(avg))
-    new_img = np.zeros([max_height, max_width]) + bgcolor
+    new_img = np.zeros([max_height, max_width]).astype(dt) + bgcolor
     if img.ndim == 2:
         try:
             new_img[startr:endr, startc:endc] = img
         except:
-            print('Could not place {} with width:{}, height:{} in {}x{}'
-                  .format(file, img.shape[1], img.shape[0], max_width, max_height))
+            print(f'Could not place 2DIM {file} with width:{img.shape[1]}, height:{img.shape[0]} in {max_width}x{max_height}')
     if img.ndim == 3:
         try:
             new_img = np.zeros([max_height, max_width, 3]) + bgcolor
@@ -55,40 +55,69 @@ def place_image(img, file, max_width, max_height, bgcolor=None):
             new_img[startr:endr, startc:endc,1] = img[:,:,1]
             new_img[startr:endr, startc:endc,2] = img[:,:,2]
         except:
-            print('Could not place 3DIM image {} with width:{}, height:{} in {}x{}'
-                  .format(file, img.shape[1], img.shape[0], max_width, max_height))
+            print(f'Could not place 3DIM {file} with width:{img.shape[1]}, height:{img.shape[0]} in {max_width}x{max_height}')
     del img
     return new_img.astype(dt)
 
+def pad_image(img, file, max_width, max_height, bgcolor=None):
+    """
+    Places the image in a padded one size container with the correct background
+    :param img: image we are working on.
+    :param file: file name and path location
+    :param max_width: width to pad
+    :param max_height: height to pad
+    :param bgcolor: background color of image, 0 for NTB, white for thionin
+    :return: placed image centered in the correct size.
+    """
+    print(f'get bg color for {file}')
+    half_max_width = max_width // 2
+    half_max_height = max_height // 2
+    startr = half_max_width - (img.shape[0] // 2)
+    endr = startr + img.shape[0]
+    startc = half_max_height - (img.shape[1] // 2)
+    endc = startc + img.shape[1]
+    dt = img.dtype
+    if bgcolor == None:
+        start_bottom = img.shape[0] - 5
+        bottom_rows = img[start_bottom:img.shape[0], :]
+        avg = np.mean(bottom_rows)
+        bgcolor = int(round(avg))
+    print('padding')
+    new_img = np.zeros([ max_width,max_height]) + bgcolor
+    print('putting image 2d')
+    if img.ndim == 2:
+        try:
+            new_img[startr:endr,startc:endc] = img
+        except:
+            print('Could not place {} with width:{}, height:{} in {}x{}'
+                  .format(file, img.shape[0], img.shape[1], max_width, max_height))
+    print('putting image 3d')
+    if img.ndim == 3:
+        try:
+            new_img = np.zeros([max_height, max_width, 3]) + bgcolor
+            new_img[startr:endr, startc:endc,0] = img[:,:,0]
+            new_img[startr:endr, startc:endc,1] = img[:,:,1]
+            new_img[startr:endr, startc:endc,2] = img[:,:,2]
+        except:
+            print('Could not place {} with width:{}, height:{} in {}x{}'
+                  .format(file, img.shape[0], img.shape[1], max_width, max_height))
+    del img
+    return new_img.astype(dt)
 
 
 def scaled(img, mask, epsilon=0.01):
     """
     This scales the image to the limit specified. You can get this value
     by looking at the combined histogram of the image stack. It is quite
-    often less than 30000 for channel 1
+    often less than 30000 for channel 1.
+    One of the reasons this takes so much RAM is a large float64 array is being
+    multiplied by another large array. That is WHERE all the RAM is going!!!!!
     The scale is hardcoded to 45000 which was a good value from Yoav
     :param img: image we are working on.
     :param mask: binary mask file
     :param epsilon:
     :param limit: max value we wish to scale to
     :return: scaled image in 16bit format
-    """
-    """
-    scale = 45000
-    _max = np.quantile(img[mask > 10], 1 - epsilon) # gets almost the max value of img
-    if scale > 255:
-        _range = 2 ** 16 - 1 # 16bit
-        data_type = np.uint16
-    else:
-        _range = 2 ** 256 - 1 # 8bit
-        data_type = np.uint8        
-    print('scaled assign value')
-    scaled = img * (scale / _max) # scale the image from original values to e.g., 30000/10000
-    scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
-    scaled = scaled * (mask > 10) # just work on the non masked values
-    del img
-    return scaled.astype(data_type)
     """
     scale = 45000
     _max = np.quantile(img[mask > 0], 1 - epsilon) # gets almost the max value of img
@@ -98,19 +127,13 @@ def scaled(img, mask, epsilon=0.01):
     else:
         _range = 2 ** 16 - 1 # 16bit
         data_type = np.uint16
-    print('scaled 1')
-    scaled = img * (scale / _max) # scale the image from original values to e.g., 30000/10000
+
+    scaled = (img * (scale // _max)).astype(data_type) # scale the image from original values to e.g., 30000/10000
     del img
-    print('scaled 2')
     scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
-    print('scaled 3')
-    scaled = scaled.astype(data_type)
-    print('scaled dtype', scaled.dtype)
-    print('mask dtype', mask.dtype)
-    scaled = scaled * (mask > 0) # just work on the non masked values. This is where all the RAM goes
+    scaled = scaled * (mask > 0) # just work on the non masked values. This is where all the RAM goes!!!!!!!
     del mask
-    print('scaled 4')
-    return scaled.astype(data_type)    
+    return scaled
 
 def equalized(fixed):
     """
@@ -169,32 +192,31 @@ def clean_and_rotate_image(file_key):
     infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
 
     img = read_image(infile)
-    print(f"MEM SIZE OF img {infile}: {convert_size(sys.getsizeof(img))}")
+    #print(f"MEM SIZE OF img {infile}: {convert_size(sys.getsizeof(img))}")
     mask = read_image(maskfile)
-    print(f"MEM SIZE OF mask {maskfile}: {convert_size(sys.getsizeof(mask))}")
+    #print(f"MEM SIZE OF mask {maskfile}: {convert_size(sys.getsizeof(mask))}")
     cleaned = apply_mask(img, mask, infile)
-    print(f"MEM SIZE OF cleaned: {convert_size(sys.getsizeof(cleaned))}")
-    print(f"TOTAL MEMORY SIZE FOR AGGREGATE (img, mask, cleaned): {convert_size(sys.getsizeof(img)+sys.getsizeof(mask)+sys.getsizeof(cleaned))}")
+    #print(f"MEM SIZE OF cleaned: {convert_size(sys.getsizeof(cleaned))}")
+    #print(f"TOTAL MEMORY SIZE FOR AGGREGATE (img, mask, cleaned): {convert_size(sys.getsizeof(img)+sys.getsizeof(mask)+sys.getsizeof(cleaned))}")
     del img
     if channel == 1:
         cleaned = scaled(cleaned, mask, epsilon=0.01)
         cleaned = equalized(cleaned)
+
     # cropped = crop_image(cleaned, mask)
     del mask
-    print("START ROTATION")
     if rotation > 0:
         cleaned = rotate_image(cleaned, infile, rotation)
     if flip == "flip":
         cleaned = np.flip(cleaned)
     if flip == "flop":
         cleaned = np.flip(cleaned, axis=1)
-    print('Finished rotation, placing image')
     cleaned = place_image(cleaned, infile, max_width, max_height, 0)
-    print('finished placing image')
+
     try:
         cv2.imwrite(outpath, cleaned)
     except Exception as e:
-        print(f'Error in saving {outpath} with shape {cleaned.shape} img type {type(cleaned)}')
+        print(f'Error in saving {outpath} with shape {cleaned.shape} img type {cleaned.dtype}')
         print(f'Error is {e}')
         print("Unexpected error:", sys.exc_info()[0])
         raise

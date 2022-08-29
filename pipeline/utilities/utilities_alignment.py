@@ -6,6 +6,8 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import pickle
 import re
+from timeit import default_timer as timer
+
 from Controllers.SqlController import SqlController
 from lib.FileLocationManager import FileLocationManager
 import cv2
@@ -356,15 +358,28 @@ orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
     }
 
 
-
-
 def align_image_to_affine(file_key):
+    """This method takes about 20 seconds to run. use this one
+    """
     _, infile, outfile, T = file_key
+    im1 = Image.open(infile)
+    im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
+    im2.save(outfile)
+    del im1, im2
+    return
+
+def align_image_to_affineXXX(file_key):
+    """This method takes about 220 seconds to complete
+    """
+    _, infile, outfile, T = file_key
+    start = timer()
     image = io.imread(infile)
     matrix = T[:2,:2]
     offset = T[:2,2]
     offset = np.flip(offset)
     image1 = affine_transform(image,matrix.T,offset)
+    end = timer()
+    print(f'align image with Scikit took {end - start} seconds.')    
     cv2.imwrite(outfile, image1)
     del image,image1
     return

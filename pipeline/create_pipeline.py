@@ -2,12 +2,22 @@
 This program will create everything.
 The only required argument is the animal. By default it will work on channel=1
 and downsample = True. Run them in this sequence:
-    python src/create_py --animal DKXX
-    python src/create_py --animal DKXX --channel 2
-    python src/create_py --animal DKXX --channel 3
-    python src/create_py --animal DKXX --channel 1 --downsample false
-    python src/create_py --animal DKXX --channel 2 --downsample false
-    python src/create_py --animal DKXX --channel 3 --downsample false
+    python pipeline/create_pipeline.py --animal DKXX --step 0|1|2|3|4|5
+    And then:
+    python pipeline/create_pipeline.py --animal DKXX channel 2|3 --step 0|1|2|3|4|5
+    And then:
+    python pipeline/create_pipeline.py --animal DKXX channel 1 downsample false --step 0|1|2|3|4|5
+    And then:
+    python pipeline/create_pipeline.py --animal DKXX channel 2|3 downsample false --step 0|1|2|3|4|5
+
+Changes from previous pipeline version:
+1. use ov cv2.imwrite instead of tiff.imwrite. This saves lots of space and works fine
+2. More of the code was moved from pipeline.py to this file to make it obvious what is being run
+3. I removed the greater than sign in the steps and replaced it with == to run specific methods only.
+4. Fine tuned the scaled method in the cleaning process. This will save lots of RAM!!!!
+5. Replaced the run_commands_with_executor with run_commands_concurrently. Much simpler!
+6. Removed the insert and select from ng.process_image and replaced with a touch file in the PROGRESS_DIR,
+    this will remove those 'mysql connection has gone away' errors.
 
 Human intervention is required at several points in the process:
 1. After create meta - the user needs to check the database and verify the images 
@@ -20,7 +30,12 @@ see: src/python/create_py -h
 for more information.
 """
 import argparse
-from settings import host as HOST, schema as SCHEMA, DATA_PATH
+try:
+    from settings import host as HOST, schema as SCHEMA, DATA_PATH
+except ImportError as fe:
+    print('You must have a settings file in the pipeline directory.', fe)
+    raise
+
 from lib.pipeline import Pipeline
 
 
