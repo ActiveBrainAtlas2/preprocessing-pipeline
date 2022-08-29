@@ -1,12 +1,10 @@
-import os, psutil
+import os
 import numpy as np
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-from pathlib import Path
-import operator
+from timeit import default_timer as timer
 
 from utilities.utilities_mask import clean_and_rotate_image
-from lib.pipeline_utilities import get_max_image_size, convert_size
 from utilities.utilities_process import SCALING_FACTOR, test_dir
 from model.slide import SlideCziTif
 from model.slide import Slide
