@@ -18,6 +18,13 @@ Changes from previous pipeline version:
 5. Replaced the run_commands_with_executor with run_commands_concurrently. Much simpler!
 6. Removed the insert and select from ng.process_image and replaced with a touch file in the PROGRESS_DIR,
     this will remove those 'mysql connection has gone away' errors.
+Timing results
+0. The processes that take the longest and need the most monitoring are, cleaning, aligning
+and creating the neuroglancer images. The number of workers must be set correctly
+otherwise the workstations will crash if the # of workers is too high. If the number
+of workers is too low, the processes take too long.
+1. Cleaning full resolution of 480 images on channel 1 on ratto took 5.5 hours
+2. Aligning full resolution of 480 images on channel 1 on ratto took 6.8 hours
 
 Human intervention is required at several points in the process:
 1. After create meta - the user needs to check the database and verify the images 
