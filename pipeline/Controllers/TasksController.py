@@ -7,7 +7,8 @@ from model.file_log import FileLog
 from datetime import datetime
 
 
-class TasksController(Controller):
+class TasksController(Controller):    
+
     def __init__(self, *args, **kwargs):
         """initiates the controller class"""
         Controller.__init__(self, *args, **kwargs)

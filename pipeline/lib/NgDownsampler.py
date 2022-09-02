@@ -3,9 +3,7 @@ import sys
 from cloudvolume import CloudVolume
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
-from lib.FileLocationManager import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors
-from utilities.utilities_process import get_cpus
 
 
 class NgDownsampler:

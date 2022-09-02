@@ -1,38 +1,17 @@
 from settings import user,password,host,schema
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
-from time import sleep
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import scoped_session
 
 
-def create_session(host,schema,max_attempt = 50):
-    success = False
-    attempt=0
-    while not success and attempt<max_attempt:
-            try:
-                connection_string = f'mysql+pymysql://{user}:{password}@{host}/{schema}?charset=utf8'
-                engine = create_engine(connection_string, pool_pre_ping=True, echo=False)
-                Session = sessionmaker(bind=engine)
-                success  = True
-            except OperationalError:
-                attempt+=1
-                sleep(5)
+def create_session(host, schema):
+    connection_string = f'mysql+pymysql://{user}:{password}@{host}/{schema}?charset=utf8'
+    timeout = 60 * 60 * 12 # = 12 hours
+    engine = create_engine(connection_string, connect_args={'connect_timeout': timeout})
+    session_factory = sessionmaker(bind=engine)
+    Session = scoped_session(session_factory)
     return Session()
 
-
-def create_pooled_session(host,schema,max_attempt = 50):
-    success = False
-    attempt=0
-    while not success and attempt<max_attempt:
-            try:
-                connection_string = f'mysql+pymysql://{user}:{password}@{host}/{schema}?charset=utf8'
-                pooledengine = create_engine(connection_string, pool_pre_ping=True, pool_size=10, max_overflow=50, pool_recycle=3600)
-                success  = True
-            except OperationalError:
-                attempt+=1
-                sleep(5)
-    return scoped_session(sessionmaker(bind=pooledengine)) 
 
 class Controller(object):
     def __init__(self, host=host, schema=schema):
@@ -40,13 +19,7 @@ class Controller(object):
         """
         self.host = host
         self.schema = schema
-        self.session,self.pooledsession = self.get_session()
-
-    def get_session(self):
-        session = create_session(self.host,self.schema)
-        pooledsession = create_pooled_session(self.host,self.schema)
-        success = True
-        return session,pooledsession
+        self.session = create_session(self.host, self.schema)
 
     def update_row(self, row):
         """update one row of a database

@@ -18,6 +18,7 @@ Changes from previous pipeline version:
 5. Replaced the run_commands_with_executor with run_commands_concurrently. Much simpler!
 6. Removed the insert and select from ng.process_image and replaced with a touch file in the PROGRESS_DIR,
     this will remove those 'mysql connection has gone away' errors.
+7. Changed the session to a scoped session and extended the connection timeout to 12 hours.
 Timing results
 0. The processes that take the longest and need the most monitoring are, cleaning, aligning
 and creating the neuroglancer images. The number of workers must be set correctly
@@ -25,16 +26,15 @@ otherwise the workstations will crash if the # of workers is too high. If the nu
 of workers is too low, the processes take too long.
 1. Cleaning full resolution of 480 images on channel 1 on ratto took 5.5 hours
 2. Aligning full resolution of 480 images on channel 1 on ratto took 6.8 hours
+3. Running entire neuroglancer process on 480 images on channel 1 on ratto took 11.3 hours
 
 Human intervention is required at several points in the process:
 1. After create meta - the user needs to check the database and verify the images 
 are in the correct order and the images look good.
-1. After the first create mask method - the user needs to check the colored masks
+2. After the first create mask method - the user needs to check the colored masks
 and possible dilate or crop them.
-1. After the alignment process - the user needs to verify the alignment looks good. 
+3. After the alignment process - the user needs to verify the alignment looks good. 
 increasing the step size will make the pipeline move forward in the process.
-see: src/python/create_py -h
-for more information.
 """
 import argparse
 try:
@@ -58,44 +58,42 @@ def run_pipeline(animal, channel, downsample, data_path, host, schema, tg, clean
     print(f"\tschema:".ljust(20), f"{schema}".ljust(20))
     print(f"\ttg:".ljust(20), f"{str(tg)}".ljust(20))
     print(f"\tdebug:".ljust(20), f"{str(debug)}".ljust(20))
-
-
     print()
 
     if step == 0:
         print(f"Step {step}: prepare images for quality control.")
-        pipeline.run_program_and_time(pipeline.extract_slide_meta_data_and_insert_to_database, "Creating meta")
-        pipeline.run_program_and_time(pipeline.create_web_friendly_image, "create web friendly image")
-        pipeline.run_program_and_time(pipeline.extract_tifs_from_czi, "Extracting Tiffs")
+        pipeline.run_program_and_time(pipeline.extract_slide_meta_data_and_insert_to_database, pipeline.TASK_CREATING_META)
+        pipeline.run_program_and_time(pipeline.create_web_friendly_image, pipeline.TASK_CREATING_WEB_IMAGES)
+        pipeline.run_program_and_time(pipeline.extract_tifs_from_czi, pipeline.TASK_EXTRACTING_TIFFS)
 
     if step == 1:
         print(f"Step {step}: apply QC and prepare image masks")
         pipeline.set_task_preps()
-        pipeline.run_program_and_time(pipeline.apply_QC, "Applying QC")
-        pipeline.run_program_and_time(pipeline.create_normalized_image, "Creating normalization")
-        pipeline.run_program_and_time(pipeline.create_mask, "Creating masks")
+        pipeline.run_program_and_time(pipeline.apply_QC, pipeline.TASK_APPLYING_QC)
+        pipeline.run_program_and_time(pipeline.create_normalized_image, pipeline.TASK_APPLYING_NORMALIZATION)
+        pipeline.run_program_and_time(pipeline.create_mask, pipeline.TASK_CREATING_MASKS)
     
     if step == 2:
         print(f"Step {step}: clean images")
-        pipeline.run_program_and_time(pipeline.apply_user_mask_edits, "Applying masks")
-        pipeline.run_program_and_time(pipeline.create_cleaned_images, "Creating cleaned image")
+        pipeline.run_program_and_time(pipeline.apply_user_mask_edits, pipeline.TASK_APPLYING_MASKS)
+        pipeline.run_program_and_time(pipeline.create_cleaned_images, pipeline.TASK_CREATING_CLEANED_IMAGES)
     
     if step == 3:
         print(f"Step {step}: create histograms")
-        pipeline.run_program_and_time(pipeline.make_histogram, "Making histogram")
-        pipeline.run_program_and_time(pipeline.make_combined_histogram, "Making combined histogram")
+        pipeline.run_program_and_time(pipeline.make_histogram, pipeline.TASK_CREATING_HISTOGRAMS)
+        pipeline.run_program_and_time(pipeline.make_combined_histogram, pipeline.TASK_CREATING_COMBINED_HISTOGRAM)
 
     if step == 4:
         print(f"Step {step}: align images within stack")
-        pipeline.run_program_and_time(pipeline.create_within_stack_transformations, "Creating elastix transform")
+        pipeline.run_program_and_time(pipeline.create_within_stack_transformations, pipeline.TASK_CREATING_ELASTIX_TRANSFORM)
         transformations = pipeline.get_transformations()
         pipeline.align_downsampled_images(transformations)
         pipeline.align_full_size_image(transformations)
     
     if step == 5:
         print(f"Step {step}: create neuroglancer data")
-        pipeline.run_program_and_time(pipeline.create_neuroglancer, "Neuroglancer1 single")
-        pipeline.run_program_and_time(pipeline.create_downsamples, "Neuroglancer2 pyramid")
+        pipeline.run_program_and_time(pipeline.create_neuroglancer, pipeline.TASK_NEUROGLANCER_SINGLE)
+        pipeline.run_program_and_time(pipeline.create_downsamples, pipeline.TASK_NEUROGLANCER_PYRAMID)
 
 
 if __name__ == "__main__":
