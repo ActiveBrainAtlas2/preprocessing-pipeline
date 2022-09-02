@@ -50,6 +50,19 @@ class Pipeline(
     This is the main class that handles the preprocessing pipeline responsible for converting Zeiss microscopy images (.czi) into neuroglancer
     viewable formats.  The Zeiss module can be swapped out to make the pipeline compatible with other microscopy setups
     """
+    TASK_CREATING_META = "Yanking meta data from CZI files"
+    TASK_CREATING_WEB_IMAGES = "Creating web friendly PNG images"
+    TASK_EXTRACTING_TIFFS = "Extracting TIFFs"
+    TASK_APPLYING_QC = "Applying QC"
+    TASK_APPLYING_NORMALIZATION = "Creating normalization"
+    TASK_CREATING_MASKS = "Creating masks"
+    TASK_APPLYING_MASKS = "Applying masks"
+    TASK_CREATING_CLEANED_IMAGES = "Creating cleaned image"
+    TASK_CREATING_HISTOGRAMS =  "Making histogram"
+    TASK_CREATING_COMBINED_HISTOGRAM = "Making combined histogram"
+    TASK_CREATING_ELASTIX_TRANSFORM = "Creating elastix transform"
+    TASK_NEUROGLANCER_SINGLE = "Neuroglancer1 single"
+    TASK_NEUROGLANCER_PYRAMID = "Neuroglancer2 pyramid"
 
     def __init__(
         self,
@@ -113,9 +126,7 @@ class Pipeline(
         """
         start_time = timer()
         os.environ["_JAVA_OPTIONS"] = "-Xmx10g"  # DEPRECATED - JUN-2022?
-        os.environ[
-            "export CV_IO_MAX_IMAGE_PIXELS"
-        ] = "21474836480"  # DEPRECATED - JUN-2022?
+        os.environ["export CV_IO_MAX_IMAGE_PIXELS"] = "21474836480"  # DEPRECATED - JUN-2022?
 
         error = ""
         if not os.path.exists("/usr/local/share/bftools/showinf"):
@@ -144,34 +155,15 @@ class Pipeline(
         print(function_name, end="")
         start_time = timer()
 
-        self.logevent("START " + str(function_name))
-        if self.downsample == False and (
-            function_name == "Creating normalization"
-            or function_name == "Applying masks"
-            or function_name == "Making histogram"
-            or function_name == "Making combined histogram"
-            or function_name == "Creating elastics transform"
-        ):
-            self.logevent(f"N/A - FULL RESOLUTION")
-        if function_name == "Making downsampled copies":
-            self.logevent(f"OUTPUT FOLDER: {self.fileLocationManager.thumbnail}")
-        else:
-            pass
+        self.logevent(f"START  {str(function_name)}, downsample: {str(self.downsample)}")
 
         function()  # RUN FUNCTION
 
         end_time = timer()
         total_elapsed_time = end_time - start_time
         print(f" took {round(total_elapsed_time,1)} seconds")
-
         sep = "*" * 40 + "\n"
-        if function_name == "create web friendly image":
-            ending_files = os.listdir(self.fileLocationManager.thumbnail_web)
-            self.logevent(f"FILE COUNT: {len(ending_files)}\n{sep}")
-        else:
-            self.logevent(
-                f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}"
-            )
+        self.logevent(f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}")
 
     def qc_cleanup(self):
         """Post QC to clean up filesystem prior to re-running mask edits"""

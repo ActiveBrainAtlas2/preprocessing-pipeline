@@ -17,7 +17,7 @@ from .ScanRunController import ScanRunController
 from .SectionsController import SectionsController
 from .SlideController import SlideController
 from .SlideCZIToTifController import SlideCZIToTifController
-from .TasksController import TasksController,file_processed, set_file_completed
+from .TasksController import TasksController, file_processed, set_file_completed
 from .HistologyController import HistologyController
 from model.scan_run import ScanRun
 from model.histology import Histology
@@ -40,12 +40,13 @@ class SqlController(ElasticsController,StructuresController,TransformationContro
             Args:
                 animal: object of animal to process
         """
-        Controller.__init__(self,host=host, schema=schema)
+        Controller.__init__(self, host=host, schema=schema)
         if self.animal_exists(animal):
             self.animal = self.get_animal(animal)
         else:
             print(f'No animal/brain with the name {animal} was found in the database.')
             sys.exit()
+        
         try:
             self.histology = self.session.query(Histology).filter(
                 Histology.prep_id == animal).one()
