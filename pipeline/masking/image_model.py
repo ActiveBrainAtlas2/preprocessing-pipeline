@@ -109,6 +109,7 @@ class ImageClassifier(object):
         return self.model
 
 ##### next class
+"""
 from label_studio_ml.model import LabelStudioMLBase
 
 class ImageClassifierAPI(LabelStudioMLBase):
@@ -123,3 +124,4 @@ class ImageClassifierAPI(LabelStudioMLBase):
 
     def fit(self, completions, **kwargs):
         pass
+"""

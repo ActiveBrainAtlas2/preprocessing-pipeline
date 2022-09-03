@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 import torch.utils.data
 from mask_class import MaskDataset, get_model_instance_segmentation, test_model, get_transform
-PIPELINE_ROOT = Path('./src').absolute()
+PIPELINE_ROOT = Path('./pipeline').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 import utils
 
@@ -20,11 +20,16 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='specify animal', required=False)
     parser.add_argument('--runmodel', help='run model', required=True)
     parser.add_argument('--debug', help='test model', required=False, default='false')
+    parser.add_argument('--tg', help='Use TG masks', required=False, default='false')
     parser.add_argument('--epochs', help='# of epochs', required=False, default=2)
     
     args = parser.parse_args()
     runmodel = bool({'true': True, 'false': False}[args.runmodel.lower()])
+    tg = bool({'true': True, 'false': False}[args.tg.lower()])
     debug = bool({'true': True, 'false': False}[args.debug.lower()])
+
+    if tg:
+        ROOT = os.path.join(ROOT, 'tg')
 
     animal = args.animal
     epochs = int(args.epochs)
