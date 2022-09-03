@@ -26,7 +26,7 @@ class MaskDataset(torch.utils.data.Dataset):
         # load images and bounding boxes
         img_path = os.path.join(self.root, 'normalized', self.imgs[idx])
         mask_path = os.path.join(self.root, 'thumbnail_masked', self.masks[idx])
-        img = Image.open(img_path).convert("L")
+        img = Image.open(img_path).convert("L") # L = grayscale
         mask = Image.open(mask_path) # 
         mask = np.array(mask)
         mask[mask > 0] = 255
