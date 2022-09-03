@@ -91,7 +91,7 @@ if __name__ == '__main__':
         # 1 epoch takes 30 minutes on ratto
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
-            mlogger = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=100)
+            mlogger = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
             smlogger = str(mlogger) + "\n"
             logfile.write(smlogger)
             # update the learning rate
