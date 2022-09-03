@@ -50,7 +50,7 @@ def create_segmentation(animal, annotator_id, structure_id, debug=False):
         section = int(np.round(z/z_scale))
         polygons[section].append(xy)
         
-    color = 255
+    color = 254 # set it below the threshold set in mask class
     
     for section, points in tqdm(polygons.items()):
         file = str(section).zfill(3) + ".tif"
