@@ -33,17 +33,14 @@ class PennFudanDataset(object):
         # because each color corresponds to a different instance
         # with 0 being background
         mask = Image.open(mask_path)
-
         mask = np.array(mask)
         # instances are encoded as different colors
         obj_ids = np.unique(mask)
         # first id is the background, so remove it
         obj_ids = obj_ids[1:]
-
         # split the color-encoded mask into a set
         # of binary masks
         masks = mask == obj_ids[:, None, None]
-
         # get bounding box coordinates for each mask
         num_objs = len(obj_ids)
         boxes = []
@@ -54,12 +51,11 @@ class PennFudanDataset(object):
             ymin = np.min(pos[0])
             ymax = np.max(pos[0])
             boxes.append([xmin, ymin, xmax, ymax])
-
+            
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         # there is only one class
         labels = torch.ones((num_objs,), dtype=torch.int64)
         masks = torch.as_tensor(masks, dtype=torch.uint8)
-
         image_id = torch.tensor([idx])
         area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
         # suppose all instances are not crowd
