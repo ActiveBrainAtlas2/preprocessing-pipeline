@@ -65,12 +65,12 @@ if __name__ == '__main__':
     data_loader = torch.utils.data.DataLoader(
                 dataset, batch_size=2, shuffle=True, num_workers=workers,
                 collate_fn=utils.collate_fn)
-                
+
     if False:
         data_loader_test = torch.utils.data.DataLoader(
                 dataset_test, batch_size=1, shuffle=False, num_workers=workers,
                 collate_fn=utils.collate_fn)
-    print(f"We have: {len()} examples, {len(dataset)} are training and {len(dataset_test)} testing")
+    print(f"We have: {len(dataset) + len(dataset_test)} examples, {len(dataset)} are training and {len(dataset_test)} testing")
 
     if torch.cuda.is_available(): 
         device = torch.device('cuda') 
