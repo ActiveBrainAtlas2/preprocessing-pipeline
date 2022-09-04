@@ -55,7 +55,7 @@ if __name__ == '__main__':
     # define training and validation data loaders
     # multiprocessing with something other than 0 workers doesn't work on current
     # version of python's multiprocessing. Using 0 turns it off
-    workers = 0
+    workers = 4
     data_loader = torch.utils.data.DataLoader(
                 dataset, batch_size=2, shuffle=True, num_workers=workers,
                 collate_fn=utils.collate_fn)
