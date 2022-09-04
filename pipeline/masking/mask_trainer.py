@@ -46,7 +46,7 @@ if __name__ == '__main__':
     torch.manual_seed(1)
     if debug:
         indices = torch.randperm(len(dataset)).tolist()
-        indices = indices[0:10]
+        indices = indices[0:30]
         test_cases = int(len(indices) * 0.15)
         dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
         dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
