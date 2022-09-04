@@ -32,31 +32,25 @@ if __name__ == '__main__':
     debug = bool({'true': True, 'false': False}[args.debug.lower()])
     animal = args.animal
     epochs = int(args.epochs)
-   # split the dataset in train and test set
-    torch.manual_seed(1)
- 
+
     if tg:
         ROOT = os.path.join(ROOT, 'tg')
         dataset = TrigeminalDataset(ROOT, transforms = get_transform(train=True))
-        dataset_test = []
+        dataset_test = TrigeminalDataset(ROOT, transforms = get_transform(train=False))
     else:
         dataset = MaskDataset(ROOT, animal, transforms = get_transform(train=True))
         dataset_test = MaskDataset(ROOT, animal, transforms = get_transform(train=False))
 
 
-    if False:
-        if debug:
-            indices = torch.randperm(len(dataset)).tolist()
-            indices = indices[0:20]
-            test_cases = int(len(indices) * 0.15)
-            dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
-            dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
-        else:
-            indices = torch.randperm(len(dataset)).tolist()
-            test_cases = int(len(indices) * 0.15)
-            dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
-            dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
+    # split the dataset in train and test set
+    torch.manual_seed(1)
+    indices = torch.randperm(len(dataset)).tolist()
+    if debug:
+        indices = indices[0:10]
 
+    test_cases = int(len(indices) * 0.1)
+    dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
+    dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
 
     # define training and validation data loaders
     # multiprocessing with something other than 0 workers doesn't work on current
@@ -65,12 +59,10 @@ if __name__ == '__main__':
     data_loader = torch.utils.data.DataLoader(
                 dataset, batch_size=2, shuffle=True, num_workers=workers,
                 collate_fn=utils.collate_fn)
-
-    if False:
-        data_loader_test = torch.utils.data.DataLoader(
-                dataset_test, batch_size=1, shuffle=False, num_workers=workers,
-                collate_fn=utils.collate_fn)
-    print(f"We have: {len(dataset) + len(dataset_test)} examples, {len(dataset)} are training and {len(dataset_test)} testing")
+    data_loader_test = torch.utils.data.DataLoader(
+            dataset_test, batch_size=1, shuffle=False, num_workers=workers,
+            collate_fn=utils.collate_fn)
+    print(f"We have: {len(indices)} examples, {len(dataset)} are training and {len(dataset_test)} testing")
 
     if torch.cuda.is_available(): 
         device = torch.device('cuda') 
@@ -97,7 +89,6 @@ if __name__ == '__main__':
         # and a learning rate scheduler which decreases the learning rate by # 10x every 3 epochs
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
-        # 1 epoch takes 30 minutes on ratto
         """
         for epoch in range(epochs):
             # train for one epoch, printing every 10 iterations
@@ -127,18 +118,76 @@ if __name__ == '__main__':
                 losses = sum(loss for loss in loss_dict.values())
                 losses.backward()       
                 optimizer.step()
-                #print('loss:', losses.item())
                 loss_epoch.append(losses.item())
-                # Plot loss every 10th iteration
-                #plt.plot(list(range(iteration)), loss_epoch)
-                #plt.xlabel("Iteration")
-                #plt.ylabel("Loss")
-                #plt.show()
                 iteration+=1
             loss_epoch_mean = np.mean(loss_epoch) 
             loss_list.append(loss_epoch_mean) 
-            print("Average loss for epoch = {:.4f} ".format(loss_epoch_mean))
+            print("Average loss for epoch: {epoch}  = {:.4f} ".format(loss_epoch_mean))
+            torch.save(model.state_dict(), modelpath)
 
+
+        # Get IoU score for whole test set
+        # only do tests if we found some masks
+        IoU_scores_list = []
+        dice_coef_scores_list = []
+        f1_scores_list = []
+        skipped = 0
+        for images,targets in tqdm(data_loader_test):
+            images = list(image.to(device) for image in images)
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+            model=model.double()
+            model.eval()
+            output = model(images)
+            # print(targets)
+            target_im = targets[0]['masks'][0].cpu().detach().numpy()
+            for k in range(len(targets[0]['masks'])):
+                target_im2 = targets[0]['masks'][k].cpu().detach().numpy()
+                target_im2[target_im2>0.5] = 1
+                target_im2[target_im2<0.5] = 0
+                target_im = target_im+target_im2
+
+            target_im[target_im>0.5] = 1
+            target_im[target_im<0.5] = 0
+            target_im = target_im.astype('int64')
+            
+            try:
+                output_im = output[0]['masks'][0]
+            except IndexError as e:
+                print("No mask prediction found, skipping")
+                skipped+=1
+                continue
+
+
+            output_im = output[0]['masks'][0][0, :, :].cpu().detach().numpy()
+
+            for k in range(len(output[0]['masks'])):
+                output_im2 = output[0]['masks'][k][0, :, :].cpu().detach().numpy()
+                output_im2[output_im2>0.5] = 1
+                output_im2[output_im2<0.5] = 0
+                output_im = output_im+output_im2
+
+            output_im[output_im>0.5] = 1
+            output_im[output_im<0.5] = 0
+            output_im = output_im.astype('int64')
+
+            if target_im.shape != output_im.shape:
+                skipped+=1
+                continue
+            
+            dice_coef_score = dice_coef(y_real=target_im, y_pred=output_im)
+            dice_coef_scores_list.append(dice_coef_score)
+            IoU_score = IoU(y_real=target_im, y_pred=output_im) 
+            IoU_scores_list.append(IoU_score)
+            f1_score = get_f1_score(target_im, output_im)
+            f1_scores_list.append(f1_score)
+
+        print(f'Skipped {skipped} predictions as there was no mask data')
+        if len(IoU_scores_list) > 0:
+            print('mean IoU score for test set:', np.mean(IoU_scores_list))
+        if len(dice_coef_scores_list) > 0:
+            print('mean Dice Coefficient score for test set:', np.mean(dice_coef_scores_list))
+        if len(f1_scores_list) > 0:
+            print('mean f1 score for test set:', np.mean(f1_scores_list))
 
 
         print('Finished with masks')
