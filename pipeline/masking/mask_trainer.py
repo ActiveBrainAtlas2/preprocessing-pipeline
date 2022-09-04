@@ -46,7 +46,7 @@ if __name__ == '__main__':
     torch.manual_seed(1)
     if debug:
         indices = torch.randperm(len(dataset)).tolist()
-        indices = indices[0:30]
+        indices = indices[0:20]
         test_cases = int(len(indices) * 0.15)
         dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
         dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         # Perform training loop for n epochs
         loss_list = []
         model.train()
-        for epoch in tqdm(range(epochs)):
+        for epoch in range(epochs):
             loss_epoch = []
             iteration=1
             for images,targets in tqdm(data_loader):
@@ -159,7 +159,9 @@ if __name__ == '__main__':
             target_im[target_im>0.5] = 1
             target_im[target_im<0.5] = 0
             target_im = target_im.astype('int64')
-            
+            print(f"output type ", type(output))
+            print(f"output len ", len(output))
+            print(output)
             # Plot output (predicted) masks
             output_im = output[0]['masks'][0][0, :, :].cpu().detach().numpy()
             for k in range(len(output[0]['masks'])):
