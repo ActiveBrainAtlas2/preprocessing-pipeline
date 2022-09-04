@@ -85,7 +85,7 @@ if __name__ == '__main__':
         model.to(device)
         # construct an optimizer
         params = [p for p in model.parameters() if p.requires_grad]
-        optimizer = torch.optim.SGD(params, lr=0.001,momentum=0.9, weight_decay=0.0005)
+        optimizer = torch.optim.SGD(params, lr=0.005,momentum=0.9, weight_decay=0.0005)
         # and a learning rate scheduler which decreases the learning rate by # 10x every 3 epochs
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
@@ -122,7 +122,10 @@ if __name__ == '__main__':
                 iteration+=1
             loss_epoch_mean = np.mean(loss_epoch) 
             loss_list.append(loss_epoch_mean) 
+            smlogger = str(loss_epoch_mean) + ",\n"
+
             print("Average loss  = {:.4f} ".format(loss_epoch_mean))
+            logfile.write(smlogger)
             torch.save(model.state_dict(), modelpath)
 
 
