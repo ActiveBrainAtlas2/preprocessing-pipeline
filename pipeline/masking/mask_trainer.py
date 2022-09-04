@@ -159,9 +159,13 @@ if __name__ == '__main__':
             target_im[target_im>0.5] = 1
             target_im[target_im<0.5] = 0
             target_im = target_im.astype('int64')
+            
             print(f"output type ", type(output[0]))
             print(f"output len ", len(output[0]))
             print(output[0])
+            print(f"output[0]['masks'] type ", type(output[0]['masks']))
+            print(f"output[0]['masks'] len ", len(output[0]['masks']))
+            print(output[0]['masks'][0])
             # Plot output (predicted) masks
             output_im = output[0]['masks'][0][0, :, :].cpu().detach().numpy()
 
