@@ -32,29 +32,30 @@ if __name__ == '__main__':
     debug = bool({'true': True, 'false': False}[args.debug.lower()])
     animal = args.animal
     epochs = int(args.epochs)
-
+   # split the dataset in train and test set
+    torch.manual_seed(1)
+ 
     if tg:
         ROOT = os.path.join(ROOT, 'tg')
         dataset = TrigeminalDataset(ROOT, transforms = get_transform(train=True))
-        dataset_test = TrigeminalDataset(ROOT, transforms = get_transform(train=False))
+        dataset_test = []
     else:
         dataset = MaskDataset(ROOT, animal, transforms = get_transform(train=True))
         dataset_test = MaskDataset(ROOT, animal, transforms = get_transform(train=False))
 
 
-    # split the dataset in train and test set
-    torch.manual_seed(1)
-    if debug:
-        indices = torch.randperm(len(dataset)).tolist()
-        indices = indices[0:20]
-        test_cases = int(len(indices) * 0.15)
-        dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
-        dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
-    else:
-        indices = torch.randperm(len(dataset)).tolist()
-        test_cases = int(len(indices) * 0.15)
-        dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
-        dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
+    if False:
+        if debug:
+            indices = torch.randperm(len(dataset)).tolist()
+            indices = indices[0:20]
+            test_cases = int(len(indices) * 0.15)
+            dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
+            dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
+        else:
+            indices = torch.randperm(len(dataset)).tolist()
+            test_cases = int(len(indices) * 0.15)
+            dataset = torch.utils.data.Subset(dataset, indices[:-test_cases])
+            dataset_test = torch.utils.data.Subset(dataset_test, indices[-test_cases:])
 
 
     # define training and validation data loaders
@@ -64,10 +65,12 @@ if __name__ == '__main__':
     data_loader = torch.utils.data.DataLoader(
                 dataset, batch_size=2, shuffle=True, num_workers=workers,
                 collate_fn=utils.collate_fn)
-    data_loader_test = torch.utils.data.DataLoader(
-            dataset_test, batch_size=1, shuffle=False, num_workers=workers,
-            collate_fn=utils.collate_fn)
-    print(f"We have: {len(indices)} examples, {len(dataset)} are training and {len(dataset_test)} testing")
+                
+    if False:
+        data_loader_test = torch.utils.data.DataLoader(
+                dataset_test, batch_size=1, shuffle=False, num_workers=workers,
+                collate_fn=utils.collate_fn)
+    print(f"We have: {len()} examples, {len(dataset)} are training and {len(dataset_test)} testing")
 
     if torch.cuda.is_available(): 
         device = torch.device('cuda') 
@@ -136,63 +139,6 @@ if __name__ == '__main__':
             loss_list.append(loss_epoch_mean) 
             print("Average loss for epoch = {:.4f} ".format(loss_epoch_mean))
 
-        # Get IoU score for whole test set
-        IoU_scores_list = []
-        dice_coef_scores_list = []
-        f1_scores_list = []
-        skipped = 0
-        for images,targets in tqdm(data_loader_test):
-            images = list(image.to(device) for image in images)
-            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
-            model=model.double()
-            model.eval()
-            output = model(images)
-            # print(targets)
-            target_im = targets[0]['masks'][0].cpu().detach().numpy()
-            for k in range(len(targets[0]['masks'])):
-                target_im2 = targets[0]['masks'][k].cpu().detach().numpy()
-                target_im2[target_im2>0.5] = 1
-                target_im2[target_im2<0.5] = 0
-                target_im = target_im+target_im2
-
-            target_im[target_im>0.5] = 1
-            target_im[target_im<0.5] = 0
-            target_im = target_im.astype('int64')
-            
-            print(f"output type ", type(output[0]))
-            print(f"output len ", len(output[0]))
-            print(output[0])
-            print(f"output[0]['masks'] type ", type(output[0]['masks']))
-            print(f"output[0]['masks'] len ", len(output[0]['masks']))
-            print(output[0]['masks'][0])
-            # Plot output (predicted) masks
-            output_im = output[0]['masks'][0][0, :, :].cpu().detach().numpy()
-
-            for k in range(len(output[0]['masks'])):
-                output_im2 = output[0]['masks'][k][0, :, :].cpu().detach().numpy()
-                output_im2[output_im2>0.5] = 1
-                output_im2[output_im2<0.5] = 0
-                output_im = output_im+output_im2
-
-            output_im[output_im>0.5] = 1
-            output_im[output_im<0.5] = 0
-            output_im = output_im.astype('int64')
-
-            if target_im.shape != output_im.shape:
-                skipped+=1
-                continue
-            
-            dice_coef_score = dice_coef(y_real=target_im, y_pred=output_im)
-            dice_coef_scores_list.append(dice_coef_score)
-            IoU_score = IoU(y_real=target_im, y_pred=output_im) 
-            IoU_scores_list.append(IoU_score)
-            f1_score = get_f1_score(target_im, output_im)
-            f1_scores_list.append(f1_score)
-
-        print('mean IoU score for test set:', np.mean(IoU_scores_list))
-        print('mean Dice Coefficient score for test set:', np.mean(dice_coef_scores_list))
-        print('mean f1 score for test set:', np.mean(f1_scores_list))
 
 
         print('Finished with masks')
