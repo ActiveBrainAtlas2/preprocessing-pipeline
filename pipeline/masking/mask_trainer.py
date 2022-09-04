@@ -122,7 +122,7 @@ if __name__ == '__main__':
                 iteration+=1
             loss_epoch_mean = np.mean(loss_epoch) 
             loss_list.append(loss_epoch_mean) 
-            print("Average loss for epoch: {epoch}  = {:.4f} ".format(loss_epoch_mean))
+            print("Average loss  = {:.4f} ".format(loss_epoch_mean))
             torch.save(model.state_dict(), modelpath)
 
 
