@@ -149,7 +149,7 @@ class TrigeminalDataset(torch.utils.data.Dataset):
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
-            return img.double(), target
+            return img, target
     
     def __len__(self):
         return len(self.imgs)

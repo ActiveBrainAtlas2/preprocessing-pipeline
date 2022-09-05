@@ -79,17 +79,24 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, lr=0.005,momentum=0.9, weight_decay=0.0005)
     # and a learning rate scheduler which decreases the learning rate by # 10x every 3 epochs
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
+    losses = []
 
-    """
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations
         mlogger = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
-        smlogger = str(mlogger) + "\n"
-        logfile.write(smlogger)
+        txt = str(mlogger.loss)
+        x = txt.split()
+        loss1 = float(x[0])
+        #sx2 = x[1]
+        #sx2 = sx2.replace("(","").replace(")","")
+        #x2 = float(sx2)
+        losses.append(loss1)
         # update the learning rate
         lr_scheduler.step()
         if not debug:
             torch.save(model.state_dict(), modelpath)
+    logfile.write(str(losses))
+    logfile.write("\n")
     """
 
     # Perform training loop for n epochs
@@ -117,6 +124,7 @@ if __name__ == '__main__':
 
     logfile.write(str(loss_list))
     logfile.write("\n")
+    """
 
     print('Finished with masks')
     logfile.close()
