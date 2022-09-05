@@ -47,7 +47,6 @@ if __name__ == '__main__':
     workers = 1
     if torch.cuda.is_available(): 
         device = torch.device('cuda') 
-        workers = 4
         batch_size = 4
         print(f'Using Nvidia graphics card GPU with {workers} workers at a batch size of {batch_size}')
     else:
