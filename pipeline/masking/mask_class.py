@@ -77,6 +77,8 @@ class MaskDataset(torch.utils.data.Dataset):
             img, target = self.transforms(img, target)
             return img, target
 
+        return img, target
+
     def __len__(self):
         return len(self.imgs)
 
@@ -95,6 +97,9 @@ class TrigeminalDataset(torch.utils.data.Dataset):
         img_path = os.path.join(self.root, self.imgdir, self.imgs[idx])
         mask_path = os.path.join(self.root, self.maskdir, self.masks[idx])
         img = Image.open(img_path).convert("L") # L = grayscale
+        img16 = np.array(img)
+        img8 = (img16/256).astype('uint8')
+
         mask = Image.open(mask_path) # 
         mask = np.array(mask)
         # instances are encoded as different colors
@@ -150,9 +155,11 @@ class TrigeminalDataset(torch.utils.data.Dataset):
         target["iscrowd"] = iscrowd
 
         if self.transforms is not None:
-            img, target = self.transforms(img, target)
-            return img, target
-    
+            img8, target = self.transforms(img8, target)
+            return img8, target
+
+        return img8, target
+
     def __len__(self):
         return len(self.imgs)
 

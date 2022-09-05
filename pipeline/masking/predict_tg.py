@@ -71,7 +71,6 @@ def predict_mask(animal):
         img16 = np.array(img)
         img8 = (img16/256).astype('uint8')
         torch_input = transform(img8)
-        #torch_input = transform(img)
         torch_input = torch_input.unsqueeze(0)
         loaded_model.eval()
         with torch.no_grad():
@@ -81,10 +80,9 @@ def predict_mask(animal):
         dims = mask.ndim
         if dims > 2:
             mask = combine_dims(mask)
-        raw_img = np.array(img)
         mask = mask.astype(np.uint8)
         mask[mask > 0] = 255
-        merged_img = merge_mask(raw_img, mask)
+        merged_img = merge_mask(img8, mask)
         del mask
         cv2.imwrite(maskpath, merged_img)
 

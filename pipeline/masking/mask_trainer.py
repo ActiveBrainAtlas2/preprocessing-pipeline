@@ -45,13 +45,12 @@ if __name__ == '__main__':
         dataset = torch.utils.data.Subset(dataset, indices)
 
     workers = 1
+    batch_size = 1
     if torch.cuda.is_available(): 
         device = torch.device('cuda') 
-        batch_size = 1
         print(f'Using Nvidia graphics card GPU with {workers} workers at a batch size of {batch_size}')
     else:
         device = torch.device('cpu')
-        batch_size = 1
         print(f'Using CPU with {workers} workers at a batch size of {batch_size}')
 
     # define training and validation data loaders
@@ -137,7 +136,7 @@ if __name__ == '__main__':
 
         loss_epoch_mean = np.mean(loss_epoch) 
         loss_list.append(loss_epoch_mean) 
-        print("Average loss  = {:.4f} ".format(loss_epoch_mean))
+        print("Epoch: {} average loss  = {:.4f} ".format(epoch, loss_epoch_mean))
         torch.save(model.state_dict(), modelpath) # save each epoch
 
     logfile.write(str(loss_list))
