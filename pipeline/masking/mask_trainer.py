@@ -126,7 +126,7 @@ if __name__ == '__main__':
             images = list(image.to(device) for image in images)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
             optimizer.zero_grad()
-            #model=model.double()
+            model=model.double()
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
             losses.backward()       
