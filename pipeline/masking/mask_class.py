@@ -168,9 +168,9 @@ class TrigeminalDataset(object):
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
-            return img.double(), target
+            return img, target
 
-        return img.double(), target
+        return img, target
 
 
     def __len__(self):

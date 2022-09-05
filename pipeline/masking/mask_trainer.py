@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     if tg:
         ROOT = os.path.join(ROOT, 'tg')
-        dataset = TrigeminalDataset(ROOT, transforms = get_transform(train=True))
+        dataset = TrigeminalDataset(ROOT, transforms = get_transform(train=False))
     else:
         dataset = MaskDataset(ROOT, animal, transforms = get_transform(train=True))
 
@@ -126,7 +126,7 @@ if __name__ == '__main__':
             images = list(image.to(device) for image in images)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
             optimizer.zero_grad()
-            model=model.double()
+            #model=model.double()
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
             losses.backward()       
