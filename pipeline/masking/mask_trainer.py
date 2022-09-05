@@ -98,7 +98,7 @@ if __name__ == '__main__':
     for epoch in range(epochs):
         loss_epoch = []
         iteration=1
-        for images,targets in tqdm(data_loader):
+        for images,targets in data_loader:
             images = list(image.to(device) for image in images)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
             optimizer.zero_grad()
