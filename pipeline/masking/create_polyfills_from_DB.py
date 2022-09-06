@@ -7,6 +7,7 @@ import cv2
 from tqdm import tqdm
 from pathlib import Path
 
+
 PIPELINE_ROOT = Path('./pipeline').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -15,6 +16,7 @@ from Controllers.PolygonSequenceController import PolygonSequenceController
 from lib.FileLocationManager import FileLocationManager
 
 from utilities.utilities_process import SCALING_FACTOR
+from utilities.utilities_mask import merge_mask
 
 def create_segmentation(animal, annotator_id, structure_id, debug=False):
     DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks'
@@ -24,8 +26,10 @@ def create_segmentation(animal, annotator_id, structure_id, debug=False):
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
     MASK_OUTPUT = os.path.join(DATA_PATH, 'tg', 'thumbnail_masked')
     os.makedirs(MASK_OUTPUT, exist_ok=True)
-    NORM_OUTPUT = os.path.join(DATA_PATH, 'tg', 'normalized')
+    NORM_OUTPUT = os.path.join(DATA_PATH, 'tg', 'thumbnail_aligned')
     os.makedirs(NORM_OUTPUT, exist_ok=True)
+    MERG_OUTPUT = os.path.join(DATA_PATH, 'tg', 'thumbnail_merged')
+    os.makedirs(MERG_OUTPUT, exist_ok=True)
 
     polygon = PolygonSequenceController()
     df = polygon.get_volume(animal, annotator_id, structure_id)
@@ -50,21 +54,28 @@ def create_segmentation(animal, annotator_id, structure_id, debug=False):
         section = int(np.round(z/z_scale))
         polygons[section].append(xy)
         
-    color = 254 # set it below the threshold set in mask class
+    color = 255 # set it below the threshold set in mask class
     
     for section, points in tqdm(polygons.items()):
         file = str(section).zfill(3) + ".tif"
         inpath = os.path.join(INPUT, file)
-        infile = cv2.imread(inpath, cv2.IMREAD_GRAYSCALE)
-        template = np.zeros(( infile.shape), dtype=np.uint8)
+        if not os.path.exists(inpath):
+            print(f'{inpath} does not exist')
+            continue
+        img = cv2.imread(inpath, cv2.IMREAD_GRAYSCALE)
+        mask = np.zeros((img.shape), dtype=np.uint8)
         points = np.array(points)
         points = points.astype(np.int32)
-        cv2.fillPoly(template, pts = [points], color = color)
+        cv2.fillPoly(mask, pts = [points], color = color)
         filename = f"{animal}.{annotator_id}.{structure_id}.{file}"
         mask_outpath = os.path.join(MASK_OUTPUT, filename)
         norm_outpath = os.path.join(NORM_OUTPUT, filename)
-        cv2.imwrite(mask_outpath, template)
+        merg_outpath = os.path.join(MERG_OUTPUT, filename)
+        cv2.imwrite(mask_outpath, mask)
         shutil.copyfile(inpath, norm_outpath)
+        merged_img = merge_mask(img, mask)
+        cv2.imwrite(merg_outpath, merged_img)
+
     
                 
         

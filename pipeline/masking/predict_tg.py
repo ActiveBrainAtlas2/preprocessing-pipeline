@@ -52,24 +52,34 @@ def predict_mask(animal):
     loaded_model = load_machine_learning_model()
     transform = torchvision.transforms.ToTensor()
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'normalized')
     TG_MASKS = os.path.join(fileLocationManager.masks, 'tg')
     os.makedirs(TG_MASKS, exist_ok=True)
 
     files = os.listdir(INPUT)
     for file in files:
         filepath = os.path.join(INPUT, file)
-        mask_dest_file = (
-            os.path.splitext(file)[0] + ".tif"
-        )  # colored mask images have .tif extension
+        mask_dest_file = (os.path.splitext(file)[0] + ".tif")  # colored mask images have .tif extension
         maskpath = os.path.join(TG_MASKS, mask_dest_file)
 
         if os.path.exists(maskpath):
             continue
 
-        img = Image.open(filepath).convert("L")
-        raw_img = np.array(img)
-        torch_input = transform(img)
+        #if not mask_dest_file.startswith("15"):
+        #    continue
+
+
+        img = Image.open(filepath) # L = grayscale
+        img_arr = np.array(img)
+
+        if 'normal' in INPUT:
+            img8 = img_arr
+            pimg = img
+        else:
+            img8 = (img_arr/256).astype('uint8')
+            pimg = Image.fromarray(img8)
+
+        torch_input = transform(pimg)
         torch_input = torch_input.unsqueeze(0)
         loaded_model.eval()
         with torch.no_grad():
@@ -81,8 +91,7 @@ def predict_mask(animal):
             mask = combine_dims(mask)
         mask = mask.astype(np.uint8)
         mask[mask > 0] = 255
-        merged_img = merge_mask(raw_img, mask)
-        del mask
+        merged_img = merge_mask(img8, mask)
         cv2.imwrite(maskpath, merged_img)
 
 

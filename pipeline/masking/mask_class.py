@@ -83,100 +83,7 @@ class MaskDataset(torch.utils.data.Dataset):
         return len(self.imgs)
 
 
-class TrigeminalDataset(object):
-    def __init__(self, root, transforms=None): # transforms
-        self.root = root
-        self.transforms = transforms
-        self.imgdir = 'thumbnail_aligned'
-        self.maskdir = 'thumbnail_masked'
-        self.imgs = sorted(os.listdir(os.path.join(root, self.imgdir)))
-        self.masks = sorted(os.listdir(os.path.join(root, self.maskdir)))
-
-
-
-    def __getitem__(self, idx):
-        # idx sometimes goes over the nr of training images, add logic to keep it lower
-        if idx >= 80:
-          idx = np.random.randint(80, size=1)[0]
-        # print(idx)
-        # load images ad masks
-        # print('idx:', idx)
-        img_path = os.path.join(self.root, 'thumbnail_aligned', self.imgs[idx])
-        # print('img_path', self.imgs[idx])
-        mask_path = os.path.join(self.root, 'thumbnail_masked', self.masks[idx])
-
-        img = Image.open(img_path).convert("L")
-        # note that we haven't converted the mask to RGB,
-        # because each color corresponds to a different instance
-        # with 0 being background
-        mask = Image.open(mask_path)
-        # convert the PIL Image into a numpy array
-        mask = np.array(mask)
-        # instances are encoded as different colors
-        obj_ids = np.unique(mask)
-        # first id is the background, so remove it
-        obj_ids = obj_ids[1:]
-
-        # split the color-encoded mask into a set
-        # of binary masks
-        masks = mask == obj_ids[:, None, None]
-
-        # get bounding box coordinates for each mask
-        num_objs = len(obj_ids)
-        # print(num_objs)
-        boxes = []
-        for i in range(num_objs):
-          pos = np.where(masks[i])
-          xmin = np.min(pos[1])
-          xmax = np.max(pos[1])
-          ymin = np.min(pos[0])
-          ymax = np.max(pos[0])
-          # Check if area is larger than a threshold
-          A = abs((xmax-xmin) * (ymax-ymin)) 
-          # print(A)
-          if A < 5:
-            print('Nr before deletion:', num_objs)
-            obj_ids=np.delete(obj_ids, [i])
-            # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
-            print('Nr after deletion:', len(obj_ids))
-            continue
-            # xmax=xmax+5 
-            # ymax=ymax+5
-
-          boxes.append([xmin, ymin, xmax, ymax])
-
-        # print('nr boxes is equal to nr ids:', len(boxes)==len(obj_ids))
-        num_objs = len(obj_ids)
-        # convert everything into a torch.Tensor
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
-        # there is only one class
-        labels = torch.ones((num_objs,), dtype=torch.int64)
-        masks = torch.as_tensor(masks, dtype=torch.uint8)
-
-        image_id = torch.tensor([idx])
-        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
-        # suppose all instances are not crowd
-        iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
-
-
-        target = {}
-        target["boxes"] = boxes
-        target["labels"] = labels
-        target["masks"] = masks
-        target["labels"] = labels # Not sure if this is needed
-
-
-        if self.transforms is not None:
-            img, target = self.transforms(img, target)
-            return img, target
-
-        return img, target
-
-
-    def __len__(self):
-        return len(self.imgs)
-
-class TrigeminalDatasetXXX(torch.utils.data.Dataset):
+class TrigeminalDataset(torch.utils.data.Dataset):
     def __init__(self, root, transforms=None):
         self.root = root
         self.transforms = transforms
@@ -189,7 +96,10 @@ class TrigeminalDatasetXXX(torch.utils.data.Dataset):
         # load images and bounding boxes
         img_path = os.path.join(self.root, self.imgdir, self.imgs[idx])
         mask_path = os.path.join(self.root, self.maskdir, self.masks[idx])
-        img = Image.open(img_path).convert("L") # L = grayscale
+        img = Image.open(img_path) # L = grayscale, doesn't work with 16bit images
+        img16 = np.array(img)
+        img8 = (img16/256).astype('uint8')
+        pimg8 = Image.fromarray(img8)
 
         mask = Image.open(mask_path) # 
         mask = np.array(mask)
@@ -219,8 +129,6 @@ class TrigeminalDatasetXXX(torch.utils.data.Dataset):
             # print('Area smaller than 5! Box coordinates:', [xmin, ymin, xmax, ymax])
             print('Nr after deletion:', len(obj_ids))
             continue
-            # xmax=xmax+5 
-            # ymax=ymax+5
 
           boxes.append([xmin, ymin, xmax, ymax])
 
@@ -246,10 +154,10 @@ class TrigeminalDatasetXXX(torch.utils.data.Dataset):
         target["iscrowd"] = iscrowd
 
         if self.transforms is not None:
-            img, target = self.transforms(img, target)
-            return img, target
+            pimg8, target = self.transforms(pimg8, target)
+            return pimg8, target
 
-        return img, target
+        return pimg8, target
 
     def __len__(self):
         return len(self.imgs)
