@@ -15,7 +15,7 @@ class Assembler(BrainStructureManager):
             self.load_origins()
 
     def initialize_origins_and_volumes(self):
-        if not self.origins == {}:
+        if not len(self.origins) == 1:
             self.origins = np.array(list(self.origins.values()))
             self.volumes = list(self.volumes.values())
 
@@ -38,10 +38,10 @@ class Assembler(BrainStructureManager):
         return row_start, col_start, z_start, row_end, col_end, z_end
     
     def get_segment_to_id_where_segment_are_brain_regions(self):
-        db_structure_infos = self.sqlController.get_structures_dict()
+        db_structure_infos = self.sqlController.get_structures()
         segment_to_id = {}
-        for structure, (_, number) in db_structure_infos.items():
-            segment_to_id[structure] = number
+        for i in db_structure_infos:
+            segment_to_id[i.abbreviation] = i.id
         return segment_to_id
 
     def assemble_all_structure_volume(self,segment_to_id):
@@ -49,7 +49,7 @@ class Assembler(BrainStructureManager):
         size = self.get_bounding_box()
         size = size + np.array([10, 10, 10])
         self.combined_volume = np.zeros(size, dtype=np.uint8)
-        for i in range(len(self.structures)):
+        for i in range(len(self.volumes)):
             structure = self.structures[i]
             volume = self.volumes[i]
             row_start, col_start, z_start, row_end, col_end, z_end = self.get_structure_boundary(i)

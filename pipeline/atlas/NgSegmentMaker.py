@@ -57,7 +57,7 @@ class NgSegmentMaker(NgConverter):
         self.debug = debug
 
     def get_atlas_resolution(self):
-        self.fixed_brain = BrainStructureManager('MD589')
+        self.fixed_brain = BrainStructureManager('MD589',sql=True)
         resolution = self.fixed_brain.get_resolution()
         SCALE = 32
         return int(resolution * SCALE * 1000)
@@ -67,7 +67,7 @@ class NgSegmentMaker(NgConverter):
         return int(resolution * self.DOWNSAMPLE_FACTOR * 1000)
 
 class AtlasNgMaker(Atlas,NgSegmentMaker):
-    def __init__(self,atlas_name,debug = False,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0,offset = None):
+    def __init__(self,atlas_name,debug = False,out_folder = 'atlas_test',threshold = 0.9,sigma = 3.0,offset = [0,0,0]):
         Atlas.__init__(self,atlas_name)
         NgSegmentMaker.__init__(self, debug,out_folder=out_folder,offset=offset)
         self.assembler = AtlasAssembler(atlas_name, threshold=threshold,sigma = sigma)
