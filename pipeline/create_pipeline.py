@@ -20,7 +20,7 @@ see: src/python/create_py -h
 for more information.
 """
 import argparse
-import settings
+from settings import host as HOST, schema as SCHEMA, DATA_PATH
 from lib.pipeline import Pipeline
 
 
@@ -91,12 +91,6 @@ if __name__ == "__main__":
         "--debug", help="Enter true or false", required=False, default="false"
     )
     parser.add_argument(
-        "--host", help="Enter the DB host", required=False, default=settings.host
-    )
-    parser.add_argument(
-        "--schema", help="Enter the DB schema", required=False, default=settings.schema
-    )
-    parser.add_argument(
         "--clean",
         help="Remove prev DB entries and files",
         required=False,
@@ -116,18 +110,15 @@ if __name__ == "__main__":
     downsample = bool({"true": True, "false": False}[str(args.downsample).lower()])
     step = int(args.step)
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
-    host = args.host
-    schema = args.schema
     tg = bool({"true": True, "false": False}[str(args.tg).lower()])
 
-    DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root/"
     run_pipeline(
         animal,
         channel,
         downsample,
         DATA_PATH,
-        host,
-        schema,
+        HOST,
+        SCHEMA,
         tg,
         args.pad,
         args.clean,
