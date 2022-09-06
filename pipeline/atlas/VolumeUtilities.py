@@ -28,7 +28,7 @@ class VolumeUtilities:
         assert(hasattr(self, 'volumes'))
         shared_structures = set(self.COM.keys()).intersection(self.volumes.keys())
         volume_coms = np.array([center_of_mass(self.volumes[si]) for si in shared_structures]).astype(int)
-        average_com = np.array(list(self.COM.values()))
+        average_com = np.array([self.COM[si] for si in shared_structures])
         origins = average_com - volume_coms
         origins = (origins - origins.min(0)).astype(int) + 10
         values = [self.volumes[ki] for ki in shared_structures]

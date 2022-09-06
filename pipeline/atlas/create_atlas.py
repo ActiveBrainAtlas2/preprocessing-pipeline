@@ -1,6 +1,6 @@
 import sys
 import os
-sys.path.append(os.path.abspath('./..'))
+sys.path.append(os.path.abspath('./preprocessing-pipeline/pipeline/'))
 from atlas.FoundationContourAligner import FoundationContourAligner
 from atlas.BrainStructureManager import BrainStructureManager
 from atlas.VolumeMaker import VolumeMaker
@@ -36,14 +36,15 @@ def make_ng_file():
     atlas = 'atlasV8'
     debug = False
     maker = AtlasNgMaker(atlas, debug, threshold=0.9)
-    maker.assembler.assemble_all_structure_volume()
+    segment_to_id = maker.assembler.get_segment_to_id_where_segment_are_brain_regions()
+    maker.assembler.assemble_all_structure_volume(segment_to_id)
     maker.create_atlas_neuroglancer()
 
 
 if __name__ == '__main__':
-    animals = ['MD585', 'MD589', 'MD594']
-    for animal in animals:
-        align_contour(animal)
-        create_volume(animal)
-    merge_brains()
+    # animals = ['MD585', 'MD589', 'MD594']
+    # for animal in animals:
+    #     align_contour(animal)
+    #     create_volume(animal)
+    # merge_brains()
     make_ng_file()

@@ -77,8 +77,6 @@ class BrainStructureManager(Brain,VolumeUtilities):
     def set_structures(self,structures):
         if not hasattr(self,'structures'):
             self.structures = structures
-        else:
-            assert np.all(np.array(self.structures)==np.array(structures))
 
     def save_contours(self):
         assert(hasattr(self, 'original_structures'))
@@ -200,7 +198,7 @@ class BrainStructureManager(Brain,VolumeUtilities):
         return contours
 
     def get_segment_properties(self,structures_to_include = None):
-        db_structure_infos = self.sqlController.get_structures_dict()
+        db_structure_infos = self.sqlController.get_structure_description_and_color()
         if structures_to_include is None:
             segment_properties = [(number, f'{structure}: {label}') for structure, (label, number) in db_structure_infos.items()]
         else:
