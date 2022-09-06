@@ -60,22 +60,19 @@ class MetaUtilities:
 
                 mem_avail = psutil.virtual_memory().available
                 batch_size = mem_avail // (single_file_size * ram_coefficient)
-
-                print(
-                    f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-                )
-                self.logevent(
-                    f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-                )
+                msg = f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
+                print(msg)
+                self.logevent(msg)
                 
                 workers = self.get_nworkers()
                 self.run_commands_concurrently(parallel_extract_slide_meta_data_and_insert_to_database, file_keys, workers)
                 self.update_database()  # may/will need revisions for parallel
             else:
-                print("NOTHING TO PROCESS - SKIPPING")
-                self.logevent(f"NOTHING TO PROCESS - SKIPPING")
+                msg = "NOTHING TO PROCESS - SKIPPING"
+                print(msg)
+                self.logevent(msg)
         else:
-            self.logevent(f"ERROR IN CZI FILES (DUPLICATE) OR DB COUNTS")
+            self.logevent("ERROR IN CZI FILES (DUPLICATE) OR DB COUNTS")
             sys.exit()
 
     def get_user_entered_scan_id(self):
@@ -202,9 +199,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         czi.metadata = czi.extract_metadata_from_czi_file(czi_file, czi_org_path)
         return czi.metadata
 
-    def add_slide_information_to_database(
-        czi_org_path, scan_id, czi_metadata, animal, dbhost, dbschema
-    ):
+    def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal, dbhost, dbschema):
         """Add the meta information about image slides that are extracted from the czi file and add them to the database"""
         slide = Slide()
         slide.scan_run_id = scan_id
@@ -244,9 +239,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
                 tif.height = height
                 tif.scene_index = series_index
                 channel_counter += 1
-                newtif = "{}_S{}_C{}.tif".format(
-                    czi_org_path, scene_number, channel_counter
-                )
+                newtif = "{}_S{}_C{}.tif".format(czi_org_path, scene_number, channel_counter)
                 newtif = newtif.replace(".czi", "").replace("__", "_")
                 tif.file_name = os.path.basename(newtif)
                 tif.channel = channel_counter
@@ -258,7 +251,5 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
 
     infile, scan_id, channel, animal, host, schema = file_key
     czi_metadata = load_metadata(infile)
-    add_slide_information_to_database(
-        infile, scan_id, czi_metadata, animal, host, schema
-    )
+    add_slide_information_to_database(infile, scan_id, czi_metadata, animal, host, schema)
     return

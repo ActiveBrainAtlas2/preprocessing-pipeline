@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     if tg:
         ROOT = os.path.join(ROOT, 'tg')
-        dataset = TrigeminalDataset(ROOT, transforms = get_transform(train=False))
+        dataset = TrigeminalDataset(ROOT, transforms = get_transform(train=True))
     else:
         dataset = MaskDataset(ROOT, animal, transforms = get_transform(train=True))
 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     if debug:
         torch.manual_seed(1)
         indices = torch.randperm(len(dataset)).tolist()
-        indices = indices[0:10]
+        indices = indices[0:25]
         dataset = torch.utils.data.Subset(dataset, indices)
 
     workers = 1
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     # and a learning rate scheduler which decreases the learning rate by # 10x every 3 epochs
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
     epoch_losses = []
-    """
+    
 
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations model, optimizer, data_loader, device, epoch,
@@ -97,7 +97,7 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), modelpath)
     logfile.write(str(epoch_losses))
     logfile.write("\n")
-
+    """
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations
         mlogger = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
@@ -114,7 +114,6 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), modelpath)
     logfile.write(str(losses))
     logfile.write("\n")
-    """
 
     # Perform training loop for n epochs
     loss_list = []
@@ -141,6 +140,7 @@ if __name__ == '__main__':
 
     logfile.write(str(loss_list))
     logfile.write("\n")
+    """
 
 
     print('Finished with masks')
