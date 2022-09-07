@@ -52,7 +52,7 @@ def predict_mask(animal):
     loaded_model = load_machine_learning_model()
     transform = torchvision.transforms.ToTensor()
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'normalized')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
     TG_MASKS = os.path.join(fileLocationManager.masks, 'tg')
     os.makedirs(TG_MASKS, exist_ok=True)
 
@@ -67,17 +67,11 @@ def predict_mask(animal):
 
         #if not mask_dest_file.startswith("15"):
         #    continue
-
-
-        img = Image.open(filepath) # L = grayscale
-        img_arr = np.array(img)
-
-        if 'normal' in INPUT:
-            img8 = img_arr
-            pimg = img
-        else:
-            img8 = (img_arr/256).astype('uint8')
-            pimg = Image.fromarray(img8)
+        
+        img8 = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+        print(mask_dest_file, img8.dtype)
+        #img8 = (img16/256).astype('uint8')
+        pimg = Image.fromarray(img8)
 
         torch_input = transform(pimg)
         torch_input = torch_input.unsqueeze(0)
