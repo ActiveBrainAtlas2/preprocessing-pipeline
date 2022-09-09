@@ -8,6 +8,7 @@ import numpy as np
 # mean_s=stat['Mean']
 
 def sobel(img):
+    """ Compute the normalized sobel edge magnitudes """
     sobel_x = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
     sobel_y = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
     _mean=(np.mean(sobel_x)+np.mean(sobel_y))/2.
@@ -33,13 +34,22 @@ def equalize_array_size_by_trimming(array1,array2):
     return array1,array2
 
 def calc_img_features(img,mean_s):
+    """  
+         img = input image
+         mean_s: the untrimmed mean image
+         Computes the agreement between the gradient of the mean image and the gradient of this example
+         mean_x,mean_y = the gradients of the particular image
+         img_x,img_y = the gradients of the image
+
+    """
+         
     img,mean=equalize_array_size_by_trimming(img,mean_s)
     mean_x,mean_y=sobel(mean)
     img_x,img_y=sobel(img)
     
     dot_prod = (mean_x*img_x)+(mean_y*img_y)
-    corr=np.mean(dot_prod.flatten())
+    corr=np.mean(dot_prod.flatten())      #corr = the mean correlation between the dot products at each pixel location
     
     mag=np.sqrt(img_x*img_x + img_y*img_y)
-    energy=np.mean((mag*mean).flatten())
+    energy=np.mean((mag*mean).flatten())  #energy: the mean of the norm of the image gradients at each pixel location
     return corr,energy
