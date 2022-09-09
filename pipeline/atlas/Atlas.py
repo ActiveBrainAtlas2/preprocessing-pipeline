@@ -77,7 +77,7 @@ class AtlasInitiator(Atlas):
         self.threshold = threshold
         self.threshold_volumes()
         self.volumes = self.thresholded_volumes
-        self.com = com_function()
+        self.COM = com_function()
         self.structures = list(self.COM.keys())
         self.convert_unit_of_com_dictionary(self.COM,conversion_factor)
         self.origins = self.get_origin_from_coms()
