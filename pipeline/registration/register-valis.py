@@ -1,7 +1,15 @@
+import os
 from valis import registration, feature_detectors, non_rigid_registrars, affine_optimizer
-slide_src_dir = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK37/preps/CH1/thumbnail"
-results_dst_dir = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK37/preps/CH1/results"
-registered_slide_dst_dir = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK37/preps/CH1/registered"
+
+animal = 'DK37'
+ROOT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
+
+slide_src_dir = os.path.join(ROOT, animal, 'preps/CH1/thumbnail_aligned')
+results_dst_dir = os.path.join(ROOT, animal, 'preps/CH1/registration_results')
+registered_slide_dst_dir = os.path.join(ROOT, animal, 'preps/CH1/registered')
+
+os.makedirs(results_dst_dir, exist_ok=True)
+os.makedirs(registered_slide_dst_dir, exist_ok=True)
 
 
 # Select feature detector, affine optimizer, and non-rigid registration method.
