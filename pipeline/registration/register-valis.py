@@ -30,6 +30,7 @@ def run_valis(animal):
                                 non_rigid_registrar_cls=non_rigid_registrar_cls)
 
     registrar.imgs_ordered=True
+    registrar.max_processed_image_dim_px=2000
 
     rigid_registrar, non_rigid_registrar, error_df = registrar.register()
 
