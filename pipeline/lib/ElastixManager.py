@@ -42,9 +42,7 @@ class ElastixManager:
         each brain.
         """
         if self.channel == 1 and self.downsample:
-            INPUT = os.path.join(
-                self.fileLocationManager.prep, "CH1", "thumbnail_cleaned"
-            )
+            INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_cleaned")
             files = sorted(os.listdir(INPUT))
             nfiles = len(files)
             self.logevent(f"INPUT FOLDER: {INPUT}")
