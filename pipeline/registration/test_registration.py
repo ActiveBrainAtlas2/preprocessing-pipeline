@@ -1,6 +1,8 @@
 import os
+import sys
 import numpy as np
 from skimage import io
+from scipy.ndimage import zoom
 
 from rigid_transform_3D import rigid_transform_3D
 
@@ -20,28 +22,33 @@ if np.linalg.det(R) < 0:
    R = U@Vt
 
 # number of points
-n = 10
+n = 5
 
 
 animal = 'DK55'
 ROOT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
-
-boundary_path = os.path.join(ROOT, animal, 'preps/CH1/brainreg_allen', 'boundaries.tiff')
-downsampled_path = os.path.join(ROOT, animal, 'preps/CH1/brainreg_allen', 'downsampled.tiff')
+#boundary_path = os.path.join(ROOT, animal, 'preps/CH1/brainreg_allen', 'boundaries.tiff')
+#downsampled_path = os.path.join(ROOT, animal, 'preps/CH1/brainreg_allen', 'downsampled.tiff')
 #A = io.imread(boundary_path)
-B = io.imread(downsampled_path)
-#A = np.random.rand(3, n)
-A = np.array([[[1,2,3,4,5],
+#B = io.imread(downsampled_path)
+#A = np.random.rand(3, n, 1)
+#A = np.zeros(3,n)
+A = np.array(
+    [[1,2,3,4,5],
     [1,2,3,4,5],
-    [1,2,3,4,5]],
-
-   [[11,22,33,44,55],
-    [11,22,33,44,55],
-    [11,22,33,44,55]]])
-
+    [1,2,3,4,5]]
+    ).astype(np.uint8)
+B = np.array(
+   [[2,3,4,5,6],
+    [2,3,4,5,78],
+    [2,3,4,5,6]]
+    ).astype(np.uint8)
 print("info on Points A")
 print(A.dtype, A.shape, A.ndim)
-print(A)
+An = zoom(A, (1.5, 1.5))
+print(An.dtype, An.shape, An.ndim)
+print(An)
+sys.exit()
 #B = R@A + t
 
 # Recover R and t
@@ -56,13 +63,6 @@ err = err * err
 err = np.sum(err)
 rmse = np.sqrt(err/n)
 
-print("info on Points A")
-print(A.dtype, A.shape)
-print("")
-
-print("Info on Points B")
-print(B.dtype, B.shape)
-print("")
 
 print("Ground truth rotation")
 print(R)
