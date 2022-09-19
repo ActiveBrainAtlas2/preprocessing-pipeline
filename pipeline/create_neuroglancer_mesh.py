@@ -32,7 +32,7 @@ def create_mesh(animal, limit, mse, downsample):
     fileLocationManager = FileLocationManager(animal)
     xy = sqlController.scan_run.resolution * 1000
     z = sqlController.scan_run.zresolution * 1000
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'boundary')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'zoomed_boundary')
     OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
     OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh')
     PROGRESS_DIR = fileLocationManager.get_neuroglancer_progress(downsample, 1)

@@ -31,6 +31,7 @@ for i in tqdm(range(0, endsection, 1)):
     img = arr[:,:,i]
     img = np.rot90(img, 3)
     img = np.flip(img, axis=1)
+    img[img > 0] = 255
     sagittal_arr[:,:,i] = img    
 
 sagittal_arr = sagittal_arr.astype(np.uint8)
