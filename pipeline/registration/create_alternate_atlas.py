@@ -25,7 +25,7 @@ print(f'midfile into {midfile}, {mid_arr.shape}, {z}')
 boundary_outpath = os.path.join(ROOT, animal, 'preps/CH1/boundary')
 os.makedirs(boundary_outpath, exist_ok=True)
 arr = volume.copy()
-sagittal_arr = np.zeros((arr.shape[1], arr.shape[0], arr.shape[2]))
+sagittal_arr = np.zeros((mid_arr.shape[0], mid_arr.shape[1], z))
 endsection = arr.shape[2]   
 for i in tqdm(range(0, endsection, 1)):
     img = arr[:,:,i]
@@ -61,6 +61,6 @@ for i in tqdm(range(0, endsection, 1)):
     img = np.rot90(img, 3)
     img = np.flip(img, axis=1)
     f = str(i).zfill(3) + '.tif'
-    outpath = os.path.join(boundary_outpath, f)
+    outpath = os.path.join(zoomed_boundary_outpath, f)
     cv2.imwrite(outpath, img)
     
