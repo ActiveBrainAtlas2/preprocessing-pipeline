@@ -25,7 +25,7 @@ print(f'midfile into {midfile}, {mid_arr.shape}, {z}')
 boundary_outpath = os.path.join(ROOT, animal, 'preps/CH1/boundary')
 os.makedirs(boundary_outpath, exist_ok=True)
 arr = volume.copy()
-sagittal_arr = np.zeros((mid_arr.shape[0], mid_arr.shape[1], z))
+sagittal_arr = np.zeros((arr.shape[1], arr.shape[0], z))
 endsection = arr.shape[2]   
 for i in tqdm(range(0, endsection, 1)):
     img = arr[:,:,i]
