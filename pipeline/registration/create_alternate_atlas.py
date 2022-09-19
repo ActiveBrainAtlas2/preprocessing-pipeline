@@ -58,8 +58,9 @@ os.makedirs(zoomed_boundary_outpath, exist_ok=True)
 endsection = zoomed_sagittal_arr.shape[2]   
 for i in tqdm(range(0, endsection, 1)):
     img = zoomed_sagittal_arr[:,:,i]
-    img = np.rot90(img, 3)
-    img = np.flip(img, axis=1)
+    #img = np.rot90(img, 3)
+    #img = np.flip(img, axis=1)
+    img = img.astype(np.uint8)
     f = str(i).zfill(3) + '.tif'
     outpath = os.path.join(zoomed_boundary_outpath, f)
     cv2.imwrite(outpath, img)
