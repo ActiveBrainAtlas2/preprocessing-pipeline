@@ -8,8 +8,8 @@ from scipy.ndimage import zoom
 animal = 'DK55'
 ROOT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
 
-boundary_tiff_path = os.path.join(ROOT, animal, 'preps/CH1/brainreg_allen', 'boundaries.tiff')
-boundary_np_path = os.path.join(ROOT, animal, 'preps/CH1/brainreg_allen', 'boundary.npy')
+boundary_tiff_path = os.path.join(ROOT, animal, 'preps/CH1/allen_mouse_25um', 'boundaries.tiff')
+#boundary_np_path = os.path.join(ROOT, animal, 'preps/CH1/brainreg_allen', 'boundary.npy')
 volume = io.imread(boundary_tiff_path)
 
 print(f'volume info {volume.shape}, {volume.dtype}')
