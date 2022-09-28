@@ -10,7 +10,6 @@ class UrlModel(Base, AtlasModel):
     id =  Column(Integer, primary_key=True, nullable=False)
     url = Column(String, nullable=False)
     person_id = Column(Integer, nullable=False)
-    vetted = Column(Boolean, default=False, nullable=False)
     updated = Column(TIMESTAMP)
     comments = Column(String)
 
