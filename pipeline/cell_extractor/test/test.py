@@ -1,7 +1,6 @@
 import sys
-sys.path.append('/data/preprocessing-pipeline/in_development/Will')
-from cell_extractor.CellDetectorBase import CellDetectorBase
-from cell_extractor.CellDetector import CellDetector
-from cell_extractor.ExampleFinder import create_examples_for_one_section 
-
-create_examples_for_one_section(animal='DK4',section=180,round=2,disk = '/scratch/',segmentation_threshold=2100)
+import os
+sys.path.append(os.path.abspath('./preprocessing-pipeline/pipeline'))
+from cell_extractor.QcGenerater import QcGenerater
+generater = QcGenerater('DK41',3)
+generater.get_sure_and_unsure_cells([500,500])
