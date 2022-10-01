@@ -1,5 +1,5 @@
 from Controllers.AnnotationSessionController import AnnotationSessionController
-from model.annotation_points import CellSources,MarkedCell,MarkedCellView
+from model.annotation_points import CellSources, MarkedCell, MarkedCellView
 from model.cell_type import CellType
 from Controllers.Controller import Controller
 import numpy as np

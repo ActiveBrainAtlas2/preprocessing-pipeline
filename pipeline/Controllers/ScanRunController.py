@@ -13,10 +13,10 @@ class ScanRunController(Controller):
     def scan_run_exists(self,animal):
         return self.row_exists(dict(prep_id = animal),ScanRun)
     
-    def get_scan_run(self,animal):
-        search_dictionary = dict(prep_id = animal)
-        return self.get_row(search_dictionary,ScanRun)
-    
+    def get_scan_run(self, animal):
+        search_dictionary = dict(prep_id=animal)
+        return self.get_row(search_dictionary, ScanRun)
+
     def update_scanrun(self, id):
         width = self.session.query(func.max(SlideCziTif.width)).join(Slide).join(ScanRun)\
             .filter(SlideCziTif.active == True) \
