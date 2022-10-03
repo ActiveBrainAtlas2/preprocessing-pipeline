@@ -1,6 +1,9 @@
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.dirname(__file__)+'/../../'))
 from cell_extractor.CellDetector import detect_cell
 import argparse
-from cell_extractor.CellDetectorBase import CellDetectorBase
+
 
 def run_from_terminal():
     parser = argparse.ArgumentParser()
@@ -14,13 +17,7 @@ def run_from_terminal():
     detect_cell(braini,disk = disk,round=round)
 
 def run_as_script():
-    base = CellDetectorBase()
-    animals = base.get_available_animals()
-    animals.remove('DK39')
-    animals.remove('DK78')
-    for animali in animals:
-        print(f'detectiong cells for {animali}')
-        detect_cell(animali,disk = '/net/birdstore/Active_Atlas_Data',round=2,segmentation_threshold=2000)
+    detect_cell('DK61',disk = '/net/birdstore/Active_Atlas_Data',round=3,segmentation_threshold=2000)
 
 if __name__ =='__main__':
     # run_from_terminal()
