@@ -44,10 +44,10 @@ be tested against the database.
 The following lines taken from the README.md file
 
 1. Classes
-    1. [Atlas class](../Atlas.Class.md)
-    1. [Cell dectector class](../cell_detection/CellDetector.Class.md)
-    1. [Django class](https://activebrainatlasadmin.readthedocs.io)
-    1. [Pipeline class](../Pipeline.Class.md)
+    1. [Atlas class](../Atlas.Class.md)  one line
+    1. [Cell dectector class](../cell_detection/CellDetector.Class.md)  Several one-line sections
+    1. [Django class](https://activebrainatlasadmin.readthedocs.io)  Uses automatic documentation generation - the gold standard.
+    1. [Pipeline class](../Pipeline.Class.md) One line
 
 of these only the Django Class points to extensive documentation, generated using readthedocs, probably by Ed.
 The rest are one line descriptions that explain very little.
