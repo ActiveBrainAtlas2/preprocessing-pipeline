@@ -36,4 +36,4 @@ There are two types of testing:
 
 Currently, we have no systematic unit tests and the extarnal tests are not done systematically.
 
-To organize the internal tests there are well established open-source frameworks, such as `systest` and `unittest`
+To organize the internal tests there are well established open-source Frameworks, such as `systest` and `unittest`
