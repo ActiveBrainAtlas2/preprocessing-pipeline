@@ -6,14 +6,17 @@
 2. **Readability** All terms need to be explained before they are used, examples: django, controller, URL ...
 3. **limited scope** Each document file should explain a limited, well define subject. Different subjects should be described in different files.
 4. **information hiding** There is a consistent hierarchy in the documentation where each level hides non-critical aspects of the code below it, exposes minimal set of parameters that are used at higher levels. 
-5. Automatic generation, using tools such as Sphinx the documentation is combined with the code. A compiler can then be used that translates the documentation into a easy to navvigate web format.
+5. **Automatic generation**, using tools such as Sphinx the documentation is combined with the code. A compiler can then be used that translates the documentation into a easy to navvigate web format.
+Ed has done this using sphinx and readthedocs: https://activebrainatlasadmin.readthedocs.io/en/latest/index.html
+
+## Plan
+We start with Ed's documentation and add to it the content for the currently undocumented packages.
 
 ## Issues with current programmer documentation.
 
 1. **Incompleteness:** The file lsr-code.txt lists all of the files in the pipeliine directory, there are about 1000 files in this directory. I found no reference to any individual files in the programmer documentation.
 2. **confusing terminology** Are we calling *all* of the code the "pipeline", or is the piepline specific to what is sometime called the "czi.2.neuroglancer" code? I think that structure detection, marked cell detection and alignment should be in separate directories.
-3. **Strong dependenciess between the code and the database** This issue is a documentation issue and a design issue: a lot of the code is written specifically to work with the database and with django. This makes it harder to understand the code and to isolate bugs.  The django code should have a common and simple API so that the rest of the code does not have to be changed if we choose to switch from django to something else or if we want to give a part of the code (for example the marked cell detector) to anther lab.
-4. The file ` programmer/high.level.overall.design.of.projects.md `  is incoherent and too long. I wrote what I believe is a better version in 
+4. The file ` programmer/high.level.overall.design.of.projects.md `  is incoherent and too long. I wrote what I believe is a better version in [high.level.doc.dir/high.level.overall.design.of.projects.md](high.level.doc.dir/high.level.overall.design.of.projects.md)
 
 ### Goals for user Documentation
 
@@ -30,6 +33,7 @@ There are two types of testing:
 * Internal unit-tests: Tests suits are run through scripts to check each class whether its publc methods work as expected. The tests are written by programmers but are run automatically after each addition or change.
 * External Usability tests: Test are done by users (not programmers) to evaluate whether the system as expected.
 
+
 Currently, we have no systematic unit tests and the extarnal tests are not done systematically.
 
-To organize the internal tests there are many well established frameworks, such as `systest` and `unittest`
+To organize the internal tests there are well established open-source frameworks, such as `systest` and `unittest`
