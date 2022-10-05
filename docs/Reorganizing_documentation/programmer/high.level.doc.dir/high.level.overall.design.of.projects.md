@@ -40,6 +40,18 @@ be tested against the database.
 
 ## Main modules
 
+## Current documentation for some of the models 
+The following lines taken from the README.md file
+
+1. Classes
+    1. [Atlas class](programmer/Atlas.Class.md)
+    1. [Cell dectector class](programmer/CellDetector.Class.md)
+    1. [Django class](https://activebrainatlasadmin.readthedocs.io)
+    1. [Pipeline class](programmer/Pipeline.Class.md)
+
+of these only the Django Class points to extensive documentation, generated using readthedocs, probably by Ed.
+The rest are one line descriptions that explain very little.
+
 Each of the following modules should be explained
 
 * Controllers
