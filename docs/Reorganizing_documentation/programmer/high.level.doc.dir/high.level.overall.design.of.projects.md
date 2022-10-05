@@ -44,7 +44,7 @@ be tested against the database.
 The following lines taken from the README.md file
 
 1. Classes
-    1. [Atlas class](../programmer/Atlas.Class.md)
+    1. [Atlas class](../Atlas.Class.md)
     1. [Cell dectector class](../programmer/CellDetector.Class.md)
     1. [Django class](https://activebrainatlasadmin.readthedocs.io)
     1. [Pipeline class](../programmer/Pipeline.Class.md)
