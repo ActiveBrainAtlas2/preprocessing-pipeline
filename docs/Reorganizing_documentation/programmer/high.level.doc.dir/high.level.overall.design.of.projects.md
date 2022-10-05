@@ -45,7 +45,7 @@ The following lines taken from the README.md file
 
 1. Classes
     1. [Atlas class](../Atlas.Class.md)
-    1. [Cell dectector class](../CellDetector.Class.md)
+    1. [Cell dectector class](../cell_detection/CellDetector.Class.md)
     1. [Django class](https://activebrainatlasadmin.readthedocs.io)
     1. [Pipeline class](../Pipeline.Class.md)
 
