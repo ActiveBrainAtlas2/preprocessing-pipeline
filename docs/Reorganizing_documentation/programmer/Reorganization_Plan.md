@@ -9,6 +9,9 @@
 5. **Automatic generation**, using tools such as Sphinx the documentation is combined with the code. A compiler can then be used that translates the documentation into a easy to navvigate web format.
 Ed has done this using sphinx and readthedocs: https://activebrainatlasadmin.readthedocs.io/en/latest/index.html
 
+## Plan
+We start with Ed's documentation and add to it the content for the currently undocumented packages.
+
 ## Issues with current programmer documentation.
 
 1. **Incompleteness:** The file lsr-code.txt lists all of the files in the pipeliine directory, there are about 1000 files in this directory. I found no reference to any individual files in the programmer documentation.
