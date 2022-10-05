@@ -13,7 +13,7 @@ Ed has done this using sphinx and readthedocs: https://activebrainatlasadmin.rea
 
 1. **Incompleteness:** The file lsr-code.txt lists all of the files in the pipeliine directory, there are about 1000 files in this directory. I found no reference to any individual files in the programmer documentation.
 2. **confusing terminology** Are we calling *all* of the code the "pipeline", or is the piepline specific to what is sometime called the "czi.2.neuroglancer" code? I think that structure detection, marked cell detection and alignment should be in separate directories.
-4. The file ` programmer/high.level.overall.design.of.projects.md `  is incoherent and too long. I wrote what I believe is a better version in [high.level.overall.design.of.projects.md](./high.level.overall.design.of.projects.md)
+4. The file ` programmer/high.level.overall.design.of.projects.md `  is incoherent and too long. I wrote what I believe is a better version in [high.level.doc.dir/high.level.overall.design.of.projects.md](high.level.doc.dir/high.level.overall.design.of.projects.md)
 
 
 
