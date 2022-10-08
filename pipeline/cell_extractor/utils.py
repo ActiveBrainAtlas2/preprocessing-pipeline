@@ -9,7 +9,7 @@ from cell_extractor.BorderFinder import BorderFinder
 from cell_extractor.CellDetector import MultiThresholdDetector
 from cell_extractor.CellAnnotationUtilities import CellAnnotationUtilities
 
-def numpy_to_json(data,color_hex = None,category = 'Round3_Sure'):
+def numpy_to_json(data,color_hex = None,category = 'Round3_Sure',description = None):
     cells = []
     for coord in data:
         cell = Cell(np.array(coord,dtype=float),random_string())
@@ -17,9 +17,12 @@ def numpy_to_json(data,color_hex = None,category = 'Round3_Sure'):
         cell.coord[-1]=cell.coord[-1]+0.5
         if hasattr(cell,'description'):
             del cell.description
+        if description is not None:
+            cell.description = description
         cell_json = cell.to_json()
         if color_hex is not None:
             cell_json["props"] = [color_hex]
+        
         cells.append(cell_json)
     return cells
 
