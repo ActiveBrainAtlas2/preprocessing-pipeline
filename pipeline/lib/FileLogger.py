@@ -6,7 +6,7 @@ from datetime import datetime
 class FileLogger:
     def __init__(self, LOGFILE_PATH):
         """
-        -SET CONFIG FOR LOGGING
+        -SET CONFIG FOR LOGGING TO FILE; ABILITY TO OUTPUT TO STD OUTPUT AND FILE
 
         """
 
