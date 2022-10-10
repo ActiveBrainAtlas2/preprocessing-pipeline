@@ -1,56 +1,42 @@
-import os
-import subprocess
+import os, sys
 from pathlib import Path
 import logging
-import socket
 from datetime import datetime
-from model.log import Log
-
 
 class FileLogger:
     def __init__(self, LOGFILE_PATH):
         """
-        -CHECK FOR PRESENCE OF LOG FILE (RW PERMISSION)
         -SET CONFIG FOR LOGGING
+
         """
 
         LOGFILE = os.path.join(LOGFILE_PATH, "pipeline-process.log")
-        try:
-            with open(LOGFILE, "a") as f:
-                pass
-        except FileNotFoundError:
-            print("CREATED LOGFILE @ ", LOGFILE)
-            Path(LOGFILE).touch()
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG) #THRESHOLD FOR LOGGER
+        formatter = logging.Formatter("%(message)s")
 
-        logging.basicConfig(filename=LOGFILE, level=logging.INFO, format="%(message)s")
+        # 'FOR LOOP' REMOVES DUAL LOGGING TO CONSOLE + FILE
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+
+        # Create file handler for INFO and up (INFO, WARNING, ERROR, CRITICAL)
+        fh = logging.FileHandler(LOGFILE)
+        fh.setLevel(logging.INFO)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+
+        # CONSOLE + LOG FILE
+        # logger = logging.getLogger(__name__)
+        # logger.setLevel(logging.DEBUG)
+        # fh = logging.FileHandler(LOGFILE)
+        # formatter = logging.Formatter("%(message)s")
+        # fh.setFormatter(formatter)
+        # logger.addHandler(fh)
+
+        self.filelogger = logger
+
 
     def logevent(self, msg: str):
         timestamp = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
-        logging.info(f"{timestamp} - {msg}")
+        self.filelogger.info(f"{timestamp} - {msg}")
         return timestamp
-
-
-# PREVIOUS VERSION BELOW (LOG TO DB)
-class DatabaseHandler(logging.Handler):
-    def __init__(self, session):
-        super().__init__()
-        self.session = session
-
-    def emit(self, record):
-        log = Log(
-            prep_id=record.name,
-            level=record.levelname,
-            logger=record.module,
-            msg=record.msg,
-        )
-        self.session.add(log)
-        self.session.commit()
-
-
-def get_logger(prep_id, session, level=logging.INFO):
-    handler = DatabaseHandler(session)
-    logger = logging.getLogger(prep_id)
-    logger.setLevel(level)
-    logger.addHandler(handler)
-
-    return logger
