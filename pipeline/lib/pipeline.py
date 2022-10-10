@@ -44,7 +44,7 @@ class Pipeline(
     ElastixManager,
     NgPrecomputedMaker,
     NgDownsampler,
-    FileLogger,
+    FileLogger
 ):
     """
     This is the main class that handles the preprocessing pipeline responsible for converting Zeiss microscopy images (.czi) into neuroglancer
@@ -125,8 +125,8 @@ class Pipeline(
         If the check failed, check the workernoshell.err.log in your project directory for more information
         """
         start_time = timer()
-        os.environ["_JAVA_OPTIONS"] = "-Xmx10g"  # DEPRECATED - JUN-2022?
-        os.environ["export CV_IO_MAX_IMAGE_PIXELS"] = "21474836480"  # DEPRECATED - JUN-2022?
+        # os.environ["_JAVA_OPTIONS"] = "-Xmx10g"  # DEPRECATED - JUN-2022? (REMOVE)
+        # os.environ["export CV_IO_MAX_IMAGE_PIXELS"] = "21474836480"  # DEPRECATED - JUN-2022? (REMOVE)
 
         error = ""
         if not os.path.exists("/usr/local/share/bftools/showinf"):
@@ -154,7 +154,6 @@ class Pipeline(
         """
         print(function_name, end="")
         start_time = timer()
-
         self.logevent(f"START  {str(function_name)}, downsample: {str(self.downsample)}")
 
         function()  # RUN FUNCTION
