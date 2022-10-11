@@ -71,10 +71,10 @@ class MaskManager:
 
     def create_mask(self):
         """Create the images masks for extracting the tissue from the surrounding debres using a CNN based machine learning algorithm"""
-        if not self.downsample:
-            self.create_full_resolution_mask()
-        else:
+        if self.downsample:
             self.create_downsampled_mask()
+        else:
+            self.create_full_resolution_mask()
 
     def load_machine_learning_model(self):
         """Load the CNN model used to generate image masks"""
