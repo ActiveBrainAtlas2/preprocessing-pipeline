@@ -1,5 +1,6 @@
 import os
 import cv2
+import sys
 import numpy as np
 from skimage import io
 from utilities.utilities_mask import equalized
@@ -21,7 +22,11 @@ class Normalizer:
                 outpath = os.path.join(OUTPUT, file)
                 if os.path.exists(outpath):
                     continue
-                img = io.imread(infile)
+                try:
+                    img = io.imread(infile)
+                except:
+                    print(f' Could not open {infile}')
+                    sys.exit()
                 if img.dtype == np.uint16:
                     img = (img / 256).astype(np.uint8)
                 fixed = equalized(img)
