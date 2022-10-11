@@ -30,6 +30,7 @@ def place_image(img, file, max_width, max_height, bgcolor=None):
     :param bgcolor: background color of image, 0 for NTB, white for thionin
     :return: placed image centered in the correct size.
     """
+
     zmidr = max_height // 2
     zmidc = max_width // 2
     startr = zmidr - (img.shape[0] // 2)
@@ -47,7 +48,7 @@ def place_image(img, file, max_width, max_height, bgcolor=None):
         try:
             new_img[startr:endr, startc:endc] = img
         except:
-            print(f'Could not place 2DIM {file} with width:{img.shape[1]}, height:{img.shape[0]} in {max_width}x{max_height}')
+            print(f'Could not place 2DIM {file} with width:{img.shape[1]}, height:{img.shape[0]} in {max_width}x{max_height} - rotate image?')
     if img.ndim == 3:
         try:
             new_img = np.zeros([max_height, max_width, 3]) + bgcolor
