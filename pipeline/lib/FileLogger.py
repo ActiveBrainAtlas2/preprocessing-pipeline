@@ -1,4 +1,5 @@
 import os, sys
+from os import environ
 from pathlib import Path
 import logging
 from datetime import datetime
@@ -11,6 +12,11 @@ class FileLogger:
         """
 
         LOGFILE = os.path.join(LOGFILE_PATH, "pipeline-process.log")
+
+        # SET ENV FOR OTHER [NON-PIPELINE] MODULES
+        if environ.get("LOGFILE_PATH") is None:
+            os.environ["LOGFILE_PATH"] = LOGFILE_PATH
+
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG) #THRESHOLD FOR LOGGER
         formatter = logging.Formatter("%(message)s")
