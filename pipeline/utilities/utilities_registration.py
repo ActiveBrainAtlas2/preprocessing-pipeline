@@ -242,7 +242,7 @@ def rotate_and_align_image(moving, fixed):
     rotation_angle = (theta_fixed - theta_moving) % (2 * np.pi)
     return rotation_angle, np.flip(offset), np.flip(center_moving)
 
-def align_elastix(fixed,moving, debug,tries=10):
+def align_elastix(fixed,moving, debug, tries=10):
     for _ in range(tries):
         try:
             elastixImageFilter = sitk.ElastixImageFilter()
@@ -362,7 +362,10 @@ def align_elastix(fixed,moving, debug,tries=10):
             ## 80 good results, 7 minutes on basalis with 4 jobs
             ## 200 good results except for 1st couple were not aligned, 12 minutes
             ## 500 is best, including first sections, basalis took 21 minutes
-            rigid_params["MaximumNumberOfIterations"] = ["1000"]
+            num_iterations = "1000"
+            if debug:
+                num_iterations = "100"
+            rigid_params["MaximumNumberOfIterations"] = [num_iterations]
             ## The step size of the optimizer, in mm. By default the voxel size is used.
             ## which usually works well. In case of unusual high-resolution images
             ## (eg histology) it is necessary to increase this value a bit, to the size
