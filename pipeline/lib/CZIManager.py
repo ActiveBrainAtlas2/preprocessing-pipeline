@@ -1,5 +1,6 @@
-from PIL import Image
+import os
 import cv2
+from PIL import Image
 from aicspylibczi import CziFile
 from aicsimageio import AICSImage, imread
 from utilities.utilities_mask import equalized
@@ -10,6 +11,10 @@ class CZIManager(FileLogger):
     def __init__(self, czi_file):
         self.czi_file = czi_file
         self.file = CziFile(czi_file)
+
+        LOGFILE_PATH = os.environ["LOGFILE_PATH"]
+        super().__init__(LOGFILE_PATH)
+
 
     def extract_metadata_from_czi_file(self, czi_file, czi_file_path):
         czi_aics = AICSImage(czi_file_path)
