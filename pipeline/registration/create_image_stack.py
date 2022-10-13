@@ -11,6 +11,7 @@ import sys
 import numpy as np
 from pathlib import Path
 from skimage import io
+from tqdm import tqdm
 
 
 
@@ -39,7 +40,7 @@ def create_volume(animal):
     OUTPUT = os.path.join(fileLocationManager.prep, 'CH1', 'image_stack.tif')
     files, volume_size = get_file_information(INPUT)
     image_stack = np.zeros(volume_size)
-    for i in range(len(files)):
+    for i in tqdm(range(len(files))):
         ffile = str(i).zfill(3) + '.tif'
         fpath = os.path.join(INPUT, ffile)
         farr = io.imread(fpath)
