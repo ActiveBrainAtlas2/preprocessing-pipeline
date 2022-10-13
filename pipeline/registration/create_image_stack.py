@@ -45,7 +45,7 @@ def create_volume(animal):
         fpath = os.path.join(INPUT, ffile)
         farr = io.imread(fpath)
         image_stack[:,:,i] = farr
-    io.imsave(OUTPUT, image_stack)
+    io.imsave(OUTPUT, image_stack.astype(np.uint16))
 
 
 
