@@ -9,9 +9,9 @@ All imports are listed by the order in which they are used in the
 
 import os
 import sys
-from shutil import which
 import shutil
 import threading
+from timeit import default_timer as timer
 
 from lib.FileLocationManager import FileLocationManager
 from lib.MetaUtilities import MetaUtilities
@@ -20,8 +20,6 @@ from lib.NgPrecomputedMaker import NgPrecomputedMaker
 from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
-from timeit import default_timer as timer
-from Controllers.SqlController import SqlController
 from lib.FileLogger import FileLogger
 from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
@@ -30,6 +28,7 @@ from lib.MaskManager import MaskManager
 from lib.ImageCleaner import ImageCleaner
 from lib.HistogramMaker import HistogramMaker
 from lib.ElastixManager import ElastixManager
+from Controllers.SqlController import SqlController
 
 
 class Pipeline(
@@ -127,14 +126,8 @@ class Pipeline(
         start_time = timer()
         
         error = ""
-        if not os.path.exists("/usr/local/share/bftools/showinf"):
-            error += "showinf in bftools is not installed"
-        if not os.path.exists("/usr/local/share/bftools/bfconvert"):
-            error += "\nbfconvert in bftools is not installed"
         if not os.path.exists("/usr/bin/identify"):
             error += "\nImagemagick is not installed"
-        if not which("java"):
-            error += "\njava is not installed"
 
         if len(error) > 0:
             print(error)
