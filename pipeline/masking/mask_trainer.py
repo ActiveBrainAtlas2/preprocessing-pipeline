@@ -82,6 +82,7 @@ if __name__ == '__main__':
     
 
     """
+    # version with train_an_epoch
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations model, optimizer, data_loader, device, epoch,
         epoch_loss = train_an_epoch(model, optimizer, data_loader, device, epoch)
@@ -98,6 +99,8 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), modelpath)
     logfile.write(str(epoch_losses))
     logfile.write("\n")
+    """
+    # original version with train_one_epoch
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations
         mlogger = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
@@ -107,15 +110,15 @@ if __name__ == '__main__':
         #sx2 = x[1]
         #sx2 = sx2.replace("(","").replace(")","")
         #x2 = float(sx2)
-        losses.append(loss1)
+        epoch_losses.append(loss1)
         # update the learning rate
         lr_scheduler.step()
         if not debug:
             torch.save(model.state_dict(), modelpath)
-    logfile.write(str(losses))
+    logfile.write(str(epoch_losses))
     logfile.write("\n")
     """
-    # Perform training loop for n epochs
+    # version with simple loop
     loss_list = []
     model.train()
     for epoch in range(epochs):
@@ -137,7 +140,7 @@ if __name__ == '__main__':
         loss_list.append(loss_epoch_mean) 
         print("Epoch: {} average loss  = {:.4f} ".format(epoch, loss_epoch_mean))
         torch.save(model.state_dict(), modelpath) # save each epoch
-
+    """
     logfile.write(str(loss_list))
     logfile.write("\n")
     
