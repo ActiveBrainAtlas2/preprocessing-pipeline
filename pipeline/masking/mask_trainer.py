@@ -44,8 +44,8 @@ if __name__ == '__main__':
         indices = indices[0:25]
         dataset = torch.utils.data.Subset(dataset, indices)
 
-    workers = 2
-    batch_size = 8
+    workers = 1
+    batch_size = 1
     if torch.cuda.is_available(): 
         device = torch.device('cuda') 
         print(f'Using Nvidia graphics card GPU with {workers} workers at a batch size of {batch_size}')
@@ -81,6 +81,7 @@ if __name__ == '__main__':
     epoch_losses = []
     
 
+    """
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations model, optimizer, data_loader, device, epoch,
         epoch_loss = train_an_epoch(model, optimizer, data_loader, device, epoch)
@@ -97,7 +98,6 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), modelpath)
     logfile.write(str(epoch_losses))
     logfile.write("\n")
-    """
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations
         mlogger = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
@@ -114,7 +114,7 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), modelpath)
     logfile.write(str(losses))
     logfile.write("\n")
-
+    """
     # Perform training loop for n epochs
     loss_list = []
     model.train()
@@ -140,7 +140,7 @@ if __name__ == '__main__':
 
     logfile.write(str(loss_list))
     logfile.write("\n")
-    """
+    
 
 
     print('Finished with masks')
