@@ -1,1 +1,1 @@
-"""ABA atlas tools."""
+"""ORM models for sqlalchemy interface to database"""
