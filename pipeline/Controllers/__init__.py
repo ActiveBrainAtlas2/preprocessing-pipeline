@@ -1,1 +1,1 @@
-"""ABA atlas tools."""
+"""Sqlalchemy interface to active brain atlas database"""
