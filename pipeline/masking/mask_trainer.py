@@ -41,7 +41,7 @@ if __name__ == '__main__':
     if debug:
         torch.manual_seed(1)
         indices = torch.randperm(len(dataset)).tolist()
-        indices = indices[0:25]
+        indices = indices[0:125]
         dataset = torch.utils.data.Subset(dataset, indices)
 
     workers = 1
@@ -99,7 +99,6 @@ if __name__ == '__main__':
             torch.save(model.state_dict(), modelpath)
     logfile.write(str(epoch_losses))
     logfile.write("\n")
-    """
     # original version with train_one_epoch
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations
@@ -139,8 +138,8 @@ if __name__ == '__main__':
         loss_epoch_mean = np.mean(loss_epoch) 
         loss_list.append(loss_epoch_mean) 
         print("Epoch: {} average loss  = {:.4f} ".format(epoch, loss_epoch_mean))
-        torch.save(model.state_dict(), modelpath) # save each epoch
-    """
+        if not debug:
+            torch.save(model.state_dict(), modelpath) # save each epoch
     logfile.write(str(loss_list))
     logfile.write("\n")
     
