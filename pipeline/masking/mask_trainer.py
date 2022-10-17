@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 import torch
 import torch.utils.data
+import torch.multiprocessing
 from tqdm import tqdm
 import numpy as np
 from mask_class import MaskDataset, TrigeminalDataset, get_model_instance_segmentation, get_transform, train_an_epoch
@@ -44,8 +45,10 @@ if __name__ == '__main__':
         indices = indices[0:125]
         dataset = torch.utils.data.Subset(dataset, indices)
 
-    workers = 1
-    batch_size = 1
+    workers = 2
+    batch_size = 4
+    torch.multiprocessing.set_sharing_strategy('file_system')
+
     if torch.cuda.is_available(): 
         device = torch.device('cuda') 
         print(f'Using Nvidia graphics card GPU with {workers} workers at a batch size of {batch_size}')
