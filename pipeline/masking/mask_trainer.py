@@ -134,7 +134,6 @@ if __name__ == '__main__':
             optimizer.step()
             loss_epoch.append(losses.item())
             iteration+=1
-        print(loss_epoch)
         loss_epoch_mean = np.mean(loss_epoch) 
         loss_list.append(loss_epoch_mean) 
         print("Epoch: {} average loss  = {:.4f} ".format(epoch, loss_epoch_mean))
