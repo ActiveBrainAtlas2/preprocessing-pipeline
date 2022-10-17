@@ -44,8 +44,8 @@ if __name__ == '__main__':
         indices = indices[0:25]
         dataset = torch.utils.data.Subset(dataset, indices)
 
-    workers = 1
-    batch_size = 1
+    workers = 2
+    batch_size = 8
     if torch.cuda.is_available(): 
         device = torch.device('cuda') 
         print(f'Using Nvidia graphics card GPU with {workers} workers at a batch size of {batch_size}')
