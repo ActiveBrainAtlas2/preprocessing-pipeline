@@ -28,7 +28,7 @@ from lib.MaskManager import MaskManager
 from lib.ImageCleaner import ImageCleaner
 from lib.HistogramMaker import HistogramMaker
 from lib.ElastixManager import ElastixManager
-from Controllers.SqlController import SqlController
+from abakit.controller.sql_controller import SqlController
 
 
 class Pipeline(
@@ -66,14 +66,16 @@ class Pipeline(
     def __init__(
         self,
         animal,
-        channel=1,
-        downsample=True,
-        DATA_PATH="/net/birdstore/Active_Atlas_Data/data_root",
-        host="localhost",
-        schema="active_atlas_development",
-        tg=False,
-        clean=False,
-        debug=False,
+        channel,
+        data_path,
+        downsample,
+        host,
+        password, 
+        schema,
+        step,
+        tg,
+        user,
+        debug,
     ):
         """Setting up the pipeline and the processing configurations
         Here is how the Class is instantiated:
@@ -101,14 +103,13 @@ class Pipeline(
         self.ch_dir = f"CH{self.channel}"
         self.downsample = downsample
         self.debug = debug
-        self.fileLocationManager = FileLocationManager(animal, DATA_PATH=DATA_PATH)
-        self.sqlController = SqlController(animal, host, schema)
+        self.fileLocationManager = FileLocationManager(animal, DATA_PATH=data_path)
+        self.sqlController = SqlController(animal, host, password, schema, user)
         self.hostname = self.get_hostname()
         self.dbhost = host
         self.dbschema = schema
         self.tg = tg
         self.progress_lookup = ProgressLookup()
-        self.clean = clean
         self.check_programs()
         self.section_count = self.sqlController.get_section_count(self.animal)
         super().__init__(self.fileLocationManager.get_logdir())

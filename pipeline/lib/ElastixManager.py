@@ -6,7 +6,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from timeit import default_timer as timer
-
+import math
 
 from lib.FileLocationManager import FileLocationManager
 from utilities.utilities_alignment import align_image_to_affine, create_downsampled_transforms
@@ -15,10 +15,9 @@ from utilities.utilities_registration import (
     parameters_to_rigid_transform,
     rigid_transform_to_parmeters,
 )
-from model.elastix_transformation import ElastixTransformation
+from abakit.model.elastix_transformation import ElastixTransformation
 from lib.pipeline_utilities import get_image_size
 
-import math
 
 
 def convert_size(size_bytes):

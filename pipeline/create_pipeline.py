@@ -1,4 +1,5 @@
 """
+Keep cell dectector folder
 This program will create everything.
 The only required argument is the animal. By default it will work on channel=1
 and downsample = True. Run them in this sequence:
@@ -38,7 +39,7 @@ increasing the step size will make the pipeline move forward in the process.
 """
 import argparse
 try:
-    from settings import host as HOST, schema as SCHEMA, DATA_PATH
+    from settings import data_path, host, password, user, schema
 except ImportError as fe:
     print('You must have a settings file in the pipeline directory.', fe)
     raise
@@ -46,9 +47,9 @@ except ImportError as fe:
 from lib.pipeline import Pipeline
 
 
-def run_pipeline(animal, channel, downsample, step, data_path, host, schema, tg, clean, debug):
+def run_pipeline(animal, channel, data_path, downsample, host, password, schema, step, tg, user, debug):
 
-    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, tg, clean, debug)
+    pipeline = Pipeline(animal, channel, data_path, downsample, host, password, schema, step, tg, user, debug)
 
     print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:")
     print(f"\tprep_id:".ljust(20), f"{animal}".ljust(20))
@@ -108,7 +109,6 @@ if __name__ == "__main__":
     parser.add_argument("--downsample", help="Enter true or false", required=False, default="true")
     parser.add_argument("--step", help="steps", required=False, default=0)
     parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
-    parser.add_argument("--clean", help="Remove prev DB entries and files", required=False, default=False)
     parser.add_argument("--tg", help="Extend the mask to expose the entire underside of the brain", required=False, default=False)
 
     args = parser.parse_args()
@@ -123,12 +123,13 @@ if __name__ == "__main__":
     run_pipeline(
         animal,
         channel,
+        data_path,
         downsample,
+        host,
+        password,
+        schema,
         step,
-        DATA_PATH,
-        HOST,
-        SCHEMA,
         tg,
-        args.clean,
+        user,
         debug,
     )
