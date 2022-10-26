@@ -13,7 +13,8 @@ from cloudvolume.lib import touch
 from matplotlib import colors
 from pylab import cm
 from collections import defaultdict
-from Controllers.SqlController import SqlController, file_processed, set_file_completed
+from abakit.controller.sql_controller import SqlController
+
 from utilities.utilities_process import get_cpus
 
 def calculate_chunks(downsample, mip):

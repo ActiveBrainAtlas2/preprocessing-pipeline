@@ -6,9 +6,9 @@ from timeit import default_timer as timer
 
 from utilities.utilities_mask import clean_and_rotate_image
 from utilities.utilities_process import SCALING_FACTOR, test_dir
-from model.slide import SlideCziTif
-from model.slide import Slide
-from model.slide import Section
+from abakit.model.slide import SlideCziTif
+from abakit.model.slide import Slide
+from abakit.model.slide import Section
 
 class ImageCleaner:
     def create_cleaned_images(self):

@@ -7,11 +7,12 @@ Image.MAX_IMAGE_PIXELS = None
 import pickle
 import re
 from timeit import default_timer as timer
-
-from Controllers.SqlController import SqlController
-from lib.FileLocationManager import FileLocationManager
 import cv2
 from scipy.ndimage import affine_transform
+
+from abakit.controller.sql_controller import SqlController
+from lib.FileLocationManager import FileLocationManager
+
 def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_filepath=None):
     """
     Args:
