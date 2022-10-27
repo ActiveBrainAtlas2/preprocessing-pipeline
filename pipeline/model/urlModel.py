@@ -1,9 +1,8 @@
-from datetime import datetime
-from sqlalchemy.sql import func
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, TIMESTAMP
-from .atlas_model import Base, AtlasModel
 import re
 import json
+from sqlalchemy import Column, String, Integer, Boolean, TIMESTAMP
+from model.atlas_model import Base, AtlasModel
+
 
 class UrlModel(Base, AtlasModel):
     __tablename__ = 'neuroglancer_urls'

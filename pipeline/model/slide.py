@@ -1,5 +1,4 @@
 from sqlalchemy import Column, String, Integer, Boolean, Float, ForeignKey, Enum
-from sqlalchemy.orm import relationship
 from model.atlas_model import Base, AtlasModel
 
 class SlideCziTif(Base, AtlasModel):

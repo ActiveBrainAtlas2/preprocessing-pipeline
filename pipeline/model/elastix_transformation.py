@@ -1,5 +1,7 @@
 from sqlalchemy import Column, String, Integer, Float
-from .atlas_model import Base, AtlasModel
+from traitlets import default
+
+from model.atlas_model import Base, AtlasModel
 
 class ElastixTransformation(Base, AtlasModel):
     __tablename__ = 'elastix_transformation'
@@ -9,6 +11,7 @@ class ElastixTransformation(Base, AtlasModel):
     rotation = Column(Float, nullable=False)
     xshift = Column(Float, nullable=False)
     yshift = Column(Float, nullable=False)
+    metric = Column(Float, nullable=False, default=0)
 
 
 

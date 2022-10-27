@@ -5,8 +5,9 @@ import sys
 from pathlib import Path
 import torch
 import torch.utils.data
-from tqdm import tqdm
+import torch.multiprocessing
 import numpy as np
+from matplotlib import pyplot as plt
 from mask_class import MaskDataset, TrigeminalDataset, get_model_instance_segmentation, get_transform, train_an_epoch
 PIPELINE_ROOT = Path('./pipeline').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -44,12 +45,16 @@ if __name__ == '__main__':
         indices = indices[0:25]
         dataset = torch.utils.data.Subset(dataset, indices)
 
-    workers = 1
-    batch_size = 1
+    workers = 2
+    batch_size = 4
+    torch.multiprocessing.set_sharing_strategy('file_system')
+
     if torch.cuda.is_available(): 
         device = torch.device('cuda') 
         print(f'Using Nvidia graphics card GPU with {workers} workers at a batch size of {batch_size}')
     else:
+        import warnings
+        warnings.filterwarnings("ignore")
         device = torch.device('cpu')
         print(f'Using CPU with {workers} workers at a batch size of {batch_size}')
 
@@ -78,9 +83,10 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, lr=0.005,momentum=0.9, weight_decay=0.0005)
     # and a learning rate scheduler which decreases the learning rate by # 10x every 3 epochs
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
-    epoch_losses = []
+    loss_list = []
     
 
+    # version with train_an_epoch
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations model, optimizer, data_loader, device, epoch,
         epoch_loss = train_an_epoch(model, optimizer, data_loader, device, epoch)
@@ -90,14 +96,15 @@ if __name__ == '__main__':
         #sx2 = x[1]
         #sx2 = sx2.replace("(","").replace(")","")
         #x2 = float(sx2)
-        epoch_losses.append(epoch_loss)
+        loss_list.append(epoch_loss)
         # update the learning rate
         lr_scheduler.step()
         if not debug:
             torch.save(model.state_dict(), modelpath)
-    logfile.write(str(epoch_losses))
+    logfile.write(str(loss_list))
     logfile.write("\n")
     """
+    # original version with train_one_epoch
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations
         mlogger = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
@@ -107,16 +114,14 @@ if __name__ == '__main__':
         #sx2 = x[1]
         #sx2 = sx2.replace("(","").replace(")","")
         #x2 = float(sx2)
-        losses.append(loss1)
+        epoch_losses.append(loss1)
         # update the learning rate
         lr_scheduler.step()
         if not debug:
             torch.save(model.state_dict(), modelpath)
-    logfile.write(str(losses))
+    logfile.write(str(epoch_losses))
     logfile.write("\n")
-
-    # Perform training loop for n epochs
-    loss_list = []
+    # version with simple loop
     model.train()
     for epoch in range(epochs):
         loss_epoch = []
@@ -132,17 +137,36 @@ if __name__ == '__main__':
             optimizer.step()
             loss_epoch.append(losses.item())
             iteration+=1
-
         loss_epoch_mean = np.mean(loss_epoch) 
         loss_list.append(loss_epoch_mean) 
         print("Epoch: {} average loss  = {:.4f} ".format(epoch, loss_epoch_mean))
-        torch.save(model.state_dict(), modelpath) # save each epoch
-
+        if not debug:
+            torch.save(model.state_dict(), modelpath) # save each epoch
     logfile.write(str(loss_list))
     logfile.write("\n")
     """
+    
 
 
     print('Finished with masks')
     logfile.close()
+
+    print('Creating loss chart')
+
+    fig = plt.figure()
+    output_path = os.path.join(ROOT, 'loss_plot.png')
+    x = [i for i in range(len(loss_list))]
+    plt.plot(x, loss_list,  color='green', linestyle='dashed', marker='o',
+        markerfacecolor='blue', markersize=5)
+    plt.style.use("ggplot")
+    plt.xticks(np.arange(min(x), max(x)+1, 1.0))
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title(f'Loss over {len(x)} epochs')
+    plt.close()
+    fig.savefig(output_path, bbox_inches="tight")
+    print('Finished with loss plot')
+
+
+
 

@@ -1,7 +1,8 @@
 from sqlalchemy import Column, String, Date, Enum, Float, Integer, ForeignKey
 from sqlalchemy.orm import relationship
-from .atlas_model import AtlasModel, Base
-from .virus_injection import virus_injection
+
+from model.atlas_model import AtlasModel, Base
+from model.injection_virus import injection_virus
 
 
 class Injection(Base, AtlasModel):
@@ -24,7 +25,7 @@ class Injection(Base, AtlasModel):
     transport_days = Column(Integer, default=0)
     virus_count = Column(Integer, default=0)
     
-    viruses = relationship("Virus", secondary=virus_injection)
+    viruses = relationship("Virus", secondary=injection_virus)
     
     
     def __repr__(self):
