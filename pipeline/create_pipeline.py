@@ -49,7 +49,7 @@ from lib.pipeline import Pipeline
 
 def run_pipeline(animal, channel, data_path, downsample, host, password, schema, step, tg, user, debug):
 
-    pipeline = Pipeline(animal, channel, data_path, downsample, host, password, schema, step, tg, user, debug)
+    pipeline = Pipeline(animal, channel, data_path, downsample, host, password, schema, tg, user, debug)
 
     print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:")
     print(f"\tprep_id:".ljust(20), f"{animal}".ljust(20))
@@ -91,6 +91,7 @@ def run_pipeline(animal, channel, data_path, downsample, host, password, schema,
         transformations = pipeline.get_transformations()
         pipeline.align_downsampled_images(transformations)
         pipeline.align_full_size_image(transformations)
+        pipeline.call_alignment_metrics()
     
     if step == 5:
         print(f"Step {step}: create neuroglancer data")

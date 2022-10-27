@@ -15,9 +15,10 @@ from skimage.transform import rescale
 PIPELINE_ROOT = Path(".").absolute().parent
 sys.path.append(PIPELINE_ROOT.as_posix())
 from lib.FileLocationManager import FileLocationManager
-from abakit.controller.sql_controller import SqlController
+from controller.sql_controller import SqlController
 
-SCALING_FACTOR = 0.03125
+SCALING_FACTOR = 16.0
+DOWNSCALING_FACTOR = 1 / SCALING_FACTOR
 Image.MAX_IMAGE_PIXELS = None
 
 
