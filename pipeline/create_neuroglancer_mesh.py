@@ -22,7 +22,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from lib.FileLocationManager import FileLocationManager
 from Controllers.SqlController import SqlController
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
-from utilities.utilities_process import get_cpus, get_hostname
+from utilities.utilities_process import SCALING_FACTOR, get_cpus, get_hostname
 
 
 def create_mesh(animal, limit, mse, downsample):
@@ -38,7 +38,7 @@ def create_mesh(animal, limit, mse, downsample):
     PROGRESS_DIR = fileLocationManager.get_neuroglancer_progress(downsample, 1)
 
     if downsample:
-        xy *= 32
+        xy /=  SCALING_FACTOR
 
     scales = (int(xy), int(xy), int(z))
     if 'godzilla' in get_hostname():

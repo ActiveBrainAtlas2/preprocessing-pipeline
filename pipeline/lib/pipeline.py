@@ -9,9 +9,9 @@ All imports are listed by the order in which they are used in the
 
 import os
 import sys
-from shutil import which
 import shutil
 import threading
+from timeit import default_timer as timer
 
 from lib.FileLocationManager import FileLocationManager
 from lib.MetaUtilities import MetaUtilities
@@ -20,8 +20,6 @@ from lib.NgPrecomputedMaker import NgPrecomputedMaker
 from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
-from timeit import default_timer as timer
-from Controllers.SqlController import SqlController
 from lib.FileLogger import FileLogger
 from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
@@ -30,6 +28,7 @@ from lib.MaskManager import MaskManager
 from lib.ImageCleaner import ImageCleaner
 from lib.HistogramMaker import HistogramMaker
 from lib.ElastixManager import ElastixManager
+from controller.sql_controller import SqlController
 
 
 class Pipeline(
@@ -67,14 +66,15 @@ class Pipeline(
     def __init__(
         self,
         animal,
-        channel=1,
-        downsample=True,
-        DATA_PATH="/net/birdstore/Active_Atlas_Data/data_root",
-        host="localhost",
-        schema="active_atlas_development",
-        tg=False,
-        clean=False,
-        debug=False,
+        channel,
+        data_path,
+        downsample,
+        host,
+        password, 
+        schema,
+        tg,
+        user,
+        debug,
     ):
         """Setting up the pipeline and the processing configurations
         Here is how the Class is instantiated:
@@ -102,14 +102,13 @@ class Pipeline(
         self.ch_dir = f"CH{self.channel}"
         self.downsample = downsample
         self.debug = debug
-        self.fileLocationManager = FileLocationManager(animal, DATA_PATH=DATA_PATH)
-        self.sqlController = SqlController(animal, host, schema)
+        self.fileLocationManager = FileLocationManager(animal, DATA_PATH=data_path)
+        self.sqlController = SqlController(animal, host, password, schema, user)
         self.hostname = self.get_hostname()
         self.dbhost = host
         self.dbschema = schema
         self.tg = tg
         self.progress_lookup = ProgressLookup()
-        self.clean = clean
         self.check_programs()
         self.section_count = self.sqlController.get_section_count(self.animal)
         super().__init__(self.fileLocationManager.get_logdir())
@@ -127,14 +126,8 @@ class Pipeline(
         start_time = timer()
         
         error = ""
-        if not os.path.exists("/usr/local/share/bftools/showinf"):
-            error += "showinf in bftools is not installed"
-        if not os.path.exists("/usr/local/share/bftools/bfconvert"):
-            error += "\nbfconvert in bftools is not installed"
         if not os.path.exists("/usr/bin/identify"):
             error += "\nImagemagick is not installed"
-        if not which("java"):
-            error += "\njava is not installed"
 
         if len(error) > 0:
             print(error)

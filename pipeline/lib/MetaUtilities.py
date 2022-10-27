@@ -1,10 +1,10 @@
 import os, sys, time, re, psutil
 from datetime import datetime
-from tqdm import tqdm
-from model.slide import Slide, SlideCziTif
 from pathlib import Path
 import operator
-from Controllers.SqlController import SqlController
+from controller.sql_controller import SqlController
+from model.slide import Slide, SlideCziTif
+
 from lib.CZIManager import CZIManager
 from lib.pipeline_utilities import convert_size
 

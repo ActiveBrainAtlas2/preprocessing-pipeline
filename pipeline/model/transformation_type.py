@@ -1,5 +1,6 @@
-from .atlas_model import Base, AtlasModel
-from sqlalchemy import Column, String, Integer,LargeBinary,ForeignKey
+from sqlalchemy import Column, String, Integer
+
+from model.atlas_model import Base, AtlasModel
 
 class TransformationType(Base, AtlasModel):
     __tablename__ = 'transformation_type'

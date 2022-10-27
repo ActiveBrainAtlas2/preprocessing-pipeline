@@ -2,6 +2,7 @@ import os, glob
 import hashlib
 from lib.ParallelManager import ParallelManager
 from lib.CZIManager import extract_tiff_from_czi, extract_png_from_czi
+from utilities.utilities_process import SCALING_FACTOR
 
 
 class TiffExtractor(ParallelManager):
@@ -24,7 +25,7 @@ class TiffExtractor(ParallelManager):
             scale_factor = 1
         else:
             OUTPUT = self.fileLocationManager.thumbnail_original
-            scale_factor = 0.03125
+            scale_factor = SCALING_FACTOR
         INPUT = self.fileLocationManager.czi
         os.makedirs(OUTPUT, exist_ok=True)
         starting_files = glob.glob(
