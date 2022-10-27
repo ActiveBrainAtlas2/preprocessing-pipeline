@@ -7,6 +7,8 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from timeit import default_timer as timer
 import math
+from subprocess import Popen, PIPE
+from pathlib import Path
 
 from lib.FileLocationManager import FileLocationManager
 from utilities.utilities_alignment import align_image_to_affine, create_downsampled_transforms
@@ -15,7 +17,7 @@ from utilities.utilities_registration import (
     parameters_to_rigid_transform,
     rigid_transform_to_parmeters,
 )
-from abakit.model.elastix_transformation import ElastixTransformation
+from model.elastix_transformation import ElastixTransformation
 from lib.pipeline_utilities import get_image_size
 
 
@@ -54,6 +56,30 @@ class ElastixManager:
                     self.calculate_elastix_transformation(INPUT, fixed_index, moving_index)
                     
 
+    def call_alignment_metrics(self):
+        if self.channel == 1 and self.downsample:
+            INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_cleaned")
+            files = sorted(os.listdir(INPUT))
+            nfiles = len(files)
+            self.logevent(f"INPUT FOLDER: {INPUT}")
+            self.logevent(f"FILE COUNT: {nfiles}")
+
+            PIPELINE_ROOT = Path('./pipeline').absolute().as_posix()
+            print(PIPELINE_ROOT)
+            program = os.path.join(PIPELINE_ROOT, 'create_alignment_metrics.py')
+
+            for i in range(1, nfiles):
+                fixed_index = os.path.splitext(files[i - 1])[0]
+                moving_index = os.path.splitext(files[i])[0]
+                fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
+                moving_file = os.path.join(INPUT, f"{moving_index}.tif")
+ 
+                p = Popen(['python', program, fixed_file, moving_file], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                output, _ = p.communicate(b"input data that is passed to subprocess' stdin")
+                
+                metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
+                updates = {'metric':metric}
+                self.sqlController.update_elastix_row(self.animal, moving_index, updates)
 
     def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
         center = self.get_rotation_center()

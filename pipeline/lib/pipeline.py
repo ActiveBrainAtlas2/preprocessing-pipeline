@@ -28,7 +28,7 @@ from lib.MaskManager import MaskManager
 from lib.ImageCleaner import ImageCleaner
 from lib.HistogramMaker import HistogramMaker
 from lib.ElastixManager import ElastixManager
-from abakit.controller.sql_controller import SqlController
+from controller.sql_controller import SqlController
 
 
 class Pipeline(
@@ -72,7 +72,6 @@ class Pipeline(
         host,
         password, 
         schema,
-        step,
         tg,
         user,
         debug,

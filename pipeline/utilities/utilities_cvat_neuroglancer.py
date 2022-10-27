@@ -13,7 +13,7 @@ from cloudvolume.lib import touch
 from matplotlib import colors
 from pylab import cm
 from collections import defaultdict
-from abakit.controller.sql_controller import SqlController
+from controller.sql_controller import SqlController
 
 from utilities.utilities_process import get_cpus
 

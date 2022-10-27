@@ -2,8 +2,8 @@ import os, sys, time, re, psutil
 from datetime import datetime
 from pathlib import Path
 import operator
-from abakit.controller.sql_controller import SqlController
-from abakit.model.slide import Slide, SlideCziTif
+from controller.sql_controller import SqlController
+from model.slide import Slide, SlideCziTif
 
 from lib.CZIManager import CZIManager
 from lib.pipeline_utilities import convert_size

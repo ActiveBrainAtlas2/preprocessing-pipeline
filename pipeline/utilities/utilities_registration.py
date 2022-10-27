@@ -25,6 +25,7 @@ from scipy.stats import skew
 from scipy.ndimage import affine_transform
 
 
+
 def parameters_to_rigid_transform(rotation, xshift, yshift, center):
     rotation, xshift, yshift = np.array([rotation, xshift, yshift]).astype(
         np.float16
@@ -242,7 +243,7 @@ def rotate_and_align_image(moving, fixed):
     rotation_angle = (theta_fixed - theta_moving) % (2 * np.pi)
     return rotation_angle, np.flip(offset), np.flip(center_moving)
 
-def align_elastix(fixed,moving, debug, tries=10):
+def align_elastix(fixed, moving, moving_index, tries=10):
     for _ in range(tries):
         try:
             elastixImageFilter = sitk.ElastixImageFilter()
@@ -407,12 +408,19 @@ def align_elastix(fixed,moving, debug, tries=10):
             rigid_params["RequiredRatioOfValidSamples"] = ["0.05"]
             elastixImageFilter.SetParameterMap(rigid_params)
             elastixImageFilter.LogToConsoleOff()
+            elastixImageFilter.SetLogToFile(True)
+            logfile = str(moving_index).zfill(3) + '.tif'
+            logpath = os.path.join('/tmp/elastix', logfile)
+            elastixImageFilter.SetOutputDirectory('/tmp/elastix')
+            elastixImageFilter.SetLogFileName(logfile)
         except RuntimeError:
             continue
         break
     elastixImageFilter.Execute()
-    return (
-        elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"])
+    
+    return (elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"])
+
+
 
 def align_principle_axis(moving,fixed):
     rotation_angle,offset,center_moving = rotate_and_align_image(sitk.GetArrayFromImage(moving),sitk.GetArrayFromImage(fixed))
@@ -433,9 +441,8 @@ def register_simple(INPUT, fixed_index, moving_index, debug=False):
     initial_transform = sitk.Euler2DTransform()
     initial_transform = parse_sitk_rigid_transform(initial_transform)
     # moving,initial_transform = align_principle_axis(moving,fixed)
-    elastix_transform = align_elastix(fixed,moving,debug = debug)
+    elastix_transform = align_elastix(fixed, moving, moving_index)
     return (elastix_transform,initial_transform)
-
 
 def parse_sitk_rigid_transform(sitk_rigid_transform):
     rotation, xshift, yshift = sitk_rigid_transform.GetParameters()

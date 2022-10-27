@@ -1,5 +1,5 @@
 import logging
-from abakit.model.log import Log
+from model.log import Log
 
 
 class DatabaseHandler(logging.Handler):
