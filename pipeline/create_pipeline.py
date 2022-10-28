@@ -91,7 +91,7 @@ def run_pipeline(animal, channel, data_path, downsample, host, password, schema,
         transformations = pipeline.get_transformations()
         pipeline.align_downsampled_images(transformations)
         pipeline.align_full_size_image(transformations)
-        pipeline.call_alignment_metrics()
+        pipeline.run_program_and_time(pipeline.call_alignment_metrics, pipeline.TASK_CREATING_ELASTIX_METRICS)
     
     if step == 5:
         print(f"Step {step}: create neuroglancer data")

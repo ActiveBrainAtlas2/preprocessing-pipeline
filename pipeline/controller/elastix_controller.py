@@ -28,6 +28,22 @@ class ElastixController(Controller):
             ElastixTransformation.prep_id == animal,
             ElastixTransformation.section == section).first())
         return row_exists
+
+    def check_elastix_metric_row(self, animal, section):
+        """checks that a given elastix row exists in the database
+
+        Args:
+            animal (str): Animal ID
+            section (int): Section Number
+
+        Returns:
+            bool: if the row in question exists
+        """        
+        row_exists = bool(self.session.query(ElastixTransformation).filter(
+            ElastixTransformation.prep_id == animal,
+            ElastixTransformation.section == section,
+            ElastixTransformation.metric != 0).first())
+        return row_exists
     
     def delete_elastix_row(self, animal, section):
         """checks that a given elastix row exists in the database
