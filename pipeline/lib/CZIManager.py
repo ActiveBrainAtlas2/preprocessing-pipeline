@@ -65,6 +65,7 @@ def extract_tiff_from_czi(file_key):
         czi.logevent(
             f"ERROR READING SCENE - [extract_tiff_from_czi] FROM FILE {czi_file} -> {czi_file}; SCENE: {scenei}; CHANNEL: {channel} ... SKIPPING - ERR: {e}"
         )
+        return
 
     try:
         cv2.imwrite(output_path, data)
