@@ -2,7 +2,7 @@ import os
 import cv2
 from PIL import Image
 from aicspylibczi import CziFile
-from aicsimageio import AICSImage, imread
+from aicsimageio import AICSImage
 from utilities.utilities_mask import equalized
 from lib.FileLogger import FileLogger
 
