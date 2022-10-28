@@ -24,9 +24,16 @@ class Normalizer:
                     continue
                 try:
                     img = io.imread(infile)
+                except IOError as errno:
+                    print(f"I/O error {errno}")
+                except ValueError:
+                    print("Could not convert data to an integer.")
                 except:
                     print(f' Could not open {infile}')
+                    print("Unexpected error:", sys.exc_info()[0])
                     sys.exit()
+
+
                 if img.dtype == np.uint16:
                     img = (img / 256).astype(np.uint8)
                 fixed = equalized(img)
