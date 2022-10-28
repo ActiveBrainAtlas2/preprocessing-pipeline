@@ -65,7 +65,6 @@ class ElastixManager:
             self.logevent(f"FILE COUNT: {nfiles}")
 
             PIPELINE_ROOT = Path('./pipeline').absolute().as_posix()
-            print(PIPELINE_ROOT)
             program = os.path.join(PIPELINE_ROOT, 'create_alignment_metrics.py')
 
             for i in range(1, nfiles):
@@ -73,13 +72,13 @@ class ElastixManager:
                 moving_index = os.path.splitext(files[i])[0]
                 fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
                 moving_file = os.path.join(INPUT, f"{moving_index}.tif")
- 
-                p = Popen(['python', program, fixed_file, moving_file], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-                output, _ = p.communicate(b"input data that is passed to subprocess' stdin")
-                
-                metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
-                updates = {'metric':metric}
-                self.sqlController.update_elastix_row(self.animal, moving_index, updates)
+                if not self.sqlController.check_elastix_metric_row(self.animal, moving_index): 
+                    p = Popen(['python', program, fixed_file, moving_file], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                    output, _ = p.communicate(b"input data that is passed to subprocess' stdin")
+                    
+                    metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
+                    updates = {'metric':metric}
+                    self.sqlController.update_elastix_row(self.animal, moving_index, updates)
 
     def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
         center = self.get_rotation_center()
