@@ -4,11 +4,14 @@ import pandas as pd
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
-from concurrent.futures.process import ProcessPoolExecutor
-
 Image.MAX_IMAGE_PIXELS = None
+from timeit import default_timer as timer
+import math
+from subprocess import Popen, PIPE
+from pathlib import Path
+
 from lib.FileLocationManager import FileLocationManager
-from utilities.utilities_alignment import create_downsampled_transforms, clean_image
+from utilities.utilities_alignment import align_image_to_affine, create_downsampled_transforms
 from utilities.utilities_registration import (
     register_simple,
     parameters_to_rigid_transform,
@@ -17,7 +20,6 @@ from utilities.utilities_registration import (
 from model.elastix_transformation import ElastixTransformation
 from lib.pipeline_utilities import get_image_size
 
-import math
 
 
 def convert_size(size_bytes):
@@ -41,9 +43,7 @@ class ElastixManager:
         each brain.
         """
         if self.channel == 1 and self.downsample:
-            INPUT = os.path.join(
-                self.fileLocationManager.prep, "CH1", "thumbnail_cleaned"
-            )
+            INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_cleaned")
             files = sorted(os.listdir(INPUT))
             nfiles = len(files)
             self.logevent(f"INPUT FOLDER: {INPUT}")
@@ -56,6 +56,30 @@ class ElastixManager:
                     self.calculate_elastix_transformation(INPUT, fixed_index, moving_index)
                     
 
+    def call_alignment_metrics(self):
+        if self.channel == 1 and self.downsample:
+            INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_cleaned")
+            files = sorted(os.listdir(INPUT))
+            nfiles = len(files)
+            self.logevent(f"INPUT FOLDER: {INPUT}")
+            self.logevent(f"FILE COUNT: {nfiles}")
+
+            PIPELINE_ROOT = Path('./pipeline').absolute().as_posix()
+            print(PIPELINE_ROOT)
+            program = os.path.join(PIPELINE_ROOT, 'create_alignment_metrics.py')
+
+            for i in range(1, nfiles):
+                fixed_index = os.path.splitext(files[i - 1])[0]
+                moving_index = os.path.splitext(files[i])[0]
+                fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
+                moving_file = os.path.join(INPUT, f"{moving_index}.tif")
+ 
+                p = Popen(['python', program, fixed_file, moving_file], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                output, _ = p.communicate(b"input data that is passed to subprocess' stdin")
+                
+                metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
+                updates = {'metric':metric}
+                self.sqlController.update_elastix_row(self.animal, moving_index, updates)
 
     def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
         center = self.get_rotation_center()
@@ -250,22 +274,9 @@ class ElastixManager:
         """
         os.makedirs(OUTPUT, exist_ok=True)
         transforms = OrderedDict(sorted(transforms.items()))
-        # ram_coefficient = 6
-
         first_file_name = list(transforms.keys())[0]
         infile = os.path.join(INPUT, first_file_name)
-        # single_file_size = os.path.getsize(infile)
-        # mem_avail = psutil.virtual_memory().available
-        # batch_size = mem_avail // (single_file_size * ram_coefficient)
-        # print(
-        #     f"MEM AVAILABLE: {convert_size(mem_avail)}; SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-        # )
-        # self.logevent(
-        #     f"MEM AVAILABLE: {convert_size(mem_avail)}; SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-        # )
         file_keys = []
-        workers = self.get_nworkers()
-
         for i, (file, T) in enumerate(transforms.items()):
             infile = os.path.join(INPUT, file)
             outfile = os.path.join(OUTPUT, file)
@@ -273,9 +284,12 @@ class ElastixManager:
                 continue
             file_keys.append([i, infile, outfile, T])
 
-        self.run_commands_in_parallel_with_executor(
-            [file_keys], workers, clean_image#, batch_size=batch_size
-        )
+        workers = self.get_nworkers() // 2
+        start = timer()
+        self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
+        end = timer()
+        print(f'Align images took {end - start} seconds.')
+
 
     def create_csv_data(self, animal, file_keys):
         """legacy code, I don't think this is used in the pipeline and should be depricated

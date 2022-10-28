@@ -1,9 +1,8 @@
 import os
-import sys
+import cv2
 from PIL import Image
 from aicspylibczi import CziFile
 from aicsimageio import AICSImage, imread
-from tifffile import imsave
 from utilities.utilities_mask import equalized
 from lib.FileLogger import FileLogger
 
@@ -12,6 +11,10 @@ class CZIManager(FileLogger):
     def __init__(self, czi_file):
         self.czi_file = czi_file
         self.file = CziFile(czi_file)
+
+        LOGFILE_PATH = os.environ["LOGFILE_PATH"]
+        super().__init__(LOGFILE_PATH)
+
 
     def extract_metadata_from_czi_file(self, czi_file, czi_file_path):
         czi_aics = AICSImage(czi_file_path)
@@ -44,33 +47,37 @@ class CZIManager(FileLogger):
     
     def get_scene(self, scene_index, channel, scale=1):
         region = self.get_scene_dimension(scene_index)
-        return self.file.read_mosaic(region=region, scale_factor=scale, C=channel - 1)[
-            0
-        ]
+        return self.file.read_mosaic(region=region, scale_factor=scale, C=channel - 1)[0]
 
     def get_scene_dimension(self, scene_index):
         scene = self.file.get_scene_bounding_box(scene_index)
         return scene.x, scene.y, scene.w, scene.h
 
 
-def extract_tiff_from_czi(czi_file, file_name, scenei, channel=1, scale=1):
+def extract_tiff_from_czi(file_key):
+    czi_file, output_path, scenei, channel, scale = file_key
     czi = CZIManager(czi_file)
     try:
         data = czi.get_scene(scale=scale, scene_index=scenei, channel=channel)
-        imsave(file_name, data)
     except Exception as e:
-        print(
-            f"ERROR READING SCENE - [extract_tiff_from_czi] IN FILE {czi_file} ... SKIPPING"
-        )
+        print(f"ERROR READING SCENE - [extract_tiff_from_czi] IN FILE {czi_file} ... SKIPPING")
         czi.logevent(
-            f"ERROR READING SCENE - [extract_tiff_from_czi] FROM FILE {czi_file} -> {file_name}; SCENE: {scenei}; CHANNEL: {channel} ... SKIPPING - ERR: {e}"
+            f"ERROR READING SCENE - [extract_tiff_from_czi] FROM FILE {czi_file} -> {czi_file}; SCENE: {scenei}; CHANNEL: {channel} ... SKIPPING - ERR: {e}"
+        )
+
+    try:
+        cv2.imwrite(output_path, data)
+    except Exception as e:
+        print(f"ERROR WRITING SCENE - [extract_tiff_from_czi] IN FILE {czi_file} ... SKIPPING")
+        czi.logevent(
+            f"ERROR WRITING SCENE - [extract_tiff_from_czi] FROM FILE {czi_file} -> {output_path}; SCENE: {scenei}; CHANNEL: {channel} ... SKIPPING - ERR: {e}"
         )
 
 
 def extract_png_from_czi(file_key, normalize=True):
     """SINGLE CHANNEL ONLY"""
 
-    index, infile, outfile, scene_index, scale = file_key
+    _, infile, outfile, scene_index, scale = file_key
 
     czi = CZIManager(infile)
     try:

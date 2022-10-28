@@ -3,9 +3,7 @@ import sys
 from cloudvolume import CloudVolume
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
-from lib.FileLocationManager import FileLocationManager
 from utilities.utilities_cvat_neuroglancer import calculate_chunks, calculate_factors
-from utilities.utilities_process import get_cpus
 
 
 class NgDownsampler:
@@ -19,14 +17,10 @@ class NgDownsampler:
             self.downsample, self.channel, rechunck=True
         )
         if os.path.exists(OUTPUT_DIR):
-            print(
-                f"DIR {OUTPUT_DIR} already exists and not performing any downsampling."
-            )
+            print(f"DIR {OUTPUT_DIR} already exists and not performing any downsampling.")
             return
         outpath = f"file://{OUTPUT_DIR}"
-        INPUT_DIR = self.fileLocationManager.get_neuroglancer(
-            self.downsample, self.channel
-        )
+        INPUT_DIR = self.fileLocationManager.get_neuroglancer( self.downsample, self.channel )
         if not os.path.exists(INPUT_DIR):
             print(f"DIR {INPUT_DIR} does not exist, exiting.")
             sys.exit()

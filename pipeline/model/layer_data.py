@@ -1,13 +1,8 @@
-from datetime import datetime
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean, TIMESTAMP
-from sqlalchemy.sql.expression import null
+from sqlalchemy import Column, String, Integer, ForeignKey, TIMESTAMP
 from sqlalchemy.sql.sqltypes import Float
-from .atlas_model import Base, AtlasModel
-from .structure import Structure
 
-
+from model.atlas_model import Base, AtlasModel
 
 class LayerData(Base, AtlasModel):
     __tablename__ = 'layer_data'

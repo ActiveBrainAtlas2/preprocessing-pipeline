@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Date, Enum, Float, Integer, ForeignKey
 from sqlalchemy.orm import relationship
-from .atlas_model import AtlasModel, Base
 
+from model.atlas_model import AtlasModel, Base
 
 class Histology(Base, AtlasModel):
     __tablename__ = 'histology'

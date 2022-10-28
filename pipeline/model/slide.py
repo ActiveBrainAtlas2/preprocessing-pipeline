@@ -1,5 +1,4 @@
 from sqlalchemy import Column, String, Integer, Boolean, Float, ForeignKey, Enum
-from sqlalchemy.orm import relationship
 from model.atlas_model import Base, AtlasModel
 
 class SlideCziTif(Base, AtlasModel):
@@ -42,12 +41,6 @@ class Slide(Base, AtlasModel):
     file_size = Column(Float, nullable=False)
     file_name = Column(String, nullable=False)
     comments = Column(String)
-    scene_rotation_1 = Column(Integer, default=0)
-    scene_rotation_2 = Column(Integer, default=0)
-    scene_rotation_3 = Column(Integer, default=0)
-    scene_rotation_4 = Column(Integer, default=0)
-    scene_rotation_5 = Column(Integer, default=0)
-    scene_rotation_6 = Column(Integer, default=0)
     
 
 class Section(Base, AtlasModel):

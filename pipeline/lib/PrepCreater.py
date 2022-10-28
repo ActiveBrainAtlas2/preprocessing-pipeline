@@ -4,8 +4,6 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
 
-# from shutil import copyfile
-from Controllers.SqlController import SqlController
 from utilities.utilities_process import test_dir, create_downsample
 from utilities.shell_tools import get_image_size
 
@@ -74,7 +72,8 @@ class PrepCreater:
             if os.path.exists(outpath):
                 continue
             file_keys.append([infile, outpath])
+            
         workers = self.get_nworkers()
-        self.run_commands_in_parallel_with_executor(
-            [file_keys], workers, create_downsample
-        )
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            executor.map(create_downsample, sorted(file_keys))
+

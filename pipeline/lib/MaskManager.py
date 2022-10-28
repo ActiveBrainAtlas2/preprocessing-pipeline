@@ -1,20 +1,17 @@
-import os, sys
+import os
 import numpy as np
-import glob
 import torch
 from PIL import Image
-
 Image.MAX_IMAGE_PIXELS = None
 import cv2
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+
 from utilities.utilities_mask import combine_dims, merge_mask
 from utilities.utilities_process import test_dir
-import warnings
-
-warnings.filterwarnings("ignore")
 from lib.pipeline_utilities import get_image_size
+
 
 
 class MaskManager:
@@ -58,7 +55,7 @@ class MaskManager:
 
     def get_model_instance_segmentation(self, num_classes):
         # load an instance segmentation model pre-trained pre-trained on COCO
-        model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
+        model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights="DEFAULT")
         # get number of input features for the classifier
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         # replace the pre-trained head with a new one
@@ -74,10 +71,10 @@ class MaskManager:
 
     def create_mask(self):
         """Create the images masks for extracting the tissue from the surrounding debres using a CNN based machine learning algorithm"""
-        if not self.downsample:
-            self.create_full_resolution_mask()
-        else:
+        if self.downsample:
             self.create_downsampled_mask()
+        else:
+            self.create_full_resolution_mask()
 
     def load_machine_learning_model(self):
         """Load the CNN model used to generate image masks"""
@@ -123,26 +120,26 @@ class MaskManager:
                 print(f"Could not open {infile}")
             size = int(width), int(height)
             file_keys.append([thumbfile, outpath, size])
+
         workers = self.get_nworkers()
-        self.run_commands_in_parallel_with_executor([file_keys], workers, resize_tif)
+        self.run_commands_concurrently(resize_tif, file_keys, workers)
+
 
     def create_downsampled_mask(self):
         """Create masks for the downsampled images using a machine learning algorithm"""
         self.load_machine_learning_model()
         transform = torchvision.transforms.ToTensor()
-        FULLRES = self.fileLocationManager.get_normalized()
+        NORMALIZED = self.fileLocationManager.get_normalized()
         COLORED = self.fileLocationManager.thumbnail_colored
-        self.logevent(f"INPUT FOLDER: {FULLRES}")
+        self.logevent(f"INPUT FOLDER: {NORMALIZED}")
         
-        test_dir(
-            self.animal, FULLRES, self.section_count, self.downsample, same_size=False
-        )
+        test_dir(self.animal, NORMALIZED, self.section_count, self.downsample, same_size=False)
         os.makedirs(COLORED, exist_ok=True)
-        files = os.listdir(FULLRES)
+        files = os.listdir(NORMALIZED)
         self.logevent(f"FILE COUNT: {len(files)}")
         self.logevent(f"OUTPUT FOLDER: {COLORED}")
         for file in files:
-            filepath = os.path.join(FULLRES, file)
+            filepath = os.path.join(NORMALIZED, file)
             mask_dest_file = (
                 os.path.splitext(file)[0] + ".tif"
             )  # colored mask images have .tif extension
@@ -152,9 +149,6 @@ class MaskManager:
                 continue
 
             img = Image.open(filepath)
-            # img = np.array(img)
-            # img = img.astype(np.float32)
-            # img = torch.tensor(img)
             torch_input = transform(img)
             torch_input = torch_input.unsqueeze(0)
             self.loaded_model.eval()
