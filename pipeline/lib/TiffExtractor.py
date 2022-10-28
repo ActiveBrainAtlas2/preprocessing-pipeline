@@ -2,7 +2,7 @@ import os, glob
 import hashlib
 from lib.ParallelManager import ParallelManager
 from lib.CZIManager import extract_tiff_from_czi, extract_png_from_czi
-from utilities.utilities_process import DOWNSCALING_FACTOR, SCALING_FACTOR
+from utilities.utilities_process import DOWNSCALING_FACTOR
 
 
 class TiffExtractor(ParallelManager):
@@ -10,7 +10,7 @@ class TiffExtractor(ParallelManager):
         """
         This method will:
             1. Fetch the meta information of each slide and czi files from the database
-            2. Extract the images from the czi file and store them as tiff format with the bioformats tool.
+            2. Extract the images from the czi file and store them as tiff format.
             3. Then updates the database with meta information about the sections in each slide
         Args:
             animal: the prep id of the animal
@@ -20,12 +20,14 @@ class TiffExtractor(ParallelManager):
         Returns:
             nothing
         """
-        if not self.downsample:
-            OUTPUT = self.fileLocationManager.tif
-            scale_factor = 1
-        else:
+
+        if self.downsample:
             OUTPUT = self.fileLocationManager.thumbnail_original
             scale_factor = DOWNSCALING_FACTOR
+        else:
+            OUTPUT = self.fileLocationManager.tif
+            scale_factor = 1
+
         INPUT = self.fileLocationManager.czi
         os.makedirs(OUTPUT, exist_ok=True)
         starting_files = glob.glob(
@@ -52,7 +54,6 @@ class TiffExtractor(ParallelManager):
                 continue
             scenei = section.scene_number - 1
             file_keys.append([czi_file, output_path, scenei, self.channel, scale_factor])
-
 
         workers = self.get_nworkers()
         self.run_commands_concurrently(extract_tiff_from_czi, file_keys, workers)
