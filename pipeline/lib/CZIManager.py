@@ -61,10 +61,9 @@ def extract_tiff_from_czi(file_key):
     try:
         data = czi.get_scene(scale=scale, scene_index=scenei, channel=channel)
     except Exception as e:
-        print(f" ERROR READING SCENE {scenei} CHANNEL {channel} [extract_tiff_from_czi] IN FILE {czi_file} to file {os.path.basename(output_path)}")
-        czi.logevent(
-            f"ERROR READING SCENE {scenei} CHANNEL {channel} [extract_tiff_from_czi] FROM FILE {czi_file} -> {czi_file}; ... SKIPPING - ERR: {e}"
-        )
+        message = f" ERROR READING SCENE {scenei} CHANNEL {channel} [extract_tiff_from_czi] IN FILE {czi_file} to file {os.path.basename(output_path)}"
+        print(message)
+        czi.logevent(message)
         return
 
     try:
