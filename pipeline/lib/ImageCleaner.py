@@ -68,8 +68,8 @@ class ImageCleaner:
         max_width = self.sqlController.scan_run.width
         max_height = self.sqlController.scan_run.height
         if self.downsample:
-            max_width = int(max_width * SCALING_FACTOR)
-            max_height = int(max_height * SCALING_FACTOR)
+            max_width = int(max_width / SCALING_FACTOR)
+            max_height = int(max_height / SCALING_FACTOR)
 
         rotation = self.sqlController.scan_run.rotation
         flip = self.sqlController.scan_run.flip
