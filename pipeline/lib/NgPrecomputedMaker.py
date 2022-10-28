@@ -1,10 +1,7 @@
 import os
-import glob
-from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
-from Controllers.SqlController import SqlController
-from utilities.utilities_process import get_cpus, SCALING_FACTOR, test_dir
+from utilities.utilities_process import SCALING_FACTOR, test_dir
 
 
 class NgPrecomputedMaker:
@@ -17,15 +14,13 @@ class NgPrecomputedMaker:
             list: list of converstion factors from pixel to micron for x,y and z
         """
         db_resolution = self.sqlController.scan_run.resolution
-        print(f"DB RESOLUTION:{db_resolution}")
         resolution = int(db_resolution * 1000 / SCALING_FACTOR)
-        print(f"NG RESOLUTION: {resolution}")
         if not self.downsample:
             resolution = int(db_resolution * 1000)
         scales = (resolution, resolution, 20000)
         return scales
 
-    def get_file_information(self, INPUT):
+    def get_file_information(self, INPUT, PROGRESS_DIR):
         """getting the information of files in the directory
 
         Args:
@@ -47,19 +42,15 @@ class NgPrecomputedMaker:
         file_keys = []
         volume_size = (width, height, len(files))
         orientation = self.sqlController.histology.orientation
-        host = self.sqlController.host
-        schema = self.sqlController.schema
         for i, f in enumerate(files):
             filepath = os.path.join(INPUT, f)
-            file_keys.append([i, filepath, host, schema, orientation])
+            file_keys.append([i, filepath, orientation, PROGRESS_DIR])
         return midfile, file_keys, volume_size, num_channels
 
     def create_neuroglancer(self):
 
         """create the Seung lab cloud volume format from the image stack"""
-        progress_id = self.sqlController.get_progress_id(
-            self.downsample, self.channel, "NEUROGLANCER"
-        )
+        progress_id = self.sqlController.get_progress_id(self.downsample, self.channel, "NEUROGLANCER")
 
         if self.downsample:
             INPUT = self.fileLocationManager.get_thumbnail_aligned(channel=self.channel)
@@ -67,19 +58,18 @@ class NgPrecomputedMaker:
             INPUT = self.fileLocationManager.get_full_aligned(channel=self.channel)
             self.sqlController.set_task(self.animal, progress_id)
 
-        OUTPUT_DIR = self.fileLocationManager.get_neuroglancer(
-            self.downsample, self.channel
-        )
+        OUTPUT_DIR = self.fileLocationManager.get_neuroglancer(self.downsample, self.channel)
         os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-        starting_files = test_dir(
-            self.animal, INPUT, self.section_count, self.downsample, same_size=True
-        )
+        PROGRESS_DIR = self.fileLocationManager.get_neuroglancer_progress(self.downsample, self.channel)
+        os.makedirs(PROGRESS_DIR, exist_ok=True)
+
+        #starting_files = test_dir(self.animal, INPUT, self.section_count, self.downsample, same_size=True)
         self.logevent(f"INPUT FOLDER: {INPUT}")
-        self.logevent(f"CURRENT FILE COUNT: {starting_files}")
+        #self.logevent(f"CURRENT FILE COUNT: {starting_files}")
         self.logevent(f"OUTPUT FOLDER: {OUTPUT_DIR}")
 
-        midfile, file_keys, volume_size, num_channels = self.get_file_information(INPUT)
+        midfile, file_keys, volume_size, num_channels = self.get_file_information(INPUT, PROGRESS_DIR)
         chunks = calculate_chunks(self.downsample, -1)
         scales = self.get_scales()
         self.logevent(f"CHUNK SIZE: {chunks}; SCALES: {scales}")
@@ -95,17 +85,8 @@ class NgPrecomputedMaker:
         
         ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=progress_id)
         workers = self.get_nworkers()
-        if num_channels == 1:
-            self.run_commands_in_parallel_with_executor(
-                [file_keys], workers, ng.process_image
-            )
-        else:  # only applicable to tif files with multiple channels (should never occur in current workflow)
-            print("ng.process_3channel **SHOULD NOT OCCUR - CHECK CODE**")
-            self.run_commands_in_parallel_with_executor(
-                [file_keys], workers, ng.process_3channel
-            )
+        self.run_commands_concurrently(ng.process_image, file_keys, workers)
         ng.precomputed_vol.cache.flush()
-        # self.sqlController.set_ng_files_completed(self.animal, progress_id, file_keys) #"ALL OR NOTHING FOR NG FILE CREATION"
 
     def create_neuroglancer_zarr(self):
         """Testing with zarr files. I think using zarr files would
@@ -162,6 +143,6 @@ class NgPrecomputedMaker:
             num_channels=num_channels,
             chunk_size=chunks,
         )
+        workers = self.get_nworkers()
         ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=None)
-        with ProcessPoolExecutor(max_workers=10) as executor:
-            executor.map(ng.process_image, sorted(file_keys))
+        self.run_commands_concurrently(ng.process_image, file_keys, workers)

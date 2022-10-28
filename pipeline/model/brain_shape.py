@@ -1,8 +1,7 @@
 from sqlalchemy import Boolean, Column, String, Integer, Float, ForeignKey
-from .atlas_model import Base, AtlasModel
 from sqlalchemy.sql.sqltypes import LargeBinary
 
-
+from model.atlas_model import Base, AtlasModel
 
 class BrainShape(Base, AtlasModel):
     __tablename__ = 'brain_shape'

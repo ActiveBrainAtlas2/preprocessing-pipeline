@@ -12,7 +12,7 @@ from lib.FileLocationManager import FileLocationManager
 from Controllers.SqlController import SqlController
 from utilities.utilities_alignment import create_downsampled_transforms
 from utilities.utilities_mask import  process_image
-from utilities.utilities_process import test_dir, get_cpus
+from utilities.utilities_process import SCALING_FACTOR, test_dir, get_cpus
 from model.elastix_transformation import ElastixTransformation
 from Controllers.Controller import create_session
 from settings import user,password,host,schema
@@ -134,8 +134,8 @@ def run_offsets(animal, transforms, channel, downsample, masks, create_csv, alle
             rotfile = file.replace('tif', 'txt')
             rotfile = os.path.join(ROT_DIR, rotfile)
             R_cshl = np.loadtxt(rotfile)
-            R_cshl[0,2] = R_cshl[0,2] / 32
-            R_cshl[1,2] = R_cshl[1,2] / 32
+            R_cshl[0,2] = R_cshl[0,2] / SCALING_FACTOR
+            R_cshl[1,2] = R_cshl[1,2] / SCALING_FACTOR
             R_cshl = R_cshl @ r90
             R_cshl = np.linalg.inv(R_cshl)
             R = T @ R_cshl

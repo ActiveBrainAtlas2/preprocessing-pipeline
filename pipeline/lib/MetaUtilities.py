@@ -1,11 +1,10 @@
 import os, sys, time, re, psutil
 from datetime import datetime
-from tqdm import tqdm
-from model.slide import Slide, SlideCziTif
 from pathlib import Path
 import operator
-from concurrent.futures.process import ProcessPoolExecutor
-from Controllers.SqlController import SqlController
+from controller.sql_controller import SqlController
+from model.slide import Slide, SlideCziTif
+
 from lib.CZIManager import CZIManager
 from lib.pipeline_utilities import convert_size
 
@@ -61,28 +60,19 @@ class MetaUtilities:
 
                 mem_avail = psutil.virtual_memory().available
                 batch_size = mem_avail // (single_file_size * ram_coefficient)
-
-                print(
-                    f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-                )
-                self.logevent(
-                    f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-                )
-                n_processing_elements = len(file_keys)
+                msg = f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
+                print(msg)
+                self.logevent(msg)
+                
                 workers = self.get_nworkers()
-
-                self.run_commands_in_parallel_with_executor(
-                    [file_keys],
-                    workers,
-                    parallel_extract_slide_meta_data_and_insert_to_database,
-                    batch_size,
-                )
+                self.run_commands_concurrently(parallel_extract_slide_meta_data_and_insert_to_database, file_keys, workers)
                 self.update_database()  # may/will need revisions for parallel
             else:
-                print("NOTHING TO PROCESS - SKIPPING")
-                self.logevent(f"NOTHING TO PROCESS - SKIPPING")
+                msg = "NOTHING TO PROCESS - SKIPPING"
+                print(msg)
+                self.logevent(msg)
         else:
-            self.logevent(f"ERROR IN CZI FILES (DUPLICATE) OR DB COUNTS")
+            self.logevent("ERROR IN CZI FILES (DUPLICATE) OR DB COUNTS")
             sys.exit()
 
     def get_user_entered_scan_id(self):
@@ -179,8 +169,6 @@ class MetaUtilities:
                 sys.exit()
             self.logevent(f"INPUT FOLDER: {INPUT}")
             self.logevent(f"FILE COUNT: {nfiles}")
-            print(f"INPUT FOLDER: {INPUT}")
-            print(f"FILE COUNT: {nfiles}")
         except OSError as e:
             print(e)
             sys.exit()
@@ -211,9 +199,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         czi.metadata = czi.extract_metadata_from_czi_file(czi_file, czi_org_path)
         return czi.metadata
 
-    def add_slide_information_to_database(
-        czi_org_path, scan_id, czi_metadata, animal, dbhost, dbschema
-    ):
+    def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal, dbhost, dbschema):
         """Add the meta information about image slides that are extracted from the czi file and add them to the database"""
         slide = Slide()
         slide.scan_run_id = scan_id
@@ -227,9 +213,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
             Path(os.path.normpath(czi_org_path)).stat().st_mtime
         )
         slide.scenes = len([elem for elem in czi_metadata.values()][0].keys())
-        print(
-            f"ADD SLIDE INFO TO DB: {slide.file_name} -> PHYSICAL SLIDE ID: {slide.slide_physical_id}"
-        )
+        # print(f"ADD SLIDE INFO TO DB: {slide.file_name} -> PHYSICAL SLIDE ID: {slide.slide_physical_id}")
 
         sqlController = SqlController(animal, dbhost, dbschema)
 
@@ -255,21 +239,17 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
                 tif.height = height
                 tif.scene_index = series_index
                 channel_counter += 1
-                newtif = "{}_S{}_C{}.tif".format(
-                    czi_org_path, scene_number, channel_counter
-                )
+                newtif = "{}_S{}_C{}.tif".format(czi_org_path, scene_number, channel_counter)
                 newtif = newtif.replace(".czi", "").replace("__", "_")
                 tif.file_name = os.path.basename(newtif)
                 tif.channel = channel_counter
                 tif.processing_duration = 0
                 tif.created = time.strftime("%Y-%m-%d %H:%M:%S")
                 sqlController.session.add(tif)
-        print(f"CHANNELS: {channel_counter}; SCENES: {scene_number}")
+        # print(f"CHANNELS: {channel_counter}; SCENES: {scene_number}")
         sqlController.session.commit()
 
     infile, scan_id, channel, animal, host, schema = file_key
     czi_metadata = load_metadata(infile)
-    add_slide_information_to_database(
-        infile, scan_id, czi_metadata, animal, host, schema
-    )
+    add_slide_information_to_database(infile, scan_id, czi_metadata, animal, host, schema)
     return

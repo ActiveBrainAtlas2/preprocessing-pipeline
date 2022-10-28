@@ -3,13 +3,18 @@ import numpy as np
 import pandas as pd
 from skimage import io
 from PIL import Image
+
+from utilities.utilities_process import SCALING_FACTOR
 Image.MAX_IMAGE_PIXELS = None
 import pickle
 import re
-from Controllers.SqlController import SqlController
-from lib.FileLocationManager import FileLocationManager
-import tifffile as tiff
+from timeit import default_timer as timer
+import cv2
 from scipy.ndimage import affine_transform
+
+from controller.sql_controller import SqlController
+from lib.FileLocationManager import FileLocationManager
+
 def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=True, anchor_filepath=None):
     """
     Args:
@@ -28,23 +33,23 @@ def load_transforms(stack, downsample_factor=None, resolution=None, use_inverse=
         resolution = 'down%d' % downsample_factor
 
     fp = get_transforms_filename(stack, anchor_filepath=anchor_filepath)
-    Ts_down32 = load_data(fp)
-    if isinstance(Ts_down32.values()[0], list): 
-        Ts_down32 = {k: np.reshape(v, (3,3)) for k, v in Ts_down32.items()}
+    Ts_downsampled = load_data(fp)
+    if isinstance(Ts_downsampled.values()[0], list): 
+        Ts_downsampled = {k: np.reshape(v, (3,3)) for k, v in Ts_downsampled.items()}
 
     if use_inverse:
         Ts_inv_rescaled = {}
-        for fn, T_down32 in sorted(Ts_down32.items()):
-            T_rescaled = T_down32.copy()
-            T_rescaled[:2, 2] = T_down32[:2, 2] * 32. * planar_resolution / string_to_voxel_size
+        for fn, T_downsampled in sorted(Ts_downsampled.items()):
+            T_rescaled = T_downsampled.copy()
+            T_rescaled[:2, 2] = T_downsampled[:2, 2] * SCALING_FACTOR * planar_resolution / string_to_voxel_size
             T_rescaled_inv = np.linalg.inv(T_rescaled)
             Ts_inv_rescaled[fn] = T_rescaled_inv
         return Ts_inv_rescaled
     else:
         Ts_rescaled = {}
-        for fn, T_down32 in sorted(Ts_down32.items()):
-            T_rescaled = T_down32.copy()
-            T_rescaled[:2, 2] = T_down32[:2, 2] * 32. * planar_resolution / string_to_voxel_size
+        for fn, T_downsampled in sorted(Ts_downsampled.items()):
+            T_rescaled = T_downsampled.copy()
+            T_rescaled[:2, 2] = T_downsampled[:2, 2] * SCALING_FACTOR * planar_resolution / string_to_voxel_size
             Ts_rescaled[fn] = T_rescaled
 
         return Ts_rescaled
@@ -204,7 +209,7 @@ def create_downsampled_transforms(animal, transforms, downsample):
     if downsample:
         transforms_scale_factor = 1
     else:
-        transforms_scale_factor = 32
+        transforms_scale_factor = SCALING_FACTOR
 
     tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
 
@@ -233,7 +238,7 @@ def convert_resolution_string_to_um(animal, downsample):
         planar_resolution = 0.325
 
     if downsample:
-        return planar_resolution * 32.
+        return planar_resolution * SCALING_FACTOR
     else:
         return planar_resolution
 
@@ -356,16 +361,29 @@ orientation_argparse_str_to_imagemagick_str =     {'transpose': '-transpose',
     }
 
 
+def align_image_to_affine(file_key):
+    """This method takes about 20 seconds to run. use this one
+    """
+    _, infile, outfile, T = file_key
+    im1 = Image.open(infile)
+    im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
+    im2.save(outfile)
+    del im1, im2
+    return
 
-
-def clean_image(file_key):
-    index, infile, outfile, T = file_key
-    image = tiff.imread(infile)
+def align_image_to_affineXXX(file_key):
+    """This method takes about 220 seconds to complete
+    """
+    _, infile, outfile, T = file_key
+    start = timer()
+    image = io.imread(infile)
     matrix = T[:2,:2]
     offset = T[:2,2]
     offset = np.flip(offset)
     image1 = affine_transform(image,matrix.T,offset)
-    tiff.imsave(outfile,image1)
+    end = timer()
+    print(f'align image with Scikit took {end - start} seconds.')    
+    cv2.imwrite(outfile, image1)
     del image,image1
     return
 

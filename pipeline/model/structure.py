@@ -1,7 +1,5 @@
-from datetime import datetime
-from sqlalchemy.sql import func
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean
-from .atlas_model import Base, AtlasModel
+from sqlalchemy import Column, String, Integer
+from model.atlas_model import Base, AtlasModel
 
 
 

@@ -1,6 +1,6 @@
-from sqlalchemy import Column, String, Date, Enum, Float, Integer
-from sqlalchemy.orm import relationship
-from .atlas_model import AtlasModel, Base
+from sqlalchemy import Column, String, Enum, Float, Integer
+
+from model.atlas_model import AtlasModel, Base
 
 
 class Virus(Base, AtlasModel):    

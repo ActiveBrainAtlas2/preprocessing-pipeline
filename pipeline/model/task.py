@@ -1,9 +1,8 @@
 from datetime import datetime
 from sqlalchemy.sql import func
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean
-from .atlas_model import Base, AtlasModel
-from model.animal import Animal
 
+from model.atlas_model import Base, AtlasModel
 
 class Task(Base, AtlasModel):
     __tablename__ = 'task'

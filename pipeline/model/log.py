@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
-from .atlas_model import Base, AtlasModel
 
+from model.atlas_model import Base, AtlasModel
 
 class Log(Base, AtlasModel):
     __tablename__ = 'logs'

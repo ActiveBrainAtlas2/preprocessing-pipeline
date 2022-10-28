@@ -22,6 +22,7 @@ class FileLocationManager(object):
         self.histogram = os.path.join(self.root, stack, "histogram")
         self.thumbnail_web = os.path.join(self.root, stack, "www", "scene")
         self.neuroglancer_data = os.path.join(self.root, stack, "neuroglancer_data")
+        self.neuroglancer_progress = os.path.join(self.neuroglancer_data, 'progress')
         self.brain_info = os.path.join(self.root, stack, "brains_info")
         self.operation_configs = os.path.join(self.brain_info, "operation_configs")
         self.mxnet_models = os.path.join(self.brain_info, "mxnet_models")
@@ -80,6 +81,15 @@ class FileLocationManager(object):
         if not rechunck:
             channel_outdir += "_rechunkme"
         return os.path.join(self.neuroglancer_data, f"{channel_outdir}")
+
+    def get_neuroglancer_progress(self, downsample=True, channel=1, rechunck=False):
+        if downsample:
+            channel_outdir = f"C{channel}T"
+        else:
+            channel_outdir = f"C{channel}"
+        if not rechunck:
+            channel_outdir += "_rechunkme"
+        return os.path.join(self.neuroglancer_progress, f"{channel_outdir}")
 
     def get_logdir(self):
         return os.path.join(self.stack)

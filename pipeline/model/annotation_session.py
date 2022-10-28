@@ -1,7 +1,6 @@
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, String, Integer, ForeignKey,Enum,DateTime
-from sqlalchemy.sql.sqltypes import Float
 from model.atlas_model import Base
 from model.brain_region import BrainRegion
 from model.user import User
@@ -20,8 +19,9 @@ class AnnotationSession(Base):
     FK_annotator_id = Column(Integer, ForeignKey('auth_user.id'), nullable=True)
     FK_structure_id = Column(Integer, ForeignKey('structure.id'), nullable=True)
     annotation_type = Column(Enum(AnnotationType))    
-    brain_region = relationship('BrainRegion', lazy=True)
-    user = relationship('User', lazy=True)
     active =  Column(Integer)
     created =  Column(DateTime)
+
+    brain_region = relationship('BrainRegion', lazy=True)
+    user = relationship('User', lazy=True)
 
