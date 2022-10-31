@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import SimpleITK as sitk
 
@@ -182,11 +183,14 @@ def align_elastix(fixed_file, moving_file, moving_index):
     elastixImageFilter.LogToConsoleOff();
     elastixImageFilter.LogToFileOn();
     logfile = str(moving_index).zfill(3) + ".tif"
-    elastixImageFilter.SetOutputDirectory('/tmp/elastix');
+    logpath = '/tmp/elastix'
+    shutil.rmtree(logpath)
+    os.makedirs(logpath, exist_ok=True)
+    elastixImageFilter.SetOutputDirectory(logpath);
     elastixImageFilter.SetLogFileName(logfile);    
     elastixImageFilter.Execute()
-    logpath = os.path.join('/tmp/elastix', logfile)
-    metric_value = getMetricValue(logpath)
+    logfilepath = os.path.join('/tmp/elastix', logfile)
+    metric_value = getMetricValue(logfilepath)
     print(metric_value)
 
 
