@@ -184,7 +184,6 @@ def align_elastix(fixed_file, moving_file, moving_index):
     elastixImageFilter.LogToFileOn();
     logfile = str(moving_index).zfill(3) + ".tif"
     logpath = '/tmp/elastix'
-    shutil.rmtree(logpath)
     os.makedirs(logpath, exist_ok=True)
     elastixImageFilter.SetOutputDirectory(logpath);
     elastixImageFilter.SetLogFileName(logfile);    

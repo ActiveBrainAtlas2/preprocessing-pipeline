@@ -75,10 +75,10 @@ class ElastixManager:
                 if not self.sqlController.check_elastix_metric_row(self.animal, moving_index): 
                     p = Popen(['python', program, fixed_file, moving_file], stdin=PIPE, stdout=PIPE, stderr=PIPE)
                     output, _ = p.communicate(b"input data that is passed to subprocess' stdin")
-                    
-                    metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
-                    updates = {'metric':metric}
-                    self.sqlController.update_elastix_row(self.animal, moving_index, updates)
+                    if len(output) > 0:
+                        metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
+                        updates = {'metric':metric}
+                        self.sqlController.update_elastix_row(self.animal, moving_index, updates)
 
     def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
         center = self.get_rotation_center()
