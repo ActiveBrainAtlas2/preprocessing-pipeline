@@ -5,20 +5,23 @@ from utilities.utilities_process import SCALING_FACTOR, test_dir
 
 
 class NgPrecomputedMaker:
-    """Class to convert a tiff image stack to the precomputed neuroglancer format deviced in Seung lab"""
+    """Class to convert a tiff image stack to the precomputed 
+    neuroglancer format deviced in Seung lab"""
 
     def get_scales(self):
-        """returns the scanning resolution for a given animal.  The scan resolution and sectioning thickness are retrived from the database
+        """returns the scanning resolution for a given animal.  
+        The scan resolution and sectioning thickness are retrived from the database
 
         Returns:
             list: list of converstion factors from pixel to micron for x,y and z
         """
         db_resolution = self.sqlController.scan_run.resolution
         zresolution = self.sqlController.scan_run.zresolution
-        resolution = int(db_resolution * 1000 * SCALING_FACTOR)
-        if not self.downsample:
-            resolution = int(db_resolution * 1000)
-        scales = (resolution, resolution, zresolution // 1000)
+        resolution = int(db_resolution * 1000) 
+        if self.downsample:
+          resolution = int(db_resolution * 1000 * SCALING_FACTOR)
+ 
+        scales = (resolution, resolution, int(zresolution))
         return scales
 
     def get_file_information(self, INPUT, PROGRESS_DIR):
