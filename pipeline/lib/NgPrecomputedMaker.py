@@ -10,7 +10,9 @@ class NgPrecomputedMaker:
 
     def get_scales(self):
         """returns the scanning resolution for a given animal.  
-        The scan resolution and sectioning thickness are retrived from the database
+        The scan resolution and sectioning thickness are retrived from the database.
+        The resolution in the database is stored as micrometers (microns -um). But
+        neuroglancer wants nanometers so we multipy by 1000
 
         Returns:
             list: list of converstion factors from pixel to micron for x,y and z
@@ -21,7 +23,7 @@ class NgPrecomputedMaker:
         if self.downsample:
           resolution = int(db_resolution * 1000 * SCALING_FACTOR)
  
-        scales = (resolution, resolution, int(zresolution))
+        scales = (resolution, resolution, int(zresolution * 1000))
         return scales
 
     def get_file_information(self, INPUT, PROGRESS_DIR):
@@ -68,9 +70,9 @@ class NgPrecomputedMaker:
         PROGRESS_DIR = self.fileLocationManager.get_neuroglancer_progress(self.downsample, self.channel)
         os.makedirs(PROGRESS_DIR, exist_ok=True)
 
-        #starting_files = test_dir(self.animal, INPUT, self.section_count, self.downsample, same_size=True)
+        starting_files = test_dir(self.animal, INPUT, self.section_count, self.downsample, same_size=True)
         self.logevent(f"INPUT FOLDER: {INPUT}")
-        #self.logevent(f"CURRENT FILE COUNT: {starting_files}")
+        self.logevent(f"CURRENT FILE COUNT: {starting_files}")
         self.logevent(f"OUTPUT FOLDER: {OUTPUT_DIR}")
 
         midfile, file_keys, volume_size, num_channels = self.get_file_information(INPUT, PROGRESS_DIR)
