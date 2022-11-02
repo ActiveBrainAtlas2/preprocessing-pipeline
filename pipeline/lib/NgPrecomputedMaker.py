@@ -14,10 +14,11 @@ class NgPrecomputedMaker:
             list: list of converstion factors from pixel to micron for x,y and z
         """
         db_resolution = self.sqlController.scan_run.resolution
-        resolution = int(db_resolution * 1000 / SCALING_FACTOR)
+        zresolution = self.sqlController.scan_run.zresolution
+        resolution = int(db_resolution * 1000 * SCALING_FACTOR)
         if not self.downsample:
             resolution = int(db_resolution * 1000)
-        scales = (resolution, resolution, 20000)
+        scales = (resolution, resolution, zresolution // 1000)
         return scales
 
     def get_file_information(self, INPUT, PROGRESS_DIR):
