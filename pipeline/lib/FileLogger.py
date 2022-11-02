@@ -4,7 +4,21 @@ from pathlib import Path
 import logging
 from datetime import datetime
 
+
 class FileLogger:
+    """
+    This class defines the file logging mechanism
+    First instance of FileLogger class defines default log file name and complete path 'LOGFILE_PATH'
+
+    The full path is passed during application execution (i.e., running the pre-processing pipeline) and sets an
+    environment variable for future file logging
+
+    Optional configuration (defined in __init__) provide for concurrent output to file and console [currently
+    only file output]
+
+    Single method in class accepts log message as argument, creates current timestamp and saves to file
+    """
+
     def __init__(self, LOGFILE_PATH):
         """
         -SET CONFIG FOR LOGGING TO FILE; ABILITY TO OUTPUT TO STD OUTPUT AND FILE
