@@ -49,6 +49,7 @@ class FileLocationManager(object):
         self.jp2 = os.path.join(self.root, stack, "jp2")
         self.thumbnail = os.path.join(self.prep, "CH1", "thumbnail")
         self.histogram = os.path.join(self.root, stack, "histogram")
+        self.section_web = os.path.join(self.root, stack, "www", "section")
         self.thumbnail_web = os.path.join(self.root, stack, "www", "scene")
         self.neuroglancer_data = os.path.join(self.root, stack, "neuroglancer_data")
         self.neuroglancer_progress = os.path.join(self.neuroglancer_data, 'progress')
