@@ -295,3 +295,39 @@ def process_image(n, queue, uuid):
     cropped = pad_image(cleaned, infile, max_width, max_height, 0)
     del cropped
     print("cropped deleted")
+
+
+def create_key_points(file_key):
+    infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
+    img = cv2.imread(outpath, 0)
+    orb = cv2.ORB_create(50)
+    keypoints, des = orb.detectAndCompute(img, None)
+    output = drawKeyPts(img, keypoints, (255,255,255), 5)
+
+    try:
+        cv2.imwrite(outpath, output)
+    except Exception as e:
+        print(f'Error in saving {outpath} with shape {output.shape} img type {output.dtype}')
+        print(f'Error is {e}')
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
+
+ 
+def drawKeyPts(im, keyp, col, th):
+    draw_shift_bits = 4
+    draw_multiplier = 1 << 4
+    LINE_AA = 16
+    im = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+    for curKey in keyp:
+        center = (int(np.round(curKey.pt[0]*draw_multiplier)), int(np.round(curKey.pt[1]*draw_multiplier)))
+        radius = int(np.round(curKey.size/2*draw_multiplier))
+        cv2.circle(im, center, radius, col, thickness=th, lineType=LINE_AA, shift=draw_shift_bits)
+        if(curKey.angle != -1):
+            srcAngleRad = (curKey.angle * np.pi/180.0)
+            orient = (int(np.round(np.cos(srcAngleRad)*radius)), int(np.round(np.sin(srcAngleRad)*radius)))
+            cv2.line(im, center, (center[0]+orient[0], center[1]+orient[1]), col, 1, LINE_AA, draw_shift_bits)
+    return cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+
+
+
+
