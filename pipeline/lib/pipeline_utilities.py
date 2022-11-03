@@ -1,5 +1,6 @@
 from skimage import io
 import os, math
+import sys
 import numpy as np
 from subprocess import check_output
 
@@ -7,9 +8,13 @@ from subprocess import check_output
 def read_image(file_path):
     try:
         img = io.imread(file_path)
-    except IOError as e:
-        errno, strerror = e.args
-        print(f'Could not open {file_path} {errno} {strerror}')
+    except IOError:
+        print(f"I/O error with {file_path}")
+    except:
+        print(f"Error with {file_path}")
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
+
     return img
 
 def get_image_size(filepath):
