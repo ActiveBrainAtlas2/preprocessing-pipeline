@@ -111,7 +111,7 @@ jedi==0.18.1
 jgo==1.0.4
 Jinja2==3.1.2
 jmespath==1.0.1
-joblib==1.1.0
+joblib==1.2.0
 JPype1==1.4.0
 json5==0.9.10
 jsonschema==4.14.0
