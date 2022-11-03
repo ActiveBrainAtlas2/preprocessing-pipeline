@@ -9,6 +9,7 @@ from timeit import default_timer as timer
 import math
 from subprocess import Popen, PIPE
 from pathlib import Path
+import cv2
 
 from lib.FileLocationManager import FileLocationManager
 from utilities.utilities_alignment import align_image_to_affine, create_downsampled_transforms
@@ -290,8 +291,41 @@ class ElastixManager:
         print(f'Align images took {end - start} seconds.')
 
 
+    def create_section_pngs(self):
+        """function to align a set of images with a with the transformations between them given
+
+        Args:
+            INPUT (str): directory of images to be aligned
+            OUTPUT (str): directory output the aligned images
+            transforms (dict): dictionary of transformations indexed by id of moving sections
+
+        Note: image alignment is memory intensive (but all images are same size)
+        6 factor of est. RAM per image for clean/transform needs firmed up but safe
+
+        """
+        INPUT = self.fileLocationManager.get_thumbnail_aligned(self.channel)
+        OUTPUT = self.fileLocationManager.section_web
+
+        os.makedirs(OUTPUT, exist_ok=True)
+        files = os.listdir(INPUT)
+        for file in files:
+            infile = os.path.join(INPUT, file)
+            file = os.path.basename(infile)
+            png = str(file).replace(".tif", ".png")
+            outfile = os.path.join(OUTPUT, png)
+            if os.path.exists(outfile):
+                continue
+            try:
+                img = cv2.imread(infile, cv2.IMREAD_GRAYSCALE)
+                rows, columns = img.shape
+                img = cv2.convertScaleAbs(img)
+                img = cv2.resize(img, (columns//4, rows//4), interpolation = cv2.INTER_AREA)
+                cv2.imwrite(outfile, img)
+            except Exception as e:
+                print(f'Error saving section: {e}')
+
     def create_csv_data(self, animal, file_keys):
-        """legacy code, I don't think this is used in the pipeline and should be depricated
+        """legacy code, I don't think this is used in the pipeline and should be deprecated
 
         Args:
             animal (str): Animal Id

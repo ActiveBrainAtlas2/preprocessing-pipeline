@@ -61,6 +61,7 @@ class Pipeline(
     TASK_CREATING_COMBINED_HISTOGRAM = "Making combined histogram"
     TASK_CREATING_ELASTIX_TRANSFORM = "Creating elastix transform"
     TASK_CREATING_ELASTIX_METRICS = "Creating elastix  metrics"
+    TASK_CREATING_ALIGNED_PNGS = "Creating aligned section PNGs"
     TASK_NEUROGLANCER_SINGLE = "Neuroglancer1 single"
     TASK_NEUROGLANCER_PYRAMID = "Neuroglancer2 pyramid"
 
