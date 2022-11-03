@@ -317,13 +317,4 @@ class ElastixManager:
         df = pd.DataFrame(data)
         df.to_csv(f"/tmp/{animal}.section2sectionalignments.csv", index=False)
 
-# Deprecated
-def calculate_elastix_transformationXXX(INPUT, fixed_index, moving_index, center, debug):
-    second_transform_parameters, initial_transform_parameters = register_simple(
-        INPUT, fixed_index, moving_index, debug
-    )
-    T1 = parameters_to_rigid_transform(*initial_transform_parameters)
-    T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
-    T = T1 @ T2
-    return rigid_transform_to_parmeters(T, center)
 

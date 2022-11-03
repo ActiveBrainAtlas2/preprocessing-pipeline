@@ -24,6 +24,9 @@ import cv2
 from scipy.stats import skew
 from scipy.ndimage import affine_transform
 
+ITERATIONS = "2000"
+
+
 
 
 def parameters_to_rigid_transform(rotation, xshift, yshift, center):
@@ -363,8 +366,7 @@ def align_elastix(fixed, moving, moving_index, tries=10):
             ## 80 good results, 7 minutes on basalis with 4 jobs
             ## 200 good results except for 1st couple were not aligned, 12 minutes
             ## 500 is best, including first sections, basalis took 21 minutes
-            num_iterations = "2000"
-            rigid_params["MaximumNumberOfIterations"] = [num_iterations]
+            rigid_params["MaximumNumberOfIterations"] = [ITERATIONS]
             ## The step size of the optimizer, in mm. By default the voxel size is used.
             ## which usually works well. In case of unusual high-resolution images
             ## (eg histology) it is necessary to increase this value a bit, to the size
