@@ -13,7 +13,8 @@ def read_image(file_path):
     except:
         print(f"Error with {file_path}")
         print("Unexpected error:", sys.exc_info()[0])
-        raise
+        print("Quitting program!")
+        sys.exit()
 
     return img
 
