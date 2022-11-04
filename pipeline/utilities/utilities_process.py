@@ -349,3 +349,16 @@ def submit_proxy(function, semaphore, executor, *args, **kwargs):
     future = executor.submit(function, *args, **kwargs)
     future.add_done_callback(task_complete_callback)
     return future
+
+
+def read_image(file_path):
+    '''
+
+    Note: RECENTLY MOVED FROM lib.pipeline_utilities.py
+    '''
+    try:
+        img = io.imread(file_path)
+    except IOError as e:
+        errno, strerror = e.args
+        print(f'Could not open {file_path} {errno} {strerror}')
+    return img

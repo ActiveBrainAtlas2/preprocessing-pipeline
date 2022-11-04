@@ -1,6 +1,19 @@
 import os
-from subprocess import Popen, check_output
 import socket
+from subprocess import Popen, check_output
+
+
+def convert_size(size_bytes):
+    ''' FUNCTION TO GENERATE AND RETURN HUMAN-READABLE FORMAT OF bytes'''
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
+
+
 def get_hostname():
     hostname = socket.gethostname()
     hostname = hostname.split(".")[0]
@@ -18,11 +31,16 @@ def get_cpus():
         usecpus = cpus[hostname]
     return usecpus
 
-def get_image_size(filepath):
-    result_parts = str(check_output(["identify", filepath]))
-    results = result_parts.split()
-    width, height = results[2].split('x')
-    return width, height
+
+# DEPRECATED AS OF 4-NOV-2022
+# def get_image_size(filepath):
+#     '''DUPLICATE FUNCTION IN utilities_process.py and pipeline_utilities.py
+#     CONSOLIDATED IN utilities_process.py as of 4-NOV-2022
+#     '''
+#     result_parts = str(check_output(["identify", filepath]))
+#     results = result_parts.split()
+#     width, height = results[2].split('x')
+#     return width, height
 
 
 def workershell(cmd):
