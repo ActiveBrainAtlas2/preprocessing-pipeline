@@ -1,9 +1,12 @@
 import sys
 import cv2
 import numpy as np
-from lib.pipeline_utilities import convert_size, read_image
+from utilities.shell_tools import convert_size
 import os
 from timeit import default_timer as timer
+
+#from lib.pipeline_utilities import convert_size, read_image   #DEPRECATED AS OF 4-NOV-2022
+from utilities.utilities_process import read_image
 
 def rotate_image(img, file, rotation):
     """
@@ -193,12 +196,8 @@ def clean_and_rotate_image(file_key):
     infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
 
     img = read_image(infile)
-    #print(f"MEM SIZE OF img {infile}: {convert_size(sys.getsizeof(img))}")
     mask = read_image(maskfile)
-    #print(f"MEM SIZE OF mask {maskfile}: {convert_size(sys.getsizeof(mask))}")
     cleaned = apply_mask(img, mask, infile)
-    #print(f"MEM SIZE OF cleaned: {convert_size(sys.getsizeof(cleaned))}")
-    #print(f"TOTAL MEMORY SIZE FOR AGGREGATE (img, mask, cleaned): {convert_size(sys.getsizeof(img)+sys.getsizeof(mask)+sys.getsizeof(cleaned))}")
     del img
     if channel == 1:
         cleaned = scaled(cleaned, mask, epsilon=0.01)
