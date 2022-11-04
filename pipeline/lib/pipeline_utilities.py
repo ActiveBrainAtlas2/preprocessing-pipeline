@@ -10,6 +10,9 @@ def read_image(file_path):
         img = io.imread(file_path)
     except IOError:
         print(f"I/O error with {file_path}")
+        print("Unexpected error:", sys.exc_info()[0])
+        print("Quitting program!")
+        sys.exit()
     except:
         print(f"Error with {file_path}")
         print("Unexpected error:", sys.exc_info()[0])
