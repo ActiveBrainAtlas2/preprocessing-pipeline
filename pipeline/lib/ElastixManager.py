@@ -1,4 +1,5 @@
 import os
+import math
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
@@ -6,7 +7,6 @@ from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from timeit import default_timer as timer
-import math
 from subprocess import Popen, PIPE
 from pathlib import Path
 
@@ -18,22 +18,32 @@ from utilities.utilities_registration import (
     rigid_transform_to_parmeters,
 )
 from model.elastix_transformation import ElastixTransformation
-from lib.pipeline_utilities import get_image_size
-
-
-
-def convert_size(size_bytes):
-    if size_bytes == 0:
-        return "0B"
-    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.floor(math.log(size_bytes, 1024)))
-    p = math.pow(1024, i)
-    s = round(size_bytes / p, 2)
-    return "%s %s" % (s, size_name[i])
+from utilities.utilities_process import get_image_size
 
 
 class ElastixManager:
-    """Class for generating, storing and applying the within stack alignment with the Elastix package"""
+    '''
+    Class for generating, storing and applying transformations within stack alignment [with the Elastix package]
+
+    All mathods relate to aligning images in stack
+
+    Methods
+    -------
+    create_within_stack_transformations()
+    call_alignment_metrics()
+    calculate_elastix_transformation()
+    rigid_transform_to_parmeters()
+    parameters_to_rigid_transform()
+    load_elastix_transformation()
+    get_rotation_center()
+    get_transformations()
+    align_full_size_image()
+    align_downsampled_images()
+    align_section_masks()
+    align_images()
+    create_csv_data() # DEPRECATED AS OF 4-NOV-2022
+
+    '''
 
     def create_within_stack_transformations(self):
         """Calculate and store the rigid transformation using elastix.  
@@ -94,7 +104,6 @@ class ElastixManager:
         )
 
 
-
     def rigid_transform_to_parmeters(self, transform):
         """convert a 2d transformation matrix (3*3) to the rotation angles, rotation center and translation
 
@@ -110,6 +119,7 @@ class ElastixManager:
         """
         return rigid_transform_to_parmeters(transform, self.get_rotation_center())
 
+
     def parameters_to_rigid_transform(self, rotation, xshift, yshift, center):
         """convert a set of rotation parameters to the transformation matrix
 
@@ -123,6 +133,7 @@ class ElastixManager:
             array: 3*3 transformation matrix for 2D image, contain the 2*2 array and 1*2 translation vector
         """
         return parameters_to_rigid_transform(rotation, xshift, yshift, center)
+
 
     def load_elastix_transformation(self, animal, moving_index):
         """loading the elastix transformation from the database
@@ -152,6 +163,7 @@ class ElastixManager:
         yshift = elastixTransformation.yshift
         return R, xshift, yshift
 
+
     def get_rotation_center(self):
         """return a rotation center for finding the parameters of a transformation from the transformation matrix
 
@@ -165,6 +177,7 @@ class ElastixManager:
         width, height = get_image_size(midfilepath)
         center = np.array([width, height]) / 2
         return center
+
 
     def get_transformations(self):
         """
@@ -206,6 +219,7 @@ class ElastixManager:
                 transformations[filename] = T_composed
         return transformations
 
+
     def align_full_size_image(self, transforms):
         """align the full resolution tif images with the transformations provided.
            All the sections are aligned to the middle sections, the transformation
@@ -231,6 +245,7 @@ class ElastixManager:
             )
             self.sqlController.set_task(self.animal, progress_id)
 
+
     def align_downsampled_images(self, transforms):
         """align the downsample tiff images
 
@@ -246,6 +261,7 @@ class ElastixManager:
             )
             self.sqlController.set_task(self.animal, progress_id)
 
+
     def align_section_masks(self, animal, transforms):
         """function that can be used to align the masks used for cleaning the image.  This not run as part of
         the pipeline, but is used to create the 3d shell around a certain brain
@@ -258,6 +274,7 @@ class ElastixManager:
         INPUT = fileLocationManager.rotated_and_padded_thumbnail_mask
         OUTPUT = fileLocationManager.aligned_rotated_and_padded_thumbnail_mask
         self.align_images(INPUT, OUTPUT, transforms)
+
 
     def align_images(self, INPUT, OUTPUT, transforms):
         """function to align a set of images with a with the transformations between them given
@@ -290,40 +307,41 @@ class ElastixManager:
         print(f'Align images took {end - start} seconds.')
 
 
-    def create_csv_data(self, animal, file_keys):
-        """legacy code, I don't think this is used in the pipeline and should be depricated
+    # DEPRECATED AS OF 4-NOV-2022
+    # def create_csv_data(self, animal, file_keys):
+    #     """legacy code, I don't think this is used in the pipeline and should be depricated
+    #
+    #     Args:
+    #         animal (str): Animal Id
+    #         file_keys (list): list of file input
+    #     """
+    #     data = []
+    #     for index, infile, outfile, T in file_keys:
+    #         T = np.linalg.inv(T)
+    #         file = os.path.basename(infile)
+    #
+    #         data.append(
+    #             {
+    #                 "i": index,
+    #                 "infile": file,
+    #                 "sx": T[0, 0],
+    #                 "sy": T[1, 1],
+    #                 "rx": T[1, 0],
+    #                 "ry": T[0, 1],
+    #                 "tx": T[0, 2],
+    #                 "ty": T[1, 2],
+    #             }
+    #         )
+    #     df = pd.DataFrame(data)
+    #     df.to_csv(f"/tmp/{animal}.section2sectionalignments.csv", index=False)
 
-        Args:
-            animal (str): Animal Id
-            file_keys (list): list of file input
-        """
-        data = []
-        for index, infile, outfile, T in file_keys:
-            T = np.linalg.inv(T)
-            file = os.path.basename(infile)
 
-            data.append(
-                {
-                    "i": index,
-                    "infile": file,
-                    "sx": T[0, 0],
-                    "sy": T[1, 1],
-                    "rx": T[1, 0],
-                    "ry": T[0, 1],
-                    "tx": T[0, 2],
-                    "ty": T[1, 2],
-                }
-            )
-        df = pd.DataFrame(data)
-        df.to_csv(f"/tmp/{animal}.section2sectionalignments.csv", index=False)
-
-# Deprecated
-def calculate_elastix_transformationXXX(INPUT, fixed_index, moving_index, center, debug):
-    second_transform_parameters, initial_transform_parameters = register_simple(
-        INPUT, fixed_index, moving_index, debug
-    )
-    T1 = parameters_to_rigid_transform(*initial_transform_parameters)
-    T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
-    T = T1 @ T2
-    return rigid_transform_to_parmeters(T, center)
-
+# DEPRECATED AS OF 4-NOV-2022
+# def calculate_elastix_transformationXXX(INPUT, fixed_index, moving_index, center, debug):
+#     second_transform_parameters, initial_transform_parameters = register_simple(
+#         INPUT, fixed_index, moving_index, debug
+#     )
+#     T1 = parameters_to_rigid_transform(*initial_transform_parameters)
+#     T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
+#     T = T1 @ T2
+#     return rigid_transform_to_parmeters(T, center)

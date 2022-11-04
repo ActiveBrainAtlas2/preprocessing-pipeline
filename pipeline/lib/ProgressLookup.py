@@ -1,4 +1,14 @@
 class ProgressLookup:
+    '''
+    Static class lookup table for reference codes as stages in pipleline processing
+
+    These codes could be moved to separate file (not class) if just reference table
+
+    Methods
+    -------
+    __init__()
+    '''
+
     def __init__(self):
         self.SLIDES_ARE_SCANNED = 10
         self.CZI_FILES_ARE_PLACED_ON_BIRDSTORE = 20

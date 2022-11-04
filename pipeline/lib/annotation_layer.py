@@ -1,6 +1,3 @@
-'''
-Put file doc info here
-'''
 import string
 import random
 from unicodedata import category
@@ -13,6 +10,26 @@ default_annotation_layer = dict(type = 'annotation',annotations = [],name = 'ann
 class AnnotationLayer:
     '''
     Class mapping to different annotation types in neuroglancer
+
+     Methods
+    -------
+    __init__()
+    __str__()
+    parse_annotations()
+    parse_point()
+    parse_line()
+    parse_polygon()
+    parse_volume()
+    search_annotation_with_id()
+    group_annotations()
+    reorder_polygon_points()
+    check_polygon_points()
+    get_annotation_with_id()
+    delete_annotation_with_id()
+    get_volumes()
+    get_polygons()
+    to_json()
+
     '''
 
     def __init__(self, annotation_layer=default_annotation_layer):

@@ -1,3 +1,4 @@
+
 import numpy as np
 import sys
 import time
@@ -10,7 +11,8 @@ from lib.utilities_atlas import parallel_where_binary, convert_transform_forms, 
     compute_bspline_cp_contribution_to_test_pts, convert_volume_forms, transform_points_affine, compute_gradient_v2, \
     transform_points_bspline, rotate_transform_vector, affine_components_to_vector, compose_alignment_parameters, \
     rotationMatrixToEulerAngles, eulerAnglesToRotationMatrix
-from abakit.lib.lie import matrix_exp_v
+
+from abakit.lib.lie import matrix_exp_v #abakit is deprecated
 
 volume_f = None
 volume_m = None
@@ -22,6 +24,39 @@ grad_f = None
 grad_f_origin = None
 
 class Aligner(object):
+    '''
+    Believed to be part of atlas, not pipeline
+
+
+    Methods
+    -------
+    __init__()
+    set_initial_transform()
+    set_label_weights()
+    set_inverse_covar_mats_all_indices()
+    set_regularization_weights()
+    set_bspline_grid_size()
+    set_centroid()
+    compute_gradient()
+    load_gradient()
+    get_valid_voxels_after_transform()
+    compute_score_and_gradient_one()
+    compute_score_and_gradient()
+    compute_score_one()
+    compute_scores_neighborhood_samples()
+    compute_scores_neighborhood_samples_rotation()
+    compute_scores_neighborhood_grid()
+    compute_scores_neighborhood_random_rotation()
+    compute_scores_neighborhood_random()
+    compute_hessian()
+    grid_search()
+    do_grid_search()
+    optimize()
+    step_lie()
+    step_gd()
+
+    '''
+
     def __init__(self, fixed, moving=None, nzvoxels_m_=None, centroid_f=None, centroid_m=None, \
                 labelIndexMap_m2f=None, label_weights=None, reg_weights=None, zrange=None, nz_thresh=0, init_T=None, init_transform_type='affine',
                 invalid_voxel_penalty=1., verbose=False):

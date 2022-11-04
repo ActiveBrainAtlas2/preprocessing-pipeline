@@ -2,6 +2,21 @@ from model.urlModel import UrlModel
 
 
 class UrlController:
+    '''
+    Appears to be part of API (backend) for Neuroglancer
+    If true, this is not part of pipeline
+
+
+    Methods
+    -------
+    url_exists()
+    add_url()
+    delete_url()
+    get_urlModel()
+    get_url_id_list()
+
+    '''
+
     def url_exists(self, comments):
         row_exists = bool(
             self.session.query(UrlModel).filter(UrlModel.comments == comments).first()

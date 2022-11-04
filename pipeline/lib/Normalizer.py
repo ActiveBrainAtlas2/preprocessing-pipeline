@@ -6,6 +6,15 @@ from skimage import io
 from utilities.utilities_mask import equalized
 
 class Normalizer:
+    '''
+    Single method to normlize images
+
+    Methods
+    -------
+    create_normalized_image()
+
+    '''
+
     def create_normalized_image(self):
         """Normalize the downsampled images with QC applied"""
         if self.channel == 1 and self.downsample:

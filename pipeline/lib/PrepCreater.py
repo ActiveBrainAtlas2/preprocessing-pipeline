@@ -1,14 +1,24 @@
 import os
 from PIL import Image
-
 Image.MAX_IMAGE_PIXELS = None
 from concurrent.futures.process import ProcessPoolExecutor
-
-from utilities.utilities_process import test_dir, create_downsample
-from utilities.shell_tools import get_image_size
+from utilities.utilities_process import test_dir, create_downsample, get_image_size
 
 
 class PrepCreater:
+    '''
+    Contains methods related to generating low-resolution images from image stack [so user can review for abnormalities
+    e.g. missing tissue, poor scan, etc.] and applying this quality control analysis to image stack
+
+    Methods
+    -------
+    set_task_preps()
+    apply_QC()
+    make_low_resolution()
+
+    '''
+
+
     def set_task_preps(self):
         if self.channel == 1:
             self.sqlController.update_scanrun(self.sqlController.scan_run.id)

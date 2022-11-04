@@ -5,7 +5,21 @@ import numpy as np
 
 
 class Brain:
-    """Basic class for the preprocessing pipeline, Cell Detection, contour processing and atlas creation"""
+    '''Basic class for quering attributes of Cell Detection, contour processing and atlas creation
+
+    Methods
+    -------
+    __init__()
+    get_resolution()
+    get_image_dimension()
+    get_com_array()
+    load_com()
+    get_shared_coms()
+    set_structure_from_attribute()
+    get_structures_from_attribute()
+    convert_unit_of_com_dictionary()
+
+    '''
 
     def __init__(self, animal, sql=True, *arg, **kwarg):
         """Initiates the brain object, starts the sqalchemy session, sets the location for the pipeline, readies the plotter

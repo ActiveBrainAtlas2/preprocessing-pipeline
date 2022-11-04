@@ -4,6 +4,27 @@ import numpy as np
 from collections import OrderedDict
 
 class UrlGenerator:
+    '''
+    Appears to be part of API (backend) for Neuroglancer
+    If true, this is not part of pipeline
+
+    Methods
+    -------
+    __init__()
+    add_stack_image()
+    add_segmentation_layer()
+    add_precomputed_image_layer()
+    add_annotation_layer()
+    get_url()
+    add_to_database()
+    parse_url()
+    load_database_url()
+    get_layer_with_name()
+    get_image_layers()
+    get_points_from_annotation_layer()
+
+    '''
+
     def __init__(self):
         self.layers = []
         self.controller = SqlController("DK52")
@@ -75,9 +96,6 @@ class UrlGenerator:
             insert_key_value(annotation_layer,'annotationColor',-2,color_hex)
         self.layers.append(annotation_layer)
 
-    def change_annotation_color_hex(self,annotation_layer,color_hex):
-        ...
-
     def get_url(self):
         if hasattr(self, "dimensions"):
             return json.dumps(
@@ -125,6 +143,10 @@ class UrlGenerator:
         for annotation in annotations:
             points.append(annotation["point"])
         return np.array(points)
+
+    # DEPRECATED AS OF 4-NOV-2022
+    # def change_annotation_color_hex(self,annotation_layer,color_hex):
+    #     ...
 
 def insert_key_value(a_dict, key, pos_key, value):
     new_dict = OrderedDict()
