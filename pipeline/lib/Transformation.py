@@ -1,11 +1,31 @@
 import SimpleITK as sitk
 import numpy as np
 from copy import copy
+
+
 class Transformation:
-    """a wrapper around sitk transformations to transform point sets
-    """
+    '''
+    a wrapper around sitk transformations to transform point sets
+
+
     #TODO this does not work with the affine transformation type right now.  Sitk objects are hard to pickle, the method 
     # we have right now circumvent this for the rigid transformation but not for affine
+
+    Methods
+    -------
+    __init__()
+    inverse_transform_points()
+    forward_transform_points()
+    transform_points()
+    create_inverse_transform()
+    create_transform()
+    forward_transform_volume()
+    inverse_transform_volume()
+    transform_volume()
+    transform_np_array()
+
+    '''
+
     def __init__(self,fixed_and_regular_parameters,type):
         self.fixed_and_regular_parameters = fixed_and_regular_parameters
         self.type = type

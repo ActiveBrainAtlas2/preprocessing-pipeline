@@ -6,6 +6,19 @@ from utilities.utilities_process import DOWNSCALING_FACTOR
 
 
 class TiffExtractor(ParallelManager):
+    '''
+    Includes methods to extract tiff images from czi source files and generate png files for quick viewing of
+    downsampled images in stack
+
+    Methods
+    -------
+    extract_tifs_from_czi()
+    update_database()
+    calc_filechecksum()
+    create_web_friendly_image()
+
+    '''
+
     def extract_tifs_from_czi(self):
         """
         This method will:

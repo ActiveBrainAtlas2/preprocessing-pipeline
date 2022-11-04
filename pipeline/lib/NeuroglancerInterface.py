@@ -8,6 +8,18 @@ from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer
 
 
 class NeuroglancerInterface:
+    '''
+    Deprecated local visualizations? Does not appear part of pipeline
+
+    Methods
+    -------
+    __init__()
+    load_image_layer()
+    load_annotation_layer()
+    show_neuroglancer_view()
+
+    '''
+
     def __init__(self, dimensions):
         self.viewer = neuroglancer.Viewer()
         self.layers = {}
@@ -35,6 +47,20 @@ class NeuroglancerInterface:
 
 
 class BrainViewer(NeuroglancerInterface):
+    '''
+    Related to SimpleITK?  Deprecated?
+
+    Methods
+    -------
+    __init__()
+    get_prepi_full_aligned()
+    load_image()
+    get_prepi_thumbnail()
+    load_prepi_image()
+    load_transfromed_prepi_image()
+
+    '''
+
     def __init__(self):
         super().__init__()
         self.thumbnail_image_cache = {}
@@ -82,5 +108,6 @@ class BrainViewer(NeuroglancerInterface):
         image = self.get_prepi_thumbnail(prepi)
         transformed_image = ...
 
-    def load_id_image():
-        ...
+
+    # def load_id_image():
+    #     ...

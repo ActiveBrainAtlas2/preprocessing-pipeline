@@ -12,6 +12,26 @@ from abakit.lib.Controllers.SqlController import SqlController
 SECTION_THICKNESS = 20.  # in um
 
 class CoordinatesConverter(object):
+    '''
+    Appears related to atlas, not pipeline
+    still used?
+
+    Methods
+    -------
+    __init__()
+    set_data()
+    derive_three_view_frames()
+    register_new_frame()
+    register_new_resolution()
+    get_resolution_um()
+    convert_three_view_frames()
+    convert_resolution()
+    convert_from_wholebrain_um()
+    convert_to_wholebrain_um()
+    convert_frame_and_resolution()
+
+    '''
+
     def __init__(self, stack=None, section_list=None):
         """
         """

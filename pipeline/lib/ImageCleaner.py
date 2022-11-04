@@ -1,16 +1,31 @@
 import os
 import numpy as np
 from PIL import Image
-Image.MAX_IMAGE_PIXELS = None
-from timeit import default_timer as timer
-
 from utilities.utilities_mask import clean_and_rotate_image
 from utilities.utilities_process import SCALING_FACTOR, test_dir
 from model.slide import SlideCziTif
 from model.slide import Slide
 from model.slide import Section
+Image.MAX_IMAGE_PIXELS = None
+
 
 class ImageCleaner:
+    '''
+    Methods for cleaning images [and rotation, if necessary].  "Cleaning" means applying user-verified masks (QC step) to
+    downsampled or full-resolution images
+
+
+     Methods
+    -------
+    create_cleaned_images()
+    create_cleaned_images_thumbnail()
+    create_cleaned_images_full_resolution()
+    get_section_rotation()
+    parallel_create_cleaned()
+
+    '''
+
+
     def create_cleaned_images(self):
         """
         This method applies the image masks that has been edited by the user to extract the tissue image from the surrounding

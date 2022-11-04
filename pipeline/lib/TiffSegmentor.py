@@ -11,6 +11,23 @@ import shutil
 
 
 class TiffSegmentor(CellDetectorBase):
+    '''
+    PART OF CELL SEGMENTATION/EXTRACTION; NOT PIPELINE (AS OF 4-NOV-2022)
+
+    Methods
+    -------
+    __init__()
+    detect_annotator_person_id()
+    get_save_folders()
+    create_directories_for_channeli()
+    generate_tiff_segments()
+    have_csv_in_path()
+    create_sectioni_csv()
+    move_full_aligned()
+    delete_full_aligned()
+
+    '''
+
     def __init__(self, animal, n_workers=10, *args, **kwargs):
         super().__init__(animal, *args, **kwargs)
         self.detect_annotator_person_id()
@@ -32,6 +49,10 @@ class TiffSegmentor(CellDetectorBase):
                 self.person_id = person_id
 
     def get_save_folders(self, save_directory):
+        '''
+        IF PART OF PIPELINE PROPER, THIS METHOD SHOULD MOVE TO FileLocationManager CLASS
+
+        '''
         files = os.listdir(self.tif_directory)
         self.save_folders = []
         for filei in files:

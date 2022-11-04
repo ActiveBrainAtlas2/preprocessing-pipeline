@@ -1,8 +1,20 @@
 import logging
 from model.log import Log
+import pandas as pd
 
 
 class DatabaseHandler(logging.Handler):
+    '''
+    Class to store log of activities executed during pipeline processing into database
+
+    Note: Unclear if still used as of 4-NOV-2022
+    N.B. May be redundant with FileLogger
+
+    Methods
+    -------
+    emit()
+    '''
+
     def emit(self, record):
         log = Log(
             prep_id=record.name,
@@ -14,21 +26,8 @@ class DatabaseHandler(logging.Handler):
         self.session.commit()
 
 
-def get_logger(prep_id, level=logging.INFO):
-    handler = DatabaseHandler()
-
-    logger = logging.getLogger(prep_id)
-    logger.setLevel(level)
-    logger.addHandler(handler)
-
-    return logger
-
-
-import pandas as pd
-
-
 class logger:
-    """A helper class for defining a logger function and for parsing the
+    '''A helper class for defining a logger function and for parsing the
     log, assuming it is created by XGBoost.
         Typical use:
 
@@ -37,7 +36,14 @@ class logger:
 
         bst = xgb.train(plst, dtrain, num_round, evallist, verbose_eval=False, callbacks=[logall])
         D=Logger.parse_log() #returns a dataframe with the logs.
-    """
+
+    Methods
+    -------
+    __init__()
+    get_logger()
+    parse_log()
+
+    '''
 
     def __init__(self):
         self.log = []
@@ -73,3 +79,13 @@ class logger:
         if not ax is None:
             df.plot(grid=True, title=title, ax=ax)
         return df
+
+
+def get_logger(prep_id, level=logging.INFO):
+    handler = DatabaseHandler()
+
+    logger = logging.getLogger(prep_id)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger

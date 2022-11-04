@@ -10,11 +10,32 @@ from utilities.utilities_process import workernoshell, submit_proxy
 
 
 class ParallelManager:
+    '''
+    Methods to support processing any part of pipeline (discreet function) using multiple cores
+
+    Methods
+    -------
+    get_hostname()
+    get_nworkers()
+    run_commands_concurrently()
+    run_commands_in_parallel_with_shell()
+    run_commands_in_parallel_with_multiprocessing()
+    function_belongs_to_a_pipeline_object()
+    make_picklable_copy_of_function()
+    run_commands_in_parallel_with_executor()
+
+
+    '''
 
     def get_hostname(self):
+        '''
+        DUPLICATE WITH FUNCTION IN utilities.shell_tools?
+        If true, can we remove?
+        '''
         hostname = socket.gethostname()
         hostname = hostname.split(".")[0]
         return hostname
+
 
     def get_nworkers(self):
         """There is little point in setting two different levels in one host

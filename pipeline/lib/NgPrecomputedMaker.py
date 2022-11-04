@@ -5,8 +5,18 @@ from utilities.utilities_process import SCALING_FACTOR, test_dir
 
 
 class NgPrecomputedMaker:
-    """Class to convert a tiff image stack to the precomputed 
-    neuroglancer format deviced in Seung lab"""
+    '''Class to convert a tiff image stack to the precomputed
+    neuroglancer format code from Seung lab
+
+    Methods
+    -------
+    get_scales()
+    get_file_information()
+    create_neuroglancer()
+    create_neuroglancer_zarr()
+    create_neuroglancer_lite()
+
+    '''
 
     def get_scales(self):
         """returns the scanning resolution for a given animal.  

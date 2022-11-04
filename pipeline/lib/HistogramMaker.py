@@ -4,13 +4,25 @@ from matplotlib import pyplot as plt
 from skimage import io
 import numpy as np
 import cv2
-from utilities.utilities_process import test_dir
+from utilities.utilities_process import test_dir, read_image
+
+#from lib.pipeline_utilities import read_image  #MOVED TO utilities_process AS OF 4-NOV-2022
+
 
 COLORS = {1: "b", 2: "r", 3: "g"}
-from lib.pipeline_utilities import read_image
 
 
 class HistogramMaker:
+    '''
+    Includes methods to generate single histograms per tiff file and a combined histogram for entire stack
+
+    Methods
+    -------
+    make_histogram()
+    make_combined_histogram()
+
+    '''
+
     def make_histogram(self):
         """
         This method creates an individual histogram for each tif file by channel.

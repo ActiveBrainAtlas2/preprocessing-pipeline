@@ -4,7 +4,8 @@ DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root"
 
 
 class FileLocationManager(object):
-    """Master class to house all file paths for preprocessing-pipeline
+    '''Master class to house all file paths for preprocessing-pipeline
+
     All file locations are defined in this class for reference by other methods/functions.
     Default root is UCSD-specific (birdstore fileshare) but may be modified in DATA_PATH
     Subfolders to each brain are defined based on usage (some examples below):
@@ -33,7 +34,23 @@ class FileLocationManager(object):
         └── scene
 
     Methods in this class return a file path location based on channel (default is channel 1)
-    """
+
+    Methods
+    -------
+    __init__()
+    get_full()
+    get_thumbnail()
+    get_elastix()
+    get_full_cleaned()
+    get_full_aligned()
+    get_thumbnail_aligned()
+    get_normalized()
+    get_histogram()
+    get_neuroglancer()
+    get_neuroglancer_progress()
+    get_logdir()
+
+    '''
 
     def __init__(self, stack, DATA_PATH=DATA_PATH):
         """setup the directory, file locations
@@ -103,6 +120,11 @@ class FileLocationManager(object):
         return os.path.join(self.histogram, f"CH{channel}")
 
     def get_neuroglancer(self, downsample=True, channel=1, rechunck=False):
+        '''
+        Returns path to store neuroglancer files ('precomputed' format)
+
+        Note: This path is also web-accessbile [@ UCSD]
+        '''
         if downsample:
             channel_outdir = f"C{channel}T"
         else:
@@ -121,4 +143,8 @@ class FileLocationManager(object):
         return os.path.join(self.neuroglancer_progress, f"{channel_outdir}")
 
     def get_logdir(self):
+        '''
+        This method is only called on first instance then stored as environment variable
+        [See: FileLogger class for more information]
+        '''
         return os.path.join(self.stack)

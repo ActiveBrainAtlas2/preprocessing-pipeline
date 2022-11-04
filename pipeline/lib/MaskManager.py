@@ -7,14 +7,29 @@ import cv2
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-
 from utilities.utilities_mask import combine_dims, merge_mask
-from utilities.utilities_process import test_dir
-from lib.pipeline_utilities import get_image_size
-
+from utilities.utilities_process import test_dir, get_image_size
 
 
 class MaskManager:
+    '''
+    Class containing all methods related to image masks
+
+    This class is used to create masks for each tiff image (post-extraction from czi files), apply user-modified masks
+
+    Note: Uses pytorch for ML generation of masks
+
+    Methods
+    -------
+    apply_user_mask_edits()
+    get_model_instance_segmentation()
+    create_mask()
+    load_machine_learning_model()
+    create_full_resolution_mask()
+    create_downsampled_mask()
+
+    '''
+
     def apply_user_mask_edits(self):
         """Apply the edits made on the image masks to extract the tissue from the surround debre to create the final
         masks used to clean the images"""
@@ -123,7 +138,6 @@ class MaskManager:
 
         workers = self.get_nworkers()
         self.run_commands_concurrently(resize_tif, file_keys, workers)
-
 
     def create_downsampled_mask(self):
         """Create masks for the downsampled images using a machine learning algorithm"""

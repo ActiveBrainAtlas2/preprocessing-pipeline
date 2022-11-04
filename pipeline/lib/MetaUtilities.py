@@ -6,10 +6,30 @@ from controller.sql_controller import SqlController
 from model.slide import Slide, SlideCziTif
 
 from lib.CZIManager import CZIManager
-from lib.pipeline_utilities import convert_size
+
+from utilities.shell_tools import convert_size
+#from lib.pipeline_utilities import convert_size #DEPRECATED 4-NOV-2022
 
 
 class MetaUtilities:
+    '''
+    Collection of methods used to extract meta-data from czi files and insert into database
+    Also includes methods for validating information in database and/or files [double-check]
+
+
+    Methods
+    -------
+    extract_slide_meta_data_and_insert_to_database()
+    extract_slide_meta_data_and_insert_to_database()
+    get_user_entered_scan_id()
+    file_validation()
+    all_slide_meta_data_exists_in_database()
+    slide_meta_data_exists()
+    check_czi_file_exists()
+    update_database()
+
+    '''
+
     def extract_slide_meta_data_and_insert_to_database(self):
         """
         REVISED FOR PARALLEL PROCESSING
@@ -176,7 +196,11 @@ class MetaUtilities:
         return files
 
     def update_database(self):
-        """Updates the "file log" table in the database that tracks the progress of the pipeline"""
+        """Updates the "file log" table in the database that tracks the progress of the pipeline
+
+        Unclear if still used/relevant as of 4-NOV-2022; if still used method name change [to something more descriptive
+        would be appropriate]
+        """
         SLIDES_ARE_SCANNED = self.sqlController.get_progress_id(
             downsample=0, channel=0, action="SCAN"
         )
