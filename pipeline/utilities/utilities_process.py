@@ -46,7 +46,7 @@ def get_image_size(filepath):
     result_parts = str(check_output(["identify", filepath]))
     results = result_parts.split()
     width, height = results[2].split("x")
-    return width, height
+    return int(width), int(height)
 
 
 def get_max_imagze_size(folder_path):
