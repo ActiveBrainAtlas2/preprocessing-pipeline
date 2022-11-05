@@ -32,12 +32,13 @@ class PrepCreater:
         Applies the inclusion and replacement results defined by the user on the Django admin portal for the Quality Control step
         to the full resolution images.  The result is stored in the animal_folder/preps/full directory
         """
-        if not self.downsample:
-            INPUT = self.fileLocationManager.tif
-            OUTPUT = self.fileLocationManager.get_full(self.channel)
-        else:
+        if self.downsample:
             INPUT = self.fileLocationManager.thumbnail_original
             OUTPUT = self.fileLocationManager.get_thumbnail(self.channel)
+        else:
+            INPUT = self.fileLocationManager.tif
+            OUTPUT = self.fileLocationManager.get_full(self.channel)
+            
         starting_files = os.listdir(INPUT)
         self.logevent(f"INPUT FOLDER: {INPUT}")
         self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
