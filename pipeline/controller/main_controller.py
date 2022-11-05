@@ -5,7 +5,7 @@ from sqlalchemy.orm import scoped_session
 
 def create_session(host, password, schema, user):
     connection_string = f'mysql+pymysql://{user}:{password}@{host}/{schema}?charset=utf8'
-    timeout = 60 * 60 * 12 # = 12 hours
+    timeout = 60 * 60 * 24 # = 24 hours
     engine = create_engine(connection_string, connect_args={'connect_timeout': timeout})
     session_factory = sessionmaker(bind=engine)
     Session = scoped_session(session_factory)
