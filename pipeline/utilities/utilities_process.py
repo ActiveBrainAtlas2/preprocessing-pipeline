@@ -97,7 +97,7 @@ def test_dir(animal, directory, section_count, downsample=True, same_size=False)
     # so 3000 is a good min size. I had to turn this down as we are using
     # blank images and they are small
     # min size on NTB is 8.8K
-    starting_size = 300
+    starting_size = 30
     min_size = starting_size * SCALING_FACTOR * 1000
     if downsample:
         min_size = starting_size
