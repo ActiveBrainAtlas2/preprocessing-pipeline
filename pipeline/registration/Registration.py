@@ -2,6 +2,22 @@ import numpy as np
 import SimpleITK as sitk
 
 class Registration:
+    '''
+    Contains methods related to image registration
+
+    Methods
+    -------
+    __init__()
+    calculate_transform()
+    get_transform()
+    get_inverse_transform()
+    transform_dictionary()
+    inverse_transform_dictionary()
+    transform_points()
+    inverse_transform_points()
+    get_transformed_moving_point()
+    '''
+
     def __init__(self):
         self.fixed = None
         self.moving = None
