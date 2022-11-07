@@ -1,6 +1,7 @@
 import os
 import socket
-from subprocess import Popen, check_output
+from subprocess import Popen
+import math
 
 
 def convert_size(size_bytes):
