@@ -94,9 +94,10 @@ def test_dir(animal, directory, section_count, downsample=True, same_size=False)
     error = ""
     # thumbnail resolution ntb is 10400 and min size of DK52 is 16074
     # thumbnail resolution thion is 14464 and min size for MD585 is 21954
-    # so 3000 is a good min size
+    # so 3000 is a good min size. I had to turn this down as we are using
+    # blank images and they are small
     # min size on NTB is 8.8K
-    starting_size = 3000
+    starting_size = 300
     min_size = starting_size * SCALING_FACTOR * 1000
     if downsample:
         min_size = starting_size
