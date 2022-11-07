@@ -3,7 +3,7 @@ from PIL import Image
 from tqdm import tqdm
 
 from lib.FileLocationManager import FileLocationManager
-from lib.sqlcontroller import SqlController
+from controller.sql_controller import SqlController
 from utilities.utilities_process import test_dir
 
 
