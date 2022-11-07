@@ -168,6 +168,7 @@ def make_tifs(animal, channel, workers=10):
 
     Returns:
         nothing
+
     """
 
     fileLocationManager = FileLocationManager(animal)
