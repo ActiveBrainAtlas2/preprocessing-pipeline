@@ -26,7 +26,11 @@ from controller.histology_controller import HistologyController
 from model.scan_run import ScanRun
 from model.histology import Histology
 from model.annotation_points import StructureComView
-from settings import host, password, schema, user
+try:
+    from settings import data_path, host, password, user, schema
+except ImportError as fe:
+    print('You must have a settings file in the pipeline directory.', fe)
+    raise
 
 class SqlController(ElastixController,StructuresController,TransformationController,
     UrlController,AnimalController,ScanRunController,SectionsController,TasksController,

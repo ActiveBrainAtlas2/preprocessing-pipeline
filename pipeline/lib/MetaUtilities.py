@@ -2,18 +2,15 @@ import os, sys, time, re, psutil
 from datetime import datetime
 from pathlib import Path
 import operator
+
 from controller.sql_controller import SqlController
 from model.slide import Slide, SlideCziTif
-
 from lib.CZIManager import CZIManager
-
 from utilities.shell_tools import convert_size
-#from lib.pipeline_utilities import convert_size #DEPRECATED 4-NOV-2022
 
 
 class MetaUtilities:
-    '''
-    Collection of methods used to extract meta-data from czi files and insert into database
+    """Collection of methods used to extract meta-data from czi files and insert into database
     Also includes methods for validating information in database and/or files [double-check]
 
 
@@ -28,11 +25,10 @@ class MetaUtilities:
     check_czi_file_exists()
     update_database()
 
-    '''
+    """
 
     def extract_slide_meta_data_and_insert_to_database(self):
-        """
-        REVISED FOR PARALLEL PROCESSING
+        """REVISED FOR PARALLEL PROCESSING
         Scans the czi dir to extract the meta information for each tif file
         """
         INPUT = self.fileLocationManager.czi
@@ -65,23 +61,13 @@ class MetaUtilities:
                     if i == 0:  # largest file
                         single_file_size = os.path.getsize(infile)
 
-                    file_keys.append(
-                        [
-                            infile,
-                            self.scan_id,
-                            self.channel,
-                            self.animal,
-                            self.dbhost,
-                            self.dbschema,
-                        ]
-                    )
+                    file_keys.append([infile, self.scan_id, self.animal])
 
                 ram_coefficient = 2
 
                 mem_avail = psutil.virtual_memory().available
                 batch_size = mem_avail // (single_file_size * ram_coefficient)
                 msg = f"MEM AVAILABLE: {convert_size(mem_avail)}; [LARGEST] SINGLE FILE SIZE: {convert_size(single_file_size)}; BATCH SIZE: {round(batch_size,0)}"
-                print(msg)
                 self.logevent(msg)
                 
                 workers = self.get_nworkers()
@@ -223,7 +209,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         czi.metadata = czi.extract_metadata_from_czi_file(czi_file, czi_org_path)
         return czi.metadata
 
-    def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal, host, schema):
+    def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal):
         """Add the meta information about image slides that are extracted from the czi file and add them to the database"""
         slide = Slide()
         slide.scan_run_id = scan_id
@@ -249,11 +235,11 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         for series_index in range(slide.scenes):
             scene_number = series_index + 1
             channels = range(czi_metadata[slide.file_name][series_index]["channels"])
-            channel_counter = 0 #TODO why does this variable exist?
+            channel_counter = 0 
 
             width, height = czi_metadata[slide.file_name][series_index]["dimensions"]
-
-            for channel in channels:
+            tif_list = []
+            for _ in channels:
                 tif = SlideCziTif()
                 tif.FK_slide_id = slide.id
                 tif.scene_number = scene_number
@@ -269,12 +255,13 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
                 tif.channel = channel_counter
                 tif.processing_duration = 0
                 tif.created = time.strftime("%Y-%m-%d %H:%M:%S")
-                sqlController.session.add(tif)
-            print(f"CHANNELS: {channel_counter}; SCENES: {scene_number}")
-        sqlController.session.commit()
+                tif_list.append(tif)
+        if len(tif_list) > 0:
+            sqlController.session.add_all(tif_list)
+            sqlController.session.commit()
 
-    infile, scan_id, channel, animal, host, schema = file_key
+    infile, scan_id, animal = file_key
     czi_metadata = load_metadata(infile)
-    add_slide_information_to_database(infile, scan_id, czi_metadata, animal, host, schema)
+    add_slide_information_to_database(infile, scan_id, czi_metadata, animal)
 
     return

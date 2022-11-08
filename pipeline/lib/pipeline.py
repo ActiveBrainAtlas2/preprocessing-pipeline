@@ -64,10 +64,10 @@ class Pipeline(
     TASK_NEUROGLANCER_SINGLE = "Neuroglancer1 single"
     TASK_NEUROGLANCER_PYRAMID = "Neuroglancer2 pyramid"
 
-    def __init__(self, animal, channel, downsample, data_path, host, schema, tg, debug):
+    def __init__(self, animal, channel, downsample, data_path, tg, debug):
         """Setting up the pipeline and the processing configurations
         Here is how the Class is instantiated:
-            pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug)
+            pipeline = Pipeline(animal, channel, downsample, data_path, tg, debug)
 
            The pipeline performst the following steps:
            1. extracting the images from the microscopy formats (eg czi) to tiff format
@@ -83,7 +83,7 @@ class Pipeline(
             animal (str): Animal Id
             channel (int, optional): channel number.  This tells the program which channel to work on and which channel to extract from the czis. Defaults to 1.
             downsample (bool, optional): Determine if we are working on the full resolution or downsampled version. Defaults to True.
-            DATA_PATH (str, optional): path to where the images and intermediate steps are stored. Defaults to '/net/birdstore/Active_Atlas_Data/data_root'.
+            data_path (str, optional): path to where the images and intermediate steps are stored. Defaults to '/net/birdstore/Active_Atlas_Data/data_root'.
             debug (bool, optional): determine if we are in debug mode.  This is used for development purposes. Defaults to False. (forces processing on single core)
         """
         self.animal = animal
@@ -91,11 +91,9 @@ class Pipeline(
         self.ch_dir = f"CH{self.channel}"
         self.downsample = downsample
         self.debug = debug
-        self.fileLocationManager = FileLocationManager(animal, DATA_PATH=data_path)
+        self.fileLocationManager = FileLocationManager(animal, data_path=data_path)
         self.sqlController = SqlController(animal)
         self.hostname = self.get_hostname()
-        self.dbhost = host
-        self.dbschema = schema
         self.tg = tg
         self.progress_lookup = ProgressLookup()
         self.check_programs()
