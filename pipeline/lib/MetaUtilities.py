@@ -237,7 +237,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
             Path(os.path.normpath(czi_org_path)).stat().st_mtime
         )
         slide.scenes = len([elem for elem in czi_metadata.values()][0].keys())
-        # print(f"ADD SLIDE INFO TO DB: {slide.file_name} -> PHYSICAL SLIDE ID: {slide.slide_physical_id}")
+        print(f"ADD SLIDE INFO TO DB: {slide.file_name} -> PHYSICAL SLIDE ID: {slide.slide_physical_id}")
 
         sqlController = SqlController(animal, dbhost, dbschema)
 
@@ -249,7 +249,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         for series_index in range(slide.scenes):
             scene_number = series_index + 1
             channels = range(czi_metadata[slide.file_name][series_index]["channels"])
-            channel_counter = 0
+            channel_counter = 0 #TODO why does this variable exist?
 
             width, height = czi_metadata[slide.file_name][series_index]["dimensions"]
 
@@ -270,7 +270,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
                 tif.processing_duration = 0
                 tif.created = time.strftime("%Y-%m-%d %H:%M:%S")
                 sqlController.session.add(tif)
-        # print(f"CHANNELS: {channel_counter}; SCENES: {scene_number}")
+            print(f"CHANNELS: {channel_counter}; SCENES: {scene_number}")
         sqlController.session.commit()
 
     infile, scan_id, channel, animal, host, schema = file_key
