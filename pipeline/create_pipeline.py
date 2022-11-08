@@ -122,13 +122,4 @@ if __name__ == "__main__":
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
     tg = bool({"true": True, "false": False}[str(args.tg).lower()])
 
-    run_pipeline(
-        animal,
-        channel,
-        downsample,
-        data_path,
-        host,
-        schema,
-        tg,
-        debug,
-    )
+    run_pipeline(animal, channel, downsample, data_path, host, schema, tg, debug)
