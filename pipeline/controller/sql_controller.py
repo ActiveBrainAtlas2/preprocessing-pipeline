@@ -26,7 +26,7 @@ from controller.histology_controller import HistologyController
 from model.scan_run import ScanRun
 from model.histology import Histology
 from model.annotation_points import StructureComView
-
+from settings import host, password, schema, user
 
 class SqlController(ElastixController,StructuresController,TransformationController,
     UrlController,AnimalController,ScanRunController,SectionsController,TasksController,
@@ -36,7 +36,7 @@ class SqlController(ElastixController,StructuresController,TransformationControl
     methods to interact with that table
     """
 
-    def __init__(self, animal, host, password, schema, user):
+    def __init__(self, animal):
         """ setup the attributes for the SlidesProcessor class
             Args:
                 animal: object of animal to process

@@ -96,7 +96,7 @@ class MetaUtilities:
             sys.exit()
 
     def get_user_entered_scan_id(self):
-        """Get id in the "scan run" table for the current microspy scan that was entered by the user in the preparation phase"""
+        """Get id in the "scan run" table for the current microscopy scan that was entered by the user in the preparation phase"""
         return self.sqlController.scan_run.id
 
     def file_validation(self, czi_files):
@@ -223,7 +223,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         czi.metadata = czi.extract_metadata_from_czi_file(czi_file, czi_org_path)
         return czi.metadata
 
-    def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal, dbhost, dbschema):
+    def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal, host, schema):
         """Add the meta information about image slides that are extracted from the czi file and add them to the database"""
         slide = Slide()
         slide.scan_run_id = scan_id
@@ -239,7 +239,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         slide.scenes = len([elem for elem in czi_metadata.values()][0].keys())
         print(f"ADD SLIDE INFO TO DB: {slide.file_name} -> PHYSICAL SLIDE ID: {slide.slide_physical_id}")
 
-        sqlController = SqlController(animal, dbhost, dbschema)
+        sqlController = SqlController(animal)
 
         sqlController.session.add(slide)
         sqlController.session.flush()
@@ -276,4 +276,5 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
     infile, scan_id, channel, animal, host, schema = file_key
     czi_metadata = load_metadata(infile)
     add_slide_information_to_database(infile, scan_id, czi_metadata, animal, host, schema)
+
     return
