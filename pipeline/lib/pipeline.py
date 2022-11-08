@@ -64,19 +64,7 @@ class Pipeline(
     TASK_NEUROGLANCER_SINGLE = "Neuroglancer1 single"
     TASK_NEUROGLANCER_PYRAMID = "Neuroglancer2 pyramid"
 
-    def __init__(
-        self,
-        animal,
-        channel,
-        data_path,
-        downsample,
-        host,
-        password, 
-        schema,
-        tg,
-        user,
-        debug,
-    ):
+    def __init__(self, animal, channel, downsample, data_path, host, schema, tg, debug):
         """Setting up the pipeline and the processing configurations
         Here is how the Class is instantiated:
             pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, debug)
@@ -104,7 +92,7 @@ class Pipeline(
         self.downsample = downsample
         self.debug = debug
         self.fileLocationManager = FileLocationManager(animal, DATA_PATH=data_path)
-        self.sqlController = SqlController(animal, host, password, schema, user)
+        self.sqlController = SqlController(animal)
         self.hostname = self.get_hostname()
         self.dbhost = host
         self.dbschema = schema
