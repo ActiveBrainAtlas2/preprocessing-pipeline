@@ -39,18 +39,18 @@ increasing the step size will make the pipeline move forward in the process.
 """
 import argparse
 try:
-    from settings import data_path, host, password, user, schema
+    from settings import data_path, host, schema
 except ImportError as fe:
-    print('You must have a settings file in the pipeline directory.', fe)
-    raise
+    data_path = "/net/birdstore/Active_Atlas_Data/data_root"
+    host = "db.dk.ucsd.edu"
+    schema = "active_atlas_production"
 
 from lib.pipeline import Pipeline
 
 
-def run_pipeline(animal, channel, downsample, data_path, host, schema, tg, debug):
+def run_pipeline(animal, channel, downsample, data_path, tg, debug):
 
-    #pipeline = Pipeline(animal, channel, data_path, downsample, host, password, schema, tg, user, debug)
-    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, tg, debug)
+    pipeline = Pipeline(animal, channel, downsample, data_path, tg, debug)
 
     print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:")
     print(f"\tprep_id:".ljust(20), f"{animal}".ljust(20))
@@ -122,4 +122,4 @@ if __name__ == "__main__":
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
     tg = bool({"true": True, "false": False}[str(args.tg).lower()])
 
-    run_pipeline(animal, channel, downsample, data_path, host, schema, tg, debug)
+    run_pipeline(animal, channel, downsample, data_path, tg, debug)

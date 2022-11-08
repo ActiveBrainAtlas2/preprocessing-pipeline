@@ -1,13 +1,13 @@
 import os
 
-DATA_PATH = "/net/birdstore/Active_Atlas_Data/data_root"
+data_path = "/net/birdstore/Active_Atlas_Data/data_root"
 
 
 class FileLocationManager(object):
     '''Master class to house all file paths for preprocessing-pipeline
 
     All file locations are defined in this class for reference by other methods/functions.
-    Default root is UCSD-specific (birdstore fileshare) but may be modified in DATA_PATH
+    Default root is UCSD-specific (birdstore fileshare) but may be modified in data_path
     Subfolders to each brain are defined based on usage (some examples below):
     -czi folder [stores raw scanner images from which tiff images are extracted]
     -tif [stores full resolution images extracted from czi files]
@@ -52,12 +52,12 @@ class FileLocationManager(object):
 
     '''
 
-    def __init__(self, stack, DATA_PATH=DATA_PATH):
+    def __init__(self, stack, data_path=data_path):
         """setup the directory, file locations
         Args:
             stack: the animal brain name, AKA prep_id
         """
-        self.root = os.path.join(DATA_PATH, "pipeline_data")
+        self.root = os.path.join(data_path, "pipeline_data")
         self.stack = os.path.join(self.root, stack)
         self.prep = os.path.join(self.root, stack, "preps")
         self.czi = os.path.join(self.root, stack, "czi")

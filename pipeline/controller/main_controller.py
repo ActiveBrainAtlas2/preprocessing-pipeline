@@ -16,9 +16,7 @@ class Controller(object):
     def __init__(self, host, password, schema, user):
         """ setup a sqalchemy session
         """
-        self.host = host
-        self.schema = schema
-        self.session = create_session(self.host, password, self.schema, user)
+        self.session = create_session(host, password, schema, user)
 
     def update_row(self, row):
         """update one row of a database
