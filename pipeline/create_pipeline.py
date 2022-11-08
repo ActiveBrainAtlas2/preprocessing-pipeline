@@ -47,7 +47,7 @@ except ImportError as fe:
 from lib.pipeline import Pipeline
 
 
-def run_pipeline(animal, channel, downsample, step, data_path, host, schema, tg, debug):
+def run_pipeline(animal, channel, downsample, data_path, host, schema, tg, debug):
 
     #pipeline = Pipeline(animal, channel, data_path, downsample, host, password, schema, tg, user, debug)
     pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, tg, debug)
@@ -125,13 +125,10 @@ if __name__ == "__main__":
     run_pipeline(
         animal,
         channel,
-        data_path,
         downsample,
+        data_path,
         host,
-        password,
         schema,
-        step,
         tg,
-        user,
         debug,
     )
