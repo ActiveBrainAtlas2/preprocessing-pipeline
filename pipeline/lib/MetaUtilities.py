@@ -256,9 +256,9 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
                 tif.processing_duration = 0
                 tif.created = time.strftime("%Y-%m-%d %H:%M:%S")
                 tif_list.append(tif)
-        if len(tif_list) > 0:
-            sqlController.session.add_all(tif_list)
-            sqlController.session.commit()
+            if len(tif_list) > 0:
+                sqlController.session.add_all(tif_list)
+                sqlController.session.commit()
 
     infile, scan_id, animal = file_key
     czi_metadata = load_metadata(infile)
