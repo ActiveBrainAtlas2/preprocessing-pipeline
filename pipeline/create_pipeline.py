@@ -47,9 +47,10 @@ except ImportError as fe:
 from lib.pipeline import Pipeline
 
 
-def run_pipeline(animal, channel, data_path, downsample, host, password, schema, step, tg, user, debug):
+def run_pipeline(animal, channel, downsample, step, data_path, host, schema, tg, debug):
 
-    pipeline = Pipeline(animal, channel, data_path, downsample, host, password, schema, tg, user, debug)
+    #pipeline = Pipeline(animal, channel, data_path, downsample, host, password, schema, tg, user, debug)
+    pipeline = Pipeline(animal, channel, downsample, data_path, host, schema, tg, debug)
 
     print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:")
     print(f"\tprep_id:".ljust(20), f"{animal}".ljust(20))
