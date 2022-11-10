@@ -354,13 +354,17 @@ def submit_proxy(function, semaphore, executor, *args, **kwargs):
 
 
 def read_image(file_path):
-    '''
+    """Reads a image from the filesystem with exceptins
+    """
 
-    Note: RECENTLY MOVED FROM lib.pipeline_utilities.py
-    '''
     try:
         img = io.imread(file_path)
-    except IOError as e:
+    except (OSError, ValueError) as e:
         errno, strerror = e.args
         print(f'Could not open {file_path} {errno} {strerror}')
+    except:
+        print("Exiting, cannot read file, unexpected error:", sys.exc_info()[0])
+        sys.exit()
+
+
     return img
