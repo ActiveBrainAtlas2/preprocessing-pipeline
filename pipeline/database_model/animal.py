@@ -1,8 +1,8 @@
 from sqlalchemy import Column, String, Date, Enum
 from sqlalchemy.orm import relationship
 
-from model.atlas_model import AtlasModel, Base
-from model.scan_run import ScanRun
+from database_model.atlas_model import AtlasModel, Base
+from database_model.scan_run import ScanRun
 
 
 class Animal(Base, AtlasModel):

@@ -2,7 +2,7 @@ from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 
 from controller.main_controller import Controller
-from model.structure import Structure
+from database_model.structure import Structure
 
 class StructuresController(Controller):
 

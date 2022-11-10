@@ -1,5 +1,5 @@
 from controller.main_controller import Controller
-from model.cell_type import CellType
+from database_model.cell_type import CellType
 
 class CellTypeController(Controller):
     def __init__(self,*args,**kwargs):

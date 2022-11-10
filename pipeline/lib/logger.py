@@ -1,6 +1,7 @@
 import logging
-from model.log import Log
 import pandas as pd
+
+from database_model.log import Log
 
 
 class DatabaseHandler(logging.Handler):

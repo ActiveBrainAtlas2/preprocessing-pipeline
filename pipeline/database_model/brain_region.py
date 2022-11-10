@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Integer
-from model.atlas_model import Base, AtlasModel
+from database_model.atlas_model import Base, AtlasModel
 
 class BrainRegion(Base, AtlasModel):
     __tablename__ = 'structure'

@@ -1,5 +1,5 @@
 from controller.main_controller import Controller
-from model.urlModel import UrlModel
+from database_model.urlModel import UrlModel
 
 class UrlController(Controller):
     """The sqlalchemy controller to query the neuroglancer url table

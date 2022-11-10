@@ -1,8 +1,8 @@
 import pickle
 
 from controller.main_controller import Controller
-from model.transformation import Transformation
-from model.transformation_type import TransformationType
+from database_model.transformation import Transformation
+from database_model.transformation_type import TransformationType
 
 
 class TransformationController(Controller):

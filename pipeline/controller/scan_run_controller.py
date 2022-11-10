@@ -1,9 +1,9 @@
 from sqlalchemy import func
 
 from controller.main_controller import Controller
-from model.scan_run import ScanRun
-from model.slide import SlideCziTif
-from model.slide import Slide
+from database_model.scan_run import ScanRun
+from database_model.slide import SlideCziTif
+from database_model.slide import Slide
 
 class ScanRunController(Controller):
     def __init__(self,*args,**kwargs):

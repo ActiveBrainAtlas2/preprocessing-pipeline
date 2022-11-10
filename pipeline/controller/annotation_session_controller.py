@@ -1,5 +1,5 @@
 from controller.main_controller import Controller
-from model.annotation_points import AnnotationSession, AnnotationType
+from database_model.annotation_points import AnnotationSession, AnnotationType
 
 class AnnotationSessionController(Controller):
     def __init__(self,*args,**kwargs):

@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy.sql import func
 from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean
 
-from model.atlas_model import Base, AtlasModel
+from database_model.atlas_model import Base, AtlasModel
 
 class Task(Base, AtlasModel):
     __tablename__ = 'task'

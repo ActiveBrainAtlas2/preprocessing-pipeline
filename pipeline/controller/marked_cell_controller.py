@@ -3,8 +3,8 @@ import pandas as pd
 
 from controller.annotation_session_controller import AnnotationSessionController
 from controller.main_controller import Controller
-from model.annotation_points import CellSources, MarkedCell, MarkedCellView
-from model.cell_type import CellType
+from database_model.annotation_points import CellSources, MarkedCell, MarkedCellView
+from database_model.cell_type import CellType
 
 class MarkedCellController(AnnotationSessionController):
     def __init__(self,*args,**kwargs):

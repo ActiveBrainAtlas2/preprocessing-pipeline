@@ -2,7 +2,7 @@ import numpy as np
 import json
 import pandas as pd
 
-from model.annotation_points import AnnotationPoint
+from database_model.annotation_points import AnnotationPoint
 from controller.main_controller import Controller
 
 class AnnotationPointController(Controller):

@@ -3,7 +3,7 @@ import json
 import pandas as pd
 
 from controller.main_controller import Controller
-from model.annotation_points import AnnotationPoint
+from database_model.annotation_points import AnnotationPoint
 
 
 class AnnotationPointController(Controller):

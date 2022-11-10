@@ -1,5 +1,5 @@
 from controller.main_controller import Controller
-from model.slide import Slide
+from database_model.slide import Slide
 
 class SlideController(Controller):
 
