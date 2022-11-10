@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer
 
-from model.atlas_model import Base, AtlasModel
+from database_model.atlas_model import Base, AtlasModel
 
 class CellType(Base, AtlasModel):
     __tablename__ = 'cell_type'

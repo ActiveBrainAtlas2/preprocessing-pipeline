@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String
-from model.atlas_model import AtlasModel, Base
+from database_model.atlas_model import AtlasModel, Base
 
 
 class ComType(Base, AtlasModel):

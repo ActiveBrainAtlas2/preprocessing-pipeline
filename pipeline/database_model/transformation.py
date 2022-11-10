@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, LargeBinary, ForeignKey, DateTime
 
-from model.animal import Animal
-from model.atlas_model import Base, AtlasModel
+from database_model.animal import Animal
+from database_model.atlas_model import Base, AtlasModel
 
 
 class Transformation(Base, AtlasModel):

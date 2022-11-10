@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, Date, ForeignKey, Enum, String, Float
 from sqlalchemy.orm import relationship
 
-from model.atlas_model import Base, AtlasModel
+from database_model.atlas_model import Base, AtlasModel
 
 class ScanRun(Base, AtlasModel):
     __tablename__ = 'scan_run'

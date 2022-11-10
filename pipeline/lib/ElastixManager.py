@@ -17,7 +17,7 @@ from utilities.utilities_registration import (
     parameters_to_rigid_transform,
     rigid_transform_to_parmeters,
 )
-from model.elastix_transformation import ElastixTransformation
+from database_model.elastix_transformation import ElastixTransformation
 from utilities.utilities_process import get_image_size
 
 

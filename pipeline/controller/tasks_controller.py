@@ -5,8 +5,8 @@ from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 
 from controller.main_controller import Controller
-from model.task import Task, ProgressLookup
-from model.file_log import FileLog
+from database_model.task import Task, ProgressLookup
+from database_model.file_log import FileLog
 
 
 class TasksController(Controller):    

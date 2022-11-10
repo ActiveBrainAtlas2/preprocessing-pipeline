@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Float
 from traitlets import default
 
-from model.atlas_model import Base, AtlasModel
+from database_model.atlas_model import Base, AtlasModel
 
 class ElastixTransformation(Base, AtlasModel):
     __tablename__ = 'elastix_transformation'

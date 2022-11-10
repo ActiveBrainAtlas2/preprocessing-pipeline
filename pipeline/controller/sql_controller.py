@@ -23,9 +23,9 @@ from controller.slide_controller import SlideController
 from controller.slide_tif_controller import SlideCZIToTifController
 from controller.tasks_controller import TasksController
 from controller.histology_controller import HistologyController
-from model.scan_run import ScanRun
-from model.histology import Histology
-from model.annotation_points import StructureComView
+from database_model.scan_run import ScanRun
+from database_model.histology import Histology
+from database_model.annotation_points import StructureComView
 try:
     from settings import data_path, host, password, user, schema
 except ImportError as fe:

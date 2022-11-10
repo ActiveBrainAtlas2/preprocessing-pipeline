@@ -1,5 +1,5 @@
 from controller.main_controller import Controller
-from model.animal import Animal
+from database_model.animal import Animal
 
 
 class AnimalController(Controller):

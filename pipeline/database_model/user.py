@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String
 
-from model.atlas_model import Base
+from database_model.atlas_model import Base
 
 
 class User(Base):

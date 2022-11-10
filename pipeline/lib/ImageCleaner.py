@@ -3,9 +3,9 @@ import numpy as np
 from PIL import Image
 from utilities.utilities_mask import clean_and_rotate_image
 from utilities.utilities_process import SCALING_FACTOR, test_dir
-from model.slide import SlideCziTif
-from model.slide import Slide
-from model.slide import Section
+from database_model.slide import SlideCziTif
+from database_model.slide import Slide
+from database_model.slide import Section
 Image.MAX_IMAGE_PIXELS = None
 
 

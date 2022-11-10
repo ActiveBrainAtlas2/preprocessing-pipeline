@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Integer, Boolean, Float, ForeignKey, Enum
-from model.atlas_model import Base, AtlasModel
+from database_model.atlas_model import Base, AtlasModel
 
 class SlideCziTif(Base, AtlasModel):
     __tablename__ = 'slide_czi_to_tif'

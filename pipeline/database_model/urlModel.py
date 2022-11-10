@@ -1,7 +1,7 @@
 import re
 import json
 from sqlalchemy import Column, String, Integer, Boolean, TIMESTAMP
-from model.atlas_model import Base, AtlasModel
+from database_model.atlas_model import Base, AtlasModel
 
 
 class UrlModel(Base, AtlasModel):

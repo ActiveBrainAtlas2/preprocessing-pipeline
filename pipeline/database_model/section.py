@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 
-from model.atlas_model import Base, AtlasModel
+from database_model.atlas_model import Base, AtlasModel
 
 class Section(Base, AtlasModel):
     __tablename__ = 'sections'

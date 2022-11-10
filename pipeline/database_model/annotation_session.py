@@ -1,10 +1,11 @@
 
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, String, Integer, ForeignKey,Enum,DateTime
-from model.atlas_model import Base
-from model.brain_region import BrainRegion
-from model.user import User
 import enum
+
+from database_model.atlas_model import Base
+from database_model.brain_region import BrainRegion
+from database_model.user import User
 
 class AnnotationType(enum.Enum):
     POLYGON_SEQUENCE = 'POLYGON_SEQUENCE'

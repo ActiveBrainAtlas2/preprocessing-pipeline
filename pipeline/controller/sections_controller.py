@@ -2,7 +2,7 @@ import numpy as np
 from sqlalchemy import func
 
 from controller.main_controller import Controller
-from model.slide import Section
+from database_model.slide import Section
 
 class SectionsController(Controller):
     def __init__(self,*args,**kwargs):

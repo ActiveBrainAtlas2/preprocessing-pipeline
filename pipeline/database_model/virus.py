@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Enum, Float, Integer
 
-from model.atlas_model import AtlasModel, Base
+from database_model.atlas_model import AtlasModel, Base
 
 
 class Virus(Base, AtlasModel):    

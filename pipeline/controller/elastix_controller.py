@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from model.elastix_transformation import ElastixTransformation
+from database_model.elastix_transformation import ElastixTransformation
 from controller.main_controller import Controller
 
 class ElastixController(Controller):

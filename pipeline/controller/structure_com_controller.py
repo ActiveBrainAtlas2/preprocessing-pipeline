@@ -1,5 +1,5 @@
 from controller.annotation_session_controller import AnnotationSessionController
-from model.annotation_points import AnnotationSession, StructureCOM
+from database_model.annotation_points import AnnotationSession, StructureCOM
 
 class StructureComController(AnnotationSessionController):
     '''The class that queries and addes entry to the StructureCom table'''

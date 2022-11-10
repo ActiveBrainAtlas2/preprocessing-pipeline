@@ -4,7 +4,7 @@ from pathlib import Path
 import operator
 
 from controller.sql_controller import SqlController
-from model.slide import Slide, SlideCziTif
+from database_model.slide import Slide, SlideCziTif
 from lib.CZIManager import CZIManager
 from utilities.shell_tools import convert_size
 
