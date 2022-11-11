@@ -1,4 +1,7 @@
-"""This module takes care of the CZI file management.
+"""This module takes care of the CZI file management. We used to use the bftool kit 
+(https://www.openmicroscopy.org/)
+which is a set of Java tools, but we opted to use a pure python library that
+can handle CZI files. https://github.com/AllenCellModeling/aicspylibczi
 """
 import os
 import cv2
@@ -16,6 +19,11 @@ class CZIManager(FileLogger):
 
 
     def __init__(self, czi_file):
+        """Set up the class with the name of the file and the path to it's location.
+
+        :param czi_file: string of the name of the CZI file
+        """
+        
         self.czi_file = czi_file
         self.file = CziFile(czi_file)
 
@@ -24,6 +32,13 @@ class CZIManager(FileLogger):
 
 
     def extract_metadata_from_czi_file(self, czi_file, czi_file_path):
+        """This will parse the xml metadata and return the relevant data.
+
+        :param czi_file: string of the CZI file name
+        :czi_file_path: string of the CZI path
+        :return: dictionary of the metadata
+        """
+
         czi_aics = AICSImage(czi_file_path)
         total_scenes = czi_aics.scenes
 
@@ -49,20 +64,34 @@ class CZIManager(FileLogger):
         return czi_meta_dict
     
     def get_scene_dimension(self, scene_index):
+        """Gets the bounding box size of the scene
+
+        :param scene_index: integer of the scene index
+        :return: x,y,width and height of the bounding box
+        """
+
         scene = self.file.get_scene_bounding_box(scene_index)
         return scene.x, scene.y, scene.w, scene.h
     
     def get_scene(self, scene_index, channel, scale=1):
+        """Gets the correct scene from the slide
+
+        :param scene_index: integer of the scene index
+        :param channel: integer of the channel
+        :param scale: integer of the scale. Usually either 1 or 16 (full or downsampled)
+        :return: the scene  
+        """
+
         region = self.get_scene_dimension(scene_index)
         return self.file.read_mosaic(region=region, scale_factor=scale, C=channel - 1)[0]
 
-    #DUPLICATE OF ABOVE; REMOVE; DEPRECATED AS OF 4-NOV-2022
-    # def get_scene_dimension(self, scene_index):
-    #     scene = self.file.get_scene_bounding_box(scene_index)
-    #     return scene.x, scene.y, scene.w, scene.h
 
 
 def extract_tiff_from_czi(file_key):
+    """Gets the TIFF file out of the CZI and writes it to the filesystem
+
+    :param file_key: a tuple of: czi_file, output_path, scenei, channel, scale
+    """
     czi_file, output_path, scenei, channel, scale = file_key
     czi = CZIManager(czi_file)
     data = None
@@ -84,7 +113,12 @@ def extract_tiff_from_czi(file_key):
 
 
 def extract_png_from_czi(file_key, normalize=True):
-    """SINGLE CHANNEL ONLY"""
+    """This method creates a PNG file from the TIFF file. This is used for viewing
+    on a web page.
+    
+    :param file_key: tuple of _, infile, outfile, scene_index, scale
+    :param normalize: a boolean that determines if we should normalize the TIFF
+    """
 
     _, infile, outfile, scene_index, scale = file_key
 
