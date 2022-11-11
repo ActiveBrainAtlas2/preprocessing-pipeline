@@ -5,3 +5,4 @@ SQLAlchemy
 scikit-image
 traitlets
 matplotlib
+SimpleITK
