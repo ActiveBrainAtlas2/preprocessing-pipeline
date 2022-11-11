@@ -31,25 +31,6 @@ def get_hostname() -> str:
     return hostname
 
 
-def get_cpus() -> tuple[int, int]:
-    '''
-        Function calculates available CPU cores [for parallel processing] based on host
-
-    :param None:
-    :return: tuple[int, int]:
-    '''
-    nmax = 4
-    usecpus = (nmax,nmax)
-    cpus = {}
-    cpus['muralis'] = (16,40)
-    cpus['basalis'] = (10,12)
-    cpus['ratto'] = (10,10)
-    hostname = get_hostname()
-    if hostname in cpus.keys():
-        usecpus = cpus[hostname]
-    return usecpus
-
-
 def workershell(cmd: str) -> None:
     '''
         Set up an shell command. That is what the shell true is for.
