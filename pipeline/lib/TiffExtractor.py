@@ -19,7 +19,7 @@ class TiffExtractor(ParallelManager):
 
     '''
 
-    def extract_tifs_from_czi(self):
+    def extract_tiffs_from_czi(self):
         """
         This method will:
             1. Fetch the meta information of each slide and czi files from the database
