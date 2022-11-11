@@ -1,3 +1,8 @@
+"""This module takes care of the section to section alignment. It imports
+libraries that contain the code from the elastix command line tools:
+https://elastix.lumc.nl/
+The libraries are contained within the SimpleITK-SimpleElastix library
+"""
 import os
 import math
 import numpy as np
@@ -22,28 +27,10 @@ from utilities.utilities_process import get_image_size
 
 
 class ElastixManager:
-    '''
-    Class for generating, storing and applying transformations within stack alignment [with the Elastix package]
+    """Class for generating, storing and applying transformations within stack alignment [with the Elastix package]
 
     All mathods relate to aligning images in stack
-
-    Methods
-    -------
-    create_within_stack_transformations()
-    call_alignment_metrics()
-    calculate_elastix_transformation()
-    rigid_transform_to_parmeters()
-    parameters_to_rigid_transform()
-    load_elastix_transformation()
-    get_rotation_center()
-    get_transformations()
-    align_full_size_image()
-    align_downsampled_images()
-    align_section_masks()
-    align_images()
-    create_csv_data() # DEPRECATED AS OF 4-NOV-2022
-
-    '''
+    """
 
     def create_within_stack_transformations(self):
         """Calculate and store the rigid transformation using elastix.  
@@ -180,10 +167,10 @@ class ElastixManager:
 
 
     def get_transformations(self):
-        """
-        After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
+        """After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
+        
         Args:
-            animal: the animal
+        :animal: the animal
         Returns: a dictionary of key=filename, value = coordinates
         """
 

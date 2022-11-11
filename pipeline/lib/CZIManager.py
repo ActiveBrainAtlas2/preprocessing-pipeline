@@ -1,3 +1,5 @@
+"""This module takes care of the CZI file management.
+"""
 import os
 import cv2
 from PIL import Image
@@ -8,18 +10,8 @@ from lib.FileLogger import FileLogger
 
 
 class CZIManager(FileLogger):
-    '''
-    Methods to extract meta-data from czi files using AICSImage module (Allen Institute); faster and uses less RAM than
-    Java equivalent [DEPRECATED IN 2022]
-
-    Methods
-    -------
-    __init__()
-    extract_metadata_from_czi_file()
-    get_scene_dimension()
-    get_scene()
-
-    '''
+    """Methods to extract meta-data from czi files using AICSImage module (Allen Institute)
+    """
 
 
 

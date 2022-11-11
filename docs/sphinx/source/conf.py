@@ -1,3 +1,12 @@
+import sys
+
+from pathlib import Path
+ROOT = Path(__file__).parents[3]
+PIPELINE_ROOT = Path.joinpath(ROOT, "pipeline")
+sys.path.append(PIPELINE_ROOT.as_posix())
+#print(PIPELINE_ROOT)
+#sys.exit()
+
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -7,16 +16,24 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Active Atlas Preprocessing Pipeline'
-copyright = "2022, Edward O'Donnell"
-author = "Edward O'Donnell"
+copyright = "2022, Kleinfeld lab UCSD"
+author = "Kleinfeld lab UCSD"
 release = '1.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.githubpages',
+    'sphinx.ext.autosummary',  # Create neat summary tables
+]
+autosummary_generate = False  # Turn on sphinx.ext.autosummary
 
-extensions = []
+
 
 templates_path = ['_templates']
+source_suffix = '.rst'
+master_doc = 'index'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -34,4 +51,7 @@ html_logo = "_static/250.png"
 html_theme_options = {
     'logo_only': True,
     'display_version': False,
+    # Toc options
+    'collapse_navigation': True,
+    'titles_only': True
 }
