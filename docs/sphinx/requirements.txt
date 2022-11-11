@@ -6,3 +6,4 @@ scikit-image
 traitlets
 matplotlib
 SimpleITK
+IPython
