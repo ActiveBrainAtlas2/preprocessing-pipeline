@@ -6,11 +6,8 @@ from datetime import datetime
 
 
 class FileLogger:
-    """
-    This class defines the file logging mechanism
-
-    he first instance of FileLogger class defines default log file name and complete path 'LOGFILE_PATH'
-
+    """This class defines the file logging mechanism
+    the first instance of FileLogger class defines default log file name and complete path 'LOGFILE_PATH'
     The full path is passed during application execution (i.e., running the pre-processing pipeline) and sets an
     environment variable for future file logging
 
@@ -18,12 +15,6 @@ class FileLogger:
     only file output]
 
     Single method [outside of __init__] in class accepts log message as argument, creates current timestamp and saves to file
-
-    Methods
-    -------
-    __init__()
-    logevent()
-
     """
 
     def __init__(self, LOGFILE_PATH):
