@@ -61,7 +61,7 @@ class PrepCreater:
             try:    
                 os.symlink(relative_input_path, output_path)
             except Exception as e:
-                print(f"CANNOT CREATE SYMBOLIC LINK (ALREADY EXISTS): {output_path}")
+                print(f"CANNOT CREATE SYMBOLIC LINK (ALREADY EXISTS): {output_path} {e}")
                 
 
     def make_low_resolution(self):

@@ -1,5 +1,3 @@
-import sys
-import os
 from atlas.FoundationContourAligner import FoundationContourAligner
 from atlas.BrainStructureManager import BrainStructureManager
 from atlas.VolumeMaker import VolumeMaker

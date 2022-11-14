@@ -1,6 +1,5 @@
-import os, sys
+import os
 from os import environ
-from pathlib import Path
 import logging
 from datetime import datetime
 

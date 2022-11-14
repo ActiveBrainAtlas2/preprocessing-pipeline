@@ -4,9 +4,7 @@ https://elastix.lumc.nl/
 The libraries are contained within the SimpleITK-SimpleElastix library
 """
 import os
-import math
 import numpy as np
-import pandas as pd
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
@@ -288,10 +286,11 @@ class ElastixManager:
             file_keys.append([i, infile, outfile, T])
 
         workers = self.get_nworkers() // 2
-        start = timer()
+        start_time = timer()
         self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
-        end = timer()
-        print(f'Align images took {end - start} seconds.')
+        end_time = timer()
+        total_elapsed_time = round((end_time - start_time),2)
+        print(f'Aligning images took {total_elapsed_time} seconds.')
 
 
     # DEPRECATED AS OF 4-NOV-2022

@@ -148,27 +148,15 @@ def test_dir(animal, directory, section_count, downsample=True, same_size=False)
     return len(files)
 
 
-def get_last_2d(data):
-    if data.ndim <= 2:
-        return data
-    m, n = data.shape[-2:]
-    return data.flat[: m * n].reshape(m, n)
-
-
 def make_tifs(animal, channel, workers=10):
-    """
-    This method will:
+    """This method will:
         1. Fetch the sections from the database
         2. Yank the tif out of the czi file according to the index and channel with the bioformats tool.
         3. Then updates the database with updated meta information
-    Args:
-        animal: the prep id of the animal
-        channel: the channel of the stack to process
-        compression: default is LZW compression
-
-    Returns:
-        nothing
-
+    
+    :param animal: the prep id of the animal
+    :param channel: the channel of the stack to process
+    :param compression: default is LZW compression
     """
 
     fileLocationManager = FileLocationManager(animal)

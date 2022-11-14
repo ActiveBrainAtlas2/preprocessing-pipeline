@@ -1,41 +1,15 @@
 import multiprocessing
-import socket
-from multiprocessing.pool import Pool
 from concurrent.futures.process import ProcessPoolExecutor
 from multiprocessing import Pool, Manager
 import copy
 from datetime import datetime, timedelta
 
-from utilities.utilities_process import workernoshell, submit_proxy
+from utilities.utilities_process import get_hostname, workernoshell, submit_proxy
 
 
 class ParallelManager:
-    '''
-    Methods to support processing any part of pipeline (discreet function) using multiple cores
-
-    Methods
-    -------
-    get_hostname()
-    get_nworkers()
-    run_commands_concurrently()
-    run_commands_in_parallel_with_shell()
-    run_commands_in_parallel_with_multiprocessing()
-    function_belongs_to_a_pipeline_object()
-    make_picklable_copy_of_function()
-    run_commands_in_parallel_with_executor()
-
-
-    '''
-
-    def get_hostname(self):
-        '''
-        DUPLICATE WITH FUNCTION IN utilities.shell_tools?
-        If true, can we remove?
-        '''
-        hostname = socket.gethostname()
-        hostname = hostname.split(".")[0]
-        return hostname
-
+    """Methods to support processing any part of pipeline (discreet function) using multiple cores
+    """
 
     def get_nworkers(self):
         """There is little point in setting two different levels in one host
@@ -47,7 +21,7 @@ class ParallelManager:
         cpus['muralis'] = 10
         cpus['basalis'] = 4
         cpus['ratto'] = 4
-        hostname = self.get_hostname()
+        hostname = get_hostname()
         if hostname in cpus.keys():
             usecpus = cpus[hostname]
         return usecpus
@@ -150,7 +124,7 @@ class ParallelManager:
                     )  # semaphore to limit the queue size to the pool
                     with ProcessPoolExecutor(workers) as executor:
 
-                        futures = [
+                        [
                             submit_proxy(function, semaphore, executor, *file_key)
                             for file_key in zip(*file_keys)
                         ]
