@@ -83,8 +83,7 @@ def workernoshell(cmd: str) -> None:
 
 
 def get_last_2d(data):
-    '''
-    Unknown - Needs more info
+    '''Unknown - Needs more info
 
     :param data:
     :type data:
