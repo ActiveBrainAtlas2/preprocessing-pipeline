@@ -5,7 +5,6 @@ import argparse
 import os
 import sys
 import json
-from concurrent.futures.process import ProcessPoolExecutor
 from skimage import io
 from timeit import default_timer as timer
 from taskqueue.taskqueue import LocalTaskQueue
@@ -20,7 +19,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 
 from lib.FileLocationManager import FileLocationManager
-from Controllers.SqlController import SqlController
+from controller.sql_controller import SqlController
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
 from utilities.utilities_process import SCALING_FACTOR, get_cpus, get_hostname
 

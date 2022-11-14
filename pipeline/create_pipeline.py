@@ -40,7 +40,7 @@ increasing the step size will make the pipeline move forward in the process.
 import argparse
 try:
     from settings import data_path, host, schema
-except ImportError as fe:
+except ImportError:
     data_path = "/net/birdstore/Active_Atlas_Data/data_root"
     host = "db.dk.ucsd.edu"
     schema = "active_atlas_production"
@@ -53,21 +53,21 @@ def run_pipeline(animal, channel, downsample, data_path, tg, debug):
     pipeline = Pipeline(animal, channel, downsample, data_path, tg, debug)
 
     print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:")
-    print(f"\tprep_id:".ljust(20), f"{animal}".ljust(20))
-    print(f"\tstep:".ljust(20), f"{step}".ljust(20))
-    print(f"\tchannel:".ljust(20), f"{str(channel)}".ljust(20))
-    print(f"\tdownsample:".ljust(20), f"{str(downsample)}".ljust(20))
-    print(f"\thost:".ljust(20), f"{host}".ljust(20))
-    print(f"\tschema:".ljust(20), f"{schema}".ljust(20))
-    print(f"\ttg:".ljust(20), f"{str(tg)}".ljust(20))
-    print(f"\tdebug:".ljust(20), f"{str(debug)}".ljust(20))
+    print("\tprep_id:".ljust(20), f"{animal}".ljust(20))
+    print("\tstep:".ljust(20), f"{step}".ljust(20))
+    print("\tchannel:".ljust(20), f"{str(channel)}".ljust(20))
+    print("\tdownsample:".ljust(20), f"{str(downsample)}".ljust(20))
+    print("\thost:".ljust(20), f"{host}".ljust(20))
+    print("\tschema:".ljust(20), f"{schema}".ljust(20))
+    print("\ttg:".ljust(20), f"{str(tg)}".ljust(20))
+    print("\tdebug:".ljust(20), f"{str(debug)}".ljust(20))
     print()
 
     if step == 0:
         print(f"Step {step}: prepare images for quality control.")
         pipeline.run_program_and_time(pipeline.extract_slide_meta_data_and_insert_to_database, pipeline.TASK_CREATING_META)
         pipeline.run_program_and_time(pipeline.create_web_friendly_image, pipeline.TASK_CREATING_WEB_IMAGES)
-        pipeline.run_program_and_time(pipeline.extract_tifs_from_czi, pipeline.TASK_EXTRACTING_TIFFS)
+        pipeline.run_program_and_time(pipeline.extract_tiffs_from_czi, pipeline.TASK_EXTRACTING_TIFFS)
 
     if step == 1:
         print(f"Step {step}: apply QC and prepare image masks")

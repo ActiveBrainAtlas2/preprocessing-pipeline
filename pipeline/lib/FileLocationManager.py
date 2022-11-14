@@ -1,10 +1,12 @@
+"""This module takes care of all the file locations of all the czi, tiff and log files.
+"""
 import os
 
 data_path = "/net/birdstore/Active_Atlas_Data/data_root"
 
 
 class FileLocationManager(object):
-    '''Master class to house all file paths for preprocessing-pipeline
+    """Master class to house all file paths for preprocessing-pipeline
 
     All file locations are defined in this class for reference by other methods/functions.
     Default root is UCSD-specific (birdstore fileshare) but may be modified in data_path
@@ -13,44 +15,8 @@ class FileLocationManager(object):
     -tif [stores full resolution images extracted from czi files]
     -neuroglancer_data [stores 'precomputed' format of entire image stack for loading into Neuroglancer visualization tool]
 
-    Folder structure [for each brain] under DATA_ROOT will look like the following (generated with tree -L 2 -d)
-    ├── czi
-    ├── histogram
-    │    ├── CH1
-    │    ├── CH2
-    │    └── CH3
-    ├── neuroglancer_data
-    │    ├── C1
-    │    ├── C2
-    │    └── C3
-    ├── preps
-    │    ├── CH1
-    │    ├── CH2
-    │    ├── CH3
-    │    ├── elastix
-    │    └── masks
-    ├── tif
-    └── www
-        └── scene
 
-    Methods in this class return a file path location based on channel (default is channel 1)
-
-    Methods
-    -------
-    __init__()
-    get_full()
-    get_thumbnail()
-    get_elastix()
-    get_full_cleaned()
-    get_full_aligned()
-    get_thumbnail_aligned()
-    get_normalized()
-    get_histogram()
-    get_neuroglancer()
-    get_neuroglancer_progress()
-    get_logdir()
-
-    '''
+    """
 
     def __init__(self, stack, data_path=data_path):
         """setup the directory, file locations

@@ -2,14 +2,13 @@
 Creates a shell from  aligned thumbnails
 """
 import os
-import sys
 import argparse
 from skimage import io
 from concurrent.futures.process import ProcessPoolExecutor
 
 from lib.FileLocationManager import FileLocationManager
-from Controllers.SqlController import SqlController
-from utilities.utilities_process import get_cpus, SCALING_FACTOR, test_dir
+from controller.sql_controller import SqlController
+from utilities.utilities_process import get_cpus, SCALING_FACTOR
 from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
 
 

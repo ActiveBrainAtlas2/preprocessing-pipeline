@@ -120,7 +120,7 @@ class TasksController(Controller):
             file_keys: all files processed for Ng creation
         """
 
-        qry = f"INSERT INTO file_log (prep_id, progress_id, filename) VALUES "
+        qry = "INSERT INTO file_log (prep_id, progress_id, filename) VALUES "
 
         files = []
         for file in file_keys:
@@ -171,14 +171,12 @@ def file_processed(animal, progress_id, filename, pooledsession):
         boolean if file exists or not
     """
     try:
-        file_log = (
-            pooledsession.query(FileLog)
-            .filter(FileLog.prep_id == animal)
-            .filter(FileLog.progress_id == progress_id)
-            .filter(FileLog.filename == filename)
+        pooledsession.query(FileLog)\
+            .filter(FileLog.prep_id == animal)\
+            .filter(FileLog.progress_id == progress_id)\
+            .filter(FileLog.filename == filename)\
             .one()
-        )
-    except NoResultFound as nrf:
+    except NoResultFound:
         return False
     finally:
         pooledsession.close()

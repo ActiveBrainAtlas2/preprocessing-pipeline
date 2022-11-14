@@ -1,7 +1,10 @@
+"""This module takes care of the section to section alignment. It imports
+libraries that contain the code from the elastix command line tools:
+https://elastix.lumc.nl/
+The libraries are contained within the SimpleITK-SimpleElastix library
+"""
 import os
-import math
 import numpy as np
-import pandas as pd
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
@@ -22,28 +25,10 @@ from utilities.utilities_process import get_image_size
 
 
 class ElastixManager:
-    '''
-    Class for generating, storing and applying transformations within stack alignment [with the Elastix package]
+    """Class for generating, storing and applying transformations within stack alignment [with the Elastix package]
 
     All mathods relate to aligning images in stack
-
-    Methods
-    -------
-    create_within_stack_transformations()
-    call_alignment_metrics()
-    calculate_elastix_transformation()
-    rigid_transform_to_parmeters()
-    parameters_to_rigid_transform()
-    load_elastix_transformation()
-    get_rotation_center()
-    get_transformations()
-    align_full_size_image()
-    align_downsampled_images()
-    align_section_masks()
-    align_images()
-    create_csv_data() # DEPRECATED AS OF 4-NOV-2022
-
-    '''
+    """
 
     def create_within_stack_transformations(self):
         """Calculate and store the rigid transformation using elastix.  
@@ -180,10 +165,10 @@ class ElastixManager:
 
 
     def get_transformations(self):
-        """
-        After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
+        """After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
+        
         Args:
-            animal: the animal
+        :animal: the animal
         Returns: a dictionary of key=filename, value = coordinates
         """
 
@@ -301,10 +286,11 @@ class ElastixManager:
             file_keys.append([i, infile, outfile, T])
 
         workers = self.get_nworkers() // 2
-        start = timer()
+        start_time = timer()
         self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
-        end = timer()
-        print(f'Align images took {end - start} seconds.')
+        end_time = timer()
+        total_elapsed_time = round((end_time - start_time),2)
+        print(f'Aligning images took {total_elapsed_time} seconds.')
 
 
     # DEPRECATED AS OF 4-NOV-2022
