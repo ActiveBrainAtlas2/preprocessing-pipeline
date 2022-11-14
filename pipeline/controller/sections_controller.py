@@ -1,5 +1,4 @@
 import numpy as np
-from sqlalchemy import func
 
 from controller.main_controller import Controller
 from database_model.slide import Section

@@ -21,7 +21,6 @@ from lib.NgDownsampler import NgDownsampler
 from lib.ProgressLookup import ProgressLookup
 from lib.TiffExtractor import TiffExtractor
 from lib.FileLogger import FileLogger
-from lib.logger import get_logger
 from lib.ParallelManager import ParallelManager
 from lib.Normalizer import Normalizer
 from lib.MaskManager import MaskManager
@@ -29,6 +28,7 @@ from lib.ImageCleaner import ImageCleaner
 from lib.HistogramMaker import HistogramMaker
 from lib.ElastixManager import ElastixManager
 from controller.sql_controller import SqlController
+from utilities.utilities_process import get_hostname
 
 
 class Pipeline(
@@ -93,7 +93,7 @@ class Pipeline(
         self.debug = debug
         self.fileLocationManager = FileLocationManager(animal, data_path=data_path)
         self.sqlController = SqlController(animal)
-        self.hostname = self.get_hostname()
+        self.hostname = get_hostname()
         self.tg = tg
         self.progress_lookup = ProgressLookup()
         self.check_programs()
@@ -137,10 +137,10 @@ class Pipeline(
         function()  # RUN FUNCTION
 
         end_time = timer()
-        total_elapsed_time = end_time - start_time
-        print(f" took {round(total_elapsed_time,1)} seconds")
+        total_elapsed_time = round((end_time - start_time),2)
+        print(f" took {total_elapsed_time} seconds")
         sep = "*" * 40 + "\n"
-        self.logevent(f"{function_name} took {round((end_time - start_time), 1)} seconds\n{sep}")
+        self.logevent(f"{function_name} took {total_elapsed_time} seconds\n{sep}")
 
     def qc_cleanup(self):
         """Post QC to clean up filesystem prior to re-running mask edits"""
@@ -155,7 +155,7 @@ class Pipeline(
                 else:
                     print(f"FOLDER ALREADY DELETED: {basename}")
             except OSError as e:
-                print(f"FOLDER ALREADY DELETED: {new_path}")
+                print(f"FOLDER ALREADY DELETED: {new_path} {e}")
 
         sep = "*" * 40 + "\n"
         msg = f"DELETE MASKED FILES FROM {self.fileLocationManager.thumbnail_masked}"
@@ -179,7 +179,7 @@ class Pipeline(
                 else:
                     print(f"FOLDER ALREADY DELETED: {basename}")
             except OSError as e:
-                print(f"FOLDER ALREADY DELETED: {new_path}")
+                print(f"FOLDER ALREADY DELETED: {new_path} {e}")
 
         sep = "*" * 40 + "\n"
         thumbnail_aligned_dir = self.fileLocationManager.get_thumbnail_aligned()
@@ -211,7 +211,7 @@ class Pipeline(
                 else:
                     print(f"FOLDER ALREADY DELETED: {basename}")
             except OSError as e:
-                print(f"FOLDER ALREADY DELETED: {new_path}")
+                print(f"FOLDER ALREADY DELETED: {new_path} {e}")
 
         sep = "*" * 40 + "\n"
         OUTPUT_DIR = self.fileLocationManager.get_neuroglancer(
@@ -228,6 +228,4 @@ class Pipeline(
         # print(msg)
         # background_del(OUTPUT_DIR)
 
-        db_output = self.sqlController.clear_file_log(
-            self.animal, self.downsample, self.channel
-        )
+        self.sqlController.clear_file_log(self.animal, self.downsample, self.channel)

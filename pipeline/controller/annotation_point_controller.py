@@ -1,9 +1,11 @@
-import numpy as np
 import json
+import numpy as np
 import pandas as pd
+from sqlalchemy.orm.exc import NoResultFound
 
 from controller.main_controller import Controller
 from database_model.annotation_points import AnnotationPoint
+from database_model.urlModel import UrlModel
 
 
 class AnnotationPointController(Controller):
@@ -26,24 +28,24 @@ class AnnotationPointController(Controller):
         """
         return self.query_table(search_dictionary, AnnotationPoint)
 
-    def add_annotation_points(self, abbreviation, animal, label, x, y, section,
-                              FK_owner_id, FK_input_id):
-        """adding a row to annotation points table
+
+    def add_annotation_points(self, animal, FK_owner_id, FK_input_id, 
+        coordinates, FK_structure_id, label):
+        """adding a row to the annotation points table
 
         Args:
-            abbreviation (string): structure name short hand
-            animal (string): animal name
-            label (string): label name
-            x (float): x coordinate
-            y (float): y coordinate
-            section (int): z section number
-            FK_owner_id (int): id of annotator 
-            FK_input_id (int): id of input type
+            animal (str): Animal ID
+            FK_owner_id (int): Annotator ID
+            FK_input_id (int): Input Type ID
+            coordinates (list): list of x,y,z coordinates
+            FK_structure_id (int): Structure ID
+            label (str): label name
         """
-        FK_structure_id = self.structure_abbreviation_to_id(abbreviation)
-        coordinates = (x, y, section)
-        self.add_annotation_points(
-            animal, FK_owner_id, FK_input_id, coordinates, FK_structure_id, label)
+        x, y, z = coordinates
+        data = AnnotationPoint(prep_id=animal, FK_owner_id=FK_owner_id, FK_input_id=FK_input_id, x=x, y=y,
+                               section=z, FK_structure_id=FK_structure_id, label=label)
+        self.add_row(data)
+
 
     def get_annotation_points(self, prep_id, FK_input_id=1, FK_owner_id=2, active=1, label='COM'):
         """function to obtain coordinates of annotation points
@@ -69,22 +71,6 @@ class AnnotationPointController(Controller):
             structure = row.brain_region.abbreviation
             search_result[structure] = [row.x, row.y, row.z]
         return search_result
-
-    def add_annotation_points(self, animal, FK_owner_id, FK_input_id, coordinates, FK_structure_id, label):
-        """adding a row to the annotation points table
-
-        Args:
-            animal (str): Animal ID
-            FK_owner_id (int): Annotator ID
-            FK_input_id (int): Input Type ID
-            coordinates (list): list of x,y,z coordinates
-            FK_structure_id (int): Structure ID
-            label (str): label name
-        """
-        x, y, z = coordinates
-        data = AnnotationPoint(prep_id=animal, FK_owner_id=FK_owner_id, FK_input_id=FK_input_id, x=x, y=y,
-                               section=z, FK_structure_id=FK_structure_id, label=label)
-        self.add_row(data)
 
     def add_com(self, prep_id, abbreviation, coordinates, FK_owner_id=2, FK_input_id=1):
         """Adding a Com Entry

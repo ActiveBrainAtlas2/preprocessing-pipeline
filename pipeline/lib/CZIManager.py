@@ -16,8 +16,6 @@ class CZIManager(FileLogger):
     """Methods to extract meta-data from czi files using AICSImage module (Allen Institute)
     """
 
-
-
     def __init__(self, czi_file):
         """Set up the class with the name of the file and the path to it's location.
 
@@ -98,7 +96,7 @@ def extract_tiff_from_czi(file_key):
     try:
         data = czi.get_scene(scale=scale, scene_index=scenei, channel=channel)
     except Exception as e:
-        message = f" ERROR READING SCENE {scenei} CHANNEL {channel} [extract_tiff_from_czi] IN FILE {czi_file} to file {os.path.basename(output_path)}"
+        message = f" ERROR READING SCENE {scenei} CHANNEL {channel} [extract_tiff_from_czi] IN FILE {czi_file} to file {os.path.basename(output_path)} {e}"
         print(message)
         czi.logevent(message)
         return
