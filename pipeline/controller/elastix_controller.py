@@ -84,7 +84,7 @@ class ElastixController(Controller):
 
 
     def update_elastix_row(self, animal, section, updates):
-        row = self.session.query(ElastixTransformation)\
+        self.session.query(ElastixTransformation)\
             .filter(ElastixTransformation.prep_id == animal)\
             .filter(ElastixTransformation.section == section).update(updates)
         self.session.commit()

@@ -1,1 +1,9 @@
 aicsimageio==3.2.1
+opencv-python
+pandas
+SQLAlchemy
+scikit-image
+traitlets
+matplotlib
+SimpleITK
+IPython

@@ -1,11 +1,8 @@
 import sys
 import cv2
 import numpy as np
-from utilities.shell_tools import convert_size
 import os
-from timeit import default_timer as timer
 
-#from lib.pipeline_utilities import convert_size, read_image   #DEPRECATED AS OF 4-NOV-2022
 from utilities.utilities_process import read_image
 
 def rotate_image(img, file, rotation):
@@ -224,7 +221,6 @@ def clean_and_rotate_image(file_key):
     return
 
 
-
 def crop_image(cleaned, mask):
     BUFFER = 2
     mask = np.array(mask)
@@ -232,7 +228,6 @@ def crop_image(cleaned, mask):
     ret, thresh = cv2.threshold(mask, 200, 255, 0)
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     boxes = []
-    areas = [cv2.contourArea(contour) for contour in contours]
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
         area = cv2.contourArea(contour)

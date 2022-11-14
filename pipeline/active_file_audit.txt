@@ -1,0 +1,82 @@
+Files used by the preprocessing pipeline as of 10 Nov
+
+├── controller
+│   ├── animal_controller.py
+│   ├── annotation_point_controller.py
+│   ├── annotation_session_controller.py
+│   ├── brain_shape_controller.py
+│   ├── cell_type_controller.py
+│   ├── elastix_controller.py
+│   ├── histology_controller.py
+│   ├── layer_data_controller.py
+│   ├── main_controller.py
+│   ├── marked_cell_controller.py
+│   ├── polygon_sequence_controller.py
+│   ├── scan_run_controller.py
+│   ├── sections_controller.py
+│   ├── slide_controller.py
+│   ├── slide_tif_controller.py
+│   ├── sql_controller.py
+│   ├── structure_com_controller.py
+│   ├── structure_controller.py
+│   ├── tasks_controller.py
+│   ├── transformation_controller.py
+│   └── url_controller.py
+├── create_alignment_metrics.py
+├── create_pipeline.py – this is the main entry file that runs the pipeline.
+├── database_model
+│   ├── animal.py
+│   ├── annotation_points.py
+│   ├── annotation_session.py
+│   ├── atlas_model.py
+│   ├── atlas_schema.py
+│   ├── brain_region.py
+│   ├── brain_shape.py
+│   ├── cell_type.py
+│   ├── elastix_transformation.py
+│   ├── file_log.py
+│   ├── histology.py
+│   ├── injection.py
+│   ├── injection_virus.py
+│   ├── input_type.py
+│   ├── layer_data.py
+│   ├── log.py
+│   ├── neuroglancer_data.py
+│   ├── organic_label.py
+│   ├── scan_run.py
+│   ├── section.py
+│   ├── slide_czi_to_tif.py
+│   ├── slide.py
+│   ├── structure.py
+│   ├── task.py
+│   ├── transformation.py
+│   ├── transformation_type.py
+│   ├── urlModel.py
+│   ├── user.py
+│   └── virus.py
+├── lib
+│   ├── CZIManager.py
+│   ├── ElastixManager.py
+│   ├── FileLocationManager.py
+│   ├── FileLogger.py
+│   ├── HistogramMaker.py
+│   ├── ImageCleaner.py
+│   ├── logger.py
+│   ├── MaskManager.py
+│   ├── MetaUtilities.py
+│   ├── NgDownsampler.py
+│   ├── NgPrecomputedMaker.py
+│   ├── Normalizer.py
+│   ├── ParallelManager.py
+│   ├── pipeline.py
+│   ├── PrepCreater.py
+│   ├── ProgressLookup.py
+│   └── TiffExtractor.py
+├── settings.py
+└── utilities
+    ├── shell_tools.py
+    ├── utilities_alignment.py
+    ├── utilities_cvat_neuroglancer.py
+    ├── utilities_mask.py
+    ├── utilities_process.py
+    └── utilities_registration.py

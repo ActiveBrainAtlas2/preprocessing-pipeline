@@ -40,7 +40,7 @@ class HistogramMaker:
                 self.animal, INPUT, self.section_count, downsample=True, same_size=False
             )
             if len(files) == 0:
-                error += " No sections in the database"
+                print(" No sections in the database")
             OUTPUT = self.fileLocationManager.get_histogram(self.channel)
             os.makedirs(OUTPUT, exist_ok=True)
             self.sqlController.set_task_for_step(
