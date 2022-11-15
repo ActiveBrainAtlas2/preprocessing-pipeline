@@ -15,8 +15,15 @@ from lib.FileLogger import FileLogger
 
 class CZIManager(FileLogger):
     """Methods to extract meta-data from czi files using AICSImage module (Allen Institute)
-    """
 
+    Methods
+    -------
+    __init__()
+    extract_metadata_from_czi_file()
+    get_scene_dimension()
+    get_scene()
+
+    """
     def __init__(self, czi_file):
         """Set up the class with the name of the file and the path to it's location.
 
@@ -85,8 +92,6 @@ class CZIManager(FileLogger):
         return self.file.read_mosaic(region=region, scale_factor=scale, C=channel - 1)[0]
 
 
-
-
 def extract_tiff_from_czi(file_key):
     """Gets the TIFF file out of the CZI and writes it to the filesystem
 
@@ -108,7 +113,7 @@ def extract_tiff_from_czi(file_key):
 
 
 
-def extract_png_from_czi(file_key, normalize=True):
+def extract_png_from_czi(file_key: tuple[str, ...], normalize: bool = True):
     """This method creates a PNG file from the TIFF file. This is used for viewing
     on a web page.
     
