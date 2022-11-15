@@ -405,12 +405,12 @@ class NumpyToNeuroglancer():
         tq.execute()
 
 
-    def process_simple_slice(self, file_key):
+    def process_simple_slice(self, file_key: tuple[str, ...]):
         '''Unknown role but method a)loops through image stack, b) loads into Numpy array, c) reshapes in single dimension,
         d) adds to 'precomputed' cloud volume, e) touches files to track progress
 
         :param file_key:
-        :type file_key:
+        :type file_key: tuple
         :return:
         :rtype:
         '''
@@ -430,14 +430,14 @@ class NumpyToNeuroglancer():
         return
 
 
-    def process_mesh(self, file_key):
+    def process_mesh(self, file_key: tuple[str, ...]):
         '''Unknown role but method a) loops through image stack, b) loads into Numpy array, c) applies mask?
         d) transposes Numpy array, e) adds to 'precomputed' cloud volume
 
         Unclear where values for labels range came from
 
         :param file_key:
-        :type file_key:
+        :type file_key: tuple
         :return:
         :rtype:
         '''
@@ -461,14 +461,14 @@ class NumpyToNeuroglancer():
         return
 
 
-    def process_coronal_slice(self, file_key):
+    def process_coronal_slice(self, file_key: tuple[str, ...]):
         '''Unknown role but method a) loops through image stack, b) loads into Numpy array, c) reshapes each image
         d) adds to 'precomputed' cloud volume
 
         Only for coronal-sliced brains?
 
         :param file_key:
-        :type file_key:
+        :type file_key: tuple
         :return:
         :rtype:
         '''
@@ -491,11 +491,11 @@ class NumpyToNeuroglancer():
         return
 
 
-    def process_image(self, file_key):
+    def process_image(self, file_key: tuple[str, ...]):
         '''Unknown role but method a) reads single file, b) reshapes/transforms, c) adds to 'precomputed' cloud volume
 
         :param file_key:
-        :type file_key:
+        :type file_key: tuple
         :return:
         :rtype:
         '''
