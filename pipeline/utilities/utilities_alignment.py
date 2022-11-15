@@ -81,13 +81,13 @@ def csv_to_dict(fp: str) -> dict:
 
 
 
-def align_image_to_affine(file_key):
+def align_image_to_affine(file_key: tuple[str, ...]):
     '''Unknown - image stack alignment using affine transformations? Needs more info
 
     This method takes about 20 seconds to run. use this one
 
     :param file_key:
-    :type file_key:
+    :type file_key: tuple
     :return:
     :rtype:
     '''
@@ -99,7 +99,7 @@ def align_image_to_affine(file_key):
     return
 
 
-def align_image_to_affineXXX(file_key):
+def align_image_to_affineXXX(file_key: tuple[str, ...]):
     '''Unknown - image stack alignment using affine transformations? Needs more info
 
     This method takes about 220 seconds to complete
@@ -107,7 +107,7 @@ def align_image_to_affineXXX(file_key):
     # REMOVE FUNCTION IF REDUNDANT (AND SLOWER) COMPARED TO align_image_to_affine() (10-NOV-2022 COMMENT)
 
     :param file_key:
-    :type file_key:
+    :type file_key: tuple
     :return:
     :rtype:
     '''
