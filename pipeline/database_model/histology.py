@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, Date, Enum, Float, Integer, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, String, Date, Enum, Integer, ForeignKey
 
 from database_model.atlas_model import AtlasModel, Base
 

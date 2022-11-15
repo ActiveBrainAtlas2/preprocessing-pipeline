@@ -1,7 +1,9 @@
 import os, glob
 import hashlib
+import cv2
+
 from lib.ParallelManager import ParallelManager
-from lib.CZIManager import extract_tiff_from_czi, extract_png_from_czi
+from lib.CZIManager import CZIManager, extract_png_from_czi, extract_tiff_from_czi
 from utilities.utilities_process import DOWNSCALING_FACTOR
 
 
@@ -25,6 +27,7 @@ class TiffExtractor(ParallelManager):
         Returns:
             nothing
         """
+        
 
         if self.downsample:
             OUTPUT = self.fileLocationManager.thumbnail_original
@@ -64,6 +67,33 @@ class TiffExtractor(ParallelManager):
         self.run_commands_concurrently(extract_tiff_from_czi, file_keys, workers)
 
         self.update_database()
+
+    def extract_tiff_from_cziXXX(self, file_key):
+        """Gets the TIFF file out of the CZI and writes it to the filesystem
+
+        :param file_key: a tuple of: czi_file, output_path, scenei, channel, scale
+        """
+        czi_file, output_path, scenei, channel, scale = file_key
+        czi = CZIManager(czi_file)
+        print('extract', czi_file)
+        data = None
+        try:
+            data = czi.get_scene(scale=scale, scene_index=scenei, channel=channel)
+        except Exception as e:
+            message = f" ERROR READING SCENE {scenei} CHANNEL {channel} [extract_tiff_from_czi] IN FILE {czi_file} to file {os.path.basename(output_path)} {e}"
+            print(message)
+            czi.logevent(message)
+            return
+
+
+        try:
+            cv2.imwrite(output_path, data)
+        except Exception as e:
+            print(f"ERROR WRITING SCENE - [extract_tiff_from_czi] IN FILE {czi_file} ... SKIPPING")
+            czi.logevent(
+                f"ERROR WRITING SCENE - [extract_tiff_from_czi] FROM FILE {czi_file} -> {output_path}; SCENE: {scenei}; CHANNEL: {channel} ... SKIPPING - ERR: {e}"
+            )
+
 
     def update_database(self):
         """Updating the file log table in the database about the completion of the QC preparation steps"""

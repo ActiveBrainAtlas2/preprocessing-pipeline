@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import os
 
-from utilities.utilities_process import read_image
+from utilities.utilities_process import read_image, write_image
 
 def rotate_image(img, file, rotation):
     """
@@ -170,6 +170,7 @@ def clean_and_rotate_image(file_key):
            a usual orientation (where the olfactory bulb is facing left and the cerebellum is facing right.
            The hippocampus is facing up and the brainstem is facing down)
     file_keys is a tuple of the following:
+    
         :param infile: file path of image to read
         :param outpath: file path of image to write
         :param mask: binary mask image of the image
@@ -210,13 +211,8 @@ def clean_and_rotate_image(file_key):
         cleaned = np.flip(cleaned, axis=1)
     cleaned = place_image(cleaned, infile, max_width, max_height, 0)
 
-    try:
-        cv2.imwrite(outpath, cleaned)
-    except Exception as e:
-        print(f'Error in saving {outpath} with shape {cleaned.shape} img type {cleaned.dtype}')
-        print(f'Error is {e}')
-        print("Unexpected error:", sys.exc_info()[0])
-        raise
+    message = f'Error in saving {outpath} with shape {cleaned.shape} img type {cleaned.dtype}'
+    write_image(outpath, cleaned, message=message)
         
     return
 
@@ -225,7 +221,7 @@ def crop_image(cleaned, mask):
     BUFFER = 2
     mask = np.array(mask)
     mask[mask > 0] = 255
-    ret, thresh = cv2.threshold(mask, 200, 255, 0)
+    _, thresh = cv2.threshold(mask, 200, 255, 0)
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     boxes = []
     for contour in contours:
@@ -262,30 +258,3 @@ def apply_mask(img, mask, infile):
     return cleaned
 
 
-
-def process_image(n, queue, uuid):
-    my_pid = os.getpid()
-    queue.put((uuid, my_pid))
-    file_key = ['/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK78/preps/CH1/full/194.tif', '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK78/preps/CH1/full_cleaned/194.tif', '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK78/preps/full_masked/194.tif', 3, 'none', 30000, 60000, 1]
-    infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
-    print("load image")
-    img = read_image(infile)
-    print("load mask")
-    mask = read_image(maskfile)
-    print("apply mask")
-    cleaned = apply_mask(img, mask, infile)
-    print("scale")
-    cleaned = scaled(cleaned, mask, epsilon=0.01)
-    print("equalize")
-    cleaned = equalized(cleaned)
-    del img
-    del mask
-    print("image and masks deleted")
-    print("rotate")
-    cleaned = rotate_image(cleaned, infile, rotation)
-    print("flip")
-    cleaned = np.flip(cleaned)
-    print("pad")
-    cropped = pad_image(cleaned, infile, max_width, max_height, 0)
-    del cropped
-    print("cropped deleted")

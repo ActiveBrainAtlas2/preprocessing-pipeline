@@ -88,7 +88,6 @@ class Pipeline(
         """
         self.animal = animal
         self.channel = channel
-        self.ch_dir = f"CH{self.channel}"
         self.downsample = downsample
         self.debug = debug
         self.fileLocationManager = FileLocationManager(animal, data_path=data_path)

@@ -1,6 +1,6 @@
 import re
 import json
-from sqlalchemy import Column, String, Integer, Boolean, TIMESTAMP
+from sqlalchemy import Column, String, Integer, TIMESTAMP
 from database_model.atlas_model import Base, AtlasModel
 
 

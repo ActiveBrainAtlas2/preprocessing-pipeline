@@ -8,6 +8,7 @@ import cv2
 from PIL import Image
 from aicspylibczi import CziFile
 from aicsimageio import AICSImage
+from utilities.utilities_process import write_image
 from utilities.utilities_mask import equalized
 from lib.FileLogger import FileLogger
 
@@ -85,6 +86,7 @@ class CZIManager(FileLogger):
 
 
 
+
 def extract_tiff_from_czi(file_key):
     """Gets the TIFF file out of the CZI and writes it to the filesystem
 
@@ -101,13 +103,9 @@ def extract_tiff_from_czi(file_key):
         czi.logevent(message)
         return
 
-    try:
-        cv2.imwrite(output_path, data)
-    except Exception as e:
-        print(f"ERROR WRITING SCENE - [extract_tiff_from_czi] IN FILE {czi_file} ... SKIPPING")
-        czi.logevent(
-            f"ERROR WRITING SCENE - [extract_tiff_from_czi] FROM FILE {czi_file} -> {output_path}; SCENE: {scenei}; CHANNEL: {channel} ... SKIPPING - ERR: {e}"
-        )
+    message = f"ERROR WRITING SCENE - [extract_tiff_from_czi] FROM FILE {czi_file} -> {output_path}; SCENE: {scenei}; CHANNEL: {channel} ... SKIPPING"
+    write_image(output_path, data, message=message)
+
 
 
 def extract_png_from_czi(file_key, normalize=True):
