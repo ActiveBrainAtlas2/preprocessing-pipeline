@@ -20,7 +20,7 @@ def convert_size(size_bytes: int) -> str:
 
 
 def workershell(cmd: str) -> None:
-    """Set up an shell command. That is what the shell true is for.
+    """Set up an shell command.
 
     :param cmd: a command line program with arguments in a list
     :type cmd: str
@@ -36,7 +36,7 @@ def workershell(cmd: str) -> None:
 
 
 def workernoshell(cmd: str) -> None:
-    """Set up an shell command. That is what the shell true is for.
+    """Set up an shell command.
 
     :param cmd: a command line program with arguments in a list
     :type cmd: str

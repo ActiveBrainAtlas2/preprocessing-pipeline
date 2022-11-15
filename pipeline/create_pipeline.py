@@ -101,10 +101,6 @@ def run_pipeline(animal, channel, downsample, data_path, tg, debug):
 
 
 if __name__ == "__main__":
-    steps = """
-    start=0, prep, normalized and masks=1, mask, clean and histograms=2, 
-     elastix and alignment=3, neuroglancer=4
-     """
     parser = argparse.ArgumentParser(description="Work on Animal")
     parser.add_argument("--animal", help="Enter the animal", required=True)
     parser.add_argument("--channel", help="Enter channel", required=False, default=1)

@@ -8,7 +8,7 @@ import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from utilities.utilities_mask import combine_dims, merge_mask
-from utilities.utilities_process import test_dir, get_image_size
+from utilities.utilities_process import test_dir, get_image_size, write_image
 
 
 class MaskManager:
@@ -50,7 +50,7 @@ class MaskManager:
                 mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
                 mask = mask[:, :, 2]
                 mask[mask > 0] = 255
-                cv2.imwrite(maskpath, mask.astype(np.uint8))
+                write_image(maskpath, mask.astype(np.uint8))
 
             if self.tg:
                 for file in files:
@@ -65,7 +65,7 @@ class MaskManager:
                     lastrow = whiterows[-1]
                     lastcol = whitecols[-1]
                     mask[firstrow:lastrow, 0:lastcol] = 255
-                    cv2.imwrite(maskfillpath, mask.astype(np.uint8))
+                    write_image(maskfillpath, mask.astype(np.uint8))
 
 
     def get_model_instance_segmentation(self, num_classes):
@@ -178,7 +178,7 @@ class MaskManager:
             mask[mask > 0] = 255
             merged_img = merge_mask(raw_img, mask)
             del mask
-            cv2.imwrite(maskpath, merged_img)
+            write_image(maskpath, merged_img)
 
 
 def resize_tif(file_key):

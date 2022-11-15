@@ -1,6 +1,6 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Table
+from sqlalchemy import Column, Integer, ForeignKey, Table
 
-from database_model.atlas_model import AtlasModel, Base
+from database_model.atlas_model import Base
 
 injection_virus = Table('injection_virus', Base.metadata,
                         
