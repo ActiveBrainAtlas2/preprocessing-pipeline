@@ -11,7 +11,6 @@ import numpy as np
 import gc
 from skimage.transform import rescale
 
-
 from lib.FileLocationManager import FileLocationManager
 from controller.sql_controller import SqlController
 
@@ -45,7 +44,22 @@ def get_image_size(filepath: str) -> tuple[int, ...]:
     return int(width), int(height)
 
 
-def test_dir(animal, directory, section_count, downsample=True, same_size=False):
+def test_dir(animal: str, directory, section_count, downsample: bool = True, same_size: bool = False) -> int:
+    '''Verify image stack directory for section count and max width, height
+
+    :param animal:
+    :type animal: str
+    :param directory:
+    :type directory:
+    :param section_count:
+    :type section_count:
+    :param downsample:
+    :type downsample: bool
+    :param same_size:
+    :type same_size: bool
+    :return:
+    :rtype: int
+    '''
     error = ""
     # thumbnail resolution ntb is 10400 and min size of DK52 is 16074
     # thumbnail resolution thion is 14464 and min size for MD585 is 21954
@@ -103,8 +117,20 @@ def test_dir(animal, directory, section_count, downsample=True, same_size=False)
     return len(files)
 
 
-
 def convert(img, target_type_min, target_type_max, target_type):
+    '''Unknown - Needs more info [not sure what this converts]
+
+    :param img:
+    :type img:
+    :param target_type_min:
+    :type target_type_min:
+    :param target_type_max:
+    :type target_type_max:
+    :param target_type:
+    :type target_type:
+    :return:
+    :rtype:
+    '''
     imin = img.min()
     imax = img.max()
 
@@ -115,9 +141,8 @@ def convert(img, target_type_min, target_type_max, target_type):
     return new_img
 
 
-def create_downsample(file_key):
-    """
-    takes a big tif and scales it down to a manageable size.
+def create_downsample(file_key: tuple[str, ...]):
+    """takes a big tif and scales it down to a manageable size.
     This method is used in PrepCreator
     For 16bit images, this is a good number near the high end.
     """
@@ -137,10 +162,9 @@ def create_downsample(file_key):
     return
 
 
-def write_image(file_path, data, message="Error"):
+def write_image(file_path, data, message: str = "Error") -> None:
     """Writes an image to the filesystem
     """
-
     try:
         cv2.imwrite(file_path, data)
     except Exception as e:
@@ -149,8 +173,8 @@ def write_image(file_path, data, message="Error"):
         sys.exit()
 
 
-def read_image(file_path):
-    """Reads a image from the filesystem with exceptions
+def read_image(file_path: str):
+    """Reads an image from the filesystem with exceptions
     """
 
     try:
