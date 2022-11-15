@@ -27,7 +27,22 @@ from utilities.utilities_process import get_image_size
 class ElastixManager:
     """Class for generating, storing and applying transformations within stack alignment [with the Elastix package]
 
-    All mathods relate to aligning images in stack
+    All methods relate to aligning images in stack
+
+    Methods
+    -------
+    create_within_stack_transformations()
+    call_alignment_metrics()
+    calculate_elastix_transformation()
+    rigid_transform_to_parmeters()
+    parameters_to_rigid_transform()
+    load_elastix_transformation()
+    get_rotation_center()
+    get_transformations()
+    align_full_size_image()
+    align_downsampled_images()
+    align_section_masks()
+    align_images()
     """
 
     def create_within_stack_transformations(self):
@@ -78,8 +93,7 @@ class ElastixManager:
     def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
         center = self.get_rotation_center()
         second_transform_parameters, initial_transform_parameters = register_simple(
-            INPUT, fixed_index, moving_index, self.debug
-        )
+            INPUT, fixed_index, moving_index)
         T1 = parameters_to_rigid_transform(*initial_transform_parameters)
         T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
         T = T1 @ T2
@@ -105,7 +119,7 @@ class ElastixManager:
         return rigid_transform_to_parmeters(transform, self.get_rotation_center())
 
 
-    def parameters_to_rigid_transform(self, rotation, xshift, yshift, center):
+    def parameters_to_rigid_transform(self, rotation: float, xshift: float, yshift: float, center):
         """convert a set of rotation parameters to the transformation matrix
 
         Args:
@@ -215,9 +229,7 @@ class ElastixManager:
             transforms (dict): dictionary of transformations that are index by the id of moving sections
         """
         if not self.downsample:
-            transforms = create_downsampled_transforms(
-                self.animal, transforms, downsample=False
-            )
+            transforms = create_downsampled_transforms(transforms, downsample=False)
             INPUT = self.fileLocationManager.get_full_cleaned(self.channel)
             OUTPUT = self.fileLocationManager.get_full_aligned(self.channel)
             self.logevent(f"INPUT FOLDER: {INPUT}")
@@ -292,42 +304,3 @@ class ElastixManager:
         total_elapsed_time = round((end_time - start_time),2)
         print(f'Aligning images took {total_elapsed_time} seconds.')
 
-
-    # DEPRECATED AS OF 4-NOV-2022
-    # def create_csv_data(self, animal, file_keys):
-    #     """legacy code, I don't think this is used in the pipeline and should be depricated
-    #
-    #     Args:
-    #         animal (str): Animal Id
-    #         file_keys (list): list of file input
-    #     """
-    #     data = []
-    #     for index, infile, outfile, T in file_keys:
-    #         T = np.linalg.inv(T)
-    #         file = os.path.basename(infile)
-    #
-    #         data.append(
-    #             {
-    #                 "i": index,
-    #                 "infile": file,
-    #                 "sx": T[0, 0],
-    #                 "sy": T[1, 1],
-    #                 "rx": T[1, 0],
-    #                 "ry": T[0, 1],
-    #                 "tx": T[0, 2],
-    #                 "ty": T[1, 2],
-    #             }
-    #         )
-    #     df = pd.DataFrame(data)
-    #     df.to_csv(f"/tmp/{animal}.section2sectionalignments.csv", index=False)
-
-
-# DEPRECATED AS OF 4-NOV-2022
-# def calculate_elastix_transformationXXX(INPUT, fixed_index, moving_index, center, debug):
-#     second_transform_parameters, initial_transform_parameters = register_simple(
-#         INPUT, fixed_index, moving_index, debug
-#     )
-#     T1 = parameters_to_rigid_transform(*initial_transform_parameters)
-#     T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
-#     T = T1 @ T2
-#     return rigid_transform_to_parmeters(T, center)
