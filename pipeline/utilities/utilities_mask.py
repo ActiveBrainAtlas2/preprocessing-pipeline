@@ -5,14 +5,16 @@ import os
 
 from utilities.utilities_process import read_image, write_image
 
-def rotate_image(img, file, rotation):
-    """
+
+def rotate_image(img, file: str, rotation: int):
+    '''Rotate the image by the number of rotation(s)
+
     Rotate the image by the number of rotation
     :param img: image to work on
     :param file: file name and path
     :param rotation: number of rotations, 1 = 90degrees clockwise
     :return: rotated image
-    """
+    '''
     try:
         img = np.rot90(img, rotation, axes=(1,0))
     except:
@@ -20,9 +22,9 @@ def rotate_image(img, file, rotation):
     return img
 
 
-def place_image(img, file, max_width, max_height, bgcolor=None):
-    """
-    Places the image in a padded one size container with the correct background
+def place_image(img, file: str, max_width, max_height, bgcolor=None):
+    """Places the image in a padded one size container with the correct background
+
     :param img: image we are working on.
     :param file: file name and path location
     :param max_width: width to pad
@@ -60,9 +62,11 @@ def place_image(img, file, max_width, max_height, bgcolor=None):
     del img
     return new_img.astype(dt)
 
+
 def pad_image(img, file, max_width, max_height, bgcolor=None):
     """
-    Places the image in a padded one size container with the correct background
+    pad image [prior to placing in container]
+
     :param img: image we are working on.
     :param file: file name and path location
     :param max_width: width to pad
@@ -114,6 +118,7 @@ def scaled(img, mask, epsilon=0.01):
     One of the reasons this takes so much RAM is a large float64 array is being
     multiplied by another large array. That is WHERE all the RAM is going!!!!!
     The scale is hardcoded to 45000 which was a good value from Yoav
+
     :param img: image we are working on.
     :param mask: binary mask file
     :param epsilon:
@@ -136,11 +141,12 @@ def scaled(img, mask, epsilon=0.01):
     del mask
     return scaled
 
+
 def equalized(fixed):
-    """
-    Takes an image that has already been scaled and uses opencv adaptive histogram
+    """Takes an image that has already been scaled and uses opencv adaptive histogram
     equalization. This cases uses 10 as the clip limit and splits the image into 8 rows
     and 8 columns
+
     :param fixed: image we are working on
     :return: a better looking image
     """
@@ -148,14 +154,34 @@ def equalized(fixed):
     fixed = clahe.apply(fixed)
     return fixed
 
+
 def merge_mask(image, mask):
+    '''Merge image with mask [so user can edit]
+
+    stack 3 channels on single image (black background, image, then mask)
+
+    :param image:
+    :type image:
+    :param mask:
+    :type mask:
+    :return:
+    :rtype:
+    '''
     b = mask
     g = image
     r = np.zeros_like(image).astype(np.uint8)
     merged = np.stack([r, g, b], axis=2)
     return merged
 
+
 def combine_dims(a):
+    '''Unknown - combine dimensions of?
+
+    :param a:
+    :type a:
+    :return:
+    :rtype:
+    '''
     if a.shape[0] > 0:
         a1 = a[0,:,:]
         a2 = a[1,:,:]
@@ -165,20 +191,20 @@ def combine_dims(a):
     return a3
 
 
-def clean_and_rotate_image(file_key):
+def clean_and_rotate_image(file_key: tuple[str, ...]):
     """The main function that uses the User edited mask to crop out the tissue from surrounding debre. and rotates the image to
-           a usual orientation (where the olfactory bulb is facing left and the cerebellum is facing right.
-           The hippocampus is facing up and the brainstem is facing down)
+       a usual orientation (where the olfactory bulb is facing left and the cerebellum is facing right.
+       The hippocampus is facing up and the brainstem is facing down)
+
     file_keys is a tuple of the following:
-    
-        :param infile: file path of image to read
-        :param outpath: file path of image to write
-        :param mask: binary mask image of the image
-        :param rotation: number of 90 degree rotations
-        :param flip: either flip or flop
-        :param max_width: width of image
-        :param max_height: height of image
-        :param scale: used in scaling. Gotten from the histogram
+    :param infile: file path of image to read
+    :param outpath: file path of image to write
+    :param mask: binary mask image of the image
+    :param rotation: number of 90 degree rotations
+    :param flip: either flip or flop
+    :param max_width: width of image
+    :param max_height: height of image
+    :param scale: used in scaling. Gotten from the histogram
     :return: nothing. we write the image to disk
 
     Args:
@@ -218,6 +244,15 @@ def clean_and_rotate_image(file_key):
 
 
 def crop_image(cleaned, mask):
+    '''Crop image to remove parts of image not in mask
+
+    :param cleaned:
+    :type cleaned:
+    :param mask:
+    :type mask:
+    :return:
+    :rtype:
+    '''
     BUFFER = 2
     mask = np.array(mask)
     mask[mask > 0] = 255
@@ -246,6 +281,17 @@ def crop_image(cleaned, mask):
 
 
 def apply_mask(img, mask, infile):
+    '''Apply image mask to org. image
+
+    :param img:
+    :type img:
+    :param mask:
+    :type mask:
+    :param infile:
+    :type infile:
+    :return:
+    :rtype:
+    '''
     try:
         cleaned = cv2.bitwise_and(img, img, mask=mask)
     except:
@@ -256,5 +302,3 @@ def apply_mask(img, mask, infile):
         print("Unexpected error:", sys.exc_info()[0])
         raise
     return cleaned
-
-
