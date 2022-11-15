@@ -20,18 +20,29 @@ DOWNSCALING_FACTOR = 1 / SCALING_FACTOR
 Image.MAX_IMAGE_PIXELS = None
 
 
-def get_hostname():
+def get_hostname() -> str:
+    '''Returns hostname of server where code is processed
+
+    :return:
+    :rtype:str
+    '''
     hostname = socket.gethostname()
     hostname = hostname.split(".")[0]
     return hostname
 
 
-def get_image_size(filepath):
+def get_image_size(filepath: str) -> tuple[int, ...]:
+    '''Returns width, height of single image
+
+    :param filepath:
+    :type filepath: str
+    :return:
+    :rtype:
+    '''
     result_parts = str(check_output(["identify", filepath]))
     results = result_parts.split()
     width, height = results[2].split("x")
     return int(width), int(height)
-
 
 
 def test_dir(animal, directory, section_count, downsample=True, same_size=False):
