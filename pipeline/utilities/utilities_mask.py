@@ -2,17 +2,17 @@ import sys
 import cv2
 import numpy as np
 import os
-from utilities.utilities_process import read_image
 
+from utilities.utilities_process import read_image, write_image
 
-def rotate_image(img, file: str, rotation: int):
-    '''Rotate the image by the number of rotation
-
+def rotate_image(img, file, rotation):
+    """
+    Rotate the image by the number of rotation
     :param img: image to work on
     :param file: file name and path
     :param rotation: number of rotations, 1 = 90degrees clockwise
     :return: rotated image
-    '''
+    """
     try:
         img = np.rot90(img, rotation, axes=(1,0))
     except:
@@ -20,10 +20,9 @@ def rotate_image(img, file: str, rotation: int):
     return img
 
 
-def place_image(img, file: str, max_width, max_height, bgcolor=None):
+def place_image(img, file, max_width, max_height, bgcolor=None):
     """
     Places the image in a padded one size container with the correct background
-
     :param img: image we are working on.
     :param file: file name and path location
     :param max_width: width to pad
@@ -61,11 +60,9 @@ def place_image(img, file: str, max_width, max_height, bgcolor=None):
     del img
     return new_img.astype(dt)
 
-
 def pad_image(img, file, max_width, max_height, bgcolor=None):
     """
-    pad image [prior to placing in container]
-
+    Places the image in a padded one size container with the correct background
     :param img: image we are working on.
     :param file: file name and path location
     :param max_width: width to pad
@@ -117,7 +114,6 @@ def scaled(img, mask, epsilon=0.01):
     One of the reasons this takes so much RAM is a large float64 array is being
     multiplied by another large array. That is WHERE all the RAM is going!!!!!
     The scale is hardcoded to 45000 which was a good value from Yoav
-
     :param img: image we are working on.
     :param mask: binary mask file
     :param epsilon:
@@ -140,13 +136,11 @@ def scaled(img, mask, epsilon=0.01):
     del mask
     return scaled
 
-
 def equalized(fixed):
     """
     Takes an image that has already been scaled and uses opencv adaptive histogram
     equalization. This cases uses 10 as the clip limit and splits the image into 8 rows
     and 8 columns
-
     :param fixed: image we are working on
     :return: a better looking image
     """
@@ -154,34 +148,14 @@ def equalized(fixed):
     fixed = clahe.apply(fixed)
     return fixed
 
-
 def merge_mask(image, mask):
-    '''Merge image with mask [so user can edit]
-
-    stack 3 channels on single image (black background, image, then mask)
-
-    :param image:
-    :type image:
-    :param mask:
-    :type mask:
-    :return:
-    :rtype:
-    '''
     b = mask
     g = image
     r = np.zeros_like(image).astype(np.uint8)
     merged = np.stack([r, g, b], axis=2)
     return merged
 
-
 def combine_dims(a):
-    '''Unknown - combine dimensions of?
-
-    :param a:
-    :type a:
-    :return:
-    :rtype:
-    '''
     if a.shape[0] > 0:
         a1 = a[0,:,:]
         a2 = a[1,:,:]
@@ -191,12 +165,12 @@ def combine_dims(a):
     return a3
 
 
-def clean_and_rotate_image(file_key: tuple[str, ...]):
+def clean_and_rotate_image(file_key):
     """The main function that uses the User edited mask to crop out the tissue from surrounding debre. and rotates the image to
            a usual orientation (where the olfactory bulb is facing left and the cerebellum is facing right.
            The hippocampus is facing up and the brainstem is facing down)
-
     file_keys is a tuple of the following:
+    
         :param infile: file path of image to read
         :param outpath: file path of image to write
         :param mask: binary mask image of the image
@@ -237,32 +211,17 @@ def clean_and_rotate_image(file_key: tuple[str, ...]):
         cleaned = np.flip(cleaned, axis=1)
     cleaned = place_image(cleaned, infile, max_width, max_height, 0)
 
-    try:
-        cv2.imwrite(outpath, cleaned)
-    except Exception as e:
-        print(f'Error in saving {outpath} with shape {cleaned.shape} img type {cleaned.dtype}')
-        print(f'Error is {e}')
-        print("Unexpected error:", sys.exc_info()[0])
-        raise
+    message = f'Error in saving {outpath} with shape {cleaned.shape} img type {cleaned.dtype}'
+    write_image(outpath, cleaned, message=message)
         
     return
 
 
 def crop_image(cleaned, mask):
-    '''
-    Crop image to remove parts of image not in mask
-
-    :param cleaned:
-    :type cleaned:
-    :param mask:
-    :type mask:
-    :return:
-    :rtype:
-    '''
     BUFFER = 2
     mask = np.array(mask)
     mask[mask > 0] = 255
-    ret, thresh = cv2.threshold(mask, 200, 255, 0)
+    _, thresh = cv2.threshold(mask, 200, 255, 0)
     contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     boxes = []
     for contour in contours:
@@ -287,18 +246,6 @@ def crop_image(cleaned, mask):
 
 
 def apply_mask(img, mask, infile):
-    '''
-    Apply image mask to org. image
-
-    :param img:
-    :type img:
-    :param mask:
-    :type mask:
-    :param infile:
-    :type infile:
-    :return:
-    :rtype:
-    '''
     try:
         cleaned = cv2.bitwise_and(img, img, mask=mask)
     except:
@@ -311,41 +258,3 @@ def apply_mask(img, mask, infile):
     return cleaned
 
 
-def process_image(n, queue, uuid):
-    '''Unknown - Needs more info [possibly just for testing and may be removed]
-    Comment based on hard-coded 'DK78'
-
-    :param n:
-    :type n:
-    :param queue:
-    :type queue:
-    :param uuid:
-    :type uuid:
-    :return:
-    :rtype:
-    '''
-    my_pid = os.getpid()
-    queue.put((uuid, my_pid))
-    file_key = ['/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK78/preps/CH1/full/194.tif', '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK78/preps/CH1/full_cleaned/194.tif', '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK78/preps/full_masked/194.tif', 3, 'none', 30000, 60000, 1]
-    infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
-    print("load image")
-    img = read_image(infile)
-    print("load mask")
-    mask = read_image(maskfile)
-    print("apply mask")
-    cleaned = apply_mask(img, mask, infile)
-    print("scale")
-    cleaned = scaled(cleaned, mask, epsilon=0.01)
-    print("equalize")
-    cleaned = equalized(cleaned)
-    del img
-    del mask
-    print("image and masks deleted")
-    print("rotate")
-    cleaned = rotate_image(cleaned, infile, rotation)
-    print("flip")
-    cleaned = np.flip(cleaned)
-    print("pad")
-    cropped = pad_image(cleaned, infile, max_width, max_height, 0)
-    del cropped
-    print("cropped deleted")

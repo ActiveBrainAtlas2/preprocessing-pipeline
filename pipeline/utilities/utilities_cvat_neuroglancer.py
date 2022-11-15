@@ -93,85 +93,6 @@ def calculate_factors(downsample, mip):
         result = [2,2,1]
     return result
 
-
-def get_db_structure_infos():
-    '''Unknown - Needs more info [possibly just for testing and may be removed]
-    Comment based on hard-coded 'MD589'
-
-    :return:
-    :rtype:
-    '''
-    sqlController = SqlController('MD589')
-    db_structures = sqlController.get_structures_dict()
-    structures = {}
-    for structure, v in db_structures.items():
-        if '_' in structure:
-            structure = structure[0:-2]
-        structures[structure] = v
-    return structures
-
-
-def get_known_foundation_structure_names() -> list[str]:
-    '''Unknown - Needs more info [possibly just for testing and may be removed]
-    Comment based on presence of these same structure names in database (not static) but, if required,
-    should be moved to static variable declaration (lookup tables)
-
-    :return:
-    :rtype:
-    '''
-    known_foundation_structures = ['MVePC', 'DTgP', 'VTA', 'Li', 'Op', 'Sp5C', 'RPC', 'MVeMC', 'APT', 'IPR',
-                                   'Cb', 'pc', 'Amb', 'SolIM', 'Pr5VL', 'IPC', '8n', 'MPB', 'Pr5', 'SNR',
-                                   'DRD', 'PBG', '10N', 'VTg', 'R', 'IF', 'RR', 'LDTg', '5TT', 'Bar',
-                                   'Tz', 'IO', 'Cu', 'SuVe', '12N', '6N', 'PTg', 'Sp5I', 'SNC', 'MnR',
-                                   'RtTg', 'Gr', 'ECu', 'DTgC', '4N', 'IPA', '3N', '7N', 'LC', '7n',
-                                   'SC', 'LPB', 'EW', 'Pr5DM', 'VCA', '5N', 'Dk', 'DTg', 'LVe', 'SpVe',
-                                   'MVe', 'LSO', 'InC', 'IC', 'Sp5O', 'DC', 'Pn', 'LRt', 'RMC', 'PF',
-                                   'VCP', 'CnF', 'Sol', 'IPL', 'X', 'AP', 'MiTg', 'DRI', 'RPF', 'VLL']
-    return known_foundation_structures
-
-
-def get_structure_number(structure: str) -> str:
-    '''Unknown - Needs more info [possibly just for testing and may be removed]
-    Likely deprecated as we do not use 'color' attribute of brains and call to get_db_structure_infos(), which has hard-coded 'MD589'
-
-    :param structure:
-    :type structure: str
-    :return:
-    :rtype: str
-    '''
-    db_structure_infos = get_db_structure_infos()
-    known_foundation_structure_names = get_known_foundation_structure_names()
-    non_db_structure_names = [structure for structure in known_foundation_structure_names if structure not in db_structure_infos.keys()]
-
-    if structure in db_structure_infos:
-        color = db_structure_infos[structure][1]
-    elif structure in non_db_structure_names:
-        color = len(db_structure_infos) + non_db_structure_names.index(structure) + 1
-    else:
-        color = 255
-    return color
-
-
-def get_segment_properties(all_known: bool = False):
-    '''Unknown - Needs more info [possibly just for testing and may be removed]
-    Comment based on call to get_db_structure_infos(), which has hard-coded 'MD589'
-
-    :param all_known:
-    :type all_known:
-    :return:
-    :rtype:
-    '''
-    db_structure_infos = get_db_structure_infos()
-    known_foundation_structure_names = get_known_foundation_structure_names()
-    non_db_structure_names = [structure for structure in known_foundation_structure_names if structure not in db_structure_infos.keys()]
-
-    segment_properties = [(number, f'{structure}: {label}') for structure, (label, number) in db_structure_infos.items()]
-    if all_known:
-        segment_properties += [(len(db_structure_infos) + index + 1, structure) for index, structure in enumerate(non_db_structure_names)]
-
-    return segment_properties
-
-
 def get_segment_ids(volume):
     '''Unknown - Needs more info
 
@@ -707,13 +628,10 @@ class NumpyToNeuroglancer():
 
 
 def mask_to_shell(mask):
-    '''Unknown - Needs more info
+    """Takes a stack of masks and creates a 3D neuroglancer shell
 
-    :param mask:
-    :type mask:
-    :return:
-    :rtype:
-    '''
+    :param mask: binary mask file
+    """
     sub_contours = measure.find_contours(mask, 1)
     sub_shells = []
     for sub_contour in sub_contours:
