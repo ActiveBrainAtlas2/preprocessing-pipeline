@@ -22,13 +22,24 @@ DOWNSCALING_FACTOR = 1 / SCALING_FACTOR
 Image.MAX_IMAGE_PIXELS = None
 
 
-def get_hostname():
+def get_hostname() -> None:
+    '''
+    Returns hostname of server where code is processed
+
+    :return:
+    :rtype:
+    '''
     hostname = socket.gethostname()
     hostname = hostname.split(".")[0]
     return hostname
 
 
-def get_cpus():
+def get_cpus() -> tuple[int, ...]:
+    '''Returns quantity of CPU cores of server where code will be processed
+
+    :return:
+    :rtype:
+    '''
     nmax = 4
     usecpus = (nmax, nmax)
     cpus = {}
@@ -42,14 +53,29 @@ def get_cpus():
     return usecpus
 
 
-def get_image_size(filepath):
+def get_image_size(filepath: str) -> tuple[int, ...]:
+    '''Returns width, height of single image
+
+    :param filepath:
+    :type filepath: str
+    :return:
+    :rtype:
+    '''
     result_parts = str(check_output(["identify", filepath]))
     results = result_parts.split()
     width, height = results[2].split("x")
     return int(width), int(height)
 
 
-def get_max_imagze_size(folder_path):
+def get_max_imagze_size(folder_path: str):
+    '''
+    Returns max width, height of image stack
+
+    :param folder_path:
+    :type folder_path:
+    :return:
+    :rtype:
+    '''
     size = []
     for file in os.listdir(folder_path):
         filepath = folder_path + "/" + file
@@ -58,12 +84,12 @@ def get_max_imagze_size(folder_path):
     return np.array(size).max(axis=0)
 
 
-def workershell(cmd):
+def workershell(cmd) -> None:
     """
     Set up an shell command. That is what the shell true is for.
+
     Args:
         cmd:  a command line program with arguments in a list
-    Returns: nothing
     """
     stderr_template = os.path.join(os.getcwd(), "workershell.err.log")
     stdout_template = os.path.join(os.getcwd(), "workershell.log")
@@ -73,12 +99,12 @@ def workershell(cmd):
     proc.wait()
 
 
-def workernoshell(cmd):
+def workernoshell(cmd) -> None:
     """
     Set up an shell command. That is what the shell true is for.
+
     Args:
         cmd:  a command line program with arguments in a list
-    Returns: nothing
     """
     stderr_template = os.path.join(os.getcwd(), "workernoshell.err.log")
     stdout_template = os.path.join(os.getcwd(), "workernoshell.log")
@@ -90,7 +116,23 @@ def workernoshell(cmd):
     proc.wait()
 
 
-def test_dir(animal, directory, section_count, downsample=True, same_size=False):
+def test_dir(animal: str, directory, section_count, downsample: bool = True, same_size: bool = False) -> int:
+    '''
+    Verify image stack directory for section count and max width, height
+
+    :param animal:
+    :type animal: str
+    :param directory:
+    :type directory:
+    :param section_count:
+    :type section_count:
+    :param downsample:
+    :type downsample: bool
+    :param same_size:
+    :type same_size: bool
+    :return:
+    :rtype: int
+    '''
     error = ""
     # thumbnail resolution ntb is 10400 and min size of DK52 is 16074
     # thumbnail resolution thion is 14464 and min size for MD585 is 21954
@@ -148,7 +190,7 @@ def test_dir(animal, directory, section_count, downsample=True, same_size=False)
     return len(files)
 
 
-def make_tifs(animal, channel, workers=10):
+def make_tifs(animal: str, channel: int, workers: int = 10):
     """This method will:
         1. Fetch the sections from the database
         2. Yank the tif out of the czi file according to the index and channel with the bioformats tool.
@@ -208,6 +250,7 @@ def make_tifs(animal, channel, workers=10):
 def resize_and_save_tif(file_key):
     """
     This does not work. PIL just can't open large TIF files (18 Oct 2021)
+    DEPRECAED - 14-NOV-2022
     """
     filepath, png_path = file_key
     image = io.imread(filepath)
@@ -219,7 +262,15 @@ def resize_and_save_tif(file_key):
     image.save(png_path, format="png")
 
 
-def make_scenes(animal):
+def make_scenes(animal: str) -> None:
+    '''
+    Used to create png files from downsampled images [for loading in QC web portal]
+
+    :param animal:
+    :type animal: str
+    :return:
+    :rtype:
+    '''
     fileLocationManager = FileLocationManager(animal)
     INPUT = fileLocationManager.tif
     OUTPUT = os.path.join(fileLocationManager.thumbnail_web, "scene")
@@ -253,7 +304,21 @@ def make_scenes(animal):
         p.map(workernoshell, file_keys)
 
 
-def make_tif(animal, tif_id, file_id, testing=False):
+def make_tif(animal: str, tif_id, file_id, testing:bool = False):
+    '''
+    Create tiff files? Need verification
+
+    :param animal:
+    :type animal: str
+    :param tif_id:
+    :type tif_id:
+    :param file_id:
+    :type file_id:
+    :param testing:
+    :type testing: bool
+    :return:
+    :rtype:
+    '''
     fileLocationManager = FileLocationManager(animal)
     sqlController = SqlController(animal)
     INPUT = fileLocationManager.czi
@@ -299,6 +364,19 @@ def make_tif(animal, tif_id, file_id, testing=False):
 
 
 def convert(img, target_type_min, target_type_max, target_type):
+    '''Unknown - Needs more info [not sure what this converts]
+
+    :param img:
+    :type img:
+    :param target_type_min:
+    :type target_type_min:
+    :param target_type_max:
+    :type target_type_max:
+    :param target_type:
+    :type target_type:
+    :return:
+    :rtype:
+    '''
     imin = img.min()
     imax = img.max()
 
@@ -309,7 +387,7 @@ def convert(img, target_type_min, target_type_max, target_type):
     return new_img
 
 
-def create_downsample(file_key):
+def create_downsample(file_key: tuple[str, ...]):
     """
     takes a big tif and scales it down to a manageable size.
     For 16bit images, this is a good number near the high end.
@@ -331,6 +409,24 @@ def create_downsample(file_key):
 
 
 def submit_proxy(function, semaphore, executor, *args, **kwargs):
+    '''
+    Used for parallel processing with queuing of jobs
+
+    Unclear if still used - needs vetification
+
+    :param function:
+    :type function:
+    :param semaphore:
+    :type semaphore:
+    :param executor:
+    :type executor:
+    :param args:
+    :type args:
+    :param kwargs:
+    :type kwargs:
+    :return:
+    :rtype:
+    '''
     def task_complete_callback(future):
         semaphore.release()
 
@@ -341,7 +437,7 @@ def submit_proxy(function, semaphore, executor, *args, **kwargs):
     return future
 
 
-def read_image(file_path):
+def read_image(file_path: str):
     """Reads a image from the filesystem with exceptins
     """
 
@@ -353,6 +449,4 @@ def read_image(file_path):
     except:
         print(f"Exiting, cannot read {file_path}, unexpected error: {sys.exc_info()[0]}")
         sys.exit()
-
-
     return img
