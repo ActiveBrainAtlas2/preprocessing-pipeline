@@ -7,20 +7,12 @@ from utilities.utilities_cvat_neuroglancer import calculate_chunks, calculate_fa
 
 
 class NgDownsampler:
-    '''
-    Single-method class creates low-resolution neuroglancer cloudvolume ("precomputed" format).
-
+    """Single-method class creates low-resolution neuroglancer cloudvolume ("precomputed" format).
     Required step prior to creating entire cloudvolume of entire image stack (all resolutions)
-
     Files generated for each brain and stored in 'neuroglancer_data/C1T' folder
-
-    Note: This directory may be deleted after full-resolution image stack is created e.g. 'neuroglancer_data/C1'
-
-    Methods
-    -------
-    create_downsamples()
-
-    '''
+    Note: This directory may be deleted after full-resolution image stack 
+    is created e.g. 'neuroglancer_data/C1'
+    """
 
     def create_downsamples(self):
         """Downsamples the neuroglancer cloudvolume this step is needed to make the files viewable in neuroglancer"""
