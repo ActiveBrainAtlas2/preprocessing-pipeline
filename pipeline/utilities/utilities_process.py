@@ -116,6 +116,18 @@ def test_dir(animal: str, directory, section_count, downsample: bool = True, sam
         
     return len(files)
 
+def get_cpus():
+    nmax = 4
+    usecpus = (nmax, nmax)
+    cpus = {}
+    cpus["mothra"] = (1, 1)
+    cpus["muralis"] = (10, 20)
+    cpus["basalis"] = (4, 12)
+    cpus["ratto"] = (4, 8)
+    hostname = get_hostname()
+    if hostname in cpus.keys():
+        usecpus = cpus[hostname]
+    return usecpus
 
 def convert(img, target_type_min, target_type_max, target_type):
     '''Unknown - Needs more info [not sure what this converts]
