@@ -1,40 +1,41 @@
 """
-Keep cell dectector folder
 This program will create everything.
-The only required argument is the animal. By default it will work on channel=1
+The only required argument is the animal and step. By default it will work on channel=1
 and downsample = True. Run them in this sequence:
-    python pipeline/create_pipeline.py --animal DKXX --step 0|1|2|3|4|5
-    And then:
-    python pipeline/create_pipeline.py --animal DKXX channel 2|3 --step 0|1|2|3|4|5
-    And then:
-    python pipeline/create_pipeline.py --animal DKXX channel 1 downsample false --step 0|1|2|3|4|5
-    And then:
-    python pipeline/create_pipeline.py --animal DKXX channel 2|3 downsample false --step 0|1|2|3|4|5
 
-Changes from previous pipeline version:
-1. use ov cv2.imwrite instead of tiff.imwrite. This saves lots of space and works fine
-2. More of the code was moved from pipeline.py to this file to make it obvious what is being run
-3. I removed the greater than sign in the steps and replaced it with == to run specific methods only.
-4. Fine tuned the scaled method in the cleaning process. This will save lots of RAM!!!!
-5. Replaced the run_commands_with_executor with run_commands_concurrently. Much simpler!
-6. Removed the insert and select from ng.process_image and replaced with a touch file in the PROGRESS_DIR,
-    this will remove those 'mysql connection has gone away' errors.
-7. Changed the session to a scoped session and extended the connection timeout to 12 hours.
-Timing results
-0. The processes that take the longest and need the most monitoring are, cleaning, aligning
-and creating the neuroglancer images. The number of workers must be set correctly
-otherwise the workstations will crash if the # of workers is too high. If the number
+- python pipeline/create_pipeline.py --animal DKXX --step 0|1|2|3|4|5
+- python pipeline/create_pipeline.py --animal DKXX channel 2|3 --step 0|1|2|3|4|5
+- python pipeline/create_pipeline.py --animal DKXX channel 1 downsample false --step 0|1|2|3|4|5
+- python pipeline/create_pipeline.py --animal DKXX channel 2|3 downsample false --step 0|1|2|3|4|5
+
+**Changes from previous pipeline version**
+
+- Use opencv cv2.imwrite instead of tiff.imwrite. This saves lots of space and works fine
+- More of the code was moved from pipeline.py to this file to make it obvious what is being run
+- I removed the greater than sign in the steps and replaced it with == to run specific methods only.
+- Fine tuned the scaled method in the cleaning process. This will save lots of RAM!!!!
+- Replaced the run_commands_with_executor with run_commands_concurrently. Much simpler!
+- Removed the insert and select from ng.process_image and replaced with a touch file in \
+the PROGRESS_DIR, this will remove those 'mysql connection has gone away' errors.
+- Changed the session to a scoped session and extended the connection timeout to 24 hours.
+
+**Timing results**
+
+- The processes that take the longest and need the most monitoring are, cleaning, aligning \
+and creating the neuroglancer images. The number of workers must be set correctly \
+otherwise the workstations will crash if the number of workers is too high. If the number \
 of workers is too low, the processes take too long.
-1. Cleaning full resolution of 480 images on channel 1 on ratto took 5.5 hours
-2. Aligning full resolution of 480 images on channel 1 on ratto took 6.8 hours
-3. Running entire neuroglancer process on 480 images on channel 1 on ratto took 11.3 hours
+- Cleaning full resolution of 480 images on channel 1 on ratto took 5.5 hours
+- Aligning full resolution of 480 images on channel 1 on ratto took 6.8 hours
+- Running entire neuroglancer process on 480 images on channel 1 on ratto took 11.3 hours
 
-Human intervention is required at several points in the process:
-1. After create meta - the user needs to check the database and verify the images 
+**Human intervention is required at several points in the process**
+
+- After create meta - the user needs to check the database and verify the images \
 are in the correct order and the images look good.
-2. After the first create mask method - the user needs to check the colored masks
+- After the first create mask method - the user needs to check the colored masks \
 and possible dilate or crop them.
-3. After the alignment process - the user needs to verify the alignment looks good. 
+- After the alignment process - the user needs to verify the alignment looks good. \
 increasing the step size will make the pipeline move forward in the process.
 """
 import argparse
@@ -49,6 +50,15 @@ from lib.pipeline import Pipeline
 
 
 def run_pipeline(animal, channel, downsample, data_path, tg, debug):
+    """Takes params and runs the pipeline
+
+    :param animal: The animal we are working on.
+    :param channel: The channel, integer 1, 2, or 3. Defaults to 1
+    :param downsample: True for downsample, False for full resolution. Defaults to True
+    :param data_path: A string pointing to the birdstore location.
+    :param tg: A boolean to determine if the mask gets extended for the trigeminal ganglia.
+    :param debug: A boolean to determine if we should run in debug mode: Defaults to false.
+    """
 
     pipeline = Pipeline(animal, channel, downsample, data_path, tg, debug)
 
@@ -101,10 +111,6 @@ def run_pipeline(animal, channel, downsample, data_path, tg, debug):
 
 
 if __name__ == "__main__":
-    steps = """
-    start=0, prep, normalized and masks=1, mask, clean and histograms=2, 
-     elastix and alignment=3, neuroglancer=4
-     """
     parser = argparse.ArgumentParser(description="Work on Animal")
     parser.add_argument("--animal", help="Enter the animal", required=True)
     parser.add_argument("--channel", help="Enter channel", required=False, default=1)

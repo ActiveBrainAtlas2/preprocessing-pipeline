@@ -25,24 +25,9 @@ from utilities.utilities_process import get_image_size
 
 
 class ElastixManager:
-    """Class for generating, storing and applying transformations within stack alignment [with the Elastix package]
-
+    """Class for generating, storing and applying transformations within 
+    stack alignment [with the Elastix package]
     All methods relate to aligning images in stack
-
-    Methods
-    -------
-    create_within_stack_transformations()
-    call_alignment_metrics()
-    calculate_elastix_transformation()
-    rigid_transform_to_parmeters()
-    parameters_to_rigid_transform()
-    load_elastix_transformation()
-    get_rotation_center()
-    get_transformations()
-    align_full_size_image()
-    align_downsampled_images()
-    align_section_masks()
-    align_images()
     """
 
     def create_within_stack_transformations(self):

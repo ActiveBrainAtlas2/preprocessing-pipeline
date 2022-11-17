@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Integer, Float, ForeignKey
 from sqlalchemy.orm import relationship
 
 from database_model.atlas_model import Base, AtlasModel
-from database_model.section import Section
+from database_model.section import Section # This import is required by SqlAlchemy
 
 class SlideCziTif(Base, AtlasModel):
     __tablename__ = 'slide_czi_to_tif'

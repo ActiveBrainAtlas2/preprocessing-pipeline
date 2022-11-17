@@ -9,6 +9,7 @@ This includes modules, classes and methods.
    :maxdepth: 2
    :caption: Modules, classes, methods and utilities
 
+   create_pipeline.rst
    lib/czi_manager.rst
    lib/elastix_manager.rst
    lib/filelocation_manager.rst
