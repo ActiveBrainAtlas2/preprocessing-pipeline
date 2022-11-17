@@ -1,5 +1,4 @@
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 from sqlalchemy import Column, String, Integer, ForeignKey
 
 from database_model.atlas_model import Base, AtlasModel

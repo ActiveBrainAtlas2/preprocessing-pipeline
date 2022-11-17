@@ -10,31 +10,27 @@ from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 
 from controller.main_controller import Controller
-from controller.elastix_controller import ElastixController
-from controller.structure_controller import StructuresController
-from controller.structure_com_controller import StructureComController
-from controller.marked_cell_controller import MarkedCellController
-from controller.transformation_controller import TransformationController
 from controller.animal_controller import AnimalController
-from controller.url_controller import UrlController
+from controller.elastix_controller import ElastixController
+from controller.histology_controller import HistologyController
 from controller.scan_run_controller import ScanRunController
 from controller.sections_controller import SectionsController
 from controller.slide_controller import SlideController
 from controller.slide_tif_controller import SlideCZIToTifController
 from controller.tasks_controller import TasksController
-from controller.histology_controller import HistologyController
 from database_model.scan_run import ScanRun
 from database_model.histology import Histology
-from database_model.annotation_points import StructureComView
+
 try:
     from settings import host, password, user, schema
 except ImportError as fe:
     print('You must have a settings file in the pipeline directory.', fe)
     raise
 
-class SqlController(ElastixController,StructuresController,TransformationController,
-    UrlController,AnimalController,ScanRunController,SectionsController,TasksController,
-    SlideController,SlideCZIToTifController,HistologyController,StructureComController,MarkedCellController):
+
+class SqlController(AnimalController, ElastixController, HistologyController,
+                     ScanRunController, SectionsController,
+                    SlideController, SlideCZIToTifController, TasksController):
     """ This is the base class for all things SQL.  
     Each parent class of SqlController would correspond to one table in the database, and include all the 
     methods to interact with that table
@@ -87,17 +83,3 @@ class SqlController(ElastixController,StructuresController,TransformationControl
     def get_slides_from_animal(self,prep_id):
         scan_run_id = self.get_scan_run(prep_id).id
         return self.get_slides_from_scan_run_id(scan_run_id)
-
-    def get_all_manual_COM(self):
-        coms = self.session.query(StructureComView)\
-            .filter(StructureComView.source == 'MANUAL').all()
-        coms = np.array(coms)
-        animals = np.array([i.FK_prep_id for i in coms])
-        unique_animals = np.unique(animals)
-        all_coms = {}
-        for i in unique_animals:
-            animal_com = coms[animals==i]
-            names = [self.structure_id_to_abbreviation(i.FK_structure_id) for i in animal_com]
-            coords = [np.floor([i.x,i.y,i.z]).astype(int) for i in animal_com]
-            all_coms[i] = dict(zip(names,coords))
-        return all_coms

@@ -1,11 +1,6 @@
-import multiprocessing
 from concurrent.futures.process import ProcessPoolExecutor
-from multiprocessing import Pool, Manager
-import copy
-from datetime import datetime, timedelta
 
 from utilities.utilities_process import get_hostname
-from utilities.shell_tools import workernoshell
 
 
 class ParallelManager:

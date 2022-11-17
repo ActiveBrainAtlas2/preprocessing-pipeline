@@ -1,5 +1,4 @@
 from sqlalchemy import Column, String, Integer, Float
-from traitlets import default
 
 from database_model.atlas_model import Base, AtlasModel
 
