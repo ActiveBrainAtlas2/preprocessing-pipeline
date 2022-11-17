@@ -15,15 +15,8 @@ from lib.FileLogger import FileLogger
 
 class CZIManager(FileLogger):
     """Methods to extract meta-data from czi files using AICSImage module (Allen Institute)
-
-    Methods
-    -------
-    __init__()
-    extract_metadata_from_czi_file()
-    get_scene_dimension()
-    get_scene()
-
     """
+    
     def __init__(self, czi_file):
         """Set up the class with the name of the file and the path to it's location.
 
@@ -41,7 +34,7 @@ class CZIManager(FileLogger):
         """This will parse the xml metadata and return the relevant data.
 
         :param czi_file: string of the CZI file name
-        :czi_file_path: string of the CZI path
+        :param czi_file_path: string of the CZI path
         :return: dictionary of the metadata
         """
 

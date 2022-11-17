@@ -55,7 +55,6 @@ class NgPrecomputedMaker:
         return midfile, file_keys, volume_size, num_channels
 
     def create_neuroglancer(self):
-
         """create the Seung lab cloud volume format from the image stack"""
         progress_id = self.sqlController.get_progress_id(self.downsample, self.channel, "NEUROGLANCER")
 
