@@ -1,7 +1,7 @@
 File logger module
 ------------------
 
-.. automodule:: lib.FileLogger
+.. automodule:: lib.file_logger
    :members:
    :undoc-members:
    :show-inheritance: 

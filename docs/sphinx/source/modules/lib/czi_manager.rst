@@ -1,7 +1,7 @@
 CZI manager module
 ------------------
 
-.. automodule:: lib.CZIManager
+.. automodule:: lib.czi_manager
    :members:
    :undoc-members:
    :show-inheritance:
