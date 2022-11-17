@@ -1,6 +1,4 @@
-"""
-
- #Notes from the manual regarding MOMENTS vs GEOMETRY:
+"""Notes from the manual regarding MOMENTS vs GEOMETRY:
 
  The CenteredTransformInitializer supports two modes of operation. In the first mode, the centers of
  the images are computed as space coordinates using the image origin, size and spacing. The center of
@@ -14,15 +12,15 @@
  while the other parameters correspond to the translations that are measured in millimeters
 
 """
-
 import os
 import numpy as np
-from matplotlib import pyplot as plt
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 import SimpleITK as sitk
-from IPython.display import clear_output
-import cv2
-from scipy.stats import skew
-from scipy.ndimage import affine_transform
+
+from utilities.utilities_process import SCALING_FACTOR
+
+
 
 
 
@@ -61,84 +59,6 @@ def rigid_transform_to_parmeters(transform,center):
     xshift,yshift = shift-center +np.dot(R, center)
     return xshift,yshift,rotation,center
 
-def create_matrix(final_transform):
-    finalParameters = final_transform.GetParameters()
-    fixedParameters = final_transform.GetFixedParameters()
-    # print(finalParameters)
-    # print(fixedParameters)
-    # return
-    rot_rad, xshift, yshift = finalParameters
-    center = np.array(fixedParameters)
-
-    R = np.array(
-        [
-            [np.cos(rot_rad), -np.sin(rot_rad)],
-            [np.sin(rot_rad), np.cos(rot_rad)],
-        ]
-    )
-    shift = center + (xshift, yshift) - np.dot(R, center)
-    T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
-    return T
-
-def convert_2d_transform_forms(arr):
-    """
-    Just creates correct size matrix
-    """
-    return np.vstack([arr, [0, 0, 1]])
-
-
-def start_plot():
-    global metric_values, multires_iterations
-    metric_values = []
-    multires_iterations = []
-
-
-# Callback invoked when the EndEvent happens, do cleanup of data and figure.
-def end_plot():
-    global metric_values, multires_iterations
-    del metric_values
-    del multires_iterations
-    # Close figure, we don't want to get a duplicate of the plot latter on.
-    plt.close()
-
-
-# Callback invoked when the sitkMultiResolutionIterationEvent happens, update the index into the
-# metric_values list.
-def update_multires_iterations():
-    global metric_values, multires_iterations
-    multires_iterations.append(len(metric_values))
-
-
-# Callback invoked when the IterationEvent happens, update our data and display new figure.
-def plot_values(registration_method):
-    global metric_values, multires_iterations
-
-    metric_values.append(registration_method.GetMetricValue())
-    # Clear the output area (wait=True, to reduce flickering), and plot current data
-    clear_output(wait=True)
-    # Plot the similarity metric values
-    plt.plot(metric_values, "r")
-    plt.plot(
-        multires_iterations,
-        [metric_values[index] for index in multires_iterations],
-        "b*",
-    )
-    plt.xlabel("Iteration Number", fontsize=12)
-    plt.ylabel("Metric Value", fontsize=12)
-    plt.show()
-
-
-def command_iteration(method):
-    print(
-        "{0:3} = {1:10.5f} : {2}".format(
-            method.GetOptimizerIteration(),
-            method.GetMetricValue(),
-            method.GetOptimizerPosition(),
-        )
-    )
-
-
-
 def resample(image, transform):
     # Output image Origin, Spacing, Size, Direction are taken from the reference
     # image in this call to Resample
@@ -148,55 +68,6 @@ def resample(image, transform):
     return sitk.Resample(
         image, reference_image, transform, interpolator, default_value
     )
-
-
-def find_principle_vector(mask):
-    moments = cv2.moments(mask)
-    x = moments["m10"] / moments["m00"]
-    y = moments["m01"] / moments["m00"]
-    u20 = moments["m20"] / moments["m00"] - x**2
-    u11 = moments["m11"] / moments["m00"] - x * y
-    u02 = moments["m02"] / moments["m00"] - y**2
-    theta = 0.5 * np.arctan(2 * u11 / (u20 - u02)) + (u20 < u02) * np.pi / 2
-    x = moments["m10"] / moments["m00"]
-    y = moments["m01"] / moments["m00"]
-    center = np.array([x, y]).astype(int)
-    return theta, center
-
-
-def find_skewness_along_X(image):
-    inds = np.argwhere(image > np.mean(image))
-    return skew(inds[:, 1])
-
-
-def rotate_and_align_image(moving, fixed):
-    moving_mask = np.array((np.array(moving) > np.mean(moving)) * 255).astype(
-        "uint8"
-    )
-    fixed_mask = np.array((np.array(fixed) > np.mean(fixed)) * 255).astype(
-        "uint8"
-    )
-    theta_moving, center_moving = find_principle_vector(moving_mask)
-    theta_fixed, center_fixed = find_principle_vector(fixed_mask)
-    T = parameters_to_rigid_transform(
-        rotation=-theta_moving,
-        xshift=0,
-        yshift=0,
-        center=np.flip(center_moving),
-    )
-    straight_moving = affine_transform(moving, T)
-    T = parameters_to_rigid_transform(
-        rotation=-theta_fixed, xshift=0, yshift=0, center=np.flip(center_fixed)
-    )
-    straight_fixed = affine_transform(fixed, T)
-    skewness_moving = find_skewness_along_X(straight_moving)
-    skewness_fixed = find_skewness_along_X(straight_fixed)
-    if np.sign(skewness_fixed) != np.sign(skewness_moving):
-        theta_moving = (theta_moving + np.pi) % (2 * np.pi)
-    rotation_angle = theta_fixed - theta_moving
-    offset = center_fixed - center_moving
-    rotation_angle = (theta_fixed - theta_moving) % (2 * np.pi)
-    return rotation_angle, np.flip(offset), np.flip(center_moving)
 
 def align_elastix(fixed, moving):
     elastixImageFilter = sitk.ElastixImageFilter()
@@ -366,17 +237,6 @@ def align_elastix(fixed, moving):
     return (elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"])
 
 
-
-def align_principle_axis(moving,fixed):
-    rotation_angle,offset,center_moving = rotate_and_align_image(sitk.GetArrayFromImage(moving),sitk.GetArrayFromImage(fixed))
-    initial_transform = sitk.Euler2DTransform()
-    initial_transform.SetParameters([rotation_angle,*offset.astype(float)])
-    initial_transform.SetFixedParameters(center_moving.astype(float))
-    moving = resample(moving,initial_transform)
-    initial_transform = parse_sitk_rigid_transform(initial_transform)
-    return moving,initial_transform
-
-
 def register_simple(INPUT, fixed_index, moving_index):
     pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
@@ -392,3 +252,61 @@ def parse_sitk_rigid_transform(sitk_rigid_transform):
     rotation, xshift, yshift = sitk_rigid_transform.GetParameters()
     center = sitk_rigid_transform.GetFixedParameters()
     return rotation, xshift, yshift, center
+
+
+def create_downsampled_transforms(transforms: dict, downsample: bool) -> dict:
+    """Changes the dictionary of transforms to the correct resolution
+
+
+    :param animal: prep_id of animal we are working on
+    :type animal: str
+    :param transforms: dictionary of filename:array of transforms
+    :type transforms:
+    :param downsample: either true for thumbnails, false for full resolution images
+    :type downsample: bool
+    :return: corrected dictionary of filename: array  of transforms
+    :rtype: dict
+    """
+
+    if downsample:
+        transforms_scale_factor = 1
+    else:
+        transforms_scale_factor = SCALING_FACTOR
+
+    tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
+
+    transforms_to_anchor = {}
+    for img_name, tf in transforms.items():
+        transforms_to_anchor[img_name] = \
+            convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor)
+    return transforms_to_anchor
+
+
+def convert_2d_transform_forms(arr):
+    """Helper method used by create_downsampled_transforms
+
+    :param arr: an array of data to vertically stack
+    :return: a numpy array
+    """
+
+    return np.vstack([arr, [0, 0, 1]])
+
+
+def align_image_to_affine(file_key):
+    """This is the method that takes the rigid transformation and uses
+    PIL to align the image.
+    This method takes about 20 seconds to run as compared to scikit's version 
+    which takes 220 seconds to run on a full scale image.
+
+    :param file_key: tuple of file input and output
+    :return: nothing
+    """
+    _, infile, outfile, T = file_key
+    im1 = Image.open(infile)
+    im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
+    im2.save(outfile)
+    del im1, im2
+    return
+
+
+

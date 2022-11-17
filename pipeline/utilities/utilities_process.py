@@ -1,18 +1,15 @@
-import os, sys, time
-from subprocess import run, check_output
-from multiprocessing.pool import Pool
+import os, sys
+from subprocess import Popen, check_output
 import socket
 from skimage import io
 from PIL import Image
-
 Image.MAX_IMAGE_PIXELS = None
 import cv2
 import numpy as np
 import gc
 from skimage.transform import rescale
+import math
 
-from lib.FileLocationManager import FileLocationManager
-from controller.sql_controller import SqlController
 
 SCALING_FACTOR = 16.0
 DOWNSCALING_FACTOR = 1 / SCALING_FACTOR
@@ -172,6 +169,22 @@ def create_downsample(file_key: tuple[str, ...]):
     del img
     gc.collect()
     return
+
+
+def convert_size(size_bytes: int) -> str:
+    """Function takes unformatted bytes, calculates human-readable format [with units] and returns string
+
+    :param size_bytes:
+    :type size_bytes: int
+    :return: str:
+    """
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
 
 
 def write_image(file_path, data, message: str = "Error") -> None:

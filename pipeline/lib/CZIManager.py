@@ -4,7 +4,6 @@ which is a set of Java tools, but we opted to use a pure python library that
 can handle CZI files. https://github.com/AllenCellModeling/aicspylibczi
 """
 import os
-import cv2
 from PIL import Image
 from aicspylibczi import CziFile
 from aicsimageio import AICSImage

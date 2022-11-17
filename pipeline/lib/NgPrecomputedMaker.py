@@ -1,6 +1,13 @@
 import os
 from skimage import io
-from utilities.utilities_cvat_neuroglancer import NumpyToNeuroglancer, calculate_chunks
+import sys
+from cloudvolume import CloudVolume
+from taskqueue import LocalTaskQueue
+import igneous.task_creation as tc
+
+
+from lib.numpy_neuroglancer import NumpyToNeuroglancer, calculate_chunks, \
+    calculate_factors
 from utilities.utilities_process import SCALING_FACTOR, test_dir
 
 
@@ -93,3 +100,52 @@ class NgPrecomputedMaker:
         workers = self.get_nworkers()
         self.run_commands_concurrently(ng.process_image, file_keys, workers)
         ng.precomputed_vol.cache.flush()
+
+
+    def create_downsamples(self):
+        """Downsamples the neuroglancer cloudvolume this step is needed to make the files viewable in neuroglancer"""
+        chunks = calculate_chunks(self.downsample, 0)
+        mips = [0, 1, 2, 3, 4, 5, 6, 7]
+        if self.downsample:
+            mips = [0, 1, 2]
+        OUTPUT_DIR = self.fileLocationManager.get_neuroglancer(
+            self.downsample, self.channel, rechunck=True
+        )
+        if os.path.exists(OUTPUT_DIR):
+            print(f"DIR {OUTPUT_DIR} already exists and not performing any downsampling.")
+            return
+        outpath = f"file://{OUTPUT_DIR}"
+        INPUT_DIR = self.fileLocationManager.get_neuroglancer( self.downsample, self.channel )
+        if not os.path.exists(INPUT_DIR):
+            print(f"DIR {INPUT_DIR} does not exist, exiting.")
+            sys.exit()
+        cloudpath = f"file://{INPUT_DIR}"
+        self.logevent(f"INPUT_DIR: {INPUT_DIR}")
+        self.logevent(f"OUTPUT_DIR: {OUTPUT_DIR}")
+        workers =self.get_nworkers()
+        tq = LocalTaskQueue(parallel=workers)
+        tasks = tc.create_transfer_tasks(
+            cloudpath,
+            dest_layer_path=outpath,
+            chunk_size=chunks,
+            mip=0,
+            skip_downsamples=True,
+        )
+        tq.insert(tasks)
+        tq.execute()
+        for mip in mips:
+            cv = CloudVolume(outpath, mip)
+            chunks = calculate_chunks(self.downsample, mip)
+            factors = calculate_factors(self.downsample, mip)
+            tasks = tc.create_downsampling_tasks(
+                cv.layer_cloudpath,
+                mip=mip,
+                num_mips=1,
+                factor=factors,
+                preserve_chunk_size=False,
+                compress=True,
+                chunk_size=chunks,
+            )
+            tq.insert(tasks)
+            tq.execute()
+

@@ -14,10 +14,11 @@ from subprocess import Popen, PIPE
 from pathlib import Path
 
 from lib.FileLocationManager import FileLocationManager
-from utilities.utilities_alignment import align_image_to_affine, create_downsampled_transforms
 from utilities.utilities_registration import (
-    register_simple,
+    align_image_to_affine,
+    create_downsampled_transforms,
     parameters_to_rigid_transform,
+    register_simple,
     rigid_transform_to_parmeters,
 )
 from database_model.elastix_transformation import ElastixTransformation
