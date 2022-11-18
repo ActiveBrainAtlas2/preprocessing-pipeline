@@ -143,7 +143,7 @@ def convert(img, target_type_min, target_type_max, target_type):
     return new_img
 
 
-def create_downsample(file_key: tuple[str, ...]):
+def create_downsample(file_key):
     """takes a big tif and scales it down to a manageable size.
     This method is used in PrepCreator
     For 16bit images, this is a good number near the high end.
