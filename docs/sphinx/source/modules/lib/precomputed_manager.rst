@@ -1,4 +1,4 @@
-Neuroglancer precomputed manager
+Precomputed manager
 --------------------------------
 
 .. automodule:: lib.precomputed_manager

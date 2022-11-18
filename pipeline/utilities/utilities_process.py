@@ -1,5 +1,5 @@
 import os, sys
-from subprocess import Popen, check_output
+from subprocess import check_output
 import socket
 from skimage import io
 from PIL import Image
@@ -17,24 +17,23 @@ Image.MAX_IMAGE_PIXELS = None
 
 
 def get_hostname() -> str:
-    '''Returns hostname of server where code is processed
+    """Returns hostname of server where code is processed
 
-    :return:
-    :rtype:str
-    '''
+    :return: string of the current workstation
+    """
+
     hostname = socket.gethostname()
     hostname = hostname.split(".")[0]
     return hostname
 
 
 def get_image_size(filepath: str) -> tuple[int, ...]:
-    '''Returns width, height of single image
+    """Returns width, height of single image
 
-    :param filepath:
-    :type filepath: str
-    :return:
-    :rtype:
-    '''
+    :param filepath: path of input file
+    :return: tuple of int width and height of the file
+    """
+
     result_parts = str(check_output(["identify", filepath]))
     results = result_parts.split()
     width, height = results[2].split("x")
@@ -42,21 +41,16 @@ def get_image_size(filepath: str) -> tuple[int, ...]:
 
 
 def test_dir(animal: str, directory, section_count, downsample: bool = True, same_size: bool = False) -> int:
-    '''Verify image stack directory for section count and max width, height
+    """Verify image stack directory for section count and max width, height
 
-    :param animal:
-    :type animal: str
-    :param directory:
-    :type directory:
-    :param section_count:
-    :type section_count:
-    :param downsample:
-    :type downsample: bool
-    :param same_size:
-    :type same_size: bool
-    :return:
-    :rtype: int
-    '''
+    :param animal: string of animal name.
+    :param directory: directory we are testing.
+    :param section_count: integer how many sections are in the stack
+    :param downsample: boolean on whether to downsample or not
+    :param same_size: boolean on whether all files are same size
+    :return: string of error messages
+    """
+
     error = ""
     # thumbnail resolution ntb is 10400 and min size of DK52 is 16074
     # thumbnail resolution thion is 14464 and min size for MD585 is 21954
@@ -114,6 +108,9 @@ def test_dir(animal: str, directory, section_count, downsample: bool = True, sam
     return len(files)
 
 def get_cpus():
+    """Helper method to return the number of CPUs to use
+    """
+
     nmax = 4
     usecpus = (nmax, nmax)
     cpus = {}
@@ -127,19 +124,15 @@ def get_cpus():
     return usecpus
 
 def convert(img, target_type_min, target_type_max, target_type):
-    '''Unknown - Needs more info [not sure what this converts]
+    """Converts an image from one type to another and also resizes
 
-    :param img:
-    :type img:
-    :param target_type_min:
-    :type target_type_min:
-    :param target_type_max:
-    :type target_type_max:
-    :param target_type:
-    :type target_type:
+    :param img: numpy array
+    :param target_type_min: min size
+    :param target_type_max: max size
+    :param target_type: dtype of array
     :return:
-    :rtype:
-    '''
+    """
+
     imin = img.min()
     imax = img.max()
 
@@ -155,6 +148,7 @@ def create_downsample(file_key: tuple[str, ...]):
     This method is used in PrepCreator
     For 16bit images, this is a good number near the high end.
     """
+
     infile, outpath = file_key
     try:
         img = io.imread(infile)
@@ -178,6 +172,7 @@ def convert_size(size_bytes: int) -> str:
     :type size_bytes: int
     :return: str:
     """
+
     if size_bytes == 0:
         return "0B"
     size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
@@ -190,6 +185,7 @@ def convert_size(size_bytes: int) -> str:
 def write_image(file_path, data, message: str = "Error") -> None:
     """Writes an image to the filesystem
     """
+    
     try:
         cv2.imwrite(file_path, data)
     except Exception as e:
