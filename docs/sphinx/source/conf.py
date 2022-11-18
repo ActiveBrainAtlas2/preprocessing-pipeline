@@ -28,7 +28,7 @@ extensions = [
     'sphinx.ext.autosummary',  # Create neat summary tables
 ]
 autosummary_generate = False  # Turn on sphinx.ext.autosummary
-autodoc_mock_imports = ["settings", "SimpleITK-SimpleElastix"]
+autodoc_mock_imports = ["settings", "SimpleITK-SimpleElastix", "cloudvolume", "neuroglancer"]
 
 
 
