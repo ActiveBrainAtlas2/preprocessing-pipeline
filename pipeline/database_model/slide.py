@@ -3,7 +3,6 @@ from database_model.atlas_model import Base, AtlasModel
 
 class SlideCziTif(Base, AtlasModel):
     __tablename__ = 'slide_czi_to_tif'
-    __table_args__ = {'extend_existing': True}
     id =  Column(Integer, primary_key=True, nullable=False)
     FK_slide_id = Column(Integer, ForeignKey('slide.id'), nullable=False)
     file_name = Column(String, nullable=False)
@@ -18,7 +17,6 @@ class SlideCziTif(Base, AtlasModel):
 
 class Slide(Base, AtlasModel):
     __tablename__ = 'slide'
-    __table_args__ = {'extend_existing': True}
     id =  Column(Integer, primary_key=True, nullable=False)
     scan_run_id = Column(Integer, ForeignKey('scan_run.id'))
     slide_physical_id = Column(Integer)
@@ -45,7 +43,6 @@ class Slide(Base, AtlasModel):
 
 class Section(Base, AtlasModel):
     __tablename__ = 'sections'
-    __table_args__ = {'extend_existing': True}
     id =  Column(Integer, primary_key=True, nullable=False)
     prep_id = Column(String, ForeignKey('animal.prep_id'), nullable=False)
     czi_file = Column(String, nullable=False)

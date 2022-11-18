@@ -8,6 +8,18 @@ and downsample = True. Run them in this sequence:
 - python pipeline/create_pipeline.py --animal DKXX channel 1 downsample false --step 0|1|2|3|4|5
 - python pipeline/create_pipeline.py --animal DKXX channel 2|3 downsample false --step 0|1|2|3|4|5
 
+Explanation for the steps:
+
+- Step 0 - extracts the metadata from the CZI and inserts into the database. \
+    Also creates web friendly PNG files for viewing in the portal. Extracts the TIFF \
+    files at the standard downsampling factor
+- Step 1 - This is after the database portal QC. The normalized images are created and the masks \
+    are also created. The user peforms QC on the masks and makes sure they are good.
+- Step 2 - Final masks are created and then the images are cleaned from the masks.
+- Step 3 - Histograms are created of all channel 1 sections
+- Step 4 - Alignment with Elastix is run on the cleaned images
+- Step 5 - Neuroglancer precomputed data is created from the aligned and cleaned images.
+
 **Changes from previous pipeline version**
 
 - Use opencv cv2.imwrite instead of tiff.imwrite. This saves lots of space and works fine

@@ -1,4 +1,3 @@
-
 from datetime import datetime
 import os
 from sqlalchemy import func
@@ -13,9 +12,16 @@ class TasksController(Controller):
 
     def __init__(self, *args, **kwargs):
         """initiates the controller class"""
+
         Controller.__init__(self, *args, **kwargs)
 
     def get_current_task(self, animal):
+        """Gets the current task
+        
+        :param animal: animal key
+        :return: a description of the current step        
+        """
+
         step = None
         try:
             lookup_id = (
@@ -41,14 +47,11 @@ class TasksController(Controller):
         return lookup.description
 
     def set_task(self, animal, lookup_id):
-        """
-        Look up the lookup up from the step. Check if the animal already exists,
+        """Look up the lookup up from the step. Check if the animal already exists,
         if not, insert, otherwise, update
-        Args:
-            animal: string of the animal you are working on
-            lookup_id: current lookup ID
-        Returns:
-            nothing, just merges
+        
+        :param animal: string of the animal you are working on
+        :param lookup_id: current lookup ID
         """
         try:
             lookup = (

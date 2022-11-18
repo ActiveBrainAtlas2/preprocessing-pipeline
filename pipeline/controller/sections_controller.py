@@ -4,31 +4,31 @@ from controller.main_controller import Controller
 from database_model.slide import Section
 
 class SectionsController(Controller):
-    def __init__(self,*args,**kwargs):
+    def __init__(self, *args, **kwargs):
         """initiates the controller class
-        """        
-        Controller.__init__(self,*args,**kwargs)
+        """
+
+        Controller.__init__(self, *args, **kwargs)
         
     def get_section(self, ID):
-        """
-        The sections table is a view and it is already filtered by active and file_status = 'good'
+        """The sections table is a view and it is already filtered by active and file_status = 'good'
         This qeury returns a single section by id.
-        Args:
-            id: integer primary key
+        
+        :param id: integer primary key
 
-        Returns: one section
+        :returns: one section
         """
+
         return self.session.query(Section).get(ID)
     
     def get_sections(self, animal, channel):
-        """
-        The sections table is a view and it is already filtered by active and file_status = 'good'
+        """The sections table is a view and it is already filtered by active and file_status = 'good'
         The ordering is important. This needs to come from the histology table.
-        Args:
-            animal: the animal to query
-            channel: 1 or 2 or 3.
 
-        Returns: list of sections in order
+        :param animal: the animal to query
+        :param channel: 1 or 2 or 3.
+
+        :returns: list of sections in order
 
         """
         slide_orderby = self.histology.side_sectioned_first
@@ -56,6 +56,12 @@ class SectionsController(Controller):
         return sections
     
     def get_sections_numbers(self, animal):
+        """Get all the section numbers from an animal
+
+        :param animal: animal key
+        :return section_numbers: a list of the sections
+        """
+
         sections = self.session.query(Section).filter(
             Section.prep_id == animal).filter(Section.channel == 1).all()
         section_numbers = []
@@ -64,6 +70,13 @@ class SectionsController(Controller):
         return section_numbers
 
     def get_sections_dict(self, animal):
+        """Gets a dictionary of sections by animal
+
+        
+        :param animal: animal key
+        :return section_numbers: a dictionary of the sections
+        """
+
         sections = self.session.query(Section).filter(
             Section.prep_id == animal).filter(Section.channel == 1).all()
 
@@ -74,6 +87,11 @@ class SectionsController(Controller):
         return sections_dict
 
     def get_section_count(self, animal):
+        """Get the number of sections by animal
+
+        :param animal: animal key
+        :return section_numbers: a integer of the count
+        """
         try:
             count = self.session.query(Section).filter(
                 Section.prep_id == animal).filter(Section.channel == 1).count()
@@ -82,16 +100,15 @@ class SectionsController(Controller):
         return count
     
     def get_distinct_section_filenames(self, animal, channel):
-        """
-        Very similar to the get_sections query but this will return a list of
+        """Very similar to the get_sections query but this will return a list of
         distinct file names. Since some of the scenes get duplicated in the QA process,
         we need to get the tifs without duplicates. The duplicates will then get replicated
         with the get_sections method. The order doesn't matter here.
-        Args:
-            animal: the animal to query
-            channel: 1 or 2 or 3.
 
-        Returns: list of sections with distinct file names
+        :param animal: the animal to query
+        :param channel: 1 or 2 or 3.
+
+        :returns: list of sections with distinct file names
 
         """
         sections = self.session.query(Section.czi_file, Section.file_name, Section.scene_number,  Section.channel_index).distinct()\

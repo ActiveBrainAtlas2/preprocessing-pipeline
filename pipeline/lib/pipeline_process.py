@@ -13,19 +13,19 @@ import shutil
 import threading
 from timeit import default_timer as timer
 
-from lib.FileLocationManager import FileLocationManager
-from lib.MetaUtilities import MetaUtilities
-from lib.PrepCreater import PrepCreater
-from lib.NgPrecomputedMaker import NgPrecomputedMaker
-from lib.ProgressLookup import ProgressLookup
-from lib.TiffExtractor import TiffExtractor
-from lib.FileLogger import FileLogger
-from lib.ParallelManager import ParallelManager
-from lib.Normalizer import Normalizer
-from lib.MaskManager import MaskManager
-from lib.ImageCleaner import ImageCleaner
-from lib.HistogramMaker import HistogramMaker
-from lib.ElastixManager import ElastixManager
+from lib.filelocation_manager import FileLocationManager
+from lib.meta_manager import MetaUtilities
+from lib.prep_manager import PrepCreater
+from lib.precomputed_manager import NgPrecomputedMaker
+from lib.progress_manager import ProgressLookup
+from lib.tiff_extractor_manager import TiffExtractor
+from lib.file_logger import FileLogger
+from lib.parallel_manager import ParallelManager
+from lib.normalizer_manager import Normalizer
+from lib.mask_manager import MaskManager
+from lib.image_cleaner import ImageCleaner
+from lib.histogram_maker import HistogramMaker
+from lib.elastix_manager import ElastixManager
 from controller.sql_controller import SqlController
 from utilities.utilities_process import get_hostname
 
@@ -86,7 +86,6 @@ class Pipeline(
         """
         self.animal = animal
         self.channel = channel
-        self.ch_dir = f"CH{self.channel}"
         self.downsample = downsample
         self.debug = debug
         self.fileLocationManager = FileLocationManager(animal, data_path=data_path)

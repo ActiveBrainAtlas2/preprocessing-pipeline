@@ -1,15 +1,19 @@
-"""Notes from the manual regarding MOMENTS vs GEOMETRY:
+"""This code contains helper methods in using Elastix to perform section to section
+aligment. Elastix takes in many many different parameter settings. Below are some notes
+regarding one particular parameter.
 
- The CenteredTransformInitializer supports two modes of operation. In the first mode, the centers of
+**Notes from the manual regarding MOMENTS vs GEOMETRY:**
+
+ *The* ``CenteredTransformInitializer`` *parameter supports two modes of operation. In the first mode, the centers of
  the images are computed as space coordinates using the image origin, size and spacing. The center of
  the fixed image is assigned as the rotational center of the transform while the vector going from the
  fixed image center to the moving image center is passed as the initial translation of the transform.
  In the second mode, the image centers are not computed geometrically but by using the moments of the
- intensity gray levels.
+ intensity gray levels.*
 
- Keep in mind that the scale of units in rotation and translation is quite different. For example, here
+ *Keep in mind that the scale of units in rotation and translation is quite different. For example, here
  we know that the first element of the parameters array corresponds to the angle that is measured in radians,
- while the other parameters correspond to the translations that are measured in millimeters
+ while the other parameters correspond to the translations that are measured in millimeters*
 
 """
 import os
@@ -20,11 +24,18 @@ import SimpleITK as sitk
 
 from utilities.utilities_process import SCALING_FACTOR
 
-
-
-
-
 def parameters_to_rigid_transform(rotation, xshift, yshift, center):
+    """Takes the rotation, xshift, yshift that were created by Elastix
+    and stored in the elastix_transformation table. Creates a matrix of the
+    rigid transformation.
+
+    :param rotation: a float designating the rotation
+    :param xshift: a float for showing how much the moving image shifts in the X direction.
+    :param yshift: a float for showing how much the moving image shifts in the Y direction.
+    :param center: tuple of floats showing the center of the image.
+    :returns: the 3x3 rigid transformation
+    """
+
     rotation, xshift, yshift = np.array([rotation, xshift, yshift]).astype(
         np.float16
     )
@@ -39,37 +50,36 @@ def parameters_to_rigid_transform(rotation, xshift, yshift, center):
     T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
     return T
 
-def rigid_transform_to_parmeters(transform,center):
-    """convert a 2d transformation matrix (3*3) to the rotation angles, rotation center and translation
+def rigid_transform_to_parmeters(transform, center):
+    """convert a 2d transformation matrix (3*3) to the rotation angles, 
+    rotation center and translation
 
-    Args:
-        transform (array like): 3*3 array that stores the 2*2 transformation matrix and the 1*2 translation vector for a 
-        2D image.  the third row of the array is a place holder of values [0,0,1].
 
-    Returns:
-        float: x translation
-        float: y translation
-        float: rotation angle in arc
-        list:  lisf of x and y for rotation center
-    """        
+    :param transform: (array like): 3*3 array that stores the 2*2 transformation \
+    matrix and the 1*2 translation vector for a \
+    2D image.  the third row of the array is a place holder of values [0,0,1].
+    :param center: tuple of floats showing the center of the image.
+
+    :return:    float: x translation, float: y translation, float: rotation angle \
+    in arc list of x and y for rotation center
+    """     
+
     R = transform[:2,:2]
     shift = transform[:2,2]
-    tan= R[1,0]/R[0,0]
+    tan = R[1,0]/R[0,0]
     rotation = np.arctan(tan)
-    xshift,yshift = shift-center +np.dot(R, center)
-    return xshift,yshift,rotation,center
-
-def resample(image, transform):
-    # Output image Origin, Spacing, Size, Direction are taken from the reference
-    # image in this call to Resample
-    reference_image = image
-    interpolator = sitk.sitkCosineWindowedSinc
-    default_value = 100.0
-    return sitk.Resample(
-        image, reference_image, transform, interpolator, default_value
-    )
+    xshift, yshift = shift - center + np.dot(R, center)
+    return xshift, yshift, rotation, center
 
 def align_elastix(fixed, moving):
+    """This takes the moving and fixed images runs Elastix on them. Note
+    the huge list of parameters Elastix uses here.
+
+    :param fixed: sitk float array for the fixed image (the image behind the moving).
+    :param moving: sitk float array for the moving image.
+    :return: the Elastix transformation results that get parsed into the rigid transformation
+    """
+
     elastixImageFilter = sitk.ElastixImageFilter()
     elastixImageFilter.SetFixedImage(fixed)
     elastixImageFilter.SetMovingImage(moving)
@@ -238,6 +248,15 @@ def align_elastix(fixed, moving):
 
 
 def register_simple(INPUT, fixed_index, moving_index):
+    """Helper method for inputing the fixed and moving images into Elastix
+    This creates the sitk float images and sends them to Elastix
+
+    :param INPUT: path to files
+    :param fixed_index: index of the fixed image path
+    :param moving_index: index of the moving image path
+    :return: two elastix transforms
+    """
+
     pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
     moving_file = os.path.join(INPUT, f"{moving_index}.tif")
@@ -246,9 +265,15 @@ def register_simple(INPUT, fixed_index, moving_index):
     initial_transform = sitk.Euler2DTransform()
     initial_transform = parse_sitk_rigid_transform(initial_transform)
     elastix_transform = align_elastix(fixed, moving)
-    return (elastix_transform,initial_transform)
+    return (elastix_transform, initial_transform)
 
 def parse_sitk_rigid_transform(sitk_rigid_transform):
+    """Parses the transform to get the parameters out.
+    
+    :param sitk_rigid_transform: The transform created by sitk.Euler2DTransform()
+    :return: floats of rotation, xshift, yshift, center 
+    """
+
     rotation, xshift, yshift = sitk_rigid_transform.GetParameters()
     center = sitk_rigid_transform.GetFixedParameters()
     return rotation, xshift, yshift, center
@@ -258,14 +283,10 @@ def create_downsampled_transforms(transforms: dict, downsample: bool) -> dict:
     """Changes the dictionary of transforms to the correct resolution
 
 
-    :param animal: prep_id of animal we are working on
-    :type animal: str
+    :param animal: prep_id of animal we are working on animal
     :param transforms: dictionary of filename:array of transforms
-    :type transforms:
-    :param downsample: either true for thumbnails, false for full resolution images
-    :type downsample: bool
+    :param downsample: boolean: either true for thumbnails, false for full resolution images
     :return: corrected dictionary of filename: array  of transforms
-    :rtype: dict
     """
 
     if downsample:
