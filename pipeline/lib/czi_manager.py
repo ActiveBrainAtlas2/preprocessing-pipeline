@@ -106,7 +106,7 @@ def extract_tiff_from_czi(file_key):
 
 
 
-def extract_png_from_czi(file_key: tuple[str, ...], normalize: bool = True):
+def extract_png_from_czi(file_key, normalize = True):
     """This method creates a PNG file from the TIFF file. This is used for viewing
     on a web page.
     
