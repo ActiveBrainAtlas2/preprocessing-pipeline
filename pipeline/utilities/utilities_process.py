@@ -27,7 +27,7 @@ def get_hostname() -> str:
     return hostname
 
 
-def get_image_size(filepath: str) -> tuple[int, ...]:
+def get_image_size(filepath: str):
     """Returns width, height of single image
 
     :param filepath: path of input file
