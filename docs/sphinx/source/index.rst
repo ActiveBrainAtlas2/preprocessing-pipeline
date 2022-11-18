@@ -22,7 +22,7 @@ Use the side navigation panel to view different documentation topics.
    modules/create_pipeline.rst
    modules/pipeline.database_model.rst
    modules/pipeline.controller.rst
-   modules/pipeline.lib.rst
+   modules/pipeline.image_manipulation.rst
    modules/pipeline.utilities.rst
    modules/high.level.description.of.preprocessing.pipeline.rst
    modules/description.czi.2.neuroglancer.rst

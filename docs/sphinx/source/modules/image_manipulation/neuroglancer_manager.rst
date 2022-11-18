@@ -1,7 +1,7 @@
 Neuroglancer module
 -------------------
 
-.. automodule:: lib.neuroglancer_manager
+.. automodule:: image_manipulation.neuroglancer_manager
    :members:
    :undoc-members:
    :show-inheritance:

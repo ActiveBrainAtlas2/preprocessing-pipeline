@@ -36,15 +36,6 @@ class FileLocationManager(object):
         self.neuroglancer_data = os.path.join(self.root, stack, "neuroglancer_data")
         self.neuroglancer_progress = os.path.join(self.neuroglancer_data, 'progress')
         self.brain_info = os.path.join(self.root, stack, "brains_info")
-        self.operation_configs = os.path.join(self.brain_info, "operation_configs")
-        self.mxnet_models = os.path.join(self.brain_info, "mxnet_models")
-        self.atlas_volume = os.path.join(
-            self.brain_info, "CSHL_volumes", "atlasV7", "score_volumes"
-        )
-        self.classifiers = os.path.join(self.brain_info, "classifiers")
-        self.custom_transform = os.path.join(self.brain_info, "custom_transform")
-        self.mouseatlas_tmp = os.path.join(self.brain_info, "mouseatlas_tmp")
-        self.elastix_dir = os.path.join(self.prep, "elastix")
         self.full_aligned = os.path.join(self.prep, "full_aligned")
         self.masks = os.path.join(self.prep, "masks")
         self.thumbnail_masked = os.path.join(self.masks, "thumbnail_masked")
