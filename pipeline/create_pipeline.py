@@ -58,7 +58,7 @@ except ImportError:
     host = "db.dk.ucsd.edu"
     schema = "active_atlas_production"
 
-from lib.pipeline_process import Pipeline
+from image_manipulation.pipeline_process import Pipeline
 
 
 def run_pipeline(animal, channel, downsample, data_path, tg, debug):

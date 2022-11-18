@@ -1,5 +1,5 @@
-Library modules
----------------
+File manipulation modules
+-------------------------
 
 These files contain classes and methods used in peforming actual maninpulations
 on the numpy arrays (the images). This involves:

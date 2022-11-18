@@ -13,19 +13,19 @@ import shutil
 import threading
 from timeit import default_timer as timer
 
-from lib.filelocation_manager import FileLocationManager
-from lib.meta_manager import MetaUtilities
-from lib.prep_manager import PrepCreater
-from lib.precomputed_manager import NgPrecomputedMaker
-from lib.progress_manager import ProgressLookup
-from lib.tiff_extractor_manager import TiffExtractor
-from lib.file_logger import FileLogger
-from lib.parallel_manager import ParallelManager
-from lib.normalizer_manager import Normalizer
-from lib.mask_manager import MaskManager
-from lib.image_cleaner import ImageCleaner
-from lib.histogram_maker import HistogramMaker
-from lib.elastix_manager import ElastixManager
+from image_manipulation.filelocation_manager import FileLocationManager
+from image_manipulation.meta_manager import MetaUtilities
+from image_manipulation.prep_manager import PrepCreater
+from image_manipulation.precomputed_manager import NgPrecomputedMaker
+from image_manipulation.progress_manager import ProgressLookup
+from image_manipulation.tiff_extractor_manager import TiffExtractor
+from image_manipulation.file_logger import FileLogger
+from image_manipulation.parallel_manager import ParallelManager
+from image_manipulation.normalizer_manager import Normalizer
+from image_manipulation.mask_manager import MaskManager
+from image_manipulation.image_cleaner import ImageCleaner
+from image_manipulation.histogram_maker import HistogramMaker
+from image_manipulation.elastix_manager import ElastixManager
 from controller.sql_controller import SqlController
 from utilities.utilities_process import get_hostname
 
