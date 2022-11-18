@@ -8,7 +8,7 @@ from PIL import Image
 from aicspylibczi import CziFile
 from aicsimageio import AICSImage
 
-from lib.file_logger import FileLogger
+from image_manipulation.file_logger import FileLogger
 from utilities.utilities_process import write_image
 from utilities.utilities_mask import equalized
 

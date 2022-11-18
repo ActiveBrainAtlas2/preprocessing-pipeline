@@ -7,7 +7,7 @@ import operator
 
 from controller.sql_controller import SqlController
 from database_model.slide import Slide, SlideCziTif
-from lib.czi_manager import CZIManager
+from image_manipulation.czi_manager import CZIManager
 from utilities.utilities_process import convert_size
 
 

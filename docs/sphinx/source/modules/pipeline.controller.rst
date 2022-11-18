@@ -1,9 +1,9 @@
 SQL Controllers
 ---------------
 
-This documentation covers classes and methods used to interface with the
+Classes and methods used to interface with the
 database. It accesss the database models and exposes create, retrieve, update and delete
-methods available to the programmer.
+methods to the programmer.
 
 .. toctree::
    :titlesonly:

@@ -6,7 +6,7 @@ from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 
 
-from lib.neuroglancer_manager import NumpyToNeuroglancer, calculate_chunks, \
+from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer, calculate_chunks, \
     calculate_factors
 from utilities.utilities_process import SCALING_FACTOR, test_dir
 

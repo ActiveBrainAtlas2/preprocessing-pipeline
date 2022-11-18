@@ -14,7 +14,7 @@ from subprocess import Popen, PIPE
 from pathlib import Path
 
 from database_model.elastix_transformation import ElastixTransformation
-from lib.filelocation_manager import FileLocationManager
+from image_manipulation.filelocation_manager import FileLocationManager
 from utilities.utilities_process import get_image_size
 from utilities.utilities_registration import (
     align_image_to_affine,

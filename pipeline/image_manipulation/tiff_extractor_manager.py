@@ -1,7 +1,7 @@
 import os, glob
 import hashlib
-from lib.parallel_manager import ParallelManager
-from lib.czi_manager import extract_tiff_from_czi, extract_png_from_czi
+from image_manipulation.parallel_manager import ParallelManager
+from image_manipulation.czi_manager import extract_tiff_from_czi, extract_png_from_czi
 from utilities.utilities_process import DOWNSCALING_FACTOR
 
 
@@ -76,7 +76,7 @@ class TiffExtractor(ParallelManager):
         )
 
     def calc_filechecksum(self, filename, channel):
-        sha256_hash = hashlib.sha256()
+        sha256_hash = hashimage_manipulation.sha256()
 
         if filename.find("_") != -1:
             path_to_full_resolution_tiff = os.path.join(
