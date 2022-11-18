@@ -1,7 +1,7 @@
 File location manager module
 ----------------------------
 
-.. automodule:: lib.filelocation_manager
+.. automodule:: image_manipulation.filelocation_manager
    :members:  
    :undoc-members:
    :show-inheritance:

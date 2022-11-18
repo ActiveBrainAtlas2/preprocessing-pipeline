@@ -1,5 +1,5 @@
 import os, glob
-import hashlib
+
 from image_manipulation.parallel_manager import ParallelManager
 from image_manipulation.czi_manager import extract_tiff_from_czi, extract_png_from_czi
 from utilities.utilities_process import DOWNSCALING_FACTOR
@@ -17,13 +17,10 @@ class TiffExtractor(ParallelManager):
             1. Fetch the meta information of each slide and czi files from the database
             2. Extract the images from the czi file and store them as tiff format.
             3. Then updates the database with meta information about the sections in each slide
-        Args:
-            animal: the prep id of the animal
-            channel: the channel of the stack image to process
-            compression: Compression used to store the tiff files default is LZW compression
-
-        Returns:
-            nothing
+        
+        :param animal: the prep id of the animal
+        :param channel: the channel of the stack image to process
+        :param compression: Compression used to store the tiff files default is LZW compression
         """
 
         if self.downsample:
@@ -75,35 +72,12 @@ class TiffExtractor(ParallelManager):
             self.progress_lookup.CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1,
         )
 
-    def calc_filechecksum(self, filename, channel):
-        sha256_hash = hashimage_manipulation.sha256()
-
-        if filename.find("_") != -1:
-            path_to_full_resolution_tiff = os.path.join(
-                self.fileLocationManager.tif, filename
-            )
-        else:
-            path_to_full_resolution_tiff = os.path.join(
-                self.fileLocationManager.prep, "CH" + str(channel), filename
-            )
-        with open(path_to_full_resolution_tiff, "rb") as f:
-            # Read and update hash string value in blocks of 4K
-            for byte_block in iter(lambda: f.read(4096), b""):
-                sha256_hash.update(byte_block)
-            checksum = str(sha256_hash.hexdigest())
-        print(
-            sha256_hash.hexdigest(),
-            "\t",
-            os.path.basename(path_to_full_resolution_tiff),
-            "\n",
-        )
-        return checksum
-
     def create_web_friendly_image(self):
-        """Create downsampled version of full size tiff images that can be viewed on the Django admin portal
-        These images are used for Quality Control
-        ONLY 1 CHANNEL CREATED FOR .png FILES
+        """Create downsampled version of full size tiff images that can be 
+        viewed on the Django admin portal.
+        These images are used for Quality Control.
         """
+
         INPUT = self.fileLocationManager.czi
         OUTPUT = self.fileLocationManager.thumbnail_web
         channel = 1

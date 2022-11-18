@@ -1,7 +1,7 @@
 CZI manager module
 ------------------
 
-.. automodule:: lib.czi_manager
+.. automodule:: image_manipulation.czi_manager
    :members:
    :undoc-members:
    :show-inheritance:

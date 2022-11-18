@@ -1,7 +1,7 @@
 Mask manager module
 -------------------
 
-.. automodule:: lib.mask_manager
+.. automodule:: image_manipulation.mask_manager
    :members:
    :undoc-members:
    :show-inheritance:
