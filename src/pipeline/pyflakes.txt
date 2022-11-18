@@ -1,0 +1,5 @@
+./database_model/slide_czi_to_tif.py:5:1: 'database_model.section.Section' imported but unused
+./database_model/annotation_points.py:8:1: 'database_model.brain_region.BrainRegion' imported but unused
+./database_model/annotation_points.py:9:1: 'database_model.user.User' imported but unused
+./database_model/annotation_session.py:7:1: 'database_model.brain_region.BrainRegion' imported but unused
+./database_model/annotation_session.py:8:1: 'database_model.user.User' imported but unused
