@@ -144,7 +144,7 @@ def combine_dims(a):
     return a3
 
 
-def clean_and_rotate_image(file_key: tuple[str, ...]):
+def clean_and_rotate_image(file_key):
     """The main function that uses the user edited mask to crop out the tissue from 
     surrounding debris. It also rotates the image to
     a usual orientation (where the olfactory bulb is facing left and the cerebellum is facing right.
