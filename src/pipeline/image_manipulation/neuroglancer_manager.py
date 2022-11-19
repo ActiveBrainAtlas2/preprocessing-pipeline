@@ -132,7 +132,7 @@ class NumpyToNeuroglancer():
     viewer = None
 
     def __init__(self, animal: str, volume, scales, layer_type, data_type, num_channels=1,
-        chunk_size: list[int] = [256,256,128], offset: list[int] = [0,0,0]):
+        chunk_size = [256,256,128], offset = [0,0,0]):
         self.volume = volume
         self.scales = scales
         self.layer_type = layer_type
