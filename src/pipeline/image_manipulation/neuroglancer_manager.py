@@ -258,7 +258,7 @@ class NumpyToNeuroglancer():
         tq.execute()
 
 
-    def add_downsampled_volumes(self, chunk_size: list[int] = [128, 128, 64], num_mips: int = 4) -> None:
+    def add_downsampled_volumes(self, chunk_size = [128, 128, 64], num_mips = 4) -> None:
         '''Augments 'precomputed' cloud volume with additional resolutions using chunk calculations
 
         :param chunk_size:
@@ -278,7 +278,7 @@ class NumpyToNeuroglancer():
         tq.execute()
 
 
-    def add_segmentation_mesh(self, shape: list[int] = [448, 448, 448], mip: int = 0) -> None:
+    def add_segmentation_mesh(self, shape = [448, 448, 448], mip = 0) -> None:
         '''Augments 'precomputed' cloud volume with segmentation mesh
 
         :param shape:
@@ -304,7 +304,7 @@ class NumpyToNeuroglancer():
         tq.execute()
 
 
-    def process_simple_slice(self, file_key: tuple[str, ...]):
+    def process_simple_slice(self, file_key):
         '''Unknown role but method a)loops through image stack, b) loads into Numpy array, c) reshapes in single dimension,
         d) adds to 'precomputed' cloud volume, e) touches files to track progress
 
@@ -329,7 +329,7 @@ class NumpyToNeuroglancer():
         return
 
 
-    def process_mesh(self, file_key: tuple[str, ...]):
+    def process_mesh(self, file_key):
         '''Unknown role but method a) loops through image stack, b) loads into Numpy array, c) applies mask?
         d) transposes Numpy array, e) adds to 'precomputed' cloud volume
 
@@ -360,7 +360,7 @@ class NumpyToNeuroglancer():
         return
 
 
-    def process_coronal_slice(self, file_key: tuple[str, ...]):
+    def process_coronal_slice(self, file_key):
         '''Unknown role but method a) loops through image stack, b) loads into Numpy array, c) reshapes each image
         d) adds to 'precomputed' cloud volume
 
@@ -390,7 +390,7 @@ class NumpyToNeuroglancer():
         return
 
 
-    def process_image(self, file_key: tuple[str, ...]):
+    def process_image(self, file_key):
         '''Unknown role but method a) reads single file, b) reshapes/transforms, c) adds to 'precomputed' cloud volume
 
         :param file_key:
