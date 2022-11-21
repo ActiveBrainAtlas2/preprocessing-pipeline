@@ -1,21 +1,13 @@
 from sqlalchemy import Column, String, Integer, Boolean, Float, ForeignKey, Enum
 from database_model.atlas_model import Base, AtlasModel
 
-class SlideCziTif(Base, AtlasModel):
-    __tablename__ = 'slide_czi_to_tif'
-    id =  Column(Integer, primary_key=True, nullable=False)
-    FK_slide_id = Column(Integer, ForeignKey('slide.id'), nullable=False)
-    file_name = Column(String, nullable=False)
-    scene_number = Column(Integer, nullable=False)
-    width = Column(Integer)
-    height = Column(Integer)
-    file_size = Column(Float)
-    comments = Column(String)
-    channel = Column(Integer)
-    scene_index = Column(Integer)
-    processing_duration = Column(Float, nullable=False)
 
 class Slide(Base, AtlasModel):
+    """This class describes an individual slide. Each slide usually has 
+    4 scenes (pieces of tissue). This is the parent class to the 
+    TIFF (SlideCziToTif) class.
+    """
+    
     __tablename__ = 'slide'
     id =  Column(Integer, primary_key=True, nullable=False)
     scan_run_id = Column(Integer, ForeignKey('scan_run.id'))
@@ -39,9 +31,33 @@ class Slide(Base, AtlasModel):
     file_size = Column(Float, nullable=False)
     file_name = Column(String, nullable=False)
     comments = Column(String)
+
+class SlideCziTif(Base, AtlasModel):
+    """This is the child class of the Slide class. This model describes the 
+    metadata associated with a TIFF file, or another way to think of it, 
+    it describes one piece of brain tissue on a slide.
+    """
+
+    __tablename__ = 'slide_czi_to_tif'
+    id =  Column(Integer, primary_key=True, nullable=False)
+    FK_slide_id = Column(Integer, ForeignKey('slide.id'), nullable=False)
+    file_name = Column(String, nullable=False)
+    scene_number = Column(Integer, nullable=False)
+    width = Column(Integer)
+    height = Column(Integer)
+    file_size = Column(Float)
+    comments = Column(String)
+    channel = Column(Integer)
+    scene_index = Column(Integer)
+    processing_duration = Column(Float, nullable=False)
     
 
 class Section(Base, AtlasModel):
+    """This class describes a view and not an actual database table.
+    This table provides the names, locations and ordering of the 
+    TIFF files.
+    """
+
     __tablename__ = 'sections'
     id =  Column(Integer, primary_key=True, nullable=False)
     prep_id = Column(String, ForeignKey('animal.prep_id'), nullable=False)
@@ -54,6 +70,4 @@ class Section(Base, AtlasModel):
     channel = Column(Integer, nullable=False)
     channel_index = Column(Integer, nullable=False)
     FK_slide_id = Column(Integer, ForeignKey('slide.id'), nullable=False)
-    def get_rotation(self):
-        return getattr(self.slide,f'scene_rotation_{self.scene_number}')
 

@@ -3,7 +3,12 @@ from sqlalchemy.orm import relationship
 
 from database_model.atlas_model import Base, AtlasModel
 
-class ScanRun(Base, AtlasModel):
+class ScanRun(Base, AtlasModel):  
+    """This class describes the blueprint of a scan. Each animal will usually 
+    have just one scan run, but they can have more than one. Information in 
+    this table is used extensively throughout the pre-processing 
+    """
+
     __tablename__ = 'scan_run'
 
     id =  Column(Integer, primary_key=True, nullable=False)

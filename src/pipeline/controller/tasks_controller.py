@@ -1,8 +1,5 @@
-"""This module takes care of logging the steps
-into the file_log table. This is later shown in
-the progress lookup view in the database portal.
-This could probably be deprecated as we are using
-the log in the pipeline-progress file on birdstore."""
+"""This module peforms the CRUD actions for tasks.
+"""
 
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -82,14 +79,3 @@ class TasksController(Controller):
 
         progress_id = self.get_progress_id(downsample, channel, step)
         self.set_task(animal, progress_id)
-
-    def clear_file_log(self, animal, downsample, channel):
-        """Method to clear the file log
-        """
-
-        qry = f"DELETE FROM file_log WHERE prep_id='{animal}' AND progress_id IN (SELECT id FROM progress_lookup WHERE ACTION='NEUROGLANCER' AND downsample={downsample} AND CHANNEL={channel})"
-        result = self.session.execute(qry)
-        self.session.commit()
-        return result
-
-

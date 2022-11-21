@@ -5,6 +5,7 @@ from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Boolean
 from database_model.atlas_model import Base, AtlasModel
 
 class Task(Base, AtlasModel):
+    
     __tablename__ = 'task'
     id =  Column(Integer, primary_key=True, nullable=False)
 

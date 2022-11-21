@@ -3,6 +3,9 @@ from sqlalchemy import Column, String, Date, Enum, Integer, ForeignKey
 from database_model.atlas_model import AtlasModel, Base
 
 class Histology(Base, AtlasModel):
+    """This class provides the metadata associated with the histology of the animal
+    """
+    
     __tablename__ = 'histology'
 
     id =  Column(Integer, primary_key=True, nullable=False)

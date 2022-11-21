@@ -6,6 +6,10 @@ from database_model.scan_run import ScanRun
 
 
 class Animal(Base, AtlasModel):
+    """This is the main model used by almost all the other models in the entire project.
+    It includes the fields originally set by David and Yoav.
+    """
+
     __tablename__ = 'animal'
     
     prep_id = Column(String, nullable=False, primary_key=True)
