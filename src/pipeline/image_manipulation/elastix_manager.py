@@ -60,7 +60,7 @@ class ElastixManager:
             self.logevent(f"INPUT FOLDER: {INPUT}")
             self.logevent(f"FILE COUNT: {nfiles}")
 
-            PIPELINE_ROOT = Path('./pipeline').absolute().as_posix()
+            PIPELINE_ROOT = Path('./src/pipeline/scripts').absolute().as_posix()
             program = os.path.join(PIPELINE_ROOT, 'create_alignment_metrics.py')
 
             for i in range(1, nfiles):

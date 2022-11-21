@@ -26,10 +26,10 @@ Running the initial step (step 0)
 *   Add entries in the animal, scan run and histology table in the
     database using the `admin portal <https://activebrainatlas.ucsd.edu/activebrainatlas/admin>`__.
 *   All functionality for running the pipeline is found in
-    pipeline/create_pipeline.py
+    src/pipeline/scripts/create_pipeline.py
 *   You can run the script with the ‘h’ option to get the arguments:
-    ``python pipeline/create_pipeline.py -h``
-*   Run: ``python pipeline/create_pipeline.py --animal DKXX --step 0``
+    ``python src/pipeline/scripts/create_pipeline.py -h``
+*   Run: ``python src/pipeline/scripts/create_pipeline.py --animal DKXX --step 0``
 
     #. This will scan each czi file.
     #. Extracts the tif meta information and inserts into the
@@ -77,7 +77,7 @@ Database portal QC between step 0 and step 1
 Running Step 1
 ~~~~~~~~~~~~~~
 
-*   Run: ``python pipeline/create_pipeline.py --animal DKXX step 1``
+*   Run: ``python src/pipeline/scripts/create_pipeline.py --animal DKXX step 1``
 
     #. This will read the sections view in the database.
     #. Creates the downsampled files
@@ -93,7 +93,7 @@ Running Step 1
 Running Step 2
 ~~~~~~~~~~~~~~
 
-*   Run: ``python pipeline/create_pipeline.py --animal DKXX --step 2``
+*   Run: ``python src/pipeline/scripts/create_pipeline.py --animal DKXX --step 2``
 
     #. This will finalize the masks
     #. Creates the cleaned files from the masks
@@ -101,14 +101,14 @@ Running Step 2
 Running Step 3
 ~~~~~~~~~~~~~~
 
-*   Run: ``python pipeline/create_pipeline.py --animal DKXX --step 3``
+*   Run: ``python src/pipeline/scripts/create_pipeline.py --animal DKXX --step 3``
 
     * This will create all the histograms
 
 Running Step 4
 ~~~~~~~~~~~~~~
 
-*   Run: ``python pipeline/create_pipeline.py --animal DKXX --step 4``
+*   Run: ``python src/pipeline/scripts/create_pipeline.py --animal DKXX --step 4``
 
     #. This will run elastix and create the rigid transformation for
        consecutive pair of files.
@@ -125,7 +125,7 @@ Running Step 4
 Running Step 5
 ~~~~~~~~~~~~~~
 
-*   Run: ``python pipeline/create_pipeline.py --animal DKXX --step 5``
+*   Run: ``python src/pipeline/scripts/create_pipeline.py --animal DKXX --step 5``
 
     #. This will create all the neuroglancer files in C1T_rechunkme and
        then C1T. C1T_rechunkme is the preliminary data directory that is
@@ -140,10 +140,10 @@ Running on other channels and the full resolution images
 
 *   After you have completed the downampled version for channel 1, you
     can repeat this entire process by running
-    ``python pipeline/create_pipeline.py --animal DKXX --channel 2 --step 1|2|3|4|5``
+    ``python src/pipeline/scripts/create_pipeline.py --animal DKXX --channel 2 --step 1|2|3|4|5``
     This will run the entire process for channel 2. Some of the steps
     will be automatically skipped.
 *   Repeat the process again for channel 3. Once you are happy with all
     the results, run the process again but with
-    ``python pipeline/create_pipeline.py --animal DKXX --channel 1 downsample false --step 1|2|3|4|5``.
+    ``python src/pipeline/scripts/create_pipeline.py --animal DKXX --channel 1 downsample false --step 1|2|3|4|5``.
     Some of the steps will be skipped automatically.

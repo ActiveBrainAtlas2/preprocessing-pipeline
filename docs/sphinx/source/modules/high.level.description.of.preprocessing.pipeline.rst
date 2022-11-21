@@ -25,7 +25,7 @@ High level description of the preprocessing pipeline
       `requirements.txt
       file <https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/requirements.txt>`__
 
-3. The entire process is run from one script ``pipeline/create_pipeline.py``
+3. The entire process is run from one script ``src/pipeline/scripts/create_pipeline.py``
 4. For instructions on running the pipeline see this
    `HOWTO <https://github.com/ActiveBrainAtlas2/preprocessing-pipeline/blob/master/docs/user/RUNNING.md>`__
 
@@ -36,22 +36,22 @@ Raw images processing
    proprietary format called CZI. These files are compressed and contain
    the images (around 20 per czi file) and also a great deal of metadata
    that describes the scanner and also the images. This metadata gets
-   parsed with the `Bioformats
-   tools <https://www.openmicroscopy.org/bio-formats/>`__ from the CZI
-   files and inserted into the MySQL database with and ORM library
+   parsed with the `aicspylibczi
+   tools <https://github.com/AllenCellModeling/aicspylibczi>`__ from the CZI
+   files and inserted into the MySQL database with an ORM library
    (Object relational mapping) called
    `sqlalchemy <https://www.sqlalchemy.org/>`__.
 2. After the TIF data has been extracted and the metadata inserted into
    the database, the user can verify the quality of the images and then
    proceed with the pipeline.
 3. The next steps invole creating histograms for each file and
-   downsampled versions of the iamges that can be viewed on the web in a
+   downsampled versions of the images that can be viewed on the web in a
    browser.
 
 Masking and cleaning
 ~~~~~~~~~~~~~~~~~~~~
 
-1. Masking is used to remove the shmuts that is in the clear areas
+1. Masking is used to remove the debris, glue and junk that is in the clear areas
    outside the sections. It is important to have clean images as they
    look better and it also makes the alignment process more reliable.
 

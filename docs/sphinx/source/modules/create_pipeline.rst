@@ -1,7 +1,7 @@
 Create pipeline - main script
 -----------------------------
 
-.. automodule:: create_pipeline
+.. automodule:: scripts.create_pipeline
    :members:
    :undoc-members:
    :show-inheritance:
