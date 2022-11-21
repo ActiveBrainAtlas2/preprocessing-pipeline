@@ -3,6 +3,7 @@ libraries that contain the code from the elastix command line tools:
 https://elastix.lumc.nl/
 The libraries are contained within the SimpleITK-SimpleElastix library
 """
+
 import os
 import numpy as np
 from collections import OrderedDict
@@ -53,6 +54,10 @@ class ElastixManager:
                     
 
     def call_alignment_metrics(self):
+        """For the metrics value that shows how well the alignment went, 
+        elastix needs to be called as a separate program.
+        """
+
         if self.channel == 1 and self.downsample:
             INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_cleaned")
             files = sorted(os.listdir(INPUT))
@@ -77,6 +82,13 @@ class ElastixManager:
                         self.sqlController.update_elastix_row(self.animal, moving_index, updates)
 
     def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
+        """Calculates the rigid transformation from the Elastix output
+        and adds it to the database.
+
+        :param INPUT: path of the files
+        :param fixed_index: index of fixed image
+        :param moving_index: index of moving image
+        """
         center = self.get_rotation_center()
         second_transform_parameters, initial_transform_parameters = register_simple(
             INPUT, fixed_index, moving_index)
@@ -90,48 +102,41 @@ class ElastixManager:
 
 
     def rigid_transform_to_parmeters(self, transform):
-        """convert a 2d transformation matrix (3*3) to the rotation angles, rotation center and translation
+        """convert a 2d transformation matrix (3*3) to the rotation angles, 
+        rotation center and translation
 
-        Args:
-            transform (array like): 3*3 array that stores the 2*2 transformation matrix and the 1*2 translation vector for a
+        :param transform: (array like): 3*3 array that stores the 2*2 transformation matrix and the 1*2 translation vector for a
             2D image.  the third row of the array is a place holder of values [0,0,1].
-
-        Returns:
-            float: x translation
-            float: y translation
-            float: rotation angle in arc
-            list:  lisf of x and y for rotation center
+        :return tuple: floats of x,y translation, float of rotation
         """
+
         return rigid_transform_to_parmeters(transform, self.get_rotation_center())
 
 
     def parameters_to_rigid_transform(self, rotation: float, xshift: float, yshift: float, center):
         """convert a set of rotation parameters to the transformation matrix
 
-        Args:
-            rotation (float): rotation angle in arc
-            xshift (float): translation in x
-            yshift (float): translation in y
-            center (list): list of x and y for the rotation center
+        
+        :param rotation: rotation angle in arc
+        :param xshift: (float) translation in x
+        :param yshift: (float) translation in y
+        :param center: (list) list of x and y for the rotation center
 
-        Returns:
-            array: 3*3 transformation matrix for 2D image, contain the 2*2 array and 1*2 translation vector
+        :return array: 3*3 transformation matrix for 2D image, contain the 2*2 array and 1*2 translation vector
         """
+
         return parameters_to_rigid_transform(rotation, xshift, yshift, center)
 
 
     def load_elastix_transformation(self, animal, moving_index):
         """loading the elastix transformation from the database
 
-        Args:
-            animal (str): Animal ID
-            moving_index (int): index of moving section
+        :param animal: (str) Animal ID
+        :param moving_index: (int) index of moving section
 
-        Returns:
-            array: 2*2 roatation matrix
-            float: x translation
-            float: y translation
+        :return array: 2*2 roatation matrix, float: x translation, float: y translation
         """
+
         try:
             elastixTransformation = (
                 self.sqlController.session.query(ElastixTransformation)
@@ -152,9 +157,9 @@ class ElastixManager:
     def get_rotation_center(self):
         """return a rotation center for finding the parameters of a transformation from the transformation matrix
 
-        Returns:
-            list: list of x and y for rotation center that set as the midpoint of the section that is in the middle of the stack
+        :return list: list of x and y for rotation center that set as the midpoint of the section that is in the middle of the stack
         """
+
         INPUT = self.fileLocationManager.get_thumbnail_cleaned(1)
         files = sorted(os.listdir(INPUT))
         midpoint = len(files) // 2
@@ -167,9 +172,8 @@ class ElastixManager:
     def get_transformations(self):
         """After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
         
-        Args:
-        :animal: the animal
-        Returns: a dictionary of key=filename, value = coordinates
+        :param animal: the animal
+        :return: a dictionary of key=filename, value = coordinates
         """
 
         sections = self.sqlController.get_sections(self.animal, self.channel)
@@ -211,8 +215,7 @@ class ElastixManager:
            of a given section to the middle section is the composite of the transformation
            from the given section through all the intermediate sections to the middle sections.
 
-        Args:
-            transforms (dict): dictionary of transformations that are index by the id of moving sections
+        :param transforms: (dict): dictionary of transformations that are index by the id of moving sections
         """
         if not self.downsample:
             transforms = create_downsampled_transforms(transforms, downsample=False)
@@ -232,9 +235,9 @@ class ElastixManager:
     def align_downsampled_images(self, transforms):
         """align the downsample tiff images
 
-        Args:
-            transforms (dict): dictionary of transformations indexed by id of moving sections
+        :param transforms: (dict) dictionary of transformations indexed by id of moving sections
         """
+
         if self.downsample:
             INPUT = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
             OUTPUT = self.fileLocationManager.get_thumbnail_aligned(self.channel)
@@ -249,9 +252,8 @@ class ElastixManager:
         """function that can be used to align the masks used for cleaning the image.  This not run as part of
         the pipeline, but is used to create the 3d shell around a certain brain
 
-        Args:
-            animal (str): Animal ID
-            transforms (array): 3*3 transformation array
+        :param animal: (str) Animal ID
+        :param transforms: (array): 3*3 transformation array
         """
         fileLocationManager = FileLocationManager(animal)
         INPUT = fileLocationManager.rotated_and_padded_thumbnail_mask
@@ -261,16 +263,14 @@ class ElastixManager:
 
     def align_images(self, INPUT, OUTPUT, transforms):
         """function to align a set of images with a with the transformations between them given
-
-        Args:
-            INPUT (str): directory of images to be aligned
-            OUTPUT (str): directory output the aligned images
-            transforms (dict): dictionary of transformations indexed by id of moving sections
-
         Note: image alignment is memory intensive (but all images are same size)
         6 factor of est. RAM per image for clean/transform needs firmed up but safe
 
+        :param INPUT: (str) directory of images to be aligned
+        :param OUTPUT (str): directory output the aligned images
+        :param transforms (dict): dictionary of transformations indexed by id of moving sections
         """
+
         os.makedirs(OUTPUT, exist_ok=True)
         transforms = OrderedDict(sorted(transforms.items()))
         first_file_name = list(transforms.keys())[0]

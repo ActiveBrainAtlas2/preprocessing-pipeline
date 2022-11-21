@@ -6,19 +6,40 @@ from database_model.slide import SlideCziTif
 from database_model.slide import Slide
 
 class ScanRunController(Controller):
-    def __init__(self,*args,**kwargs):
+    """Controller for the scan_run table"""
+
+    def __init__(self, *args, **kwargs):
         """initiates the controller class
-        """        
-        Controller.__init__(self,*args,**kwargs)
-        
-    def scan_run_exists(self,animal):
-        return self.row_exists(dict(prep_id = animal),ScanRun)
-    
+        """
+        Controller.__init__(self, *args, **kwargs)
+
+    def scan_run_exists(self, animal):
+        """Check to see if there is a row for this animal in the
+        scan run table
+
+        :param animal: the animal (AKA primary key)
+        :return boolean: whether the scan run exists for this animal
+        """
+
+        return self.row_exists(dict(prep_id=animal), ScanRun)
+
     def get_scan_run(self, animal):
+        """Check to see if there is a row for this animal in the
+        scan run table
+
+        :param animal: the animal (AKA primary key)
+        :return scan run object: one object (row)
+        """
+
         search_dictionary = dict(prep_id=animal)
         return self.get_row(search_dictionary, ScanRun)
 
     def update_scanrun(self, id):
+        """Update the scan run table with safe and good values for the width and height
+
+        :param id: integer primary key of scan run table
+        """
+        
         width = self.session.query(func.max(SlideCziTif.width)).join(Slide).join(ScanRun)\
             .filter(SlideCziTif.active == True) \
             .filter(ScanRun.id == id).scalar()

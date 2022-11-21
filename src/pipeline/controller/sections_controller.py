@@ -1,5 +1,3 @@
-import numpy as np
-
 from controller.main_controller import Controller
 from database_model.slide import Section
 
@@ -116,8 +114,3 @@ class SectionsController(Controller):
             Section.channel == channel).all()
 
         return sections
-    
-    def get_duplicate_sections(self,animal):
-        sections = self.get_sections(animal,1)
-        label = np.array([f'{i.czi_file}_{i.scene_index}' for i in sections])
-        return np.where(label[:-1]==label[1:])

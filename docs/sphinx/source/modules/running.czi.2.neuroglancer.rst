@@ -4,17 +4,12 @@ Running the entire process - HOWTO
 Setup
 ~~~~~
 
-*   To install the software prerequisites, `look
-    here. <../programmer/preprocessing-pipeline/software.installation.md>`__
-    Or use the installed virtual environment on ratto, basalis and
+*   Use the installed virtual environment on ratto, basalis and
     muralis by running: ``source /usr/local/share/pipeline/bin/activate``
 
 *   To run any of these commands at high resolution, prefix each command
     with ``nohup``\ and end the command with ``&``. That will make it run
     in the background and you can log out.
-
-*   All scripts that can be parallelized are done in the script with the
-    get_cpus method.
 
 Running the initial step (step 0)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

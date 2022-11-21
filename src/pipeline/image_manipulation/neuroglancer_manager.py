@@ -1,28 +1,25 @@
 """This module has several methods for helping create the precomputed data.
 It also has the main class to convert numpy arrays (images) into the precomputed format.
 """
+
 import os
-from skimage import measure, io
+from skimage import io
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-import cv2
 import json
 import numpy as np
-import neuroglancer
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 from cloudvolume.lib import touch
-from matplotlib import colors
-from pylab import cm
 from collections import defaultdict
 
 from utilities.utilities_process import get_cpus
 
 
 def calculate_chunks(downsample, mip):
-    """Function returns chunk sizes for different 'precomputed cloud volume' image stack resolutions
-
+    """Function returns chunk sizes for different 'precomputed cloud volume' image 
+    stack resolutions.
     Image stack will be created from full-resolution images but must be chunked for 
     efficient storage and loading into browser.
     Default values are [64, 64, 64] but may be modified for different resolutions.
@@ -63,15 +60,13 @@ def calculate_chunks(downsample, mip):
 
 
 def calculate_factors(downsample, mip):
-    '''Scales get calculated by default by 2x2x1 downsampling
+    """Scales get calculated by default by 2x2x1 downsampling
 
-    :param downsample:
-    :type downsample:
-    :param mip:
-    :type mip:
-    :return:
-    :rtype:
-    '''
+    :param downsample: boolean
+    :param mip: which pyramid level to work on
+    :return list: list of factors
+    """
+
     d = defaultdict(dict)
     result = [2,2,1]
     d[False][0] = result
@@ -96,32 +91,16 @@ def calculate_factors(downsample, mip):
     return result
 
 def get_segment_ids(volume):
-    '''Unknown - Needs more info
+    """Gets the unique values of a numpy array. This is used in Neuroglancer
+    for the labels in a mesh
+    
+    :param volume: numpy array
+    :return list: list of segment IDs
+    """
 
-    :param volume:
-    :type volume:
-    :return:
-    :rtype:
-    '''
     ids = [int(i) for i in np.unique(volume[:])]
     segment_properties = [(number, f'{number}: {number}') for number in ids]
     return segment_properties
-
-
-def get_hex_from_id(id, colormap: str = 'coolwarm'):
-    '''Unknown - Needs more info [possibly just for testing and may be removed]
-    Likely deprecated as we do not use 'color' attribute of brains
-
-    :param id:
-    :type id:
-    :param colormap: str
-    :type colormap:
-    :return:
-    :rtype:
-    '''
-    cmap = cm.get_cmap(colormap, 255)
-    rgba = cmap(id)
-    return colors.rgb2hex(rgba)
 
 
 class NumpyToNeuroglancer():
@@ -129,8 +108,6 @@ class NumpyToNeuroglancer():
     More info: https://github.com/seung-lab/cloud-volume
     """
     
-    viewer = None
-
     def __init__(self, animal: str, volume, scales, layer_type, data_type, num_channels=1,
         chunk_size = [256,256,128], offset = [0,0,0]):
         self.volume = volume
@@ -146,19 +123,15 @@ class NumpyToNeuroglancer():
 
 
     def init_precomputed(self, path: str, volume_size, starting_points=None, progress_id=None) -> None:
-        '''Initializes 'precomputed' cloud volume format (directory holding multiple volumes)
+        """Initializes 'precomputed' cloud volume format (directory 
+        holding multiple volumes)
 
-        :param path:
-        :type path: str
-        :param volume_size:
-        :type volume_size:
-        :param starting_points:
-        :type starting_points:
-        :param progress_id:
-        :type progress_id:
-        :return:
-        :rtype:
-        '''
+        :param path: str of the file location
+        :param volume_size: size of the volume
+        :param starting_points: initial starting points
+        :param progress_id: progress ID
+        """
+
         info = CloudVolume.create_new_info(
             num_channels=self.num_channels,
             layer_type=self.layer_type,  # 'image' or 'segmentation'
@@ -177,13 +150,12 @@ class NumpyToNeuroglancer():
 
 
     def init_volume(self, path: str) -> None:
-        '''Initializes 'precomputed' cloud volume ('volume' is a collection image stack with same resolution)
+        """Initializes 'precomputed' cloud volume ('volume' is a collection image 
+        stack with same resolution)
 
-        :param path:
-        :type path: str
-        :return:
-        :rtype:
-        '''
+        :param path: path of file location
+        """
+
         info = CloudVolume.create_new_info(
             num_channels = self.volume.shape[2] if len(self.volume.shape) > 2 else 1,
             layer_type = self.layer_type,
@@ -201,13 +173,12 @@ class NumpyToNeuroglancer():
 
 
     def add_segment_properties(self, segment_properties) -> None:
-        '''Augments 'precomputed' cloud volume with attribute tags [resolution, chunk size]
+        """Augments 'precomputed' cloud volume with attribute tags 
+        [resolution, chunk size]
 
-        :param segment_properties:
-        :type segment_properties:
-        :return:
-        :rtype:
-        '''
+        :param segment_properties: IDs of labels
+        """
+
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
@@ -233,18 +204,14 @@ class NumpyToNeuroglancer():
 
 
     def add_rechunking(self, outpath: str, downsample, chunks=None) -> None:
-        '''Augments 'precomputed' cloud volume with additional chunk calculations
+        """Augments 'precomputed' cloud volume with additional chunk calculations
         [so format has pointers to location of individual volumes?]
 
-        :param outpath:
-        :type outpath: str
-        :param downsample:
-        :type downsample:
-        :param chunks:
-        :type chunks:
-        :return:
-        :rtype:
-        '''
+        :param outpath: path of file location
+        :param downsample: boolean
+        :param chunks: list of chunk sizes
+        """
+
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         cpus, _ = get_cpus()
@@ -259,15 +226,13 @@ class NumpyToNeuroglancer():
 
 
     def add_downsampled_volumes(self, chunk_size = [128, 128, 64], num_mips = 4) -> None:
-        '''Augments 'precomputed' cloud volume with additional resolutions using chunk calculations
+        """Augments 'precomputed' cloud volume with additional resolutions using 
+        chunk calculations
 
-        :param chunk_size:
-        :type chunk_size: list[int]
-        :param num_mips:
-        :type num_mips: int
-        :return:
-        :rtype:
-        '''
+        :param chunk_size: list size of chunks
+        :param num_mips: number of levels in the pyramid
+        """
+
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         _, cpus = get_cpus()
@@ -279,15 +244,12 @@ class NumpyToNeuroglancer():
 
 
     def add_segmentation_mesh(self, shape = [448, 448, 448], mip = 0) -> None:
-        '''Augments 'precomputed' cloud volume with segmentation mesh
+        """Augments 'precomputed' cloud volume with segmentation mesh
 
-        :param shape:
-        :type shape: list[int]
-        :param mip:
-        :type mip: int
-        :return:
-        :rtype:
-        '''
+        :param shape: list[int]
+        :param mip: int, pyramid level
+        """
+
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
@@ -304,100 +266,13 @@ class NumpyToNeuroglancer():
         tq.execute()
 
 
-    def process_simple_slice(self, file_key):
-        '''Unknown role but method a)loops through image stack, b) loads into Numpy array, c) reshapes in single dimension,
-        d) adds to 'precomputed' cloud volume, e) touches files to track progress
-
-        :param file_key:
-        :type file_key: tuple
-        :return:
-        :rtype:
-        '''
-        index, infile = file_key
-        print(index, infile)
-        try:
-            image = Image.open(infile)
-        except:
-            print('Could not open', infile)
-        width, height = image.size
-        array = np.array(image, dtype=self.data_type, order='F')
-        array = array.reshape((1, height, width)).T
-        self.precomputed_vol[:,:, index] = array
-        touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
-        touch(touchfile)
-        image.close()
-        return
-
-
-    def process_mesh(self, file_key):
-        '''Unknown role but method a) loops through image stack, b) loads into Numpy array, c) applies mask?
-        d) transposes Numpy array, e) adds to 'precomputed' cloud volume
-
-        Unclear where values for labels range came from
-
-        :param file_key:
-        :type file_key: tuple
-        :return:
-        :rtype:
-        '''
-        index, infile = file_key
-        if os.path.exists(os.path.join(self.progress_dir, os.path.basename(infile))):
-            print(f"Section {index} already processed, skipping ")
-            return
-        img = io.imread(infile)
-        labels = [[v-8,v-1] for v in range(9,256,8)]
-        arr = np.copy(img)
-        for label in labels:
-            mask = (arr >= label[0]) & (arr <= label[1])
-            arr[mask] = label[1]
-        arr[arr > 248] = 255        
-        img = arr.T
-        del arr
-        self.precomputed_vol[:, :, index] = img.reshape(img.shape[0], img.shape[1], 1)
-        touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
-        touch(touchfile)
-        del img
-        return
-
-
-    def process_coronal_slice(self, file_key):
-        '''Unknown role but method a) loops through image stack, b) loads into Numpy array, c) reshapes each image
-        d) adds to 'precomputed' cloud volume
-
-        Only for coronal-sliced brains?
-
-        :param file_key:
-        :type file_key: tuple
-        :return:
-        :rtype:
-        '''
-        index, infile = file_key
-        if os.path.exists(os.path.join(self.progress_dir, os.path.basename(infile))):
-            print(f"Slice {index} already processed, skipping ")
-            return
-
-        img = io.imread(infile)
-        starty, endy, startx, endx = self.starting_points
-        #img = np.rot90(img, 2)
-        #img = np.flip(img)
-        img = img[starty:endy, startx:endx]
-        img = img.reshape(img.shape[0], img.shape[1], 1)
-        #print(index, infile, img.shape, img.dtype, self.precomputed_vol.dtype, self.precomputed_vol.shape)
-        self.precomputed_vol[:, :, index] = img
-        touchfile = os.path.join(self.progress_dir, os.path.basename(infile))
-        touch(touchfile)
-        del img
-        return
-
 
     def process_image(self, file_key):
-        '''Unknown role but method a) reads single file, b) reshapes/transforms, c) adds to 'precomputed' cloud volume
+        """This reads the image and starts the precomputed data
 
-        :param file_key:
-        :type file_key: tuple
-        :return:
-        :rtype:
-        '''
+        :param file_key: file_key: tuple
+        """
+
         index, infile, orientation, progress_dir = file_key
         basefile = os.path.basename(infile)
         progress_file = os.path.join(progress_dir, basefile)
@@ -425,199 +300,3 @@ class NumpyToNeuroglancer():
         del img
         return
 
-
-    def get_dimensions(self):
-        '''Unknown - Needs more info
-
-        :return:
-        :rtype:
-        '''
-        return neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='nm', scales=self.scales)
-
-
-    def add_annotation_layer(self, layer_name, annotations) -> None:
-        '''Unknown - Needs more info
-
-        adds annotation layer? If so, not part of preprocessing-pipeline
-
-        :param layer_name:
-        :type layer_name:
-        :param annotations:
-        :type annotations:
-        :return:
-        :rtype:
-        '''
-        dimensions = self.get_dimensions()
-        with self.viewer.txn() as s:
-            s.layers.append(name=layer_name,
-                    layer=neuroglancer.LocalAnnotationLayer(dimensions=dimensions,
-                    annotations=annotations))
-
-
-    def add_annotation_point_set(self, cooridnate_list, point_id_list = None, layer_name=None, clear_layer: bool = False) -> None:
-        '''Unknown - Needs more info
-
-        adds coordinate points to annotation layer to Neuroglancer? If so, not part of preprocessing-pipeline
-
-        :param cooridnate_list:
-        :type cooridnate_list:
-        :param point_id_list:
-        :type point_id_list:
-        :param layer_name:
-        :type layer_name:
-        :param clear_layer:
-        :type clear_layer:
-        :return:
-        :rtype:
-        '''
-        n_annotations = len(cooridnate_list)
-        if point_id_list == None:
-            point_id_list = [str(elementi) for elementi in list(range(n_annotations))]
-        self.init_layer(clear_layer)
-        annotations = []
-        for annotationi in range(n_annotations):
-            point_annotation = neuroglancer.PointAnnotation(id=point_id_list[annotationi],point=cooridnate_list[annotationi])
-            annotations.append(point_annotation)
-        self.add_annotation_layer(layer_name,annotations)
-        self.report_new_layer(layer_name)
-
-
-    def add_annotation_point(self, cooridnate, point_id='pointi', layer_name=None, clear_layer: bool = False) -> None:
-        '''Unknown - Needs more info
-
-        adds single coordinate point to annotation layer to Neuroglancer? If so, not part of preprocessing-pipeline
-
-        :param cooridnate:
-        :type cooridnate:
-        :param point_id:
-        :type point_id:
-        :param layer_name:
-        :type layer_name:
-        :param clear_layer:
-        :type clear_layer:
-        :return:
-        :rtype:
-        '''
-        self.init_layer(clear_layer)
-        annotations=[neuroglancer.PointAnnotation(id=point_id,point=cooridnate)]
-        self.add_annotation_layer(layer_name,annotations)
-        self.report_new_layer(layer_name)
-
-
-    def clear_layer(self, clear_layer: bool = False) -> None:
-        '''Unknown - Needs more info
-
-        removes annotation layer from Neuroglancer? If so, not part of preprocessing-pipeline
-
-        :param clear_layer:
-        :type clear_layer: bool
-        :return:
-        :rtype:
-        '''
-        if clear_layer:
-            with self.viewer.txn() as s:
-                    s.layers.clear()
-
-
-    def add_layer(self, layer_name: str, layer) -> None:
-        '''Unknown - Needs more info
-
-        adds annotation layer to Neuroglancer? If so, not part of preprocessing-pipeline
-
-        :param layer_name:
-        :type layer_name: str
-        :param layer:
-        :type layer:
-        :return:
-        :rtype:
-        '''
-        with self.viewer.txn() as s:
-            s.layers[layer_name] = layer
-    
-    def init_layer(self, clear_layer) -> None:
-        '''Unknown - Needs more info
-
-        initializes [image or annotation] layer for Neuroglancer? If so, not part of preprocessing-pipeline
-
-        :param clear_layer:
-        :type clear_layer:
-        :return:
-        :rtype:
-        '''
-        if self.viewer is None:
-            self.viewer = neuroglancer.Viewer()
-        self.clear_layer(clear_layer)
-
-
-    def report_new_layer(self, layer_name: str) -> None:
-        '''Appears to be for debugging; REMOVE
-
-        :param layer_name:
-        :type layer_name:
-        :return:
-        :rtype:
-        '''
-        print(f'A new layer named {layer_name} is added to:')
-        print(self.viewer)
-
-
-    def add_volume(self, volume, layer_name: str = None, clear_layer: bool = False) -> None:
-        '''Unknown - Needs more info
-
-        adds volume to precomputed cloud volume format?
-
-        :param volume:
-        :type volume:
-        :param layer_name:
-        :type layer_name:
-        :param clear_layer:
-        :type clear_layer:
-        :return:
-        :rtype:
-        '''
-        self.init_layer(clear_layer)
-        if layer_name is None:
-            layer_name = f'{self.layer_type}_{self.scales}'
-        source = neuroglancer.LocalVolume(
-            data=volume,
-            dimensions=neuroglancer.CoordinateSpace(names=['x', 'y', 'z'], units='nm', scales=self.scales),
-            voxel_offset=self.offset)
-        if self.layer_type == 'segmentation':
-            layer = neuroglancer.SegmentationLayer(source=source)
-        else:
-            layer = neuroglancer.ImageLayer(source=source)
-        self.add_layer(layer_name,layer)
-        self.report_new_layer(layer_name)
-
-
-    def preview(self, layer_name: str = None, clear_layer: bool = False) -> None:
-        '''Unknown - Needs more info
-
-        adds volume to precomputed cloud volume format? Name inconsistent with function
-
-        :param layer_name:
-        :type layer_name:
-        :param clear_layer:
-        :type clear_layer:
-        :return:
-        :rtype:
-        '''
-        self.add_volume(self.volume,layer_name=layer_name, clear_layer=clear_layer)
-
-
-def mask_to_shell(mask):
-    """Takes a stack of masks and creates a 3D neuroglancer shell
-
-    :param mask: binary mask file
-    """
-    sub_contours = measure.find_contours(mask, 1)
-    sub_shells = []
-    for sub_contour in sub_contours:
-        sub_contour.T[[0, 1]] = sub_contour.T[[1, 0]]
-        pts = sub_contour.astype(np.int32).reshape((-1, 1, 2))
-        sub_shell = np.zeros(mask.shape, dtype='uint8')
-        sub_shell = cv2.polylines(sub_shell, [pts], True, 1, 5, lineType=cv2.LINE_AA)
-        sub_shells.append(sub_shell)
-    shell = np.array(sub_shells).sum(axis=0)
-    del sub_shells
-    return shell

@@ -9,8 +9,6 @@ All imports are listed by the order in which they are used in the
 
 import os
 import sys
-import shutil
-import threading
 from timeit import default_timer as timer
 
 from image_manipulation.filelocation_manager import FileLocationManager
@@ -138,53 +136,3 @@ class Pipeline(
         print(f" took {total_elapsed_time} seconds")
         sep = "*" * 40 + "\n"
         self.logevent(f"{function_name} took {total_elapsed_time} seconds\n{sep}")
-
-    def qc_cleanup(self):
-        """Post QC to clean up filesystem prior to re-running mask edits"""
-
-        def background_del(org_path):
-            try:
-                basename = os.path.basename(os.path.normpath(org_path))
-                new_path = os.path.join(org_path, "..", "." + str(basename))
-                if os.path.exists(basename):
-                    os.rename(org_path, new_path)
-                    threading.Thread(target=lambda: shutil.rmtree(new_path)).start()
-                else:
-                    print(f"FOLDER ALREADY DELETED: {basename}")
-            except OSError as e:
-                print(f"FOLDER ALREADY DELETED: {new_path} {e}")
-
-        sep = "*" * 40 + "\n"
-        msg = f"DELETE MASKED FILES FROM {self.fileLocationManager.thumbnail_masked}"
-        self.logevent(f"{msg} \n{sep}")
-        background_del(self.fileLocationManager.thumbnail_masked)
-
-    def align_cleanup(self):
-        """
-        THIS STEP IS RE-RUN IMAGE ALIGNMENT:
-        DELETE FOLDERS:
-        DELETE DB ENTRIES:
-        """
-
-        def background_del(org_path):
-            try:
-                basename = os.path.basename(os.path.normpath(org_path))
-                new_path = os.path.join(org_path, "..", "." + str(basename))
-                if os.path.exists(basename):
-                    os.rename(org_path, new_path)
-                    threading.Thread(target=lambda: shutil.rmtree(new_path)).start()
-                else:
-                    print(f"FOLDER ALREADY DELETED: {basename}")
-            except OSError as e:
-                print(f"FOLDER ALREADY DELETED: {new_path} {e}")
-
-        sep = "*" * 40 + "\n"
-        thumbnail_aligned_dir = self.fileLocationManager.get_thumbnail_aligned()
-        msg = f"DELETE ALIGNED THUMBNAILS FILES FROM {thumbnail_aligned_dir}"
-        self.logevent(f"{msg} \n{sep}")
-        background_del(thumbnail_aligned_dir)
-
-        thumbnail_cleaned_dir = self.fileLocationManager.get_thumbnail_cleaned()
-        msg = f"DELETE CLEANED THUMBNAILS FILES FROM {thumbnail_cleaned_dir}"
-        self.logevent(f"{msg} \n{sep}")
-        background_del(thumbnail_cleaned_dir)
