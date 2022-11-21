@@ -1,9 +1,11 @@
+"""This module is responsible for creating and applying the masks. The idea
+and lots of the code were very heavily borrowed from this study:
+https://www.cis.upenn.edu/~jshi/ped_html/
+"""
+
 import os
 import numpy as np
 import torch
-"""This module is responsible for creating and applying the masks
-"""
-
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import cv2
@@ -24,8 +26,10 @@ class MaskManager:
     """
 
     def apply_user_mask_edits(self):
-        """Apply the edits made on the image masks to extract the tissue from the surround debre to create the final
-        masks used to clean the images"""
+        """Apply the edits made on the image masks to extract the tissue from the 
+        surround debris to create the final masks used to clean the images
+        """
+        
         if self.channel == 1 and self.downsample:
             COLORED = self.fileLocationManager.thumbnail_colored
             MASKS = self.fileLocationManager.thumbnail_masked
@@ -62,6 +66,11 @@ class MaskManager:
 
 
     def get_model_instance_segmentation(self, num_classes):
+        """This loads the mask model CNN
+
+        :param num_classes: int showing how many classes, usually 2, brain tissue, not brain tissue
+        """
+
         # load an instance segmentation model pre-trained pre-trained on COCO
         model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights="DEFAULT")
         # get number of input features for the classifier
@@ -78,14 +87,20 @@ class MaskManager:
         return model
 
     def create_mask(self):
-        """Create the images masks for extracting the tissue from the surrounding debres using a CNN based machine learning algorithm"""
+        """Helper method to call either full resolition of downsampled.
+        Create the images masks for extracting the tissue from the surrounding 
+        debris using a CNN based machine learning algorithm
+        """
+        
         if self.downsample:
             self.create_downsampled_mask()
         else:
             self.create_full_resolution_mask()
 
     def load_machine_learning_model(self):
-        """Load the CNN model used to generate image masks"""
+        """Load the CNN model used to generate image masks
+        """
+        
         modelpath = os.path.join(
             "/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth"
         )
@@ -99,7 +114,9 @@ class MaskManager:
             return
 
     def create_full_resolution_mask(self):
-        """Upsample the masks created for the downsampled images to the full resolution"""
+        """Upsample the masks created for the downsampled images to the full resolution
+        """
+        
         self.sqlController.set_task(
             self.animal, self.progress_lookup.CREATE_FULL_RES_MASKS
         )
@@ -130,10 +147,12 @@ class MaskManager:
             file_keys.append([thumbfile, outpath, size])
 
         workers = self.get_nworkers()
-        self.run_commands_concurrently(resize_tif, file_keys, workers)
+        self.run_commands_concurrently(self.resize_tif, file_keys, workers)
 
     def create_downsampled_mask(self):
-        """Create masks for the downsampled images using a machine learning algorithm"""
+        """Create masks for the downsampled images using a machine learning algorithm
+        """
+        
         self.load_machine_learning_model()
         transform = torchvision.transforms.ToTensor()
         NORMALIZED = self.fileLocationManager.get_normalized()
@@ -173,20 +192,21 @@ class MaskManager:
             del mask
             cv2.imwrite(maskpath, merged_img)
 
+    @staticmethod
+    def resize_tif(file_key):
+        """Function to upsample mask images
 
-def resize_tif(file_key):
-    """Function to upsample mask images
+        :param file_key: tuple of inputs to the upsampling program including:
+        
+        - path to thumbnail file
+        - The output directory of upsampled image
+        - resulting size after upsampling
+        """
 
-    Args:
-        file_key (list): list of inputs to the upsampling program including:
-        1. path to thumbnail file
-        2. The output directory of upsampled image
-        3. resulting size after upsampling
-    """
-    thumbfile, outpath, size = file_key
-    try:
-        im = Image.open(thumbfile)
-        im = im.resize(size, Image.LANCZOS)
-        im.save(outpath)
-    except IOError:
-        print("cannot resize", thumbfile)
+        thumbfile, outpath, size = file_key
+        try:
+            im = Image.open(thumbfile)
+            im = im.resize(size, Image.LANCZOS)
+            im.save(outpath)
+        except IOError:
+            print("cannot resize", thumbfile)

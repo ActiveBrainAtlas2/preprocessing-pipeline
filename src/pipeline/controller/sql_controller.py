@@ -4,6 +4,7 @@ needs an animal passed to the constructor
 It also needs for the animal, histology and scan run tables to be
 filled out for each animal to use
 """
+
 import sys
 import numpy as np
 from collections import OrderedDict
@@ -62,24 +63,18 @@ class SqlController(AnimalController, ElastixController, HistologyController,
         self.tifs = None
         self.valid_sections = OrderedDict()
 
-    def convert_coordinate_pixel_to_microns(self,coordinates):
-        resolution = self.scan_run.resolution
-        x,y,z = coordinates
-        x*=resolution
-        y*=resolution
-        z*=20
-        return x,y,z
-
-    def get_resolution(self,animal):
+    def get_resolution(self, animal):
+        """Returns the resolution for an animal
+        
+        :param animal: string primary key
+        :return numpy array: of the resolutions
+        """
+        
         scan_run = self.get_scan_run(animal)
         histology = self.get_histology(animal)
         if histology.orientation == 'coronal':
-            return np.array([scan_run.zresolution,scan_run.resolution,scan_run.resolution])
+            return np.array([scan_run.zresolution, scan_run.resolution, scan_run.resolution])
         elif histology.orientation == 'horizontal':
-            return np.array([scan_run.resolution,scan_run.zresolution,scan_run.resolution])
+            return np.array([scan_run.resolution, scan_run.zresolution, scan_run.resolution])
         elif histology.orientation == 'sagittal':
-            return np.array([scan_run.resolution,scan_run.resolution,scan_run.zresolution])
-
-    def get_slides_from_animal(self,prep_id):
-        scan_run_id = self.get_scan_run(prep_id).id
-        return self.get_slides_from_scan_run_id(scan_run_id)
+            return np.array([scan_run.resolution, scan_run.resolution, scan_run.zresolution])

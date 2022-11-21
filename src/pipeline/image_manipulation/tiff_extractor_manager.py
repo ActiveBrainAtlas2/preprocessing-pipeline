@@ -63,7 +63,10 @@ class TiffExtractor(ParallelManager):
         self.update_database()
 
     def update_database(self):
-        """Updating the file log table in the database about the completion of the QC preparation steps"""
+        """Updating the file log table in the database about the completion of the 
+        QC preparation steps
+        """
+        
         self.sqlController.set_task(
             self.animal, self.progress_lookup.QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN
         )

@@ -1,5 +1,6 @@
 """This module is responsible for extracting metadata from the CZI files.
 """
+
 import os, sys, time, re, psutil
 from datetime import datetime
 from pathlib import Path
@@ -12,14 +13,16 @@ from utilities.utilities_process import convert_size
 
 
 class MetaUtilities:
-    """Collection of methods used to extract meta-data from czi files and insert into database
-    Also includes methods for validating information in database and/or files [double-check]
+    """Collection of methods used to extract meta-data from czi files and insert 
+    into database. Also includes methods for validating information in 
+    database and/or files [double-check]
     """
 
     def extract_slide_meta_data_and_insert_to_database(self):
         """REVISED FOR PARALLEL PROCESSING
         Scans the czi dir to extract the meta information for each tif file
         """
+
         INPUT = self.fileLocationManager.czi
         czi_files = self.check_czi_file_exists()
         self.scan_id = self.get_user_entered_scan_id()
@@ -61,7 +64,7 @@ class MetaUtilities:
                 
                 workers = self.get_nworkers()
                 self.run_commands_concurrently(parallel_extract_slide_meta_data_and_insert_to_database, file_keys, workers)
-                self.update_database()  # may/will need revisions for parallel
+                self.update_database_with_metadata()  # may/will need revisions for parallel
             else:
                 msg = "NOTHING TO PROCESS - SKIPPING"
                 print(msg)
@@ -71,14 +74,21 @@ class MetaUtilities:
             sys.exit()
 
     def get_user_entered_scan_id(self):
-        """Get id in the "scan run" table for the current microscopy scan that was entered by the user in the preparation phase"""
+        """Get id in the "scan run" table for the current microscopy scan that 
+        was entered by the user in the preparation phase
+        """
+        
         return self.sqlController.scan_run.id
 
     def file_validation(self, czi_files):
-        """
-        CHECK IF DUPLICATE SLIDE NUMBERS EXIST IN FILENAMES; ALSO CHECKS CZI FORMAT
+        """CHECK IF DUPLICATE SLIDE NUMBERS EXIST IN FILENAMES; ALSO CHECKS CZI FORMAT
         CHECK DB COUNT FOR SLIDE TABLE
+
+        :param czi_files: list of CZI files
+        :return status: boolean on whether the files are valid
+        :return list: list of CZI files
         """
+
         slide_id = []
         for file in czi_files:
             filename = os.path.splitext(file)
@@ -103,6 +113,13 @@ class MetaUtilities:
         return status, czi_files
 
     def all_slide_meta_data_exists_in_database(self, czi_files):
+        """Determines whether or not all the slide info is already 
+        in the datbase
+
+        :param list: list of CZI files
+        :return status: boolean on whether the files are valid
+        :return list: list of CZI files
+        """
         qry = self.sqlController.session.query(Slide).filter(
             Slide.scan_run_id == self.scan_id
         )
@@ -142,7 +159,12 @@ class MetaUtilities:
         return status, czi_files
 
     def slide_meta_data_exists(self, czi_file_name):
-        """Checks if a specific CZI file has been logged in the database"""
+        """Checks if a specific CZI file has been logged in the database
+        
+        :param czi_file_name: str of a particular CZI file
+        :return boolean: does the file exist?
+        """
+        
         return bool(
             self.sqlController.session.query(Slide)
             .filter(Slide.scan_run_id == self.scan_id)
@@ -151,7 +173,9 @@ class MetaUtilities:
         )
 
     def check_czi_file_exists(self):
-        """Check that the CZI files are placed in the correct location"""
+        """Check that the CZI files are placed in the correct location
+        """
+        
         INPUT = self.fileLocationManager.czi
         if not os.path.exists(INPUT):
             print(f"{INPUT} does not exist, we are exiting.")
@@ -170,10 +194,12 @@ class MetaUtilities:
 
         return files
 
-    def update_database(self):
-        """Updates the "file log" table in the database that tracks the progress of the pipeline
+    def update_database_with_metadata(self):
+        """Updates the "file log" table in the database that tracks the progress 
+        of the pipeline
 
-        Unclear if still used/relevant as of 4-NOV-2022; if still used method name change [to something more descriptive
+        Unclear if still used/relevant as of 4-NOV-2022; if still used method name 
+        change [to something more descriptive
         would be appropriate]
         """
         SLIDES_ARE_SCANNED = self.sqlController.get_progress_id(

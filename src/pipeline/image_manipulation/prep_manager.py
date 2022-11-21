@@ -1,9 +1,8 @@
 import os
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
-from concurrent.futures.process import ProcessPoolExecutor
 
-from utilities.utilities_process import test_dir, create_downsample, get_image_size
+from utilities.utilities_process import get_image_size
 
 
 class PrepCreater:
@@ -57,28 +56,3 @@ class PrepCreater:
             except Exception as e:
                 print(f"CANNOT CREATE SYMBOLIC LINK (ALREADY EXISTS): {output_path} {e}")
                 
-
-    def make_low_resolution(self):
-        """
-        Making low resolution version of the full resolution images with QC applied.  These images are used to
-        create image masks and within stack alignments
-        """
-        file_keys = []
-        INPUT = self.fileLocationManager.get_full(self.channel)
-        OUTPUT = self.fileLocationManager.get_thumbnail(self.channel)
-        os.makedirs(OUTPUT, exist_ok=True)
-        test_dir(
-            self.animal, INPUT, self.section_count, downsample=False, same_size=False
-        )
-        files = sorted(os.listdir(INPUT))
-        for file in files:
-            infile = os.path.join(INPUT, file)
-            outpath = os.path.join(OUTPUT, file)
-            if os.path.exists(outpath):
-                continue
-            file_keys.append([infile, outpath])
-            
-        workers = self.get_nworkers()
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            executor.map(create_downsample, sorted(file_keys))
-

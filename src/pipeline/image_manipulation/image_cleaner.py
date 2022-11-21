@@ -2,13 +2,9 @@
 the brain area by using masks.
 """
 import os
-import numpy as np
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 
-from database_model.slide import SlideCziTif
-from database_model.slide import Slide
-from database_model.slide import Section
 from utilities.utilities_mask import clean_and_rotate_image
 from utilities.utilities_process import SCALING_FACTOR, test_dir
 
@@ -36,7 +32,9 @@ class ImageCleaner:
             self.create_cleaned_images_full_resolution()
 
     def create_cleaned_images_thumbnail(self):
-        """Clean the image using the masks for the downsampled version"""
+        """Clean the image using the masks for the downsampled version
+        """
+        
         CLEANED = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
         INPUT = self.fileLocationManager.get_thumbnail(self.channel)
         MASKS = self.fileLocationManager.thumbnail_masked
@@ -51,7 +49,9 @@ class ImageCleaner:
         self.parallel_create_cleaned(INPUT, CLEANED, MASKS)
 
     def create_cleaned_images_full_resolution(self):
-        """Clean the image using the masks for the full resolution image"""
+        """Clean the image using the masks for the full resolution image
+        """
+        
         CLEANED = self.fileLocationManager.get_full_cleaned(self.channel)
         os.makedirs(CLEANED, exist_ok=True)
         INPUT = self.fileLocationManager.get_full(self.channel)
@@ -65,16 +65,14 @@ class ImageCleaner:
         self.logevent(f"OUTPUT FOLDER: {CLEANED}")
         self.parallel_create_cleaned(INPUT, CLEANED, MASKS)
 
-    def get_section_rotation(self, section: Section):
-        sections = self.sqlController.session.query(SlideCziTif).filter(
-            SlideCziTif.FK_slide_id == section.FK_slide_id
-        )
-        indices = np.sort(np.unique([i.scene_index for i in sections]))
-        scene = np.where(indices == section.scene_index)[0][0] + 1
-        slide = self.sqlController.session.query(Slide).get(section.FK_slide_id)
-        return getattr(slide, f"scene_rotation_{scene}")
-
     def parallel_create_cleaned(self, INPUT, CLEANED, MASKS):
+        """Do the image cleaning in parallel
+
+        :param INPUT: str of file location input
+        :param CLEANED: str of file location output
+        :param MASKS: str of file location of masks
+        """
+
         max_width = self.sqlController.scan_run.width
         max_height = self.sqlController.scan_run.height
         if self.downsample:
