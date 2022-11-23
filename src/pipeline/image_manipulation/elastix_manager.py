@@ -73,12 +73,15 @@ class ElastixManager:
                 moving_index = os.path.splitext(files[i])[0]
                 fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
                 moving_file = os.path.join(INPUT, f"{moving_index}.tif")
+                
                 if not self.sqlController.check_elastix_metric_row(self.animal, moving_index): 
                     p = Popen(['python', program, fixed_file, moving_file], stdin=PIPE, stdout=PIPE, stderr=PIPE)
                     output, _ = p.communicate(b"input data that is passed to subprocess' stdin")
+                    print('output', output)
                     if len(output) > 0:
                         metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
                         updates = {'metric':metric}
+                        print('updates', updates)
                         self.sqlController.update_elastix_row(self.animal, moving_index, updates)
 
     def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
