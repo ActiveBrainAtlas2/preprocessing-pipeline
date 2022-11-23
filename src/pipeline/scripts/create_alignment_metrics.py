@@ -2,6 +2,8 @@ import os
 import sys
 import SimpleITK as sitk
 
+from utilities.utilities_registration import NUM_ITERATIONS
+
 
 
 def lines_that_start_with(string, fp):
@@ -134,8 +136,7 @@ def align_elastix(fixed_file, moving_file, moving_index):
     ## 80 good results, 7 minutes on basalis with 4 jobs
     ## 200 good results except for 1st couple were not aligned, 12 minutes
     ## 500 is best, including first sections, basalis took 21 minutes
-    num_iterations = "2000"
-    rigid_params["MaximumNumberOfIterations"] = [num_iterations]
+    rigid_params["MaximumNumberOfIterations"] = [NUM_ITERATIONS]
     ## The step size of the optimizer, in mm. By default the voxel size is used.
     ## which usually works well. In case of unusual high-resolution images
     ## (eg histology) it is necessary to increase this value a bit, to the size
