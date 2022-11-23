@@ -74,7 +74,8 @@ def rigid_transform_to_parmeters(transform, center):
     return xshift, yshift, rotation, center
 
 
-def align_elastix(fixed, moving, moving_index, tries=10):
+def align_elastix(fixed, moving):
+    tries = 10
     for _ in range(tries):
         try:
             elastixImageFilter = sitk.ElastixImageFilter()
@@ -238,11 +239,6 @@ def align_elastix(fixed, moving, moving_index, tries=10):
             rigid_params["RequiredRatioOfValidSamples"] = ["0.05"]
             elastixImageFilter.SetParameterMap(rigid_params)
             elastixImageFilter.LogToConsoleOff()
-            elastixImageFilter.SetLogToFile(True)
-            logfile = str(moving_index).zfill(3) + '.tif'
-            logpath = os.path.join('/tmp/elastix', logfile)
-            elastixImageFilter.SetOutputDirectory('/tmp/elastix')
-            elastixImageFilter.SetLogFileName(logfile)
         except RuntimeError:
             continue
         break
