@@ -1,6 +1,9 @@
 import os
 import sys
 import SimpleITK as sitk
+from pathlib import Path
+PIPELINE_ROOT = Path('./src/pipeline').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
 
 from utilities.utilities_registration import NUM_ITERATIONS
 
@@ -191,8 +194,6 @@ def align_elastix(fixed_file, moving_file, moving_index):
     logfilepath = os.path.join('/tmp/elastix', logfile)
     metric_value = getMetricValue(logfilepath)
     print(metric_value)
-
-
 
 
 if __name__ == '__main__':
