@@ -74,8 +74,7 @@ def rigid_transform_to_parmeters(transform, center):
     return xshift, yshift, rotation, center
 
 
-def align_elastix(fixed, moving):
-    tries = 10
+def align_elastix(fixed, moving, tries=10):
     for _ in range(tries):
         try:
             elastixImageFilter = sitk.ElastixImageFilter()
@@ -243,7 +242,8 @@ def align_elastix(fixed, moving):
             continue
         break
     elastixImageFilter.Execute()
-    
+    return (
+        elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"])    
 
 
 def align_elastixXXX(fixed, moving):
