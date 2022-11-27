@@ -13,6 +13,9 @@ class PrepCreater:
     """
 
     def set_task_preps(self):
+        """This is where the scan run table gets updated so the width and 
+        height are correct.
+        """
         if self.channel == 1:
             self.sqlController.update_scanrun(self.sqlController.scan_run.id)
         progress_id = self.sqlController.get_progress_id(True, self.channel, "TIF")
