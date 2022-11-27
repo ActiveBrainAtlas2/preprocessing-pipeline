@@ -54,6 +54,7 @@ class ScanRunController(Controller):
             width = round(width, -3)
             height += LITTLE_BIT_MORE
             width += LITTLE_BIT_MORE
+            print(f'\theight={height} and width={width}')
             # width and height get flipped
             try:
                 self.session.query(ScanRun).filter(ScanRun.id == id).update(
