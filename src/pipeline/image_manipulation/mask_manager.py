@@ -105,9 +105,22 @@ class MaskManager:
             "/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth"
         )
         self.loaded_model = self.get_model_instance_segmentation(num_classes=2)
+        workers = 2
+        batch_size = 4
+        torch.multiprocessing.set_sharing_strategy('file_system')
+
+        if torch.cuda.is_available(): 
+            device = torch.device('cuda') 
+            print(f'Using Nvidia graphics card GPU with {workers} workers at a batch size of {batch_size}')
+        else:
+            import warnings
+            warnings.filterwarnings("ignore")
+            device = torch.device('cpu')
+            print(f'Using CPU with {workers} workers at a batch size of {batch_size}')
+
         if os.path.exists(modelpath):
             self.loaded_model.load_state_dict(
-                torch.load(modelpath, map_location=torch.device("cpu"))
+                torch.load(modelpath, map_location = device )
             )
         else:
             print("no model to load")
