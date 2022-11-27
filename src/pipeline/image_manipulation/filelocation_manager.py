@@ -23,40 +23,40 @@ class FileLocationManager(object):
         Args:
             stack: the animal brain name, AKA prep_id
         """
+
+        # These need to be set first
         self.root = os.path.join(data_path, "pipeline_data")
         self.stack = os.path.join(self.root, stack)
         self.prep = os.path.join(self.root, stack, "preps")
+        self.masks = os.path.join(self.prep, "masks")
+        
+        # The rest
+        self.brain_info = os.path.join(self.root, stack, "brains_info")
         self.czi = os.path.join(self.root, stack, "czi")
-        self.tif = os.path.join(self.root, stack, "tif")
-        self.thumbnail_original = os.path.join(self.stack, "thumbnail_original")
-        self.jp2 = os.path.join(self.root, stack, "jp2")
-        self.thumbnail = os.path.join(self.prep, "CH1", "thumbnail")
+        self.elastix = os.path.join(self.prep, "elastix")
+        self.full_aligned = os.path.join(self.prep, "full_aligned")
+        self.full_masked = os.path.join(self.masks, "full_masked")
         self.histogram = os.path.join(self.root, stack, "histogram")
-        self.thumbnail_web = os.path.join(self.root, stack, "www", "scene")
         self.neuroglancer_data = os.path.join(self.root, stack, "neuroglancer_data")
         self.neuroglancer_progress = os.path.join(self.neuroglancer_data, 'progress')
-        self.brain_info = os.path.join(self.root, stack, "brains_info")
-        self.full_aligned = os.path.join(self.prep, "full_aligned")
-        self.masks = os.path.join(self.prep, "masks")
-        self.thumbnail_masked = os.path.join(self.masks, "thumbnail_masked")
-        self.thumbnail_colored = os.path.join(self.masks, "thumbnail_colored")
-        self.full_masked = os.path.join(self.masks, "full_masked")
         self.rotated_and_padded_thumbnail_mask = os.path.join(
             self.masks, "thumbnail_rotated_and_padded"
         )
-        self.aligned_rotated_and_padded_thumbnail_mask = os.path.join(
+        self.rotated_and_padded_and_aligned_thumbnail_mask = os.path.join(
             self.masks, "thumbnail_aligned_rotated_and_padded"
         )
-        self.shell = os.path.join(self.root, stack, "shell")
+        self.tif = os.path.join(self.root, stack, "tif")
+        self.thumbnail = os.path.join(self.prep, "CH1", "thumbnail")
+        self.thumbnail_colored = os.path.join(self.masks, "thumbnail_colored")
+        self.thumbnail_masked = os.path.join(self.masks, "thumbnail_masked")
+        self.thumbnail_original = os.path.join(self.stack, "thumbnail_original")
+        self.thumbnail_web = os.path.join(self.root, stack, "www", "scene")
 
     def get_full(self, channel=1):
         return os.path.join(self.prep, f"CH{channel}", "full")
 
     def get_thumbnail(self, channel=1):
         return os.path.join(self.prep, f"CH{channel}", "thumbnail")
-
-    def get_elastix(self, channel=1):
-        return os.path.join(self.prep, f"CH{channel}", "elastix")
 
     def get_full_cleaned(self, channel=1):
         return os.path.join(self.prep, f"CH{channel}", "full_cleaned")

@@ -75,8 +75,8 @@ class ElastixManager:
                 moving_file = os.path.join(INPUT, f"{moving_index}.tif")
 
                 if not self.sqlController.check_elastix_metric_row(self.animal, moving_index): 
-                    p = Popen(['python', program, fixed_file, moving_file], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-                    output, _ = p.communicate(b"input data that is passed to subprocess' stdin")
+                    p = Popen(['python', program, self.animal, fixed_file, moving_file], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                    output, error = p.communicate(b"input data that is passed to subprocess' stdin")
                     if len(output) > 0:
                         metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
                         updates = {'metric':metric}
@@ -92,7 +92,7 @@ class ElastixManager:
         """
         center = self.get_rotation_center()
         second_transform_parameters, initial_transform_parameters = register_simple(
-            INPUT, fixed_index, moving_index)
+            INPUT, self.animal, fixed_index, moving_index)
         T1 = parameters_to_rigid_transform(*initial_transform_parameters)
         T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
         T = T1 @ T2
@@ -250,15 +250,16 @@ class ElastixManager:
 
 
     def align_section_masks(self, animal, transforms):
-        """function that can be used to align the masks used for cleaning the image.  This not run as part of
-        the pipeline, but is used to create the 3d shell around a certain brain
+        """function that can be used to align the masks used for cleaning the image.  
+        This not run as part of the pipeline, but is used to create the 3d shell 
+        around a certain brain
 
         :param animal: (str) Animal ID
         :param transforms: (array): 3*3 transformation array
         """
         fileLocationManager = FileLocationManager(animal)
         INPUT = fileLocationManager.rotated_and_padded_thumbnail_mask
-        OUTPUT = fileLocationManager.aligned_rotated_and_padded_thumbnail_mask
+        OUTPUT = fileLocationManager.rotated_and_padded_and_aligned_thumbnail_mask
         self.align_images(INPUT, OUTPUT, transforms)
 
 

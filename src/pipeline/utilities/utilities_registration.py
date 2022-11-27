@@ -22,8 +22,9 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import SimpleITK as sitk
 
+from image_manipulation.filelocation_manager import FileLocationManager
 from utilities.utilities_process import SCALING_FACTOR
-NUM_ITERATIONS = "2000"
+NUM_ITERATIONS = "1200"
 
 
 def parameters_to_rigid_transform(rotation, xshift, yshift, center):
@@ -73,20 +74,15 @@ def rigid_transform_to_parmeters(transform, center):
     xshift, yshift = shift - center + np.dot(R, center)
     return xshift, yshift, rotation, center
 
-def align_elastix(fixed, moving):
-    """This takes the moving and fixed images runs Elastix on them. Note
-    the huge list of parameters Elastix uses here.
+def create_rigid_parameters(elastixImageFilter):
+    """Creates the rigid paramaters used by Elastix.
+    This sets lots of parameters in this dictionary and it used multiple places.
 
-    :param fixed: sitk float array for the fixed image (the image behind the moving).
-    :param moving: sitk float array for the moving image.
-    :return: the Elastix transformation results that get parsed into the rigid transformation
+    :param elastixImageFilter: object set in previous method for Elastix.
+    :return: dictionary of parameters
     """
 
-    elastixImageFilter = sitk.ElastixImageFilter()
-    elastixImageFilter.SetFixedImage(fixed)
-    elastixImageFilter.SetMovingImage(moving)
     rigid_params = elastixImageFilter.GetDefaultParameterMap("rigid")
-
     rigid_params["AutomaticTransformInitializationMethod"] = [
         "GeometricalCenter"
     ]
@@ -241,6 +237,22 @@ def align_elastix(fixed, moving):
     rigid_params["ResultImagePixelType"] = ["unsigned char"]
     rigid_params["ResultImageFormat"] = ["tif"]
     rigid_params["RequiredRatioOfValidSamples"] = ["0.05"]
+    return rigid_params
+
+
+def align_elastix(fixed, moving):
+    """This takes the moving and fixed images runs Elastix on them. Note
+    the huge list of parameters Elastix uses here.
+
+    :param fixed: sitk float array for the fixed image (the image behind the moving).
+    :param moving: sitk float array for the moving image.
+    :return: the Elastix transformation results that get parsed into the rigid transformation
+    """
+
+    elastixImageFilter = sitk.ElastixImageFilter()
+    elastixImageFilter.SetFixedImage(fixed)
+    elastixImageFilter.SetMovingImage(moving)
+    rigid_params = create_rigid_parameters(elastixImageFilter)
     elastixImageFilter.SetParameterMap(rigid_params)
     elastixImageFilter.LogToConsoleOff()
     elastixImageFilter.Execute()
@@ -248,7 +260,7 @@ def align_elastix(fixed, moving):
     return (elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"])
 
 
-def register_simple(INPUT, fixed_index, moving_index):
+def register_simple(INPUT, animal, fixed_index, moving_index):
     """Helper method for inputing the fixed and moving images into Elastix
     This creates the sitk float images and sends them to Elastix
 
@@ -257,7 +269,9 @@ def register_simple(INPUT, fixed_index, moving_index):
     :param moving_index: index of the moving image path
     :return: two elastix transforms
     """
-
+    fileLocationManager = FileLocationManager(animal)
+    OUTPUT = fileLocationManager.elastix
+    os.makedirs(OUTPUT, exist_ok=True)
     pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
     moving_file = os.path.join(INPUT, f"{moving_index}.tif")
