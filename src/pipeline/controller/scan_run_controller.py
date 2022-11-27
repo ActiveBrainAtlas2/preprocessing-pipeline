@@ -46,6 +46,7 @@ class ScanRunController(Controller):
         height = self.session.query(func.max(SlideCziTif.height)).join(Slide).join(ScanRun)\
             .filter(SlideCziTif.active == True) \
             .filter(ScanRun.id == id).scalar()
+        print(f'\tFirst height={height} and width={width}')
         SAFEMAX = 10000
         LITTLE_BIT_MORE = 500
         # just to be safe, we don't want to update numbers that aren't realistic
@@ -54,7 +55,7 @@ class ScanRunController(Controller):
             width = round(width, -3)
             height += LITTLE_BIT_MORE
             width += LITTLE_BIT_MORE
-            print(f'\theight={height} and width={width}')
+            print(f'\tAfter modifications, height={height} and width={width}')
             # width and height get flipped
             try:
                 self.session.query(ScanRun).filter(ScanRun.id == id).update(
