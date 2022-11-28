@@ -41,9 +41,10 @@ class TiffExtractor(ParallelManager):
         self.logevent(f"FILE COUNT [FOR CHANNEL {self.channel}]: {len(starting_files)}")
         self.logevent(f"TOTAL FILE COUNT [FOR DIRECTORY]: {len(total_files)}")
 
-        sections = self.sqlController.get_distinct_section_filenames(
-            self.animal, self.channel
-        )
+        #sections = self.sqlController.get_distinct_section_filenames(
+        #    self.animal, self.channel)
+
+        sections = self.sqlController.get_sections(self.animal, self.channel)
 
         file_keys = [] # czi_file, output_path, scenei, channel=1, scale=1
         for section in sections:
