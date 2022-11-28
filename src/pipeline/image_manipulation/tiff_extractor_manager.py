@@ -54,8 +54,9 @@ class TiffExtractor(ParallelManager):
                 continue
             if os.path.exists(output_path):
                 continue
-            scenei = section.scene_number - 1
-            file_keys.append([czi_file, output_path, scenei, self.channel, scale_factor])
+            #scenei = section.scene_number - 1
+            scene = section.scene_index
+            file_keys.append([czi_file, output_path, scene, self.channel, scale_factor])
 
         workers = self.get_nworkers()
         self.run_commands_concurrently(extract_tiff_from_czi, file_keys, workers)
