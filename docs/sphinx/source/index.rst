@@ -26,6 +26,7 @@ Use the side navigation panel to view different documentation topics.
    modules/pipeline.utilities.rst
    modules/high.level.description.of.preprocessing.pipeline.rst
    modules/description.czi.2.neuroglancer.rst
+   modules/software.installation.rst
    modules/running.czi.2.neuroglancer.rst
 
 Indices and modules
