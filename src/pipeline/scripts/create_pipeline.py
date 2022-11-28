@@ -53,15 +53,17 @@ increasing the step size will make the pipeline move forward in the process.
 import argparse
 from pathlib import Path
 import sys
+PIPELINE_ROOT = Path('./src/pipeline').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
+
 try:
     from settings import data_path, host, schema
 except ImportError:
+    print('Missing settings using defaults')
     data_path = "/net/birdstore/Active_Atlas_Data/data_root"
     host = "db.dk.ucsd.edu"
     schema = "active_atlas_production"
 
-PIPELINE_ROOT = Path('./src/pipeline').absolute()
-sys.path.append(PIPELINE_ROOT.as_posix())
 
 from image_manipulation.pipeline_process import Pipeline
 
