@@ -1,5 +1,5 @@
-Preprocessing pipeline software installation
---------------------------------------------
+Software installation
+---------------------
 
 Creating a sandbox on your computer or on a new workstation.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
