@@ -6,6 +6,7 @@ Specifically, the documentation includes:
 * A description of all necessary modules, classes and methods.
 * A high level description of the pipeline (non technical documentation).
 * A description of all the steps in the process (technical documentation).
+* Instructions on installing the necessary software.
 * A HOWTO set of instructions to run the actual steps of the pipeline.
 
 
