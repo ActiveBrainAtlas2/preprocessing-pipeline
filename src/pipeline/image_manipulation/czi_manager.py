@@ -124,9 +124,6 @@ def extract_png_from_czi(file_key, normalize = True):
         im = Image.fromarray(data)
         im.save(outfile)
     except Exception as e:
-        print(
-            f"ERROR READING SCENE - [extract_png_from_czi] IN FILE {infile} ... SKIPPING"
-        )
-        czi.logevent(
-            f"ERROR READING SCENE - [extract_png_from_czi] IN FILE {infile} ... SKIPPING - ERR: {e}"
-        )
+        message = f"ERROR READING SCENE - [extract_png_from_czi] IN FILE {infile} ERR: {e}"
+        print(message)
+        czi.logevent(message)
