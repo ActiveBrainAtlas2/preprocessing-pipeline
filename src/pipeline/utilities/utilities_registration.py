@@ -23,7 +23,7 @@ Image.MAX_IMAGE_PIXELS = None
 import SimpleITK as sitk
 
 from image_manipulation.filelocation_manager import FileLocationManager
-from utilities.utilities_process import SCALING_FACTOR
+from utilities.utilities_process import SCALING_FACTOR, read_image, write_image
 NUM_ITERATIONS = "1200"
 
 
@@ -337,12 +337,23 @@ def align_image_to_affine(file_key):
     :param file_key: tuple of file input and output
     :return: nothing
     """
-    _, infile, outfile, T = file_key
+    infile, outfile, T = file_key
     im1 = Image.open(infile)
     im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
     im2.save(outfile)
     del im1, im2
     return
+
+
+def tif_to_png(file_key):
+    """This method creates a PNG from a TIF
+    :param file_key: tuple of file input and output
+    :return: nothing
+    """
+    infile, outfile = file_key
+    img = read_image(infile)
+    img = (img / 256).astype(np.uint8)
+    write_image(outfile, img)
 
 
 

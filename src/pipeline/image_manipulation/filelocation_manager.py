@@ -45,6 +45,7 @@ class FileLocationManager(object):
         self.rotated_and_padded_and_aligned_thumbnail_mask = os.path.join(
             self.masks, "thumbnail_aligned_rotated_and_padded"
         )
+        self.section_web = os.path.join(self.root, stack, "www", "section")
         self.tif = os.path.join(self.root, stack, "tif")
         self.thumbnail = os.path.join(self.prep, "CH1", "thumbnail")
         self.thumbnail_colored = os.path.join(self.masks, "thumbnail_colored")
