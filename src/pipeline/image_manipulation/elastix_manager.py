@@ -23,6 +23,7 @@ from utilities.utilities_registration import (
     parameters_to_rigid_transform,
     register_simple,
     rigid_transform_to_parmeters,
+    tif_to_png,
 )
 
 
@@ -278,12 +279,12 @@ class ElastixManager:
         first_file_name = list(transforms.keys())[0]
         infile = os.path.join(INPUT, first_file_name)
         file_keys = []
-        for i, (file, T) in enumerate(transforms.items()):
+        for file, T in transforms.items():
             infile = os.path.join(INPUT, file)
             outfile = os.path.join(OUTPUT, file)
             if os.path.exists(outfile):
                 continue
-            file_keys.append([i, infile, outfile, T])
+            file_keys.append([infile, outfile, T])
 
         workers = self.get_nworkers() // 2
         start_time = timer()
@@ -291,4 +292,28 @@ class ElastixManager:
         end_time = timer()
         total_elapsed_time = round((end_time - start_time),2)
         print(f'Aligning images took {total_elapsed_time} seconds.')
+
+
+    def create_web_friendly_sections(self):
+        """A function to create section PNG files for the database portal.
+        """
+
+        fileLocationManager = FileLocationManager(self.animal)
+        INPUT = fileLocationManager.get_thumbnail_aligned(channel=1)
+        OUTPUT = fileLocationManager.section_web
+
+        os.makedirs(OUTPUT, exist_ok=True)
+        files = sorted(os.listdir(INPUT))
+        file_keys = []
+        for file in files:
+            png = str(file).replace(".tif", ".png")
+            infile = os.path.join(INPUT, file)
+            outfile = os.path.join(OUTPUT, png)
+            if os.path.exists(outfile):
+                continue
+            file_keys.append([infile, outfile])
+
+        workers = self.get_nworkers()
+        self.run_commands_concurrently(tif_to_png, file_keys, workers)
+
 
