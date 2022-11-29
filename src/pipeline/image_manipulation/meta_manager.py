@@ -225,7 +225,10 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         return czi.metadata
 
     def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal):
-        """Add the meta information about image slides that are extracted from the czi file and add them to the database"""
+        """Add the meta information about image slides that are extracted from the czi 
+        file and add them to the database
+        """
+        
         slide = Slide()
         slide.scan_run_id = scan_id
         slide.slide_physical_id = int(re.findall(r"slide\d+", czi_org_path)[0][5:])
@@ -238,7 +241,6 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
             Path(os.path.normpath(czi_org_path)).stat().st_mtime
         )
         slide.scenes = len([elem for elem in czi_metadata.values()][0].keys())
-        print(f"ADD SLIDE INFO TO DB: {slide.file_name} -> PHYSICAL SLIDE ID: {slide.slide_physical_id}")
 
         sqlController = SqlController(animal)
 

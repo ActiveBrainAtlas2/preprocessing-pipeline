@@ -41,9 +41,6 @@ class TiffExtractor(ParallelManager):
         self.logevent(f"FILE COUNT [FOR CHANNEL {self.channel}]: {len(starting_files)}")
         self.logevent(f"TOTAL FILE COUNT [FOR DIRECTORY]: {len(total_files)}")
 
-        #sections = self.sqlController.get_distinct_section_filenames(
-        #    self.animal, self.channel)
-
         sections = self.sqlController.get_sections(self.animal, self.channel)
 
         file_keys = [] # czi_file, output_path, scenei, channel=1, scale=1
@@ -55,7 +52,6 @@ class TiffExtractor(ParallelManager):
                 continue
             if os.path.exists(output_path):
                 continue
-            #scenei = section.scene_number - 1
             scene = section.scene_index
             file_keys.append([czi_file, output_path, scene, self.channel, scale_factor])
 
@@ -88,9 +84,7 @@ class TiffExtractor(ParallelManager):
         channel = 1
         os.makedirs(OUTPUT, exist_ok=True)
 
-        sections = self.sqlController.get_distinct_section_filenames(
-            self.animal, channel
-        )
+        sections = self.sqlController.get_sections(self.animal, channel)
         self.logevent(f"SINGLE (FIRST) CHANNEL ONLY - SECTIONS: {len(sections)}")
         self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
 
@@ -104,9 +98,10 @@ class TiffExtractor(ParallelManager):
             if os.path.exists(outfile):
                 files_skipped += 1
                 continue
-            scene_index = section.scene_number - 1
+            scene = section.scene_index
+
             scale = 0.01
-            file_keys.append([i, infile, outfile, scene_index, scale])
+            file_keys.append([i, infile, outfile, scene, scale])
 
         if files_skipped > 0:
             print(f" SKIPPED [PRE-EXISTING] FILES: {files_skipped}", end=" ")
