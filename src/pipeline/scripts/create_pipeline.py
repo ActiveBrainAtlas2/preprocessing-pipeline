@@ -100,7 +100,7 @@ def run_pipeline(animal, channel, downsample, data_path, tg, debug):
 
     if step == 1:
         print(f"Step {step}: apply QC and prepare image masks")
-        pipeline.set_task_preps()
+        pipeline.set_task_preps_update_scanrun()
         pipeline.run_program_and_time(pipeline.apply_QC, pipeline.TASK_APPLYING_QC)
         pipeline.run_program_and_time(pipeline.create_normalized_image, pipeline.TASK_APPLYING_NORMALIZATION)
         pipeline.run_program_and_time(pipeline.create_mask, pipeline.TASK_CREATING_MASKS)
