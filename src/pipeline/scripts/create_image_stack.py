@@ -1,9 +1,6 @@
 """
-This takes the coordinates and packs them into a binary file,
-see https://github.com/google/neuroglancer/issues/227
-Create a dir on birdstore called points
-put the info file under points/info
-create the binary file and put in points/spatial0/0_0_0
+This takes the a stack of tifs and creates a numpy array
+3D (volume)
 """
 import argparse
 import os
@@ -13,14 +10,10 @@ from pathlib import Path
 from skimage import io
 from tqdm import tqdm
 
-
-
-
-PIPELINE_ROOT = Path('./pipeline').absolute()
+PIPELINE_ROOT = Path('./src/pipeline').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from lib.FileLocationManager import FileLocationManager
-
+from image_manipulation.filelocation_manager import FileLocationManager
 
 def get_file_information(INPUT):
     files = sorted(os.listdir(INPUT))
