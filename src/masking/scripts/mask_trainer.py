@@ -38,13 +38,10 @@ if __name__ == '__main__':
         dataset = MaskDataset(ROOT, animal, transforms = get_transform(train=True))
 
     indices = torch.randperm(len(dataset)).tolist()
-    indices = indices[0:21]
 
     if debug:
-        test_cases = len(indices) // 100
-        test_cases = max(test_cases, 12)
+        test_cases = 12
         torch.manual_seed(1)
-        indices = indices[0:12]
         dataset = torch.utils.data.Subset(dataset, indices[0:test_cases])
     else:
         dataset = torch.utils.data.Subset(dataset, indices)
