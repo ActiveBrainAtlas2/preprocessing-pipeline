@@ -22,10 +22,6 @@ class ImageCleaner:
         debris
         """
 
-        if self.channel == 1:
-            self.sqlController.set_task(
-                self.animal, self.progress_lookup.CLEAN_CHANNEL_1_THUMBNAIL_WITH_MASK
-            )
         if self.downsample:
             self.create_cleaned_images_thumbnail()
         else:

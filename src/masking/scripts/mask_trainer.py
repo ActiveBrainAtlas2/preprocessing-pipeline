@@ -63,8 +63,11 @@ if __name__ == '__main__':
         dataset, batch_size=batch_size, shuffle=True, num_workers=workers,
         collate_fn=collate_fn)
 
-
-    print(f"We have: {len(dataset)} images to train.")
+    n_files = len(dataset)
+    print_freq = 10
+    if n_files > 1000:
+        print_freq = 100
+    print(f"We have: {n_files} images to train and printing loss info every {print_freq} iterations.")
     # our dataset has two classs, tissue or 'not tissue'
     num_classes = 2
     modelpath = os.path.join(ROOT, 'mask.model.pth')
@@ -87,7 +90,7 @@ if __name__ == '__main__':
     # original version with train_one_epoch
     for epoch in range(epochs):
         # train for one epoch, printing every 10 iterations
-        mlogger = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
+        mlogger = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=print_freq)
         loss_txt = str(mlogger.loss)
         x = loss_txt.split()
         loss = float(x[0])

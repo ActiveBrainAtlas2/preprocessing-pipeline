@@ -15,7 +15,6 @@ from image_manipulation.filelocation_manager import FileLocationManager
 from image_manipulation.meta_manager import MetaUtilities
 from image_manipulation.prep_manager import PrepCreater
 from image_manipulation.precomputed_manager import NgPrecomputedMaker
-from image_manipulation.progress_manager import ProgressLookup
 from image_manipulation.tiff_extractor_manager import TiffExtractor
 from image_manipulation.file_logger import FileLogger
 from image_manipulation.parallel_manager import ParallelManager
@@ -91,7 +90,6 @@ class Pipeline(
         self.sqlController = SqlController(animal)
         self.hostname = get_hostname()
         self.tg = tg
-        self.progress_lookup = ProgressLookup()
         self.check_programs()
         self.section_count = self.sqlController.get_section_count(self.animal)
         super().__init__(self.fileLocationManager.get_logdir())
@@ -106,7 +104,6 @@ class Pipeline(
         be increased accordingly if your images are bigger
         If the check failed, check the workernoshell.err.log in your project directory for more information
         """
-        start_time = timer()
         
         error = ""
         if not os.path.exists("/usr/bin/identify"):
@@ -115,9 +112,6 @@ class Pipeline(
         if len(error) > 0:
             print(error)
             sys.exit()
-        end_time = timer()
-        total_elapsed_time = end_time - start_time
-        print(f"Check programs took {round(total_elapsed_time,1)} seconds")
 
     def run_program_and_time(self, function, function_name):
         """utility to run a specific function and time it
