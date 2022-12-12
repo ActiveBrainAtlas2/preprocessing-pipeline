@@ -115,23 +115,24 @@ Retraing the masking objection detection model
        1. Back up the existing model:
           ``mv -vf /net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth  /net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth.bak``
        2. In the base part of this repo activate the virtualenv and do:
-          ``python pipeline/masking/mask_trainer.py --runmodel false``
+          ``python src/masking/scripts/mask_trainer.py --runmodel false``
        3. That will not run the process but will tell you how many
           images you are working with and if you are using a CPU or GPU.
           You really need to use a GPU on this process otherwise it will
           take days to run.
        4. After you are sure you have a viable GPU, do:
-          ``python pipeline/masking/mask_trainer.py --runmodel true --epochs 30``
+          ``python src/masking/scripts/mask_trainer.py --runmodel true --epochs 30``
           That will run the model for 30 epochs. 30 is probably
           overkill, 20 might do it, I would not go under 15.
        5. After that runs, a new model will be stored in:
           */net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/mask.model.pth*
+       6. You can view a plot of the loss over epochs graph by looking at: /net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/loss_plot.png
 
     7. The new model will now be ready to use. You can test it out by
        removing the files in:
        */net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/thumbnail_colored*
        and rerunning the create_pipeline.py script:
-       ``python pipeline/create_pipeline.py --animal DKXX --step 1`` Go to
+       ``python src/pipeline/scripts/create_pipeline.py --animal DKXX --step 1`` Go to
        the
        */net/birdstore/Active_Atlas_Data/data_root/brains_info/masks/thumbnail_colored*
        and verify the masks look good. They should as those images have
