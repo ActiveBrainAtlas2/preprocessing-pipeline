@@ -101,7 +101,11 @@ Directory structure of the pipeline
 1. The base directory is located on birdstore at:
    ``/net/birdstore/Active_Atlas_Data/data_root/pipeline_data``
 2. All brains are located in the base directory.
-3. The directory structure of a 3 channel brain will look like this:
+3. The directory structure of a 3 channel brain is shown below. Data is served via Apache with the data in the
+   neuroglancer_data directory. Each neuroglancer_data directory will usually contain a directory for each 3 channels.
+   For example, under C1 there are several subdirectories representing a zoom level of the pyramid. The 325_325_20000 directory
+   represents the an x,y,z resolution in nanometers. The x,y resolution is at 325nm and the z is at 20,000nm (20um). The structure
+   for DK52 is:
 
 ::
 
