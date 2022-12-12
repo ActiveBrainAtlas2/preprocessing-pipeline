@@ -58,20 +58,6 @@ class TiffExtractor(ParallelManager):
         workers = self.get_nworkers()
         self.run_commands_concurrently(extract_tiff_from_czi, file_keys, workers)
 
-        self.update_database()
-
-    def update_database(self):
-        """Updating the file log table in the database about the completion of the 
-        QC preparation steps
-        """
-        
-        self.sqlController.set_task(
-            self.animal, self.progress_lookup.QC_IS_DONE_ON_SLIDES_IN_WEB_ADMIN
-        )
-        self.sqlController.set_task(
-            self.animal,
-            self.progress_lookup.CZI_FILES_ARE_CONVERTED_INTO_NUMBERED_TIFS_FOR_CHANNEL_1,
-        )
 
     def create_web_friendly_image(self):
         """Create downsampled version of full size tiff images that can be 
