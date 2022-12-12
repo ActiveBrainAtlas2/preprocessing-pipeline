@@ -85,7 +85,7 @@ Neuroglancer
    directories contains files that describe a different resolution in
    Neuroglancer. The following directory structure describes the
    available resolutions with the first directory being the original
-   resolution of the images in nanometers.
+   resolution of the images in nanometers. x=325, y=325, z=20000
 
 ================== ===== ===============
 Directory          Size  Number of files
