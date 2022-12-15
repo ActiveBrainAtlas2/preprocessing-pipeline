@@ -15,6 +15,41 @@ PIPELINE_ROOT = Path('./src/pipeline').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 from image_manipulation.filelocation_manager import FileLocationManager
+from utilities.utilities_mask import equalized 
+
+def scaled(img, epsilon=0.01):
+    """This scales the image to the limit specified. You can get this value
+    by looking at the combined histogram of the image stack. It is quite
+    often less than 30000 for channel 1.
+    One of the reasons this takes so much RAM is a large float64 array is being
+    multiplied by another large array. That is WHERE all the RAM is going!!!!!
+    The scale is hardcoded to 45000 which was a good value from Yoav
+
+    :param img: image we are working on.
+    :param mask: binary mask file
+    :param epsilon:
+    :param limit: max value we wish to scale to
+    :return: scaled image in 16bit format
+    """
+
+    scale = 45000
+    _max = np.quantile(img, 1 - epsilon) # gets almost the max value of img
+    if img.dtype == np.uint8:
+        _range = 2 ** 8 - 1 # 8bit
+        data_type = np.uint8        
+    else:
+        _range = 2 ** 16 - 1 # 16bit
+        data_type = np.uint16
+
+    if _max > 0:
+        scaled = (img * (scale // _max)).astype(data_type) # scale the image from original values to e.g., 30000/10000
+    else:
+        scaled = img
+    del img
+    scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
+    return scaled
+
+
 
 class VolumeRegistration:
     """This class takes a downsampled image stack and registers it to the Allen volume    
@@ -29,6 +64,7 @@ class VolumeRegistration:
         self.parameter_file_affine = os.path.join(self.fileLocationManager.registration_info, 'Order1_Par0000affine.txt')
         self.parameter_file_bspline = os.path.join(self.fileLocationManager.registration_info, 'Order2_Par0000bspline.txt')
         self.sagittal_allen_path = os.path.join(self.fileLocationManager.registration_info, 'sagittal_atlas_20um_iso.tif')
+        self.allen_stack_path = os.path.join(self.fileLocationManager.prep, 'CH1', 'allen_sagittal.tif')
  
 
     def get_file_information(self):
@@ -57,6 +93,23 @@ class VolumeRegistration:
         io.imsave(self.aligned_volume, image_stack.astype(np.uint16))
         print(image_stack.shape)
 
+    def create_allen_stack(self):
+        allen = io.imread(self.sagittal_allen_path)
+        image_stack = np.zeros(allen.shape)
+        print(allen.shape)
+        
+        file_list = []
+        for i in tqdm(range(allen.shape[0])):
+            farr = allen[i,:,:]
+            farr = scaled(farr)
+            farr = np.rot90(farr, 1, axes=(1,0))
+            farr = np.flip(farr, axis=1)
+            file_list.append(farr)
+
+        image_stack = np.stack(file_list, axis = 0)
+        io.imsave(self.allen_stack_path, image_stack.astype(np.uint16))
+        print(image_stack.shape)
+
     def register_volume(self):
         """This is the command that gets run for DK41:
         elastix -f /net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/sagittal_atlas_20um_iso.tif 
@@ -67,18 +120,22 @@ class VolumeRegistration:
         """
 
         os.makedirs(self.registration_path, exist_ok=True)
-        cmd = ["elastix", "-f", self.sagittal_allen_path, "-m", self.aligned_volume, "-out", 
+        cmd = ["elastix", "-f", self.allen_stack_path, "-m", self.aligned_volume, "-out", 
             self.registration_path, "-p", self.parameter_file_affine, "-p", self.parameter_file_bspline]
         cmd = ' '.join(cmd)
         proc_elastix = Popen(cmd, shell=True, stdout = PIPE, stderr = PIPE)
         stdout, stderr = proc_elastix.communicate()
         print(f'Output {stdout}')
-        print(f'Error', {stderr})
+        if stderr:
+            print(f'Error', {stderr})
 
     def perform_registration(self):
+        
         if not os.path.exists(self.aligned_volume):
             self.create_volume()
-        if not os.path.exists( os.path.join(self.registration_path, 'TransformParameters.0.txt') ):
+        if not os.path.exists(self.sagittal_allen_path):
+            self.create_allen_stack()
+        if not os.path.exists( os.path.join(self.registration_path, 'TransformParameters.1.txt') ):
             self.register_volume()
         
 
