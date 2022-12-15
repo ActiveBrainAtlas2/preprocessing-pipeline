@@ -133,7 +133,7 @@ class VolumeRegistration:
         
         if not os.path.exists(self.aligned_volume):
             self.create_volume()
-        if not os.path.exists(self.sagittal_allen_path):
+        if not os.path.exists(self.allen_stack_path):
             self.create_allen_stack()
         if not os.path.exists( os.path.join(self.registration_path, 'TransformParameters.1.txt') ):
             self.register_volume()
