@@ -58,21 +58,14 @@ class VolumeRegistration:
         print(image_stack.shape)
 
     def register_volume(self):
-        """This basically just runs elastix as the following command
-        elastix -f $HOME/.brainglobe/sagittal_atlas_20um_iso.tif \
-        -m /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK37/preps/CH1/image_stack.tif \
-        -out /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK37/preps/CH1/registration \
-        -p $HOME/programming/preprocessing-pipeline/pipeline/registration/princeton/parameterfolder/Order2_Par0000bspline.txt \
- -      p $HOME/programming/preprocessing-pipeline/pipeline/registration/princeton/parameterfolder/Order1_Par0000affine.txt
-
+        """This is the command that gets run for DK41:
         elastix -f /net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/sagittal_atlas_20um_iso.tif 
         -m /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK41/preps/CH1/aligned_volume.tif 
         -out /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK41/preps/CH1/registered_volume.tif 
         -p /net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/Order1_Par0000affine.txt 
         -p /net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/Order2_Par0000bspline.txt
-
-
         """
+
         os.makedirs(self.registration_path, exist_ok=True)
         cmd = ["elastix", "-f", self.sagittal_allen_path, "-m", self.aligned_volume, "-out", 
             self.registration_path, "-p", self.parameter_file_affine, "-p", self.parameter_file_bspline]
@@ -85,7 +78,7 @@ class VolumeRegistration:
     def perform_registration(self):
         if not os.path.exists(self.aligned_volume):
             self.create_volume()
-        if not os.path.exists(self.registration_path):
+        if not os.path.exists( os.path.join(self.registration_path, 'TransformParameters.0.txt'):
             self.register_volume()
         
 
