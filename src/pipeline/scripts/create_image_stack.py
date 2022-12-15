@@ -78,7 +78,7 @@ class VolumeRegistration:
     def perform_registration(self):
         if not os.path.exists(self.aligned_volume):
             self.create_volume()
-        if not os.path.exists( os.path.join(self.registration_path, 'TransformParameters.0.txt'):
+        if not os.path.exists( os.path.join(self.registration_path, 'TransformParameters.0.txt') ):
             self.register_volume()
         
 
