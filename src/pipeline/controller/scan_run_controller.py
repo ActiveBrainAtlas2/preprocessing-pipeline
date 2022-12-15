@@ -13,16 +13,6 @@ class ScanRunController(Controller):
         """
         Controller.__init__(self, *args, **kwargs)
 
-    def scan_run_exists(self, animal):
-        """Check to see if there is a row for this animal in the
-        scan run table
-
-        :param animal: the animal (AKA primary key)
-        :return boolean: whether the scan run exists for this animal
-        """
-
-        return self.row_exists(dict(prep_id=animal), ScanRun)
-
     def get_scan_run(self, animal):
         """Check to see if there is a row for this animal in the
         scan run table

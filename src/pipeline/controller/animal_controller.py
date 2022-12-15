@@ -11,18 +11,6 @@ class AnimalController(Controller):
         """initiates the controller class
         """        
         Controller.__init__(self,*args,**kwargs)
-        
-    def get_animal_list(self):
-        """Gets a list of animal names
-
-        :returns: a list of animal names
-        """
-
-        results = self.session.query(Animal).all()
-        animals = []
-        for resulti in results:
-            animals.append(resulti.prep_id)
-        return animals
 
     def animal_exists(self, animal):
         """A method to test whether an animal exists
