@@ -43,16 +43,6 @@ class ElastixController(Controller):
             ElastixTransformation.metric != 0).first())
         return row_exists
     
-    def delete_elastix_row(self, animal, section):
-        """Deletes a given elastix row in the database
-
-        :param animal: (str) Animal ID
-        :param section: (str) Section Number
-        """
-
-        search_dictionary = {'prep_id':animal,'section':section}
-        self.delete_row(search_dictionary, ElastixTransformation)
-    
     def add_elastix_row(self, animal, section, rotation, xshift, yshift):
         """adding a row in the elastix table
 
@@ -67,14 +57,6 @@ class ElastixController(Controller):
             prep_id=animal, section=section, rotation=rotation, xshift=xshift, yshift=yshift,
             created=datetime.utcnow(), active=True)
         self.add_row(data)
-
-    def clear_elastix(self, animal):
-        """delete an elastix row
-
-        :param animal (str): Animal ID
-        """    
-        self.session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
-            .delete()
 
 
     def update_elastix_row(self, animal, section, updates):

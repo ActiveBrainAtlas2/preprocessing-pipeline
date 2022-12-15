@@ -26,6 +26,7 @@ class FileLocationManager(object):
 
         # These need to be set first
         self.root = os.path.join(data_path, "pipeline_data")
+        self.registration_info = os.path.join(data_path, "brains_info/registration")
         self.stack = os.path.join(self.root, stack)
         self.prep = os.path.join(self.root, stack, "preps")
         self.masks = os.path.join(self.prep, "masks")

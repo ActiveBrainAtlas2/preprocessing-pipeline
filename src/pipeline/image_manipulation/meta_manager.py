@@ -158,20 +158,6 @@ class MetaUtilities:
 
         return status, czi_files
 
-    def slide_meta_data_exists(self, czi_file_name):
-        """Checks if a specific CZI file has been logged in the database
-        
-        :param czi_file_name: str of a particular CZI file
-        :return boolean: does the file exist?
-        """
-        
-        return bool(
-            self.sqlController.session.query(Slide)
-            .filter(Slide.scan_run_id == self.scan_id)
-            .filter(Slide.file_name == czi_file_name)
-            .first()
-        )
-
     def check_czi_file_exists(self):
         """Check that the CZI files are placed in the correct location
         """
@@ -217,8 +203,15 @@ class MetaUtilities:
 
 
 def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
-    # function that gets submitted for parallel processing
+    """A helper method to define some methods for extracting metadata.
+    """
+
     def load_metadata(czi_org_path):
+        """This gets the metadata out of the CZI file.
+
+        :param czi_org_path: str defining the path of the CZI file
+        """
+        
         czi_file = os.path.basename(os.path.normpath(czi_org_path))
         czi = CZIManager(czi_org_path)
         czi.metadata = czi.extract_metadata_from_czi_file(czi_file, czi_org_path)

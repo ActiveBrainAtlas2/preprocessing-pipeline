@@ -9,15 +9,6 @@ class SlideCZIToTifController(Controller):
 
         Controller.__init__(self,*args,**kwargs)
 
-    def get_tif(self, ID):
-        """Get one tif object (row)
-        
-        :param id: integer primary key
-        :return: one tif
-        """
-
-        return self.session.query(SlideCziTif).get(ID)
-
     def update_tif(self, id, width, height):
         """Update a TIFF object (row)
         
