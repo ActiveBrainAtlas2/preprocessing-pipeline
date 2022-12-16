@@ -33,6 +33,5 @@ on the numpy arrays (the images). This involves:
    image_manipulation/parallel_manager.rst
    image_manipulation/precomputed_manager.rst
    image_manipulation/prep_manager.rst
-   image_manipulation/progress_manager.rst
    image_manipulation/tiff_extractor_manager.rst
    
