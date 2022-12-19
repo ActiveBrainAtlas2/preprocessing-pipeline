@@ -83,7 +83,7 @@ class ElastixManager:
                         updates = {'metric':metric}
                         self.sqlController.update_elastix_row(self.animal, moving_index, updates)
 
-    def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
+    def calculate_elastix_transformation_v2(self, INPUT, fixed_index, moving_index):
         """Calculates the rigid transformation from the Elastix output
         and adds it to the database.
 
@@ -101,6 +101,45 @@ class ElastixManager:
         self.sqlController.add_elastix_row(
             self.animal, moving_index, rotation, xshift, yshift
         )
+
+    def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
+        ELASTIX = self.fileLocationManager.elastix
+
+        parse_dir = '{}_to_{}'.format(moving_index, fixed_index)
+        output_subdir = os.path.join(ELASTIX, parse_dir)
+        filepath = os.path.join(output_subdir, 'TransformParameters.0.txt')
+
+        if os.path.exists(filepath):
+            d = self.parameter_elastix_parameter_file_to_dict(filepath)
+            rotation, xshift, yshift = d['TransformParameters']
+            self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
+        else:
+            print(f'{filepath} does not exist')
+
+    @staticmethod
+    def parameter_elastix_parameter_file_to_dict(filename):
+        d = {}
+        with open(filename, 'r') as f:
+            for line in f.readlines():
+                if line.startswith('('):
+                    tokens = line[1:-2].split(' ')
+                    key = tokens[0]
+                    if len(tokens) > 2:
+                        value = []
+                        for v in tokens[1:]:
+                            try:
+                                value.append(float(v))
+                            except ValueError:
+                                value.append(v)
+                    else:
+                        v = tokens[1]
+                        try:
+                            value = (float(v))
+                        except ValueError:
+                            value = v
+                    d[key] = value
+
+            return d
 
 
     def rigid_transform_to_parmeters(self, transform):

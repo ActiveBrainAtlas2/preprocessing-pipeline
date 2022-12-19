@@ -44,27 +44,26 @@ def parameter_elastix_parameter_file_to_dict(filename):
 
         return d
 
-def parse_elastix_parameter_file(filepath, tf_type=None):
+def parse_elastix_parameter_file(filepath):
     """
     Parse elastix parameter result file.
     """
     
     d = parameter_elastix_parameter_file_to_dict(filepath)
     
-    if tf_type is None:
-        # For alignment composition script
-        rot_rad, x_mm, y_mm = d['TransformParameters']
-        center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
-        # center[1] = d['Size'][1] - center[1]
+    # For alignment composition script
+    rot_rad, x_mm, y_mm = d['TransformParameters']
+    center = np.array(d['CenterOfRotationPoint']) / np.array(d['Spacing'])
+    # center[1] = d['Size'][1] - center[1]
 
-        xshift = x_mm / d['Spacing'][0]
-        yshift = y_mm / d['Spacing'][1]
+    xshift = x_mm / d['Spacing'][0]
+    yshift = y_mm / d['Spacing'][1]
 
-        R = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
-                      [np.sin(rot_rad), np.cos(rot_rad)]])
-        shift = center + (xshift, yshift) - np.dot(R, center)
-        T = np.vstack([np.column_stack([R, shift]), [0,0,1]])
-        return T
+    R = np.array([[np.cos(rot_rad), -np.sin(rot_rad)],
+                    [np.sin(rot_rad), np.cos(rot_rad)]])
+    shift = center + (xshift, yshift) - np.dot(R, center)
+    T = np.vstack([np.column_stack([R, shift]), [0,0,1]])
+    return T
 
 
 def slurp(animal):
@@ -87,10 +86,14 @@ def slurp(animal):
         filepath = os.path.join(output_subdir, 'TransformParameters.0.txt')
 
         if os.path.exists(filepath):
-            d = parameter_elastix_parameter_file_to_dict(filepath)
-            rotation, xshift, yshift = d['TransformParameters']
+            if moving_index == '100':
+                d = parameter_elastix_parameter_file_to_dict(filepath)
+                rotation, xshift, yshift = d['TransformParameters']
+                T = parse_elastix_parameter_file(filepath)
+                print(moving_index, T)
+                return
             #print(f'{filepath} rotation={rotation} xshift={xshift}, yshift={yshift}')
-            sqlController.add_elastix_row(animal, moving_index, rotation, xshift, yshift)
+            #sqlController.add_elastix_row(animal, moving_index, rotation, xshift, yshift)
         else:
             print(f'{filepath} does not exist')
 
