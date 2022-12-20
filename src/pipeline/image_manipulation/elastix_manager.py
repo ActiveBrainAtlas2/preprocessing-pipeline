@@ -83,7 +83,7 @@ class ElastixManager:
                         updates = {'metric':metric}
                         self.sqlController.update_elastix_row(self.animal, moving_index, updates)
 
-    def calculate_elastix_transformation_v2(self, INPUT, fixed_index, moving_index):
+    def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
         """Calculates the rigid transformation from the Elastix output
         and adds it to the database.
 
@@ -102,7 +102,7 @@ class ElastixManager:
             self.animal, moving_index, rotation, xshift, yshift
         )
 
-    def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
+    def calculate_elastix_transformation_v1(self, INPUT, fixed_index, moving_index):
         ELASTIX = self.fileLocationManager.elastix
 
         parse_dir = '{}_to_{}'.format(moving_index, fixed_index)

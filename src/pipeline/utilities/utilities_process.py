@@ -10,8 +10,7 @@ import gc
 from skimage.transform import rescale
 import math
 
-##### temporarily resetting to 32 for redoing DK52
-SCALING_FACTOR = 32.0
+SCALING_FACTOR = 16.0
 DOWNSCALING_FACTOR = 1 / SCALING_FACTOR
 Image.MAX_IMAGE_PIXELS = None
 
