@@ -117,10 +117,15 @@ def run_pipeline(animal, channel, downsample, data_path, tg, debug):
 
     if step == 4:
         print(f"Step {step}: align images within stack")
-        pipeline.run_program_and_time(pipeline.create_within_stack_transformations, pipeline.TASK_CREATING_ELASTIX_TRANSFORM)
-        transformations = pipeline.get_transformations()
-        pipeline.align_downsampled_images(transformations)
-        pipeline.align_full_size_image(transformations)
+
+        for i in [0, 1]:
+            pipeline.iteration = i
+            pipeline.run_program_and_time(pipeline.create_within_stack_transformations, pipeline.TASK_CREATING_ELASTIX_TRANSFORM)
+            transformations = pipeline.get_transformations()
+            pipeline.align_downsampled_images(transformations)
+            pipeline.align_full_size_image(transformations)
+
+        pipeline.iteration = 1
         pipeline.run_program_and_time(pipeline.create_web_friendly_sections, pipeline.TASK_CREATING_SECTION_PNG)
         pipeline.run_program_and_time(pipeline.call_alignment_metrics, pipeline.TASK_CREATING_ELASTIX_METRICS)
     

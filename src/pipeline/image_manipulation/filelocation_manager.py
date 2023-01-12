@@ -63,8 +63,14 @@ class FileLocationManager(object):
     def get_full_cleaned(self, channel=1):
         return os.path.join(self.prep, f"CH{channel}", "full_cleaned")
 
+    def get_full_aligned_iteration_0(self, channel=1):
+        return os.path.join(self.prep, f"CH{channel}", "full_aligned_iteration_0")
+
     def get_full_aligned(self, channel=1):
         return os.path.join(self.prep, f"CH{channel}", "full_aligned")
+
+    def get_thumbnail_aligned_iteration_0(self, channel=1):
+        return os.path.join(self.prep, f"CH{channel}", "thumbnail_aligned_iteration_0")
 
     def get_thumbnail_aligned(self, channel=1):
         return os.path.join(self.prep, f"CH{channel}", "thumbnail_aligned")
