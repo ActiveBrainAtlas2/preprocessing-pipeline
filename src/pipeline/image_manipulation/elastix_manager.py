@@ -16,6 +16,7 @@ from pathlib import Path
 
 from database_model.elastix_transformation import ElastixTransformation
 from image_manipulation.filelocation_manager import FileLocationManager
+from image_manipulation.file_logger import FileLogger
 from utilities.utilities_process import get_image_size
 from utilities.utilities_registration import (
     align_image_to_affine,
@@ -27,21 +28,33 @@ from utilities.utilities_registration import (
 )
 
 
-class ElastixManager:
+class ElastixManager(FileLogger):
     """Class for generating, storing and applying transformations within 
     stack alignment [with the Elastix package]
     All methods relate to aligning images in stack
     """
+
+    def __init__(self, iteration=0):
+        self.iteration = iteration
+        LOGFILE_PATH = self.fileLocationManager.stack
+        super().__init__(LOGFILE_PATH)
+
+
+
 
     def create_within_stack_transformations(self):
         """Calculate and store the rigid transformation using elastix.  
         The transformations are calculated from the next image to the previous
         This is done in a simple loop with no workers. Usually takes
         up to an hour to run for a stack. It only needs to be run once for
-        each brain.
+        each brain. We are now using 2 iterations to get better alignment.
+        The 2nd pass uses the results of the 1st pass to align
         """
         if self.channel == 1 and self.downsample:
             INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_cleaned")
+            if self.iteration == 1:
+                INPUT = self.fileLocationManager.get_thumbnail_aligned_iteration_0(self.channel)
+
             files = sorted(os.listdir(INPUT))
             nfiles = len(files)
             self.logevent(f"INPUT FOLDER: {INPUT}")
@@ -50,8 +63,9 @@ class ElastixManager:
             for i in range(1, nfiles):
                 fixed_index = os.path.splitext(files[i - 1])[0]
                 moving_index = os.path.splitext(files[i])[0]
-                if not self.sqlController.check_elastix_row(self.animal, moving_index):
+                if not self.sqlController.check_elastix_row(self.animal, moving_index, self.iteration):
                     self.calculate_elastix_transformation(INPUT, fixed_index, moving_index)
+
                     
 
     def call_alignment_metrics(self):
@@ -59,12 +73,10 @@ class ElastixManager:
         elastix needs to be called as a separate program.
         """
 
-        if self.channel == 1 and self.downsample:
-            INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_cleaned")
+        if self.channel == 1 and self.downsample and self.iteration == 1:
+            INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_aligned")
             files = sorted(os.listdir(INPUT))
             nfiles = len(files)
-            self.logevent(f"INPUT FOLDER: {INPUT}")
-            self.logevent(f"FILE COUNT: {nfiles}")
 
             PIPELINE_ROOT = Path('./src/pipeline/scripts').absolute().as_posix()
             program = os.path.join(PIPELINE_ROOT, 'create_alignment_metrics.py')
@@ -75,7 +87,7 @@ class ElastixManager:
                 fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
                 moving_file = os.path.join(INPUT, f"{moving_index}.tif")
 
-                if not self.sqlController.check_elastix_metric_row(self.animal, moving_index): 
+                if not self.sqlController.check_elastix_metric_row(self.animal, moving_index, self.iteration): 
                     p = Popen(['python', program, self.animal, fixed_file, moving_file], stdin=PIPE, stdout=PIPE, stderr=PIPE)
                     output, error = p.communicate(b"input data that is passed to subprocess' stdin")
                     if len(output) > 0:
@@ -99,22 +111,7 @@ class ElastixManager:
         T = T1 @ T2
         xshift, yshift, rotation, center = rigid_transform_to_parmeters(T, center)
         self.sqlController.add_elastix_row(
-            self.animal, moving_index, rotation, xshift, yshift
-        )
-
-    def calculate_elastix_transformation_v1(self, INPUT, fixed_index, moving_index):
-        ELASTIX = self.fileLocationManager.elastix
-
-        parse_dir = '{}_to_{}'.format(moving_index, fixed_index)
-        output_subdir = os.path.join(ELASTIX, parse_dir)
-        filepath = os.path.join(output_subdir, 'TransformParameters.0.txt')
-
-        if os.path.exists(filepath):
-            d = self.parameter_elastix_parameter_file_to_dict(filepath)
-            rotation, xshift, yshift = d['TransformParameters']
-            self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift)
-        else:
-            print(f'{filepath} does not exist')
+            self.animal, moving_index, rotation, xshift, yshift, self.iteration)
 
     @staticmethod
     def parameter_elastix_parameter_file_to_dict(filename):
@@ -169,7 +166,7 @@ class ElastixManager:
         return parameters_to_rigid_transform(rotation, xshift, yshift, center)
 
 
-    def load_elastix_transformation(self, animal, moving_index):
+    def load_elastix_transformation(self, animal, moving_index, iteration=0):
         """loading the elastix transformation from the database
 
         :param animal: (str) Animal ID
@@ -182,6 +179,7 @@ class ElastixManager:
             elastixTransformation = (
                 self.sqlController.session.query(ElastixTransformation)
                 .filter(ElastixTransformation.prep_id == animal)
+                .filter(ElastixTransformation.iteration == iteration)
                 .filter(ElastixTransformation.section == moving_index)
                 .one()
             )
@@ -225,7 +223,7 @@ class ElastixManager:
         center = self.get_rotation_center()
 
         for i in range(1, len(sections)):
-            rotation, xshift, yshift = self.load_elastix_transformation(self.animal, i)
+            rotation, xshift, yshift = self.load_elastix_transformation(self.animal, i, self.iteration)
             T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
             transformation_to_previous_sec[i] = T
 
@@ -261,7 +259,11 @@ class ElastixManager:
         if not self.downsample:
             transforms = create_downsampled_transforms(transforms, downsample=False)
             INPUT = self.fileLocationManager.get_full_cleaned(self.channel)
-            OUTPUT = self.fileLocationManager.get_full_aligned(self.channel)
+            OUTPUT = self.fileLocationManager.get_full_aligned_iteration_0(self.channel)
+            if self.iteration == 1:
+                INPUT = self.fileLocationManager.get_full_aligned_iteration_0(self.channel)
+                OUTPUT = self.fileLocationManager.get_full_aligned(self.channel)
+
             self.logevent(f"INPUT FOLDER: {INPUT}")
             starting_files = os.listdir(INPUT)
             self.logevent(f"FILE COUNT: {len(starting_files)}")
@@ -281,7 +283,11 @@ class ElastixManager:
 
         if self.downsample:
             INPUT = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
-            OUTPUT = self.fileLocationManager.get_thumbnail_aligned(self.channel)
+            OUTPUT = self.fileLocationManager.get_thumbnail_aligned_iteration_0(self.channel)
+            if self.iteration == 1:
+                INPUT = self.fileLocationManager.get_thumbnail_aligned_iteration_0(self.channel)
+                OUTPUT = self.fileLocationManager.get_thumbnail_aligned(self.channel)
+
             self.align_images(INPUT, OUTPUT, transforms)
             progress_id = self.sqlController.get_progress_id(
                 downsample=True, channel=self.channel, action="ALIGN"

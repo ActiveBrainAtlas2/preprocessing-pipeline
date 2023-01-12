@@ -16,6 +16,7 @@ class ElastixTransformation(Base, AtlasModel):
     xshift = Column(Float, nullable=False)
     yshift = Column(Float, nullable=False)
     metric = Column(Float, nullable=False, default=0)
+    iteration = Column(Integer, nullable=False, default=0)
 
 
 
