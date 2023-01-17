@@ -16,11 +16,9 @@ class PrepCreater:
         """This is where the scan run table gets updated so the width and 
         height are correct.
         """
-        if self.channel == 1:
+        if self.channel == 1 and self.downsample:
             self.sqlController.update_scanrun(self.sqlController.scan_run.id)
-        progress_id = self.sqlController.get_progress_id(True, self.channel, "TIF")
-        self.sqlController.set_task(self.animal, progress_id)
-        progress_id = self.sqlController.get_progress_id(False, self.channel, "TIF")
+        progress_id = self.sqlController.get_progress_id(self.downsample, self.channel, "TIF")
         self.sqlController.set_task(self.animal, progress_id)
 
     def apply_QC(self):
