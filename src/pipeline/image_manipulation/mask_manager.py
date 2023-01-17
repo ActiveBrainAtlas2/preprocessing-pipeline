@@ -109,15 +109,8 @@ class MaskManager:
         batch_size = 4
         torch.multiprocessing.set_sharing_strategy('file_system')
 
-        if torch.cuda.is_available(): 
-            # takes 1490 seconds (about 25 minutes on ratto)
-            device = torch.device('cuda') 
-            print(f'\tUsing Nvidia graphics card GPU with {workers} workers at a batch size of {batch_size}')
-        else:
-            import warnings
-            warnings.filterwarnings("ignore")
-            device = torch.device('cpu')
-            print(f'\tUsing CPU with {workers} workers at a batch size of {batch_size}')
+        device = torch.device('cpu')
+        print(f'\tUsing CPU with {workers} workers at a batch size of {batch_size}')
 
         if os.path.exists(modelpath):
             self.loaded_model.load_state_dict(torch.load(modelpath, map_location = device))
