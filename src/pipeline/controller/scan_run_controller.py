@@ -39,6 +39,7 @@ class ScanRunController(Controller):
         SAFEMAX = 10000
         LITTLE_BIT_MORE = 500
         # just to be safe, we don't want to update numbers that aren't realistic
+        print(f'Found max file size with width={width} height: {height}')
         if height > SAFEMAX and width > SAFEMAX:
             height = round(height, -3)
             width = round(width, -3)

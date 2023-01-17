@@ -48,10 +48,7 @@ class CZIManager(FileLogger):
             dimensions = (czi_aics.dims.X, czi_aics.dims.Y)
             channels = czi_aics.dims.C
 
-            print("CZI FILE:", czi_file)
-            print("CURRENT SCENE:", czi_aics.current_scene)
-            print("DIMENSIONS (x,y):", dimensions)
-            print("CHANNELS:", channels)
+            print(f"CZI file: {czi_file}, scene: {czi_aics.current_scene}, dimensions: {dimensions}, channels: {channels}")
 
             scenes[idx] = {
                 "scene_name": czi_aics.current_scene,
