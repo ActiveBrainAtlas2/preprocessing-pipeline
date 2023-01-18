@@ -196,7 +196,7 @@ def write_image(file_path, data, message: str = "Error") -> None:
 def read_image(file_path: str):
     """Reads an image from the filesystem with exceptions
     """
-
+    img = None
     try:
         img = io.imread(file_path)
     except (OSError, ValueError) as e:
