@@ -74,7 +74,9 @@ class ElastixManager(FileLogger):
         """
 
         if self.channel == 1 and self.downsample:
-            INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_aligned")
+            INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_aligned_iteration_0")
+            if self.iteration == 1:
+                INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_aligned")
             files = sorted(os.listdir(INPUT))
             nfiles = len(files)
 
