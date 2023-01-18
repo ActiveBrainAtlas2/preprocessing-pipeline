@@ -73,7 +73,7 @@ class ElastixManager(FileLogger):
         elastix needs to be called as a separate program.
         """
 
-        if self.channel == 1 and self.downsample and self.iteration == 1:
+        if self.channel == 1 and self.downsample:
             INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_aligned")
             files = sorted(os.listdir(INPUT))
             nfiles = len(files)
@@ -92,7 +92,7 @@ class ElastixManager(FileLogger):
                     output, error = p.communicate(b"input data that is passed to subprocess' stdin")
                     if len(output) > 0:
                         metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
-                        updates = {'metric':metric}
+                        updates = {'metric':metric, 'iteration': self.iteration}
                         self.sqlController.update_elastix_row(self.animal, moving_index, updates)
 
     def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):

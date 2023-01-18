@@ -201,9 +201,9 @@ def read_image(file_path: str):
         img = io.imread(file_path)
     except (OSError, ValueError) as e:
         errno, strerror = e.args
-        print(f'Could not open {file_path} {errno} {strerror}')
+        print(f'\tCould not open {file_path} {errno} {strerror}')
     except:
-        print(f"Exiting, cannot read {file_path}, unexpected error: {sys.exc_info()[0]}")
+        print(f"\tExiting, cannot read {file_path}, unexpected error: {sys.exc_info()[0]}")
 
     if img is None:
         sys.exit()
