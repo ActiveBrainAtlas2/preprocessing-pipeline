@@ -92,8 +92,8 @@ class ElastixManager(FileLogger):
                     output, error = p.communicate(b"input data that is passed to subprocess' stdin")
                     if len(output) > 0:
                         metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
-                        updates = {'metric':metric, 'iteration': self.iteration}
-                        self.sqlController.update_elastix_row(self.animal, moving_index, updates)
+                        updates = {'metric':metric}
+                        self.sqlController.update_elastix_row(self.animal, moving_index, self.iteration, updates)
 
     def calculate_elastix_transformation(self, INPUT, fixed_index, moving_index):
         """Calculates the rigid transformation from the Elastix output
