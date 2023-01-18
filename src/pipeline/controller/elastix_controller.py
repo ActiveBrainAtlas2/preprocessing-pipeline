@@ -64,7 +64,7 @@ class ElastixController(Controller):
         self.add_row(data)
 
 
-    def update_elastix_row(self, animal, section, updates):
+    def update_elastix_row(self, animal, section, iteration, updates):
         """Update a row
         
         :param animal: (str) Animal ID
@@ -73,6 +73,6 @@ class ElastixController(Controller):
         """
         self.session.query(ElastixTransformation)\
             .filter(ElastixTransformation.prep_id == animal)\
-            .filter(ElastixTransformation.iteration == 1)\
+            .filter(ElastixTransformation.iteration == iteration)\
             .filter(ElastixTransformation.section == section).update(updates)
         self.session.commit()
