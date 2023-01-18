@@ -204,6 +204,7 @@ def read_image(file_path: str):
         print(f'Could not open {file_path} {errno} {strerror}')
     except:
         print(f"Exiting, cannot read {file_path}, unexpected error: {sys.exc_info()[0]}")
-        sys.exit()
 
+    if img is None:
+        sys.exit()
     return img
