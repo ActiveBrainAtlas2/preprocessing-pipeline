@@ -53,13 +53,13 @@ class ElastixManager(FileLogger):
         if self.channel == 1 and self.downsample:
             INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_cleaned")
             if self.iteration == 1:
-                INPUT = self.fileLocationManager.get_thumbnail_aligned_iteration_0(self.channel)
+                INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_aligned_iteration_0")
 
             files = sorted(os.listdir(INPUT))
             nfiles = len(files)
             self.logevent(f"INPUT FOLDER: {INPUT}")
             self.logevent(f"FILE COUNT: {nfiles}")
-
+            print(f'\nCreating transformations from {INPUT}', end=" ")
             for i in range(1, nfiles):
                 fixed_index = os.path.splitext(files[i - 1])[0]
                 moving_index = os.path.splitext(files[i])[0]
@@ -168,7 +168,7 @@ class ElastixManager(FileLogger):
         return parameters_to_rigid_transform(rotation, xshift, yshift, center)
 
 
-    def load_elastix_transformation(self, animal, moving_index, iteration=0):
+    def load_elastix_transformation(self, animal, moving_index, iteration):
         """loading the elastix transformation from the database
 
         :param animal: (str) Animal ID
@@ -289,6 +289,9 @@ class ElastixManager(FileLogger):
             if self.iteration == 1:
                 INPUT = self.fileLocationManager.get_thumbnail_aligned_iteration_0(self.channel)
                 OUTPUT = self.fileLocationManager.get_thumbnail_aligned(self.channel)
+
+            print(f'Aligning images from {os.path.basename(os.path.normpath(INPUT))} to {os.path.basename(os.path.normpath(OUTPUT))}')
+
 
             self.align_images(INPUT, OUTPUT, transforms)
             progress_id = self.sqlController.get_progress_id(
