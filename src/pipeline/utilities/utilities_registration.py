@@ -269,29 +269,18 @@ def register_simple(INPUT, animal, fixed_index, moving_index):
     :param moving_index: index of the moving image path
     :return: two elastix transforms
     """
-    fileLocationManager = FileLocationManager(animal)
-    OUTPUT = fileLocationManager.elastix
-    os.makedirs(OUTPUT, exist_ok=True)
     pixelType = sitk.sitkFloat32
     fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
     moving_file = os.path.join(INPUT, f"{moving_index}.tif")
     fixed = sitk.ReadImage(fixed_file, pixelType)
     moving = sitk.ReadImage(moving_file, pixelType)
     initial_transform = sitk.Euler2DTransform()
-    initial_transform = parse_sitk_rigid_transform(initial_transform)
+    #initial_transform = parse_sitk_rigid_transform(initial_transform)
+    initial_transform = rotation, xshift, yshift, center
+    rotation, xshift, yshift = sitk.GetParameters()
+    center = sitk.GetFixedParameters()
     elastix_transform = align_elastix(fixed, moving)
     return (elastix_transform, initial_transform)
-
-def parse_sitk_rigid_transform(sitk_rigid_transform):
-    """Parses the transform to get the parameters out.
-    
-    :param sitk_rigid_transform: The transform created by sitk.Euler2DTransform()
-    :return: floats of rotation, xshift, yshift, center 
-    """
-
-    rotation, xshift, yshift = sitk_rigid_transform.GetParameters()
-    center = sitk_rigid_transform.GetFixedParameters()
-    return rotation, xshift, yshift, center
 
 
 def create_downsampled_transforms(transforms: dict, downsample: bool) -> dict:

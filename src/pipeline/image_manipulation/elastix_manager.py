@@ -13,12 +13,14 @@ Image.MAX_IMAGE_PIXELS = None
 from timeit import default_timer as timer
 from subprocess import Popen, PIPE
 from pathlib import Path
+import SimpleITK as sitk
 
 from database_model.elastix_transformation import ElastixTransformation
 from image_manipulation.filelocation_manager import FileLocationManager
 from image_manipulation.file_logger import FileLogger
 from utilities.utilities_process import get_image_size
 from utilities.utilities_registration import (
+    align_elastix,
     align_image_to_affine,
     create_downsampled_transforms,
     parameters_to_rigid_transform,
@@ -77,6 +79,10 @@ class ElastixManager(FileLogger):
             INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_aligned_iteration_0")
             if self.iteration == 1:
                 INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_aligned")
+            
+            ELASTIX_OUTPUT = self.fileLocationManager.elastix
+            os.makedirs(ELASTIX_OUTPUT, exist_ok=True)
+
             files = sorted(os.listdir(INPUT))
             nfiles = len(files)
 
@@ -105,15 +111,30 @@ class ElastixManager(FileLogger):
         :param fixed_index: index of fixed image
         :param moving_index: index of moving image
         """
-        center = self.get_rotation_center()
-        second_transform_parameters, initial_transform_parameters = register_simple(
-            INPUT, self.animal, fixed_index, moving_index)
-        T1 = parameters_to_rigid_transform(*initial_transform_parameters)
-        T2 = parameters_to_rigid_transform(*second_transform_parameters, center)
-        T = T1 @ T2
-        xshift, yshift, rotation, center = rigid_transform_to_parmeters(T, center)
-        self.sqlController.add_elastix_row(
-            self.animal, moving_index, rotation, xshift, yshift, self.iteration)
+        center0 = self.get_rotation_center()
+
+        # start register simple
+        pixelType = sitk.sitkFloat32
+        fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
+        moving_file = os.path.join(INPUT, f"{moving_index}.tif")
+        fixed = sitk.ReadImage(fixed_file, pixelType)
+        moving = sitk.ReadImage(moving_file, pixelType)
+        #####initial_transform = sitk.Euler2DTransform()
+
+        #####initial_transform_parameters = initial_transform.GetParameters()
+        #####center1 = initial_transform.GetFixedParameters()
+        #####print(f'itp {initial_transform_parameters} center0 {center0}, center1 {center1}')
+
+        #second_transform_parameters = align_elastix(fixed, moving)
+        rotation, xshift, yshift = align_elastix(fixed, moving)
+        
+
+        #T1 = parameters_to_rigid_transform(*initial_transform_parameters, center0)
+        #T2 = parameters_to_rigid_transform(*second_transform_parameters, center1)
+        #T = T1 @ T2
+        #xshift, yshift, rotation, center = rigid_transform_to_parmeters(T, center0)
+        #xshift, yshift, rotation, center = rigid_transform_to_parmeters(T, center0)
+        self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)
 
     @staticmethod
     def parameter_elastix_parameter_file_to_dict(filename):

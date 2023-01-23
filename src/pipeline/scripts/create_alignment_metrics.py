@@ -28,7 +28,7 @@ def align_elastix(animal, fixed_file, moving_file, moving_index):
     rigid_params = create_rigid_parameters(elastixImageFilter)
     # We reset this value below to a lower number as just want a metric
     # we can compare to other sections
-    rigid_params["MaximumNumberOfIterations"] = ["200"]
+    rigid_params["MaximumNumberOfIterations"] = ["20"]
 
     elastixImageFilter.SetParameterMap(rigid_params)
     # logging
