@@ -168,15 +168,18 @@ def process_image(file_key):
         return
     
     try:
+        img = resize(img, orientation, anti_aliasing=False)
         img = img * 255
-        img = resize(img.astype(np.uint8), orientation, anti_aliasing=True)
         img = img.astype(np.uint8)
-        img[img==1] = 255
-
     except:
         print(f'could not resize {basefile} with shape={img.shape} to new shape={orientation}')
         return
-    
+
+    if DEBUG:
+        values, counts = np.unique(img, return_counts=True)
+        print(f'index={index} shape={img.shape} dtype={img.dtype} values={values} counts={counts}')
+
+
     try:
         img = img.reshape(1, img.shape[0], img.shape[1]).T
     except:
