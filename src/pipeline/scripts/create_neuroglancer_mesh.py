@@ -21,7 +21,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from image_manipulation.filelocation_manager import FileLocationManager
 
 from controller.sql_controller import SqlController
-from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer, calculate_chunks
+from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
 from utilities.utilities_process import get_cpus, get_hostname
 DEBUG = True
 
@@ -90,7 +90,7 @@ def create_mesh(animal, limit, scaling_factor):
         try:
             ng.precomputed_vol[:, :, index] = img
         except:
-            print(f'Index={index}, could not set {f} to precomputed with shape {img.shape} and dtype {img.dtype}')
+            print(f'Index={index}, could not set {infile} to precomputed with shape {img.shape} and dtype {img.dtype}')
         index += 1
         
     
