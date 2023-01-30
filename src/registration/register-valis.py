@@ -1,14 +1,13 @@
 import os
 import argparse
 from valis import registration, feature_detectors, non_rigid_registrars, affine_optimizer
-
-animal = 'DK37'
+# OME-NGFF file format
 
 def run_valis(animal):
 
     ROOT = '/net/birdstore/Active_Atlas_Data/data_root/pipeline_data'
 
-    slide_src_dir = os.path.join(ROOT, animal, 'preps/CH1/thumbnail_aligned')
+    slide_src_dir = os.path.join(ROOT, animal, 'preps/CH1/thumbnail')
     results_dst_dir = os.path.join(ROOT, animal, 'preps/CH1/registration_results')
     registered_slide_dst_dir = os.path.join(ROOT, animal, 'preps/CH1/registered')
 
@@ -33,7 +32,8 @@ def run_valis(animal):
     registrar.max_processed_image_dim_px=2000
 
     rigid_registrar, non_rigid_registrar, error_df = registrar.register()
-
+    
+    registrar.warp_and_save_slides(registered_slide_dst_dir, crop="overlap")
     registration.kill_jvm() # Kill the JVM
 
 if __name__ == "__main__":
