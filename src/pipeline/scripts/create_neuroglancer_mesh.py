@@ -94,7 +94,7 @@ def create_mesh(animal, limit, scaling_factor):
         index += 1
         
     
-    sys.exit()
+    # sys.exit()
     #ng.precomputed_vol.cache.flush()
 
     ##### rechunk
@@ -176,7 +176,7 @@ def process_image(file_key):
 
     if DEBUG:
         values, counts = np.unique(img, return_counts=True)
-        print(f'index={index} shape={img.shape} dtype={img.dtype} values={values} counts={counts}')
+        print(f'index={index} file={basefile} shape={img.shape} dtype={img.dtype} values={values} counts={counts}')
 
 
     try:
