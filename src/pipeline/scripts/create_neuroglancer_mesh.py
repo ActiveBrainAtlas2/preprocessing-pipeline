@@ -83,19 +83,18 @@ def create_mesh(animal, limit, scaling_factor):
 
     # index, infile, orientation, progress_dir = file_key
     index = 0
-    for i,f in enumerate(files):
-        if i % scaling_factor == 0:
-            infile = os.path.join(INPUT, f)            
-            file_keys.append([index, infile])
-            img = process_image([index, infile, (volume_size[1], volume_size[0])])
-            try:
-                ng.precomputed_vol[:, :, index] = img
-            except:
-                print(f'Index={index}, could not set {f} to precomputed with shape {img.shape} and dtype {img.dtype}')
-            index += 1
+    for i in range(0, len(files), scaling_factor):
+        infile = os.path.join(INPUT, files[i])            
+        file_keys.append([index, infile])
+        img = process_image([index, infile, (volume_size[1], volume_size[0])])
+        try:
+            ng.precomputed_vol[:, :, index] = img
+        except:
+            print(f'Index={index}, could not set {f} to precomputed with shape {img.shape} and dtype {img.dtype}')
+        index += 1
         
     
-    # sys.exit()
+    sys.exit()
     #ng.precomputed_vol.cache.flush()
 
     ##### rechunk
