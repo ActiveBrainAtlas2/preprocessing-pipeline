@@ -177,19 +177,11 @@ def process_image(file_key):
         print(f'could not resize {basefile} with shape={img.shape} to new shape={orientation}')
         return
     
-
-    if DEBUG:
-        values, counts = np.unique(img, return_counts=True)
-        print(f'img index={index}, shape={img.shape} dtype={img.dtype} values={values} counts={counts}', end="\t")
-    
     try:
         img = img.reshape(1, img.shape[0], img.shape[1]).T
     except:
         print(f'could not reshape {infile}')
         return
-    
-    if DEBUG:
-        print(f'after reshaping img shape={img.shape} dtype={img.dtype}')
 
     return img
 
