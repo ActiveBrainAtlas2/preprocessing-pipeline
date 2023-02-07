@@ -6,7 +6,7 @@ import argparse
 
 
 
-def run_main(animal):
+def run_main(animal, debug):
 
     czi_file_path = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{animal}/czi'
     czi_files = sorted(os.listdir(czi_file_path))
