@@ -152,7 +152,8 @@ class MaskManager:
         self.run_commands_concurrently(self.resize_tif, file_keys, workers)
 
     def create_downsampled_mask(self):
-        """Create masks for the downsampled images using a machine learning algorithm
+        """Create masks for the downsampled images using a machine learning algorithm.
+        The input files are the files that have been normalized.
         """
         
         self.load_machine_learning_model()
