@@ -21,7 +21,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from image_manipulation.filelocation_manager import FileLocationManager
 
 from controller.sql_controller import SqlController
-from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
+from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer, calculate_factors
 from utilities.utilities_process import get_cpus, get_hostname
 DEBUG = True
 
@@ -33,7 +33,7 @@ def create_mesh(animal, limit, scaling_factor):
     z = sqlController.scan_run.zresolution * 1000
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
     OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
-    OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_scaled')
+    OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_{scaling_factor}')
 
     xy *=  scaling_factor
     z *= scaling_factor
@@ -110,6 +110,25 @@ def create_mesh(animal, limit, scaling_factor):
     tq.insert(tasks)
     tq.execute()
 
+    ##### multiple mips
+    mips = [0]
+
+    for mip in mips:
+        cv = CloudVolume(cloudpath2, mip)
+        factors = calculate_factors(True, mip)
+        tasks = tc.create_downsampling_tasks(
+            cv.layer_cloudpath,
+            mip=mip,
+            num_mips=1,
+            factor=factors,
+            preserve_chunk_size=False,
+            compress=True,
+            chunk_size=chunks,
+        )
+        tq.insert(tasks)
+        tq.execute()
+
+
     ##### add segment properties
     cv2 = CloudVolume(cloudpath2, 0)
     cv2.info['segment_properties'] = 'names'
@@ -133,18 +152,32 @@ def create_mesh(animal, limit, scaling_factor):
         json.dump(info, file, indent=2)
 
     ##### first mesh task, create meshing tasks
+    magnitude = 4
     workers, _ = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
-    mesh_dir = 'mesh_mip_0_err_40'
-    cv2.info['mesh'] = mesh_dir
-    cv2.commit_info()
-    tasks = tc.create_meshing_tasks(cv2.layer_cloudpath, mip=0, mesh_dir=mesh_dir, max_simplification_error=40)
-    tq.insert(tasks)
-    tq.execute()
+
+    for mip in mips:
+        tasks = tc.create_meshing_tasks(cv2.layer_cloudpath, mip=mip)
+        tq.insert(tasks)
+        tq.execute()
+
+    #tc.create_unsharded_multires_mesh_tasks(cv2.layer_cloudpath, magnitude = magnitude, num_lod=2)
+    #tq.insert(tasks)   
+    #tq.execute()
+
     ##### 2nd mesh task, create manifest
-    tasks = tc.create_mesh_manifest_tasks(cv2.layer_cloudpath, mesh_dir=mesh_dir)
+    tasks = tc.create_mesh_manifest_tasks(cv2.layer_cloudpath)
     tq.insert(tasks)
     tq.execute()
+
+ 
+    ##### skeleton
+    tasks = tc.create_skeletonizing_tasks(cv2.layer_cloudpath, mip=0)
+    tq.insert(tasks)
+    tasks = tc.create_unsharded_skeleton_merge_tasks(cv2.layer_cloudpath)
+    tq.insert(tasks)
+    tq.execute()
+
     
     print("Done!")
 

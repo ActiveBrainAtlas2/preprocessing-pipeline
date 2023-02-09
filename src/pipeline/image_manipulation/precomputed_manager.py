@@ -133,6 +133,7 @@ class NgPrecomputedMaker:
         )
         tq.insert(tasks)
         tq.execute()
+        
         for mip in mips:
             cv = CloudVolume(outpath, mip)
             chunks = calculate_chunks(self.downsample, mip)
