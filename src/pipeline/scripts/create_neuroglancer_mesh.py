@@ -24,9 +24,11 @@ from controller.sql_controller import SqlController
 from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer, calculate_factors
 from utilities.utilities_process import get_cpus, get_hostname
 DEBUG = True
+DTYPE = np.uint8
 
 def create_mesh(animal, limit, scaling_factor):
-    chunks = (128, 128, 1)
+    chunk = 128
+    chunks = (chunk, chunk, 1)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
     xy = sqlController.scan_run.resolution * 1000
@@ -60,7 +62,7 @@ def create_mesh(animal, limit, scaling_factor):
     midfile = midfile.astype(np.uint8)
     midfile[midfile > 0] = 255
 
-    data_type = np.uint8
+    data_type = DTYPE
     if limit > 0:
         _start = midpoint - limit
         _end = midpoint + limit
@@ -90,7 +92,8 @@ def create_mesh(animal, limit, scaling_factor):
         try:
             ng.precomputed_vol[:, :, index] = img
         except:
-            print(f'Index={index}, could not set {infile} to precomputed with shape {img.shape} and dtype {img.dtype}')
+            print(f'Fatal error: Index={index}, could not set {infile} to precomputed with shape {img.shape} and dtype {img.dtype}')
+            sys.exit()
         index += 1
         
     
@@ -103,7 +106,7 @@ def create_mesh(animal, limit, scaling_factor):
     _, workers = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
     cloudpath2 = f'file://{OUTPUT2_DIR}'
-    chunks = (128, 128, 64)
+    chunks = (chunk, chunk, 64)
     tasks = tc.create_transfer_tasks(cloudpath1, dest_layer_path=cloudpath2, 
         chunk_size=chunks, mip=0, skip_downsamples=True)
 
@@ -111,7 +114,7 @@ def create_mesh(animal, limit, scaling_factor):
     tq.execute()
 
     ##### multiple mips
-    mips = [0]
+    mips = [0, 1]
 
     for mip in mips:
         cv = CloudVolume(cloudpath2, mip)
@@ -121,7 +124,6 @@ def create_mesh(animal, limit, scaling_factor):
             mip=mip,
             num_mips=1,
             factor=factors,
-            preserve_chunk_size=False,
             compress=True,
             chunk_size=chunks,
         )
@@ -152,19 +154,21 @@ def create_mesh(animal, limit, scaling_factor):
         json.dump(info, file, indent=2)
 
     ##### first mesh task, create meshing tasks
-    magnitude = 4
     workers, _ = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
 
     for mip in mips:
-        tasks = tc.create_meshing_tasks(cv2.layer_cloudpath, mip=mip)
+        tasks = tc.create_meshing_tasks(cv2.layer_cloudpath, mip=mip, sharded=False)
         tq.insert(tasks)
         tq.execute()
 
-    #tc.create_unsharded_multires_mesh_tasks(cv2.layer_cloudpath, magnitude = magnitude, num_lod=2)
-    #tq.insert(tasks)   
-    #tq.execute()
+    print('Create shared multires mesh tasks')
+    #tasks = tc.create_sharded_multires_mesh_tasks(cv2.layer_cloudpath, num_lod=1)
+    tasks = tc.create_unsharded_multires_mesh_tasks(cv2.layer_cloudpath, num_lod=2)
+    tq.insert(tasks)    
+    tq.execute()
 
+    print('Create mesh manifest tasks')
     ##### 2nd mesh task, create manifest
     tasks = tc.create_mesh_manifest_tasks(cv2.layer_cloudpath)
     tq.insert(tasks)
@@ -172,11 +176,13 @@ def create_mesh(animal, limit, scaling_factor):
 
  
     ##### skeleton
+    """For some reason, this is hanging and not completing when the scaling factor is small
     tasks = tc.create_skeletonizing_tasks(cv2.layer_cloudpath, mip=0)
     tq.insert(tasks)
     tasks = tc.create_unsharded_skeleton_merge_tasks(cv2.layer_cloudpath)
     tq.insert(tasks)
     tq.execute()
+    """
 
     
     print("Done!")
@@ -202,7 +208,7 @@ def process_image(file_key):
     try:
         img = resize(img, orientation, anti_aliasing=False)
         img = img * 255
-        img = img.astype(np.uint8)
+        img = img.astype(DTYPE)
     except:
         print(f'could not resize {basefile} with shape={img.shape} to new shape={orientation}')
         return
