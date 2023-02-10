@@ -46,6 +46,7 @@ def create_mesh(animal, limit, scaling_factor):
         print('Cleaning output dirs:')
         print(OUTPUT1_DIR)
         print(OUTPUT2_DIR)
+        print(PROGRESS_DIR)
         if os.path.exists(OUTPUT1_DIR):
             shutil.rmtree(OUTPUT1_DIR)
         if os.path.exists(OUTPUT2_DIR):
@@ -103,38 +104,20 @@ def create_mesh(animal, limit, scaling_factor):
         """
         index += 1
 
-    workers, cpus = get_cpus()
+    _, workers = get_cpus()
     print(f'Working on {len(file_keys)} files with {workers} cpus')
     with ProcessPoolExecutor(max_workers=workers) as executor:
         executor.map(ng.process_image_mesh, sorted(file_keys), chunksize=1)
         executor.shutdown(wait=True)
 
     
-    # sys.exit()
-    #ng.precomputed_vol.cache.flush()
-
-    ##### rechunk
-    """
-    cloudpath1 = f"file://{OUTPUT1_DIR}"
-    # cv1 = CloudVolume(cloudpath1, 0)
-    _, workers = get_cpus()
-    cloudpath2 = f'file://{OUTPUT2_DIR}'
     chunks = (chunk, chunk, 64)
-    tasks = tc.create_transfer_tasks(cloudpath1, dest_layer_path=cloudpath2, 
-        chunk_size=chunks, mip=0, skip_downsamples=True)
-
-    tq.insert(tasks)
-    tq.execute()
-    """
-    chunks = (chunk, chunk, 64)
-
     # This calls the igneous create_transfer_tasks
     ng.add_rechunking(OUTPUT2_DIR, chunks=chunks, mip=0, skip_downsamples=True)
 
     ##### multiple mips
     mips = [0, 1]
 
-    workers, _ = get_cpus()
     tq = LocalTaskQueue(parallel=workers)
     cloudpath2 = f'file://{OUTPUT2_DIR}'
     for mip in mips:
