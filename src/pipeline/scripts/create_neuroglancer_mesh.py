@@ -2,6 +2,7 @@
 Creates a 3D Mesh
 """
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import os
 import sys
 import json
@@ -13,7 +14,6 @@ import shutil
 import numpy as np
 from tqdm import tqdm
 from pathlib import Path
-from skimage.transform import resize
 
 PIPELINE_ROOT = Path('./src/pipeline').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -36,7 +36,8 @@ def create_mesh(animal, limit, scaling_factor):
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
     OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
     OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_{scaling_factor}')
-
+    PROGRESS_DIR = fileLocationManager.get_neuroglancer_progress(False, 1)
+    
     xy *=  scaling_factor
     z *= scaling_factor
 
@@ -49,11 +50,14 @@ def create_mesh(animal, limit, scaling_factor):
             shutil.rmtree(OUTPUT1_DIR)
         if os.path.exists(OUTPUT2_DIR):
             shutil.rmtree(OUTPUT2_DIR)
+        if os.path.exists(PROGRESS_DIR):
+            shutil.rmtree(PROGRESS_DIR)
 
     files = sorted(os.listdir(INPUT))
 
     os.makedirs(OUTPUT1_DIR, exist_ok=True)
     os.makedirs(OUTPUT2_DIR, exist_ok=True)
+    os.makedirs(PROGRESS_DIR, exist_ok=True)
 
     len_files = len(files)
     midpoint = len_files // 2
@@ -87,24 +91,33 @@ def create_mesh(animal, limit, scaling_factor):
     index = 0
     for i in range(0, len(files), scaling_factor):
         infile = os.path.join(INPUT, files[i])            
-        file_keys.append([index, infile])
+        file_keys.append([index, infile, (volume_size[1], volume_size[0]), PROGRESS_DIR])
+        
+        """
         img = process_image([index, infile, (volume_size[1], volume_size[0])])
         try:
             ng.precomputed_vol[:, :, index] = img
         except:
             print(f'Fatal error: Index={index}, could not set {infile} to precomputed with shape {img.shape} and dtype {img.dtype}')
             sys.exit()
+        """
         index += 1
-        
+
+    workers, cpus = get_cpus()
+    print(f'Working on {len(file_keys)} files with {workers} cpus')
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        executor.map(ng.process_image_mesh, sorted(file_keys), chunksize=1)
+        executor.shutdown(wait=True)
+
     
     # sys.exit()
     #ng.precomputed_vol.cache.flush()
 
     ##### rechunk
+    """
     cloudpath1 = f"file://{OUTPUT1_DIR}"
     # cv1 = CloudVolume(cloudpath1, 0)
     _, workers = get_cpus()
-    tq = LocalTaskQueue(parallel=workers)
     cloudpath2 = f'file://{OUTPUT2_DIR}'
     chunks = (chunk, chunk, 64)
     tasks = tc.create_transfer_tasks(cloudpath1, dest_layer_path=cloudpath2, 
@@ -112,23 +125,25 @@ def create_mesh(animal, limit, scaling_factor):
 
     tq.insert(tasks)
     tq.execute()
+    """
+    chunks = (chunk, chunk, 64)
+
+    # This calls the igneous create_transfer_tasks
+    ng.add_rechunking(OUTPUT2_DIR, chunks=chunks, mip=0, skip_downsamples=True)
 
     ##### multiple mips
     mips = [0, 1]
 
+    workers, _ = get_cpus()
+    tq = LocalTaskQueue(parallel=workers)
+    cloudpath2 = f'file://{OUTPUT2_DIR}'
     for mip in mips:
         cv = CloudVolume(cloudpath2, mip)
         factors = calculate_factors(True, mip)
-        tasks = tc.create_downsampling_tasks(
-            cv.layer_cloudpath,
-            mip=mip,
-            num_mips=1,
-            factor=factors,
-            compress=True,
-            chunk_size=chunks,
-        )
+        tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors, compress=True,  chunk_size=chunks)
         tq.insert(tasks)
         tq.execute()
+
 
 
     ##### add segment properties
@@ -154,26 +169,8 @@ def create_mesh(animal, limit, scaling_factor):
         json.dump(info, file, indent=2)
 
     ##### first mesh task, create meshing tasks
-    workers, _ = get_cpus()
-    tq = LocalTaskQueue(parallel=workers)
 
-    for mip in mips:
-        tasks = tc.create_meshing_tasks(cv2.layer_cloudpath, mip=mip, sharded=False)
-        tq.insert(tasks)
-        tq.execute()
-
-    print('Create shared multires mesh tasks')
-    #tasks = tc.create_sharded_multires_mesh_tasks(cv2.layer_cloudpath, num_lod=1)
-    tasks = tc.create_unsharded_multires_mesh_tasks(cv2.layer_cloudpath, num_lod=2)
-    tq.insert(tasks)    
-    tq.execute()
-
-    print('Create mesh manifest tasks')
-    ##### 2nd mesh task, create manifest
-    tasks = tc.create_mesh_manifest_tasks(cv2.layer_cloudpath)
-    tq.insert(tasks)
-    tq.execute()
-
+    ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=0)
  
     ##### skeleton
     """For some reason, this is hanging and not completing when the scaling factor is small
@@ -186,45 +183,6 @@ def create_mesh(animal, limit, scaling_factor):
 
     
     print("Done!")
-
-
-
-
-def process_image(file_key):
-    """This reads the image and starts the precomputed data
-
-    :param file_key: file_key: tuple
-    """
-
-    index, infile, orientation = file_key
-    basefile = os.path.basename(infile)
-
-    try:
-        img = io.imread(infile, img_num=0)
-    except IOError as ioe:
-        print(f'could not open {infile} {ioe}')
-        return
-    
-    try:
-        img = resize(img, orientation, anti_aliasing=False)
-        img = img * 255
-        img = img.astype(DTYPE)
-    except:
-        print(f'could not resize {basefile} with shape={img.shape} to new shape={orientation}')
-        return
-
-    if DEBUG:
-        values, counts = np.unique(img, return_counts=True)
-        print(f'index={index} file={basefile} shape={img.shape} dtype={img.dtype} values={values} counts={counts}')
-
-
-    try:
-        img = img.reshape(1, img.shape[0], img.shape[1]).T
-    except:
-        print(f'could not reshape {infile}')
-        return
-
-    return img
 
 
 if __name__ == '__main__':
