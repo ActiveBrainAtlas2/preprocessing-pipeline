@@ -13,6 +13,7 @@ import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 from cloudvolume.lib import touch
 from collections import defaultdict
+from skimage.transform import resize
 
 from utilities.utilities_process import get_cpus
 
@@ -203,7 +204,8 @@ class NumpyToNeuroglancer():
             json.dump(info, file, indent=2)
 
 
-    def add_rechunking(self, outpath: str, downsample, chunks=None) -> None:
+
+    def add_rechunking(self, outpath: str, chunks=[64, 64, 64], mip=0, skip_downsamples=True) -> None:
         """Augments 'precomputed' cloud volume with additional chunk calculations
         [so format has pointers to location of individual volumes?]
 
@@ -217,17 +219,16 @@ class NumpyToNeuroglancer():
         cpus, _ = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
         outpath = f'file://{outpath}'
-        if chunks is None:
-            chunks = calculate_chunks(downsample, 0)
         tasks = tc.create_transfer_tasks(self.precomputed_vol.layer_cloudpath, 
-            dest_layer_path=outpath, chunk_size=chunks, skip_downsamples=True)
+            dest_layer_path=outpath, chunk_size=chunks, mip=mip, skip_downsamples=skip_downsamples)
         tq.insert(tasks)
         tq.execute()
 
 
-    def add_downsampled_volumes(self, chunk_size = [128, 128, 64], num_mips = 4) -> None:
+    def add_downsampled_volumes(self, chunk_size = [128, 128, 64], mip=0) -> None:
         """Augments 'precomputed' cloud volume with additional resolutions using 
         chunk calculations
+        tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors, compress=True,  chunk_size=chunks)
 
         :param chunk_size: list size of chunks
         :param num_mips: number of levels in the pyramid
@@ -237,13 +238,13 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         _, cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, preserve_chunk_size=False,
-                                             num_mips=num_mips, chunk_size=chunk_size, compress=True)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, mip=mip,
+                                             num_mips=1, chunk_size=chunk_size, compress=True)
         tq.insert(tasks)
         tq.execute()
 
 
-    def add_segmentation_mesh(self, shape = [448, 448, 448], mip = 0) -> None:
+    def add_segmentation_mesh(self, layer_path, mip = 0) -> None:
         """Augments 'precomputed' cloud volume with segmentation mesh
 
         :param shape: list[int]
@@ -255,13 +256,19 @@ class NumpyToNeuroglancer():
 
         _, cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(self.precomputed_vol.layer_cloudpath,mip=mip,
+        tasks = tc.create_meshing_tasks(layer_path, mip=mip,
                                         max_simplification_error=40,
-                                        shape=shape, compress=True) # The first phase of creating mesh
+                                        compress=True, sharded=False) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
-        # It should be able to incorporate to above tasks, but it will give a weird bug. Don't know the reason
-        tasks = tc.create_mesh_manifest_tasks(self.precomputed_vol.layer_cloudpath) # The second phase of creating mesh
+
+        tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2)
+        #tasks = tc.create_sharded_multires_mesh_tasks(layer_path, num_lod=2)
+        tq.insert(tasks)    
+        tq.execute()
+
+
+        tasks = tc.create_mesh_manifest_tasks(layer_path) # The second phase of creating mesh
         tq.insert(tasks)
         tq.execute()
 
@@ -299,4 +306,48 @@ class NumpyToNeuroglancer():
         touch(progress_file)
         del img
         return
+    
+    def process_image_mesh(self, file_key):
+        """This reads the image and starts the precomputed data
+
+        :param file_key: file_key: tuple
+        """
+
+        index, infile, orientation, progress_dir = file_key
+        basefile = os.path.basename(infile)
+        progress_file = os.path.join(progress_dir, basefile)
+        if os.path.exists(progress_file):
+             print(f"Section {index} has already been processed, skipping.")
+             return
+
+        try:
+            img = io.imread(infile, img_num=0)
+        except IOError as ioe:
+            print(f'could not open {infile} {ioe}')
+            return
+        
+        try:
+            img = resize(img, orientation, anti_aliasing=False)
+            img = img * 255
+            img = img.astype(np.uint8)
+        except:
+            print(f'could not resize {basefile} with shape={img.shape} to new shape={orientation}')
+            return
+
+        try:
+            img = img.reshape(1, img.shape[0], img.shape[1]).T
+        except:
+            print(f'could not reshape {infile}')
+            return
+
+        try:
+            self.precomputed_vol[:, :, index] = img
+        except:
+            print(f'could not set {infile} to precomputed')
+            return
+
+        touch(progress_file)
+        del img
+        return
+
 
