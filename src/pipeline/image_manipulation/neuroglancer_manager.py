@@ -244,7 +244,7 @@ class NumpyToNeuroglancer():
         tq.execute()
 
 
-    def add_segmentation_mesh(self, layer_path, mip = 0) -> None:
+    def add_segmentation_mesh(self, layer_path, mip = 0, mse=40) -> None:
         """Augments 'precomputed' cloud volume with segmentation mesh
 
         :param shape: list[int]
@@ -258,7 +258,7 @@ class NumpyToNeuroglancer():
         print(f'Creating meshing tasks with {cpus} CPUs')
         tq = LocalTaskQueue(parallel=cpus)
         tasks = tc.create_meshing_tasks(layer_path, mip=mip,
-                                        max_simplification_error=60,
+                                        max_simplification_error=mse,
                                         compress=True, sharded=False) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
@@ -316,7 +316,7 @@ class NumpyToNeuroglancer():
         :param file_key: file_key: tuple
         """
 
-        index, infile, orientation, progress_dir = file_key
+        index, infile, orientation, progress_dir, scaling_factor = file_key
         basefile = os.path.basename(infile)
         progress_file = os.path.join(progress_dir, basefile)
         if os.path.exists(progress_file):
@@ -330,7 +330,8 @@ class NumpyToNeuroglancer():
             return
         
         try:
-            img = resize(img, orientation, anti_aliasing=False)
+            if scaling_factor > 1:
+                img = resize(img, orientation, anti_aliasing=False)
             img = img * 255
             img = img.astype(np.uint8)
         except:

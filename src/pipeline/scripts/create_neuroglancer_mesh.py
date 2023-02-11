@@ -24,8 +24,11 @@ from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer, calcula
 from utilities.utilities_process import get_cpus, get_hostname
 DTYPE = np.uint8
 
-def create_mesh(animal, limit, scaling_factor):
-    chunkXY = 256
+def create_mesh(animal, limit, scaling_factor, mse=40):
+    if scaling_factor > 5:
+        chunkXY = 64
+    else:
+        chunkXY = 256
     chunkZ = chunkXY // 2
     chunks = (chunkXY, chunkXY, 1)
     sqlController = SqlController(animal)
@@ -91,7 +94,7 @@ def create_mesh(animal, limit, scaling_factor):
     index = 0
     for i in range(0, len(files), scaling_factor):
         infile = os.path.join(INPUT, files[i])            
-        file_keys.append([index, infile, (volume_size[1], volume_size[0]), PROGRESS_DIR])
+        file_keys.append([index, infile, (volume_size[1], volume_size[0]), PROGRESS_DIR, scaling_factor])
         
         """
         img = process_image([index, infile, (volume_size[1], volume_size[0])])
@@ -152,7 +155,7 @@ def create_mesh(animal, limit, scaling_factor):
 
     ##### first mesh task, create meshing tasks
     for mip in mips:
-        ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=mip)
+        ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=mip, mse=mse)
  
     ##### skeleton
     """For some reason, this is hanging and not completing when the scaling factor is small
@@ -172,10 +175,12 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--limit', help='Enter the # of files to test', required=False, default=0)
     parser.add_argument('--scaling_factor', help='Enter an integer that will be the denominator', required=False, default=1)
+    parser.add_argument('--mse', help='Enter an integer for the max simplication error', required=False, default=40)
     args = parser.parse_args()
     animal = args.animal
     limit = int(args.limit)
     scaling_factor = int(args.scaling_factor)
+    mse = int(args.mse)
     
-    create_mesh(animal, limit, scaling_factor)
+    create_mesh(animal, limit, scaling_factor, mse)
 
