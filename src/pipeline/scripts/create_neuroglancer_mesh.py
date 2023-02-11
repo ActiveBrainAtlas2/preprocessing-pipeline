@@ -12,7 +12,6 @@ import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 import shutil
 import numpy as np
-from tqdm import tqdm
 from pathlib import Path
 
 PIPELINE_ROOT = Path('./src/pipeline').absolute()
@@ -23,20 +22,20 @@ from image_manipulation.filelocation_manager import FileLocationManager
 from controller.sql_controller import SqlController
 from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer, calculate_factors
 from utilities.utilities_process import get_cpus, get_hostname
-DEBUG = True
 DTYPE = np.uint8
 
 def create_mesh(animal, limit, scaling_factor):
-    chunk = 128
-    chunks = (chunk, chunk, 1)
+    chunkXY = 256
+    chunkZ = chunkXY // 2
+    chunks = (chunkXY, chunkXY, 1)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
     xy = sqlController.scan_run.resolution * 1000
     z = sqlController.scan_run.zresolution * 1000
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
-    OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'mesh_input')
+    OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_input_{scaling_factor}')
     OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_{scaling_factor}')
-    PROGRESS_DIR = fileLocationManager.get_neuroglancer_progress(False, 1)
+    PROGRESS_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'progress', f'mesh_{scaling_factor}')
     
     xy *=  scaling_factor
     z *= scaling_factor
@@ -78,7 +77,7 @@ def create_mesh(animal, limit, scaling_factor):
     volume_size = (width//scaling_factor, height//scaling_factor, len(files) // scaling_factor) # neuroglancer is width, height
     print('volume size', volume_size)
     print('scales', scales)
-    print('chunks', chunks)
+    print(f'Initial chunks at {chunks} and chunks for downsampling=({chunkXY},{chunkXY},{chunkZ})')
     print(f'ids {ids}')
     print('midfile data type', data_type)
     ng = NumpyToNeuroglancer(animal, None, scales, layer_type='segmentation', 
@@ -111,12 +110,12 @@ def create_mesh(animal, limit, scaling_factor):
         executor.shutdown(wait=True)
 
     
-    chunks = (chunk, chunk, 64)
+    chunks = (chunkXY, chunkXY, chunkZ)
     # This calls the igneous create_transfer_tasks
     ng.add_rechunking(OUTPUT2_DIR, chunks=chunks, mip=0, skip_downsamples=True)
 
     ##### multiple mips
-    mips = [0, 1]
+    mips = [0, 1, 2]
 
     tq = LocalTaskQueue(parallel=workers)
     cloudpath2 = f'file://{OUTPUT2_DIR}'
@@ -152,8 +151,8 @@ def create_mesh(animal, limit, scaling_factor):
         json.dump(info, file, indent=2)
 
     ##### first mesh task, create meshing tasks
-
-    ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=0)
+    for mip in mips:
+        ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=mip)
  
     ##### skeleton
     """For some reason, this is hanging and not completing when the scaling factor is small

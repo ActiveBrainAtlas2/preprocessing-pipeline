@@ -255,19 +255,22 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
         _, cpus = get_cpus()
+        print(f'Creating meshing tasks with {cpus} CPUs')
         tq = LocalTaskQueue(parallel=cpus)
         tasks = tc.create_meshing_tasks(layer_path, mip=mip,
-                                        max_simplification_error=40,
+                                        max_simplification_error=60,
                                         compress=True, sharded=False) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
 
-        tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2)
-        #tasks = tc.create_sharded_multires_mesh_tasks(layer_path, num_lod=2)
-        tq.insert(tasks)    
-        tq.execute()
+        """Taking out tmp"""
+        #####print(f'Creating unsharded multires mesh tasks with {cpus} CPUs')
+        #####tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2)
+        #####tq.insert(tasks)    
+        #####tq.execute()
 
 
+        print(f'Creating meshing manifest tasks with {cpus} CPUs')
         tasks = tc.create_mesh_manifest_tasks(layer_path) # The second phase of creating mesh
         tq.insert(tasks)
         tq.execute()
