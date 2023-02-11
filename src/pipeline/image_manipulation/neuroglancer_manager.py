@@ -173,30 +173,30 @@ class NumpyToNeuroglancer():
         self.precomputed_vol.commit_provenance()
 
 
-    def add_segment_properties(self, segment_properties) -> None:
+    def add_segment_properties(self, cloud_volume, segment_properties) -> None:
         """Augments 'precomputed' cloud volume with attribute tags 
         [resolution, chunk size]
 
-        :param segment_properties: IDs of labels
+        :param cloud_volume: Cloudvolume object
+        :param segment_properties: dictionary of labels, ids
         """
 
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
-        self.precomputed_vol.info['segment_properties'] = 'names'
-        self.precomputed_vol.commit_info()
+        cloud_volume.info['segment_properties'] = 'names'
+        cloud_volume.commit_info()
 
-        segment_properties_path = os.path.join(self.precomputed_vol.layer_cloudpath.replace('file://', ''), 'names')
+        segment_properties_path = os.path.join(cloud_volume.layerpath.replace('file://', ''), 'names')
         os.makedirs(segment_properties_path, exist_ok=True)
-
         info = {
             "@type": "neuroglancer_segment_properties",
             "inline": {
-                "ids": [str(number) for number, label in segment_properties],
+                "ids": [str(number) for number, _ in segment_properties.items()],
                 "properties": [{
                     "id": "label",
                     "type": "label",
-                    "values": [str(label) for number, label in segment_properties]
+                    "values": [str(label) for _, label in segment_properties.items()]
                 }]
             }
         }
@@ -216,7 +216,7 @@ class NumpyToNeuroglancer():
 
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
-        cpus, _ = get_cpus()
+        _, cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
         outpath = f'file://{outpath}'
         tasks = tc.create_transfer_tasks(self.precomputed_vol.layer_cloudpath, 
@@ -263,15 +263,13 @@ class NumpyToNeuroglancer():
         tq.insert(tasks)
         tq.execute()
 
-        """Taking out tmp"""
-        #####print(f'Creating unsharded multires mesh tasks with {cpus} CPUs')
-        #####tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2)
-        #####tq.insert(tasks)    
-        #####tq.execute()
-
+        print(f'Creating unsharded multires mesh tasks with {cpus} CPUs')
+        tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=5)
+        tq.insert(tasks)    
+        tq.execute()
 
         print(f'Creating meshing manifest tasks with {cpus} CPUs')
-        tasks = tc.create_mesh_manifest_tasks(layer_path) # The second phase of creating mesh
+        tasks = tc.create_mesh_manifest_tasks(layer_path, magnitude=3) # The second phase of creating mesh
         tq.insert(tasks)
         tq.execute()
 
