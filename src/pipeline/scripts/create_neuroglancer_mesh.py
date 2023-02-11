@@ -49,13 +49,15 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
         print(OUTPUT1_DIR)
         print(OUTPUT2_DIR)
         print(PROGRESS_DIR)
+        """
         if os.path.exists(OUTPUT1_DIR):
             shutil.rmtree(OUTPUT1_DIR)
         if os.path.exists(OUTPUT2_DIR):
             shutil.rmtree(OUTPUT2_DIR)
         if os.path.exists(PROGRESS_DIR):
             shutil.rmtree(PROGRESS_DIR)
-
+        """
+        
     files = sorted(os.listdir(INPUT))
 
     os.makedirs(OUTPUT1_DIR, exist_ok=True)
@@ -97,23 +99,14 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
     with ProcessPoolExecutor(max_workers=cpus) as executor:
         executor.map(ng.process_image_mesh, sorted(file_keys), chunksize=1)
         executor.shutdown(wait=True)
-
     
     chunks = (chunkXY, chunkXY, chunkZ)
     # This calls the igneous create_transfer_tasks
     ng.add_rechunking(OUTPUT2_DIR, chunks=chunks, mip=0, skip_downsamples=True)
 
-    ##### multiple mips
-    mips = [0, 1, 2]
-
     tq = LocalTaskQueue(parallel=cpus)
     cloudpath2 = f'file://{OUTPUT2_DIR}'
-    for mip in mips:
-        cv = CloudVolume(cloudpath2, mip)
-        factors = calculate_factors(True, mip)
-        tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors, compress=True,  chunk_size=chunks)
-        tq.insert(tasks)
-        tq.execute()
+    ng.add_downsampled_volumes(chunk_size = chunks, num_mips = 1)
 
     ##### add segment properties
     cv2 = CloudVolume(cloudpath2, 0)
