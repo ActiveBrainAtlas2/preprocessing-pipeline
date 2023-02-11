@@ -36,8 +36,8 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
     xy = sqlController.scan_run.resolution * 1000
     z = sqlController.scan_run.zresolution * 1000
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'full')
-    OUTPUT1_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_input_{scaling_factor}')
-    OUTPUT2_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_{scaling_factor}')
+    MESH_INPUT_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_input_{scaling_factor}')
+    MESH_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_{scaling_factor}')
     PROGRESS_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'progress', f'mesh_{scaling_factor}')
     
     xy *=  scaling_factor
@@ -45,23 +45,21 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
 
     scales = (int(xy), int(xy), int(z))
     if 'godzilla' in get_hostname():
-        print('Cleaning output dirs:')
-        print(OUTPUT1_DIR)
-        print(OUTPUT2_DIR)
-        print(PROGRESS_DIR)
-        """
-        if os.path.exists(OUTPUT1_DIR):
-            shutil.rmtree(OUTPUT1_DIR)
-        if os.path.exists(OUTPUT2_DIR):
-            shutil.rmtree(OUTPUT2_DIR)
-        if os.path.exists(PROGRESS_DIR):
-            shutil.rmtree(PROGRESS_DIR)
-        """
-        
+        print(f'Cleaning {MESH_DIR}')
+        #print(MESH_INPUT_DIR)
+        #print(PROGRESS_DIR)
+        #if os.path.exists(MESH_INPUT_DIR):
+        #    shutil.rmtree(MESH_INPUT_DIR)
+
+        if os.path.exists(MESH_DIR):
+            shutil.rmtree(MESH_DIR)
+        #if os.path.exists(PROGRESS_DIR):
+        #    shutil.rmtree(PROGRESS_DIR)
+
     files = sorted(os.listdir(INPUT))
 
-    os.makedirs(OUTPUT1_DIR, exist_ok=True)
-    os.makedirs(OUTPUT2_DIR, exist_ok=True)
+    os.makedirs(MESH_INPUT_DIR, exist_ok=True)
+    os.makedirs(MESH_DIR, exist_ok=True)
     os.makedirs(PROGRESS_DIR, exist_ok=True)
 
     len_files = len(files)
@@ -85,7 +83,7 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
     ng = NumpyToNeuroglancer(animal, None, scales, layer_type='segmentation', 
         data_type=data_type, chunk_size=chunks)
 
-    ng.init_precomputed(OUTPUT1_DIR, volume_size)
+    ng.init_precomputed(MESH_INPUT_DIR, volume_size)
 
     file_keys = []
     index = 0
@@ -102,10 +100,10 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
     
     chunks = (chunkXY, chunkXY, chunkZ)
     # This calls the igneous create_transfer_tasks
-    ng.add_rechunking(OUTPUT2_DIR, chunks=chunks, mip=0, skip_downsamples=True)
+    ng.add_rechunking(MESH_DIR, chunks=chunks, mip=0, skip_downsamples=True)
 
     tq = LocalTaskQueue(parallel=cpus)
-    cloudpath2 = f'file://{OUTPUT2_DIR}'
+    cloudpath2 = f'file://{MESH_DIR}'
     ng.add_downsampled_volumes(chunk_size = chunks, num_mips = 1)
 
     ##### add segment properties
