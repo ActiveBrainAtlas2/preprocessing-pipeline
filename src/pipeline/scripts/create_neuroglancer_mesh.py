@@ -24,7 +24,7 @@ from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer, calcula
 from utilities.utilities_process import get_cpus, get_hostname
 DTYPE = np.uint8
 
-def create_mesh(animal, limit, scaling_factor, mse, multires):
+def create_mesh(animal, limit, scaling_factor, mse, skeleton):
     if scaling_factor > 5:
         chunkXY = 64
     else:
@@ -78,37 +78,23 @@ def create_mesh(animal, limit, scaling_factor, mse, multires):
     
     height, width = midfile.shape
     volume_size = (width//scaling_factor, height//scaling_factor, len(files) // scaling_factor) # neuroglancer is width, height
-    print('volume size', volume_size)
-    print('scales', scales)
+    print(f'\nScaling factor={scaling_factor}, volume size={volume_size} with dtype={data_type}, ids={ids} scales={scales}')
     print(f'Initial chunks at {chunks} and chunks for downsampling=({chunkXY},{chunkXY},{chunkZ})')
-    print(f'ids {ids}')
-    print('midfile data type', data_type)
     ng = NumpyToNeuroglancer(animal, None, scales, layer_type='segmentation', 
         data_type=data_type, chunk_size=chunks)
 
     ng.init_precomputed(OUTPUT1_DIR, volume_size)
 
     file_keys = []
-
-    # index, infile, orientation, progress_dir = file_key
     index = 0
     for i in range(0, len(files), scaling_factor):
         infile = os.path.join(INPUT, files[i])            
-        file_keys.append([index, infile, (volume_size[1], volume_size[0]), PROGRESS_DIR, scaling_factor])
-        
-        """
-        img = process_image([index, infile, (volume_size[1], volume_size[0])])
-        try:
-            ng.precomputed_vol[:, :, index] = img
-        except:
-            print(f'Fatal error: Index={index}, could not set {infile} to precomputed with shape {img.shape} and dtype {img.dtype}')
-            sys.exit()
-        """
+        file_keys.append([index, infile, (volume_size[1], volume_size[0]), PROGRESS_DIR, scaling_factor])        
         index += 1
 
-    _, workers = get_cpus()
-    print(f'Working on {len(file_keys)} files with {workers} cpus')
-    with ProcessPoolExecutor(max_workers=workers) as executor:
+    _, cpus = get_cpus()
+    print(f'Working on {len(file_keys)} files with {cpus} cpus')
+    with ProcessPoolExecutor(max_workers=cpus) as executor:
         executor.map(ng.process_image_mesh, sorted(file_keys), chunksize=1)
         executor.shutdown(wait=True)
 
@@ -120,7 +106,7 @@ def create_mesh(animal, limit, scaling_factor, mse, multires):
     ##### multiple mips
     mips = [0, 1, 2]
 
-    tq = LocalTaskQueue(parallel=workers)
+    tq = LocalTaskQueue(parallel=cpus)
     cloudpath2 = f'file://{OUTPUT2_DIR}'
     for mip in mips:
         cv = CloudVolume(cloudpath2, mip)
@@ -129,58 +115,24 @@ def create_mesh(animal, limit, scaling_factor, mse, multires):
         tq.insert(tasks)
         tq.execute()
 
-
-
     ##### add segment properties
     cv2 = CloudVolume(cloudpath2, 0)
-    cv2.info['segment_properties'] = 'names'
-    cv2.commit_info()
-
-    segment_properties_path = os.path.join(cloudpath2.replace('file://', ''), 'names')
-    os.makedirs(segment_properties_path, exist_ok=True)
-
-    info = {
-        "@type": "neuroglancer_segment_properties",
-        "inline": {
-            "ids": [str(value) for value in ids.tolist()],
-            "properties": [{
-                "id": "label",
-                "type": "label",
-                "values": [str(value) for value in ids.tolist()]
-            }]
-        }
-    }
-    with open(os.path.join(segment_properties_path, 'info'), 'w') as file:
-        json.dump(info, file, indent=2)
+    segment_properties = {str(id): str(id) for id in ids}
+    ng.add_segment_properties(cv2, segment_properties)
 
     ##### first mesh task, create meshing tasks
-    if multires:
-        ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=0, mse=mse)
-        print(f'Creating unsharded multires mesh tasks with {workers} CPUs')
-        tasks = tc.create_unsharded_multires_mesh_tasks(cv2.layer_cloudpath, num_lod=2)
-        tq.insert(tasks)    
-        tq.execute()
+    ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=0, mse=mse)
 
-    else:
-        for mip in mips:
-            ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=mip, mse=mse)
-
-    #####print(f'Creating unsharded multires mesh tasks with {cpus} CPUs')
-    #####tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2)
-    #####tq.insert(tasks)    
-    #####tq.execute()
-
- 
     ##### skeleton
-    """For some reason, this is hanging and not completing when the scaling factor is small
-    tasks = tc.create_skeletonizing_tasks(cv2.layer_cloudpath, mip=0)
-    tq.insert(tasks)
-    tasks = tc.create_unsharded_skeleton_merge_tasks(cv2.layer_cloudpath)
-    tq.insert(tasks)
-    tq.execute()
-    """
-
+    if skeleton:
+        print('Creating skeletons')
+        tasks = tc.create_skeletonizing_tasks(cv2.layer_cloudpath, mip=0)
+        tq.insert(tasks)
+        tasks = tc.create_unsharded_skeleton_merge_tasks(cv2.layer_cloudpath)
+        tq.insert(tasks)
+        tq.execute()
     
+
     print("Done!")
 
 
@@ -190,13 +142,13 @@ if __name__ == '__main__':
     parser.add_argument('--limit', help='Enter the # of files to test', required=False, default=0)
     parser.add_argument('--scaling_factor', help='Enter an integer that will be the denominator', required=False, default=1)
     parser.add_argument('--mse', help='Enter an integer for the max simplication error', required=False, default=40)
-    parser.add_argument("--multires", help="Create a multiple resolution version", required=False, default=False)
+    parser.add_argument("--skeleton", help="Create skeletons", required=False, default=False)
     args = parser.parse_args()
     animal = args.animal
     limit = int(args.limit)
     scaling_factor = int(args.scaling_factor)
     mse = int(args.mse)
-    multires = bool({"true": True, "false": False}[str(args.multires).lower()])
+    skeleton = bool({"true": True, "false": False}[str(args.skeleton).lower()])
     
-    create_mesh(animal, limit, scaling_factor, mse, multires)
+    create_mesh(animal, limit, scaling_factor, mse, skeleton)
 
