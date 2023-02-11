@@ -24,7 +24,7 @@ from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer, calcula
 from utilities.utilities_process import get_cpus, get_hostname
 DTYPE = np.uint8
 
-def create_mesh(animal, limit, scaling_factor, mse=40):
+def create_mesh(animal, limit, scaling_factor, mse, multires):
     if scaling_factor > 5:
         chunkXY = 64
     else:
@@ -154,8 +154,22 @@ def create_mesh(animal, limit, scaling_factor, mse=40):
         json.dump(info, file, indent=2)
 
     ##### first mesh task, create meshing tasks
-    for mip in mips:
-        ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=mip, mse=mse)
+    if multires:
+        ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=0, mse=mse)
+        print(f'Creating unsharded multires mesh tasks with {workers} CPUs')
+        tasks = tc.create_unsharded_multires_mesh_tasks(cv2.layer_cloudpath, num_lod=2)
+        tq.insert(tasks)    
+        tq.execute()
+
+    else:
+        for mip in mips:
+            ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=mip, mse=mse)
+
+    #####print(f'Creating unsharded multires mesh tasks with {cpus} CPUs')
+    #####tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2)
+    #####tq.insert(tasks)    
+    #####tq.execute()
+
  
     ##### skeleton
     """For some reason, this is hanging and not completing when the scaling factor is small
@@ -176,11 +190,13 @@ if __name__ == '__main__':
     parser.add_argument('--limit', help='Enter the # of files to test', required=False, default=0)
     parser.add_argument('--scaling_factor', help='Enter an integer that will be the denominator', required=False, default=1)
     parser.add_argument('--mse', help='Enter an integer for the max simplication error', required=False, default=40)
+    parser.add_argument("--multires", help="Create a multiple resolution version", required=False, default=False)
     args = parser.parse_args()
     animal = args.animal
     limit = int(args.limit)
     scaling_factor = int(args.scaling_factor)
     mse = int(args.mse)
+    multires = bool({"true": True, "false": False}[str(args.multires).lower()])
     
-    create_mesh(animal, limit, scaling_factor, mse)
+    create_mesh(animal, limit, scaling_factor, mse, multires)
 
