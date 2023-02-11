@@ -225,7 +225,7 @@ class NumpyToNeuroglancer():
         tq.execute()
 
 
-    def add_downsampled_volumes(self, chunk_size = [128, 128, 64], mip=0) -> None:
+    def add_downsampled_volumes(self, chunk_size = [128, 128, 64], num_mips = 3) -> None:
         """Augments 'precomputed' cloud volume with additional resolutions using 
         chunk calculations
         tasks = tc.create_downsampling_tasks(cv.layer_cloudpath, mip=mip, num_mips=1, factor=factors, compress=True,  chunk_size=chunks)
@@ -236,10 +236,10 @@ class NumpyToNeuroglancer():
 
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
+        
         _, cpus = get_cpus()
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, mip=mip,
-                                             num_mips=1, chunk_size=chunk_size, compress=True)
+        tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, num_mips=num_mips, chunk_size=chunk_size, compress=True)
         tq.insert(tasks)
         tq.execute()
 
