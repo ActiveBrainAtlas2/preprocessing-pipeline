@@ -347,8 +347,12 @@ class NumpyToNeuroglancer():
             self.precomputed_vol[:, :, index] = img
         except:
             print(f'could not set {infile} to precomputed, adding blank img')
-            newimg = np.zeros(orientation, dtype=np.uint8)
-            self.precomputed_vol[:, :, index] = newimg
+            try:
+                newimg = np.zeros(orientation, dtype=np.uint8)
+                self.precomputed_vol[:, :, index] = newimg
+            except:
+                print(f'could not set blank black img to precomputed, exiting.')
+                sys.exit()
 
         touch(progress_file)
         del img
