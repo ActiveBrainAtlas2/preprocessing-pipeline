@@ -77,7 +77,7 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
     ids = np.unique(midfile)
     
     height, width = midfile.shape
-    volume_size = (width//scaling_factor, height//scaling_factor, len(files) // scaling_factor) # neuroglancer is width, height
+    volume_size = (width//scaling_factor, height//scaling_factor, len_files // scaling_factor) # neuroglancer is width, height
     print(f'\nScaling factor={scaling_factor}, volume size={volume_size} with dtype={data_type}, ids={ids} scales={scales}')
     print(f'Initial chunks at {chunks} and chunks for downsampling=({chunkXY},{chunkXY},{chunkZ})')
     ng = NumpyToNeuroglancer(animal, None, scales, layer_type='segmentation', 
@@ -87,10 +87,14 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
 
     file_keys = []
     index = 0
-    for i in range(0, len(files), scaling_factor):
+    for i in range(0, len_files, scaling_factor):
+        if index == len_files // scaling_factor:
+            print(f'breaking at index={index}')
+            break
         infile = os.path.join(INPUT, files[i])            
-        file_keys.append([index, infile, (volume_size[1], volume_size[0]), PROGRESS_DIR, scaling_factor])        
+        file_keys.append([index, infile, (volume_size[1], volume_size[0]), PROGRESS_DIR, scaling_factor])
         index += 1
+
 
     _, cpus = get_cpus()
     print(f'Working on {len(file_keys)} files with {cpus} cpus')
@@ -98,6 +102,7 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
         executor.map(ng.process_image_mesh, sorted(file_keys), chunksize=1)
         executor.shutdown(wait=True)
     
+    sys.exit()
     chunks = (chunkXY, chunkXY, chunkZ)
     # This calls the igneous create_transfer_tasks
     ng.add_rechunking(MESH_DIR, chunks=chunks, mip=0, skip_downsamples=True)

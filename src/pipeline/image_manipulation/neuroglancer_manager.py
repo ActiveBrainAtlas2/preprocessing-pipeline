@@ -319,7 +319,7 @@ class NumpyToNeuroglancer():
         basefile = os.path.basename(infile)
         progress_file = os.path.join(progress_dir, basefile)
         if os.path.exists(progress_file):
-             print(f"{basefile} has already been processed, skipping.")
+             #print(f"{basefile} has already been processed, skipping.")
              return
 
         try:
@@ -347,12 +347,7 @@ class NumpyToNeuroglancer():
             self.precomputed_vol[:, :, index] = img
         except:
             print(f'could not set {infile} to precomputed, adding blank img')
-            try:
-                newimg = np.zeros(orientation, dtype=np.uint8)
-                self.precomputed_vol[:, :, index] = newimg
-            except:
-                print(f'could not set blank black img to precomputed, exiting.')
-                sys.exit()
+            return
 
         touch(progress_file)
         del img
