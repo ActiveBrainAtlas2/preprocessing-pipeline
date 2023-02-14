@@ -102,7 +102,6 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
         executor.map(ng.process_image_mesh, sorted(file_keys), chunksize=1)
         executor.shutdown(wait=True)
     
-    sys.exit()
     chunks = (chunkXY, chunkXY, chunkZ)
     # This calls the igneous create_transfer_tasks
     ng.add_rechunking(MESH_DIR, chunks=chunks, mip=0, skip_downsamples=True)
