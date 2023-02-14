@@ -265,7 +265,7 @@ class NumpyToNeuroglancer():
         tq.execute()
 
         print(f'Creating unsharded multires mesh tasks with {cpus} CPUs')
-        tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2, magnitude=magnitude, min_chunk_size=[64, 64, 64])
+        tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2, magnitude=magnitude, min_chunk_size=[32, 32, 32])
         tq.insert(tasks)    
         tq.execute()
 
@@ -319,7 +319,7 @@ class NumpyToNeuroglancer():
         basefile = os.path.basename(infile)
         progress_file = os.path.join(progress_dir, basefile)
         if os.path.exists(progress_file):
-             print(f"Section {index} has already been processed, skipping.")
+             print(f"{basefile} has already been processed, skipping.")
              return
 
         try:
