@@ -3,6 +3,7 @@ It also has the main class to convert numpy arrays (images) into the precomputed
 """
 
 import os
+import sys
 from skimage import io
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
@@ -345,8 +346,9 @@ class NumpyToNeuroglancer():
         try:
             self.precomputed_vol[:, :, index] = img
         except:
-            print(f'could not set {infile} to precomputed')
-            return
+            print(f'could not set {infile} to precomputed, adding blank img')
+            newimg = np.zeros(orientation, dtype=np.uint8)
+            self.precomputed_vol[:, :, index] = newimg
 
         touch(progress_file)
         del img
