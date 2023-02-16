@@ -238,21 +238,20 @@ class ElastixManager(FileLogger):
         :return: a dictionary of key=filename, value = coordinates
         """
 
-        sections = self.sqlController.get_sections(self.animal, self.channel)
-
-        midpoint = len(sections) // 2
-
+        INPUT = self.fileLocationManager.get_thumbnail_cleaned(1)
+        files = sorted(os.listdir(INPUT))
+        midpoint = len(files) // 2
         transformation_to_previous_sec = {}
         center = self.get_rotation_center()
 
-        for i in range(1, len(sections)):
+        for i in range(1, len(files)):
             rotation, xshift, yshift = self.load_elastix_transformation(self.animal, i, self.iteration)
             T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
             transformation_to_previous_sec[i] = T
 
         transformations = {}
 
-        for moving_index in range(len(sections)):
+        for moving_index in range(len(files)):
             filename = str(moving_index).zfill(3) + ".tif"
             if moving_index == midpoint:
                 transformations[filename] = np.eye(3)
@@ -311,7 +310,7 @@ class ElastixManager(FileLogger):
                 INPUT = self.fileLocationManager.get_thumbnail_aligned_iteration_0(self.channel)
                 OUTPUT = self.fileLocationManager.get_thumbnail_aligned(self.channel)
 
-            print(f'Aligning images from {os.path.basename(os.path.normpath(INPUT))} to {os.path.basename(os.path.normpath(OUTPUT))}')
+            print(f'Aligning {len(os.listdir(INPUT))} images from {os.path.basename(os.path.normpath(INPUT))} to {os.path.basename(os.path.normpath(OUTPUT))}')
 
 
             self.align_images(INPUT, OUTPUT, transforms)
@@ -362,7 +361,7 @@ class ElastixManager(FileLogger):
         self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
         end_time = timer()
         total_elapsed_time = round((end_time - start_time),2)
-        print(f'Aligning images took {total_elapsed_time} seconds.')
+        print(f'Aligning {len(file_keys)} images took {total_elapsed_time} seconds.')
 
 
     def create_web_friendly_sections(self):
