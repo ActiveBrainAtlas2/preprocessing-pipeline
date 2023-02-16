@@ -45,6 +45,29 @@ def align_elastix(animal, fixed_file, moving_file, moving_index):
     metric_value = getMetricValue(logfilepath)
     print(metric_value)
 
+def create_image(fixed_file, moving_file):
+    elastixImageFilter = sitk.ElastixImageFilter()
+    pixelType = sitk.sitkFloat32
+    fixed = sitk.ReadImage(fixed_file, pixelType)
+    moving = sitk.ReadImage(moving_file, pixelType)
+    elastixImageFilter.SetFixedImage(fixed)
+    elastixImageFilter.SetMovingImage(moving)
+    rigid_params = create_rigid_parameters(elastixImageFilter)
+    elastixImageFilter.SetParameterMap(rigid_params)
+    elastixImageFilter.Execute()
+    rigidTransform = elastixImageFilter.GetTransformParameterMap()[0]
+
+
+
+    transformixFilter = sitk.TransformixImageFilter()
+    transformixFilter.SetTransformParameterMap(rigidTransform)
+    transformixFilter.SetMovingImage(moving)
+    transformixFilter.Execute()
+    transformed = transformixFilter.GetResultImage()
+    transformed = sitk.Cast(transformed, sitk.sitkUInt16)
+    print(f'new image type {type(transformed)}')
+    sitk.WriteImage(transformed, 'xxx.tif')
+
 
 if __name__ == '__main__':
     animal = sys.argv[1]
@@ -53,4 +76,4 @@ if __name__ == '__main__':
     moving_index = os.path.basename(moving)
     moving_index = str(moving_index).replace(".tif","")
     align_elastix(animal, fixed, moving, moving_index)
-
+    #create_image(fixed, moving)

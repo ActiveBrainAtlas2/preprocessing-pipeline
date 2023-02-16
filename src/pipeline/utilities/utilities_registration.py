@@ -232,9 +232,9 @@ def create_rigid_parameters(elastixImageFilter):
     ## You can save some time by setting this to false, if you are
     ## only interested in the final (nonrigidly) deformed moving image
     ## for example.
-    rigid_params["WriteResultImage"] = ["false"]
+    rigid_params["WriteResultImage"] = ["true"]
     ## The pixel type and format of the resulting deformed moving image
-    rigid_params["ResultImagePixelType"] = ["unsigned char"]
+    rigid_params["ResultImagePixelType"] = ["float"]
     rigid_params["ResultImageFormat"] = ["tif"]
     rigid_params["RequiredRatioOfValidSamples"] = ["0.05"]
     return rigid_params
@@ -327,9 +327,21 @@ def align_image_to_affine(file_key):
     :return: nothing
     """
     infile, outfile, T = file_key
-    im1 = Image.open(infile)
-    im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
-    im2.save(outfile)
+    try:
+        im1 = Image.open(infile)
+    except:
+        print(f'align image to affine, could not open {infile}')
+
+    try:
+        im2 = im1.transform((im1.size), Image.AFFINE, T.flatten()[:6], resample=Image.NEAREST)
+    except:
+        print(f'align image to affine, could not transform {infile}')
+
+    try:
+        im2.save(outfile)
+    except:
+        print(f'align image to affine, could not save {infile}')
+
     del im1, im2
     return
 
