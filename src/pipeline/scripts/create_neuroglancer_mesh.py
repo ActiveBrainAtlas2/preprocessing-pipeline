@@ -74,6 +74,7 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
         _start = midpoint - limit
         _end = midpoint + limit
         files = files[_start:_end]
+        len_files = len(files)
     ids = np.unique(midfile)
     
     height, width = midfile.shape
