@@ -264,11 +264,10 @@ class NumpyToNeuroglancer():
         tq.insert(tasks)
         tq.execute()
 
-        #print(f'Creating sharded multires mesh tasks with {cpus} CPUs')
-        #tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2, magnitude=magnitude)
-        #tasks = tc.create_sharded_multires_mesh_from_unsharded_tasks(self.precomputed_vol.layer_cloudpath, layer_path, num_lod=2)
-        #tq.insert(tasks)    
-        #tq.execute()
+        print(f'Creating multires mesh tasks with {cpus} CPUs')
+        tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2, magnitude=magnitude)
+        tq.insert(tasks)    
+        tq.execute()
 
         print(f'Creating meshing manifest tasks with {cpus} CPUs')
         tasks = tc.create_mesh_manifest_tasks(layer_path, magnitude=magnitude) # The second phase of creating mesh
