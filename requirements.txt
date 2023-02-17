@@ -244,7 +244,7 @@ ppft==1.7.6.5
 prometheus-client==0.14.1
 prompt-toolkit==3.0.30
 proto-plus==1.22.0
-protobuf==3.19.4
+protobuf==3.19.5
 prov==2.0.0
 psutil==5.9.1
 psygnal==0.3.5
