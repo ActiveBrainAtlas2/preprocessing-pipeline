@@ -375,7 +375,7 @@ vulture==2.6
 wcwidth==0.2.5
 webencodings==0.5.1
 weightedstats==0.4.1
-Werkzeug==2.2.2
+Werkzeug==2.2.3
 Whoosh==2.7.4
 widgetsnbextension==4.0.2
 wrapt==1.14.1

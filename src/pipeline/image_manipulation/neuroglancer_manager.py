@@ -258,14 +258,14 @@ class NumpyToNeuroglancer():
         _, cpus = get_cpus()
         print(f'Creating meshing tasks with {cpus} CPUs')
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(layer_path, mip=mip,
+        tasks = tc.create_meshing_tasks(layer_path, mip=mip,shape=[128,128,128],
                                         max_simplification_error=mse,
                                         compress=True, sharded=False) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
 
         print(f'Creating multires mesh tasks with {cpus} CPUs')
-        tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2, magnitude=magnitude)
+        tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2, magnitude=magnitude, min_chunk_size=[32,32,32])
         tq.insert(tasks)    
         tq.execute()
 
