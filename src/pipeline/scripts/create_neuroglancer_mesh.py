@@ -28,7 +28,7 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
     if scaling_factor > 5:
         chunkXY = 64
     else:
-        chunkXY = 256
+        chunkXY = 128
     chunkZ = chunkXY // 2
     chunks = (chunkXY, chunkXY, 1)
     sqlController = SqlController(animal)
