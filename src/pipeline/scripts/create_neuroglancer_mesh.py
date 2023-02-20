@@ -5,14 +5,25 @@ import argparse
 from concurrent.futures import ProcessPoolExecutor
 import os
 import sys
-import json
 from skimage import io
+from PIL import Image
+Image.MAX_IMAGE_PIXELS = None
 from taskqueue.taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 import shutil
 import numpy as np
 from pathlib import Path
+
+import faulthandler
+import signal
+faulthandler.register(signal.SIGUSR1.value)
+"""
+use:
+kill -s SIGUSR1 <pid> 
+This will give you a stacktrace of the running process and you can see where it hangs.
+"""
+
 
 PIPELINE_ROOT = Path('./src/pipeline').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -22,9 +33,9 @@ from image_manipulation.filelocation_manager import FileLocationManager
 from controller.sql_controller import SqlController
 from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer, calculate_factors
 from utilities.utilities_process import get_cpus, get_hostname
-DTYPE = np.uint8
+DTYPE = np.uint64
 
-def create_mesh(animal, limit, scaling_factor, mse, skeleton):
+def create_mesh(animal, limit, scaling_factor, skeleton):
     if scaling_factor > 5:
         chunkXY = 64
     else:
@@ -46,15 +57,8 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
     scales = (int(xy), int(xy), int(z))
     if 'godzilla' in get_hostname():
         print(f'Cleaning {MESH_DIR}')
-        #print(MESH_INPUT_DIR)
-        #print(PROGRESS_DIR)
-        #if os.path.exists(MESH_INPUT_DIR):
-        #    shutil.rmtree(MESH_INPUT_DIR)
-
         if os.path.exists(MESH_DIR):
             shutil.rmtree(MESH_DIR)
-        #if os.path.exists(PROGRESS_DIR):
-        #    shutil.rmtree(PROGRESS_DIR)
 
     files = sorted(os.listdir(INPUT))
 
@@ -64,23 +68,28 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
 
     len_files = len(files)
     midpoint = len_files // 2
-    midfilepath = os.path.join(INPUT, files[midpoint])
-    midfile = io.imread(midfilepath)
+    infile = os.path.join(INPUT, files[midpoint])
+    midim = Image.open(infile)
+    midfile = np.array(midim)
+    del midim
     midfile = midfile.astype(np.uint8)
     midfile[midfile > 0] = 255
+    ids, counts = np.unique(midfile, return_counts=True)
 
-    data_type = DTYPE
+    data_type = midfile.dtype
     if limit > 0:
         _start = midpoint - limit
         _end = midpoint + limit
         files = files[_start:_end]
         len_files = len(files)
-    ids = np.unique(midfile)
     
     height, width = midfile.shape
     volume_size = (width//scaling_factor, height//scaling_factor, len_files // scaling_factor) # neuroglancer is width, height
-    print(f'\nScaling factor={scaling_factor}, volume size={volume_size} with dtype={data_type}, ids={ids} scales={scales}')
-    print(f'Initial chunks at {chunks} and chunks for downsampling=({chunkXY},{chunkXY},{chunkZ})')
+    print(f'\nMidfile: {infile} dtype={midfile.dtype}, shape={midfile.shape}, ids={ids}, counts={counts}')
+    print(f'Scaling factor={scaling_factor}, volume size={volume_size} with dtype={data_type}, scales={scales}')
+    print(f'Initial chunks at {chunks} and chunks for downsampling=({chunkXY},{chunkXY},{chunkZ})\n')
+    
+    
     ng = NumpyToNeuroglancer(animal, None, scales, layer_type='segmentation', 
         data_type=data_type, chunk_size=chunks)
 
@@ -103,6 +112,7 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
         executor.map(ng.process_image_mesh, sorted(file_keys), chunksize=1)
         executor.shutdown(wait=True)
     
+    
     chunks = (chunkXY, chunkXY, chunkZ)
     # This calls the igneous create_transfer_tasks
     ng.add_rechunking(MESH_DIR, chunks=chunks, mip=0, skip_downsamples=True)
@@ -117,7 +127,7 @@ def create_mesh(animal, limit, scaling_factor, mse, skeleton):
     ng.add_segment_properties(cv2, segment_properties)
 
     ##### first mesh task, create meshing tasks
-    ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=0, mse=mse)
+    ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=0)
 
     ##### skeleton
     if skeleton:
@@ -137,14 +147,12 @@ if __name__ == '__main__':
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--limit', help='Enter the # of files to test', required=False, default=0)
     parser.add_argument('--scaling_factor', help='Enter an integer that will be the denominator', required=False, default=1)
-    parser.add_argument('--mse', help='Enter an integer for the max simplication error', required=False, default=40)
     parser.add_argument("--skeleton", help="Create skeletons", required=False, default=False)
     args = parser.parse_args()
     animal = args.animal
     limit = int(args.limit)
     scaling_factor = int(args.scaling_factor)
-    mse = int(args.mse)
     skeleton = bool({"true": True, "false": False}[str(args.skeleton).lower()])
     
-    create_mesh(animal, limit, scaling_factor, mse, skeleton)
+    create_mesh(animal, limit, scaling_factor, skeleton)
 

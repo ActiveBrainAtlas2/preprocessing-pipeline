@@ -3,7 +3,6 @@ It also has the main class to convert numpy arrays (images) into the precomputed
 """
 
 import os
-import sys
 from skimage import io
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
@@ -239,13 +238,15 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
         
         _, cpus = get_cpus()
+        print(f'Creating downsamples with {cpus} CPUs')
         tq = LocalTaskQueue(parallel=cpus)
         tasks = tc.create_downsampling_tasks(self.precomputed_vol.layer_cloudpath, num_mips=num_mips, chunk_size=chunk_size, compress=True)
+        #tasks = tc.create_image_shard_downsample_tasks(self.precomputed_vol.layer_cloudpath, chunk_size=chunk_size)
         tq.insert(tasks)
         tq.execute()
 
 
-    def add_segmentation_mesh(self, layer_path, mip = 0, mse=40) -> None:
+    def add_segmentation_mesh(self, layer_path, mip = 0) -> None:
         """Augments 'precomputed' cloud volume with segmentation mesh
 
         :param shape: list[int]
@@ -256,16 +257,20 @@ class NumpyToNeuroglancer():
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
 
         _, cpus = get_cpus()
-        print(f'Creating meshing tasks with {cpus} CPUs')
         tq = LocalTaskQueue(parallel=cpus)
-        tasks = tc.create_meshing_tasks(layer_path, mip=mip,shape=[128,128,128],
-                                        max_simplification_error=mse,
-                                        compress=True, sharded=False) # The first phase of creating mesh
+        
+        print(f'Creating meshing tasks with {cpus} CPUs')
+        """A big shape does not work with big images. (the default is 448 and that does not work with 4147x4506, while 128 does)
+        128 works at 4147x4506
+        448 does not work at 4147x4506
+        64 works at 9331x10138 and 10368x11264
+        """
+        tasks = tc.create_meshing_tasks(layer_path, mip=mip, shape=[64,64,64], compress=True, sharded=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
 
         print(f'Creating multires mesh tasks with {cpus} CPUs')
-        tasks = tc.create_unsharded_multires_mesh_tasks(layer_path, num_lod=2, magnitude=magnitude, min_chunk_size=[32,32,32])
+        tasks = tc.create_sharded_multires_mesh_tasks(layer_path, num_lod=5, min_chunk_size=[32,32,32])
         tq.insert(tasks)    
         tq.execute()
 
@@ -274,6 +279,21 @@ class NumpyToNeuroglancer():
         tq.insert(tasks)
         tq.execute()
 
+    def normalize_stack(self, layer_path, src_path=None, dest_path=None):
+        """This does basically the same thing as our cleaning process.
+        """
+
+        _, cpus = get_cpus()
+        print(f'Creating meshing tasks with {cpus} CPUs')
+        tq = LocalTaskQueue(parallel=cpus)
+        # first pass: create per z-slice histogram
+        tasks = tc.create_luminance_levels_tasks(layer_path, coverage_factor=0.01, shape=None, offset=(0,0,0), mip=0) 
+        tq.insert(tasks)    
+        tq.execute()
+        # second pass: apply histogram equalization
+        tasks = tc.create_contrast_normalization_tasks(src_path, dest_path, shape=None, mip=0, clip_fraction=0.01, fill_missing=False, translate=(0,0,0))
+        tq.insert(tasks)    
+        tq.execute()
 
 
     def process_image(self, file_key):
@@ -323,16 +343,20 @@ class NumpyToNeuroglancer():
              return
 
         try:
-            img = io.imread(infile, img_num=0)
+            #img = io.imread(infile, img_num=0)
+            im = Image.open(infile)
         except IOError as ioe:
             print(f'could not open {infile} {ioe}')
             return
         
         try:
             if scaling_factor > 1:
-                img = resize(img, orientation, anti_aliasing=False)
-            img = img * 255
+                width, height = im.size
+                im = im.resize((width//scaling_factor, height//scaling_factor))
+                #img = resize(img, orientation, anti_aliasing=True)
+            img = np.array(im)
             img = img.astype(np.uint8)
+            img[img > 0] = 255
         except:
             print(f'could not resize {basefile} with shape={img.shape} to new shape={orientation}')
             return
@@ -342,6 +366,9 @@ class NumpyToNeuroglancer():
         except:
             print(f'could not reshape {infile}')
             return
+
+        ids, counts = np.unique(img, return_counts=True)
+        print(f'{basefile} dtype={img.dtype}, shape={img.shape}, ids={ids}, counts={counts}')
 
         try:
             self.precomputed_vol[:, :, index] = img
