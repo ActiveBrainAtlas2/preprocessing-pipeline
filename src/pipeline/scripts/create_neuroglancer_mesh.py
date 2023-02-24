@@ -39,7 +39,7 @@ def create_mesh(animal, limit, scaling_factor, skeleton):
     if scaling_factor > 5:
         chunkXY = 64
     else:
-        chunkXY = 256
+        chunkXY = 128
     chunkZ = chunkXY // 2
     chunks = (chunkXY, chunkXY, 1)
     sqlController = SqlController(animal)
@@ -76,7 +76,7 @@ def create_mesh(animal, limit, scaling_factor, skeleton):
     midfile[midfile > 0] = 255
     ids, counts = np.unique(midfile, return_counts=True)
 
-    data_type = np.float64
+    data_type = midfile.dtype
     if limit > 0:
         _start = midpoint - limit
         _end = midpoint + limit
