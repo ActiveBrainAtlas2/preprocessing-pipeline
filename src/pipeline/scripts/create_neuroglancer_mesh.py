@@ -76,7 +76,7 @@ def create_mesh(animal, limit, scaling_factor, skeleton):
     midfile[midfile > 0] = 255
     ids, counts = np.unique(midfile, return_counts=True)
 
-    data_type = midfile.dtype
+    data_type = np.float64
     if limit > 0:
         _start = midpoint - limit
         _end = midpoint + limit

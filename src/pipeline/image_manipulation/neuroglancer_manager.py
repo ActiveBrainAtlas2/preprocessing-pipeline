@@ -263,6 +263,7 @@ class NumpyToNeuroglancer():
         128 works at 4147x4506
         448 does not work at 4147x4506
         64 works at 9331x10138, NOT at 10368x11264
+        64 dies at limit 50 full res
         """
         shapeXYZ = 32
         print(f'Creating meshing tasks with {cpus} CPUs with shape={shapeXYZ, shapeXYZ, shapeXYZ}')
