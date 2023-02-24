@@ -40,7 +40,8 @@ def create_mesh(animal, limit, scaling_factor, skeleton):
         chunkXY = 64
     else:
         chunkXY = 128
-    chunkZ = chunkXY // 2
+    # chunkZ = chunkXY // 2
+    chunkZ = chunkXY
     chunks = (chunkXY, chunkXY, 1)
     sqlController = SqlController(animal)
     fileLocationManager = FileLocationManager(animal)
