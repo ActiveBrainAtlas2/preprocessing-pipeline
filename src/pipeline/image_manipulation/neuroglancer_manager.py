@@ -262,9 +262,9 @@ class NumpyToNeuroglancer():
         """A big shape does not work with big images. (the default is 448 and that does not work with 4147x4506, while 128 does)
         128 works at 4147x4506
         448 does not work at 4147x4506
-        64 works at 9331x10138 and 10368x11264
+        64 works at 9331x10138, NOT at 10368x11264
         """
-        shapeXYZ = 64 * scaling_factor
+        shapeXYZ = 32
         print(f'Creating meshing tasks with {cpus} CPUs with shape={shapeXYZ, shapeXYZ, shapeXYZ}')
         tasks = tc.create_meshing_tasks(layer_path, mip=mip, shape=[shapeXYZ, shapeXYZ, shapeXYZ], compress=True, sharded=True) # The first phase of creating mesh
         tq.insert(tasks)
