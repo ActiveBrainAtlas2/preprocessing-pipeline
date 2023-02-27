@@ -128,7 +128,7 @@ def create_mesh(animal, limit, scaling_factor, skeleton):
     ng.add_segment_properties(cv2, segment_properties)
 
     ##### first mesh task, create meshing tasks
-    ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=0, scaling_factor=scaling_factor)
+    ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=0)
 
     ##### skeleton
     if skeleton:

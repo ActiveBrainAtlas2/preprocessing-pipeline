@@ -246,7 +246,7 @@ class NumpyToNeuroglancer():
         tq.execute()
 
 
-    def add_segmentation_mesh(self, layer_path, mip = 0, scaling_factor=1) -> None:
+    def add_segmentation_mesh(self, layer_path, mip = 0) -> None:
         """Augments 'precomputed' cloud volume with segmentation mesh
 
         :param shape: list[int]
@@ -264,20 +264,21 @@ class NumpyToNeuroglancer():
         448 does not work at 4147x4506
         64 works at 9331x10138, NOT at 10368x11264
         64 dies at limit 50 full res
+        32 dies at limit 100 full res
         """
-        shapeXYZ = 32
+        shapeXYZ = 128
         print(f'Creating meshing tasks with {cpus} CPUs with shape={shapeXYZ, shapeXYZ, shapeXYZ}')
         tasks = tc.create_meshing_tasks(layer_path, mip=mip, shape=[shapeXYZ, shapeXYZ, shapeXYZ], compress=True, sharded=True) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
 
         print(f'Creating multires mesh tasks with {cpus} CPUs')
-        tasks = tc.create_sharded_multires_mesh_tasks(layer_path, num_lod=5, min_chunk_size=[32,32,32])
+        tasks = tc.create_sharded_multires_mesh_tasks(layer_path, num_lod=1)
         tq.insert(tasks)    
         tq.execute()
 
         print(f'Creating meshing manifest tasks with {cpus} CPUs')
-        tasks = tc.create_mesh_manifest_tasks(layer_path, magnitude=magnitude) # The second phase of creating mesh
+        tasks = tc.create_mesh_manifest_tasks(layer_path) # The second phase of creating mesh
         tq.insert(tasks)
         tq.execute()
 
