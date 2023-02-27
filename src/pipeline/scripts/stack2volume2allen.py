@@ -4,7 +4,7 @@ This script will:
 - Create a 3D volume from a directory of aligned images
 - Create a 3D volume from the 20um sagittal Allen brain and orient it the same orientation as ours
 - Run elastix on the above 2 volumes
-- Run transformix with the 3D volume from the 1st step with teh results of the elastix transformation
+- Run transformix with the 3D volume from the 1st step with the results of the elastix transformation
 """
 
 import argparse
@@ -24,7 +24,7 @@ from utilities.utilities_mask import equalized
 
 def scaled(img, epsilon=0.01):
     """This scales the image to the limit specified. You can get this value
-    by looking at the combined histogram of the image stack. It is quite
+    by looking at the combined histogram of the image stack. 
 
     :param img: image we are working on.
     :param epsilon: very small number used in np.quantile
@@ -35,13 +35,11 @@ def scaled(img, epsilon=0.01):
     _max = np.quantile(img, 1 - epsilon) # gets almost the max value of img
     if img.dtype == np.uint8:
         _range = 2 ** 8 - 1 # 8bit
-        data_type = np.uint8        
     else:
         _range = 2 ** 16 - 1 # 16bit
-        data_type = np.uint16
 
     if _max > 0:
-        scaled = (img * (scale // _max)).astype(data_type) # scale the image from original values to e.g., 30000/10000
+        scaled = (img * (scale // _max)).astype(img.dtype) # scale the image from original values to e.g., 30000/10000
     else:
         scaled = img
     del img
@@ -179,10 +177,6 @@ class VolumeRegistration:
         if not os.path.exists( os.path.join(self.registration_output_path, 'result.tif') ):
             self.transformix_volume()
         
-
-
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
@@ -191,4 +185,3 @@ if __name__ == '__main__':
     animal = args.animal
     volumeRegistration = VolumeRegistration(animal)
     volumeRegistration.perform_registration()
-

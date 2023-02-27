@@ -174,7 +174,7 @@ def clean_and_rotate_image(file_key):
         cleaned = scaled(cleaned, mask, epsilon=0.01)
         cleaned = equalized(cleaned)
 
-    # cropped = crop_image(cleaned, mask)
+    cleaned = crop_image(cleaned, mask)
     del mask
     if rotation > 0:
         cleaned = rotate_image(cleaned, infile, rotation)
@@ -209,3 +209,38 @@ def apply_mask(img, mask, infile):
         print("Unexpected error:", sys.exc_info()[0])
         raise
     return cleaned
+
+
+def crop_image(img, mask):
+    """Crop image to remove parts of image not in mask
+
+    :param img: numpy array of image
+    :param mask: numpy array of mask
+    :return: numpy array of cropped image
+    """
+
+    BUFFER = 2
+    mask = np.array(mask)
+    mask[mask > 0] = 255
+    _, thresh = cv2.threshold(mask, 200, 255, 0)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    boxes = []
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        area = cv2.contourArea(contour)
+        if area > 100:
+            xmin = int(round(x))
+            ymin = int(round(y))
+            xmax = int(round(x + w))
+            ymax = int(round(y + h))
+            boxes.append([xmin, ymin, xmax, ymax])
+    x1 = min(x[0] for x in boxes) - BUFFER
+    y1 = min(x[1] for x in boxes) - BUFFER
+    x2 = max(x[2] for x in boxes) + BUFFER
+    y2 = max(x[3] for x in boxes) + BUFFER
+    box = np.array([x1, y1, x2, y2])
+    box[box < 0] = 0
+    x1, y1, x2, y2 = box
+    img = np.ascontiguousarray(img, dtype=np.uint16)
+    cropped = img[y1:y2, x1:x2]
+    return cropped
