@@ -36,7 +36,7 @@ class MetaUtilities:
                 dict_target_filesizes = {}  # dict for symlink <-> target file size
                 for filename in outstanding_files:
                     symlink = os.path.join(INPUT, filename)
-                    target_file = Path(symlink).resolve()  # taget of symbolic link
+                    target_file = Path(symlink).resolve()  # target of symbolic link
                     file_size = os.path.getsize(target_file)
                     dict_target_filesizes[filename] = file_size
 
@@ -53,7 +53,7 @@ class MetaUtilities:
                     if i == 0:  # largest file
                         single_file_size = os.path.getsize(infile)
 
-                    file_keys.append([infile, self.scan_id, self.animal])
+                    file_keys.append([infile, self.scan_id, self.animal, self.rescan])
 
                 ram_coefficient = 2
 
@@ -217,7 +217,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         czi.metadata = czi.extract_metadata_from_czi_file(czi_file, czi_org_path)
         return czi.metadata
 
-    def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal):
+    def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal, rescan):
         """Add the meta information about image slides that are extracted from the czi 
         file and add them to the database
         """
@@ -225,7 +225,6 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         slide = Slide()
         slide.scan_run_id = scan_id
         slide.slide_physical_id = int(re.findall(r"slide\d+", czi_org_path)[0][5:])
-        slide.rescan_number = "1"
         slide.slide_status = "Good"
         slide.processed = False
         slide.file_size = os.path.getsize(czi_org_path)
@@ -235,8 +234,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         )
         slide.scenes = len([elem for elem in czi_metadata.values()][0].keys())
 
-        sqlController = SqlController(animal)
-
+        sqlController = SqlController(animal, rescan=rescan)
         sqlController.session.add(slide)
         sqlController.session.flush()
         sqlController.session.commit()
@@ -270,8 +268,8 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
                 sqlController.session.add_all(tif_list)
                 sqlController.session.commit()
 
-    infile, scan_id, animal = file_key
+    infile, scan_id, animal, rescan = file_key
     czi_metadata = load_metadata(infile)
-    add_slide_information_to_database(infile, scan_id, czi_metadata, animal)
+    add_slide_information_to_database(infile, scan_id, czi_metadata, animal, rescan)
 
     return

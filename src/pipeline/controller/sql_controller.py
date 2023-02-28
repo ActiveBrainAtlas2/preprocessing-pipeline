@@ -37,7 +37,7 @@ class SqlController(AnimalController, ElastixController, HistologyController,
     methods to interact with that table
     """
 
-    def __init__(self, animal, rescan):
+    def __init__(self, animal, rescan=0):
         """ setup the attributes for the SlidesProcessor class
             Args:
                 animal: object of animal to process
