@@ -37,7 +37,7 @@ class SqlController(AnimalController, ElastixController, HistologyController,
     methods to interact with that table
     """
 
-    def __init__(self, animal):
+    def __init__(self, animal, rescan):
         """ setup the attributes for the SlidesProcessor class
             Args:
                 animal: object of animal to process
@@ -54,11 +54,14 @@ class SqlController(AnimalController, ElastixController, HistologyController,
                 Histology.prep_id == animal).one()
         except NoResultFound:
             print(f'No histology for {animal}')
+
         try:
-            self.scan_run = self.session.query(ScanRun).filter(
-                ScanRun.prep_id == animal).order_by(ScanRun.id.desc()).one()
+            self.scan_run = self.session.query(ScanRun)\
+                .filter(ScanRun.prep_id == animal)\
+                .filter(ScanRun.rescan_number == rescan).one()
         except NoResultFound:
             print(f'No scan run for {animal}')
+        
         self.slides = None
         self.tifs = None
         self.valid_sections = OrderedDict()
