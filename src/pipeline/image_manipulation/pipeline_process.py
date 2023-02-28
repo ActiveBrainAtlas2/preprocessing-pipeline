@@ -60,7 +60,7 @@ class Pipeline(
     TASK_NEUROGLANCER_SINGLE = "Neuroglancer1 single"
     TASK_NEUROGLANCER_PYRAMID = "Neuroglancer2 pyramid"
 
-    def __init__(self, animal, channel, downsample, data_path, tg, debug):
+    def __init__(self, animal, rescan, channel, downsample, data_path, tg, debug):
         """Setting up the pipeline and the processing configurations
         Here is how the Class is instantiated:
             pipeline = Pipeline(animal, channel, downsample, data_path, tg, debug)
@@ -83,6 +83,7 @@ class Pipeline(
             debug (bool, optional): determine if we are in debug mode.  This is used for development purposes. Defaults to False. (forces processing on single core)
         """
         self.animal = animal
+        self.rescan = rescan
         self.channel = channel
         self.downsample = downsample
         self.debug = debug

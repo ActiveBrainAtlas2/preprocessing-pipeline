@@ -13,6 +13,7 @@ class ScanRun(Base, AtlasModel):
 
     id =  Column(Integer, primary_key=True, nullable=False)
     prep_id = Column(String, ForeignKey('animal.prep_id'), nullable=False)
+    rescan_number = Column(Integer, default=0)
     performance_center = Column(Enum("CSHL", "Salk", "UCSD", "HHMI"))
     machine = Column(Enum("Axioscan I", "Axioscan II"))
     objective = Column(Enum("60X", "40X", "20X", "10X"))
@@ -25,7 +26,6 @@ class ScanRun(Base, AtlasModel):
     section_schema = Column(Enum("L to R", "R to L"))
     channels_per_scene = Column(Enum("1", "2", "3", "4"))
     slide_folder_path = Column(String)
-    converted_folder_path  = Column(String)
     converted_status = Column(Enum("not started", "converted", "converting", "error"))
     ch_1_filter_set = Column(Enum("68", "47", "38", "46", "63", "64", "50"))
     ch_2_filter_set = Column(Enum("68", "47", "38", "46", "63", "64", "50"))

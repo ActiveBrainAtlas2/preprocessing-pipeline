@@ -23,7 +23,7 @@ class MetaUtilities:
         Scans the czi dir to extract the meta information for each tif file
         """
 
-        INPUT = self.fileLocationManager.czi
+        INPUT = self.fileLocationManager.get_czi(self.rescan)
         czi_files = self.check_czi_file_exists()
         self.scan_id = self.get_user_entered_scan_id()
         file_validation_status, unique_files = self.file_validation(czi_files)
@@ -162,7 +162,7 @@ class MetaUtilities:
         """Check that the CZI files are placed in the correct location
         """
         
-        INPUT = self.fileLocationManager.czi
+        INPUT = self.fileLocationManager.get_czi(self.rescan)
         if not os.path.exists(INPUT):
             print(f"{INPUT} does not exist, we are exiting.")
             sys.exit()

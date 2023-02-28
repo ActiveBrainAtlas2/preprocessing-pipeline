@@ -21,7 +21,7 @@ class ScanRunController(Controller):
         :return scan run object: one object (row)
         """
 
-        search_dictionary = dict(prep_id=animal)
+        search_dictionary = dict(prep_id=animal, rescan_number=self.rescan)
         return self.get_row(search_dictionary, ScanRun)
 
     def update_scanrun(self, id):

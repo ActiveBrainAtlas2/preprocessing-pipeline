@@ -54,6 +54,13 @@ class FileLocationManager(object):
         self.thumbnail_original = os.path.join(self.stack, "thumbnail_original")
         self.thumbnail_web = os.path.join(self.root, stack, "www", "scene")
 
+    def get_czi(self, czi=0):
+        czi_path = self.czi
+        if czi > 0:
+            czi_path = os.path.join(self.stack, f'czi_{czi}')
+        
+        return czi_path
+    
     def get_full(self, channel=1):
         return os.path.join(self.prep, f"CH{channel}", "full")
 

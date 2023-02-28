@@ -30,7 +30,7 @@ class TiffExtractor(ParallelManager):
             OUTPUT = self.fileLocationManager.tif
             scale_factor = 1
 
-        INPUT = self.fileLocationManager.czi
+        INPUT = self.fileLocationManager.get_czi(self.rescan)
         os.makedirs(OUTPUT, exist_ok=True)
         starting_files = glob.glob(
             os.path.join(OUTPUT, "*_C" + str(self.channel) + ".tif")
@@ -65,7 +65,7 @@ class TiffExtractor(ParallelManager):
         These images are used for Quality Control.
         """
 
-        INPUT = self.fileLocationManager.czi
+        INPUT = self.fileLocationManager.get_czi(self.rescan)
         OUTPUT = self.fileLocationManager.thumbnail_web
         channel = 1
         os.makedirs(OUTPUT, exist_ok=True)

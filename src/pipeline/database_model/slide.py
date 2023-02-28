@@ -12,7 +12,6 @@ class Slide(Base, AtlasModel):
     id =  Column(Integer, primary_key=True, nullable=False)
     scan_run_id = Column(Integer, ForeignKey('scan_run.id'))
     slide_physical_id = Column(Integer)
-    rescan_number = Column(Enum("1", "2", "3"), default="1", nullable=False)
     slide_status = Column(Enum("Bad", "Good"), nullable=False)
     scenes = Column(Integer, nullable=False)
     insert_before_one = Column(Integer, default=0)
