@@ -97,7 +97,7 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
     if step == 0:
         print(f"Step {step}: prepare images for quality control.")
         pipeline.run_program_and_time(pipeline.extract_slide_meta_data_and_insert_to_database, pipeline.TASK_CREATING_META)
-        #pipeline.run_program_and_time(pipeline.create_web_friendly_image, pipeline.TASK_CREATING_WEB_IMAGES)
+        pipeline.run_program_and_time(pipeline.create_web_friendly_image, pipeline.TASK_CREATING_WEB_IMAGES)
         pipeline.run_program_and_time(pipeline.extract_tiffs_from_czi, pipeline.TASK_EXTRACTING_TIFFS)
 
     if step == 1:

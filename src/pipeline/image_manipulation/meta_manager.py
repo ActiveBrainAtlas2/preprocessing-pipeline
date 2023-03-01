@@ -32,9 +32,6 @@ class MetaUtilities:
             db_validation_status,
             outstanding_files,
         ) = self.all_slide_meta_data_exists_in_database(unique_files)
-        print(f'db_validation_status={db_validation_status}')
-        print(f'file_validation_status={file_validation_status}')
-        print(f'len(outstanding_files)={len(outstanding_files)}')
         if file_validation_status and db_validation_status:
             if len(outstanding_files) > 0:
                 dict_target_filesizes = {}  # dict for symlink <-> target file size
