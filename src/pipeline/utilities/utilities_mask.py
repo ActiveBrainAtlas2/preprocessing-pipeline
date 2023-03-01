@@ -66,6 +66,19 @@ def place_image(img, file: str, max_width, max_height, bgcolor=None):
     return new_img.astype(dt)
 
 
+def normalize_image(img):
+    """This is a simple opencv image normalization for 16 bit images.
+    It uses 45000 as an arbitrary limit which seems to fit well
+    with our image stacks.
+
+    :param img: the numpy array of the 16bit image
+    :return img: the normalized image
+    """
+    scale = 2 ** 16 - 1 # 16bit
+    cv2.normalize(img, img, 0, scale, cv2.NORM_MINMAX)
+    return img
+
+
 def scaled(img, mask, epsilon=0.01):
     """This scales the image to the limit specified. You can get this value
     by looking at the combined histogram of the image stack. It is quite
@@ -80,13 +93,13 @@ def scaled(img, mask, epsilon=0.01):
     :param limit: max value we wish to scale to
     :return: scaled image in 16bit format
     """
-    """
-    scale = 45000
     _max = np.quantile(img[mask > 0], 1 - epsilon) # gets almost the max value of img
     if img.dtype == np.uint8:
         _range = 2 ** 8 - 1 # 8bit
-        data_type = np.uint8        
+        data_type = np.uint8
+        scale = 178        
     else:
+        scale = 45000
         _range = 2 ** 16 - 1 # 16bit
         data_type = np.uint16
 
@@ -97,11 +110,8 @@ def scaled(img, mask, epsilon=0.01):
     scaled = scaled * (mask > 0) # just work on the non masked values. This is where all the RAM goes!!!!!!!
 
     del mask
-    """
-    #scaled = cv2.equalizeHist(img)
-    cv2.normalize(img, img, 0, 45000, cv2.NORM_MINMAX);
 
-    return img
+    return scaled
 
 
 def equalized(fixed):
@@ -113,7 +123,7 @@ def equalized(fixed):
     :return: a better looking image
     """
     
-    clahe = cv2.createCLAHE(clipLimit=60.0, tileGridSize=(2, 2))
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
     fixed = clahe.apply(fixed)
     return fixed
 
@@ -177,8 +187,9 @@ def clean_and_rotate_image(file_key):
     cleaned = apply_mask(img, mask, infile)
     del img
     if channel == 1:
-        cleaned = scaled(cleaned, mask, epsilon=0.01)
-        #cleaned = equalized(cleaned)
+        cleaned = normalize_image(cleaned)
+        #####DEPRECATED cleaned = scaled(cleaned, mask, epsilon=0.01)
+        cleaned = equalized(cleaned)
 
     cleaned = crop_image(cleaned, mask)
     del mask
