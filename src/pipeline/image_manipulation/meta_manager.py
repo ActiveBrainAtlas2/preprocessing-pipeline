@@ -23,14 +23,18 @@ class MetaUtilities:
         Scans the czi dir to extract the meta information for each tif file
         """
 
-        INPUT = self.fileLocationManager.get_czi(self.rescan)
+        INPUT = self.fileLocationManager.get_czi(self.rescan_number)
         czi_files = self.check_czi_file_exists()
         self.scan_id = self.get_user_entered_scan_id()
+        print(f'Scan run ID={self.scan_id}')
         file_validation_status, unique_files = self.file_validation(czi_files)
         (
             db_validation_status,
             outstanding_files,
         ) = self.all_slide_meta_data_exists_in_database(unique_files)
+        print(f'db_validation_status={db_validation_status}')
+        print(f'file_validation_status={file_validation_status}')
+        print(f'len(outstanding_files)={len(outstanding_files)}')
         if file_validation_status and db_validation_status:
             if len(outstanding_files) > 0:
                 dict_target_filesizes = {}  # dict for symlink <-> target file size
@@ -53,7 +57,7 @@ class MetaUtilities:
                     if i == 0:  # largest file
                         single_file_size = os.path.getsize(infile)
 
-                    file_keys.append([infile, self.scan_id, self.animal, self.rescan])
+                    file_keys.append([infile, self.scan_id, self.animal, self.rescan_number])
 
                 ram_coefficient = 2
 
@@ -63,6 +67,7 @@ class MetaUtilities:
                 self.logevent(msg)
                 
                 workers = self.get_nworkers()
+                print(f'working on parallel extract files={len(file_keys)}')
                 self.run_commands_concurrently(parallel_extract_slide_meta_data_and_insert_to_database, file_keys, workers)
                 self.update_database_with_metadata()  # may/will need revisions for parallel
             else:
@@ -162,7 +167,7 @@ class MetaUtilities:
         """Check that the CZI files are placed in the correct location
         """
         
-        INPUT = self.fileLocationManager.get_czi(self.rescan)
+        INPUT = self.fileLocationManager.get_czi(self.rescan_number)
         if not os.path.exists(INPUT):
             print(f"{INPUT} does not exist, we are exiting.")
             sys.exit()
@@ -217,7 +222,7 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
         czi.metadata = czi.extract_metadata_from_czi_file(czi_file, czi_org_path)
         return czi.metadata
 
-    def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal, rescan):
+    def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal, rescan_number):
         """Add the meta information about image slides that are extracted from the czi 
         file and add them to the database
         """
@@ -233,8 +238,8 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
             Path(os.path.normpath(czi_org_path)).stat().st_mtime
         )
         slide.scenes = len([elem for elem in czi_metadata.values()][0].keys())
-
-        sqlController = SqlController(animal, rescan=rescan)
+        
+        sqlController = SqlController(animal, rescan_number=rescan_number)
         sqlController.session.add(slide)
         sqlController.session.flush()
         sqlController.session.commit()
@@ -265,11 +270,12 @@ def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
                 tif.created = time.strftime("%Y-%m-%d %H:%M:%S")
                 tif_list.append(tif)
             if len(tif_list) > 0:
+                print(f'Adding {len(tif_list)} files to DB.')
                 sqlController.session.add_all(tif_list)
                 sqlController.session.commit()
 
-    infile, scan_id, animal, rescan = file_key
+    infile, scan_id, animal, rescan_number = file_key
     czi_metadata = load_metadata(infile)
-    add_slide_information_to_database(infile, scan_id, czi_metadata, animal, rescan)
+    add_slide_information_to_database(infile, scan_id, czi_metadata, animal, rescan_number)
 
     return

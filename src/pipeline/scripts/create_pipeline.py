@@ -68,7 +68,7 @@ except ImportError:
 from image_manipulation.pipeline_process import Pipeline
 
 
-def run_pipeline(animal, rescan, channel, downsample, step, tg, debug):
+def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
     """Takes params and runs the pipeline
 
     :param animal: The animal we are working on.
@@ -80,12 +80,12 @@ def run_pipeline(animal, rescan, channel, downsample, step, tg, debug):
     :param debug: A boolean to determine if we should run in debug mode: Defaults to false.
     """
 
-    pipeline = Pipeline(animal, rescan, channel, downsample, data_path, tg, debug)
+    pipeline = Pipeline(animal, rescan_number, channel, downsample, data_path, tg, debug)
 
     print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:")
     print("\tprep_id:".ljust(20), f"{animal}".ljust(20))
     print("\tstep:".ljust(20), f"{step}".ljust(20))
-    print("\trescan:".ljust(20), f"{rescan}".ljust(20))
+    print("\trescan_number:".ljust(20), f"{rescan_number}".ljust(20))
     print("\tchannel:".ljust(20), f"{str(channel)}".ljust(20))
     print("\tdownsample:".ljust(20), f"{str(downsample)}".ljust(20))
     print("\thost:".ljust(20), f"{host}".ljust(20))
@@ -97,7 +97,7 @@ def run_pipeline(animal, rescan, channel, downsample, step, tg, debug):
     if step == 0:
         print(f"Step {step}: prepare images for quality control.")
         pipeline.run_program_and_time(pipeline.extract_slide_meta_data_and_insert_to_database, pipeline.TASK_CREATING_META)
-        pipeline.run_program_and_time(pipeline.create_web_friendly_image, pipeline.TASK_CREATING_WEB_IMAGES)
+        #pipeline.run_program_and_time(pipeline.create_web_friendly_image, pipeline.TASK_CREATING_WEB_IMAGES)
         pipeline.run_program_and_time(pipeline.extract_tiffs_from_czi, pipeline.TASK_EXTRACTING_TIFFS)
 
     if step == 1:
@@ -140,7 +140,7 @@ def run_pipeline(animal, rescan, channel, downsample, step, tg, debug):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Work on Animal")
     parser.add_argument("--animal", help="Enter the animal", required=True)
-    parser.add_argument("--rescan", help="Enter rescan number, default is 0", required=False, default=0)
+    parser.add_argument("--rescan_number", help="Enter rescan number, default is 0", required=False, default=0)
     parser.add_argument("--channel", help="Enter channel", required=False, default=1)
     parser.add_argument("--downsample", help="Enter true or false", required=False, default="true")
     parser.add_argument("--step", help="steps", required=False, default=0)
@@ -153,8 +153,8 @@ if __name__ == "__main__":
     channel = int(args.channel)
     downsample = bool({"true": True, "false": False}[str(args.downsample).lower()])
     step = int(args.step)
-    rescan = int(args.rescan)
+    rescan_number = int(args.rescan_number)
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
     tg = bool({"true": True, "false": False}[str(args.tg).lower()])
 
-    run_pipeline(animal, rescan, channel, downsample, step, tg, debug)
+    run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug)

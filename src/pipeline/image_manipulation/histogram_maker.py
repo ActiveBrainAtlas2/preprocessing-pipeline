@@ -28,7 +28,7 @@ class HistogramMaker:
         if self.downsample:
             INPUT = self.fileLocationManager.get_thumbnail(self.channel)
             MASK_INPUT = self.fileLocationManager.thumbnail_masked
-            files = self.sqlController.get_sections(self.animal, self.channel)
+            files = self.sqlController.get_sections(self.animal, self.channel, self.rescan_number)
             test_dir(
                 self.animal, INPUT, self.section_count, downsample=True, same_size=False
             )

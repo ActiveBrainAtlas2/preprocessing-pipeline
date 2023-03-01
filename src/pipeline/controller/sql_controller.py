@@ -37,7 +37,7 @@ class SqlController(AnimalController, ElastixController, HistologyController,
     methods to interact with that table
     """
 
-    def __init__(self, animal, rescan=0):
+    def __init__(self, animal, rescan_number=0):
         """ setup the attributes for the SlidesProcessor class
             Args:
                 animal: object of animal to process
@@ -58,7 +58,7 @@ class SqlController(AnimalController, ElastixController, HistologyController,
         try:
             self.scan_run = self.session.query(ScanRun)\
                 .filter(ScanRun.prep_id == animal)\
-                .filter(ScanRun.rescan_number == rescan).one()
+                .filter(ScanRun.rescan_number == rescan_number).one()
         except NoResultFound:
             print(f'No scan run for {animal}')
         

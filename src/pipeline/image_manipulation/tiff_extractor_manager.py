@@ -30,7 +30,7 @@ class TiffExtractor(ParallelManager):
             OUTPUT = self.fileLocationManager.tif
             scale_factor = 1
 
-        INPUT = self.fileLocationManager.get_czi(self.rescan)
+        INPUT = self.fileLocationManager.get_czi(self.rescan_number)
         os.makedirs(OUTPUT, exist_ok=True)
         starting_files = glob.glob(
             os.path.join(OUTPUT, "*_C" + str(self.channel) + ".tif")
@@ -41,7 +41,7 @@ class TiffExtractor(ParallelManager):
         self.logevent(f"FILE COUNT [FOR CHANNEL {self.channel}]: {len(starting_files)}")
         self.logevent(f"TOTAL FILE COUNT [FOR DIRECTORY]: {len(total_files)}")
 
-        sections = self.sqlController.get_sections(self.animal, self.channel)
+        sections = self.sqlController.get_sections(self.animal, self.channel, self.rescan_number)
 
         file_keys = [] # czi_file, output_path, scenei, channel=1, scale=1
         for section in sections:
@@ -54,7 +54,6 @@ class TiffExtractor(ParallelManager):
                 continue
             scene = section.scene_index
             file_keys.append([czi_file, output_path, scene, self.channel, scale_factor])
-
         workers = self.get_nworkers()
         self.run_commands_concurrently(extract_tiff_from_czi, file_keys, workers)
 
@@ -65,12 +64,12 @@ class TiffExtractor(ParallelManager):
         These images are used for Quality Control.
         """
 
-        INPUT = self.fileLocationManager.get_czi(self.rescan)
+        INPUT = self.fileLocationManager.get_czi(self.rescan_number)
         OUTPUT = self.fileLocationManager.thumbnail_web
         channel = 1
         os.makedirs(OUTPUT, exist_ok=True)
 
-        sections = self.sqlController.get_sections(self.animal, channel)
+        sections = self.sqlController.get_sections(self.animal, channel, self.rescan_number)
         self.logevent(f"SINGLE (FIRST) CHANNEL ONLY - SECTIONS: {len(sections)}")
         self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
 

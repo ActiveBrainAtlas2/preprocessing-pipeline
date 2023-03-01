@@ -60,7 +60,7 @@ class Pipeline(
     TASK_NEUROGLANCER_SINGLE = "Neuroglancer1 single"
     TASK_NEUROGLANCER_PYRAMID = "Neuroglancer2 pyramid"
 
-    def __init__(self, animal, rescan, channel, downsample, data_path, tg, debug):
+    def __init__(self, animal, rescan_number, channel, downsample, data_path, tg, debug):
         """Setting up the pipeline and the processing configurations
         Here is how the Class is instantiated:
             pipeline = Pipeline(animal, channel, downsample, data_path, tg, debug)
@@ -83,16 +83,16 @@ class Pipeline(
             debug (bool, optional): determine if we are in debug mode.  This is used for development purposes. Defaults to False. (forces processing on single core)
         """
         self.animal = animal
-        self.rescan = rescan
+        self.rescan_number = rescan_number
         self.channel = channel
         self.downsample = downsample
         self.debug = debug
         self.fileLocationManager = FileLocationManager(animal, data_path=data_path)
-        self.sqlController = SqlController(animal, rescan)
+        self.sqlController = SqlController(animal, rescan_number)
         self.hostname = get_hostname()
         self.tg = tg
         self.check_programs()
-        self.section_count = self.sqlController.get_section_count(self.animal)
+        self.section_count = self.sqlController.get_section_count(self.animal, self.rescan_number)
         super().__init__(self.fileLocationManager.get_logdir())
 
 

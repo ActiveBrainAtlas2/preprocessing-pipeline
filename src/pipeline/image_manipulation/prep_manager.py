@@ -38,7 +38,7 @@ class PrepCreater:
         self.logevent(f"CURRENT FILE COUNT: {len(starting_files)}")
         self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
         os.makedirs(OUTPUT, exist_ok=True)
-        sections = self.sqlController.get_sections(self.animal, self.channel)
+        sections = self.sqlController.get_sections(self.animal, self.channel, self.rescan_number)
         for section_number, section in enumerate(sections):
             infile = os.path.basename(section.file_name)
             input_path = os.path.join(INPUT, infile)
