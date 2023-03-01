@@ -4,6 +4,7 @@
 import sys
 import cv2
 import numpy as np
+from skimage.transform import rescale, resize
 
 from utilities.utilities_process import read_image, write_image
 
@@ -216,12 +217,15 @@ def apply_mask(img, mask, infile):
     :return: numpy array of cleaned image
     """
 
+    if img.shape != mask.shape:
+        print(f'Resizing img from {img.shape} to {mask.shape}')
+        img = cv2.resize(img, (mask.shape[1], mask.shape[0]), interpolation=cv2.INTER_NEAREST)
+
+
     try:
         cleaned = cv2.bitwise_and(img, img, mask=mask)
     except:
-        print(
-            f"Error in masking {infile} with mask shape {mask.shape} img shape {img.shape}"
-        )
+        print(f"Error in masking {infile} with mask shape {mask.shape} img shape {img.shape}")
         print("Are the shapes exactly the same?")
         print("Unexpected error:", sys.exc_info()[0])
         raise

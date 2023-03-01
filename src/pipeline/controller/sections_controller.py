@@ -44,8 +44,11 @@ class SectionsController(Controller):
 
 
     def get_section_count(self, animal):
-        return self.session.query(Section).filter(
-            Section.prep_id == animal).filter(Section.channel == 1).count()
+        count = self.session.query(Section)\
+            .filter(Section.prep_id == animal)\
+            .filter(Section.channel == 1)\
+            .count() 
+        return count
 
     
 

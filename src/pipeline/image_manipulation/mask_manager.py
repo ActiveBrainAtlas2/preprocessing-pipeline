@@ -92,10 +92,11 @@ class MaskManager:
         debris using a CNN based machine learning algorithm
         """
         
-        if self.downsample:
-            self.create_downsampled_mask()
-        else:
-            self.create_full_resolution_mask()
+        if self.channel == 1:
+            if self.downsample:
+                self.create_downsampled_mask()
+            else:
+                self.create_full_resolution_mask()
 
     def load_machine_learning_model(self):
         """Load the CNN model used to generate image masks
