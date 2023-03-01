@@ -287,7 +287,7 @@ class NumpyToNeuroglancer():
         """
 
         _, cpus = get_cpus()
-        print(f'Creating meshing tasks with {cpus} CPUs')
+        print(f'Creating image normalization with {cpus} CPUs')
         tq = LocalTaskQueue(parallel=cpus)
         # first pass: create per z-slice histogram
         tasks = tc.create_luminance_levels_tasks(layer_path, coverage_factor=0.01, shape=None, offset=(0,0,0), mip=0) 

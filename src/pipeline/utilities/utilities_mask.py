@@ -80,7 +80,7 @@ def scaled(img, mask, epsilon=0.01):
     :param limit: max value we wish to scale to
     :return: scaled image in 16bit format
     """
-
+    """
     scale = 45000
     _max = np.quantile(img[mask > 0], 1 - epsilon) # gets almost the max value of img
     if img.dtype == np.uint8:
@@ -90,12 +90,18 @@ def scaled(img, mask, epsilon=0.01):
         _range = 2 ** 16 - 1 # 16bit
         data_type = np.uint16
 
+    print(f'Scaling image range={_range}, data type={data_type}, max={_max}')
     scaled = (img * (scale // _max)).astype(data_type) # scale the image from original values to e.g., 30000/10000
     del img
     scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
     scaled = scaled * (mask > 0) # just work on the non masked values. This is where all the RAM goes!!!!!!!
+
     del mask
-    return scaled
+    """
+    #scaled = cv2.equalizeHist(img)
+    cv2.normalize(img, img, 0, 45000, cv2.NORM_MINMAX);
+
+    return img
 
 
 def equalized(fixed):
@@ -172,7 +178,7 @@ def clean_and_rotate_image(file_key):
     del img
     if channel == 1:
         cleaned = scaled(cleaned, mask, epsilon=0.01)
-        cleaned = equalized(cleaned)
+        #cleaned = equalized(cleaned)
 
     cleaned = crop_image(cleaned, mask)
     del mask
