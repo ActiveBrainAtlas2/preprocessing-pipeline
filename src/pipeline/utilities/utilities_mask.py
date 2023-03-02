@@ -218,8 +218,8 @@ def apply_mask(img, mask, infile):
     """
 
     if img.shape != mask.shape:
-        print(f'Resizing img from {img.shape} to {mask.shape}')
-        img = cv2.resize(img, (mask.shape[1], mask.shape[0]), interpolation=cv2.INTER_NEAREST)
+        print(f'Resizing mask from {mask.shape} to {img.shape}')
+        mask = cv2.resize(mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
 
 
     try:

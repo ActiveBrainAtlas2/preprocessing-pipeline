@@ -96,21 +96,17 @@ class ElastixManager(FileLogger):
                 self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)
 
             T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
+            Tinv = np.linalg.inv(T);
 
             #infile = os.path.join(INPUT, file)
             infile = moving_file
             outfile = os.path.join(OUTPUT, file)
             if os.path.exists(outfile):
                 continue
-            file_keys.append([infile, outfile, T])
+            file_keys.append([infile, outfile, Tinv])
 
         workers = self.get_nworkers() // 2
         self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
-
-
-
-
-        return transformations
             
 
     def call_alignment_metrics(self):
