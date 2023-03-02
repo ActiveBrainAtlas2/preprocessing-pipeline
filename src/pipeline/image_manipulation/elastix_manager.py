@@ -14,11 +14,12 @@ from timeit import default_timer as timer
 from subprocess import Popen, PIPE
 from pathlib import Path
 import SimpleITK as sitk
+from scipy.ndimage import affine_transform
 
 from database_model.elastix_transformation import ElastixTransformation
 from image_manipulation.filelocation_manager import FileLocationManager
 from image_manipulation.file_logger import FileLogger
-from utilities.utilities_process import get_image_size
+from utilities.utilities_process import get_image_size, read_image, write_image
 from utilities.utilities_registration import (
     align_elastix,
     align_image_to_affine,
@@ -96,17 +97,21 @@ class ElastixManager(FileLogger):
                 self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)
 
             T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
-            Tinv = np.linalg.inv(T);
 
             #infile = os.path.join(INPUT, file)
             infile = moving_file
             outfile = os.path.join(OUTPUT, file)
             if os.path.exists(outfile):
                 continue
-            file_keys.append([infile, outfile, Tinv])
+            file_keys.append([infile, outfile, T])
 
-        workers = self.get_nworkers() // 2
-        self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
+            img = read_image(infile)
+            img1 = self.transform_image(img, T)
+            write_image(outfile, img1)
+
+
+        #workers = self.get_nworkers() // 2
+        #self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
             
 
     def call_alignment_metrics(self):
@@ -289,6 +294,14 @@ class ElastixManager(FileLogger):
         width, height = get_image_size(midfilepath)
         center = np.array([width, height]) / 2
         return center
+    
+    def transform_image(self, img, T):
+        matrix = T[:2,:2]
+        offset = T[:2,2]
+        offset = np.flip(offset)
+        img = affine_transform(img,matrix.T,offset)
+        return img
+
 
 
     def get_transformations(self):
