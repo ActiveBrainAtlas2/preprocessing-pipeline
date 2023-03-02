@@ -56,7 +56,7 @@ def create_image(fixed_file, moving_file, outfile):
     rigid_params = create_rigid_parameters(elastixImageFilter)
     # We reset this value below to a lower number as just want a metric
     # we can compare to other sections
-    rigid_params["MaximumNumberOfIterations"] = ["80"]
+    rigid_params["MaximumNumberOfIterations"] = ["2000"]
 
     elastixImageFilter.SetParameterMap(rigid_params)
     elastixImageFilter.LogToConsoleOff();
