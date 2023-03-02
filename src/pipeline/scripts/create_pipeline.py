@@ -136,6 +136,16 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
         pipeline.run_program_and_time(pipeline.create_neuroglancer, pipeline.TASK_NEUROGLANCER_SINGLE)
         pipeline.run_program_and_time(pipeline.create_downsamples, pipeline.TASK_NEUROGLANCER_PYRAMID)
 
+    if step == 6:
+        print(f"Step {step}: align images dir to another image dir")
+
+        i = 2
+        print(f'Starting iteration {i}')
+        pipeline.iteration = i
+        pipeline.create_dir2dir_transformations()
+        #####TODO pipeline.align_full_size_image(transformations)
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Work on Animal")

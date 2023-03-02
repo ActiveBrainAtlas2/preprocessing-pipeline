@@ -68,7 +68,50 @@ class ElastixManager(FileLogger):
                 if not self.sqlController.check_elastix_row(self.animal, moving_index, self.iteration):
                     self.calculate_elastix_transformation(INPUT, fixed_index, moving_index)
 
-                    
+
+    def create_dir2dir_transformations(self):
+        """Calculate and store the rigid transformation using elastix.  
+        Align CH3 from CH1
+        """
+        MOVING_DIR = os.path.join(self.fileLocationManager.prep, 'CH3', 'thumbnail_aligned_iteration_1')
+        FIXED_DIR = self.fileLocationManager.get_thumbnail_aligned(channel=1)
+        OUTPUT = self.fileLocationManager.get_thumbnail_aligned(channel=3)
+        os.makedirs(OUTPUT, exist_ok=True)
+        moving_files = sorted(os.listdir(MOVING_DIR))
+        pixelType = sitk.sitkFloat32
+        center = self.get_rotation_center()
+        file_keys = []
+
+        for file in moving_files:
+            moving_index = str(file).replace(".tif","")
+            moving_file = os.path.join(MOVING_DIR, file)
+            fixed_file = os.path.join(FIXED_DIR, file)
+
+            if self.sqlController.check_elastix_row(self.animal, moving_index, self.iteration):
+                rotation, xshift, yshift = self.load_elastix_transformation(self.animal, moving_index, self.iteration)
+            else:
+                fixed = sitk.ReadImage(fixed_file, pixelType)
+                moving = sitk.ReadImage(moving_file, pixelType)
+                rotation, xshift, yshift = align_elastix(fixed, moving)
+                self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)
+
+            T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
+
+            #infile = os.path.join(INPUT, file)
+            infile = moving_file
+            outfile = os.path.join(OUTPUT, file)
+            if os.path.exists(outfile):
+                continue
+            file_keys.append([infile, outfile, T])
+
+        workers = self.get_nworkers() // 2
+        self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
+
+
+
+
+        return transformations
+            
 
     def call_alignment_metrics(self):
         """For the metrics value that shows how well the alignment went, 
@@ -135,6 +178,27 @@ class ElastixManager(FileLogger):
         #xshift, yshift, rotation, center = rigid_transform_to_parmeters(T, center0)
         #xshift, yshift, rotation, center = rigid_transform_to_parmeters(T, center0)
         self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)
+
+
+    def calculate_elastix_channels(self, INPUT, fixed_index, moving_index):
+        """Calculates the rigid transformation from the Elastix output
+        and adds it to the database.
+
+        :param INPUT: path of the files
+        :param fixed_index: index of fixed image
+        :param moving_index: index of moving image
+        """
+
+        # start register simple
+        pixelType = sitk.sitkFloat32
+        fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
+        moving_file = os.path.join(INPUT, f"{moving_index}.tif")
+        fixed = sitk.ReadImage(fixed_file, pixelType)
+        moving = sitk.ReadImage(moving_file, pixelType)
+        rotation, xshift, yshift = align_elastix(fixed, moving)
+        self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)
+
+
 
     @staticmethod
     def parameter_elastix_parameter_file_to_dict(filename):

@@ -24,7 +24,7 @@ import SimpleITK as sitk
 
 from image_manipulation.filelocation_manager import FileLocationManager
 from utilities.utilities_process import SCALING_FACTOR, read_image, write_image
-NUM_ITERATIONS = "2000"
+NUM_ITERATIONS = "800"
 
 
 def parameters_to_rigid_transform(rotation, xshift, yshift, center):
