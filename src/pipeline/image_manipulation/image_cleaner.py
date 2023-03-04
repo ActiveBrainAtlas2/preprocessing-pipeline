@@ -33,7 +33,7 @@ class ImageCleaner:
         
         CLEANED = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
         INPUT = self.fileLocationManager.get_thumbnail(self.channel)
-        MASKS = self.fileLocationManager.thumbnail_masked
+        MASKS = self.fileLocationManager.get_thumbnail_masked(channel=1) # TODO, this should default to 1, except for step 6
         self.logevent(f"INPUT FOLDER: {INPUT}")
         starting_files = os.listdir(INPUT)
         self.logevent(f"FILE COUNT: {len(starting_files)}")

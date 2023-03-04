@@ -9,6 +9,7 @@ import numpy as np
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
+
 Image.MAX_IMAGE_PIXELS = None
 from timeit import default_timer as timer
 from subprocess import Popen, PIPE
@@ -20,6 +21,7 @@ from database_model.elastix_transformation import ElastixTransformation
 from image_manipulation.filelocation_manager import FileLocationManager
 from image_manipulation.file_logger import FileLogger
 from utilities.utilities_process import get_image_size, read_image, write_image
+from utilities.utilities_mask import equalized, normalize_image
 from utilities.utilities_registration import (
     align_elastix,
     align_image_to_affine,
@@ -74,13 +76,17 @@ class ElastixManager(FileLogger):
         """Calculate and store the rigid transformation using elastix.  
         Align CH3 from CH1
         """
-        MOVING_DIR = os.path.join(self.fileLocationManager.prep, 'CH3', 'thumbnail_aligned_iteration_1')
-        FIXED_DIR = self.fileLocationManager.get_thumbnail_aligned(channel=1)
+        MOVING_DIR = os.path.join(self.fileLocationManager.prep, 'CH3', 'thumbnail_cleaned')
+        FIXED_DIR = self.fileLocationManager.get_thumbnail_aligned(channel=2)
         OUTPUT = self.fileLocationManager.get_thumbnail_aligned(channel=3)
         os.makedirs(OUTPUT, exist_ok=True)
         moving_files = sorted(os.listdir(MOVING_DIR))
-        pixelType = sitk.sitkFloat32
-        center = self.get_rotation_center()
+        files = sorted(os.listdir(MOVING_DIR))
+        midpoint = len(files) // 2
+        midfilepath = os.path.join(MOVING_DIR, files[midpoint])
+        width, height = get_image_size(midfilepath)
+        center = np.array([width, height]) / 2
+
         file_keys = []
 
         for file in moving_files:
@@ -91,8 +97,16 @@ class ElastixManager(FileLogger):
             if self.sqlController.check_elastix_row(self.animal, moving_index, self.iteration):
                 rotation, xshift, yshift = self.load_elastix_transformation(self.animal, moving_index, self.iteration)
             else:
-                fixed = sitk.ReadImage(fixed_file, pixelType)
-                moving = sitk.ReadImage(moving_file, pixelType)
+                fixed_arr = read_image(fixed_file)
+                fixed_arr = normalize_image(fixed_arr)
+                fixed_arr = equalized(fixed_arr)
+                fixed = sitk.GetImageFromArray(fixed_arr)
+
+                moving_arr = read_image(moving_file)
+                moving_arr = normalize_image(moving_arr)
+                moving_arr = equalized(moving_arr)
+                moving = sitk.GetImageFromArray(moving_arr)
+
                 rotation, xshift, yshift = align_elastix(fixed, moving)
                 self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)
 

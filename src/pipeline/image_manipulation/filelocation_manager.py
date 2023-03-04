@@ -49,8 +49,6 @@ class FileLocationManager(object):
         self.section_web = os.path.join(self.root, stack, "www", "section")
         self.tif = os.path.join(self.root, stack, "tif")
         self.thumbnail = os.path.join(self.prep, "CH1", "thumbnail")
-        self.thumbnail_colored = os.path.join(self.masks, "thumbnail_colored")
-        self.thumbnail_masked = os.path.join(self.masks, "thumbnail_masked")
         self.thumbnail_original = os.path.join(self.stack, "thumbnail_original")
         self.thumbnail_web = os.path.join(self.root, stack, "www", "scene")
 
@@ -87,6 +85,18 @@ class FileLocationManager(object):
 
     def get_normalized(self, channel=1):
         return os.path.join(self.prep, f"CH{channel}", "normalized")
+
+    def get_thumbnail_colored(self, channel=1):
+        return os.path.join(self.masks, f"CH{channel}", "thumbnail_colored")
+    
+    def get_thumbnail_masked(self, channel=1):
+        return os.path.join(self.masks, f"CH{channel}", "thumbnail_masked")
+
+    def get_full_colored(self, channel=1):
+        return os.path.join(self.masks, f"CH{channel}", "full_colored")
+    
+    def get_full_masked(self, channel=1):
+        return os.path.join(self.masks, f"CH{channel}", "full_masked")
 
     def get_histogram(self, channel=1):
         return os.path.join(self.histogram, f"CH{channel}")

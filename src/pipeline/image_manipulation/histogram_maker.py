@@ -27,7 +27,7 @@ class HistogramMaker:
 
         if self.downsample:
             INPUT = self.fileLocationManager.get_thumbnail(self.channel)
-            MASK_INPUT = self.fileLocationManager.thumbnail_masked
+            MASK_INPUT = self.fileLocationManager.get_thumbnail_masked(channel=1) # hard code this to channel 1
             files = self.sqlController.get_sections(self.animal, self.channel, self.rescan_number)
             test_dir(
                 self.animal, INPUT, self.section_count, downsample=True, same_size=False
@@ -73,7 +73,7 @@ class HistogramMaker:
 
         if self.downsample:
             INPUT = self.fileLocationManager.get_thumbnail(self.channel)
-            MASK_INPUT = self.fileLocationManager.thumbnail_masked
+            MASK_INPUT = self.fileLocationManager.get_thumbnail_masked(channel=1) #hard code this to channel 1
             OUTPUT = self.fileLocationManager.get_histogram(self.channel)
             self.logevent(f"INPUT FOLDER: {INPUT}")
             files = os.listdir(INPUT)

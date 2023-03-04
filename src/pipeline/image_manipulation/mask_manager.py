@@ -30,39 +30,39 @@ class MaskManager:
         surround debris to create the final masks used to clean the images
         """
         
-        if self.channel == 1 and self.downsample:
-            COLORED = self.fileLocationManager.thumbnail_colored
-            MASKS = self.fileLocationManager.thumbnail_masked
-            test_dir(self.animal, COLORED, self.section_count, True, same_size=False)
-            os.makedirs(MASKS, exist_ok=True)
-            files = sorted(os.listdir(COLORED))
-            self.logevent(f"INPUT FOLDER: {COLORED}")
-            self.logevent(f"FILE COUNT: {len(files)}")
-            self.logevent(f"MASKS FOLDER: {MASKS}")
-            for file in files:
-                filepath = os.path.join(COLORED, file)
-                maskpath = os.path.join(MASKS, file)
-                if os.path.exists(maskpath):
-                    continue
-                mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
-                mask = mask[:, :, 2]
-                mask[mask > 0] = 255
-                cv2.imwrite(maskpath, mask.astype(np.uint8))
+        COLORED = self.fileLocationManager.get_thumbnail_colored(self.channel)
+        MASKS = self.fileLocationManager.get_thumbnail_masked(self.channel)
+        
+        test_dir(self.animal, COLORED, self.section_count, True, same_size=False)
+        os.makedirs(MASKS, exist_ok=True)
+        files = sorted(os.listdir(COLORED))
+        self.logevent(f"INPUT FOLDER: {COLORED}")
+        self.logevent(f"FILE COUNT: {len(files)}")
+        self.logevent(f"MASKS FOLDER: {MASKS}")
+        for file in files:
+            filepath = os.path.join(COLORED, file)
+            maskpath = os.path.join(MASKS, file)
+            if os.path.exists(maskpath):
+                continue
+            mask = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
+            mask = mask[:, :, 2]
+            mask[mask > 0] = 255
+            cv2.imwrite(maskpath, mask.astype(np.uint8))
 
-            if self.tg:
-                for file in files:
-                    maskpath = os.path.join(MASKS, file)
-                    maskfillpath = os.path.join(MASKS, file)   
-                    maskfile = Image.open(maskpath) # 
-                    mask = np.array(maskfile)
-                    white = np.where(mask==255)
-                    whiterows = white[0]
-                    whitecols = white[1]
-                    firstrow = whiterows[0]
-                    lastrow = whiterows[-1]
-                    lastcol = whitecols[-1]
-                    mask[firstrow:lastrow, 0:lastcol] = 255
-                    cv2.imwrite(maskfillpath, mask.astype(np.uint8))
+        if self.tg:
+            for file in files:
+                maskpath = os.path.join(MASKS, file)
+                maskfillpath = os.path.join(MASKS, file)   
+                maskfile = Image.open(maskpath) # 
+                mask = np.array(maskfile)
+                white = np.where(mask==255)
+                whiterows = white[0]
+                whitecols = white[1]
+                firstrow = whiterows[0]
+                lastrow = whiterows[-1]
+                lastcol = whitecols[-1]
+                mask[firstrow:lastrow, 0:lastcol] = 255
+                cv2.imwrite(maskfillpath, mask.astype(np.uint8))
 
 
     def get_model_instance_segmentation(self, num_classes):
@@ -124,7 +124,7 @@ class MaskManager:
         """
         
         FULLRES = self.fileLocationManager.get_full(self.channel)
-        THUMBNAIL = self.fileLocationManager.thumbnail_masked
+        THUMBNAIL = self.fileLocationManager.get_thumbnail_masked(self.channel)
         MASKED = self.fileLocationManager.full_masked
         self.logevent(f"INPUT FOLDER: {FULLRES}")
         starting_files = os.listdir(FULLRES)
@@ -159,8 +159,8 @@ class MaskManager:
         
         self.load_machine_learning_model()
         transform = torchvision.transforms.ToTensor()
-        NORMALIZED = self.fileLocationManager.get_normalized()
-        COLORED = self.fileLocationManager.thumbnail_colored
+        NORMALIZED = self.fileLocationManager.get_normalized(self.channel)
+        COLORED = self.fileLocationManager.get_thumbnail_colored(self.channel)
         self.logevent(f"INPUT FOLDER: {NORMALIZED}")
         
         test_dir(self.animal, NORMALIZED, self.section_count, self.downsample, same_size=False)

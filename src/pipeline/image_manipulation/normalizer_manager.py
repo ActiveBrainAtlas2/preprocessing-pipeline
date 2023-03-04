@@ -13,8 +13,8 @@ class Normalizer:
 
     def create_normalized_image(self):
         """Normalize the downsampled images with QC applied"""
-        if self.channel == 1 and self.downsample:
-            INPUT = self.fileLocationManager.thumbnail
+        if self.downsample:
+            INPUT = self.fileLocationManager.get_thumbnail(self.channel)
             OUTPUT = self.fileLocationManager.get_normalized(self.channel)
             self.logevent(f"INPUT FOLDER: {INPUT}")
             files = sorted(os.listdir(INPUT))
@@ -41,5 +41,5 @@ class Normalizer:
 
                 if img.dtype == np.uint16:
                     img = (img / 256).astype(np.uint8)
-                fixed = equalized(img)
-                cv2.imwrite(outpath, fixed.astype(np.uint8))
+                img = equalized(img)
+                cv2.imwrite(outpath, img.astype(np.uint8))

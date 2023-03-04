@@ -104,12 +104,14 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
         print(f"Step {step}: apply QC and prepare image masks")
         pipeline.set_task_preps_update_scanrun()
         pipeline.run_program_and_time(pipeline.apply_QC, pipeline.TASK_APPLYING_QC)
-        pipeline.run_program_and_time(pipeline.create_normalized_image, pipeline.TASK_APPLYING_NORMALIZATION)
-        pipeline.run_program_and_time(pipeline.create_mask, pipeline.TASK_CREATING_MASKS)
+        if channel == 1 and downsample:
+            pipeline.run_program_and_time(pipeline.create_normalized_image, pipeline.TASK_APPLYING_NORMALIZATION)
+            pipeline.run_program_and_time(pipeline.create_mask, pipeline.TASK_CREATING_MASKS)
     
     if step == 2:
         print(f"Step {step}: clean images")
-        pipeline.run_program_and_time(pipeline.apply_user_mask_edits, pipeline.TASK_APPLYING_MASKS)
+        if channel == 1 and downsample:
+            pipeline.run_program_and_time(pipeline.apply_user_mask_edits, pipeline.TASK_APPLYING_MASKS)
         pipeline.run_program_and_time(pipeline.create_cleaned_images, pipeline.TASK_CREATING_CLEANED_IMAGES)
     
     if step == 3:
@@ -137,11 +139,20 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
         pipeline.run_program_and_time(pipeline.create_downsamples, pipeline.TASK_NEUROGLANCER_PYRAMID)
 
     if step == 6:
+        """This step is in case channel X differs from channel 1 and came from a different set of CZI files. 
+        This step will do everything for the channel, so you don't need to run channel X for step 2, or 4
+        """
+        
         print(f"Step {step}: align images dir to another image dir")
 
         i = 2
         print(f'Starting iteration {i}')
         pipeline.iteration = i
+        pipeline.create_normalized_image()
+        pipeline.create_downsampled_mask()
+        pipeline.apply_user_mask_edits()
+        ### Need to make sure this channel image size is the same as channel 1 image size
+        pipeline.create_cleaned_images()
         pipeline.create_dir2dir_transformations()
         #####TODO pipeline.align_full_size_image(transformations)
 

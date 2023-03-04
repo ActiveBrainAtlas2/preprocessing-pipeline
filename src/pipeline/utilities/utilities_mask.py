@@ -54,7 +54,10 @@ def place_image(img, file: str, max_width, max_height, bgcolor=None):
         try:
             new_img[startr:endr, startc:endc] = img
         except:
-            print(f'Could not place 2DIM {file} with width:{img.shape[1]}, height:{img.shape[0]} in {max_width}x{max_height} - rotate image?')
+            print(f'Resizing {file} from {img.shape} to {new_img.shape}')
+            ###mask = cv2.resize(mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+            img = cv2.resize(img, (new_img.shape[1], new_img.shape[0]), interpolation=cv2.INTER_LANCZOS4)
+            #print(f'Could not place {file} with width:{img.shape[1]}, height:{img.shape[0]} in {max_width}x{max_height}')
     if img.ndim == 3:
         try:
             new_img = np.zeros([max_height, max_width, 3]) + bgcolor
@@ -124,7 +127,7 @@ def equalized(fixed):
     :return: a better looking image
     """
     
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(2, 2))
+    clahe = cv2.createCLAHE(clipLimit=62.0, tileGridSize=(2, 2))
     fixed = clahe.apply(fixed)
     return fixed
 
@@ -216,11 +219,6 @@ def apply_mask(img, mask, infile):
     :param infile: path to file
     :return: numpy array of cleaned image
     """
-
-    if img.shape != mask.shape:
-        print(f'Resizing mask from {mask.shape} to {img.shape}')
-        mask = cv2.resize(mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
-
 
     try:
         cleaned = cv2.bitwise_and(img, img, mask=mask)
