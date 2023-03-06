@@ -112,37 +112,29 @@ class ElastixManager(FileLogger):
 
             T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
 
-            #infile = os.path.join(INPUT, file)
             infile = moving_file
             outfile = os.path.join(OUTPUT, file)
             if os.path.exists(outfile):
                 continue
             file_keys.append([infile, outfile, T])
 
-            img = read_image(infile)
-            img1 = self.transform_image(img, T)
-            write_image(outfile, img1)
-
-
-        #workers = self.get_nworkers() // 2
-        #self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
+        workers = self.get_nworkers()
+        self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
             
 
-    def apply_full_transformations(self):
+    def apply_full_transformations(self, channel=1):
         """Calculate and store the rigid transformation using elastix.  
         Align CH3 from CH1
         """
         INPUT = os.path.join(self.fileLocationManager.prep, 'CH3', 'full_cleaned')
-        OUTPUT = self.fileLocationManager.get_full_aligned(channel=3)
-        #####INPUT = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
-        #####OUTPUT = self.fileLocationManager.get_thumbnail_aligned(channel=3)
+        OUTPUT = self.fileLocationManager.get_full_aligned(channel=channel)
         os.makedirs(OUTPUT, exist_ok=True)
         files = sorted(os.listdir(INPUT))
         midpoint = len(files) // 2
         midfilepath = os.path.join(INPUT, files[midpoint])
         width, height = get_image_size(midfilepath)
         center = np.array([width, height]) / 2
-
+        file_keys = []
 
         for file in files:
             moving_index = str(file).replace(".tif","")
@@ -155,11 +147,12 @@ class ElastixManager(FileLogger):
             if os.path.exists(outfile):
                 continue
 
-            img = read_image(infile)
-            img1 = self.transform_image(img, Ts)
-            del img
-            write_image(outfile, img1)
+            file_key = [infile, outfile, Ts]
+            file_keys.append(file_key)
+            align_image_to_affine(file_key)
 
+        workers = self.get_nworkers() // 2
+        self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
 
 
     def call_alignment_metrics(self):

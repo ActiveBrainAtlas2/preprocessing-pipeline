@@ -139,7 +139,8 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
 
     if step == 6:
         """This step is in case channel X differs from channel 1 and came from a different set of CZI files. 
-        This step will do everything for the channel, so you don't need to run channel X for step 2, or 4
+        This step will do everything for the channel, so you don't need to run channel X for step 2, or 4. You do need
+        to run step 0 and step 1.
         """
         
         print(f"Step {step}: align images dir to another image dir")
@@ -156,10 +157,7 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
         else:
             pipeline.create_full_resolution_mask(channel=channel)
             pipeline.create_cleaned_images_full_resolution(channel=channel)
-            pipeline.apply_full_transformations()
-
-        #####TODO pipeline.align_full_size_image(transformations)
-
+            pipeline.apply_full_transformations(channel=channel)
 
 
 if __name__ == "__main__":
