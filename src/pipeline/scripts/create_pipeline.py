@@ -154,8 +154,8 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
             pipeline.create_cleaned_images_thumbnail(channel=channel)
             pipeline.create_dir2dir_transformations()
         else:
-            #pipeline.create_full_resolution_mask(channel=channel)
-            #pipeline.create_cleaned_images_full_resolution(channel=channel)
+            pipeline.create_full_resolution_mask(channel=channel)
+            pipeline.create_cleaned_images_full_resolution(channel=channel)
             pipeline.apply_full_transformations()
 
         #####TODO pipeline.align_full_size_image(transformations)

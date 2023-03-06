@@ -26,7 +26,7 @@ from utilities.utilities_registration import (
     align_elastix,
     align_image_to_affine,
     create_downsampled_transforms,
-    create_transform,
+    create_scaled_transform,
     parameters_to_rigid_transform,
     rigid_transform_to_parmeters,
     tif_to_png,
@@ -149,7 +149,7 @@ class ElastixManager(FileLogger):
             rotation, xshift, yshift = self.load_elastix_transformation(self.animal, moving_index, self.iteration)
 
             T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
-            Ts = create_transform(T)
+            Ts = create_scaled_transform(T)
             infile = os.path.join(INPUT, file)
             outfile = os.path.join(OUTPUT, file)
             if os.path.exists(outfile):
@@ -331,7 +331,7 @@ class ElastixManager(FileLogger):
         matrix = T[:2,:2]
         offset = T[:2,2]
         offset = np.flip(offset)
-        img = affine_transform(img,matrix.T,offset)
+        img = affine_transform(img, matrix.T, offset)
         return img
 
 
