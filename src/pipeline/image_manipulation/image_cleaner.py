@@ -27,13 +27,13 @@ class ImageCleaner:
         else:
             self.create_cleaned_images_full_resolution()
 
-    def create_cleaned_images_thumbnail(self):
+    def create_cleaned_images_thumbnail(self, channel=1):
         """Clean the image using the masks for the downsampled version
         """
         
         CLEANED = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
         INPUT = self.fileLocationManager.get_thumbnail(self.channel)
-        MASKS = self.fileLocationManager.get_thumbnail_masked(channel=1) # TODO, this should default to 1, except for step 6
+        MASKS = self.fileLocationManager.get_thumbnail_masked(channel=channel) # TODO, this should default to 1, except for step 6
         self.logevent(f"INPUT FOLDER: {INPUT}")
         starting_files = os.listdir(INPUT)
         self.logevent(f"FILE COUNT: {len(starting_files)}")
