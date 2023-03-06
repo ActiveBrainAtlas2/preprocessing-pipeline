@@ -13,7 +13,6 @@ import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 from cloudvolume.lib import touch
 from collections import defaultdict
-from skimage.transform import resize
 
 from utilities.utilities_process import get_cpus
 
@@ -123,7 +122,7 @@ class NumpyToNeuroglancer():
         self.num_channels = num_channels
 
 
-    def init_precomputed(self, path: str, volume_size, starting_points=None, progress_id=None) -> None:
+    def init_precomputed(self, path: str, volume_size, starting_points=None) -> None:
         """Initializes 'precomputed' cloud volume format (directory 
         holding multiple volumes)
 
@@ -144,7 +143,6 @@ class NumpyToNeuroglancer():
             volume_size=volume_size,  # X,Y,Z size in voxels
         )
         self.starting_points = starting_points
-        self.progress_id = progress_id
         self.precomputed_vol = CloudVolume(f'file://{path}', mip=0, info=info, compress=True, progress=False)
         self.precomputed_vol.commit_info()
         self.precomputed_vol.commit_provenance()

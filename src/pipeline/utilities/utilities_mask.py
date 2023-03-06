@@ -4,7 +4,6 @@
 import sys
 import cv2
 import numpy as np
-from skimage.transform import rescale, resize
 
 from utilities.utilities_process import read_image, write_image
 

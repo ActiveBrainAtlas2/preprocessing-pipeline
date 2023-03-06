@@ -182,27 +182,6 @@ class MetaUtilities:
 
         return files
 
-    def update_database_with_metadata(self):
-        """Updates the "file log" table in the database that tracks the progress 
-        of the pipeline
-
-        Unclear if still used/relevant as of 4-NOV-2022; if still used method name 
-        change [to something more descriptive
-        would be appropriate]
-        """
-        SLIDES_ARE_SCANNED = self.sqlController.get_progress_id(
-            downsample=0, channel=0, action="SCAN"
-        )
-        CZI_FILES_ARE_PLACED_ON_BIRDSTORE = self.sqlController.get_progress_id(
-            downsample=0, channel=0, action="BIRDSTORE"
-        )
-        CZI_FILES_ARE_SCANNED_TO_GET_METADATA = self.sqlController.get_progress_id(
-            downsample=0, channel=0, action="META"
-        )
-        self.sqlController.set_task(self.animal, SLIDES_ARE_SCANNED)
-        self.sqlController.set_task(self.animal, CZI_FILES_ARE_PLACED_ON_BIRDSTORE)
-        self.sqlController.set_task(self.animal, CZI_FILES_ARE_SCANNED_TO_GET_METADATA)
-
 
 def parallel_extract_slide_meta_data_and_insert_to_database(file_key):
     """A helper method to define some methods for extracting metadata.

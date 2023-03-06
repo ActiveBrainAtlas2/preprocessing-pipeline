@@ -83,10 +83,6 @@ class ImageCleaner:
 
         files = sorted(os.listdir(INPUT))
 
-        progress_id = self.sqlController.get_progress_id(
-            self.downsample, self.channel, "CLEAN"
-        )
-        self.sqlController.set_task(self.animal, progress_id)
         file_keys = []
         for file in files:
             infile = os.path.join(INPUT, file)

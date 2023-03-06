@@ -5,7 +5,6 @@ import argparse
 from concurrent.futures import ProcessPoolExecutor
 import os
 import sys
-from skimage import io
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 from taskqueue.taskqueue import LocalTaskQueue
@@ -31,7 +30,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from image_manipulation.filelocation_manager import FileLocationManager
 
 from controller.sql_controller import SqlController
-from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer, calculate_factors
+from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
 from utilities.utilities_process import get_cpus, get_hostname
 DTYPE = np.uint64
 

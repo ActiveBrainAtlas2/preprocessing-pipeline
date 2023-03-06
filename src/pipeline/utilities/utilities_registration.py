@@ -16,13 +16,11 @@ regarding one particular parameter.
  while the other parameters correspond to the translations that are measured in millimeters*
 
 """
-import os
 import numpy as np
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import SimpleITK as sitk
 
-from image_manipulation.filelocation_manager import FileLocationManager
 from utilities.utilities_process import SCALING_FACTOR, read_image, write_image
 NUM_ITERATIONS = "2000"
 
@@ -258,29 +256,6 @@ def align_elastix(fixed, moving):
     elastixImageFilter.Execute()
     
     return (elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"])
-
-
-def register_simple(INPUT, animal, fixed_index, moving_index):
-    """Helper method for inputing the fixed and moving images into Elastix
-    This creates the sitk float images and sends them to Elastix
-
-    :param INPUT: path to files
-    :param fixed_index: index of the fixed image path
-    :param moving_index: index of the moving image path
-    :return: two elastix transforms
-    """
-    pixelType = sitk.sitkFloat32
-    fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
-    moving_file = os.path.join(INPUT, f"{moving_index}.tif")
-    fixed = sitk.ReadImage(fixed_file, pixelType)
-    moving = sitk.ReadImage(moving_file, pixelType)
-    initial_transform = sitk.Euler2DTransform()
-    #initial_transform = parse_sitk_rigid_transform(initial_transform)
-    initial_transform = rotation, xshift, yshift, center
-    rotation, xshift, yshift = sitk.GetParameters()
-    center = sitk.GetFixedParameters()
-    elastix_transform = align_elastix(fixed, moving)
-    return (elastix_transform, initial_transform)
 
 
 def create_downsampled_transforms(transforms: dict, downsample: bool) -> dict:

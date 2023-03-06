@@ -18,7 +18,6 @@ from controller.scan_run_controller import ScanRunController
 from controller.sections_controller import SectionsController
 from controller.slide_controller import SlideController
 from controller.slide_tif_controller import SlideCZIToTifController
-from controller.tasks_controller import TasksController
 from database_model.scan_run import ScanRun
 from database_model.histology import Histology
 
@@ -31,7 +30,7 @@ except ImportError as fe:
 
 class SqlController(AnimalController, ElastixController, HistologyController,
                      ScanRunController, SectionsController,
-                    SlideController, SlideCZIToTifController, TasksController):
+                    SlideController, SlideCZIToTifController):
     """ This is the base class for all things SQL.  
     Each parent class of SqlController would correspond to one table in the database, and include all the 
     methods to interact with that table

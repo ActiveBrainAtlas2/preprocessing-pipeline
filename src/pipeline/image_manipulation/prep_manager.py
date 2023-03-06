@@ -18,8 +18,6 @@ class PrepCreater:
         """
         if self.channel == 1 and self.downsample:
             self.sqlController.update_scanrun(self.sqlController.scan_run.id)
-        progress_id = self.sqlController.get_progress_id(self.downsample, self.channel, "TIF")
-        self.sqlController.set_task(self.animal, progress_id)
 
     def apply_QC(self):
         """

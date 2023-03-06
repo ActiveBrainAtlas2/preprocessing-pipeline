@@ -36,9 +36,6 @@ class HistogramMaker:
                 print(" No sections in the database")
             OUTPUT = self.fileLocationManager.get_histogram(self.channel)
             os.makedirs(OUTPUT, exist_ok=True)
-            self.sqlController.set_task_for_step(
-                self.animal, True, self.channel, "HISTOGRAM"
-            )
             file_keys = []
             for i, file in enumerate(files):
                 filename = str(i).zfill(3) + ".tif"

@@ -2,7 +2,6 @@ import argparse
 import os
 import sys
 import numpy as np
-from skimage import io
 
 from pathlib import Path
 PIPELINE_ROOT = Path('./src/pipeline').absolute()

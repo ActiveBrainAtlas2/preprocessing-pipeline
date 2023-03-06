@@ -63,13 +63,11 @@ class NgPrecomputedMaker:
 
     def create_neuroglancer(self):
         """create the Seung lab cloud volume format from the image stack"""
-        progress_id = self.sqlController.get_progress_id(self.downsample, self.channel, "NEUROGLANCER")
 
         if self.downsample:
             INPUT = self.fileLocationManager.get_thumbnail_aligned(channel=self.channel)
         if not self.downsample:
             INPUT = self.fileLocationManager.get_full_aligned(channel=self.channel)
-            self.sqlController.set_task(self.animal, progress_id)
 
         OUTPUT_DIR = self.fileLocationManager.get_neuroglancer(self.downsample, self.channel)
         os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -96,7 +94,7 @@ class NgPrecomputedMaker:
             chunk_size=chunks,
         )
         
-        ng.init_precomputed(OUTPUT_DIR, volume_size, progress_id=progress_id)
+        ng.init_precomputed(OUTPUT_DIR, volume_size)
         workers = self.get_nworkers()
         self.run_commands_concurrently(ng.process_image, file_keys, workers)
         ng.precomputed_vol.cache.flush()
