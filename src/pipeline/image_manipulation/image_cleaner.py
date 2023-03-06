@@ -33,7 +33,7 @@ class ImageCleaner:
         
         CLEANED = self.fileLocationManager.get_thumbnail_cleaned(self.channel)
         INPUT = self.fileLocationManager.get_thumbnail(self.channel)
-        MASKS = self.fileLocationManager.get_thumbnail_masked(channel=channel) # TODO, this should default to 1, except for step 6
+        MASKS = self.fileLocationManager.get_thumbnail_masked(channel=channel) # usually channel=1, except for step 6
         self.logevent(f"INPUT FOLDER: {INPUT}")
         starting_files = os.listdir(INPUT)
         self.logevent(f"FILE COUNT: {len(starting_files)}")
@@ -44,14 +44,14 @@ class ImageCleaner:
         os.makedirs(CLEANED, exist_ok=True)
         self.parallel_create_cleaned(INPUT, CLEANED, MASKS)
 
-    def create_cleaned_images_full_resolution(self):
+    def create_cleaned_images_full_resolution(self, channel=1):
         """Clean the image using the masks for the full resolution image
         """
         
         CLEANED = self.fileLocationManager.get_full_cleaned(self.channel)
         os.makedirs(CLEANED, exist_ok=True)
         INPUT = self.fileLocationManager.get_full(self.channel)
-        MASKS = self.fileLocationManager.full_masked
+        MASKS = self.fileLocationManager.get_full_masked(channel=channel) #usually channel=1, except for step 6
         self.logevent(f"INPUT FOLDER: {INPUT}")
         starting_files = os.listdir(INPUT)
         self.logevent(f"FILE COUNT: {len(starting_files)}")
