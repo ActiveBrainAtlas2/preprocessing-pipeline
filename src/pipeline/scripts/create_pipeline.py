@@ -102,7 +102,7 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
 
     if step == 1:
         print(f"Step {step}: apply QC and prepare image masks")
-        pipeline.set_task_preps_update_scanrun()
+        pipeline.update_scanrun()
         pipeline.run_program_and_time(pipeline.apply_QC, pipeline.TASK_APPLYING_QC)
         pipeline.run_program_and_time(pipeline.create_normalized_image, pipeline.TASK_APPLYING_NORMALIZATION)
         pipeline.run_program_and_time(pipeline.create_mask, pipeline.TASK_CREATING_MASKS)
@@ -147,11 +147,17 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
         i = 2
         print(f'Starting iteration {i}')
         pipeline.iteration = i
-        pipeline.create_normalized_image()
-        pipeline.create_downsampled_mask()
-        pipeline.apply_user_mask_edits()
-        pipeline.create_cleaned_images_thumbnail(channel=channel)
-        pipeline.create_dir2dir_transformations()
+        if downsample:
+            pipeline.create_normalized_image()
+            pipeline.create_downsampled_mask()
+            pipeline.apply_user_mask_edits()
+            pipeline.create_cleaned_images_thumbnail(channel=channel)
+            pipeline.create_dir2dir_transformations()
+        else:
+            #pipeline.create_full_resolution_mask(channel=channel)
+            #pipeline.create_cleaned_images_full_resolution(channel=channel)
+            pipeline.apply_full_transformations()
+
         #####TODO pipeline.align_full_size_image(transformations)
 
 

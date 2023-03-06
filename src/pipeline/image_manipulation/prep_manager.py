@@ -12,7 +12,7 @@ class PrepCreater:
     to image stack
     """
 
-    def set_task_preps_update_scanrun(self):
+    def update_scanrun(self):
         """This is where the scan run table gets updated so the width and 
         height are correct.
         """

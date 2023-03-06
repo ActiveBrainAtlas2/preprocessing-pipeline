@@ -282,6 +282,27 @@ def create_downsampled_transforms(transforms: dict, downsample: bool) -> dict:
     return transforms_to_anchor
 
 
+def create_transform(T):
+    """Creates a transform (T) to the correct resolution
+    """
+    transforms_scale_factor = SCALING_FACTOR
+
+    tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
+
+    """
+    transforms_to_anchor = {}
+    for img_name, tf in transforms.items():
+        transforms_to_anchor[img_name] = \
+            convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor)
+    return transforms_to_anchor
+    """
+
+    Ts = convert_2d_transform_forms(np.reshape(T, (3, 3))[:2] * tf_mat_mult_factor)
+    return Ts
+
+
+
+
 def convert_2d_transform_forms(arr):
     """Helper method used by create_downsampled_transforms
 

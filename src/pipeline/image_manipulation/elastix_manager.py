@@ -26,6 +26,7 @@ from utilities.utilities_registration import (
     align_elastix,
     align_image_to_affine,
     create_downsampled_transforms,
+    create_transform,
     parameters_to_rigid_transform,
     rigid_transform_to_parmeters,
     tif_to_png,
@@ -126,6 +127,40 @@ class ElastixManager(FileLogger):
         #workers = self.get_nworkers() // 2
         #self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
             
+
+    def apply_full_transformations(self):
+        """Calculate and store the rigid transformation using elastix.  
+        Align CH3 from CH1
+        """
+        INPUT = os.path.join(self.fileLocationManager.prep, 'CH3', 'full_cleaned')
+        OUTPUT = self.fileLocationManager.get_full_aligned(channel=3)
+        #####INPUT = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_cleaned')
+        #####OUTPUT = self.fileLocationManager.get_thumbnail_aligned(channel=3)
+        os.makedirs(OUTPUT, exist_ok=True)
+        files = sorted(os.listdir(INPUT))
+        midpoint = len(files) // 2
+        midfilepath = os.path.join(INPUT, files[midpoint])
+        width, height = get_image_size(midfilepath)
+        center = np.array([width, height]) / 2
+
+
+        for file in files:
+            moving_index = str(file).replace(".tif","")
+            rotation, xshift, yshift = self.load_elastix_transformation(self.animal, moving_index, self.iteration)
+
+            T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
+            Ts = create_transform(T)
+            infile = os.path.join(INPUT, file)
+            outfile = os.path.join(OUTPUT, file)
+            if os.path.exists(outfile):
+                continue
+
+            img = read_image(infile)
+            img1 = self.transform_image(img, Ts)
+            del img
+            write_image(outfile, img1)
+
+
 
     def call_alignment_metrics(self):
         """For the metrics value that shows how well the alignment went, 
@@ -361,10 +396,6 @@ class ElastixManager(FileLogger):
             self.logevent(f"FILE COUNT: {len(starting_files)}")
             self.logevent(f"OUTPUT FOLDER: {OUTPUT}")
             self.align_images(INPUT, OUTPUT, transforms)
-            progress_id = self.sqlController.get_progress_id(
-                downsample=False, channel=self.channel, action="ALIGN"
-            )
-            self.sqlController.set_task(self.animal, progress_id)
 
 
     def align_downsampled_images(self, transforms):
