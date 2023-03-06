@@ -119,13 +119,13 @@ class MaskManager:
             print("no model to load")
             return
 
-    def create_full_resolution_mask(self):
+    def create_full_resolution_mask(self, channel=1):
         """Upsample the masks created for the downsampled images to the full resolution
         """
         
         FULLRES = self.fileLocationManager.get_full(self.channel)
-        THUMBNAIL = self.fileLocationManager.get_thumbnail_masked(self.channel)
-        MASKED = self.fileLocationManager.full_masked
+        THUMBNAIL = self.fileLocationManager.get_thumbnail_masked(channel=channel) # usually channel=1, except for step 6
+        MASKED = self.fileLocationManager.get_full_masked(channel=channel) # usually channel=1, except for step 6
         self.logevent(f"INPUT FOLDER: {FULLRES}")
         starting_files = os.listdir(FULLRES)
         self.logevent(f"FILE COUNT: {len(starting_files)}")
@@ -152,7 +152,7 @@ class MaskManager:
         workers = self.get_nworkers()
         self.run_commands_concurrently(self.resize_tif, file_keys, workers)
 
-    def create_downsampled_mask(self):
+    def create_downsampled_mask(self, channel=1):
         """Create masks for the downsampled images using a machine learning algorithm.
         The input files are the files that have been normalized.
         """
@@ -160,7 +160,7 @@ class MaskManager:
         self.load_machine_learning_model()
         transform = torchvision.transforms.ToTensor()
         NORMALIZED = self.fileLocationManager.get_normalized(self.channel)
-        COLORED = self.fileLocationManager.get_thumbnail_colored(self.channel)
+        COLORED = self.fileLocationManager.get_thumbnail_colored(channel=channel) # usually channel=1, except for step 6
         self.logevent(f"INPUT FOLDER: {NORMALIZED}")
         
         test_dir(self.animal, NORMALIZED, self.section_count, self.downsample, same_size=False)
