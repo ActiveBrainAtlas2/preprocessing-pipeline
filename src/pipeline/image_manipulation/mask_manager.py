@@ -139,15 +139,15 @@ class MaskManager:
         for file in files:
             infile = os.path.join(FULLRES, file)
             thumbfile = os.path.join(THUMBNAIL, file)
-            outpath = os.path.join(MASKED, file)
-            if os.path.exists(outpath):
+            outfile = os.path.join(MASKED, file)
+            if os.path.exists(outfile):
                 continue
             try:
                 width, height = get_image_size(infile)
             except:
                 print(f"Could not open {infile}")
             size = int(width), int(height)
-            file_keys.append([thumbfile, outpath, size])
+            file_keys.append([thumbfile, outfile, size])
 
         workers = self.get_nworkers()
         self.run_commands_concurrently(self.resize_tif, file_keys, workers)

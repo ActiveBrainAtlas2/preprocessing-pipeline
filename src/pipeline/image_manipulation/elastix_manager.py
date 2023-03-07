@@ -147,7 +147,7 @@ class ElastixManager(FileLogger):
             file_keys.append(file_key)
             align_image_to_affine(file_key)
 
-        workers = self.get_nworkers() // 2
+        workers = self.get_nworkers()
         self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
 
 

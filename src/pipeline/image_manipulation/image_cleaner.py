@@ -86,14 +86,14 @@ class ImageCleaner:
         file_keys = []
         for file in files:
             infile = os.path.join(INPUT, file)
-            outpath = os.path.join(CLEANED, file)  # regular-birdstore
-            if os.path.exists(outpath):
+            outfile = os.path.join(CLEANED, file)  # regular-birdstore
+            if os.path.exists(outfile):
                 continue
             maskfile = os.path.join(MASKS, file)
             file_keys.append(
                 [
                     infile,
-                    outpath,
+                    outfile,
                     maskfile,
                     rotation,
                     flip,
