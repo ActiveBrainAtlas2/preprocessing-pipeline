@@ -20,7 +20,7 @@ from scipy.ndimage import affine_transform
 from database_model.elastix_transformation import ElastixTransformation
 from image_manipulation.filelocation_manager import FileLocationManager
 from image_manipulation.file_logger import FileLogger
-from utilities.utilities_process import get_image_size, read_image, write_image
+from utilities.utilities_process import get_image_size, read_image
 from utilities.utilities_mask import equalized, normalize_image
 from utilities.utilities_registration import (
     align_elastix,
@@ -28,7 +28,6 @@ from utilities.utilities_registration import (
     create_downsampled_transforms,
     create_scaled_transform,
     parameters_to_rigid_transform,
-    rigid_transform_to_parmeters,
     tif_to_png,
 )
 
@@ -110,7 +109,7 @@ class ElastixManager(FileLogger):
                 rotation, xshift, yshift = align_elastix(fixed, moving)
                 self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)
 
-            T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
+            T = parameters_to_rigid_transform(rotation, xshift, yshift, center)
 
             infile = moving_file
             outfile = os.path.join(OUTPUT, file)
@@ -130,17 +129,14 @@ class ElastixManager(FileLogger):
         OUTPUT = self.fileLocationManager.get_full_aligned(channel=channel)
         os.makedirs(OUTPUT, exist_ok=True)
         files = sorted(os.listdir(INPUT))
-        midpoint = len(files) // 2
-        midfilepath = os.path.join(INPUT, files[midpoint])
-        width, height = get_image_size(midfilepath)
-        center = np.array([width, height]) / 2
+        center = self.get_rotation_center(channel=channel)
         file_keys = []
 
         for file in files:
             moving_index = str(file).replace(".tif","")
             rotation, xshift, yshift = self.load_elastix_transformation(self.animal, moving_index, self.iteration)
 
-            T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
+            T = parameters_to_rigid_transform(rotation, xshift, yshift, center)
             Ts = create_scaled_transform(T)
             infile = os.path.join(INPUT, file)
             outfile = os.path.join(OUTPUT, file)
@@ -251,34 +247,6 @@ class ElastixManager(FileLogger):
 
             return d
 
-
-    def rigid_transform_to_parmeters(self, transform):
-        """convert a 2d transformation matrix (3*3) to the rotation angles, 
-        rotation center and translation
-
-        :param transform: (array like): 3*3 array that stores the 2*2 transformation matrix and the 1*2 translation vector for a
-            2D image.  the third row of the array is a place holder of values [0,0,1].
-        :return tuple: floats of x,y translation, float of rotation
-        """
-
-        return rigid_transform_to_parmeters(transform, self.get_rotation_center())
-
-
-    def parameters_to_rigid_transform(self, rotation: float, xshift: float, yshift: float, center):
-        """convert a set of rotation parameters to the transformation matrix
-
-        
-        :param rotation: rotation angle in arc
-        :param xshift: (float) translation in x
-        :param yshift: (float) translation in y
-        :param center: (list) list of x and y for the rotation center
-
-        :return array: 3*3 transformation matrix for 2D image, contain the 2*2 array and 1*2 translation vector
-        """
-
-        return parameters_to_rigid_transform(rotation, xshift, yshift, center)
-
-
     def load_elastix_transformation(self, animal, moving_index, iteration):
         """loading the elastix transformation from the database
 
@@ -306,13 +274,13 @@ class ElastixManager(FileLogger):
         return R, xshift, yshift
 
 
-    def get_rotation_center(self):
+    def get_rotation_center(self, channel=1):
         """return a rotation center for finding the parameters of a transformation from the transformation matrix
 
         :return list: list of x and y for rotation center that set as the midpoint of the section that is in the middle of the stack
         """
 
-        INPUT = self.fileLocationManager.get_thumbnail_cleaned(1)
+        INPUT = self.fileLocationManager.get_thumbnail_cleaned(channel)
         files = sorted(os.listdir(INPUT))
         midpoint = len(files) // 2
         midfilepath = os.path.join(INPUT, files[midpoint])
@@ -344,7 +312,7 @@ class ElastixManager(FileLogger):
 
         for i in range(1, len(files)):
             rotation, xshift, yshift = self.load_elastix_transformation(self.animal, i, self.iteration)
-            T = self.parameters_to_rigid_transform(rotation, xshift, yshift, center)
+            T = parameters_to_rigid_transform(rotation, xshift, yshift, center)
             transformation_to_previous_sec[i] = T
 
         transformations = {}
