@@ -19,6 +19,5 @@ methods to the programmer.
    controller/slide_controller.rst
    controller/slide_tif_controller.rst
    controller/sql_controller.rst
-   controller/tasks_controller.rst
 
    

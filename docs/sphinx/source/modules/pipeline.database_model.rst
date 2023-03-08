@@ -15,4 +15,3 @@ The database models provide an object oriented method to access the database tab
    database_model/histology.rst
    database_model/scan_run.rst
    database_model/slide.rst
-   database_model/task.rst
