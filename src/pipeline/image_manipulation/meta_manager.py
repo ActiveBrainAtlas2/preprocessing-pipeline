@@ -66,7 +66,6 @@ class MetaUtilities:
                 workers = self.get_nworkers()
                 print(f'working on parallel extract files={len(file_keys)}')
                 self.run_commands_concurrently(parallel_extract_slide_meta_data_and_insert_to_database, file_keys, workers)
-                self.update_database_with_metadata()  # may/will need revisions for parallel
             else:
                 msg = "NOTHING TO PROCESS - SKIPPING"
                 print(msg)

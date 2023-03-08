@@ -94,31 +94,31 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
     print("\tdebug:".ljust(20), f"{str(debug)}".ljust(20))
     print()
 
-    if step == 0:
+    if step == "0":
         print(f"Step {step}: prepare images for quality control.")
         pipeline.run_program_and_time(pipeline.extract_slide_meta_data_and_insert_to_database, pipeline.TASK_CREATING_META)
         pipeline.run_program_and_time(pipeline.create_web_friendly_image, pipeline.TASK_CREATING_WEB_IMAGES)
         pipeline.run_program_and_time(pipeline.extract_tiffs_from_czi, pipeline.TASK_EXTRACTING_TIFFS)
 
-    if step == 1:
+    if step == "1":
         print(f"Step {step}: apply QC and prepare image masks")
         pipeline.update_scanrun()
         pipeline.run_program_and_time(pipeline.apply_QC, pipeline.TASK_APPLYING_QC)
         pipeline.run_program_and_time(pipeline.create_normalized_image, pipeline.TASK_APPLYING_NORMALIZATION)
         pipeline.run_program_and_time(pipeline.create_mask, pipeline.TASK_CREATING_MASKS)
     
-    if step == 2:
+    if step == "2":
         print(f"Step {step}: clean images")
         if channel == 1 and downsample:
             pipeline.run_program_and_time(pipeline.apply_user_mask_edits, pipeline.TASK_APPLYING_MASKS)
         pipeline.run_program_and_time(pipeline.create_cleaned_images, pipeline.TASK_CREATING_CLEANED_IMAGES)
     
-    if step == 3:
+    if step == "3":
         print(f"Step {step}: create histograms")
         pipeline.run_program_and_time(pipeline.make_histogram, pipeline.TASK_CREATING_HISTOGRAMS)
         pipeline.run_program_and_time(pipeline.make_combined_histogram, pipeline.TASK_CREATING_COMBINED_HISTOGRAM)
 
-    if step == 4:
+    if step == "4":
         print(f"Step {step}: align images within stack")
 
         for i in [0, 1]:
@@ -131,13 +131,8 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
             pipeline.run_program_and_time(pipeline.call_alignment_metrics, pipeline.TASK_CREATING_ELASTIX_METRICS)
 
         pipeline.run_program_and_time(pipeline.create_web_friendly_sections, pipeline.TASK_CREATING_SECTION_PNG)
-    
-    if step == 5:
-        print(f"Step {step}: create neuroglancer data")
-        pipeline.run_program_and_time(pipeline.create_neuroglancer, pipeline.TASK_NEUROGLANCER_SINGLE)
-        pipeline.run_program_and_time(pipeline.create_downsamples, pipeline.TASK_NEUROGLANCER_PYRAMID)
 
-    if step == 6:
+    if step == "4a":
         """This step is in case channel X differs from channel 1 and came from a different set of CZI files. 
         This step will do everything for the channel, so you don't need to run channel X for step 2, or 4. You do need
         to run step 0 and step 1.
@@ -159,6 +154,14 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
             pipeline.create_cleaned_images_full_resolution(channel=channel)
             pipeline.apply_full_transformations(channel=channel)
 
+    if step == "5":
+        print(f"Step {step}: create neuroglancer data")
+        pipeline.run_program_and_time(pipeline.create_neuroglancer, pipeline.TASK_NEUROGLANCER_SINGLE)
+        pipeline.run_program_and_time(pipeline.create_downsamples, pipeline.TASK_NEUROGLANCER_PYRAMID)
+
+
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Work on Animal")
@@ -175,7 +178,7 @@ if __name__ == "__main__":
     animal = args.animal
     channel = int(args.channel)
     downsample = bool({"true": True, "false": False}[str(args.downsample).lower()])
-    step = int(args.step)
+    step = str(args.step)
     rescan_number = int(args.rescan_number)
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
     tg = bool({"true": True, "false": False}[str(args.tg).lower()])
