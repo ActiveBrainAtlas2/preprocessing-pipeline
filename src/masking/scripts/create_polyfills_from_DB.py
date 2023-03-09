@@ -59,7 +59,7 @@ def create_segmentation(animal, annotator_id, structure_id, debug=False):
         x = row['coordinate'][0]
         y = row['coordinate'][1]
         z = row['coordinate'][2]
-        xy = (x/scale_xy*SCALING_FACTOR, y/scale_xy*SCALING_FACTOR)
+        xy = (x/scale_xy/SCALING_FACTOR, y/scale_xy/SCALING_FACTOR)
         section = int(np.round(z/z_scale))
         polygons[section].append(xy)
         
