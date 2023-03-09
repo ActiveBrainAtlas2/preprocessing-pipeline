@@ -9,11 +9,13 @@ import torch.multiprocessing
 import numpy as np
 from matplotlib import pyplot as plt
 import warnings
-PIPELINE_ROOT = Path('./src/masking').absolute()
+
+PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
-from utilities.mask_class import MaskDataset, TrigeminalDataset, get_model_instance_segmentation, get_transform
-from utilities.utils import collate_fn
-from utilities.engine import train_one_epoch
+
+from library.mask_utilities.mask_class import MaskDataset, TrigeminalDataset, get_model_instance_segmentation, get_transform
+from library.mask_utilities.utils import collate_fn
+from library.mask_utilities.engine import train_one_epoch
 
 ROOT = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/masks'
 

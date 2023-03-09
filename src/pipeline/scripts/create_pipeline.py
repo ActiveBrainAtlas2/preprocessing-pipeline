@@ -54,7 +54,7 @@ increasing the step size will make the pipeline move forward in the process.
 import argparse
 from pathlib import Path
 import sys
-PIPELINE_ROOT = Path('./src/pipeline').absolute()
+PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 try:
@@ -66,7 +66,7 @@ except ImportError:
     schema = "active_atlas_production"
 
 
-from image_manipulation.pipeline_process import Pipeline
+from library.image_manipulation.pipeline_process import Pipeline
 
 
 def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
