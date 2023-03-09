@@ -55,7 +55,7 @@ def create_segmentation(animal, annotator_id, structure_id, debug=False):
     
     polygons = defaultdict(list)
 
-    if animal in ('DK73', 'DK78'):
+    if animal in ('DK55', 'DK73', 'DK78'):
         sfactor = 32
     else:
         sfactor = SCALING_FACTOR
