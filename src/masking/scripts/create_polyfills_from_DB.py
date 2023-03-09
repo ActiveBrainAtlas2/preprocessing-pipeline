@@ -54,6 +54,9 @@ def create_segmentation(animal, annotator_id, structure_id, debug=False):
         sys.exit()
     
     polygons = defaultdict(list)
+
+    if animal in ('DK73', 'DK78'):
+        SCALING_FACTOR = 32
     
     for _, row in df.iterrows():
         x = row['coordinate'][0]
