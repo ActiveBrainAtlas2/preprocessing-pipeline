@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 import warnings
 PIPELINE_ROOT = Path('./src/masking').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
-from utilities.mask_class import MaskDataset, TrigeminalDataset, get_model_instance_segmentation, get_transform, train_an_epoch
+from utilities.mask_class import MaskDataset, TrigeminalDataset, get_model_instance_segmentation, get_transform
 from utilities.utils import collate_fn
 from utilities.engine import train_one_epoch
 

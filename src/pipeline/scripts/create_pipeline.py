@@ -18,6 +18,7 @@ Explanation for the steps:
 - Step 2 - Final masks are created and then the images are cleaned from the masks.
 - Step 3 - Histograms are created of all channel 1 sections
 - Step 4 - Alignment with Elastix is run on the cleaned images
+- Step 4a - Alignment with Elastix is run on the cleaned images between one channel and another. This won't be run usually.
 - Step 5 - Neuroglancer precomputed data is created from the aligned and cleaned images.
 
 **Changes from previous pipeline version**
