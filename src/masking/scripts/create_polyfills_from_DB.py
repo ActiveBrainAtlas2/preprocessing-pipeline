@@ -56,13 +56,15 @@ def create_segmentation(animal, annotator_id, structure_id, debug=False):
     polygons = defaultdict(list)
 
     if animal in ('DK73', 'DK78'):
-        SCALING_FACTOR = 32
+        sfactor = 32
+    else:
+        sfactor = SCALING_FACTOR
     
     for _, row in df.iterrows():
         x = row['coordinate'][0]
         y = row['coordinate'][1]
         z = row['coordinate'][2]
-        xy = (x/scale_xy/SCALING_FACTOR, y/scale_xy/SCALING_FACTOR)
+        xy = (x/scale_xy/sfactor, y/scale_xy/sfactor)
         section = int(np.round(z/z_scale))
         polygons[section].append(xy)
         
