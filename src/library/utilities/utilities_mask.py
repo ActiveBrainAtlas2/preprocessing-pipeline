@@ -117,7 +117,7 @@ def scaled(img, mask, epsilon=0.01):
     return scaled
 
 
-def equalized(fixed):
+def equalized(fixed, cliplimit=10):
     """Takes an image that has already been scaled and uses opencv adaptive histogram
     equalization. This cases uses 10 as the clip limit and splits the image into 8 rows
     and 8 columns
@@ -126,7 +126,7 @@ def equalized(fixed):
     :return: a better looking image
     """
     
-    clahe = cv2.createCLAHE(clipLimit=62.0, tileGridSize=(2, 2))
+    clahe = cv2.createCLAHE(clipLimit=cliplimit, tileGridSize=(2, 2))
     fixed = clahe.apply(fixed)
     return fixed
 

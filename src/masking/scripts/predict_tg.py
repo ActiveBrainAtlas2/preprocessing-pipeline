@@ -17,7 +17,7 @@ PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 from library.image_manipulation.filelocation_manager import FileLocationManager
-from library.utilities.utilities_mask import combine_dims, merge_mask
+from library.utilities.utilities_mask import combine_dims, equalized, merge_mask, normalize_image
 
 
 def get_model_instance_segmentation(num_classes):
@@ -54,7 +54,7 @@ def predict_mask(animal):
     loaded_model = load_machine_learning_model()
     transform = torchvision.transforms.ToTensor()
     fileLocationManager = FileLocationManager(animal)
-    INPUT = os.path.join(fileLocationManager.prep, 'CH2', 'thumbnail_aligned')
+    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
     TG_MASKS = os.path.join(fileLocationManager.masks, 'tg')
     os.makedirs(TG_MASKS, exist_ok=True)
 
@@ -72,6 +72,7 @@ def predict_mask(animal):
         
         img8 = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
         #print(mask_dest_file, img8.dtype)
+        #img8 = equalized(img8)
         #img8 = (img16/256).astype('uint8')
         pimg = Image.fromarray(img8)
 
