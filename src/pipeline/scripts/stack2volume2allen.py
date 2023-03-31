@@ -16,11 +16,13 @@ from skimage import io
 from tqdm import tqdm
 from subprocess import Popen, PIPE
 
-PIPELINE_ROOT = Path('./src/pipeline').absolute()
+
+PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from image_manipulation.filelocation_manager import FileLocationManager
-from utilities.utilities_mask import equalized 
+from library.image_manipulation.filelocation_manager import FileLocationManager
+from library.utilities.utilities_mask import equalized 
+from library.utilities.utilities_process import read_image
 
 def scaled(img, epsilon=0.01):
     """This scales the image to the limit specified. You can get this value
@@ -52,17 +54,19 @@ class VolumeRegistration:
     """This class takes a downsampled image stack and registers it to the Allen volume    
     """
 
-    def __init__(self, animal):
+    def __init__(self, animal, debug):
         self.animal = animal
         self.fileLocationManager = FileLocationManager(animal)
+        # check if exists
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
         self.aligned_volume = os.path.join(self.fileLocationManager.prep, 'CH1', 'aligned_volume.tif')
-        self.registration_path = os.path.join(self.fileLocationManager.prep, 'CH1', 'registration')
         self.parameter_file_affine = os.path.join(self.fileLocationManager.registration_info, 'Order1_Par0000affine.txt')
         self.parameter_file_bspline = os.path.join(self.fileLocationManager.registration_info, 'Order2_Par0000bspline.txt')
         self.sagittal_allen_path = os.path.join(self.fileLocationManager.registration_info, 'sagittal_atlas_20um_iso.tif')
-        self.allen_stack_path = os.path.join(self.fileLocationManager.prep, 'CH1', 'allen_sagittal.tif')
-        self.registration_output_path = os.path.join(self.fileLocationManager.prep, 'CH1', 'registration_output')
+        self.allen_stack_path = os.path.join(self.fileLocationManager.prep, 'allen_sagittal.tif')
+        self.elastix_output = os.path.join(self.fileLocationManager.prep, 'elastix_output')
+        self.transformix_output = os.path.join(self.fileLocationManager.prep, 'transformix_output')
+        self.debug = debug
  
 
     def get_file_information(self):
@@ -75,7 +79,7 @@ class VolumeRegistration:
         files = sorted(os.listdir(self.thumbnail_aligned))
         midpoint = len(files) // 2
         midfilepath = os.path.join(self.thumbnail_aligned, files[midpoint])
-        midfile = io.imread(midfilepath, img_num=0)
+        midfile = read_image(midfilepath)
         rows = midfile.shape[0]
         columns = midfile.shape[1]
         volume_size = (rows, columns, len(files))
@@ -88,17 +92,16 @@ class VolumeRegistration:
         """
         
         files, volume_size = self.get_file_information()
-        print(volume_size)
         image_stack = np.zeros(volume_size)
         file_list = []
         for i in tqdm(range(len(files))):
             ffile = str(i).zfill(3) + '.tif'
             fpath = os.path.join(self.thumbnail_aligned, ffile)
-            farr = io.imread(fpath)
+            farr = read_image(fpath)
             file_list.append(farr)
         image_stack = np.stack(file_list, axis = 0)
         io.imsave(self.aligned_volume, image_stack.astype(np.uint16))
-        print(image_stack.shape)
+        print(f'Saved a 3D volume {self.aligned_volume} with shape={image_stack.shape} and dtype={image_stack.dtype}')
 
     def create_allen_stack(self):
         """Create a 3D volume of the sagittal image stack that is in
@@ -107,9 +110,8 @@ class VolumeRegistration:
         Rostral is on the left, caudal on the right.
         """
         
-        allen = io.imread(self.sagittal_allen_path)
+        allen = read_image(self.sagittal_allen_path)
         image_stack = np.zeros(allen.shape)
-        print(allen.shape)
         
         file_list = []
         for i in tqdm(range(allen.shape[0])):
@@ -121,7 +123,55 @@ class VolumeRegistration:
 
         image_stack = np.stack(file_list, axis = 0)
         io.imsave(self.allen_stack_path, image_stack.astype(np.uint16))
-        print(image_stack.shape)
+        print(f'Saved a Allen stack {self.allen_stack_path} with shape={image_stack.shape} and dtype={image_stack.dtype}')
+
+    def register_volume(self):
+        """This is the command that gets run for DK52:
+        """
+        
+        print('Running elastix and registering volume.')
+        os.makedirs(self.elastix_output, exist_ok=True)
+        cmd = ["elastix", 
+               "-f", self.allen_stack_path, 
+               "-m", self.aligned_volume, 
+               "-out", self.elastix_output, 
+               "-p", self.parameter_file_affine, 
+               "-p", self.parameter_file_bspline]
+        if self.debug:
+            print(" ".join(cmd))
+        self.run_proc(cmd)
+
+    def transformix_volume(self):
+        """This is the command that gets run for DK52:
+        """
+
+        print('Running transformix and registering volume.')
+        os.makedirs(self.transformix_output, exist_ok=True)
+        cmd = ["transformix", 
+                "-in", self.aligned_volume, 
+                "-tp", os.path.join(self.elastix_output,'TransformParameters.1.txt'),  
+                "-out", self.transformix_output]
+        if self.debug:
+            print(" ".join(cmd))
+        self.run_proc(cmd)
+
+    def perform_registration(self):
+        """Starter method to check for existing directories and files
+        """
+        
+        if not os.path.exists(self.aligned_volume):
+            self.create_volume()
+        if not os.path.exists(self.allen_stack_path):
+            self.create_allen_stack()
+        if not os.path.exists( os.path.join(self.elastix_output, 'TransformParameters.1.txt') ):
+            self.register_volume()
+
+        result = os.path.exists( os.path.join(self.transformix_output, 'result.tif') )
+        if result:
+            print(f'Process done, Allen aligned volume is at={result}')
+        else:
+            self.transformix_volume()
+
 
     @staticmethod
     def run_proc(cmd):
@@ -136,52 +186,13 @@ class VolumeRegistration:
         if stderr:
             print(f'Error', {stderr})
 
-    def register_volume(self):
-        """This is the command that gets run for DK41:
-        elastix 
-        -f /net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/sagittal_atlas_20um_iso.tif 
-        -m /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK41/preps/CH1/aligned_volume.tif 
-        -out /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK41/preps/CH1/registered_volume.tif 
-        -p /net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/Order1_Par0000affine.txt 
-        -p /net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/Order2_Par0000bspline.txt
-        """
-
-        os.makedirs(self.registration_path, exist_ok=True)
-        cmd = ["elastix", "-f", self.allen_stack_path, "-m", self.aligned_volume, "-out", 
-            self.registration_path, "-p", self.parameter_file_affine, "-p", self.parameter_file_bspline]
-        self.run_proc(cmd)
-
-    def transformix_volume(self):
-        """This is the command that gets run for DK41:
-        transformix 
-        -in /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK41/preps/CH1/aligned_volume.tif
-        -tp /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK41/preps/CH1/registration/TransformParameters.1.txt
-        -out /net/birdstore/Active_Atlas_Data/data_root/pipeline_data/DK41/preps/CH1/registration_output
-        """
-
-        os.makedirs(self.registration_output_path, exist_ok=True)
-        cmd = ["transformix", "-in", self.aligned_volume, "-tp", os.path.join(self.registration_path,'TransformParameters.1.txt'),  
-            "-out", self.registration_output_path]
-        self.run_proc(cmd)
-
-    def perform_registration(self):
-        """Starter method to check for existing directories and files
-        """
-        
-        if not os.path.exists(self.aligned_volume):
-            self.create_volume()
-        if not os.path.exists(self.allen_stack_path):
-            self.create_allen_stack()
-        if not os.path.exists( os.path.join(self.registration_path, 'TransformParameters.1.txt') ):
-            self.register_volume()
-        if not os.path.exists( os.path.join(self.registration_output_path, 'result.tif') ):
-            self.transformix_volume()
-        
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-
+    parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
+    
     args = parser.parse_args()
     animal = args.animal
-    volumeRegistration = VolumeRegistration(animal)
+    debug = bool({"true": True, "false": False}[str(args.debug).lower()])
+    volumeRegistration = VolumeRegistration(animal, debug)
     volumeRegistration.perform_registration()

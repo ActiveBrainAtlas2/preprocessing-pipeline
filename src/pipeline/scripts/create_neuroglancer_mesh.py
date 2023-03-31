@@ -27,11 +27,11 @@ This will give you a stacktrace of the running process and you can see where it 
 PIPELINE_ROOT = Path('./src/pipeline').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from image_manipulation.filelocation_manager import FileLocationManager
+from library.image_manipulation.filelocation_manager import FileLocationManager
 
-from controller.sql_controller import SqlController
-from image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
-from utilities.utilities_process import get_cpus, get_hostname
+from library.controller.sql_controller import SqlController
+from library.image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
+from library.utilities.utilities_process import get_cpus, get_hostname
 DTYPE = np.uint64
 
 def create_mesh(animal, limit, scaling_factor, skeleton):
