@@ -45,8 +45,12 @@ def create_precomputed(animal, volume_file, um):
 
 
     os.makedirs(IMAGE_INPUT, exist_ok=True)
-    midfilepath = os.path.join(INPUT, volume_file)
-    volume = read_image(midfilepath)
+    volumepath = os.path.join(INPUT, volume_file)
+    if not os.path.exists(volumepath):
+        print(f'{volumepath} does not exist, exiting.')
+        sys.exit()
+
+    volume = read_image(volumepath)
     volume = np.swapaxes(volume, 0, 2)
     num_channels = 1
     volume_size = volume.shape
