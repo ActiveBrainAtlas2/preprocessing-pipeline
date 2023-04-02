@@ -62,7 +62,7 @@ class VolumeRegistration:
         self.aligned_volume = os.path.join(self.fileLocationManager.prep, 'CH1', 'aligned_volume.tif')
         self.parameter_file_affine = os.path.join(self.fileLocationManager.registration_info, 'Order1_Par0000affine.txt')
         self.parameter_file_bspline = os.path.join(self.fileLocationManager.registration_info, 'Order2_Par0000bspline.txt')
-        self.sagittal_allen_path = os.path.join(self.fileLocationManager.registration_info, 'sagittal_atlas_20um_iso.tif')
+        self.sagittal_allen_path = os.path.join(self.fileLocationManager.registration_info, 'allen_25um_sagittal.tiff')
         self.allen_stack_path = os.path.join(self.fileLocationManager.prep, 'allen_sagittal.tif')
         self.elastix_output = os.path.join(self.fileLocationManager.prep, 'elastix_output')
         self.transformix_output = os.path.join(self.fileLocationManager.prep, 'transformix_output')
@@ -161,7 +161,7 @@ class VolumeRegistration:
         
         if not os.path.exists(self.aligned_volume):
             self.create_volume()
-        if not os.path.exists(self.allen_stack_path):
+        if not os.path.exists(self.sagittal_allen_path):
             self.create_allen_stack()
         if not os.path.exists( os.path.join(self.elastix_output, 'TransformParameters.1.txt') ):
             self.register_volume()
