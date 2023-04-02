@@ -19,6 +19,15 @@ from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
 from library.utilities.utilities_process import get_hostname, read_image
 
+def normalize16(img):
+    mn = img.min()
+    mx = img.max()
+    mx -= mn
+    img = ((img - mn)/mx) * 2**16 - 1
+    return np.round(img).astype(np.uint16) 
+
+
+
 def create_precomputed(animal, volume_file):
     chunk = 64
     chunks = (chunk, chunk, chunk)
@@ -27,7 +36,7 @@ def create_precomputed(animal, volume_file):
     outpath = os.path.basename(volume_file)
     outpath = outpath.split('.')[0]
     IMAGE_INPUT = os.path.join(fileLocationManager.neuroglancer_data, f'input_{outpath}')
-    scales = (20000, 20000, 20000)
+    scales = (25000, 25000, 25000)
     if 'godzilla' in get_hostname():
         print(f'Cleaning {IMAGE_INPUT}')
         if os.path.exists(IMAGE_INPUT):
@@ -38,9 +47,11 @@ def create_precomputed(animal, volume_file):
     midfilepath = os.path.join(INPUT, volume_file)
     volume = read_image(midfilepath)
     volume = np.swapaxes(volume, 0, 2)
-    #num_channels = volume.shape[2] if len(volume.shape) > 2 else 1
     num_channels = 1
     volume_size = volume.shape
+    print(f'volume shape={volume.shape} dtype={volume.dtype}')
+    volume = normalize16(volume)
+    print(f'volume shape={volume.shape} dtype={volume.dtype}')
 
     ng = NumpyToNeuroglancer(
         animal,

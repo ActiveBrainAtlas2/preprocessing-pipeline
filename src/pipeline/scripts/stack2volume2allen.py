@@ -56,17 +56,22 @@ class VolumeRegistration:
 
     def __init__(self, animal, debug):
         self.animal = animal
+        self.debug = debug
         self.fileLocationManager = FileLocationManager(animal)
         # check if exists
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
         self.aligned_volume = os.path.join(self.fileLocationManager.prep, 'CH1', 'aligned_volume.tif')
-        self.parameter_file_affine = os.path.join(self.fileLocationManager.registration_info, 'Order1_Par0000affine.txt')
-        self.parameter_file_bspline = os.path.join(self.fileLocationManager.registration_info, 'Order2_Par0000bspline.txt')
+        if self.debug:
+            print('Debugging with less iterations')
+            self.parameter_file_affine = os.path.join(self.fileLocationManager.registration_info, 'Order1_Par0000affine.debug.txt')
+            self.parameter_file_bspline = os.path.join(self.fileLocationManager.registration_info, 'Order2_Par0000bspline.debug.txt')
+        else:
+            self.parameter_file_affine = os.path.join(self.fileLocationManager.registration_info, 'Order1_Par0000affine.txt')
+            self.parameter_file_bspline = os.path.join(self.fileLocationManager.registration_info, 'Order2_Par0000bspline.txt')
         self.sagittal_allen_path = os.path.join(self.fileLocationManager.registration_info, 'allen_25um_sagittal.tiff')
         self.allen_stack_path = os.path.join(self.fileLocationManager.prep, 'allen_sagittal.tif')
         self.elastix_output = os.path.join(self.fileLocationManager.prep, 'elastix_output')
         self.transformix_output = os.path.join(self.fileLocationManager.prep, 'transformix_output')
-        self.debug = debug
  
 
     def get_file_information(self):
