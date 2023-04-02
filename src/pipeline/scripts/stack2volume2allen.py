@@ -132,7 +132,7 @@ class VolumeRegistration:
         print('Running elastix and registering volume.')
         os.makedirs(self.elastix_output, exist_ok=True)
         cmd = ["elastix", 
-               "-f", self.allen_stack_path, 
+               "-f", self.sagittal_allen_path, 
                "-m", self.aligned_volume, 
                "-out", self.elastix_output, 
                "-p", self.parameter_file_affine, 
