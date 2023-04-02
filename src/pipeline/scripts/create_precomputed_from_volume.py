@@ -28,15 +28,16 @@ def normalize16(img):
 
 
 
-def create_precomputed(animal, volume_file):
+def create_precomputed(animal, volume_file, um):
     chunk = 64
     chunks = (chunk, chunk, chunk)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'registered')
     outpath = os.path.basename(volume_file)
     outpath = outpath.split('.')[0]
-    IMAGE_INPUT = os.path.join(fileLocationManager.neuroglancer_data, f'input_{outpath}')
-    scales = (25000, 25000, 25000)
+    IMAGE_INPUT = os.path.join(fileLocationManager.neuroglancer_data, f'{outpath}')
+    scale = um * 1000
+    scales = (scale, scale, scale)
     if 'godzilla' in get_hostname():
         print(f'Cleaning {IMAGE_INPUT}')
         if os.path.exists(IMAGE_INPUT):
@@ -80,9 +81,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument('--volume', help='Enter the name of the volume file', required=False, default='downsampled_standard.tiff')
+    parser.add_argument('--um', help="size of Allen atlas in micrometers", required=False, default=10, type=int)
     args = parser.parse_args()
     animal = args.animal
     volume = args.volume
+    um = args.um
     
-    create_precomputed(animal, volume)
+    create_precomputed(animal, volume, um)
 
