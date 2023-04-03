@@ -76,8 +76,6 @@ def create_precomputed(animal, volume_file, um):
     tasks = tc.create_downsampling_tasks(cloudpath, num_mips=2)
     tq.insert(tasks)
     tq.execute()
-
-
     print("Done!")
 
 

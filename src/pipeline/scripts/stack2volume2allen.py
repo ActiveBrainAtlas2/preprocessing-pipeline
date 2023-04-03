@@ -15,6 +15,7 @@ from pathlib import Path
 from skimage import io
 from tqdm import tqdm
 from subprocess import Popen, PIPE
+import SimpleITK as sitk
 
 
 PIPELINE_ROOT = Path('./src').absolute()
@@ -72,7 +73,24 @@ class VolumeRegistration:
         self.allen_stack_path = os.path.join(self.fileLocationManager.prep, 'allen_sagittal.tif')
         self.elastix_output = os.path.join(self.fileLocationManager.prep, 'elastix_output')
         self.transformix_output = os.path.join(self.fileLocationManager.prep, 'transformix_output')
+        self.aligned_point_file = os.path.join(self.fileLocationManager.prep, 'com.points.csv')
  
+
+    def create_simple(self):
+        fixedImage = sitk.ReadImage(self.sagittal_allen_path)
+        movingImage = sitk.ReadImage(self.aligned_volume)
+        # Compute the transformation
+        elastixImageFilter = sitk.ElastixImageFilter()
+        elastixImageFilter.SetInitialTransformParameterFileName(self.parameter_file_affine)
+        elastixImageFilter.SetInitialTransformParameterFileName(self.parameter_file_bspline)
+        elastixImageFilter.SetFixedImage(fixedImage)
+        elastixImageFilter.SetMovingImage(movingImage)
+        elastixImageFilter.SetOutputDirectory(self.elastix_output)
+        #parameterMapVector = sitk.VectorOfParameterMap()
+        #parameterMapVector.append(sitk.GetDefaultParameterMap("affine"))
+        #parameterMapVector.append(sitk.GetDefaultParameterMap("bspline"))
+        #elastixImageFilter.SetParameterMap(parameterMapVector)
+        elastixImageFilter.Execute()        
 
     def get_file_information(self):
         """Get information about the mid file in the image stack
@@ -131,7 +149,8 @@ class VolumeRegistration:
         print(f'Saved a Allen stack {self.allen_stack_path} with shape={image_stack.shape} and dtype={image_stack.dtype}')
 
     def register_volume(self):
-        """This is the command that gets run for DK52:
+        """The moving image (our image stack) is warped to the fixed image (the allen reference brain) by the transformation.
+        This is the command that gets run for DK52:
         """
         
         print('Running elastix and registering volume.')
@@ -160,6 +179,31 @@ class VolumeRegistration:
             print(" ".join(cmd))
         self.run_proc(cmd)
 
+    def transformix_points(self):
+        """ Points are stored in the DB in micrometers from the full resolution images
+        For the 10um allen:
+            1. The set of images are from the 1/16 downsampled images
+            2. That set of images are deformed to 10um iso
+        
+        This takes  file in THIS format:
+        point
+        3
+        102.8 -33.4 57.0
+        178.1 -10.9 14.5
+        180.4 -18.1 78.9
+
+        """
+
+        print('Running transformix and registering volume.')
+        os.makedirs(self.transformix_output, exist_ok=True)
+        cmd = ["transformix", 
+                "-def", self.aligned_point_file, 
+                "-tp", os.path.join(self.elastix_output,'TransformParameters.1.txt'),  
+                "-out", self.transformix_output]
+        if self.debug:
+            print(" ".join(cmd))
+        self.run_proc(cmd)
+
     def perform_registration(self):
         """Starter method to check for existing directories and files
         """
@@ -168,14 +212,17 @@ class VolumeRegistration:
             self.create_volume()
         if not os.path.exists(self.sagittal_allen_path):
             self.create_allen_stack()
-        if not os.path.exists( os.path.join(self.elastix_output, 'TransformParameters.1.txt') ):
+        if not os.path.exists(os.path.join(self.elastix_output, 'TransformParameters.1.txt')):
             self.register_volume()
 
-        result = os.path.exists( os.path.join(self.transformix_output, 'result.tif') )
+        result = os.path.exists(os.path.join(self.transformix_output, 'result.tif'))
         if result:
             print(f'Process done, Allen aligned volume is at={result}')
         else:
             self.transformix_volume()
+
+        if os.path.exists(os.path.join(self.aligned_point_file)):
+            self.transformix_points()
 
 
     @staticmethod
