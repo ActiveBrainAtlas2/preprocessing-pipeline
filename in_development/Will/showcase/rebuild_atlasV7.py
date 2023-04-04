@@ -1,5 +1,5 @@
 from atlas.Assembler import Assembler
-from atlas.Atlas import Atlas
+from atlas.atlas_manager import Atlas
 from atlas.NgSegmentMaker import NgSegmentMaker
 class AtlasV7Builder(Atlas,Assembler,NgSegmentMaker):
     def __init__(self,debug = False,out_folder = 'rebuild_atlas7',threshold = 0.9,sigma = 3.0,offset = None):

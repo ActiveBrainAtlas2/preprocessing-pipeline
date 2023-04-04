@@ -23,7 +23,7 @@ assenbler  = get_assembled_atlas_v7()
 
 import numpy as np
 import os
-from atlas.Atlas import Atlas
+from atlas.atlas_manager import Atlas
 from Controllers.SqlController import SqlController
 from atlas.NgSegmentMaker import NgConverter
 from atlas.Assembler import Assembler,get_v7_volume_and_origin,get_assembled_atlas_v7

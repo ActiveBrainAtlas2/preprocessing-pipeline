@@ -4,7 +4,7 @@ from Controllers.SqlController import SqlController
 import plotly.graph_objects as go
 import numpy as np
 import os
-from atlas.Atlas import Atlas
+from atlas.atlas_manager import Atlas
 from atlas.Assembler import Assembler,get_v7_volume_and_origin,get_assembled_atlas_v7
 from scipy.ndimage import zoom
 import matplotlib.pyplot as plt

@@ -12,6 +12,7 @@ class ScanRunController(Controller):
         """initiates the controller class
         """
         Controller.__init__(self, *args, **kwargs)
+        self.rescan_number = 0
 
     def get_scan_run(self, animal):
         """Check to see if there is a row for this animal in the
@@ -21,7 +22,7 @@ class ScanRunController(Controller):
         :return scan run object: one object (row)
         """
 
-        search_dictionary = dict(prep_id=animal, rescan_number=self.rescan_number)
+        search_dictionary = dict(FK_prep_id=animal, rescan_number=self.rescan_number)
         return self.get_row(search_dictionary, ScanRun)
 
     def update_scanrun(self, id):

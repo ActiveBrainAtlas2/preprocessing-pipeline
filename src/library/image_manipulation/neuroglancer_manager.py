@@ -264,16 +264,14 @@ class NumpyToNeuroglancer():
         64 dies at limit 50 full res
         32 dies at limit 100 full res
         """
-        shapeXYZ = 128
-        print(f'Creating meshing tasks with {cpus} CPUs with shape={shapeXYZ, shapeXYZ, shapeXYZ}')
-        tasks = tc.create_meshing_tasks(layer_path, mip=mip, shape=[shapeXYZ, shapeXYZ, shapeXYZ], compress=True, sharded=True) # The first phase of creating mesh
+        tasks = tc.create_meshing_tasks(layer_path, mip=mip, compress=True, sharded=False) # The first phase of creating mesh
         tq.insert(tasks)
         tq.execute()
 
-        print(f'Creating multires mesh tasks with {cpus} CPUs')
-        tasks = tc.create_sharded_multires_mesh_tasks(layer_path, num_lod=1)
-        tq.insert(tasks)    
-        tq.execute()
+        #print(f'Creating multires mesh tasks with {cpus} CPUs')
+        #tasks = tc.create_sharded_multires_mesh_tasks(layer_path, num_lod=1)
+        #tq.insert(tasks)    
+        #tq.execute()
 
         print(f'Creating meshing manifest tasks with {cpus} CPUs')
         tasks = tc.create_mesh_manifest_tasks(layer_path) # The second phase of creating mesh
