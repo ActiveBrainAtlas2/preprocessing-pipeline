@@ -81,15 +81,15 @@ class VolumeRegistration:
         movingImage = sitk.ReadImage(self.aligned_volume)
         # Compute the transformation
         elastixImageFilter = sitk.ElastixImageFilter()
-        elastixImageFilter.SetInitialTransformParameterFileName(self.parameter_file_affine)
-        elastixImageFilter.SetInitialTransformParameterFileName(self.parameter_file_bspline)
+        #elastixImageFilter.SetInitialTransformParameterFileName(self.parameter_file_affine)
+        #elastixImageFilter.SetInitialTransformParameterFileName(self.parameter_file_bspline)
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
         elastixImageFilter.SetOutputDirectory(self.elastix_output)
-        #parameterMapVector = sitk.VectorOfParameterMap()
-        #parameterMapVector.append(sitk.GetDefaultParameterMap("affine"))
-        #parameterMapVector.append(sitk.GetDefaultParameterMap("bspline"))
-        #elastixImageFilter.SetParameterMap(parameterMapVector)
+        parameterMapVector = sitk.VectorOfParameterMap()
+        parameterMapVector.append(sitk.GetDefaultParameterMap("affine"))
+        parameterMapVector.append(sitk.GetDefaultParameterMap("bspline"))
+        elastixImageFilter.SetParameterMap(parameterMapVector)
         elastixImageFilter.Execute()        
 
     def get_file_information(self):
@@ -247,4 +247,5 @@ if __name__ == '__main__':
     animal = args.animal
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
     volumeRegistration = VolumeRegistration(animal, debug)
-    volumeRegistration.perform_registration()
+    #volumeRegistration.perform_registration()
+    volumeRegistration.create_simple()

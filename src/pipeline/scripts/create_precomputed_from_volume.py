@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
+import nrrd
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -20,12 +21,15 @@ from library.image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
 from library.utilities.utilities_process import get_hostname, read_image
 
 def normalize16(img):
-    mn = img.min()
-    mx = img.max()
-    mx -= mn
-    img = ((img - mn)/mx) * 2**16 - 1
-    return np.round(img).astype(np.uint16) 
-
+    if img.dtype == np.uint32:
+        print('image dtype is 32bit')
+        return img.astype(np.uint16)
+    else:
+        mn = img.min()
+        mx = img.max()
+        mx -= mn
+        img = ((img - mn)/mx) * 2**16 - 1
+        return np.round(img).astype(np.uint16) 
 
 
 def create_precomputed(animal, volume_file, um):
@@ -33,8 +37,14 @@ def create_precomputed(animal, volume_file, um):
     chunks = (chunk, chunk, chunk)
     fileLocationManager = FileLocationManager(animal)
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'registered')
+    volumepath = os.path.join(INPUT, volume_file)
+    if not os.path.exists(volumepath):
+        print(f'{volumepath} does not exist, exiting.')
+        sys.exit()
+        
     outpath = os.path.basename(volume_file)
     outpath = outpath.split('.')[0]
+    ext = outpath.split('.')[0]
     IMAGE_INPUT = os.path.join(fileLocationManager.neuroglancer_data, f'{outpath}')
     scale = um * 1000
     scales = (scale, scale, scale)
@@ -45,12 +55,11 @@ def create_precomputed(animal, volume_file, um):
 
 
     os.makedirs(IMAGE_INPUT, exist_ok=True)
-    volumepath = os.path.join(INPUT, volume_file)
-    if not os.path.exists(volumepath):
-        print(f'{volumepath} does not exist, exiting.')
-        sys.exit()
 
-    volume = read_image(volumepath)
+    if ext == 'nrrd':
+        volume, _ = nrrd.read(volume_file)
+    else:
+        volume = read_image(volumepath)
     volume = np.swapaxes(volume, 0, 2)
     num_channels = 1
     volume_size = volume.shape
