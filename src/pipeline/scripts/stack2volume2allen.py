@@ -69,7 +69,7 @@ class VolumeRegistration:
         else:
             self.parameter_file_affine = os.path.join(self.fileLocationManager.registration_info, 'Order1_Par0000affine.txt')
             self.parameter_file_bspline = os.path.join(self.fileLocationManager.registration_info, 'Order2_Par0000bspline.txt')
-        self.fixed_volume = os.path.join(self.fileLocationManager.registration_info, 'fixed_volume.tiff')
+        self.fixed_volume = os.path.join(self.fileLocationManager.registration_info, 'fixed_volume.tif')
         self.allen_stack_path = os.path.join(self.fileLocationManager.prep, 'allen_sagittal.tif')
         self.elastix_output = os.path.join(self.fileLocationManager.prep, 'elastix_output')
         self.transformix_output = os.path.join(self.fileLocationManager.prep, 'transformix_output')
