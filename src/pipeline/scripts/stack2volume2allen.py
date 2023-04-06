@@ -99,8 +99,8 @@ class VolumeRegistration:
         bsplineParameterMap["UseDirectionCosines"] = ["false"]
 
 
-        elastixImageFilter.SetParameterMap(sitk.GetDefaultParameterMap(affineParameterMap))
-        elastixImageFilter.AddParameterMap(sitk.GetDefaultParameterMap(bsplineParameterMap))
+        elastixImageFilter.SetParameterMap(affineParameterMap)
+        elastixImageFilter.AddParameterMap(bsplineParameterMap)
         elastixImageFilter.LogToConsoleOff();
         elastixImageFilter.LogToFileOn();
         elastixImageFilter.SetOutputDirectory(self.elastix_output)
