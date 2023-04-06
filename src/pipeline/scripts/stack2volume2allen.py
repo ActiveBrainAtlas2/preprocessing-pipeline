@@ -61,7 +61,7 @@ class VolumeRegistration:
         self.fileLocationManager = FileLocationManager(animal)
         # check if exists
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
-        self.aligned_volume = os.path.join(self.fileLocationManager.prep, 'CH1', 'aligned_volume.tif')
+        self.moving_volume = os.path.join(self.fileLocationManager.prep, 'CH1', 'moving_volume.tif')
         if self.debug:
             print('Debugging with less iterations')
             self.parameter_file_affine = os.path.join(self.fileLocationManager.registration_info, 'Order1_Par0000affine.debug.txt')
@@ -69,7 +69,7 @@ class VolumeRegistration:
         else:
             self.parameter_file_affine = os.path.join(self.fileLocationManager.registration_info, 'Order1_Par0000affine.txt')
             self.parameter_file_bspline = os.path.join(self.fileLocationManager.registration_info, 'Order2_Par0000bspline.txt')
-        self.sagittal_allen_path = os.path.join(self.fileLocationManager.registration_info, 'allen_10um_sagittal.tiff')
+        self.fixed_volume = os.path.join(self.fileLocationManager.registration_info, 'fixed_volume.tiff')
         self.allen_stack_path = os.path.join(self.fileLocationManager.prep, 'allen_sagittal.tif')
         self.elastix_output = os.path.join(self.fileLocationManager.prep, 'elastix_output')
         self.transformix_output = os.path.join(self.fileLocationManager.prep, 'transformix_output')
@@ -77,8 +77,8 @@ class VolumeRegistration:
  
 
     def create_simple(self):
-        fixedImage = sitk.ReadImage(self.sagittal_allen_path)
-        movingImage = sitk.ReadImage(self.aligned_volume)
+        fixedImage = sitk.ReadImage(self.fixed_volume)
+        movingImage = sitk.ReadImage(self.moving_volume)
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
@@ -129,8 +129,8 @@ class VolumeRegistration:
             farr = read_image(fpath)
             file_list.append(farr)
         image_stack = np.stack(file_list, axis = 0)
-        io.imsave(self.aligned_volume, image_stack.astype(np.uint16))
-        print(f'Saved a 3D volume {self.aligned_volume} with shape={image_stack.shape} and dtype={image_stack.dtype}')
+        io.imsave(self.moving_volume, image_stack.astype(np.uint16))
+        print(f'Saved a 3D volume {self.moving_volume} with shape={image_stack.shape} and dtype={image_stack.dtype}')
 
     def create_allen_stack(self):
         """Create a 3D volume of the sagittal image stack that is in
@@ -139,7 +139,7 @@ class VolumeRegistration:
         Rostral is on the left, caudal on the right.
         """
         
-        allen = read_image(self.sagittal_allen_path)
+        allen = read_image(self.fixed_volume)
         image_stack = np.zeros(allen.shape)
         
         file_list = []
@@ -162,8 +162,8 @@ class VolumeRegistration:
         print('Running elastix and registering volume.')
         os.makedirs(self.elastix_output, exist_ok=True)
         cmd = ["elastix", 
-               "-f", self.sagittal_allen_path, 
-               "-m", self.aligned_volume, 
+               "-f", self.fixed_volume, 
+               "-m", self.moving_volume, 
                "-out", self.elastix_output, 
                "-p", self.parameter_file_affine, 
                "-p", self.parameter_file_bspline]
@@ -178,7 +178,7 @@ class VolumeRegistration:
         print('Running transformix and registering volume.')
         os.makedirs(self.transformix_output, exist_ok=True)
         cmd = ["transformix", 
-                "-in", self.aligned_volume, 
+                "-in", self.moving_volume, 
                 "-tp", os.path.join(self.elastix_output,'TransformParameters.1.txt'),  
                 "-out", self.transformix_output]
         if self.debug:
@@ -214,9 +214,9 @@ class VolumeRegistration:
         """Starter method to check for existing directories and files
         """
         
-        if not os.path.exists(self.aligned_volume):
+        if not os.path.exists(self.moving_volume):
             self.create_volume()
-        if not os.path.exists(self.sagittal_allen_path):
+        if not os.path.exists(self.fixed_volume):
             self.create_allen_stack()
         if not os.path.exists(os.path.join(self.elastix_output, 'TransformParameters.1.txt')):
             self.register_volume()
