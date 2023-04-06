@@ -82,16 +82,22 @@ class VolumeRegistration:
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
-        parameterMapVector = sitk.VectorOfParameterMap()
-        parameterMapVector.append(sitk.GetDefaultParameterMap("affine"))
-        parameterMapVector.append(sitk.GetDefaultParameterMap("bspline"))
-        parameterMapVector["MaximumNumberOfIterations"] = ["500"]
-        parameterMapVector["WriteResultImage"] = ["true"]
-        parameterMapVector["ResultImageFormat"] = ["tif"]
-        parameterMapVector["ResultImagePixelType"] = ["float"]
-        parameterMapVector["NumberOfResolutions"]= ["2"]
-        parameterMapVector["UseDirectionCosines"] = ["false"]
-        elastixImageFilter.SetParameterMap(parameterMapVector)
+        #parameterMapVector = sitk.VectorOfParameterMap()
+        #parameterMapVector.append(sitk.GetDefaultParameterMap("affine"))
+        #parameterMapVector.append(sitk.GetDefaultParameterMap("bspline"))
+
+        elastixImageFilter.SetParameterMap(sitk.GetDefaultParameterMap('affine'))
+        elastixImageFilter.AddParameterMap(sitk.GetDefaultParameterMap('bspline'))
+        p = sitk.ParameterMap()
+        #p['Registration'] = ['MultiResolutionRegistration']
+        #p['Transform'] = ['TranslationTransform']
+        p["MaximumNumberOfIterations"] = ["500"]
+        p["WriteResultImage"] = ["true"]
+        p["ResultImageFormat"] = ["tif"]
+        p["ResultImagePixelType"] = ["float"]
+        p["NumberOfResolutions"]= ["2"]
+        p["UseDirectionCosines"] = ["false"]
+        elastixImageFilter.SetParameterMap(p)
         elastixImageFilter.LogToConsoleOff();
         elastixImageFilter.LogToFileOn();
         elastixImageFilter.SetOutputDirectory(self.elastix_output)
