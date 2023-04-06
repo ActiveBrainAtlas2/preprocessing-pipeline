@@ -82,22 +82,25 @@ class VolumeRegistration:
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
-        #parameterMapVector = sitk.VectorOfParameterMap()
-        #parameterMapVector.append(sitk.GetDefaultParameterMap("affine"))
-        #parameterMapVector.append(sitk.GetDefaultParameterMap("bspline"))
 
-        elastixImageFilter.SetParameterMap(sitk.GetDefaultParameterMap('affine'))
-        elastixImageFilter.AddParameterMap(sitk.GetDefaultParameterMap('bspline'))
-        p = sitk.ParameterMap()
-        #p['Registration'] = ['MultiResolutionRegistration']
-        #p['Transform'] = ['TranslationTransform']
-        p["MaximumNumberOfIterations"] = ["500"]
-        p["WriteResultImage"] = ["true"]
-        p["ResultImageFormat"] = ["tif"]
-        p["ResultImagePixelType"] = ["float"]
-        p["NumberOfResolutions"]= ["2"]
-        p["UseDirectionCosines"] = ["false"]
-        elastixImageFilter.SetParameterMap(p)
+        affineParameterMap = sitk.GetDefaultParameterMap('affine')
+        affineParameterMap["MaximumNumberOfIterations"] = ["500"]
+        affineParameterMap["WriteResultImage"] = ["true"]
+        affineParameterMap["ResultImageFormat"] = ["tif"]
+        affineParameterMap["ResultImagePixelType"] = ["float"]
+        affineParameterMap["NumberOfResolutions"]= ["2"]
+
+        bsplineParameterMap = sitk.GetDefaultParameterMap('bspline')
+        bsplineParameterMap["MaximumNumberOfIterations"] = ["500"]
+        bsplineParameterMap["WriteResultImage"] = ["true"]
+        bsplineParameterMap["ResultImageFormat"] = ["tif"]
+        bsplineParameterMap["ResultImagePixelType"] = ["float"]
+        bsplineParameterMap["NumberOfResolutions"]= ["2"]
+        bsplineParameterMap["UseDirectionCosines"] = ["false"]
+
+
+        elastixImageFilter.SetParameterMap(sitk.GetDefaultParameterMap(affineParameterMap))
+        elastixImageFilter.AddParameterMap(sitk.GetDefaultParameterMap(bsplineParameterMap))
         elastixImageFilter.LogToConsoleOff();
         elastixImageFilter.LogToFileOn();
         elastixImageFilter.SetOutputDirectory(self.elastix_output)
@@ -112,7 +115,7 @@ class VolumeRegistration:
         """
 
         files = sorted(os.listdir(self.thumbnail_aligned))
-        midpoint = len(files) // 2
+        midpoint = len(files) // 20
         midfilepath = os.path.join(self.thumbnail_aligned, files[midpoint])
         midfile = read_image(midfilepath)
         rows = midfile.shape[0]
