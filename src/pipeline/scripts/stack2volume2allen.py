@@ -98,6 +98,7 @@ class VolumeRegistration:
         bsplineParameterMap["NumberOfResolutions"]= ["8"]
         bsplineParameterMap["UseDirectionCosines"] = ["false"]
         bsplineParameterMap["FinalGridSpacingInVoxels"] = ["20"]
+        bsplineParameterMap["FinalGridSpacingInPhysicalUnits"] = None
 
         elastixImageFilter.SetParameterMap(affineParameterMap)
         elastixImageFilter.AddParameterMap(bsplineParameterMap)
