@@ -79,17 +79,23 @@ class VolumeRegistration:
     def create_simple(self):
         fixedImage = sitk.ReadImage(self.sagittal_allen_path)
         movingImage = sitk.ReadImage(self.aligned_volume)
-        # Compute the transformation
         elastixImageFilter = sitk.ElastixImageFilter()
-        #elastixImageFilter.SetInitialTransformParameterFileName(self.parameter_file_affine)
-        #elastixImageFilter.SetInitialTransformParameterFileName(self.parameter_file_bspline)
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
-        elastixImageFilter.SetOutputDirectory(self.elastix_output)
         parameterMapVector = sitk.VectorOfParameterMap()
         parameterMapVector.append(sitk.GetDefaultParameterMap("affine"))
         parameterMapVector.append(sitk.GetDefaultParameterMap("bspline"))
+        parameterMapVector["MaximumNumberOfIterations"] = ["500"]
+        parameterMapVector["WriteResultImage"] = ["true"]
+        parameterMapVector["ResultImageFormat"] = ["tif"]
+        parameterMapVector["ResultImagePixelType"] = ["float"]
+        parameterMapVector["NumberOfResolutions"]= ["2"]
+        parameterMapVector["UseDirectionCosines"] = ["false"]
         elastixImageFilter.SetParameterMap(parameterMapVector)
+        elastixImageFilter.LogToConsoleOff();
+        elastixImageFilter.LogToFileOn();
+        elastixImageFilter.SetOutputDirectory(self.elastix_output)
+        elastixImageFilter.SetLogFileName('elastix.log');    
         elastixImageFilter.Execute()        
 
     def get_file_information(self):
