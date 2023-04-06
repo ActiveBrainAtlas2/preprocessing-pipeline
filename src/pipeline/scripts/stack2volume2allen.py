@@ -95,9 +95,9 @@ class VolumeRegistration:
         bsplineParameterMap["WriteResultImage"] = ["true"]
         bsplineParameterMap["ResultImageFormat"] = ["tif"]
         bsplineParameterMap["ResultImagePixelType"] = ["float"]
-        bsplineParameterMap["NumberOfResolutions"]= ["4"]
+        #bsplineParameterMap["NumberOfResolutions"]= ["4"]
         bsplineParameterMap["UseDirectionCosines"] = ["false"]
-        bsplineParameterMap["GridSpacingSchedule"] = ["4 3 2 1"]
+        #bsplineParameterMap["GridSpacingSchedule"] = ["4 3 2 1"]
 
 
 
