@@ -84,22 +84,20 @@ class VolumeRegistration:
         elastixImageFilter.SetMovingImage(movingImage)
 
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
-        affineParameterMap["MaximumNumberOfIterations"] = ["500"]
+        affineParameterMap["MaximumNumberOfIterations"] = ["200"]
         affineParameterMap["WriteResultImage"] = ["true"]
         affineParameterMap["ResultImageFormat"] = ["tif"]
         affineParameterMap["ResultImagePixelType"] = ["float"]
-        affineParameterMap["NumberOfResolutions"]= ["8"]
+        affineParameterMap["NumberOfResolutions"]= ["3"]
 
         bsplineParameterMap = sitk.GetDefaultParameterMap('bspline')
-        bsplineParameterMap["MaximumNumberOfIterations"] = ["500"]
+        bsplineParameterMap["MaximumNumberOfIterations"] = ["200"]
         bsplineParameterMap["WriteResultImage"] = ["true"]
         bsplineParameterMap["ResultImageFormat"] = ["tif"]
         bsplineParameterMap["ResultImagePixelType"] = ["float"]
-        #bsplineParameterMap["NumberOfResolutions"]= ["4"]
+        bsplineParameterMap["NumberOfResolutions"]= ["8"]
         bsplineParameterMap["UseDirectionCosines"] = ["false"]
-        #bsplineParameterMap["GridSpacingSchedule"] = ["4 3 2 1"]
-
-
+        bsplineParameterMap["GridSpacingSchedule"] = ["20"]
 
         elastixImageFilter.SetParameterMap(affineParameterMap)
         elastixImageFilter.AddParameterMap(bsplineParameterMap)
