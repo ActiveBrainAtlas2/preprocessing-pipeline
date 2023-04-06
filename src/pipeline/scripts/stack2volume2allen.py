@@ -96,9 +96,9 @@ class VolumeRegistration:
         bsplineParameterMap["ResultImageFormat"] = ["tif"]
         bsplineParameterMap["ResultImagePixelType"] = ["float"]
         bsplineParameterMap["UseDirectionCosines"] = ["false"]
-        bsplineParameterMap["NumberOfResolutions"]= ["4"]
-        bsplineParameterMap["FinalGridSpacingInVoxels"] = ["20 20"]
-        bsplineParameterMap["GridSpacingSchedule"] = ["6.0 6.0 4.0 4.0 2.5 2.5 1.0 1.0"]
+        #bsplineParameterMap["NumberOfResolutions"]= ["4"]
+        bsplineParameterMap["FinalGridSpacingInVoxels"] = ["20"]
+        #bsplineParameterMap["GridSpacingSchedule"] = ["6.0 6.0 4.0 4.0 2.5 2.5 1.0 1.0"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
         elastixImageFilter.SetParameterMap(affineParameterMap)
