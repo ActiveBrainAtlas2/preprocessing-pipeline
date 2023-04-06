@@ -88,7 +88,7 @@ class VolumeRegistration:
         affineParameterMap["WriteResultImage"] = ["true"]
         affineParameterMap["ResultImageFormat"] = ["tif"]
         affineParameterMap["ResultImagePixelType"] = ["float"]
-        affineParameterMap["NumberOfResolutions"]= ["3"]
+        affineParameterMap["NumberOfResolutions"]= ["8"]
 
         bsplineParameterMap = sitk.GetDefaultParameterMap('bspline')
         bsplineParameterMap["MaximumNumberOfIterations"] = ["15000"]
