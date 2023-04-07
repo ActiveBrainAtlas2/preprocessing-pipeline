@@ -156,7 +156,7 @@ class NumpyToNeuroglancer():
         """
 
         info = CloudVolume.create_new_info(
-            num_channels = self.volume.shape[2] if len(self.volume.shape) > 2 else 1,
+            num_channels = 1,
             layer_type = self.layer_type,
             data_type = self.data_type, # str(self.volume.dtype),  # Channel images might be 'uint8'
             encoding = 'raw',  # raw, jpeg, compressed_segmentation, fpzip, kempressed

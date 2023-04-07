@@ -168,7 +168,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Work on Animal")
     parser.add_argument("--animal", help="Enter the animal", required=True)
     parser.add_argument("--rescan_number", help="Enter rescan number, default is 0", required=False, default=0)
-    parser.add_argument("--channel", help="Enter channel", required=False, default=1)
+    parser.add_argument("--channel", help="Enter channel", required=False, default=1, type=int)
     parser.add_argument("--downsample", help="Enter true or false", required=False, default="true")
     parser.add_argument("--step", help="steps", required=False, default=0)
     parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     animal = args.animal
-    channel = int(args.channel)
+    channel = args.channel
     downsample = bool({"true": True, "false": False}[str(args.downsample).lower()])
     step = str(args.step)
     rescan_number = int(args.rescan_number)

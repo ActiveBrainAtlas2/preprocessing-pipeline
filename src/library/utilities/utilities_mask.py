@@ -262,3 +262,16 @@ def crop_image(img, mask):
     img = np.ascontiguousarray(img, dtype=np.uint16)
     cropped = img[y1:y2, x1:x2]
     return cropped
+
+
+def normalize16(img):
+    if img.dtype == np.uint32:
+        print('image dtype is 32bit')
+        return img.astype(np.uint16)
+    else:
+        mn = img.min()
+        mx = img.max()
+        mx -= mn
+        img = ((img - mn)/mx) * 2**16 - 1
+        return np.round(img).astype(np.uint16) 
+

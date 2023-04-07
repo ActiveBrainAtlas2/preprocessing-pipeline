@@ -19,20 +19,10 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
 from library.utilities.utilities_process import get_hostname, read_image
-
-def normalize16(img):
-    if img.dtype == np.uint32:
-        print('image dtype is 32bit')
-        return img.astype(np.uint16)
-    else:
-        mn = img.min()
-        mx = img.max()
-        mx -= mn
-        img = ((img - mn)/mx) * 2**16 - 1
-        return np.round(img).astype(np.uint16) 
+from library.utilities.utilities_mask import normalize16
 
 
-def create_precomputed(animal, volume_file, um):
+def create_precomputed(animal, volume_file, um, channel):
     chunk = 64
     chunks = (chunk, chunk, chunk)
     fileLocationManager = FileLocationManager(animal)
@@ -91,7 +81,7 @@ def create_precomputed(animal, volume_file, um):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--volume', help='Enter the name of the volume file', required=False, default='downsampled_standard.tiff')
+    parser.add_argument('--volume', help='Enter the name of the volume file', required=False, default='result.tif')
     parser.add_argument('--um', help="size of Allen atlas in micrometers", required=False, default=10, type=int)
     args = parser.parse_args()
     animal = args.animal
