@@ -46,34 +46,37 @@ class VolumeRegistration:
         self.fixed_volume = os.path.join(self.fileLocationManager.registration_info, 'fixed_volume.tif')
         self.allen_stack_path = os.path.join(self.fileLocationManager.prep, 'allen_sagittal.tif')
         self.elastix_output = os.path.join(self.fileLocationManager.prep, 'elastix_output')
+        self.reverse_elastix_output = os.path.join(self.fileLocationManager.prep, 'reverse_elastix_output')
         self.transformix_output = os.path.join(self.fileLocationManager.prep, self.channel,  'registered')
-        self.aligned_point_file = os.path.join(self.fileLocationManager.prep, 'com.points.pts')
+        self.unaligned_point_file = os.path.join(self.fileLocationManager.prep, 'com.points.pts')
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}')
+        if self.debug:
+            self.affineIterations = "250"
+            self.bsplineIterations = "150"
+        else:
+            self.affineIterations = "2500"
+            self.bsplineIterations = "15000"
  
 
     def register_volume(self):
-        if self.debug:
-            affineIterations = "250"
-            bsplineIterations = "150"
-        else:
-            affineIterations = "2500"
-            bsplineIterations = "15000"
 
-        fixedImage = sitk.ReadImage(self.fixed_volume)
-        movingImage = sitk.ReadImage(self.moving_volume)
+        #fixedImage = sitk.ReadImage(self.fixed_volume)
+        #movingImage = sitk.ReadImage(self.moving_volume)
+        fixedImage = sitk.ReadImage(self.moving_volume)
+        movingImage = sitk.ReadImage(self.fixed_volume)
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
 
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
-        affineParameterMap["MaximumNumberOfIterations"] = [affineIterations] # 250 works ok
+        affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
         affineParameterMap["WriteResultImage"] = ["true"]
         affineParameterMap["ResultImageFormat"] = ["tif"]
         affineParameterMap["ResultImagePixelType"] = ["float"]
         affineParameterMap["NumberOfResolutions"]= ["8"]
 
         bsplineParameterMap = sitk.GetDefaultParameterMap('bspline')
-        bsplineParameterMap["MaximumNumberOfIterations"] = [bsplineIterations] # 150 works ok
+        bsplineParameterMap["MaximumNumberOfIterations"] = [self.bsplineIterations] # 150 works ok
         bsplineParameterMap["WriteResultImage"] = ["true"]
         bsplineParameterMap["ResultImageFormat"] = ["tif"]
         bsplineParameterMap["ResultImagePixelType"] = ["float"]
@@ -89,25 +92,92 @@ class VolumeRegistration:
         elastixImageFilter.SetLogFileName('elastix.log');
         if self.debug:
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)    
-        resultImage = elastixImageFilter.Execute()  
-        #transformed = sitk.Cast(resultImage, sitk.sitkUInt16)
-        #print(f'new image type {type(transformed)}')
+        resultImage = elastixImageFilter.Execute()         
         sitk.WriteImage(resultImage, os.path.join(self.transformix_output, 'result.tif'))
 
+
+    def register_points(self):
+        """ Points are stored in the DB in micrometers from the full resolution images
+        For the 10um allen:
+            1. The set of images are from the 1/16 downsampled images
+            2. That set of images are deformed to 10um iso
+        
+        This takes  file in THIS format:
+        point
+        3
+        102.8 -33.4 57.0
+        178.1 -10.9 14.5
+        180.4 -18.1 78.9
+        """
+
+        if not os.path.exists(self.unaligned_point_file):
+            print(f'No points file at {self.unaligned_point_file}, exiting.')
+            sys.exit()
+
+        print('Running registration on points.')
+        os.makedirs(self.reverse_elastix_output, exist_ok=True)
+        # reverse the volumes for getting the points, doesn't make sense to me.
+        fixedImage = sitk.ReadImage(self.moving_volume)
+        movingImage = sitk.ReadImage(self.fixed_volume)
+
+        elastixImageFilter = sitk.ElastixImageFilter()
+        elastixImageFilter.SetFixedImage(fixedImage)
+        elastixImageFilter.SetMovingImage(movingImage)
+
+        affineParameterMap = sitk.GetDefaultParameterMap('affine')
+        affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
+        affineParameterMap["WriteResultImage"] = ["false"]
+        affineParameterMap["NumberOfResolutions"]= ["8"]
+
+        bsplineParameterMap = sitk.GetDefaultParameterMap('bspline')
+        bsplineParameterMap["MaximumNumberOfIterations"] = [self.bsplineIterations] # 150 works ok
+        bsplineParameterMap["WriteResultImage"] = ["false"]
+        bsplineParameterMap["UseDirectionCosines"] = ["false"]
+        bsplineParameterMap["FinalGridSpacingInVoxels"] = [f"{self.um}"]
+        del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
+
+        elastixImageFilter.SetParameterMap(affineParameterMap)
+        elastixImageFilter.AddParameterMap(bsplineParameterMap)
+        elastixImageFilter.LogToConsoleOff();
+        elastixImageFilter.LogToFileOn();
+        elastixImageFilter.SetOutputDirectory(self.reverse_elastix_output)
+        elastixImageFilter.SetLogFileName('elastix.log');
+        if self.debug:
+            elastixImageFilter.PrintParameterMap(bsplineParameterMap)    
+        elastixImageFilter.Execute()
+
     def transformix_volume(self):
+        """Helper method when you want to rerun the same transform on another volume
+        """
 
         transformixImageFilter = sitk.TransformixImageFilter()
         parameterMap0 = sitk.ReadParameterFile(os.path.join(self.elastix_output, 'TransformParameters.0.txt'))
         parameterMap1 = sitk.ReadParameterFile(os.path.join(self.elastix_output, 'TransformParameters.1.txt'))
-        transformixImageFilter.SetParameterMap(parameterMap0)
-        transformixImageFilter.AddParameterMap(parameterMap1)
+        transformixImageFilter.SetTransformParameterMap(parameterMap0)
+        transformixImageFilter.AddTransformParameterMap(parameterMap1)
         movingImage = sitk.ReadImage(self.moving_volume)
         transformixImageFilter.SetMovingImage(movingImage)
         transformixImageFilter.Execute()
         transformed = transformixImageFilter.GetResultImage()
-        transformed = sitk.Cast(transformed, sitk.sitkUInt16)
         print(f'new image type {type(transformed)}')
-        sitk.WriteImage(transformed, os.path.join(self.transformix_output, 'result.tif'))
+        sitk.WriteImage(transformed, os.path.join(self.transformix_output, 'test_result.tif'))
+
+    def transformix_points(self):
+        """Helper method when you want to rerun the same transform on another set of points
+        """
+
+        transformixImageFilter = sitk.TransformixImageFilter()
+        parameterMap0 = sitk.ReadParameterFile(os.path.join(self.reverse_elastix_output, 'TransformParameters.0.txt'))
+        parameterMap1 = sitk.ReadParameterFile(os.path.join(self.reverse_elastix_output, 'TransformParameters.1.txt'))
+        transformixImageFilter.SetTransformParameterMap(parameterMap0)
+        transformixImageFilter.AddTransformParameterMap(parameterMap1)
+        transformixImageFilter.SetFixedPointSetFileName(self.unaligned_point_file)
+        transformixImageFilter.LogToFileOff()
+        transformixImageFilter.LogToConsoleOn()
+        transformixImageFilter.SetOutputDirectory(self.transformix_output)
+        movingImage = sitk.ReadImage(self.fixed_volume)
+        transformixImageFilter.SetMovingImage(movingImage)
+        transformixImageFilter.Execute()
 
 
     def get_file_information(self):
@@ -143,32 +213,6 @@ class VolumeRegistration:
         image_stack = np.stack(file_list, axis = 0)
         io.imsave(self.moving_volume, image_stack.astype(np.uint16))
         print(f'Saved a 3D volume {self.moving_volume} with shape={image_stack.shape} and dtype={image_stack.dtype}')
-
-    def transformix_points(self):
-        """ Points are stored in the DB in micrometers from the full resolution images
-        For the 10um allen:
-            1. The set of images are from the 1/16 downsampled images
-            2. That set of images are deformed to 10um iso
-        
-        This takes  file in THIS format:
-        point
-        3
-        102.8 -33.4 57.0
-        178.1 -10.9 14.5
-        180.4 -18.1 78.9
-
-        """
-
-        print('Running transformix and registering volume.')
-        os.makedirs(self.transformix_output, exist_ok=True)
-        cmd = ["transformix", 
-                "-def", self.aligned_point_file, 
-                "-tp", os.path.join(self.elastix_output,'TransformParameters.1.txt'),  
-                "-out", self.transformix_output]
-        if self.debug:
-            print(" ".join(cmd))
-        self.run_proc(cmd)
-
 
     def create_precomputed(self):
         chunk = 64
@@ -235,7 +279,7 @@ class VolumeRegistration:
 
         if not os.path.exists(self.neuroglancer_data_path):
             print('Running the precomputed process on the registered volume')
-            self.create_precomputed()
+            #self.create_precomputed()
 
 
 
@@ -267,4 +311,4 @@ if __name__ == '__main__':
     atlas = args.atlas
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
     volumeRegistration = VolumeRegistration(animal, channel, um, atlas, debug)
-    volumeRegistration.perform_registration()
+    volumeRegistration.register_points()
