@@ -5,8 +5,8 @@ from pathlib import Path
 PIPELINE_ROOT = Path('./src/pipeline').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from image_manipulation.filelocation_manager import FileLocationManager
-from utilities.utilities_registration import create_rigid_parameters
+from library.image_manipulation.filelocation_manager import FileLocationManager
+from library.utilities.utilities_registration import create_rigid_parameters
 
 
 def lines_that_start_with(string, fp):

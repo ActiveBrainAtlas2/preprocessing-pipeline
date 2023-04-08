@@ -22,7 +22,7 @@ from library.database_model.scan_run import ScanRun
 from library.database_model.histology import Histology
 
 try:
-    from pipeline.settings import host, password, user, schema
+    from settings import host, password, user, schema
 except ImportError as fe:
     print('You must have a settings file in the pipeline directory.', fe)
     raise
