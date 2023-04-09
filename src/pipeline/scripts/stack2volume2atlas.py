@@ -219,7 +219,10 @@ class VolumeRegistration:
         with open(self.registered_point_file, "r") as f:                
             lines=f.readlines()
             f.close()
-        assert len(lines) == len(point_dict)
+
+        if len(lines) != len(point_dict):
+            print(f'Length {os.path.basename(self.registered_point_file)}: {len(lines)} does not match {os.path.basename(self.unregistered_pickle_file)}: {len(point_dict)}')
+            sys.exit()
         print("\n\n{} points detected\n\n".format(len(lines)))
         controller = AnnotationSessionController(host, password, schema, user)
         for structure, i in zip(point_dict.keys(), range(len(lines))):        
