@@ -18,6 +18,7 @@ import SimpleITK as sitk
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 import pandas as pd
+import urllib
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -36,6 +37,7 @@ except ImportError:
     host = "db.dk.ucsd.edu"
     schema = "active_atlas_production"
 
+password = urllib.parse.quote_plus(password) # escape special characters
 
 class VolumeRegistration:
     """This class takes a downsampled image stack and registers it to the Allen volume    
@@ -362,7 +364,7 @@ if __name__ == '__main__':
     parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
     parser.add_argument("--task", 
                         help="Enter the task you want to perform: \
-                          create_volume|register_volume|reverse_register_volume|transformix_volume|tranformix_points|create_precomputed", 
+                          create_volume|register_volume|reverse_register_volume|transformix_volume|tranformix_points|create_precomputed|insert_points", 
                         required=False, default="check_registration", type=str)
     
     args = parser.parse_args()
@@ -371,7 +373,7 @@ if __name__ == '__main__':
     um = args.um
     atlas = args.atlas
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
-    task = args.task
+    task = str(args.task).strip().lower()
     volumeRegistration = VolumeRegistration(animal, channel, um, atlas, debug)
 
 
