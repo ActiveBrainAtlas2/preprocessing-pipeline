@@ -1,3 +1,4 @@
+src/settings.py
 .vscode/
 *.log
 parameters.yaml

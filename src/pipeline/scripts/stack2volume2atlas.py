@@ -195,8 +195,21 @@ class VolumeRegistration:
 
 
 
-    def test_com(self):
+    def insert_points(self):
+        """This method will take the pickle file of COMs and insert them.
+        For typical COMs, the full scaled xy version gets multiplied by 0.325 then inserted
+        Upon retrieval, xy gets: divided by 0.325. Here we scale by our downsampling factor when we created the volume,
+        then multiple by the scan run resolution which is hard coded below.
+        """
+        if not os.path.exists(self.unregistered_pickle_file):
+            print(f'{self.unregistered_pickle_file} does not exist, exiting.')
+            sys.exit()
+        if not os.path.exists(self.registered_point_file):
+            print(f'{self.registered_point_file} does not exist, exiting.')
+            sys.exit()
+
         point_or_index = 'OutputPoint'
+        source='COMPUTER'
         d = pd.read_pickle(self.unregistered_pickle_file)
         point_dict = dict(sorted(d.items()))
         controller = AnnotationSessionController(host, password, schema, user)
@@ -207,28 +220,25 @@ class VolumeRegistration:
         assert len(lines) == len(point_dict)
         print("\n\n{} points detected\n\n".format(len(lines)))
         controller = AnnotationSessionController(host, password, schema, user)
-        source='COMPUTER'
         for structure, i in zip(point_dict.keys(), range(len(lines))):        
             lx=lines[i].split()[lines[i].split().index(point_or_index)+3:lines[i].split().index(point_or_index)+6] #x,y,z
             lf = [float(x) for x in lx]
-            x = round(lf[0] * 0.325)
-            y = round(lf[1] * 0.325)
-            z = round(lf[2] * 20 )
+            x = lf[0] * self.scaling_factor * 0.325
+            y = lf[1] * self.scaling_factor * 0.325
+            z = lf[2] * 20 
             brain_region = controller.get_brain_region(structure)
             if brain_region is not None:
                 annotation_session = controller.get_annotation_session(self.animal, brain_region.id, 1)
-                if brain_region.id in [4,5,8]:
-                    print(source, structure, lf, x,y,z)
                 entry = {'source': source, 'FK_session_id': annotation_session.id, 'x': x, 'y':y, 'z': z}
-
                 controller.session.execute(StructureCOM.__table__
                     .insert()
                     .prefix_with('IGNORE')
                     .values(entry))
-
-                
             else:
                 print(f'No brain region found for {structure}')
+
+            if self.debug:
+                print(source, structure, lf, x,y)
 
     def get_file_information(self):
         """Get information about the mid file in the image stack
@@ -326,8 +336,13 @@ class VolumeRegistration:
         if not os.path.exists(self.neuroglancer_data_path):
             status.append(f'\tThere is no precomputed data at: {self.neuroglancer_data_path}')
 
-        if os.path.exists(self.unregistered_point_file) and not os.path.exists(self.registered_point_file):
-            status.append(f'\tThere are unregisted points at: {self.unregistered_point_file}')
+        if not os.path.exists(self.unregistered_pickle_file):
+            status.append(f'\tThere is no COM pickle data at: {self.unregistered_pickle_file}')
+
+        if not os.path.exists(self.unregistered_point_file):
+            status.append(f'\tThere are no unregisted points at: {self.unregistered_point_file}')
+
+        if not os.path.exists(self.registered_point_file):
             status.append(f'\tThere are no registed points at: {self.registered_point_file}')
 
 
@@ -366,9 +381,9 @@ if __name__ == '__main__':
                         'transformix_volume': volumeRegistration.transformix_volume,
                         'transformix_points': volumeRegistration.transformix_points,
                         'create_precomputed': volumeRegistration.create_precomputed,
-                        'check_registration': volumeRegistration.check_registration
+                        'check_registration': volumeRegistration.check_registration,
+                        'insert_points': volumeRegistration.insert_points
     }
 
-    #function_mapping[task]()
-    volumeRegistration.test_com()
+    function_mapping[task]()
 
