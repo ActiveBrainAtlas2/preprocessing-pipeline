@@ -27,7 +27,7 @@ from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.utilities.utilities_mask import normalize16
 from library.utilities.utilities_process import read_image
 from library.controller.annotation_session_controller import AnnotationSessionController
-from library.database_model.annotation_points import AnnotationType
+from library.database_model.annotation_points import StructureCOM
 try:
     from settings import host, password, schema, user
 except ImportError:
@@ -47,6 +47,7 @@ class VolumeRegistration:
         self.um = um
         self.channel = f'CH{channel}'
         self.atlas = atlas
+        self.scaling_factor = 64 # This is the downsampling factor used to create the aligned volume
         self.fileLocationManager = FileLocationManager(animal)
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, self.channel, 'thumbnail_aligned')
         self.moving_volume = os.path.join(self.fileLocationManager.prep, self.channel, 'moving_volume.tif')
@@ -192,6 +193,9 @@ class VolumeRegistration:
         transformixImageFilter.SetMovingImage(movingImage)
         transformixImageFilter.Execute()
 
+
+
+    def test_com(self):
         point_or_index = 'OutputPoint'
         d = pd.read_pickle(self.unregistered_pickle_file)
         point_dict = dict(sorted(d.items()))
@@ -202,28 +206,29 @@ class VolumeRegistration:
             f.close()
         assert len(lines) == len(point_dict)
         print("\n\n{} points detected\n\n".format(len(lines)))
+        controller = AnnotationSessionController(host, password, schema, user)
         source='COMPUTER'
         for structure, i in zip(point_dict.keys(), range(len(lines))):        
             lx=lines[i].split()[lines[i].split().index(point_or_index)+3:lines[i].split().index(point_or_index)+6] #x,y,z
             lf = [float(x) for x in lx]
-            x = lf[0]
-            y = lf[1]
-            z = lf[2]
+            x = round(lf[0] * 0.325)
+            y = round(lf[1] * 0.325)
+            z = round(lf[2] * 20 )
             brain_region = controller.get_brain_region(structure)
             if brain_region is not None:
-                FK_session_id = self.get_annotation_session(brain_region_id=brain_region.id)
-                print(source, brain_region.id, x,y,z, FK_session_id)
+                annotation_session = controller.get_annotation_session(self.animal, brain_region.id, 1)
+                if brain_region.id in [4,5,8]:
+                    print(source, structure, lf, x,y,z)
+                entry = {'source': source, 'FK_session_id': annotation_session.id, 'x': x, 'y':y, 'z': z}
+
+                controller.session.execute(StructureCOM.__table__
+                    .insert()
+                    .prefix_with('IGNORE')
+                    .values(entry))
+
+                
             else:
                 print(f'No brain region found for {structure}')
-
-
-
-    def get_annotation_session(self, brain_region_id):
-        controller = AnnotationSessionController(host, password, schema, user)
-        annotation_session = controller.get_annotation_session(self.animal, brain_region_id, 1)
-        return annotation_session.id
-        
-
 
     def get_file_information(self):
         """Get information about the mid file in the image stack
@@ -364,6 +369,6 @@ if __name__ == '__main__':
                         'check_registration': volumeRegistration.check_registration
     }
 
-    function_mapping[task]()
-    #volumeRegistration.get_brain_region()
+    #function_mapping[task]()
+    volumeRegistration.test_com()
 
