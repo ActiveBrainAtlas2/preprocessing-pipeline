@@ -25,13 +25,13 @@ class AnnotationSessionController(Controller):
         """ 
         active_sessions = self.session.query(AnnotationSession) \
                 .filter(AnnotationSession.annotation_type==AnnotationType.STRUCTURE_COM)\
-                .filter(AnnotationSession.active==1).all()
+                .filter(AnnotationSession.active==True).all()
         return active_sessions
     
     def get_brain_region(self, abbreviation):
         brain_region = self.session.query(BrainRegion) \
                 .filter(BrainRegion.abbreviation==abbreviation)\
-                .filter(BrainRegion.active==1).one_or_none()
+                .filter(BrainRegion.active==True).one_or_none()
         return brain_region
     
 
@@ -39,28 +39,18 @@ class AnnotationSessionController(Controller):
         annotation_session = self.session.query(AnnotationSession).filter(AnnotationSession.active==True)\
             .filter(AnnotationSession.annotation_type==AnnotationType.STRUCTURE_COM)\
             .filter(AnnotationSession.FK_prep_id==prep_id)\
-            .filter(AnnotationSession.FK_brain_region_id==brain_region_id)\
-            .filter(AnnotationSession.FK_user_id==annotator_id)\
+            .filter(AnnotationSession.FK_structure_id==brain_region_id)\
+            .filter(AnnotationSession.FK_annotator_id==annotator_id)\
             .order_by(AnnotationSession.created.desc()).first()
 
         if annotation_session is None:
             annotation_session = AnnotationSession(
                 FK_prep_id=prep_id,
-                FK_user_id=annotator_id,
-                FK_brain_region_id=brain_region_id,
+                FK_annotator_id=annotator_id,
+                FK_structure_id=brain_region_id,
                 annotation_type=AnnotationType.STRUCTURE_COM,
                 active=True,
                 created=datetime.datetime.now())
-            """
-            FK_prep_id = Column(String, nullable=False)
-            FK_user_id = Column(Integer, ForeignKey('auth_user.id'), nullable=True)
-            FK_brain_region_id = Column(Integer, ForeignKey('brain_region.id'),nullable=True)
-            annotation_type = Column(Enum(AnnotationType))    
-            brain_region = relationship('BrainRegion', lazy=True, primaryjoin="AnnotationSession.FK_brain_region_id == BrainRegion.id")
-            annotator = relationship('User', lazy=True)
-            active =  Column(Integer,default=1)
-            created =  Column(DateTime)
-            """
 
             self.session.add(annotation_session)
             self.session.commit()
