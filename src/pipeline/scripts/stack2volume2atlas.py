@@ -387,5 +387,8 @@ if __name__ == '__main__':
                         'insert_points': volumeRegistration.insert_points
     }
 
-    function_mapping[task]()
+    if task in function_mapping:
+        function_mapping[task]()
+    else:
+        print(f'{task} is not a correct task.')
 
