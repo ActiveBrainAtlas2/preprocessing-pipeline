@@ -154,6 +154,7 @@ class VolumeRegistration:
     def transformix_volume(self):
         """Helper method when you want to rerun the same transform on another volume
         """
+        os.makedirs(self.registered_output, exist_ok=True)
 
         transformixImageFilter = sitk.TransformixImageFilter()
         parameterMap0 = sitk.ReadParameterFile(os.path.join(self.elastix_output, 'TransformParameters.0.txt'))
@@ -162,6 +163,9 @@ class VolumeRegistration:
         transformixImageFilter.AddTransformParameterMap(parameterMap1)
         movingImage = sitk.ReadImage(self.moving_volume)
         transformixImageFilter.SetMovingImage(movingImage)
+        transformixImageFilter.LogToConsoleOff()
+        transformixImageFilter.LogToFileOn()
+        transformixImageFilter.SetOutputDirectory(self.registered_output)
         transformixImageFilter.Execute()
         transformed = transformixImageFilter.GetResultImage()
         print(f'new image type {type(transformed)}')
