@@ -81,6 +81,10 @@ class VolumeRegistration:
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
 
+        rigidParameterMap = sitk.GetDefaultParameterMap('rigid')
+        rigidParameterMap["MaximumNumberOfIterations"] = ["1250"] # 250 works ok
+        rigidParameterMap["WriteResultImage"] = ["false"]
+
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
         affineParameterMap["WriteResultImage"] = ["true"]
@@ -97,13 +101,15 @@ class VolumeRegistration:
         bsplineParameterMap["FinalGridSpacingInVoxels"] = [f"{self.um}"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
-        elastixImageFilter.SetParameterMap(affineParameterMap)
-        elastixImageFilter.AddParameterMap(bsplineParameterMap)
+        #elastixImageFilter.SetParameterMap(affineParameterMap)
+        elastixImageFilter.SetParameterMap(rigidParameterMap)
+        #elastixImageFilter.AddParameterMap(affineParameterMap)
+        #elastixImageFilter.AddParameterMap(bsplineParameterMap)
         elastixImageFilter.LogToConsoleOff();
         elastixImageFilter.LogToFileOn();
         elastixImageFilter.SetOutputDirectory(self.elastix_output)
         elastixImageFilter.SetLogFileName('elastix.log');
-        if self.debug:
+        if self.debug or True:
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)    
         resultImage = elastixImageFilter.Execute()         
         sitk.WriteImage(resultImage, os.path.join(self.registered_output, 'result.tif'))
@@ -151,24 +157,35 @@ class VolumeRegistration:
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)    
         elastixImageFilter.Execute()
 
-    def transformix_volume(self):
-        """Helper method when you want to rerun the same transform on another volume
+    def setup_transformix(self, elastix_output):
+        """Method used to transform volumes and points
         """
+        
         os.makedirs(self.registered_output, exist_ok=True)
 
         transformixImageFilter = sitk.TransformixImageFilter()
-        parameterMap0 = sitk.ReadParameterFile(os.path.join(self.elastix_output, 'TransformParameters.0.txt'))
-        parameterMap1 = sitk.ReadParameterFile(os.path.join(self.elastix_output, 'TransformParameters.1.txt'))
+        parameterMap0 = sitk.ReadParameterFile(os.path.join(elastix_output, 'TransformParameters.0.txt'))
+        parameterMap1 = sitk.ReadParameterFile(os.path.join(elastix_output, 'TransformParameters.1.txt'))
         transformixImageFilter.SetTransformParameterMap(parameterMap0)
         transformixImageFilter.AddTransformParameterMap(parameterMap1)
+        if os.path.exists(os.path.join(self.elastix_output, 'TransformParameters.2.txt')):
+            parameterMap2 = sitk.ReadParameterFile(os.path.join(elastix_output, 'TransformParameters.2.txt'))
+            transformixImageFilter.AddTransformParameterMap(parameterMap2)
+
+        transformixImageFilter.LogToFileOn()
+        transformixImageFilter.LogToConsoleOff()
+        transformixImageFilter.SetOutputDirectory(self.registered_output)
         movingImage = sitk.ReadImage(self.moving_volume)
         transformixImageFilter.SetMovingImage(movingImage)
-        transformixImageFilter.LogToConsoleOff()
-        transformixImageFilter.LogToFileOn()
-        transformixImageFilter.SetOutputDirectory(self.registered_output)
+        return transformixImageFilter
+
+    def transformix_volume(self):
+        """Helper method when you want to rerun the same transform on another volume
+        """
+        
+        transformixImageFilter = self.setup_transformix(self.elastix_output)
         transformixImageFilter.Execute()
         transformed = transformixImageFilter.GetResultImage()
-        print(f'new image type {type(transformed)}')
         sitk.WriteImage(transformed, os.path.join(self.registered_output, 'result.tif'))
 
     def transformix_points(self):
@@ -186,17 +203,8 @@ class VolumeRegistration:
         180.4 -18.1 78.9
         """
         
-        transformixImageFilter = sitk.TransformixImageFilter()
-        parameterMap0 = sitk.ReadParameterFile(os.path.join(self.reverse_elastix_output, 'TransformParameters.0.txt'))
-        parameterMap1 = sitk.ReadParameterFile(os.path.join(self.reverse_elastix_output, 'TransformParameters.1.txt'))
-        transformixImageFilter.SetTransformParameterMap(parameterMap0)
-        transformixImageFilter.AddTransformParameterMap(parameterMap1)
+        transformixImageFilter = self.setup_transformix(self.reverse_elastix_output)
         transformixImageFilter.SetFixedPointSetFileName(self.unregistered_point_file)
-        transformixImageFilter.LogToFileOn()
-        transformixImageFilter.LogToConsoleOff()
-        transformixImageFilter.SetOutputDirectory(self.registered_output)
-        movingImage = sitk.ReadImage(self.fixed_volume)
-        transformixImageFilter.SetMovingImage(movingImage)
         transformixImageFilter.Execute()
 
 

@@ -1,6 +1,7 @@
 import numpy as np
 import SimpleITK as sitk
 from registration.Registration import Registration
+
 class PointSetAlignment(Registration):
     def __init__(self,fixed,moving):
         super().__init__()
@@ -31,7 +32,7 @@ def get_shared_key_and_array(fixed_dictionary,moving_dictionary):
     shared_keys = set(fixed_dictionary.keys()).intersection(set(moving_dictionary.keys()))
     fixed = np.array([fixed_dictionary[key] for key in shared_keys])
     moving = np.array([moving_dictionary[key] for key in shared_keys])
-    return fixed,moving,shared_keys
+    return fixed, moving, shared_keys
 
 def get_rigid_alignmented_points(fixed_dictionary,moving_dictionary):
     fixed,moving,shared_keys = get_shared_key_and_array(fixed_dictionary,moving_dictionary)

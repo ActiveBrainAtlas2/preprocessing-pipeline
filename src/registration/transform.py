@@ -1,11 +1,11 @@
 """Transformations."""
 import torch
-from pytorch3d.transforms import RotateAxisAngle
-from pytorch3d.transforms import Scale
-from pytorch3d.transforms import Translate
+#from pytorch3d.transforms import RotateAxisAngle
+#from pytorch3d.transforms import Scale
+#from pytorch3d.transforms import Translate
 from torch.nn import Module
 from torch.nn import Parameter
-from .algorithm import umeyama
+#from .algorithm import umeyama
 
 class Transform(Module):
     def transform_numpy(self, moving):
