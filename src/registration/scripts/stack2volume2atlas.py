@@ -46,15 +46,14 @@ class VolumeRegistration:
     def __init__(self, animal, channel, um, atlas, debug):
         self.animal = animal
         self.debug = debug
+        self.atlas = atlas
         self.um = um
         self.channel = f'CH{channel}'
-        self.atlas = atlas
         self.scaling_factor = 64 # This is the downsampling factor used to create the aligned volume
         self.fileLocationManager = FileLocationManager(animal)
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, self.channel, 'thumbnail_aligned')
         self.moving_volume = os.path.join(self.fileLocationManager.prep, self.channel, 'moving_volume.tif')
-        self.fixed_volume = os.path.join(self.fileLocationManager.registration_info, 'fixed_volume.tif')
-        self.allen_stack_path = os.path.join(self.fileLocationManager.prep, 'allen_sagittal.tif')
+        self.fixed_volume = os.path.join(self.fileLocationManager.registration_info, f'{atlas}_{um}um_sagittal.tif')
         self.elastix_output = os.path.join(self.fileLocationManager.prep, 'elastix_output')
         self.reverse_elastix_output = os.path.join(self.fileLocationManager.prep, 'reverse_elastix_output')
         self.registered_output = os.path.join(self.fileLocationManager.prep, self.channel,  'registered')
@@ -63,11 +62,19 @@ class VolumeRegistration:
         self.unregistered_point_file = os.path.join(self.fileLocationManager.prep, 'points.pts')
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}')
         if self.debug:
+            self.rigidIterations = "250"
             self.affineIterations = "250"
             self.bsplineIterations = "150"
         else:
+            self.rigidIterations = "1000"
             self.affineIterations = "2500"
             self.bsplineIterations = "15000"
+
+        if not os.path.exists(self.fixed_volume):
+            print(f'{self.fixed_volume} does not exist, exiting.')
+            sys.exit()
+
+        
  
 
     def register_volume(self):
@@ -82,9 +89,12 @@ class VolumeRegistration:
         elastixImageFilter.SetMovingImage(movingImage)
 
         rigidParameterMap = sitk.GetDefaultParameterMap('rigid')
-        rigidParameterMap["MaximumNumberOfIterations"] = ["1250"] # 250 works ok
-        rigidParameterMap["WriteResultImage"] = ["false"]
-
+        
+        rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
+        rigidParameterMap["WriteResultImage"] = ["true"]
+        rigidParameterMap["ResultImageFormat"] = ["tif"]
+        rigidParameterMap["ResultImagePixelType"] = ["float"]
+        
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
         affineParameterMap["WriteResultImage"] = ["true"]
@@ -101,15 +111,17 @@ class VolumeRegistration:
         bsplineParameterMap["FinalGridSpacingInVoxels"] = [f"{self.um}"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
-        #elastixImageFilter.SetParameterMap(affineParameterMap)
         elastixImageFilter.SetParameterMap(rigidParameterMap)
-        #elastixImageFilter.AddParameterMap(affineParameterMap)
-        #elastixImageFilter.AddParameterMap(bsplineParameterMap)
+        elastixImageFilter.AddParameterMap(affineParameterMap)
+        elastixImageFilter.AddParameterMap(bsplineParameterMap)
         elastixImageFilter.LogToConsoleOff();
         elastixImageFilter.LogToFileOn();
         elastixImageFilter.SetOutputDirectory(self.elastix_output)
         elastixImageFilter.SetLogFileName('elastix.log');
-        if self.debug or True:
+        if self.debug:
+            print(f'Registering {self.moving_volume} to {self.fixed_volume}')
+            elastixImageFilter.PrintParameterMap(rigidParameterMap)    
+            elastixImageFilter.PrintParameterMap(affineParameterMap)
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)    
         resultImage = elastixImageFilter.Execute()         
         sitk.WriteImage(resultImage, os.path.join(self.registered_output, 'result.tif'))
@@ -374,8 +386,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument("--channel", help="Enter channel", required=False, default=1, type=int)
-    parser.add_argument('--um', help="size of Allen atlas in micrometers", required=False, default=20, type=int)
-    parser.add_argument('--atlas', help='Enter the atlas', required=False, default='princeton')
+    parser.add_argument('--um', help="size of atlas in micrometers", required=False, default=20, type=int)
+    parser.add_argument('--atlas', help='Enter the atlas: allen|princeton', required=False, default='princeton')
     parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
     parser.add_argument("--task", 
                         help="Enter the task you want to perform: \
