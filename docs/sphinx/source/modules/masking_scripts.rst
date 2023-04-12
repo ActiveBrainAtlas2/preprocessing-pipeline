@@ -1,4 +1,4 @@
-Create pipeline - main script
+Masking scripts
 -----------------------------
 
 .. automodule:: masking.scripts.create_polyfills_from_DB

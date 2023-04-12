@@ -1,5 +1,5 @@
-Create pipeline - main script
------------------------------
+Registration scripts
+--------------------
 
 .. automodule:: registration.scripts.stack2volume2atlas
    :members:

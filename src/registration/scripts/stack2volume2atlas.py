@@ -54,13 +54,13 @@ class VolumeRegistration:
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, self.channel, 'thumbnail_aligned')
         self.moving_volume = os.path.join(self.fileLocationManager.prep, self.channel, 'moving_volume.tif')
         self.fixed_volume = os.path.join(self.fileLocationManager.registration_info, f'{atlas}_{um}um_sagittal.tif')
-        self.elastix_output = os.path.join(self.fileLocationManager.prep, 'elastix_output')
-        self.reverse_elastix_output = os.path.join(self.fileLocationManager.prep, 'reverse_elastix_output')
-        self.registered_output = os.path.join(self.fileLocationManager.prep, self.channel,  'registered')
+        self.elastix_output = os.path.join(self.fileLocationManager.prep, f'elastix_output_{self.atlas}{um}um')
+        self.reverse_elastix_output = os.path.join(self.fileLocationManager.prep, f'reverse_elastix_output_{self.atlas}{um}um')
+        self.registered_output = os.path.join(self.fileLocationManager.prep, self.channel,  f'registered_{self.atlas}{um}um')
         self.registered_point_file = os.path.join(self.registered_output, 'outputpoints.txt')
         self.unregistered_pickle_file = os.path.join(self.fileLocationManager.prep, 'points.pkl')
         self.unregistered_point_file = os.path.join(self.fileLocationManager.prep, 'points.pts')
-        self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}')
+        self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}{um}um')
         if self.debug:
             self.rigidIterations = "250"
             self.affineIterations = "250"
