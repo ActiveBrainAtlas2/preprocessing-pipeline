@@ -1,5 +1,5 @@
 """
-This script will:
+This script will
 
 - Create a 3D volume from a directory of aligned images
 - Create a 3D volume from the 20um sagittal Allen brain and orient it the same orientation as ours
@@ -37,7 +37,7 @@ except ImportError:
     host = "db.dk.ucsd.edu"
     schema = "active_atlas_production"
 
-password = urllib.parse.quote_plus(password) # escape special characters
+password = urllib.parse.quote_plus(str(password))
 
 class VolumeRegistration:
     """This class takes a downsampled image stack and registers it to the Allen volume    
@@ -204,6 +204,7 @@ class VolumeRegistration:
         """Helper method when you want to rerun the same transform on another set of points
         Points are stored in the DB in micrometers from the full resolution images
         For the 10um allen:
+        
             1. The set of images are from the 1/16 downsampled images
             2. That set of images are deformed to 10um iso
         
@@ -248,7 +249,6 @@ class VolumeRegistration:
             print(f'Length {os.path.basename(self.registered_point_file)}: {len(lines)} does not match {os.path.basename(self.unregistered_pickle_file)}: {len(point_dict)}')
             sys.exit()
         print("\n\n{} points detected\n\n".format(len(lines)))
-        controller = AnnotationSessionController(host, password, schema, user)
         for structure, i in zip(point_dict.keys(), range(len(lines))):        
             lx=lines[i].split()[lines[i].split().index(point_or_index)+3:lines[i].split().index(point_or_index)+6] #x,y,z
             lf = [float(x) for x in lx]

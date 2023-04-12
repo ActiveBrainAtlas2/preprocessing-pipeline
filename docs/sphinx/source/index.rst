@@ -16,20 +16,24 @@ Use the side navigation panel to view different documentation topics.
 
 .. toctree::
    :titlesonly:
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Preprocessing pipeline
    :hidden:
 
-   modules/create_pipeline.rst
-   modules/pipeline.database_model.rst
-   modules/pipeline.controller.rst
-   modules/pipeline.image_manipulation.rst
-   modules/pipeline.utilities.rst
-   modules/high.level.description.of.preprocessing.pipeline.rst
-   modules/description.czi.2.neuroglancer.rst
-   modules/software.installation.rst
-   modules/running.czi.2.neuroglancer.rst
+   modules/masking_scripts.rst
+   modules/pipeline_scripts.rst
+   modules/registration_scripts.rst
+   modules/pipeline_utilities.rst
+   modules/high_level_description_of_preprocessing_pipeline.rst
+   modules/description_czi_2_neuroglancer.rst
+   modules/software_installation.rst
+   modules/running_czi_2_neuroglancer.rst
+   modules/database_models.rst
+   modules/controllers.rst
+   modules/image_manipulation.rst
 
+
+   
 Indices and modules
 ~~~~~~~~~~~~~~~~~~~
 

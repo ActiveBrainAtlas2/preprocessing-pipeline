@@ -2,7 +2,7 @@ import sys
 
 from pathlib import Path
 ROOT = Path(__file__).parents[3]
-PIPELINE_ROOT = Path.joinpath(ROOT, "src", "pipeline")
+PIPELINE_ROOT = Path.joinpath(ROOT, "src")
 sys.path.append(PIPELINE_ROOT.as_posix())
 #print(PIPELINE_ROOT)
 #sys.exit()
