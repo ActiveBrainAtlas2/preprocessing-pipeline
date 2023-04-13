@@ -119,6 +119,7 @@ class VolumeRegistration:
         rigidParameterMap["NumberOfResolutions"]= ["6"]
         rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
         rigidParameterMap["MaximumStepLength"] =  ["1.0"]
+        rigidParameterMap["AutomaticTransformInitializationMethod"] = ["GeometricalCenter"]
         
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
