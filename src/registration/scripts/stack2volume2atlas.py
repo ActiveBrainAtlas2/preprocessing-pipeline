@@ -112,16 +112,17 @@ class VolumeRegistration:
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
 
-        """
+        
         rigidParameterMap = sitk.GetDefaultParameterMap('rigid')        
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
         rigidParameterMap["WriteResultImage"] = ["false"]
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         rigidParameterMap["NumberOfResolutions"]= ["6"]
-        rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
+        rigidParameterMap["NumberOfSpatialSamples"] = ["40000"]
         rigidParameterMap["MaximumStepLength"] =  ["1.0"]
+        rigidParameterMap["AutomaticTransformInitialization"] = ["true"]
         rigidParameterMap["AutomaticTransformInitializationMethod"] = ["GeometricalCenter"]
-        """
+        
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
         affineParameterMap["WriteResultImage"] = ["false"]
@@ -140,14 +141,14 @@ class VolumeRegistration:
         bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
-        #elastixImageFilter.SetParameterMap(rigidParameterMap)
-        elastixImageFilter.SetParameterMap(affineParameterMap)
+        elastixImageFilter.SetParameterMap(rigidParameterMap)
+        elastixImageFilter.AddParameterMap(affineParameterMap)
         elastixImageFilter.AddParameterMap(bsplineParameterMap)
         if self.debug:
-            #elastixImageFilter.PrintParameterMap(rigidParameterMap)    
+            elastixImageFilter.PrintParameterMap(rigidParameterMap)    
             elastixImageFilter.PrintParameterMap(affineParameterMap)
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)
-            elastixImageFilter.LogToConsoleOn();
+            elastixImageFilter.LogToConsoleOff();
         else:
             elastixImageFilter.LogToConsoleOff()
             elastixImageFilter.LogToFileOn();
