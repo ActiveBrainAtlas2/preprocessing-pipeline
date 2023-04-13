@@ -3,6 +3,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from library.controller.main_controller import Controller
 from library.database_model.brain_region import BrainRegion
+from library.database_model.annotation_points import StructureCOM
 from library.database_model.annotation_points import AnnotationSession, AnnotationType
 
 
@@ -57,5 +58,25 @@ class AnnotationSessionController(Controller):
             self.session.refresh(annotation_session)
             
         return annotation_session
+
+    def upsert_structure_com(self, entry):
+        """Method to do update/insert. It first checks if there is already an entry. If not,
+        it does insert otherwise it updates.
+        """
+        FK_session_id = entry['FK_session_id']
+        structure_com = self.session.query(StructureCOM).filter(StructureCOM.FK_session_id==FK_session_id).first()
+        if structure_com is None:
+            data = StructureCOM(
+                source=entry['source'],
+                FK_session_id = FK_session_id,
+                x = entry['x'],
+                y = entry['y'],
+                z = entry['z']
+            )
+            self.add_row(data)
+        else:
+            self.session.query(StructureCOM)\
+                .filter(StructureCOM.FK_session_id == FK_session_id).update(entry)
+            self.session.commit()
 
 
