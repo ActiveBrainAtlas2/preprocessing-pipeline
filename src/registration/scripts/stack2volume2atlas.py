@@ -1,7 +1,11 @@
 """
 Important notes,
 If your fixed image has a smaller field of view than your moving image, 
-your moving image will be cropped. In other words, only the part your moving image 
+your moving image will be cropped. (This is what happens when the brain stem
+gets cropped out. However, when the fixed image is bigger than the moving image, we get the following error:
+Too many samples map outside moving image buffer. The moving image needs to be properly initialized.
+
+In other words, only the part your moving image 
 that overlap with the fixed image is included in your result image.
 To warp the whole image, you can edit the size of the domain in the 
 transform parameter map to match your moving image, and pass your moving image and 
@@ -63,7 +67,7 @@ class VolumeRegistration:
         self.unregistered_pickle_file = os.path.join(self.fileLocationManager.prep, 'points.pkl')
         self.unregistered_point_file = os.path.join(self.fileLocationManager.prep, 'points.pts')
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}{um}um')
-        self.number_of_sampling_attempts = "8"
+        self.number_of_sampling_attempts = "6"
         if self.debug:
             self.rigidIterations = "100"
             self.affineIterations = "100"
@@ -108,9 +112,19 @@ class VolumeRegistration:
     def setup_registration(self, imagepath1, imagepath2, outputpath):
         fixedImage = sitk.ReadImage(imagepath1)
         movingImage = sitk.ReadImage(imagepath2)
+
+        initial_transform = sitk.CenteredTransformInitializer(fixedImage, 
+                                                            movingImage, 
+                                                            sitk.Euler3DTransform(), 
+                                                            sitk.CenteredTransformInitializerFilter.MOMENTS)
+
+        moving_resampled = sitk.Resample(movingImage, fixedImage, initial_transform, sitk.sitkLinear, 0.0, movingImage.GetPixelID())
+
+
+
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
-        elastixImageFilter.SetMovingImage(movingImage)
+        elastixImageFilter.SetMovingImage(moving_resampled)
 
         
         rigidParameterMap = sitk.GetDefaultParameterMap('rigid')        
@@ -118,10 +132,10 @@ class VolumeRegistration:
         rigidParameterMap["WriteResultImage"] = ["false"]
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         rigidParameterMap["NumberOfResolutions"]= ["6"]
-        rigidParameterMap["NumberOfSpatialSamples"] = ["40000"]
-        rigidParameterMap["MaximumStepLength"] =  ["1.0"]
-        rigidParameterMap["AutomaticTransformInitialization"] = ["true"]
-        rigidParameterMap["AutomaticTransformInitializationMethod"] = ["GeometricalCenter"]
+        rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
+        #rigidParameterMap["MaximumStepLength"] =  ["1.0"]
+        #rigidParameterMap["AutomaticTransformInitialization"] = ["true"]
+        #rigidParameterMap["AutomaticTransformInitializationMethod"] = ["GeometricalCenter"]
         
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
@@ -148,7 +162,7 @@ class VolumeRegistration:
             elastixImageFilter.PrintParameterMap(rigidParameterMap)    
             elastixImageFilter.PrintParameterMap(affineParameterMap)
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)
-            elastixImageFilter.LogToConsoleOff();
+            elastixImageFilter.LogToConsoleOn();
         else:
             elastixImageFilter.LogToConsoleOff()
             elastixImageFilter.LogToFileOn();
