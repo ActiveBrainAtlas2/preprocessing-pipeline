@@ -117,12 +117,14 @@ class VolumeRegistration:
         rigidParameterMap["WriteResultImage"] = ["false"]
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         rigidParameterMap["NumberOfResolutions"]= ["6"]
+        rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
         
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
         affineParameterMap["WriteResultImage"] = ["false"]
         affineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         affineParameterMap["NumberOfResolutions"]= ["6"]
+        affineParameterMap["NumberOfSpatialSamples"] = ["4000"]
 
         bsplineParameterMap = sitk.GetDefaultParameterMap('bspline')
         bsplineParameterMap["MaximumNumberOfIterations"] = [self.bsplineIterations] # 150 works ok
@@ -132,6 +134,7 @@ class VolumeRegistration:
         bsplineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         bsplineParameterMap["NumberOfResolutions"]= ["6"]
         bsplineParameterMap["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
+        bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
         elastixImageFilter.SetParameterMap(rigidParameterMap)
