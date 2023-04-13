@@ -112,6 +112,7 @@ class VolumeRegistration:
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
 
+        """
         rigidParameterMap = sitk.GetDefaultParameterMap('rigid')        
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
         rigidParameterMap["WriteResultImage"] = ["false"]
@@ -120,7 +121,7 @@ class VolumeRegistration:
         rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
         rigidParameterMap["MaximumStepLength"] =  ["1.0"]
         rigidParameterMap["AutomaticTransformInitializationMethod"] = ["GeometricalCenter"]
-        
+        """
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
         affineParameterMap["WriteResultImage"] = ["false"]
@@ -139,11 +140,11 @@ class VolumeRegistration:
         bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
-        elastixImageFilter.SetParameterMap(rigidParameterMap)
-        elastixImageFilter.AddParameterMap(affineParameterMap)
+        #elastixImageFilter.SetParameterMap(rigidParameterMap)
+        elastixImageFilter.SetParameterMap(affineParameterMap)
         elastixImageFilter.AddParameterMap(bsplineParameterMap)
         if self.debug:
-            elastixImageFilter.PrintParameterMap(rigidParameterMap)    
+            #elastixImageFilter.PrintParameterMap(rigidParameterMap)    
             elastixImageFilter.PrintParameterMap(affineParameterMap)
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)
             elastixImageFilter.LogToConsoleOn();
