@@ -1,10 +1,11 @@
 """
-This script will
-
-- Create a 3D volume from a directory of aligned images
-- Create a 3D volume from the 20um sagittal Allen brain and orient it the same orientation as ours
-- Run elastix on the above 2 volumes
-- Run transformix with the 3D volume from the 1st step with the results of the elastix transformation
+Important notes,
+If your fixed image has a smaller field of view than your moving image, 
+your moving image will be cropped. In other words, only the part your moving image 
+that overlap with the fixed image is included in your result image.
+To warp the whole image, you can edit the size of the domain in the 
+transform parameter map to match your moving image, and pass your moving image and 
+the transform parameter map to sitk.Transformix().
 """
 
 import argparse
@@ -28,7 +29,7 @@ from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.utilities.utilities_mask import normalize16
 from library.utilities.utilities_process import read_image
 from library.controller.annotation_session_controller import AnnotationSessionController
-from library.database_model.annotation_points import StructureCOM
+
 try:
     from settings import host, password, schema, user
 except ImportError:
@@ -136,14 +137,17 @@ class VolumeRegistration:
         elastixImageFilter.SetParameterMap(rigidParameterMap)
         elastixImageFilter.AddParameterMap(affineParameterMap)
         elastixImageFilter.AddParameterMap(bsplineParameterMap)
-        elastixImageFilter.LogToConsoleOff();
-        elastixImageFilter.LogToFileOn();
-        elastixImageFilter.SetOutputDirectory(outputpath)
-        elastixImageFilter.SetLogFileName('elastix.log');
         if self.debug:
             elastixImageFilter.PrintParameterMap(rigidParameterMap)    
             elastixImageFilter.PrintParameterMap(affineParameterMap)
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)
+            elastixImageFilter.LogToConsoleOn();
+        else:
+            elastixImageFilter.LogToConsoleOff()
+            elastixImageFilter.LogToFileOn();
+            elastixImageFilter.SetOutputDirectory(outputpath)
+            elastixImageFilter.SetLogFileName('elastix.log');
+
         return elastixImageFilter
 
         
