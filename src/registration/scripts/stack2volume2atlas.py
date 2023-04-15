@@ -74,7 +74,7 @@ class VolumeRegistration:
         self.unregistered_pickle_file = os.path.join(self.fileLocationManager.prep, 'points.pkl')
         self.unregistered_point_file = os.path.join(self.fileLocationManager.prep, 'points.pts')
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}{um}um')
-        self.number_of_sampling_attempts = "8"
+        self.number_of_sampling_attempts = "10"
         if self.debug:
             self.rigidIterations = "100"
             self.affineIterations = "100"
@@ -140,21 +140,23 @@ class VolumeRegistration:
         
         rigidParameterMap = sitk.GetDefaultParameterMap('rigid')        
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
-        rigidParameterMap["WriteResultImage"] = ["false"]
+        
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         rigidParameterMap["NumberOfResolutions"]= ["6"]
         rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
+        rigidParameterMap["WriteResultImage"] = ["false"]
+
         
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
-        affineParameterMap["WriteResultImage"] = ["false"]
         affineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         affineParameterMap["NumberOfResolutions"]= ["6"]
         affineParameterMap["NumberOfSpatialSamples"] = ["4000"]
+        affineParameterMap["WriteResultImage"] = ["false"]
 
         bsplineParameterMap = sitk.GetDefaultParameterMap('bspline')
         bsplineParameterMap["MaximumNumberOfIterations"] = [self.bsplineIterations] # 150 works ok
-        bsplineParameterMap["WriteResultImage"] = ["false"]
+        bsplineParameterMap["WriteResultImage"] = ["true"]
         bsplineParameterMap["UseDirectionCosines"] = ["false"]
         bsplineParameterMap["FinalGridSpacingInVoxels"] = [f"{self.um}"]
         bsplineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
@@ -165,7 +167,10 @@ class VolumeRegistration:
 
         elastixImageFilter.SetParameterMap(rigidParameterMap)
         elastixImageFilter.AddParameterMap(affineParameterMap)
-        elastixImageFilter.AddParameterMap(bsplineParameterMap)
+        #elastixImageFilter.AddParameterMap(bsplineParameterMap)
+        elastixImageFilter.SetOutputDirectory(outputpath)
+        elastixImageFilter.LogToFileOn();
+        elastixImageFilter.SetLogFileName('elastix.log');
         if self.debug:
             elastixImageFilter.PrintParameterMap(rigidParameterMap)    
             #elastixImageFilter.PrintParameterMap(affineParameterMap)
@@ -173,9 +178,6 @@ class VolumeRegistration:
             elastixImageFilter.LogToConsoleOn();
         else:
             elastixImageFilter.LogToConsoleOff()
-            elastixImageFilter.LogToFileOn();
-            elastixImageFilter.SetOutputDirectory(outputpath)
-            elastixImageFilter.SetLogFileName('elastix.log');
 
         return elastixImageFilter
 
