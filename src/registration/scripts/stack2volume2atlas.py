@@ -395,8 +395,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument("--channel", help="Enter channel", required=False, default=1, type=int)
-    parser.add_argument('--um', help="size of atlas in micrometers", required=False, default=20, type=int)
-    parser.add_argument('--atlas', help='Enter the atlas: allen|princeton', required=False, default='princeton')
+    parser.add_argument('--um', help="size of atlas in micrometers", required=False, default=10, type=int)
+    parser.add_argument('--atlas', help='Enter the atlas: allen|princeton', required=False, default='allen')
     parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
     parser.add_argument("--task", 
                         help="Enter the task you want to perform: \
