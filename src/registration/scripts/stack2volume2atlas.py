@@ -10,6 +10,13 @@ that overlap with the fixed image is included in your result image.
 To warp the whole image, you can edit the size of the domain in the 
 transform parameter map to match your moving image, and pass your moving image and 
 the transform parameter map to sitk.Transformix().
+10um allen is 1320x800
+25um allen is 528x320
+aligned volume @ 32 is 2047x1109 - unreg size matches allen10um
+aligned volume @ 64 is 1024x555 - unreg size matches allen25um
+aligned volume @ 128 is 512x278
+aligned volume @50 is 1310x710
+full aligned is 65500x35500
 """
 
 import argparse
@@ -67,7 +74,7 @@ class VolumeRegistration:
         self.unregistered_pickle_file = os.path.join(self.fileLocationManager.prep, 'points.pkl')
         self.unregistered_point_file = os.path.join(self.fileLocationManager.prep, 'points.pts')
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}{um}um')
-        self.number_of_sampling_attempts = "6"
+        self.number_of_sampling_attempts = "8"
         if self.debug:
             self.rigidIterations = "100"
             self.affineIterations = "100"
@@ -81,6 +88,9 @@ class VolumeRegistration:
             print(f'{self.fixed_volume_path} does not exist, exiting.')
             sys.exit()
 
+        if not os.path.exists(self.moving_volume_path):
+            print(f'{self.moving_volume_path} does not exist, exiting.')
+            sys.exit()
         
  
 
@@ -94,6 +104,7 @@ class VolumeRegistration:
 
         elastixImageFilter = self.setup_registration(self.fixed_volume_path, self.moving_volume_path, self.elastix_output)
         resultImage = elastixImageFilter.Execute()         
+        # simg1 = sitk.Cast(sitk.RescaleIntensity(resultImage), sitk.sitkUInt16)
         sitk.WriteImage(resultImage, os.path.join(self.registered_output, 'result.tif'))
 
 
@@ -120,7 +131,7 @@ class VolumeRegistration:
 
         moving_resampled = sitk.Resample(movingImage, fixedImage, initial_transform, sitk.sitkLinear, 0.0, movingImage.GetPixelID())
 
-
+        del movingImage
 
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
@@ -133,9 +144,6 @@ class VolumeRegistration:
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         rigidParameterMap["NumberOfResolutions"]= ["6"]
         rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
-        #rigidParameterMap["MaximumStepLength"] =  ["1.0"]
-        #rigidParameterMap["AutomaticTransformInitialization"] = ["true"]
-        #rigidParameterMap["AutomaticTransformInitializationMethod"] = ["GeometricalCenter"]
         
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
@@ -160,8 +168,8 @@ class VolumeRegistration:
         elastixImageFilter.AddParameterMap(bsplineParameterMap)
         if self.debug:
             elastixImageFilter.PrintParameterMap(rigidParameterMap)    
-            elastixImageFilter.PrintParameterMap(affineParameterMap)
-            elastixImageFilter.PrintParameterMap(bsplineParameterMap)
+            #elastixImageFilter.PrintParameterMap(affineParameterMap)
+            #elastixImageFilter.PrintParameterMap(bsplineParameterMap)
             elastixImageFilter.LogToConsoleOn();
         else:
             elastixImageFilter.LogToConsoleOff()
