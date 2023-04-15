@@ -78,7 +78,7 @@ class VolumeRegistration:
         if self.debug:
             self.rigidIterations = "100"
             self.affineIterations = "100"
-            self.bsplineIterations = "100"
+            self.bsplineIterations = "200"
         else:
             self.rigidIterations = "1000"
             self.affineIterations = "2500"
@@ -142,12 +142,14 @@ class VolumeRegistration:
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
         
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
+        rigidParameterMap["UseDirectionCosines"] = ["true"]
         rigidParameterMap["NumberOfResolutions"]= ["6"]
         rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
         rigidParameterMap["WriteResultImage"] = ["false"]
 
         
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
+        affineParameterMap["UseDirectionCosines"] = ["true"]
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
         affineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         affineParameterMap["NumberOfResolutions"]= ["6"]
@@ -157,7 +159,7 @@ class VolumeRegistration:
         bsplineParameterMap = sitk.GetDefaultParameterMap('bspline')
         bsplineParameterMap["MaximumNumberOfIterations"] = [self.bsplineIterations] # 150 works ok
         bsplineParameterMap["WriteResultImage"] = ["true"]
-        bsplineParameterMap["UseDirectionCosines"] = ["false"]
+        bsplineParameterMap["UseDirectionCosines"] = ["true"]
         bsplineParameterMap["FinalGridSpacingInVoxels"] = [f"{self.um}"]
         bsplineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         bsplineParameterMap["NumberOfResolutions"]= ["6"]
@@ -167,17 +169,15 @@ class VolumeRegistration:
 
         elastixImageFilter.SetParameterMap(rigidParameterMap)
         elastixImageFilter.AddParameterMap(affineParameterMap)
-        #elastixImageFilter.AddParameterMap(bsplineParameterMap)
+        elastixImageFilter.AddParameterMap(bsplineParameterMap)
         elastixImageFilter.SetOutputDirectory(outputpath)
         elastixImageFilter.LogToFileOn();
+        elastixImageFilter.LogToConsoleOff()
         elastixImageFilter.SetLogFileName('elastix.log');
         if self.debug:
             elastixImageFilter.PrintParameterMap(rigidParameterMap)    
-            #elastixImageFilter.PrintParameterMap(affineParameterMap)
-            #elastixImageFilter.PrintParameterMap(bsplineParameterMap)
-            elastixImageFilter.LogToConsoleOn();
-        else:
-            elastixImageFilter.LogToConsoleOff()
+            elastixImageFilter.PrintParameterMap(affineParameterMap)
+            elastixImageFilter.PrintParameterMap(bsplineParameterMap)
 
         return elastixImageFilter
 
