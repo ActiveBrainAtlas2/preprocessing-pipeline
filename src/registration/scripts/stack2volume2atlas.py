@@ -17,6 +17,7 @@ aligned volume @ 64 is 1024x555 - unreg size matches allen25um
 aligned volume @ 128 is 512x278
 aligned volume @50 is 1310x710
 full aligned is 65500x35500
+Need to scale a moving image as close as possible to the fixed image
 """
 
 import argparse
@@ -62,7 +63,7 @@ class VolumeRegistration:
         self.um = um
         self.channel = f'CH{channel}'
         self.output_dir = f'{self.atlas}{um}um'
-        self.scaling_factor = 64 # This is the downsampling factor used to create the aligned volume
+        self.scaling_factor = 110.9375 # This is the downsampling factor used to create the aligned volume
         self.fileLocationManager = FileLocationManager(animal)
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, self.channel, 'thumbnail_aligned')
         self.moving_volume_path = os.path.join(self.fileLocationManager.prep, self.channel, 'moving_volume.tif')
@@ -124,21 +125,24 @@ class VolumeRegistration:
         fixedImage = sitk.ReadImage(imagepath1)
         movingImage = sitk.ReadImage(imagepath2)
 
-        
+        """
+        Can't use this as it throws off the coordinates
         initial_transform = sitk.CenteredTransformInitializer(fixedImage, 
                                                             movingImage, 
                                                             sitk.Euler3DTransform(), 
                                                             sitk.CenteredTransformInitializerFilter.MOMENTS)
 
         moving_resampled = sitk.Resample(movingImage, fixedImage, initial_transform, sitk.sitkLinear, 0.0, movingImage.GetPixelID())
-        
-        # moving_resampled = movingImage
+        """
+        moving_resampled = movingImage
         del movingImage
 
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(moving_resampled)
 
+        # The translation is very important as it centers the two volumes
+        translateParameterMap = sitk.GetDefaultParameterMap('translation')
         
         rigidParameterMap = sitk.GetDefaultParameterMap('rigid')        
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
@@ -169,7 +173,8 @@ class VolumeRegistration:
         bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
-        elastixImageFilter.SetParameterMap(rigidParameterMap)
+        elastixImageFilter.SetParameterMap(translateParameterMap)
+        elastixImageFilter.AddParameterMap(rigidParameterMap)
         elastixImageFilter.AddParameterMap(affineParameterMap)
         elastixImageFilter.AddParameterMap(bsplineParameterMap)
         elastixImageFilter.SetOutputDirectory(outputpath)
@@ -177,6 +182,7 @@ class VolumeRegistration:
         elastixImageFilter.LogToConsoleOff()
         elastixImageFilter.SetLogFileName('elastix.log');
         if self.debug:
+            elastixImageFilter.PrintParameterMap(translateParameterMap)    
             elastixImageFilter.PrintParameterMap(rigidParameterMap)    
             elastixImageFilter.PrintParameterMap(affineParameterMap)
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)
@@ -215,20 +221,33 @@ class VolumeRegistration:
         sitk.WriteImage(transformed, os.path.join(self.registered_output, 'result.tif'))
 
     def transformix_points(self):
-        """Helper method when you want to rerun the same transform on another set of points
-        Points are stored in the DB in micrometers from the full resolution images
-        For the 10um allen:
+        """Helper method when you want to rerun the transform on a set of points.
+        Get the pickle file and transform it. It is in full resolution pixel size.
+        The points in the pickle file need to be translated from full res pixel to
+        the current resolution of the downsampled volume.
+        Points are inserted in the DB in micrometers from the full resolution images
         
-            1. The set of images are from the 1/16 downsampled images
-            2. That set of images are deformed to 10um iso
-        
-        This takes  file in THIS format:
+        The points.pts file takes THIS format:
         point
         3
         102.8 -33.4 57.0
         178.1 -10.9 14.5
         180.4 -18.1 78.9
         """
+        d = pd.read_pickle(self.unregistered_pickle_file)
+        point_dict = dict(sorted(d.items()))
+        with open(self.unregistered_point_file, 'w') as f:
+            f.write('point\n')
+            f.write(f'{len(point_dict)}\n')
+            for _, points in point_dict.items():
+                x = points[0]/self.scaling_factor
+                y = points[1]/self.scaling_factor
+                z = points[2] # the z is not scaled
+                #print(structure, points, x,y,z)
+                f.write(f'{x} {y} {z}')
+                f.write('\n')
+
+
         
         transformixImageFilter = self.setup_transformix(self.reverse_elastix_output)
         transformixImageFilter.SetFixedPointSetFileName(self.unregistered_point_file)
@@ -399,7 +418,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Animal')
     parser.add_argument('--animal', help='Enter the animal', required=True)
     parser.add_argument("--channel", help="Enter channel", required=False, default=1, type=int)
-    parser.add_argument('--um', help="size of atlas in micrometers", required=False, default=10, type=int)
+    parser.add_argument('--um', help="size of atlas in micrometers", required=False, default=25, type=int)
     parser.add_argument('--atlas', help='Enter the atlas: allen|princeton', required=False, default='allen')
     parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
     parser.add_argument("--task", 
