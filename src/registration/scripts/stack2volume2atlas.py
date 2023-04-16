@@ -62,7 +62,7 @@ class VolumeRegistration:
         self.um = um
         self.channel = f'CH{channel}'
         self.output_dir = f'{self.atlas}{um}um'
-        self.scaling_factor = 128 # This is the downsampling factor used to create the aligned volume
+        self.scaling_factor = 64 # This is the downsampling factor used to create the aligned volume
         self.fileLocationManager = FileLocationManager(animal)
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, self.channel, 'thumbnail_aligned')
         self.moving_volume_path = os.path.join(self.fileLocationManager.prep, self.channel, 'moving_volume.tif')
@@ -124,13 +124,15 @@ class VolumeRegistration:
         fixedImage = sitk.ReadImage(imagepath1)
         movingImage = sitk.ReadImage(imagepath2)
 
+        
         initial_transform = sitk.CenteredTransformInitializer(fixedImage, 
                                                             movingImage, 
                                                             sitk.Euler3DTransform(), 
                                                             sitk.CenteredTransformInitializerFilter.MOMENTS)
 
         moving_resampled = sitk.Resample(movingImage, fixedImage, initial_transform, sitk.sitkLinear, 0.0, movingImage.GetPixelID())
-
+        
+        # moving_resampled = movingImage
         del movingImage
 
         elastixImageFilter = sitk.ElastixImageFilter()
@@ -236,6 +238,7 @@ class VolumeRegistration:
 
     def insert_points(self):
         """This method will take the pickle file of COMs and insert them.
+        The COMs in the pickle files are in pixel coordinates.
         For typical COMs, the full scaled xy version gets multiplied by 0.325 then inserted
         Upon retrieval, xy gets: divided by 0.325. Here we scale by our downsampling factor when we created the volume,
         then multiple by the scan run resolution which is hard coded below.
@@ -262,7 +265,6 @@ class VolumeRegistration:
             print(f'Length {os.path.basename(self.registered_point_file)}: {len(lines)} does not match {os.path.basename(self.unregistered_pickle_file)}: {len(point_dict)}')
             sys.exit()
         print("\n\n{} points detected\n\n".format(len(lines)))
-        print(host, password, user, schema)
         for structure, i in zip(point_dict.keys(), range(len(lines))):        
             lx=lines[i].split()[lines[i].split().index(point_or_index)+3:lines[i].split().index(point_or_index)+6] #x,y,z
             lf = [float(x) for x in lx]
