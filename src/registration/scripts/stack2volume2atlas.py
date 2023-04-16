@@ -125,21 +125,9 @@ class VolumeRegistration:
         fixedImage = sitk.ReadImage(imagepath1)
         movingImage = sitk.ReadImage(imagepath2)
 
-        """
-        Can't use this as it throws off the coordinates
-        initial_transform = sitk.CenteredTransformInitializer(fixedImage, 
-                                                            movingImage, 
-                                                            sitk.Euler3DTransform(), 
-                                                            sitk.CenteredTransformInitializerFilter.MOMENTS)
-
-        moving_resampled = sitk.Resample(movingImage, fixedImage, initial_transform, sitk.sitkLinear, 0.0, movingImage.GetPixelID())
-        """
-        moving_resampled = movingImage
-        del movingImage
-
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
-        elastixImageFilter.SetMovingImage(moving_resampled)
+        elastixImageFilter.SetMovingImage(movingImage)
 
         # The translation is very important as it centers the two volumes
         translateParameterMap = sitk.GetDefaultParameterMap('translation')
@@ -201,9 +189,11 @@ class VolumeRegistration:
         parameterMap0 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.0.txt'))
         parameterMap1 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.1.txt'))
         parameterMap2 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.2.txt'))
+        parameterMap3 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.3.txt'))
         transformixImageFilter.SetTransformParameterMap(parameterMap0)
         transformixImageFilter.AddTransformParameterMap(parameterMap1)
         transformixImageFilter.AddTransformParameterMap(parameterMap2)
+        transformixImageFilter.AddTransformParameterMap(parameterMap3)
         transformixImageFilter.LogToFileOn()
         transformixImageFilter.LogToConsoleOff()
         transformixImageFilter.SetOutputDirectory(self.registered_output)
@@ -287,8 +277,8 @@ class VolumeRegistration:
         for structure, i in zip(point_dict.keys(), range(len(lines))):        
             lx=lines[i].split()[lines[i].split().index(point_or_index)+3:lines[i].split().index(point_or_index)+6] #x,y,z
             lf = [float(x) for x in lx]
-            x = lf[0] * self.scaling_factor * 0.325
-            y = lf[1] * self.scaling_factor * 0.325
+            x = lf[0] * self.scaling_factor / self.um
+            y = lf[1] * self.scaling_factor / self.um
             z = lf[2] * 20 
             brain_region = controller.get_brain_region(structure)
             if brain_region is not None:
@@ -299,7 +289,9 @@ class VolumeRegistration:
                 print(f'No brain region found for {structure}')
 
             if self.debug and brain_region is not None:
-                print(annotation_session.id, self.animal, brain_region.id, source, structure, lf, x,y)
+                lf = [round(l) for l in lf]
+                print(annotation_session.id, self.animal, brain_region.id, source, 
+                      structure, lf, int(x), int(y), int(z))
 
     def get_file_information(self):
         """Get information about the mid file in the image stack
