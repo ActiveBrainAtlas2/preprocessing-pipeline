@@ -87,12 +87,7 @@ class VolumeRegistration:
 
         if not os.path.exists(self.fixed_volume_path):
             print(f'{self.fixed_volume_path} does not exist, exiting.')
-            sys.exit()
-
-        if not os.path.exists(self.moving_volume_path):
-            print(f'{self.moving_volume_path} does not exist, exiting.')
-            sys.exit()
-        
+            sys.exit()        
  
 
     def register_volume(self):
