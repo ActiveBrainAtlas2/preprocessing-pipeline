@@ -214,6 +214,7 @@ class VolumeRegistration:
         The points in the pickle file need to be translated from full res pixel to
         the current resolution of the downsampled volume.
         Points are inserted in the DB in micrometers from the full resolution images
+
         
         The points.pts file takes THIS format:
         point
@@ -275,8 +276,8 @@ class VolumeRegistration:
         for structure, i in zip(point_dict.keys(), range(len(lines))):        
             lx=lines[i].split()[lines[i].split().index(point_or_index)+3:lines[i].split().index(point_or_index)+6] #x,y,z
             lf = [float(x) for x in lx]
-            x = lf[0] * self.scaling_factor * 0.325
-            y = lf[1] * self.scaling_factor * 0.325
+            x = lf[0] * self.um
+            y = lf[1] * self.um
             z = lf[2] * 20 
             brain_region = controller.get_brain_region(structure)
             if brain_region is not None:
@@ -286,10 +287,10 @@ class VolumeRegistration:
             else:
                 print(f'No brain region found for {structure}')
 
-            if self.debug and brain_region is not None:
-                lf = [round(l) for l in lf]
+            if self.debug and 'SC' in structure:
+                #lf = [round(l) for l in lf]
                 print(annotation_session.id, self.animal, brain_region.id, source, 
-                      structure, lf, int(x), int(y), int(z))
+                      structure, lf, x, int(y), int(z), lx)
 
     def get_file_information(self):
         """Get information about the mid file in the image stack
