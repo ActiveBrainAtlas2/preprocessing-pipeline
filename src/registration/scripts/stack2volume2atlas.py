@@ -18,6 +18,9 @@ aligned volume @ 128 is 512x278
 aligned volume @50 is 1310x710
 full aligned is 65500x35500
 Need to scale a moving image as close as possible to the fixed image
+COM info:
+allen SC: (368, 62, 227)
+pred  SC: 369, 64, 219
 """
 
 import argparse
@@ -272,8 +275,8 @@ class VolumeRegistration:
         for structure, i in zip(point_dict.keys(), range(len(lines))):        
             lx=lines[i].split()[lines[i].split().index(point_or_index)+3:lines[i].split().index(point_or_index)+6] #x,y,z
             lf = [float(x) for x in lx]
-            x = lf[0] * self.scaling_factor / self.um
-            y = lf[1] * self.scaling_factor / self.um
+            x = lf[0] * self.scaling_factor * 0.325
+            y = lf[1] * self.scaling_factor * 0.325
             z = lf[2] * 20 
             brain_region = controller.get_brain_region(structure)
             if brain_region is not None:
@@ -377,7 +380,7 @@ class VolumeRegistration:
         if os.path.exists(result_path):
             status.append(f'\tRegistered volume at {result_path}')
 
-        reverse_transformation_pfile = os.path.join(self.reverse_elastix_output, 'TransformParameters.2.txt')
+        reverse_transformation_pfile = os.path.join(self.reverse_elastix_output, 'TransformParameters.3.txt')
         if os.path.exists(reverse_transformation_pfile):
             status.append(f'\tTransformParameters file to register points at: {reverse_transformation_pfile}')
 
