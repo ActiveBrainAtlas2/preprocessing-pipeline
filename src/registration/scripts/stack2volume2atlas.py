@@ -278,7 +278,7 @@ class VolumeRegistration:
             lf = [float(x) for x in lx]
             x = lf[0] * self.um
             y = lf[1] * self.um
-            z = lf[2] * 20 
+            z = lf[2] * self.um
             brain_region = controller.get_brain_region(structure)
             if brain_region is not None:
                 annotation_session = controller.get_annotation_session(self.animal, brain_region.id, 1)
