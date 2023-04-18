@@ -287,7 +287,7 @@ class VolumeRegistration:
             else:
                 print(f'No brain region found for {structure}')
 
-            if self.debug and 'SC' in structure:
+            if self.debug and brain_region is not None:
                 #lf = [round(l) for l in lf]
                 print(annotation_session.id, self.animal, brain_region.id, source, 
                       structure, lf, x, int(y), int(z), lx)
