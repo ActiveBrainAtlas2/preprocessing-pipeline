@@ -339,7 +339,7 @@ class VolumeRegistration:
         scales = (scale, scale, scale)
         os.makedirs(PRECOMPUTED, exist_ok=True)
         volume = read_image(volumepath)
-        volume = np.swapaxes(volume, 0, 2)
+        #volume = np.swapaxes(volume, 0, 2)
         num_channels = 1
         volume_size = volume.shape
         print(f'volume shape={volume.shape} dtype={volume.dtype}')

@@ -38,7 +38,7 @@ def create_mesh(animal, volume_file):
     #xy *=  SCALING_FACTOR
 
     #scales = (int(xy), int(xy), int(z))
-    scales = (20000, 20000, 20000)
+    scales = (10000, 10000, 10000)
     if 'godzilla' in get_hostname():
         print(f'Cleaning {MESH_DIR}')
         if os.path.exists(MESH_DIR):
