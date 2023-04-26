@@ -66,7 +66,7 @@ class VolumeRegistration:
         self.um = um
         self.channel = f'CH{channel}'
         self.output_dir = f'{self.atlas}{um}um'
-        self.scaling_factor = 110.9375 # This is the downsampling factor used to create the aligned volume
+        self.scaling_factor = 28.57143 # This is the downsampling factor used to create the aligned volume
         self.fileLocationManager = FileLocationManager(animal)
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, self.channel, 'thumbnail_aligned')
         self.moving_volume_path = os.path.join(self.fileLocationManager.prep, self.channel, 'moving_volume.tif')
