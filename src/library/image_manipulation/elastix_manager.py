@@ -270,7 +270,7 @@ class ElastixManager(FileLogger):
         try:
             elastixTransformation = (
                 self.sqlController.session.query(ElastixTransformation)
-                .filter(ElastixTransformation.prep_id == animal)
+                .filter(ElastixTransformation.FK_prep_id == animal)
                 .filter(ElastixTransformation.iteration == iteration)
                 .filter(ElastixTransformation.section == moving_index)
                 .one()
