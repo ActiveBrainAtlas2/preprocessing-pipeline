@@ -10,7 +10,7 @@ class Slide(Base, AtlasModel):
     
     __tablename__ = 'slide'
     id =  Column(Integer, primary_key=True, nullable=False)
-    scan_run_id = Column(Integer, ForeignKey('scan_run.id'))
+    scan_run_id = Column("FK_scan_run_id", Integer, ForeignKey('scan_run.id'))
     slide_physical_id = Column(Integer)
     slide_status = Column(Enum("Bad", "Good"), nullable=False)
     scenes = Column(Integer, nullable=False)

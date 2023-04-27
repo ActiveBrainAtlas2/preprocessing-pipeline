@@ -63,7 +63,7 @@ except ImportError:
     print('Missing settings using defaults')
     data_path = "/net/birdstore/Active_Atlas_Data/data_root"
     host = "db.dk.ucsd.edu"
-    schema = "active_atlas_production"
+    schema = "brainsharer"
 
 
 from library.image_manipulation.pipeline_process import Pipeline

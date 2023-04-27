@@ -17,10 +17,10 @@ class AnnotationSession(Base):
     __tablename__ = 'annotation_session'
     id =  Column(Integer, primary_key=True, nullable=False)
     FK_prep_id = Column(String, nullable=False)
-    FK_annotator_id = Column(Integer, ForeignKey('auth_user.id'), nullable=True)
-    FK_structure_id = Column(Integer, ForeignKey('structure.id'),nullable=True)
+    FK_user_id = Column(Integer, ForeignKey('auth_user.id'), nullable=True)
+    FK_brain_region_id = Column(Integer, ForeignKey('brain_region.id'),nullable=True)
     annotation_type = Column(Enum(AnnotationType))    
-    brain_region = relationship('BrainRegion', lazy=True, primaryjoin="AnnotationSession.FK_structure_id == BrainRegion.id")
+    brain_region = relationship('BrainRegion', lazy=True, primaryjoin="AnnotationSession.FK_brain_region_id == BrainRegion.id")
     annotator = relationship('User', lazy=True)
     active =  Column(Integer,default=1)
     created =  Column(DateTime)

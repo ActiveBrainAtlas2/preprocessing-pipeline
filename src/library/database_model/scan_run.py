@@ -12,8 +12,7 @@ class ScanRun(Base, AtlasModel):
     __tablename__ = 'scan_run'
 
     id =  Column(Integer, primary_key=True, nullable=False)
-    prep_id = Column(String, ForeignKey('animal.prep_id'), nullable=False)
-    # FK_lab_id = Column(Integer)
+    prep_id = Column("FK_prep_id", String, ForeignKey('animal.prep_id'), nullable=False)
     rescan_number = Column(Integer, default=0)
     machine = Column(Enum("Axioscan I", "Axioscan II"))
     objective = Column(Enum("60X", "40X", "20X", "10X"))

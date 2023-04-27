@@ -9,10 +9,9 @@ class Histology(Base, AtlasModel):
     __tablename__ = 'histology'
 
     id =  Column(Integer, primary_key=True, nullable=False)
-    prep_id = Column(String, ForeignKey('animal.prep_id'), nullable=False, unique=True)
-    virus_id = Column(Integer, ForeignKey('virus.id'), nullable=True)
-    label_id = Column(String, ForeignKey('organic_label.id'), nullable=True)
-    performance_center = Column(Enum("CSHL", "Salk", "UCSD", "HHMI"))
+    prep_id = Column("FK_prep_id", String, ForeignKey('animal.prep_id'), nullable=False, unique=True)
+    virus_id = Column("FK_virus_id", Integer, ForeignKey('virus.id'), nullable=True)
+    #performance_center = Column(Enum("CSHL", "Salk", "UCSD", "HHMI"))
     anesthesia = Column(Enum("ketamine", "isoflurane", "pentobarbital", "fatal plus"))
     perfusion_age_in_days = Column(Integer, nullable=False)
     perfusion_date = Column(Date)
