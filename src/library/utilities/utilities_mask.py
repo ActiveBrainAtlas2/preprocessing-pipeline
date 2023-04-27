@@ -195,7 +195,7 @@ def clean_and_rotate_image(file_key):
         cleaned = equalized(cleaned)
         cleaned = normalize16(cleaned)
 
-    #cleaned = crop_image(cleaned, mask)
+    cleaned = crop_image(cleaned, mask)
     del mask
     if rotation > 0:
         cleaned = rotate_image(cleaned, infile, rotation)
