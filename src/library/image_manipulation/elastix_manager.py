@@ -200,7 +200,7 @@ class ElastixManager(FileLogger):
         moving = sitk.ReadImage(moving_file, pixelType)
 
         initial_transform = sitk.CenteredTransformInitializer(fixed, moving, 
-            sitk.Euler3DTransform(), 
+            sitk.Euler2DTransform(), 
             sitk.CenteredTransformInitializerFilter.GEOMETRY)
 
         moving = sitk.Resample(moving, fixed, initial_transform, sitk.sitkLinear, 0.0, moving.GetPixelID())
