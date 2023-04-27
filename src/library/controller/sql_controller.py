@@ -9,6 +9,7 @@ import sys
 import numpy as np
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
+import urllib3
 
 from library.controller.main_controller import Controller
 from library.controller.animal_controller import AnimalController
@@ -23,6 +24,7 @@ from library.database_model.histology import Histology
 
 try:
     from settings import host, password, user, schema
+    password = urllib3.parse.quote_plus(password) # escape special characters
 except ImportError as fe:
     print('You must have a settings file in the pipeline directory.', fe)
     raise
