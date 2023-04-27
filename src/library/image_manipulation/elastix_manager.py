@@ -47,7 +47,7 @@ class ElastixManager(FileLogger):
         midpoint = len(files) // 2
         midindex = str(midpoint).zfill(3)
         midfile = os.path.join(INPUT, f"{midindex}.tif")
-        self.midfixed = sitk.ReadImage(midfile, self.pixelType)
+        #self.midfixed = sitk.ReadImage(midfile, self.pixelType)
 
         super().__init__(LOGFILE_PATH)
 
@@ -207,15 +207,13 @@ class ElastixManager(FileLogger):
         moving_file = os.path.join(INPUT, f"{moving_index}.tif")
         moving = sitk.ReadImage(moving_file, self.pixelType)
 
+        """
         initial_transform = sitk.CenteredTransformInitializer(self.midfixed, moving, 
             sitk.Euler2DTransform(), 
             sitk.CenteredTransformInitializerFilter.GEOMETRY)
 
         moving = sitk.Resample(moving, self.midfixed, initial_transform, sitk.sitkLinear, 0.0, moving.GetPixelID())
-
-
-
-
+        """
 
         rotation, xshift, yshift = align_elastix(fixed, moving)
         self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)

@@ -86,7 +86,7 @@ def create_rigid_parameters(elastixImageFilter):
     ]
     rigid_params["ShowExactMetricValue"] = ["false"]
     rigid_params["CheckNumberOfSamples"] = ["true"]
-    rigid_params["NumberOfSpatialSamples"] = ["5000"]
+    rigid_params["NumberOfSpatialSamples"] = ["7500"]
     rigid_params["SubtractMean"] = ["true"]
     rigid_params["MaximumNumberOfSamplingAttempts"] = ["0"]
     rigid_params["SigmoidInitialTime"] = ["0"]
@@ -133,9 +133,7 @@ def create_rigid_parameters(elastixImageFilter):
     ##(FixedImagePyramid "FixedRecursiveImagePyramid']
     ##(MovingImagePyramid "MovingRecursiveImagePyramid']
     rigid_params["FixedImagePyramid"] = ["FixedSmoothingImagePyramid"]
-    rigid_params["MovingImagePyramid"] = [
-        "MovingSmoothingImagePyramid"
-    ]
+    rigid_params["MovingImagePyramid"] = ["MovingSmoothingImagePyramid"]
     ## The following components are most important:
     ## The optimizer AdaptiveStochasticGradientDescent (ASGD) works
     ## quite ok in general. The Transform and Metric are important
@@ -144,7 +142,8 @@ def create_rigid_parameters(elastixImageFilter):
     rigid_params["Transform"] = ["EulerTransform"]
     ##(Metric "AdvancedMattesMutualInformation")
     ## testing 17 dec
-    rigid_params["Metric"] = ["AdvancedNormalizedCorrelation"]
+    ##rigid_params["Metric"] = ["AdvancedNormalizedCorrelation"]
+    rigid_params["Metric"] = ["AdvancedMattesMutualInformation"]
     ## ***************** Transformation **************************
     ## Scales the rotations compared to the translations, to make
     ## sure they are in the same range. In general, it's best to
@@ -172,7 +171,7 @@ def create_rigid_parameters(elastixImageFilter):
     ## The number of resolutions. 1 Is only enough if the expected
     ## deformations are small. 3 or 4 mostly works fine. For large
     ## images and large deformations, 5 or 6 may even be useful.
-    rigid_params["NumberOfResolutions"] = ["6"]
+    rigid_params["NumberOfResolutions"] = ["8"]
     ##(FinalGridSpacingInVoxels 8.0 8.0)
     ##(GridSpacingSchedule 6.0 6.0 4.0 4.0 2.5 2.5 1.0 1.0)
     ## The downsampling/blurring factors for the image pyramids.
@@ -230,7 +229,7 @@ def create_rigid_parameters(elastixImageFilter):
     ## You can save some time by setting this to false, if you are
     ## only interested in the final (nonrigidly) deformed moving image
     ## for example.
-    rigid_params["WriteResultImage"] = ["true"]
+    rigid_params["WriteResultImage"] = ["false"]
     ## The pixel type and format of the resulting deformed moving image
     rigid_params["ResultImagePixelType"] = ["float"]
     rigid_params["ResultImageFormat"] = ["tif"]
