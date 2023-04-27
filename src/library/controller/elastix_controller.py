@@ -25,7 +25,7 @@ class ElastixController(Controller):
         """
 
         row_exists = bool(self.session.query(ElastixTransformation).filter(
-            ElastixTransformation.prep_id == animal,
+            ElastixTransformation.FK_prep_id == animal,
             ElastixTransformation.iteration == iteration,
             ElastixTransformation.section == section).first())
         return row_exists
@@ -41,7 +41,7 @@ class ElastixController(Controller):
         """
 
         row_exists = bool(self.session.query(ElastixTransformation).filter(
-            ElastixTransformation.prep_id == animal,
+            ElastixTransformation.FK_prep_id == animal,
             ElastixTransformation.section == section,
             ElastixTransformation.iteration == iteration,
             ElastixTransformation.metric != 0).first())
@@ -59,7 +59,7 @@ class ElastixController(Controller):
         """
 
         data = ElastixTransformation(
-            prep_id=animal, section=section, rotation=rotation, xshift=xshift, yshift=yshift, iteration=iteration,
+            FK_prep_id=animal, section=section, rotation=rotation, xshift=xshift, yshift=yshift, iteration=iteration,
             created=datetime.utcnow(), active=True)
         self.add_row(data)
 
@@ -72,7 +72,7 @@ class ElastixController(Controller):
         :param updates: dictionary of column:values to update
         """
         self.session.query(ElastixTransformation)\
-            .filter(ElastixTransformation.prep_id == animal)\
+            .filter(ElastixTransformation.FK_prep_id == animal)\
             .filter(ElastixTransformation.iteration == iteration)\
             .filter(ElastixTransformation.section == section).update(updates)
         self.session.commit()
