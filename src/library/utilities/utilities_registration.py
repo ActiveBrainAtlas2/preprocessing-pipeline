@@ -22,7 +22,7 @@ Image.MAX_IMAGE_PIXELS = None
 import SimpleITK as sitk
 
 from library.utilities.utilities_process import SCALING_FACTOR, read_image, write_image
-NUM_ITERATIONS = "2000"
+NUM_ITERATIONS = "200"
 
 
 def parameters_to_rigid_transform(rotation, xshift, yshift, center):
@@ -250,8 +250,10 @@ def align_elastix(fixed, moving):
     elastixImageFilter = sitk.ElastixImageFilter()
     elastixImageFilter.SetFixedImage(fixed)
     elastixImageFilter.SetMovingImage(moving)
+    translateParameterMap = sitk.GetDefaultParameterMap('translation')
     rigid_params = create_rigid_parameters(elastixImageFilter)
-    elastixImageFilter.SetParameterMap(rigid_params)
+    elastixImageFilter.SetParameterMap(translateParameterMap)
+    elastixImageFilter.AddParameterMap(rigid_params)
     elastixImageFilter.LogToConsoleOff()
     elastixImageFilter.Execute()
     
