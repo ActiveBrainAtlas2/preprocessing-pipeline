@@ -10,7 +10,7 @@ import gc
 from skimage.transform import rescale
 import math
 
-SCALING_FACTOR = 16.0
+SCALING_FACTOR = 32.0
 DOWNSCALING_FACTOR = 1 / SCALING_FACTOR
 Image.MAX_IMAGE_PIXELS = None
 

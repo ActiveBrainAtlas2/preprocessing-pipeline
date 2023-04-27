@@ -22,7 +22,7 @@ Image.MAX_IMAGE_PIXELS = None
 import SimpleITK as sitk
 
 from library.utilities.utilities_process import SCALING_FACTOR, read_image, write_image
-NUM_ITERATIONS = "200"
+NUM_ITERATIONS = "1000"
 
 
 def parameters_to_rigid_transform(rotation, xshift, yshift, center):

@@ -41,6 +41,14 @@ class ElastixManager(FileLogger):
     def __init__(self, iteration=0):
         self.iteration = iteration
         LOGFILE_PATH = self.fileLocationManager.stack
+        self.pixelType = sitk.sitkFloat32
+        INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_cleaned")
+        files = sorted(os.listdir(INPUT))
+        midpoint = len(files) // 2
+        midindex = str(midpoint).zfill(3)
+        midfile = os.path.join(INPUT, f"{midindex}.tif")
+        self.midfixed = sitk.ReadImage(midfile, self.pixelType)
+
         super().__init__(LOGFILE_PATH)
 
 
@@ -193,17 +201,17 @@ class ElastixManager(FileLogger):
         :param moving_index: index of moving image
         """
         # start register simple
-        pixelType = sitk.sitkFloat32
+        
         fixed_file = os.path.join(INPUT, f"{fixed_index}.tif")
+        fixed = sitk.ReadImage(fixed_file, self.pixelType)
         moving_file = os.path.join(INPUT, f"{moving_index}.tif")
-        fixed = sitk.ReadImage(fixed_file, pixelType)
-        moving = sitk.ReadImage(moving_file, pixelType)
+        moving = sitk.ReadImage(moving_file, self.pixelType)
 
-        initial_transform = sitk.CenteredTransformInitializer(fixed, moving, 
+        initial_transform = sitk.CenteredTransformInitializer(self.midfixed, moving, 
             sitk.Euler2DTransform(), 
             sitk.CenteredTransformInitializerFilter.GEOMETRY)
 
-        moving = sitk.Resample(moving, fixed, initial_transform, sitk.sitkLinear, 0.0, moving.GetPixelID())
+        moving = sitk.Resample(moving, self.midfixed, initial_transform, sitk.sitkLinear, 0.0, moving.GetPixelID())
 
 
 

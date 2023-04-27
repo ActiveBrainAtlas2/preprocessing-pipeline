@@ -126,7 +126,7 @@ def equalized(fixed, cliplimit=10):
     :return: a better looking image
     """
     
-    clahe = cv2.createCLAHE(clipLimit=cliplimit, tileGridSize=(2, 2))
+    clahe = cv2.createCLAHE(clipLimit=cliplimit, tileGridSize=(8, 8))
     fixed = clahe.apply(fixed)
     return fixed
 
@@ -190,11 +190,12 @@ def clean_and_rotate_image(file_key):
     cleaned = apply_mask(img, mask, infile)
     del img
     if channel == 1:
-        cleaned = normalize_image(cleaned)
+        #cleaned = normalize_image(cleaned)
         #####DEPRECATED cleaned = scaled(cleaned, mask, epsilon=0.01)
         cleaned = equalized(cleaned)
+        cleaned = normalize16(cleaned)
 
-    cleaned = crop_image(cleaned, mask)
+    #cleaned = crop_image(cleaned, mask)
     del mask
     if rotation > 0:
         cleaned = rotate_image(cleaned, infile, rotation)
