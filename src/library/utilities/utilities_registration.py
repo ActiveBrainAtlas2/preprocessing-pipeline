@@ -250,10 +250,8 @@ def align_elastix(fixed, moving):
     elastixImageFilter = sitk.ElastixImageFilter()
     elastixImageFilter.SetFixedImage(fixed)
     elastixImageFilter.SetMovingImage(moving)
-    translateParameterMap = sitk.GetDefaultParameterMap('translation')
     rigid_params = create_rigid_parameters(elastixImageFilter)
-    elastixImageFilter.SetParameterMap(translateParameterMap)
-    elastixImageFilter.AddParameterMap(rigid_params)
+    elastixImageFilter.SetParameterMap(rigid_params)
     elastixImageFilter.LogToConsoleOff()
     elastixImageFilter.Execute()
     

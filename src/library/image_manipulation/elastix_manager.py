@@ -198,6 +198,17 @@ class ElastixManager(FileLogger):
         moving_file = os.path.join(INPUT, f"{moving_index}.tif")
         fixed = sitk.ReadImage(fixed_file, pixelType)
         moving = sitk.ReadImage(moving_file, pixelType)
+
+        initial_transform = sitk.CenteredTransformInitializer(fixed, moving, 
+            sitk.Euler3DTransform(), 
+            sitk.CenteredTransformInitializerFilter.GEOMETRY)
+
+        moving = sitk.Resample(moving, fixed, initial_transform, sitk.sitkLinear, 0.0, moving.GetPixelID())
+
+
+
+
+
         rotation, xshift, yshift = align_elastix(fixed, moving)
         self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)
 
