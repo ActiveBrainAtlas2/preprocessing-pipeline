@@ -42,13 +42,6 @@ class ElastixManager(FileLogger):
         self.iteration = iteration
         LOGFILE_PATH = self.fileLocationManager.stack
         self.pixelType = sitk.sitkFloat32
-        INPUT = os.path.join(self.fileLocationManager.prep, "CH1", "thumbnail_cleaned")
-        files = sorted(os.listdir(INPUT))
-        midpoint = len(files) // 2
-        midindex = str(midpoint).zfill(3)
-        midfile = os.path.join(INPUT, f"{midindex}.tif")
-        #self.midfixed = sitk.ReadImage(midfile, self.pixelType)
-
         super().__init__(LOGFILE_PATH)
 
 
