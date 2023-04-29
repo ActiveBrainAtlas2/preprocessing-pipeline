@@ -117,16 +117,17 @@ def scaled(img, mask, epsilon=0.01):
     return scaled
 
 
-def equalized(fixed, cliplimit=10):
+def equalized(fixed, cliplimit=5):
     """Takes an image that has already been scaled and uses opencv adaptive histogram
-    equalization. This cases uses 10 as the clip limit and splits the image into 8 rows
-    and 8 columns
+    equalization. This cases uses 5 as the clip limit and splits the image into 2 rows
+    and 2 columns. A higher cliplimit will make the image brighter. A cliplimit of 1 will
+    do nothing.
 
     :param fixed: image we are working on
     :return: a better looking image
     """
     
-    clahe = cv2.createCLAHE(clipLimit=cliplimit, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=cliplimit, tileGridSize=(2, 2))
     fixed = clahe.apply(fixed)
     return fixed
 
@@ -190,10 +191,11 @@ def clean_and_rotate_image(file_key):
     cleaned = apply_mask(img, mask, infile)
     del img
     if channel == 1:
-        #cleaned = normalize_image(cleaned)
-        #####DEPRECATED cleaned = scaled(cleaned, mask, epsilon=0.01)
-        cleaned = equalized(cleaned)
-        cleaned = normalize16(cleaned)
+        # pass
+        cleaned = normalize_image(cleaned)
+        #cleaned = scaled(cleaned, mask, epsilon=0.01)
+        # cleaned = equalized(cleaned) # this shows too much of the surrounding 'halo' crap
+        #cleaned = normalize16(cleaned)
 
     cleaned = crop_image(cleaned, mask)
     del mask
@@ -270,9 +272,9 @@ def normalize16(img):
         print('image dtype is 32bit')
         return img.astype(np.uint16)
     else:
-        mn = img.min()
+        mn = img.min() # this will always be zero
         mx = img.max()
-        mx -= mn
+        mx -= mn # this won't change
         img = ((img - mn)/mx) * 2**16 - 1
         return np.round(img).astype(np.uint16) 
 

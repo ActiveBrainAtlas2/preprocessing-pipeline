@@ -30,27 +30,20 @@ class FileLocationManager(object):
         self.stack = os.path.join(self.root, stack)
         self.prep = os.path.join(self.root, stack, "preps")
         self.masks = os.path.join(self.prep, "masks")
+        self.www = os.path.join(self.prep, "www")
         
         # The rest
         self.brain_info = os.path.join(self.root, stack, "brains_info")
         self.czi = os.path.join(self.root, stack, "czi")
         self.elastix = os.path.join(self.prep, "elastix")
-        self.full_aligned = os.path.join(self.prep, "full_aligned")
-        self.full_masked = os.path.join(self.masks, "full_masked")
-        self.histogram = os.path.join(self.root, stack, "histogram")
-        self.neuroglancer_data = os.path.join(self.root, stack, "neuroglancer_data")
+        self.histogram = os.path.join(self.www, "histogram")
+        self.neuroglancer_data = os.path.join(self.www, "neuroglancer_data")
         self.neuroglancer_progress = os.path.join(self.neuroglancer_data, 'progress')
-        self.rotated_and_padded_thumbnail_mask = os.path.join(
-            self.masks, "thumbnail_rotated_and_padded"
-        )
-        self.rotated_and_padded_and_aligned_thumbnail_mask = os.path.join(
-            self.masks, "thumbnail_aligned_rotated_and_padded"
-        )
-        self.section_web = os.path.join(self.root, stack, "www", "section")
-        self.tif = os.path.join(self.root, stack, "tif")
+        self.section_web = os.path.join(self.www, "section")
+        self.tif = os.path.join(self.prep, "tif")
         self.thumbnail = os.path.join(self.prep, "CH1", "thumbnail")
-        self.thumbnail_original = os.path.join(self.stack, "thumbnail_original")
-        self.thumbnail_web = os.path.join(self.root, stack, "www", "scene")
+        self.thumbnail_original = os.path.join(self.prep, "thumbnail_original")
+        self.thumbnail_web = os.path.join(self.www, "scene")
 
     def get_czi(self, czi=0):
         czi_path = self.czi
