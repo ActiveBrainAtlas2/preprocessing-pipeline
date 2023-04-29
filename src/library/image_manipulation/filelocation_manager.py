@@ -30,7 +30,7 @@ class FileLocationManager(object):
         self.stack = os.path.join(self.root, stack)
         self.prep = os.path.join(self.root, stack, "preps")
         self.masks = os.path.join(self.prep, "masks")
-        self.www = os.path.join(self.prep, "www")
+        self.www = os.path.join(self.stack, "www")
         
         # The rest
         self.brain_info = os.path.join(self.root, stack, "brains_info")
