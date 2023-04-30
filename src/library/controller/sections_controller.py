@@ -1,13 +1,9 @@
-from library.controller.main_controller import Controller
 from library.database_model.slide import Section
 
-class SectionsController(Controller):
-    def __init__(self, *args, **kwargs):
-        """initiates the controller class
-        """
+class SectionsController():
+    """Class for controlling sections
+    """
 
-        Controller.__init__(self, *args, **kwargs)
-    
     def get_sections(self, animal, channel, rescan_number):
         """The sections table is a view and it is already filtered by active and file_status = 'good'
         The ordering is important. This needs to come from the histology table.

@@ -1,5 +1,6 @@
 import os
 from PIL import Image
+from library.controller.scan_run_controller import ScanRunController
 Image.MAX_IMAGE_PIXELS = None
 
 from library.utilities.utilities_process import get_image_size
@@ -17,7 +18,8 @@ class PrepCreater:
         height are correct.
         """
         if self.channel == 1 and self.downsample:
-            self.sqlController.update_scanrun(self.sqlController.scan_run.id)
+            scanrunController = ScanRunController(self.session)
+            scanrunController.update_scanrun(self.sqlController.scan_run.id)
 
     def apply_QC(self):
         """
@@ -47,7 +49,7 @@ class PrepCreater:
                 continue
             relative_input_path = os.path.relpath(input_path, os.path.dirname(output_path))
             width, height = get_image_size(input_path)
-            if self.downsample:
+            if not self.downsample:
                 self.sqlController.update_tif(section.id, width, height)
 
             try:    

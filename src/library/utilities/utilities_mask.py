@@ -53,10 +53,10 @@ def place_image(img, file: str, max_width, max_height, bgcolor=None):
         try:
             new_img[startr:endr, startc:endc] = img
         except:
-            print(f'Resizing {file} from {img.shape} to {new_img.shape}')
+            #print(f'Resizing {file} from {img.shape} to {new_img.shape}')
             ###mask = cv2.resize(mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
-            img = cv2.resize(img, (new_img.shape[1], new_img.shape[0]), interpolation=cv2.INTER_LANCZOS4)
-            #print(f'Could not place {file} with width:{img.shape[1]}, height:{img.shape[0]} in {max_width}x{max_height}')
+            #img = cv2.resize(img, (new_img.shape[1], new_img.shape[0]), interpolation=cv2.INTER_LANCZOS4)
+            print(f'Could not place {file} with rows, columns:{img.shape[0]}x{img.shape[1]} in rows,columns={max_height}x{max_width}')
     if img.ndim == 3:
         try:
             new_img = np.zeros([max_height, max_width, 3]) + bgcolor
@@ -187,6 +187,7 @@ def clean_and_rotate_image(file_key):
     infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
 
     img = read_image(infile)
+    print(infile, img.shape)
     mask = read_image(maskfile)
     cleaned = apply_mask(img, mask, infile)
     del img

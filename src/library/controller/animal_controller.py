@@ -2,15 +2,10 @@
 It performs some necessary and simple functions for the animal.
 """
 
-from library.controller.main_controller import Controller
 from library.database_model.animal import Animal
 
 
-class AnimalController(Controller):
-    def __init__(self,*args,**kwargs):
-        """initiates the controller class
-        """        
-        Controller.__init__(self, *args, **kwargs)
+class AnimalController():
 
     def animal_exists(self, animal):
         """A method to test whether an animal exists

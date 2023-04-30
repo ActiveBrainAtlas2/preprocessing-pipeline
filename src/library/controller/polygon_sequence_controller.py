@@ -1,19 +1,13 @@
 import pandas as pd
 
-from library.controller.main_controller import Controller
 from library.database_model.annotation_points import PolygonSequence
 from library.database_model.annotation_points import AnnotationSession,AnnotationType
 
 
 
-class PolygonSequenceController(Controller):
+class PolygonSequenceController():
     """The class that queries and addes entry to the PolygonSequence table
     """
-
-    def __init__(self,*args,**kwargs):
-        """initiates the controller class
-        """        
-        Controller.__init__(self, *args, **kwargs)
         
     def get_available_volumes(self):
         active_sessions = self.get_available_volumes_sessions()
@@ -32,13 +26,13 @@ class PolygonSequenceController(Controller):
             dictionary: points in a volume grouped by polygon.
         """        
         #Polygons must be ordered by section(z), then point ordering
-        session = self.session.query(AnnotationSession)\
+        annotation_session = self.session.query(AnnotationSession)\
             .filter(AnnotationSession.FK_prep_id==prep_id)\
             .filter(AnnotationSession.FK_annotator_id==annotator_id)\
             .filter(AnnotationSession.FK_structure_id==structure_id)\
             .filter(AnnotationSession.active==1).first()
         volume_points = self.session.query(PolygonSequence)\
-            .filter(PolygonSequence.FK_session_id==session.id)\
+            .filter(PolygonSequence.FK_session_id==annotation_session.id)\
                 .order_by(PolygonSequence.z)\
                 .order_by(PolygonSequence.point_order)\
                     .all()

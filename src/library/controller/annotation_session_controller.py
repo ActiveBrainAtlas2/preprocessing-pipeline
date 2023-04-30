@@ -1,22 +1,15 @@
 import datetime
-from sqlalchemy.orm.exc import NoResultFound
 
-from library.controller.main_controller import Controller
 from library.database_model.brain_region import BrainRegion
 from library.database_model.annotation_points import StructureCOM
 from library.database_model.annotation_points import AnnotationSession, AnnotationType
 
 
 
-class AnnotationSessionController(Controller):
+class AnnotationSessionController():
     """The class that queries and addes entry to the annotation_session table
     """
 
-    def __init__(self,*args,**kwargs):
-        """initiates the controller class
-        """        
-        Controller.__init__(self, *args, **kwargs)
-        
     
     def get_existing_session(self):
         """retruns a list of available session objects that is currently active in the database

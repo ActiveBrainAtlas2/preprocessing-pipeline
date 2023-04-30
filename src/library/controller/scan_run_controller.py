@@ -1,17 +1,16 @@
 from sqlalchemy import func
 
-from library.controller.main_controller import Controller
 from library.database_model.scan_run import ScanRun
 from library.database_model.slide import SlideCziTif
 from library.database_model.slide import Slide
 
-class ScanRunController(Controller):
+class ScanRunController():
     """Controller for the scan_run table"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, session):
         """initiates the controller class
         """
-        Controller.__init__(self, *args, **kwargs)
+        self.session = session
         self.rescan_number = 0
 
     def get_scan_run(self, animal):
@@ -30,7 +29,9 @@ class ScanRunController(Controller):
 
         :param id: integer primary key of scan run table
         """
-        
+        scan_run = self.session.query(ScanRun).filter(ScanRun.id == id).first()
+        rotation = scan_run.rotation
+        print(rotation, type(rotation))
         width = self.session.query(func.max(SlideCziTif.width)).join(Slide).join(ScanRun)\
             .filter(SlideCziTif.active == True) \
             .filter(ScanRun.id == id).scalar()
@@ -46,11 +47,14 @@ class ScanRunController(Controller):
             width = round(width, -3)
             height += LITTLE_BIT_MORE
             width += LITTLE_BIT_MORE
-            # print(f'\tAfter modifications, height={height} and width={width}')
-            # width and height get flipped
+            # width and height get flipped when there is a rotation.
+            if (rotation % 2) == 0:
+                update_dict = {'width': width, 'height': height}
+            else:
+                update_dict = {'width': height, 'height': width}
+             
             try:
-                self.session.query(ScanRun).filter(ScanRun.id == id).update(
-                    {'width': height, 'height': width})
+                self.session.query(ScanRun).filter(ScanRun.id == id).update(update_dict)
                 self.session.commit()
             except Exception as e:
                 print(f'No merge for  {e}')

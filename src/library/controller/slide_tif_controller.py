@@ -1,13 +1,6 @@
-from library.controller.main_controller import Controller
 from library.database_model.slide import SlideCziTif
 
-class SlideCZIToTifController(Controller):
-
-    def __init__(self,*args,**kwargs):
-        """initiates the controller class
-        """        
-
-        Controller.__init__(self,*args,**kwargs)
+class SlideCZIToTifController():
 
     def update_tif(self, id, width, height):
         """Update a TIFF object (row)

@@ -1,19 +1,13 @@
 import pandas as pd
 
-from library.controller.main_controller import Controller
 from library.database_model.annotation_points import AnnotationSession, AnnotationType, StructureCOM
 from library.database_model.brain_region import BrainRegion
 
 
 
-class StructureCOMController(Controller):
+class StructureCOMController():
     """The class that queries and addes entry to the StructureCOM table
     """
-
-    def __init__(self,*args,**kwargs):
-        """initiates the controller class
-        """        
-        Controller.__init__(self, *args, **kwargs)
 
     def get_annotation_dict(self, prep_id, annotator_id, source):
         """This method replaces get_centers_dict and get_layer_data_row.

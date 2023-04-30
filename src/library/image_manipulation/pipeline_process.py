@@ -89,6 +89,7 @@ class Pipeline(
         self.debug = debug
         self.fileLocationManager = FileLocationManager(animal, data_path=data_path)
         self.sqlController = SqlController(animal, rescan_number)
+        self.session = self.sqlController.session
         self.hostname = get_hostname()
         self.tg = tg
         self.check_programs()

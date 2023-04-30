@@ -97,9 +97,9 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
 
     if step == "0":
         print(f"Step {step}: prepare images for quality control.")
-        pipeline.run_program_and_time(pipeline.extract_slide_meta_data_and_insert_to_database, pipeline.TASK_CREATING_META)
-        pipeline.run_program_and_time(pipeline.create_web_friendly_image, pipeline.TASK_CREATING_WEB_IMAGES)
-        pipeline.run_program_and_time(pipeline.extract_tiffs_from_czi, pipeline.TASK_EXTRACTING_TIFFS)
+        pipeline.extract_slide_meta_data_and_insert_to_database()
+        pipeline.extract_tiffs_from_czi()
+        pipeline.create_web_friendly_image()
 
     if step == "1":
         print(f"Step {step}: apply QC and prepare image masks")
@@ -109,7 +109,7 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
         pipeline.run_program_and_time(pipeline.create_mask, pipeline.TASK_CREATING_MASKS)
     
     if step == "2":
-        print(f"Step {step}: clean images")
+        print(f"Step {step}: clean images\n")
         if channel == 1 and downsample:
             pipeline.run_program_and_time(pipeline.apply_user_mask_edits, pipeline.TASK_APPLYING_MASKS)
         pipeline.run_program_and_time(pipeline.create_cleaned_images, pipeline.TASK_CREATING_CLEANED_IMAGES)

@@ -1,19 +1,13 @@
 from datetime import datetime
 
 from library.database_model.elastix_transformation import ElastixTransformation
-from library.controller.main_controller import Controller
 
-class ElastixController(Controller):
+class ElastixController():
     """Controller class for the elastix table
 
     Args:
         Controller (Class): Parent class of sqalchemy session
     """
-
-    def __init__(self,*args,**kwargs):
-        """initiates the controller class
-        """        
-        Controller.__init__(self,*args,**kwargs)
 
     def check_elastix_row(self, animal, section, iteration=0):
         """checks that a given elastix row exists in the database

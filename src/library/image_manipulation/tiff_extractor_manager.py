@@ -1,4 +1,6 @@
-import os, glob
+import os
+import glob
+import sys
 
 from library.image_manipulation.parallel_manager import ParallelManager
 from library.image_manipulation.czi_manager import extract_tiff_from_czi, extract_png_from_czi
@@ -42,6 +44,9 @@ class TiffExtractor(ParallelManager):
         self.logevent(f"TOTAL FILE COUNT [FOR DIRECTORY]: {len(total_files)}")
 
         sections = self.sqlController.get_sections(self.animal, self.channel, self.rescan_number)
+        if len(sections) == 0:
+            print('\nError, no sections found, exiting.')
+            sys.exit()
 
         file_keys = [] # czi_file, output_path, scenei, channel=1, scale=1
         for section in sections:
