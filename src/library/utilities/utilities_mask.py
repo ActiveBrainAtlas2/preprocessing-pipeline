@@ -187,15 +187,14 @@ def clean_and_rotate_image(file_key):
     infile, outpath, maskfile, rotation, flip, max_width, max_height, channel = file_key
 
     img = read_image(infile)
-    print(infile, img.shape)
     mask = read_image(maskfile)
     cleaned = apply_mask(img, mask, infile)
     del img
     if channel == 1:
         # pass
-        cleaned = normalize_image(cleaned)
+        #cleaned = normalize_image(cleaned)
         #cleaned = scaled(cleaned, mask, epsilon=0.01)
-        # cleaned = equalized(cleaned) # this shows too much of the surrounding 'halo' crap
+        cleaned = equalized(cleaned) # this shows too much of the surrounding 'halo' crap
         #cleaned = normalize16(cleaned)
 
     cleaned = crop_image(cleaned, mask)

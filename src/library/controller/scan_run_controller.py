@@ -31,7 +31,6 @@ class ScanRunController():
         """
         scan_run = self.session.query(ScanRun).filter(ScanRun.id == id).first()
         rotation = scan_run.rotation
-        print(rotation, type(rotation))
         width = self.session.query(func.max(SlideCziTif.width)).join(Slide).join(ScanRun)\
             .filter(SlideCziTif.active == True) \
             .filter(ScanRun.id == id).scalar()

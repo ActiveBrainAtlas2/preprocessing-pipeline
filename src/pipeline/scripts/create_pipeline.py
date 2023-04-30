@@ -159,6 +159,7 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
         print(f"Step {step}: create neuroglancer data")
         pipeline.run_program_and_time(pipeline.create_neuroglancer, pipeline.TASK_NEUROGLANCER_SINGLE)
         pipeline.run_program_and_time(pipeline.create_downsamples, pipeline.TASK_NEUROGLANCER_PYRAMID)
+        #pipeline.create_neuroglancer_normalization()
 
 
 

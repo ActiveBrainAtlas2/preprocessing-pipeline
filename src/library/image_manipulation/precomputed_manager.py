@@ -100,6 +100,7 @@ class NgPrecomputedMaker:
         ng.precomputed_vol.cache.flush()
 
 
+
     def create_downsamples(self):
         """Downsamples the neuroglancer cloudvolume this step is needed to make the files viewable in neuroglancer"""
         chunks = calculate_chunks(self.downsample, 0)
@@ -121,6 +122,7 @@ class NgPrecomputedMaker:
         self.logevent(f"INPUT_DIR: {INPUT_DIR}")
         self.logevent(f"OUTPUT_DIR: {OUTPUT_DIR}")
         workers =self.get_nworkers()
+
         tq = LocalTaskQueue(parallel=workers)
         tasks = tc.create_transfer_tasks(
             cloudpath,
@@ -131,7 +133,7 @@ class NgPrecomputedMaker:
         )
         tq.insert(tasks)
         tq.execute()
-        
+
         for mip in mips:
             cv = CloudVolume(outpath, mip)
             chunks = calculate_chunks(self.downsample, mip)
@@ -147,4 +149,30 @@ class NgPrecomputedMaker:
             )
             tq.insert(tasks)
             tq.execute()
+
+
+
+    def create_neuroglancer_normalization(self):
+        """Downsamples the neuroglancer cloudvolume this step is needed to make the files viewable in neuroglancer"""
+        workers =self.get_nworkers()
+        mips = [0, 1, 2, 3, 4, 5, 6, 7]
+        if self.downsample:
+            mips = [0, 1, 2]
+        OUTPUT_DIR = self.fileLocationManager.get_neuroglancer(
+            self.downsample, self.channel, rechunck=True
+        )
+        outpath = f"file://{OUTPUT_DIR}"
+
+        tq = LocalTaskQueue(parallel=workers)
+        for mip in mips:
+            # first pass: create per z-slice histogram
+            cv = CloudVolume(outpath, mip)
+            tasks = tc.create_luminance_levels_tasks(cv.layer_cloudpath, coverage_factor=0.01, mip=mip) 
+            tq.insert(tasks)    
+            tq.execute()
+            # second pass: apply histogram equalization
+            tasks = tc.create_contrast_normalization_tasks(cv.layer_cloudpath, cv.layer_cloudpath, shape=None, mip=mip, clip_fraction=0.05, fill_missing=False, translate=(0,0,0))
+            tq.insert(tasks)    
+            tq.execute()
+
 
