@@ -9,6 +9,7 @@ import numpy as np
 from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from PIL import Image
+from timeit import default_timer as timer
 
 Image.MAX_IMAGE_PIXELS = None
 from timeit import default_timer as timer
@@ -106,8 +107,13 @@ class ElastixManager(FileLogger):
                 moving_arr = normalize_image(moving_arr)
                 moving_arr = equalized(moving_arr)
                 moving = sitk.GetImageFromArray(moving_arr)
-
+                start_time = timer()
                 rotation, xshift, yshift = align_elastix(fixed, moving)
+                end_time = timer()
+                total_elapsed_time = round((end_time - start_time),2)
+                print(f"Moving index={moving_index} took {total_elapsed_time} seconds")
+
+                print(f" took {total_elapsed_time} seconds")
                 self.sqlController.add_elastix_row(self.animal, moving_index, rotation, xshift, yshift, self.iteration)
 
             T = parameters_to_rigid_transform(rotation, xshift, yshift, center)

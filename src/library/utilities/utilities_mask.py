@@ -192,9 +192,9 @@ def clean_and_rotate_image(file_key):
     del img
     if channel == 1:
         # pass
-        #cleaned = normalize_image(cleaned)
+        cleaned = normalize_image(cleaned)
         #cleaned = scaled(cleaned, mask, epsilon=0.01)
-        cleaned = equalized(cleaned) # this shows too much of the surrounding 'halo' crap
+        cleaned = equalized(cleaned, cliplimit=100) # this shows too much of the surrounding 'halo' crap
         #cleaned = normalize16(cleaned)
 
     cleaned = crop_image(cleaned, mask)
@@ -205,7 +205,7 @@ def clean_and_rotate_image(file_key):
         cleaned = np.flip(cleaned)
     if flip == "flop":
         cleaned = np.flip(cleaned, axis=1)
-    cleaned = place_image(cleaned, infile, max_width, max_height, 0)
+    cleaned = place_image(cleaned, infile, max_width, max_height, bgcolor=0)
 
     message = f'Error in saving {outpath} with shape {cleaned.shape} img type {cleaned.dtype}'
     write_image(outpath, cleaned, message=message)

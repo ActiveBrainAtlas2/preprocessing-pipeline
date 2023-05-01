@@ -245,7 +245,6 @@ def align_elastix(fixed, moving):
     :param moving: sitk float array for the moving image.
     :return: the Elastix transformation results that get parsed into the rigid transformation
     """
-
     elastixImageFilter = sitk.ElastixImageFilter()
     elastixImageFilter.SetFixedImage(fixed)
     elastixImageFilter.SetMovingImage(moving)
