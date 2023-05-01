@@ -22,10 +22,11 @@ class PrepCreater:
             scanrunController.update_scanrun(self.sqlController.scan_run.id)
 
     def apply_QC(self):
+        """Applies the inclusion and replacement results defined by the user on the Django admin portal for the Quality Control step
+        to the full resolution images.  The result is stored in the animal_folder/preps/CHX/full directory
+        Note: We don't want the image size when we are downsampling, only at full resolution.
         """
-        Applies the inclusion and replacement results defined by the user on the Django admin portal for the Quality Control step
-        to the full resolution images.  The result is stored in the animal_folder/preps/full directory
-        """
+
         if self.downsample:
             INPUT = self.fileLocationManager.thumbnail_original
             OUTPUT = self.fileLocationManager.get_thumbnail(self.channel)

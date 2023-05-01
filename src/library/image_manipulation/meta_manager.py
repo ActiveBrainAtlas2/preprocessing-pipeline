@@ -54,7 +54,7 @@ class MetaUtilities:
                     if i == 0:  # largest file
                         single_file_size = os.path.getsize(infile)
 
-                    file_keys.append([infile, self.scan_id, self.animal, self.rescan_number])
+                    file_keys.append([infile, self.scan_id])
 
                 ram_coefficient = 2
 
@@ -65,7 +65,7 @@ class MetaUtilities:
                 
                 workers = self.get_nworkers()
                 print(f'working on parallel extract files={len(file_keys)}')
-                self.run_commands_concurrently(self.parallel_extract_slide_meta_data_and_insert_to_database, file_keys, workers)
+                self.run_commands_with_threads(self.parallel_extract_slide_meta_data_and_insert_to_database, file_keys, workers)
             else:
                 msg = "NOTHING TO PROCESS - SKIPPING"
                 print(msg)
@@ -185,71 +185,64 @@ class MetaUtilities:
     def parallel_extract_slide_meta_data_and_insert_to_database(self, file_key):
         """A helper method to define some methods for extracting metadata.
         """
+        infile, scan_id = file_key
+        #czi_metadata = load_metadata(infile)
+        czi_file = os.path.basename(os.path.normpath(infile))
+        czi = CZIManager(infile)
+        czi_metadata = czi.extract_metadata_from_czi_file(czi_file, infile)
 
-        def load_metadata(czi_org_path):
-            """This gets the metadata out of the CZI file.
+        slide = Slide()
+        slide.scan_run_id = scan_id
+        slide.slide_physical_id = int(re.findall(r"slide\d+", infile)[0][5:])
+        slide.slide_status = "Good"
+        slide.processed = False
+        slide.file_size = os.path.getsize(infile)
+        slide.file_name = os.path.basename(os.path.normpath(infile))
+        slide.created = datetime.fromtimestamp(
+            Path(os.path.normpath(infile)).stat().st_mtime
+        )
+        slide.scenes = len([elem for elem in czi_metadata.values()][0].keys())
+        self.session.add(slide)
+        self.session.commit()
 
-            :param czi_org_path: str defining the path of the CZI file
-            """
-            
-            czi_file = os.path.basename(os.path.normpath(czi_org_path))
-            czi = CZIManager(czi_org_path)
-            czi.metadata = czi.extract_metadata_from_czi_file(czi_file, czi_org_path)
-            return czi.metadata
+        """Add entry to the table that prepares the user Quality Control interface"""
+        for series_index in range(slide.scenes):
+            scene_number = series_index + 1
+            channels = range(czi_metadata[slide.file_name][series_index]["channels"])
+            channel_counter = 0 
 
-        def add_slide_information_to_database(czi_org_path, scan_id, czi_metadata, animal, rescan_number):
-            """Add the meta information about image slides that are extracted from the czi 
-            file and add them to the database
-            """
-            
-            slide = Slide()
-            slide.scan_run_id = scan_id
-            slide.slide_physical_id = int(re.findall(r"slide\d+", czi_org_path)[0][5:])
-            slide.slide_status = "Good"
-            slide.processed = False
-            slide.file_size = os.path.getsize(czi_org_path)
-            slide.file_name = os.path.basename(os.path.normpath(czi_org_path))
-            slide.created = datetime.fromtimestamp(
-                Path(os.path.normpath(czi_org_path)).stat().st_mtime
-            )
-            slide.scenes = len([elem for elem in czi_metadata.values()][0].keys())
-            
-            self.session.add(slide)
-            self.session.commit()
+            width, height = czi_metadata[slide.file_name][series_index]["dimensions"]
+            tif_list = []
+            for _ in channels:
+                tif = SlideCziTif()
+                tif.FK_slide_id = slide.id
+                tif.scene_number = scene_number
+                tif.file_size = 0
+                tif.active = 1
+                tif.width = width
+                tif.height = height
+                tif.scene_index = series_index
+                channel_counter += 1
+                newtif = "{}_S{}_C{}.tif".format(infile, scene_number, channel_counter)
+                newtif = newtif.replace(".czi", "").replace("__", "_")
+                tif.file_name = os.path.basename(newtif)
+                tif.channel = channel_counter
+                tif.processing_duration = 0
+                tif.created = time.strftime("%Y-%m-%d %H:%M:%S")
+                tif_list.append(tif)
+            if len(tif_list) > 0:
+                self.session.add_all(tif_list)
+        self.session.commit()
 
-            """Add entry to the table that prepares the user Quality Control interface"""
-            for series_index in range(slide.scenes):
-                scene_number = series_index + 1
-                channels = range(czi_metadata[slide.file_name][series_index]["channels"])
-                channel_counter = 0 
+        self.session.close()
 
-                width, height = czi_metadata[slide.file_name][series_index]["dimensions"]
-                print(f'width={width} height={height}')
-                tif_list = []
-                for _ in channels:
-                    tif = SlideCziTif()
-                    tif.FK_slide_id = slide.id
-                    tif.scene_number = scene_number
-                    tif.file_size = 0
-                    tif.active = 1
-                    tif.width = width
-                    tif.height = height
-                    tif.scene_index = series_index
-                    channel_counter += 1
-                    newtif = "{}_S{}_C{}.tif".format(czi_org_path, scene_number, channel_counter)
-                    newtif = newtif.replace(".czi", "").replace("__", "_")
-                    tif.file_name = os.path.basename(newtif)
-                    tif.channel = channel_counter
-                    tif.processing_duration = 0
-                    tif.created = time.strftime("%Y-%m-%d %H:%M:%S")
-                    tif_list.append(tif)
-                if len(tif_list) > 0:
-                    print(f'Adding {len(tif_list)} files to DB.')
-                    self.session.add_all(tif_list)
-                    self.session.commit()
-
-        infile, scan_id, animal, rescan_number = file_key
-        czi_metadata = load_metadata(infile)
-        add_slide_information_to_database(infile, scan_id, czi_metadata, animal, rescan_number)
 
         return
+
+def validate(session):
+    try:
+        # Try to get the underlying session connection, If you can get it, its up
+        connection = session.connection()
+        return True
+    except:
+        return False

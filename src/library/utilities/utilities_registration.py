@@ -249,12 +249,21 @@ def align_elastix(fixed, moving):
     elastixImageFilter = sitk.ElastixImageFilter()
     elastixImageFilter.SetFixedImage(fixed)
     elastixImageFilter.SetMovingImage(moving)
+    translationMap = elastixImageFilter.GetDefaultParameterMap("translation")
+
     rigid_params = create_rigid_parameters(elastixImageFilter)
-    elastixImageFilter.SetParameterMap(rigid_params)
+    elastixImageFilter.SetParameterMap(translationMap)
+    elastixImageFilter.AddParameterMap(rigid_params)
     elastixImageFilter.LogToConsoleOff()
     elastixImageFilter.Execute()
     
-    return (elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"])
+    translations = elastixImageFilter.GetTransformParameterMap()[0]["TransformParameters"]
+    rigid = elastixImageFilter.GetTransformParameterMap()[1]["TransformParameters"]
+    x1,y1 = translations
+    R,x2,y2 = rigid
+    x = float(x1) + float(x2)
+    y = float(y1) + float(y2)
+    return float(R), float(x), float(y)
 
 
 def create_downsampled_transforms(transforms: dict, downsample: bool) -> dict:

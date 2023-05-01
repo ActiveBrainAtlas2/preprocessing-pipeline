@@ -2,6 +2,7 @@
 to process multiple images simultaneously.
 """
 from concurrent.futures.process import ProcessPoolExecutor
+from concurrent.futures import wait, ThreadPoolExecutor
 
 from library.utilities.utilities_process import get_hostname
 
@@ -43,5 +44,29 @@ class ParallelManager:
                 function(file_key)
         else:
             with ProcessPoolExecutor(max_workers=workers) as executor:
-                executor.map(function, sorted(file_keys))
+                #executor.map(function, sorted(file_keys))
+                #executor.shutdown(wait=True)
+                futures = [executor.submit(function, file_key) for file_key in sorted(file_keys)]
+                wait(futures)
 
+
+    def run_commands_with_threads(self, function, file_keys, workers):
+        """This method uses the ProcessPoolExecutor library to run
+        multiple processes at the same time. It also has a debug option.
+        This is helpful to show errors on stdout. 
+
+        :param function: the function to run
+        :param file_keys: tuple of file information
+        :param workers: integer number of workers to use
+        """
+        
+        if self.debug:
+            for file_key in sorted(file_keys):
+                function(file_key)
+        else:
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                #executor.map(function, sorted(file_keys))
+                #executor.shutdown(wait=True)
+                futures = [executor.submit(function, file_key) for file_key in sorted(file_keys)]
+                # wait for all tasks to complete
+                wait(futures)
