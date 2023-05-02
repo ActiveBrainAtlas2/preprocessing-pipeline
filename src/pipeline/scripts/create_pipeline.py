@@ -50,6 +50,15 @@ are in the correct order and the images look good.
 and possible dilate or crop them.
 - After the alignment process - the user needs to verify the alignment looks good. \
 increasing the step size will make the pipeline move forward in the process.
+
+**Project for switching projection in Neuroglancer, this switches the top left and bottom
+right quadrants. Place this JSON directly below the 'position' key:
+"crossSectionOrientation": [
+    0,
+    -0.7071067690849304,
+    0,
+    0.7071067690849304
+  ],
 """
 import argparse
 from pathlib import Path

@@ -14,7 +14,7 @@ from cloudvolume import CloudVolume
 from cloudvolume.lib import touch
 from collections import defaultdict
 
-from library.utilities.utilities_process import get_cpus
+from library.utilities.utilities_process import get_cpus, read_image
 
 
 def calculate_chunks(downsample, mip):
@@ -308,11 +308,8 @@ class NumpyToNeuroglancer():
              print(f"Section {index} has already been processed, skipping.")
              return
 
-        try:
-            img = io.imread(infile, img_num=0)
-        except IOError as ioe:
-            print(f'could not open {infile} {ioe}')
-            return
+        img = read_image(infile)
+
         try:
             img = img.reshape(self.num_channels, img.shape[0], img.shape[1]).T
         except:

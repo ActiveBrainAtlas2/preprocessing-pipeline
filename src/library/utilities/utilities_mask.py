@@ -82,13 +82,12 @@ def normalize_image(img):
     return img
 
 
-def scaled(img, mask, epsilon=0.01):
+def scaled(img, mask, scale=30000):
     """This scales the image to the limit specified. You can get this value
     by looking at the combined histogram of the image stack. It is quite
     often less than 30000 for channel 1.
     One of the reasons this takes so much RAM is a large float64 array is being
     multiplied by another large array. That is WHERE all the RAM is going!!!!!
-    The scale is hardcoded to 45000 which was a good value from Yoav
 
     :param img: image we are working on.
     :param mask: binary mask file
@@ -96,73 +95,42 @@ def scaled(img, mask, epsilon=0.01):
     :param limit: max value we wish to scale to
     :return: scaled image in 16bit format
     """
-    _max = np.quantile(img[mask > 0], 1 - epsilon) # gets almost the max value of img
+    epsilon = 0.999
+    mx = img.max()
+    _max = np.quantile(img[mask > 0], epsilon) # gets almost the max value of img
+    print(f'Scaling image max={mx} almost max ={round(_max)} @ epsilon ={round(epsilon,3)}')
+
     if img.dtype == np.uint8:
         _range = 2 ** 8 - 1 # 8bit
-        data_type = np.uint8
-        scale = 178        
     else:
-        scale = 45000
         _range = 2 ** 16 - 1 # 16bit
-        data_type = np.uint16
-
-    print(f'Scaling image range={_range}, data type={data_type}, max={_max}')
-    scaled = (img * (scale // _max)).astype(data_type) # scale the image from original values to e.g., 30000/10000
+    scaled = (img * (scale / _max)).astype(img.dtype) # scale the image from original values to e.g., 30000/10000
     del img
     scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
     scaled = scaled * (mask > 0) # just work on the non masked values. This is where all the RAM goes!!!!!!!
 
     del mask
 
+    mx = scaled.max()
+    
+    _max = np.quantile(scaled, epsilon) # gets almost the max value of img
+    print(f'Scaled image max={mx} almost max ={round(_max)} @ epsilon ={round(epsilon,3)}')
     return scaled
 
 
 def equalized(fixed, cliplimit=5):
     """Takes an image that has already been scaled and uses opencv adaptive histogram
-    equalization. This cases uses 5 as the clip limit and splits the image into 2 rows
-    and 2 columns. A higher cliplimit will make the image brighter. A cliplimit of 1 will
-    do nothing.
+    equalization. This cases uses 5 as the clip limit and splits the image into rows
+    and columns. A higher cliplimit will make the image brighter. A cliplimit of 1 will
+    do nothing. 
 
     :param fixed: image we are working on
     :return: a better looking image
     """
     
-    clahe = cv2.createCLAHE(clipLimit=cliplimit, tileGridSize=(2, 2))
+    clahe = cv2.createCLAHE(clipLimit=cliplimit, tileGridSize=(8, 8))
     fixed = clahe.apply(fixed)
     return fixed
-
-
-def merge_mask(image, mask):
-    """Merge image with mask [so user can edit]
-    stack 3 channels on single image (black background, image, then mask)
-
-    :param image: numpy array of the image
-    :param mask: numpy array of the mask
-    :return: merged numpy array
-    """
-
-    b = mask
-    g = image
-    r = np.zeros_like(image).astype(np.uint8)
-    merged = np.stack([r, g, b], axis=2)
-    return merged
-
-
-def combine_dims(a):
-    """Combines dimensions of a numpy array
-
-    :param a: numpy array
-    :return: numpy array
-    """
-    
-    if a.shape[0] > 0:
-        a1 = a[0,:,:]
-        a2 = a[1,:,:]
-        a3 = np.add(a1,a2)
-    else:
-        a3 = np.zeros([a.shape[1], a.shape[2]]) + 255
-    return a3
-
 
 def clean_and_rotate_image(file_key):
     """The main function that uses the user edited mask to crop out the tissue from 
@@ -191,10 +159,9 @@ def clean_and_rotate_image(file_key):
     cleaned = apply_mask(img, mask, infile)
     del img
     if channel == 1:
-        # pass
-        cleaned = normalize_image(cleaned)
-        #cleaned = scaled(cleaned, mask, epsilon=0.01)
-        cleaned = equalized(cleaned, cliplimit=100) # this shows too much of the surrounding 'halo' crap
+        #cleaned = normalize_image(cleaned)
+        cleaned = equalized(cleaned, cliplimit=80)
+        cleaned = scaled(cleaned, mask)
         #cleaned = normalize16(cleaned)
 
     cleaned = crop_image(cleaned, mask)
@@ -278,3 +245,34 @@ def normalize16(img):
         img = ((img - mn)/mx) * 2**16 - 1
         return np.round(img).astype(np.uint16) 
 
+
+def merge_mask(image, mask):
+    """Merge image with mask [so user can edit]
+    stack 3 channels on single image (black background, image, then mask)
+
+    :param image: numpy array of the image
+    :param mask: numpy array of the mask
+    :return: merged numpy array
+    """
+
+    b = mask
+    g = image
+    r = np.zeros_like(image).astype(np.uint8)
+    merged = np.stack([r, g, b], axis=2)
+    return merged
+
+
+def combine_dims(a):
+    """Combines dimensions of a numpy array
+
+    :param a: numpy array
+    :return: numpy array
+    """
+    
+    if a.shape[0] > 0:
+        a1 = a[0,:,:]
+        a2 = a[1,:,:]
+        a3 = np.add(a1,a2)
+    else:
+        a3 = np.zeros([a.shape[1], a.shape[2]]) + 255
+    return a3
