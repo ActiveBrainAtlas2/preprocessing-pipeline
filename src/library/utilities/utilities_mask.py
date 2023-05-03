@@ -95,10 +95,13 @@ def scaled(img, mask, scale=30000):
     :param limit: max value we wish to scale to
     :return: scaled image in 16bit format
     """
+    debug = False
     epsilon = 0.999
-    mx = img.max()
     _max = np.quantile(img[mask > 0], epsilon) # gets almost the max value of img
-    print(f'Scaling image max={mx} almost max ={round(_max)} @ epsilon ={round(epsilon,3)}')
+
+    if debug:
+        mx = img.max()
+        print(f'Scaling image max={mx} almost max ={round(_max)} @ epsilon ={round(epsilon,3)}')
 
     if img.dtype == np.uint8:
         _range = 2 ** 8 - 1 # 8bit
@@ -111,10 +114,10 @@ def scaled(img, mask, scale=30000):
 
     del mask
 
-    mx = scaled.max()
-    
-    _max = np.quantile(scaled, epsilon) # gets almost the max value of img
-    print(f'Scaled image max={mx} almost max ={round(_max)} @ epsilon ={round(epsilon,3)}')
+    if debug:
+        mx = scaled.max()    
+        _max = np.quantile(scaled, epsilon) # gets almost the max value of img
+        print(f'Scaled image max={mx} almost max ={round(_max)} @ epsilon ={round(epsilon,3)}')
     return scaled
 
 
@@ -160,7 +163,7 @@ def clean_and_rotate_image(file_key):
     del img
     if channel == 1:
         #cleaned = normalize_image(cleaned)
-        cleaned = equalized(cleaned, cliplimit=80)
+        cleaned = equalized(cleaned, cliplimit=40)
         cleaned = scaled(cleaned, mask)
         #cleaned = normalize16(cleaned)
 

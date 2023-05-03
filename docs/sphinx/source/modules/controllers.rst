@@ -13,10 +13,8 @@ methods to the programmer.
    library/controller/animal_controller.rst
    library/controller/elastix_controller.rst
    library/controller/histology_controller.rst
-   library/controller/main_controller.rst
    library/controller/scan_run_controller.rst
    library/controller/sections_controller.rst
-   library/controller/slide_controller.rst
    library/controller/slide_tif_controller.rst
    library/controller/sql_controller.rst
 

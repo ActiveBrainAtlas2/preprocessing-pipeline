@@ -20,7 +20,6 @@ except ImportError:
 
 from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.controller.sql_controller import SqlController
-from library.controller.main_controller import Controller
 from library.controller.polygon_sequence_controller import PolygonSequenceController
 from library.utilities.utilities_registration import SCALING_FACTOR
 from library.utilities.utilities_mask import merge_mask
