@@ -4,6 +4,7 @@
 import sys
 import cv2
 import numpy as np
+from skimage.exposure import rescale_intensity
 
 from library.utilities.utilities_process import read_image, write_image
 
@@ -71,14 +72,12 @@ def place_image(img, file: str, max_width, max_height, bgcolor=None):
 
 def normalize_image(img):
     """This is a simple opencv image normalization for 16 bit images.
-    It uses 45000 as an arbitrary limit which seems to fit well
-    with our image stacks.
 
     :param img: the numpy array of the 16bit image
     :return img: the normalized image
     """
-    scale = 2 ** 16 - 1 # 16bit
-    cv2.normalize(img, img, 0, scale, cv2.NORM_MINMAX)
+    max = 2 ** 16 - 1 # 16bit
+    cv2.normalize(img, img, 0, max, cv2.NORM_MINMAX)
     return img
 
 
@@ -95,30 +94,28 @@ def scaled(img, mask, scale=30000):
     :param limit: max value we wish to scale to
     :return: scaled image in 16bit format
     """
-    debug = False
-    epsilon = 0.999
-    _max = np.quantile(img[mask > 0], epsilon) # gets almost the max value of img
-
+    dtype = img.dtype
+    epsilon = 0.99
+    img = img * (mask > 0)
+    upper = int(np.quantile(img, epsilon)) # gets almost the max value of img
+    img[img > upper] = upper
+    img = rescale_intensity(img, out_range=(0, upper)).astype(dtype)
+    #print(f'\nUpper={upper}')
+    """
+    _max = np.quantile(img, epsilon)
+    scaled = (img * (scale / _max)).astype(np.uint16) # scale the image from original values to e.g., 30000/10000
     if debug:
-        mx = img.max()
-        print(f'Scaling image max={mx} almost max ={round(_max)} @ epsilon ={round(epsilon,3)}')
+        print(f'Scaled image max={scaled.max()} @ epsilon ={round(epsilon,3)}')
+    """
 
-    if img.dtype == np.uint8:
-        _range = 2 ** 8 - 1 # 8bit
-    else:
-        _range = 2 ** 16 - 1 # 16bit
-    scaled = (img * (scale / _max)).astype(img.dtype) # scale the image from original values to e.g., 30000/10000
+    scaled = (img * (scale // upper)).astype(dtype) # scale the image from original values to e.g., 30000/10000
     del img
-    scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
+    #scaled[scaled > _range] = _range # if values are > 16bit, set to 16bit
     scaled = scaled * (mask > 0) # just work on the non masked values. This is where all the RAM goes!!!!!!!
-
     del mask
-
-    if debug:
-        mx = scaled.max()    
-        _max = np.quantile(scaled, epsilon) # gets almost the max value of img
-        print(f'Scaled image max={mx} almost max ={round(_max)} @ epsilon ={round(epsilon,3)}')
     return scaled
+
+
 
 
 def equalized(fixed, cliplimit=5):
@@ -134,6 +131,17 @@ def equalized(fixed, cliplimit=5):
     clahe = cv2.createCLAHE(clipLimit=cliplimit, tileGridSize=(8, 8))
     fixed = clahe.apply(fixed)
     return fixed
+
+def normalize16(img):
+    if img.dtype == np.uint32:
+        print('image dtype is 32bit')
+        return img.astype(np.uint16)
+    else:
+        mn = img.min()
+        mx = img.max()
+        mx -= mn
+        img = ((img - mn)/mx) * 2**16 - 1
+        return np.round(img).astype(np.uint16) 
 
 def clean_and_rotate_image(file_key):
     """The main function that uses the user edited mask to crop out the tissue from 
@@ -160,14 +168,14 @@ def clean_and_rotate_image(file_key):
     img = read_image(infile)
     mask = read_image(maskfile)
     cleaned = apply_mask(img, mask, infile)
-    del img
     if channel == 1:
         #cleaned = normalize_image(cleaned)
-        cleaned = equalized(cleaned, cliplimit=40)
         cleaned = scaled(cleaned, mask)
+        cleaned = equalized(cleaned, cliplimit=4)
         #cleaned = normalize16(cleaned)
 
     cleaned = crop_image(cleaned, mask)
+    del img
     del mask
     if rotation > 0:
         cleaned = rotate_image(cleaned, infile, rotation)
@@ -235,18 +243,6 @@ def crop_image(img, mask):
     img = np.ascontiguousarray(img, dtype=np.uint16)
     cropped = img[y1:y2, x1:x2]
     return cropped
-
-
-def normalize16(img):
-    if img.dtype == np.uint32:
-        print('image dtype is 32bit')
-        return img.astype(np.uint16)
-    else:
-        mn = img.min() # this will always be zero
-        mx = img.max()
-        mx -= mn # this won't change
-        img = ((img - mn)/mx) * 2**16 - 1
-        return np.round(img).astype(np.uint16) 
 
 
 def merge_mask(image, mask):
