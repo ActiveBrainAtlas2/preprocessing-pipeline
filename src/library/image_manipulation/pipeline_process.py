@@ -133,3 +133,20 @@ class Pipeline(
         print(f" took {total_elapsed_time} seconds")
         sep = "*" * 40 + "\n"
         self.logevent(f"{function_name} took {total_elapsed_time} seconds\n{sep}")
+
+    def check_status(self):
+        prep = self.fileLocationManager.prep
+        print(f'Checking directory status in {prep}')
+        section_count = self.section_count
+        print(f'Section count from DB={section_count}')
+        directories = ['thumbnail_original', 'tif', 'masks/CH1/thumbnail_colored', 'masks/CH1/thumbnail_masked', 'CH1/thumbnail', 
+                       'CH1/thumbnail_aligned_iteration_0', 'CH1/thumbnail_aligned']
+        
+        for directory in directories:
+            dir = os.path.join(prep, directory)
+            if os.path.exists(dir):
+                filecount = len(os.listdir(dir))
+                print(f'Dir={directory} exists with {filecount} files. Sections count matches directory count: {section_count == filecount}')
+            else:
+                print(f'Non-existent dir={dir}')
+

@@ -18,6 +18,7 @@ from pathlib import Path
 import SimpleITK as sitk
 from scipy.ndimage import affine_transform
 
+
 from library.database_model.elastix_transformation import ElastixTransformation
 from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.image_manipulation.file_logger import FileLogger
@@ -186,6 +187,7 @@ class ElastixManager(FileLogger):
                 if not self.sqlController.check_elastix_metric_row(self.animal, moving_index, self.iteration): 
                     p = Popen(['python', program, self.animal, fixed_file, moving_file], stdin=PIPE, stdout=PIPE, stderr=PIPE)
                     output, error = p.communicate(b"input data that is passed to subprocess' stdin")
+
                     if len(output) > 0:
                         metric =  float(''.join(c for c in str(output) if (c.isdigit() or c =='.' or c == '-')))
                         updates = {'metric':metric}

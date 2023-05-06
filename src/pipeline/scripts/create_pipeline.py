@@ -106,6 +106,9 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
     print("\tdebug:".ljust(20), f"{str(debug)}".ljust(20))
     print()
 
+    if step == "999":
+        pipeline.check_status()
+
     if step == "0":
         print(f"Step {step}: prepare images for quality control.")
         pipeline.extract_slide_meta_data_and_insert_to_database()
@@ -182,7 +185,7 @@ if __name__ == "__main__":
     parser.add_argument("--rescan_number", help="Enter rescan number, default is 0", required=False, default=0)
     parser.add_argument("--channel", help="Enter channel", required=False, default=1, type=int)
     parser.add_argument("--downsample", help="Enter true or false", required=False, default="true")
-    parser.add_argument("--step", help="steps", required=False, default=0)
+    parser.add_argument("--step", help="steps", required=False, default=999)
     parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
     parser.add_argument("--tg", help="Extend the mask to expose the entire underside of the brain", required=False, default=False)
 

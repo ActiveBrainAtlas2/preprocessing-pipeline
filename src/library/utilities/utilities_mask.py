@@ -81,7 +81,7 @@ def normalize_image(img):
     return img
 
 
-def scaled(img, mask, scale=30000):
+def scaledXXX(img, mask, scale=30000):
     """This scales the image to the limit specified. You can get this value
     by looking at the combined histogram of the image stack. It is quite
     often less than 30000 for channel 1.
@@ -115,6 +115,23 @@ def scaled(img, mask, scale=30000):
     del mask
     return scaled
 
+def scaled(img, mask, scale=30000):
+    """First we find really high values, which are the bright spots and turn them down
+    """
+    dtype = img.dtype
+    lower_e = 0.9
+    upper_e = 0.99
+    lower = int(np.quantile(img[img>0], lower_e)) # gets almost the max value of img
+    upper = int(np.quantile(img[img>0], upper_e)) # gets almost the max value of img
+    img[img > upper] = lower
+
+    #img = scale_img(img, scale=45000)
+    
+    _max = np.quantile(img[img>0], upper_e)
+    scaled = (img * (scale / _max)).astype(dtype) # scale the image from original values to e.g., 30000/10000
+    del img
+
+    return scaled
 
 
 
@@ -171,7 +188,7 @@ def clean_and_rotate_image(file_key):
     if channel == 1:
         #cleaned = normalize_image(cleaned)
         cleaned = scaled(cleaned, mask)
-        cleaned = equalized(cleaned, cliplimit=4)
+        cleaned = equalized(cleaned, cliplimit=2)
         #cleaned = normalize16(cleaned)
 
     cleaned = crop_image(cleaned, mask)

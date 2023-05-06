@@ -250,7 +250,11 @@ def align_elastix(fixed, moving):
     elastixImageFilter.SetMovingImage(moving)
     translationMap = elastixImageFilter.GetDefaultParameterMap("translation")
 
-    rigid_params = create_rigid_parameters(elastixImageFilter)
+    #rigid_params = create_rigid_parameters(elastixImageFilter)
+    rigid_params = elastixImageFilter.GetDefaultParameterMap("rigid")
+    rigid_params["WriteResultImage"] = ["false"]
+
+
     elastixImageFilter.SetParameterMap(translationMap)
     elastixImageFilter.AddParameterMap(rigid_params)
     elastixImageFilter.LogToConsoleOff()

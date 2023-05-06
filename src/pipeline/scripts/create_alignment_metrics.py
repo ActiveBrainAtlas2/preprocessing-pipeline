@@ -2,7 +2,7 @@ import os
 import sys
 import SimpleITK as sitk
 from pathlib import Path
-PIPELINE_ROOT = Path('./src/pipeline').absolute()
+PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 from library.image_manipulation.filelocation_manager import FileLocationManager
@@ -25,12 +25,10 @@ def align_elastix(animal, fixed_file, moving_file, moving_index):
     elastixImageFilter = sitk.ElastixImageFilter()
     elastixImageFilter.SetFixedImage(fixed)
     elastixImageFilter.SetMovingImage(moving)
-    rigid_params = create_rigid_parameters(elastixImageFilter)
-    # We reset this value below to a lower number as just want a metric
-    # we can compare to other sections
-    rigid_params["MaximumNumberOfIterations"] = ["80"]
-
+    rigid_params = elastixImageFilter.GetDefaultParameterMap("rigid")
+    rigid_params["WriteResultImage"] = ["false"]
     elastixImageFilter.SetParameterMap(rigid_params)
+
     # logging
     fileLocationManager = FileLocationManager(animal)
     OUTPUT = fileLocationManager.elastix
@@ -70,6 +68,9 @@ def create_image(fixed_file, moving_file):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        print('Need animal fixed moving as arguments')
+        exit(0)    
     animal = sys.argv[1]
     fixed = sys.argv[2]
     moving = sys.argv[3]
