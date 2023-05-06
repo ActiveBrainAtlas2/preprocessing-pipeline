@@ -76,9 +76,9 @@ class NgPrecomputedMaker:
         PROGRESS_DIR = self.fileLocationManager.get_neuroglancer_progress(self.downsample, self.channel)
         os.makedirs(PROGRESS_DIR, exist_ok=True)
 
-        #starting_files = test_dir(self.animal, INPUT, self.section_count, self.downsample, same_size=True)
+        starting_files = test_dir(self.animal, INPUT, self.section_count, self.downsample, same_size=True)
         self.logevent(f"INPUT FOLDER: {INPUT}")
-        #self.logevent(f"CURRENT FILE COUNT: {starting_files}")
+        self.logevent(f"CURRENT FILE COUNT: {starting_files}")
         self.logevent(f"OUTPUT FOLDER: {OUTPUT_DIR}")
 
         midfile, file_keys, volume_size, num_channels = self.get_file_information(INPUT, PROGRESS_DIR)

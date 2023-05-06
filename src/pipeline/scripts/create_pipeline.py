@@ -63,6 +63,7 @@ right quadrants. Place this JSON directly below the 'position' key:
 import argparse
 from pathlib import Path
 import sys
+
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -76,6 +77,7 @@ except ImportError:
 
 
 from library.image_manipulation.pipeline_process import Pipeline
+from library.utilities.utilities_process import SCALING_FACTOR
 
 
 def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
@@ -97,7 +99,7 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
     print("\tstep:".ljust(20), f"{step}".ljust(20))
     print("\trescan_number:".ljust(20), f"{rescan_number}".ljust(20))
     print("\tchannel:".ljust(20), f"{str(channel)}".ljust(20))
-    print("\tdownsample:".ljust(20), f"{str(downsample)}".ljust(20))
+    print("\tdownsample:".ljust(20), f"{str(downsample)}".ljust(20), f"@ {str(SCALING_FACTOR)}".ljust(20))
     print("\thost:".ljust(20), f"{host}".ljust(20))
     print("\tschema:".ljust(20), f"{schema}".ljust(20))
     print("\ttg:".ljust(20), f"{str(tg)}".ljust(20))
