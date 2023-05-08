@@ -66,7 +66,6 @@ class ElastixManager(FileLogger):
             nfiles = len(files)
             self.logevent(f"INPUT FOLDER: {INPUT}")
             self.logevent(f"FILE COUNT: {nfiles}")
-            print(f'\nCreating transformations from {INPUT}', end=" ")
             for i in range(1, nfiles):
                 fixed_index = os.path.splitext(files[i - 1])[0]
                 moving_index = os.path.splitext(files[i])[0]
@@ -390,7 +389,7 @@ class ElastixManager(FileLogger):
                 INPUT = self.fileLocationManager.get_thumbnail_aligned_iteration_0(self.channel)
                 OUTPUT = self.fileLocationManager.get_thumbnail_aligned(self.channel)
 
-            print(f'Aligning {len(os.listdir(INPUT))} images from {os.path.basename(os.path.normpath(INPUT))} to {os.path.basename(os.path.normpath(OUTPUT))}')
+            print(f'Aligning {len(os.listdir(INPUT))} images from {os.path.basename(os.path.normpath(INPUT))} to {os.path.basename(os.path.normpath(OUTPUT))}', end=" ")
             self.align_images(INPUT, OUTPUT, transforms)
 
 
@@ -435,7 +434,7 @@ class ElastixManager(FileLogger):
         self.run_commands_concurrently(align_image_to_affine, file_keys, workers)
         end_time = timer()
         total_elapsed_time = round((end_time - start_time),2)
-        print(f'Aligning {len(file_keys)} images took {total_elapsed_time} seconds.')
+        print(f'took {total_elapsed_time} seconds.')
 
 
     def create_web_friendly_sections(self):

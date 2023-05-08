@@ -59,7 +59,7 @@ class VolumeRegistration:
     """This class takes a downsampled image stack and registers it to the Allen volume    
     """
 
-    def __init__(self, animal, channel, um, atlas, debug):
+    def __init__(self, animal, channel, um, atlas, orientation, debug):
         self.animal = animal
         self.debug = debug
         self.atlas = atlas
@@ -70,7 +70,7 @@ class VolumeRegistration:
         self.fileLocationManager = FileLocationManager(animal)
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, self.channel, 'thumbnail_aligned')
         self.moving_volume_path = os.path.join(self.fileLocationManager.prep, self.channel, 'moving_volume.tif')
-        self.fixed_volume_path = os.path.join(self.fileLocationManager.registration_info, f'{atlas}_{um}um_sagittal.tif')
+        self.fixed_volume_path = os.path.join(self.fileLocationManager.registration_info, f'{atlas}_{um}um_{orientation}.tif')
         self.elastix_output = os.path.join(self.fileLocationManager.prep, 'elastix_output', self.output_dir)
         self.reverse_elastix_output = os.path.join(self.fileLocationManager.prep, 'reverse_elastix_output', self.output_dir)
         self.registered_output = os.path.join(self.fileLocationManager.prep, self.channel,  'registered', self.output_dir)
@@ -411,6 +411,7 @@ if __name__ == '__main__':
     parser.add_argument("--channel", help="Enter channel", required=False, default=1, type=int)
     parser.add_argument('--um', help="size of atlas in micrometers", required=False, default=25, type=int)
     parser.add_argument('--atlas', help='Enter the atlas: allen|princeton', required=False, default='allen')
+    parser.add_argument('--orientation', help='Enter the orientation: sagittal|coronal', required=False, default='sagittal')
     parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
     parser.add_argument("--task", 
                         help="Enter the task you want to perform: \
@@ -422,9 +423,10 @@ if __name__ == '__main__':
     channel = args.channel
     um = args.um
     atlas = args.atlas
+    orientation = args.orientation
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
     task = str(args.task).strip().lower()
-    volumeRegistration = VolumeRegistration(animal, channel, um, atlas, debug)
+    volumeRegistration = VolumeRegistration(animal, channel, um, atlas, orientation, debug)
 
 
     function_mapping = {'create_volume': volumeRegistration.create_volume,

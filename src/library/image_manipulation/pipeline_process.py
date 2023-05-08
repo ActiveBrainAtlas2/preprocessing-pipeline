@@ -139,7 +139,7 @@ class Pipeline(
         print(f'Checking directory status in {prep}')
         section_count = self.section_count
         print(f'Section count from DB={section_count}')
-        directories = ['masks/CH1/thumbnail_colored', 'masks/CH1/thumbnail_masked', 'CH1/thumbnail', 
+        directories = ['masks/CH1/thumbnail_colored', 'masks/CH1/thumbnail_masked', 'CH1/thumbnail', 'CH1/thumbnail_cleaned',
                        'CH1/thumbnail_aligned_iteration_0', 'CH1/thumbnail_aligned']
         
         for directory in directories:

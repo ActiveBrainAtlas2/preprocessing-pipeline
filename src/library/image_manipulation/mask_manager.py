@@ -111,7 +111,7 @@ class MaskManager:
         torch.multiprocessing.set_sharing_strategy('file_system')
 
         device = torch.device('cpu')
-        print(f'\tUsing CPU with {workers} workers at a batch size of {batch_size}')
+        print(f' using CPU with {workers} workers at a batch size of {batch_size}')
 
         if os.path.exists(modelpath):
             self.loaded_model.load_state_dict(torch.load(modelpath, map_location = device))

@@ -1,5 +1,4 @@
-"""
-This program will create everything.
+"""This program will create everything.
 The only required argument is the animal and step. By default it will work on channel=1
 and downsample = True. Run them in this sequence:
 
@@ -44,21 +43,18 @@ of workers is too low, the processes take too long.
 
 **Human intervention is required at several points in the process**
 
-- After create meta - the user needs to check the database and verify the images \
+- After create meta the user needs to check the database and verify the images \
 are in the correct order and the images look good.
 - After the first create mask method - the user needs to check the colored masks \
 and possible dilate or crop them.
 - After the alignment process - the user needs to verify the alignment looks good. \
 increasing the step size will make the pipeline move forward in the process.
 
-**Project for switching projection in Neuroglancer, this switches the top left and bottom
-right quadrants. Place this JSON directly below the 'position' key:
-"crossSectionOrientation": [
-    0,
-    -0.7071067690849304,
-    0,
-    0.7071067690849304
-  ],
+**Switching projection in Neuroglancer** 
+
+- This switches the top left and bottom right quadrants. Place this JSON directly below the 'position' key:
+- crossSectionOrientation: [0, -0.7071067690849304, 0, 0.7071067690849304],
+
 """
 import argparse
 from pathlib import Path
@@ -147,7 +143,17 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
 
         pipeline.run_program_and_time(pipeline.create_web_friendly_sections, pipeline.TASK_CREATING_SECTION_PNG)
 
+
     if step == "4a":
+        print(f"Step {step}: creating alignment metrics.")
+
+        for i in [0, 1]:
+            print(f'Starting iteration {i}')
+            pipeline.iteration = i
+            pipeline.run_program_and_time(pipeline.call_alignment_metrics, pipeline.TASK_CREATING_ELASTIX_METRICS)
+
+
+    if step == "4b":
         """This step is in case channel X differs from channel 1 and came from a different set of CZI files. 
         This step will do everything for the channel, so you don't need to run channel X for step 2, or 4. You do need
         to run step 0 and step 1.
@@ -174,10 +180,6 @@ def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
         pipeline.run_program_and_time(pipeline.create_neuroglancer, pipeline.TASK_NEUROGLANCER_SINGLE)
         pipeline.run_program_and_time(pipeline.create_downsamples, pipeline.TASK_NEUROGLANCER_PYRAMID)
         #pipeline.create_neuroglancer_normalization()
-
-
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Work on Animal")
