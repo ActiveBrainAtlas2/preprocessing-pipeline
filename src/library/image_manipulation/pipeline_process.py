@@ -139,8 +139,14 @@ class Pipeline(
         print(f'Checking directory status in {prep}')
         section_count = self.section_count
         print(f'Section count from DB={section_count}')
-        directories = ['masks/CH1/thumbnail_colored', 'masks/CH1/thumbnail_masked', 'CH1/thumbnail', 'CH1/thumbnail_cleaned',
-                       'CH1/thumbnail_aligned_iteration_0', 'CH1/thumbnail_aligned']
+
+        if self.downsample:
+            directories = ['masks/CH1/thumbnail_colored', 'masks/CH1/thumbnail_masked', f'CH{self.channel}/thumbnail', f'CH{self.channel}/thumbnail_cleaned',
+                        f'CH{self.channel}/thumbnail_aligned_iteration_0', f'CH{self.channel}/thumbnail_aligned']
+        else:
+            directories = ['masks/CH1/full_masked', f'CH{self.channel}/full', f'CH{self.channel}/full_cleaned',
+                        f'CH{self.channel}/full_aligned_iteration_0', f'CH{self.channel}/full_aligned']
+
         
         for directory in directories:
             dir = os.path.join(prep, directory)
