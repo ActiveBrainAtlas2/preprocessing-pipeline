@@ -317,8 +317,7 @@ class VolumeRegistration:
         files, volume_size = self.get_file_information()
         image_stack = np.zeros(volume_size)
         file_list = []
-        for i in tqdm(range(len(files))):
-            ffile = str(i).zfill(3) + '.tif'
+        for ffile in tqdm(files):
             fpath = os.path.join(self.thumbnail_aligned, ffile)
             farr = read_image(fpath)
             farr = farr[200:-200,200:-200]
