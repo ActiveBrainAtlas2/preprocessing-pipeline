@@ -144,11 +144,11 @@ class Pipeline(
         if self.downsample:
             directories = ['masks/CH1/thumbnail_colored', 'masks/CH1/thumbnail_masked', f'CH{self.channel}/thumbnail', f'CH{self.channel}/thumbnail_cleaned',
                         f'CH{self.channel}/thumbnail_aligned_iteration_0', f'CH{self.channel}/thumbnail_aligned']
-            ndirectory = [f'C{self.channel}T']
+            ndirectory = f'C{self.channel}T'
         else:
             directories = ['masks/CH1/full_masked', f'CH{self.channel}/full', f'CH{self.channel}/full_cleaned',
                         f'CH{self.channel}/full_aligned_iteration_0', f'CH{self.channel}/full_aligned']
-            ndirectory = [f'C{self.channel}']
+            ndirectory = f'C{self.channel}'
 
         
         for directory in directories:
