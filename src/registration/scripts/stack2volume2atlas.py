@@ -320,7 +320,7 @@ class VolumeRegistration:
         for ffile in tqdm(files):
             fpath = os.path.join(self.thumbnail_aligned, ffile)
             farr = read_image(fpath)
-            farr = farr[200:-200,200:-200]
+            #farr = farr[200:-200,200:-200]
             file_list.append(farr)
         image_stack = np.stack(file_list, axis = 0)
         io.imsave(self.moving_volume_path, image_stack.astype(np.uint16))
