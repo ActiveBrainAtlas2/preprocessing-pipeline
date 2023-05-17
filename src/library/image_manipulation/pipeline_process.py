@@ -136,6 +136,7 @@ class Pipeline(
 
     def check_status(self):
         prep = self.fileLocationManager.prep
+        neuroglancer = self.fileLocationManager.neuroglancer_data
         print(f'Checking directory status in {prep}')
         section_count = self.section_count
         print(f'Section count from DB={section_count}')
@@ -143,9 +144,11 @@ class Pipeline(
         if self.downsample:
             directories = ['masks/CH1/thumbnail_colored', 'masks/CH1/thumbnail_masked', f'CH{self.channel}/thumbnail', f'CH{self.channel}/thumbnail_cleaned',
                         f'CH{self.channel}/thumbnail_aligned_iteration_0', f'CH{self.channel}/thumbnail_aligned']
+            ndirectory = [f'C{self.channel}T']
         else:
             directories = ['masks/CH1/full_masked', f'CH{self.channel}/full', f'CH{self.channel}/full_cleaned',
                         f'CH{self.channel}/full_aligned_iteration_0', f'CH{self.channel}/full_aligned']
+            ndirectory = [f'C{self.channel}']
 
         
         for directory in directories:
@@ -156,3 +159,8 @@ class Pipeline(
             else:
                 print(f'Non-existent dir={dir}')
 
+        dir = os.path.join(neuroglancer, ndirectory)
+        if os.path.exists(dir):
+            print(f'Dir={directory} exists.')
+        else:
+            print(f'Non-existent dir={dir}')

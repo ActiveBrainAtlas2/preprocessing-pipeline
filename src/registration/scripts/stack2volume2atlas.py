@@ -442,5 +442,7 @@ if __name__ == '__main__':
     if task in function_mapping:
         function_mapping[task]()
     else:
-        print(f'{task} is not a correct task.')
+        print(f'{task} is not a correct task. Choose one of these:')
+        for key in function_mapping.keys():
+            print(f'\t{key}')
 
