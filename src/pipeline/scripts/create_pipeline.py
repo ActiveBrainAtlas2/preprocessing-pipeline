@@ -2,34 +2,23 @@
 The only required argument is the animal and step. By default it will work on channel=1
 and downsample = True. Run them in this sequence:
 
-- python src/pipeline/scripts/create_pipeline.py --animal DKXX --step 0|1|2|3|4|5
-- python src/pipeline/scripts/create_pipeline.py --animal DKXX channel 2|3 --step 0|1|2|3|4|5
-- python src/pipeline/scripts/create_pipeline.py --animal DKXX channel 1 downsample false --step 0|1|2|3|4|5
-- python src/pipeline/scripts/create_pipeline.py --animal DKXX channel 2|3 downsample false --step 0|1|2|3|4|5
+- python src/pipeline/scripts/create_pipeline.py --animal DKXX --task
+- python src/pipeline/scripts/create_pipeline.py --animal DKXX channel 2|3 --task
+- python src/pipeline/scripts/create_pipeline.py --animal DKXX channel 1 downsample false --task
+- python src/pipeline/scripts/create_pipeline.py --animal DKXX channel 2|3 downsample false --task
 
-Explanation for the steps:
+Explanation for the tasks:
 
-- Step 0 - extracts the metadata from the CZI and inserts into the database. \
+- extract - extracts the metadata from the CZI and inserts into the database. \
     Also creates web friendly PNG files for viewing in the portal. Extracts the TIFF \
     files at the standard downsampling factor
-- Step 1 - This is after the database portal QC. The normalized images are created and the masks \
+- mask - This is after the database portal QC. The normalized images are created and the masks \
     are also created. The user peforms QC on the masks and makes sure they are good.
-- Step 2 - Final masks are created and then the images are cleaned from the masks.
-- Step 3 - Histograms are created of all channel 1 sections
-- Step 4 - Alignment with Elastix is run on the cleaned images
-- Step 4a - Alignment with Elastix is run on the cleaned images between one channel and another. This won't be run usually.
-- Step 5 - Neuroglancer precomputed data is created from the aligned and cleaned images.
-
-**Changes from previous pipeline version**
-
-- Use opencv cv2.imwrite instead of tiff.imwrite. This saves lots of space and works fine
-- More of the code was moved from pipeline.py to this file to make it obvious what is being run
-- I removed the greater than sign in the steps and replaced it with == to run specific methods only.
-- Fine tuned the scaled method in the cleaning process. This will save lots of RAM!!!!
-- Replaced the run_commands_with_executor with run_commands_concurrently. Much simpler!
-- Removed the insert and select from ng.process_image and replaced with a touch file in \
-the PROGRESS_DIR, this will remove those 'mysql connection has gone away' errors.
-- Changed the session to a scoped session and extended the connection timeout to 24 hours.
+- clean - Final masks are created and then the images are cleaned from the masks.
+- histogram - Histograms are created of all channel 1 sections
+- align - Alignment with Elastix is run on the cleaned images
+- create_metrics - Alignment with Elastix is run on the cleaned images between one channel and another. This won't be run usually.
+- neuroglancer - Neuroglancer precomputed data is created from the aligned and cleaned images.
 
 **Timing results**
 
@@ -59,127 +48,13 @@ increasing the step size will make the pipeline move forward in the process.
 import argparse
 from pathlib import Path
 import sys
+from timeit import default_timer as timer
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-try:
-    from settings import data_path, host, schema
-except ImportError:
-    print('Missing settings using defaults')
-    data_path = "/net/birdstore/Active_Atlas_Data/data_root"
-    host = "db.dk.ucsd.edu"
-    schema = "brainsharer"
-
-
 from library.image_manipulation.pipeline_process import Pipeline
-from library.utilities.utilities_process import SCALING_FACTOR
 
-
-def run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug):
-    """Takes params and runs the pipeline
-
-    :param animal: The animal we are working on.
-    :param channel: The channel, integer 1, 2, or 3. Defaults to 1
-    :param downsample: True for downsample, False for full resolution. Defaults to True
-    :param step: The part of the pipeline we are working on
-    :param rescan_number: Usually 0 as most brains only have one scan
-    :param tg: A boolean to determine if the mask gets extended for the trigeminal ganglia.
-    :param debug: A boolean to determine if we should run in debug mode: Defaults to false.
-    """
-
-    pipeline = Pipeline(animal, rescan_number, channel, downsample, data_path, tg, debug)
-
-    print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:")
-    print("\tprep_id:".ljust(20), f"{animal}".ljust(20))
-    print("\tstep:".ljust(20), f"{step}".ljust(20))
-    print("\trescan_number:".ljust(20), f"{rescan_number}".ljust(20))
-    print("\tchannel:".ljust(20), f"{str(channel)}".ljust(20))
-    print("\tdownsample:".ljust(20), f"{str(downsample)}".ljust(20), f"@ {str(SCALING_FACTOR)}".ljust(20))
-    print("\thost:".ljust(20), f"{host}".ljust(20))
-    print("\tschema:".ljust(20), f"{schema}".ljust(20))
-    print("\ttg:".ljust(20), f"{str(tg)}".ljust(20))
-    print("\tdebug:".ljust(20), f"{str(debug)}".ljust(20))
-    print()
-
-    if step == "999":
-        pipeline.check_status()
-
-    if step == "0":
-        print(f"Step {step}: prepare images for quality control.")
-        pipeline.extract_slide_meta_data_and_insert_to_database()
-        pipeline.extract_tiffs_from_czi()
-        pipeline.create_web_friendly_image()
-
-    if step == "1":
-        print(f"Step {step}: apply QC and prepare image masks")
-        pipeline.update_scanrun()
-        pipeline.run_program_and_time(pipeline.apply_QC, pipeline.TASK_APPLYING_QC)
-        pipeline.run_program_and_time(pipeline.create_normalized_image, pipeline.TASK_APPLYING_NORMALIZATION)
-        pipeline.run_program_and_time(pipeline.create_mask, pipeline.TASK_CREATING_MASKS)
-    
-    if step == "2":
-        print(f"Step {step}: clean images\n")
-        if channel == 1 and downsample:
-            pipeline.run_program_and_time(pipeline.apply_user_mask_edits, pipeline.TASK_APPLYING_MASKS)
-        pipeline.run_program_and_time(pipeline.create_cleaned_images, pipeline.TASK_CREATING_CLEANED_IMAGES)
-    
-    if step == "3":
-        print(f"Step {step}: create histograms")
-        pipeline.run_program_and_time(pipeline.make_histogram, pipeline.TASK_CREATING_HISTOGRAMS)
-        pipeline.run_program_and_time(pipeline.make_combined_histogram, pipeline.TASK_CREATING_COMBINED_HISTOGRAM)
-
-    if step == "4":
-        print(f"Step {step}: align images within stack")
-
-        for i in [0, 1]:
-            print(f'Starting iteration {i}')
-            pipeline.iteration = i
-            pipeline.run_program_and_time(pipeline.create_within_stack_transformations, pipeline.TASK_CREATING_ELASTIX_TRANSFORM)
-            transformations = pipeline.get_transformations()
-            pipeline.align_downsampled_images(transformations)
-            pipeline.align_full_size_image(transformations)
-            pipeline.run_program_and_time(pipeline.call_alignment_metrics, pipeline.TASK_CREATING_ELASTIX_METRICS)
-
-        pipeline.run_program_and_time(pipeline.create_web_friendly_sections, pipeline.TASK_CREATING_SECTION_PNG)
-
-
-    if step == "4a":
-        print(f"Step {step}: creating alignment metrics.")
-
-        for i in [0, 1]:
-            print(f'Starting iteration {i}')
-            pipeline.iteration = i
-            pipeline.run_program_and_time(pipeline.call_alignment_metrics, pipeline.TASK_CREATING_ELASTIX_METRICS)
-
-
-    if step == "4b":
-        """This step is in case channel X differs from channel 1 and came from a different set of CZI files. 
-        This step will do everything for the channel, so you don't need to run channel X for step 2, or 4. You do need
-        to run step 0 and step 1.
-        """
-        
-        print(f"Step {step}: align images dir to another image dir")
-
-        i = 2
-        print(f'Starting iteration {i}')
-        pipeline.iteration = i
-        if downsample:
-            pipeline.create_normalized_image()
-            pipeline.create_downsampled_mask()
-            pipeline.apply_user_mask_edits()
-            pipeline.create_cleaned_images_thumbnail(channel=channel)
-            pipeline.create_dir2dir_transformations()
-        else:
-            pipeline.create_full_resolution_mask(channel=channel)
-            pipeline.create_cleaned_images_full_resolution(channel=channel)
-            pipeline.apply_full_transformations(channel=channel)
-
-    if step == "5":
-        print(f"Step {step}: create neuroglancer data")
-        pipeline.run_program_and_time(pipeline.create_neuroglancer, pipeline.TASK_NEUROGLANCER_SINGLE)
-        pipeline.run_program_and_time(pipeline.create_downsamples, pipeline.TASK_NEUROGLANCER_PYRAMID)
-        #pipeline.create_neuroglancer_normalization()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Work on Animal")
@@ -187,18 +62,49 @@ if __name__ == "__main__":
     parser.add_argument("--rescan_number", help="Enter rescan number, default is 0", required=False, default=0)
     parser.add_argument("--channel", help="Enter channel", required=False, default=1, type=int)
     parser.add_argument("--downsample", help="Enter true or false", required=False, default="true")
-    parser.add_argument("--step", help="steps", required=False, default=999)
     parser.add_argument("--debug", help="Enter true or false", required=False, default="false")
     parser.add_argument("--tg", help="Extend the mask to expose the entire underside of the brain", required=False, default=False)
+    parser.add_argument("--task", 
+                        help="Enter the task you want to perform: \
+                        extract|mask|clean|histogram|align|create_metrics|extra_channel|neuroglancer|check_status",
+                        required=False, default="check_status", type=str)
 
     args = parser.parse_args()
 
     animal = args.animal
+    rescan_number = int(args.rescan_number)
     channel = args.channel
     downsample = bool({"true": True, "false": False}[str(args.downsample).lower()])
-    step = str(args.step)
-    rescan_number = int(args.rescan_number)
     debug = bool({"true": True, "false": False}[str(args.debug).lower()])
     tg = bool({"true": True, "false": False}[str(args.tg).lower()])
+    task = str(args.task).strip().lower()
 
-    run_pipeline(animal, rescan_number, channel, downsample, step, tg, debug)
+    pipeline = Pipeline(animal, rescan_number, channel, downsample, tg, debug, task)
+
+    function_mapping = {'extract': pipeline.extract,
+                        'mask': pipeline.mask,
+                        'clean': pipeline.clean,
+                        'histogram': pipeline.histogram,
+                        'align': pipeline.align,
+                        'create_metrics': pipeline.create_metrics,
+                        'extra_channel': pipeline.extra_channel,
+                        'neuroglancer': pipeline.neuroglancer,
+                        'check_status': pipeline.check_status
+    }
+
+    if task in function_mapping:
+        start_time = timer()
+        pipeline.logevent(f"START  {str(task)}, downsample: {str(downsample)}")
+        function_mapping[task]()
+        end_time = timer()
+        total_elapsed_time = round((end_time - start_time),2)
+        print(f'{task} took {total_elapsed_time} seconds')
+        sep = "*" * 40 + "\n"
+        pipeline.logevent(f"{task} took {total_elapsed_time} seconds\n{sep}")
+
+    else:
+        print(f'{task} is not a correct task. Choose one of these:')
+        for key in function_mapping.keys():
+            print(f'\t{key}')
+
+

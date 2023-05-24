@@ -2,14 +2,13 @@
 This class is used to run the entire preprocessing pipeline - 
 from CZI files to a pyramid of tiles that can be viewed in neuroglancer.
 
-Args are animal, channel, and downsample. With animal being
+Args are animal, self.channel, and downsample. With animal being
 the only required argument.
 All imports are listed by the order in which they are used in the 
 """
 
 import os
 import sys
-from timeit import default_timer as timer
 
 from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.image_manipulation.meta_manager import MetaUtilities
@@ -24,7 +23,14 @@ from library.image_manipulation.image_cleaner import ImageCleaner
 from library.image_manipulation.histogram_maker import HistogramMaker
 from library.image_manipulation.elastix_manager import ElastixManager
 from library.controller.sql_controller import SqlController
-from library.utilities.utilities_process import get_hostname
+from library.utilities.utilities_process import get_hostname, SCALING_FACTOR
+try:
+    from settings import data_path, host, schema
+except ImportError:
+    print('Missing settings using defaults')
+    data_path = "/net/birdstore/Active_Atlas_Data/data_root"
+    host = "db.dk.ucsd.edu"
+    schema = "brainsharer"
 
 
 class Pipeline(
@@ -44,26 +50,19 @@ class Pipeline(
     This is the main class that handles the preprocessing pipeline responsible for converting Zeiss microscopy images (.czi) into neuroglancer
     viewable formats.  The Zeiss module can be swapped out to make the pipeline compatible with other microscopy setups
     """
-    TASK_CREATING_META = "Yanking meta data from CZI files"
-    TASK_CREATING_WEB_IMAGES = "Creating web friendly PNG images"
-    TASK_EXTRACTING_TIFFS = "Extracting TIFFs"
-    TASK_APPLYING_QC = "Applying QC"
-    TASK_APPLYING_NORMALIZATION = "Creating normalization"
-    TASK_CREATING_MASKS = "Creating masks"
-    TASK_APPLYING_MASKS = "Applying masks"
-    TASK_CREATING_CLEANED_IMAGES = "Creating cleaned image"
-    TASK_CREATING_HISTOGRAMS =  "Making histogram"
-    TASK_CREATING_COMBINED_HISTOGRAM = "Making combined histogram"
-    TASK_CREATING_ELASTIX_TRANSFORM = "Creating elastix transform"
-    TASK_CREATING_ELASTIX_METRICS = "Creating elastix  metrics"
-    TASK_CREATING_SECTION_PNG = "Creating section PNG files"
-    TASK_NEUROGLANCER_SINGLE = "Neuroglancer1 single"
-    TASK_NEUROGLANCER_PYRAMID = "Neuroglancer2 pyramid"
+    TASK_EXTRACT = "Extracting TIFFs and meta-data"
+    TASK_MASK = "Creating masks"
+    TASK_CLEAN = "Applying masks"
+    TASK_HISTOGRAM =  "Making histogram"
+    TASK_ALIGN = "Creating elastix transform"
+    TASK_CREATE_METRICS = "Creating elastix  metrics"
+    TASK_EXTRA_CHANNEL = "Creating separate channel"
+    TASK_NEUROGLANCER = "Neuroglancer"
 
-    def __init__(self, animal, rescan_number, channel, downsample, data_path, tg, debug):
+    def __init__(self, animal, rescan_number, channel, downsample, tg, debug, task):
         """Setting up the pipeline and the processing configurations
         Here is how the Class is instantiated:
-            pipeline = Pipeline(animal, channel, downsample, data_path, tg, debug)
+            pipeline = Pipeline(animal, self.channel, downsample, data_path, tg, debug)
 
            The pipeline performst the following steps:
            1. extracting the images from the microscopy formats (eg czi) to tiff format
@@ -77,11 +76,12 @@ class Pipeline(
 
         Args:
             animal (str): Animal Id
-            channel (int, optional): channel number.  This tells the program which channel to work on and which channel to extract from the czis. Defaults to 1.
+            self.channel (int, optional): self.channel number.  This tells the program which self.channel to work on and which self.channel to extract from the czis. Defaults to 1.
             downsample (bool, optional): Determine if we are working on the full resolution or downsampled version. Defaults to True.
             data_path (str, optional): path to where the images and intermediate steps are stored. Defaults to '/net/birdstore/Active_Atlas_Data/data_root'.
             debug (bool, optional): determine if we are in debug mode.  This is used for development purposes. Defaults to False. (forces processing on single core)
         """
+        self.task = task
         self.animal = animal
         self.rescan_number = rescan_number
         self.channel = channel
@@ -96,43 +96,88 @@ class Pipeline(
         self.section_count = self.sqlController.get_section_count(self.animal, self.rescan_number)
         super().__init__(self.fileLocationManager.get_logdir())
 
+        print("RUNNING PREPROCESSING-PIPELINE WITH THE FOLLOWING SETTINGS:")
+        print("\tprep_id:".ljust(20), f"{self.animal}".ljust(20))
+        print("\trescan_number:".ljust(20), f"{self.rescan_number}".ljust(20))
+        print("\tchannel:".ljust(20), f"{str(self.channel)}".ljust(20))
+        print("\tdownsample:".ljust(20), f"{str(self.downsample)}".ljust(20), f"@ {str(SCALING_FACTOR)}".ljust(20))
+        print("\thost:".ljust(20), f"{host}".ljust(20))
+        print("\tschema:".ljust(20), f"{schema}".ljust(20))
+        print("\ttg:".ljust(20), f"{str(self.tg)}".ljust(20))
+        print("\tdebug:".ljust(20), f"{str(self.debug)}".ljust(20))
+        print()
 
-    @staticmethod
-    def check_programs():
+
+    def extract(self):
+        print(self.TASK_EXTRACT)
+        self.extract_slide_meta_data_and_insert_to_database()
+        self.extract_tiffs_from_czi()
+        self.create_web_friendly_image()
+
+    def mask(self):
+        print(self.TASK_MASK)
+        self.update_scanrun()
+        self.apply_QC()
+        self.create_normalized_image()
+        self.create_mask()
+    
+    def clean(self):
+        print(self.TASK_CLEAN)
+        if self.channel == 1 and self.downsample:
+            self.apply_user_mask_edits()
+        self.create_cleaned_images()
+    
+    def histogram(self):
+        print(self.TASK_HISTOGRAM)
+        self.make_histogram()
+        self.make_combined_histogram()
+
+    def align(self):
+        print(self.TASK_ALIGN)
+        for i in [0, 1]:
+            print(f'Starting iteration {i}')
+            self.iteration = i
+            self.create_within_stack_transformations()
+            transformations = self.get_transformations()
+            self.align_downsampled_images(transformations)
+            self.align_full_size_image(transformations)
+            self.call_alignment_metrics()
+
+        self.create_web_friendly_sections()
+
+
+    def create_metrics(self):
+        print(self.TASK_CREATE_METRICS)
+        for i in [0, 1]:
+            print(f'Starting iteration {i}')
+            self.iteration = i
+            self.call_alignment_metrics()
+
+    def extra_channel(self):
+        """This step is in case self.channel X differs from self.channel 1 and came from a different set of CZI files. 
+        This step will do everything for the self.channel, so you don't need to run self.channel X for step 2, or 4. You do need
+        to run step 0 and step 1.
         """
-        Make sure the necessary tools are installed on the machine and configures the memory of involving tools to work with
-        big images.
-        Some tools we use are based on java so we adjust the java heap size limit to 10 GB.  This is big enough for our purpose but should
-        be increased accordingly if your images are bigger
-        If the check failed, check the workernoshell.err.log in your project directory for more information
-        """
-        
-        error = ""
-        if not os.path.exists("/usr/bin/identify"):
-            error += "\nImagemagick is not installed"
+        print(self.TASK_EXTRA_CHANNEL)
+        i = 2
+        print(f'Starting iteration {i}')
+        self.iteration = i
+        if self.downsample:
+            self.create_normalized_image()
+            self.create_downsampled_mask()
+            self.apply_user_mask_edits()
+            self.create_cleaned_images_thumbnail(channel=self.channel)
+            self.create_dir2dir_transformations()
+        else:
+            self.create_full_resolution_mask(channel=self.channel)
+            self.create_cleaned_images_full_resolution(channel=self.channel)
+            self.apply_full_transformations(channel=self.channel)
 
-        if len(error) > 0:
-            print(error)
-            sys.exit()
+    def neuroglancer(self):
+        print(self.TASK_NEUROGLANCER)
+        self.create_neuroglancer()
+        self.create_downsamples()
 
-    def run_program_and_time(self, function, function_name):
-        """utility to run a specific function and time it
-
-        Args:
-            function (function): funtion to run
-            function_name (str): name of the function used to report timing result
-        """
-        print(function_name, end="")
-        start_time = timer()
-        self.logevent(f"START  {str(function_name)}, downsample: {str(self.downsample)}")
-
-        function()  # RUN FUNCTION
-
-        end_time = timer()
-        total_elapsed_time = round((end_time - start_time),2)
-        print(f" took {total_elapsed_time} seconds")
-        sep = "*" * 40 + "\n"
-        self.logevent(f"{function_name} took {total_elapsed_time} seconds\n{sep}")
 
     def check_status(self):
         prep = self.fileLocationManager.prep
@@ -164,3 +209,22 @@ class Pipeline(
             print(f'Dir={directory} exists.')
         else:
             print(f'Non-existent dir={dir}')
+
+
+    @staticmethod
+    def check_programs():
+        """
+        Make sure the necessary tools are installed on the machine and configures the memory of involving tools to work with
+        big images.
+        Some tools we use are based on java so we adjust the java heap size limit to 10 GB.  This is big enough for our purpose but should
+        be increased accordingly if your images are bigger
+        If the check failed, check the workernoshell.err.log in your project directory for more information
+        """
+        
+        error = ""
+        if not os.path.exists("/usr/bin/identify"):
+            error += "\nImagemagick is not installed"
+
+        if len(error) > 0:
+            print(error)
+            sys.exit()

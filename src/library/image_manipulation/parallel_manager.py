@@ -44,10 +44,8 @@ class ParallelManager:
                 function(file_key)
         else:
             with ProcessPoolExecutor(max_workers=workers) as executor:
-                #executor.map(function, sorted(file_keys))
-                #executor.shutdown(wait=True)
-                futures = [executor.submit(function, file_key) for file_key in sorted(file_keys)]
-                wait(futures)
+                executor.map(function, sorted(file_keys))
+                executor.shutdown(wait=True)
 
 
     def run_commands_with_threads(self, function, file_keys, workers):

@@ -31,6 +31,7 @@ from pathlib import Path
 from skimage import io
 from tqdm import tqdm
 import SimpleITK as sitk
+import itk
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 import pandas as pd
@@ -308,7 +309,30 @@ class VolumeRegistration:
         volume_size = (rows, columns, len(files))
         return files, volume_size
 
+    def create_itk(self):
+        os.makedirs(self.registered_output, exist_ok=True)
 
+        fixed_image = itk.imread(self.fixed_volume_path, itk.F)
+        moving_image = itk.imread(self.moving_volume_path, itk.F)
+        parameter_object = itk.ParameterObject.New()
+        trans_parameter_map = parameter_object.GetDefaultParameterMap('translation')
+        rigid_parameter_map = parameter_object.GetDefaultParameterMap('rigid')
+        affine_parameter_map = parameter_object.GetDefaultParameterMap('affine')
+        bspline_parameter_map = parameter_object.GetDefaultParameterMap("bspline")
+        parameter_object.AddParameterMap(trans_parameter_map)
+        parameter_object.AddParameterMap(rigid_parameter_map)
+        parameter_object.AddParameterMap(affine_parameter_map)
+        parameter_object.AddParameterMap(bspline_parameter_map)
+        elastix_object = itk.ElastixRegistrationMethod.New(fixed_image, moving_image)
+        elastix_object.SetParameterObject(parameter_object)
+        # Set additional options
+        elastix_object.SetLogToConsole(False)
+        #elastix_object.SetNumberOfThreads(2)
+        # Update filter object (required)
+        elastix_object.UpdateLargestPossibleRegion()
+        resultImage = elastix_object.GetOutput()
+        result_transform_parameters = elastix_object.GetTransformParameterObject() 
+        itk.imwrite(resultImage, os.path.join(self.registered_output, 'result.tif'))  
 
     def create_volume(self):
         """Create a 3D volume of the image stack
@@ -436,7 +460,8 @@ if __name__ == '__main__':
                         'transformix_points': volumeRegistration.transformix_points,
                         'create_precomputed': volumeRegistration.create_precomputed,
                         'check_registration': volumeRegistration.check_registration,
-                        'insert_points': volumeRegistration.insert_points
+                        'insert_points': volumeRegistration.insert_points,
+                        'create_itk': volumeRegistration.create_itk
     }
 
     if task in function_mapping:

@@ -60,7 +60,7 @@ class TiffExtractor(ParallelManager):
             scene = section.scene_index
             file_keys.append([czi_file, output_path, scene, self.channel, scale_factor])
         workers = self.get_nworkers()
-        self.run_commands_concurrently(extract_tiff_from_czi, file_keys, workers)
+        self.run_commands_with_threads(extract_tiff_from_czi, file_keys, workers)
 
 
     def create_web_friendly_image(self):

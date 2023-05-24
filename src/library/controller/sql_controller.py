@@ -12,7 +12,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import scoped_session
-
+from sqlalchemy.pool import NullPool
 import urllib
 
 from library.controller.animal_controller import AnimalController
@@ -32,23 +32,6 @@ except ImportError as fe:
     raise
 
 
-def create_session(host, password, schema, user):
-    """Create a session scoped session. A session will last
-    24 hours.
-    :param host: The database server to connect to
-    :param password: string kept in the settings.py file in the users home
-    :param schema: which database schema to use.
-    :param user: connect to the database with which user
-    """
-
-    connection_string = f'mysql+pymysql://{user}:{password}@{host}/{schema}?charset=utf8'
-    timeout = 60 * 60 * 24 # = 24 hours
-    #engine = create_engine(connection_string, connect_args={'connect_timeout': timeout})
-    engine = create_engine(connection_string, pool_size=1, max_overflow=0)
-    session_factory = sessionmaker(bind=engine)
-    Session = scoped_session(session_factory)
-    return Session()
-
 class SqlController(AnimalController, ElastixController, HistologyController,
                      ScanRunController, SectionsController, SlideCZIToTifController):
     """ This is the base controller class for all things SQL.  
@@ -62,14 +45,11 @@ class SqlController(AnimalController, ElastixController, HistologyController,
                 animal: object of animal to process
         """
 
-        #connection_string = f'mysql+pymysql://{user}:{password}@{host}/{schema}?charset=utf8'
-        #engine = create_engine(connection_string, pool_size=1, max_overflow=0)
-        #DBSession = scoped_session(sessionmaker(bind=engine)) 
-        print('Creating session')
-        #self.session = DBSession
-        self.session = create_session(host, password, schema, user)
-
-
+        connection_string = f'mysql+pymysql://{user}:{password}@{host}/{schema}?charset=utf8'
+        engine = create_engine(connection_string, poolclass=NullPool)
+        self.session = scoped_session(sessionmaker(bind=engine)) 
+        print('Creating session')        
+        self.session.begin()
 
         if self.animal_exists(animal):
             self.animal = self.get_animal(animal)

@@ -28,10 +28,7 @@ class MetaUtilities:
         self.scan_id = self.get_user_entered_scan_id()
         print(f'\tScan run ID={self.scan_id}')
         file_validation_status, unique_files = self.file_validation(czi_files)
-        (
-            db_validation_status,
-            outstanding_files,
-        ) = self.all_slide_meta_data_exists_in_database(unique_files)
+        db_validation_status,outstanding_files = self.all_slide_meta_data_exists_in_database(unique_files)
         if file_validation_status and db_validation_status:
             if len(outstanding_files) > 0:
                 dict_target_filesizes = {}  # dict for symlink <-> target file size
@@ -121,6 +118,7 @@ class MetaUtilities:
         :return status: boolean on whether the files are valid
         :return list: list of CZI files
         """
+        
         qry = self.sqlController.session.query(Slide).filter(
             Slide.scan_run_id == self.scan_id
         )
@@ -156,7 +154,7 @@ class MetaUtilities:
         elif db_slides_cnt == len(czi_files):
             # all files processed (db_slides_cnt==filecount); continue with empty list
             czi_files = []
-
+        self.session.close()
         return status, czi_files
 
     def check_czi_file_exists(self):
@@ -202,15 +200,15 @@ class MetaUtilities:
             Path(os.path.normpath(infile)).stat().st_mtime
         )
         slide.scenes = len([elem for elem in czi_metadata.values()][0].keys())
+        self.session.begin()
         self.session.add(slide)
         self.session.commit()
-
+    
         """Add entry to the table that prepares the user Quality Control interface"""
         for series_index in range(slide.scenes):
             scene_number = series_index + 1
             channels = range(czi_metadata[slide.file_name][series_index]["channels"])
             channel_counter = 0 
-
             width, height = czi_metadata[slide.file_name][series_index]["dimensions"]
             tif_list = []
             for _ in channels:
@@ -232,9 +230,7 @@ class MetaUtilities:
                 tif_list.append(tif)
             if len(tif_list) > 0:
                 self.session.add_all(tif_list)
-        self.session.commit()
-
-        self.session.close()
+                self.session.commit()
 
 
         return
