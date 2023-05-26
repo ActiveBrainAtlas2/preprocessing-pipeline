@@ -348,12 +348,8 @@ class VolumeRegistration:
         moving_image = itk.imread(self.moving_volume_path, itk.F)
         # init transform start
         # Translate to roughly position sample data on top of CCF data
-
-        init_transform = itk.VersorRigid3DTransform[
-            itk.D
-        ].New()  # Represents 3D rigid transformation with unit quaternion
+        init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
         init_transform.SetIdentity()
-
         transform_initializer = itk.CenteredVersorTransformInitializer[
             type(fixed_image), type(moving_image)
         ].New()
