@@ -35,7 +35,6 @@ import itk
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 import pandas as pd
-import urllib
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -46,15 +45,6 @@ from library.utilities.utilities_mask import normalize16
 from library.utilities.utilities_process import read_image
 from library.controller.annotation_session_controller import AnnotationSessionController
 
-try:
-    from settings import host, password, schema, user
-except ImportError:
-    print('Missing settings using defaults')
-    data_path = "/net/birdstore/Active_Atlas_Data/data_root"
-    host = "db.dk.ucsd.edu"
-    schema = "active_atlas_production"
-
-password = urllib.parse.quote_plus(str(password))
 
 class VolumeRegistration:
     """This class takes a downsampled image stack and registers it to the Allen volume    
@@ -67,7 +57,7 @@ class VolumeRegistration:
         self.um = um
         self.channel = f'CH{channel}'
         self.output_dir = f'{self.atlas}{um}um'
-        self.scaling_factor = 28.57143 # This is the downsampling factor used to create the aligned volume
+        self.scaling_factor = 64 # This is the downsampling factor used to create the aligned volume
         self.fileLocationManager = FileLocationManager(animal)
         self.thumbnail_aligned = os.path.join(self.fileLocationManager.prep, self.channel, 'thumbnail_aligned')
         self.moving_volume_path = os.path.join(self.fileLocationManager.prep, self.channel, 'moving_volume.tif')
@@ -209,7 +199,7 @@ class VolumeRegistration:
         transformed = transformixImageFilter.GetResultImage()
         sitk.WriteImage(transformed, os.path.join(self.registered_output, 'result.tif'))
 
-    def transformix_points(self):
+    def transformix_pointsXXX(self):
         """Helper method when you want to rerun the transform on a set of points.
         Get the pickle file and transform it. It is in full resolution pixel size.
         The points in the pickle file need to be translated from full res pixel to
@@ -236,13 +226,54 @@ class VolumeRegistration:
                 #print(structure, points, x,y,z)
                 f.write(f'{x} {y} {z}')
                 f.write('\n')
-
-
         
         transformixImageFilter = self.setup_transformix(self.reverse_elastix_output)
         transformixImageFilter.SetFixedPointSetFileName(self.unregistered_point_file)
         transformixImageFilter.Execute()
 
+    def transformix_points(self):
+        """Helper method when you want to rerun the transform on a set of points.
+        Get the pickle file and transform it. It is in full resolution pixel size.
+        The points in the pickle file need to be translated from full res pixel to
+        the current resolution of the downsampled volume.
+        Points are inserted in the DB in micrometers from the full resolution images
+
+        
+        The points.pts file takes THIS format:
+        point
+        3
+        102.8 -33.4 57.0
+        178.1 -10.9 14.5
+        180.4 -18.1 78.9
+        """
+        controller = AnnotationSessionController(animal=self.animal)
+        d = pd.read_pickle(self.unregistered_pickle_file)
+        point_dict = dict(sorted(d.items()))
+        input_points = itk.PointSet[itk.F, 3].New()
+        """
+        with open(self.unregistered_point_file, 'w') as f:
+            f.write('point\n')
+            f.write(f'{len(point_dict)}\n')
+            for _, points in point_dict.items():
+                x = points[0]/self.scaling_factor
+                y = points[1]/self.scaling_factor
+                z = points[2] # the z is not scaled
+                #print(structure, points, x,y,z)
+                f.write(f'{x} {y} {z}')
+                f.write('\n')
+        """
+        for structure, points in point_dict.items():
+            x = points[0]/self.scaling_factor
+            y = points[1]/self.scaling_factor
+            z = points[2] # the z is not scaled
+            points = [x,y,z]
+            print(structure, points)
+            brain_region = controller.get_brain_region(structure)
+            if brain_region is not None:
+                input_points.GetPoints().InsertElement(brain_region.id, points)
+                #init_points.GetPoints().InsertElement(idx, init_transform.TransformPoint(point))
+
+        print(input_points)
 
 
     def insert_points(self):
@@ -264,7 +295,7 @@ class VolumeRegistration:
         source='COMPUTER'
         d = pd.read_pickle(self.unregistered_pickle_file)
         point_dict = dict(sorted(d.items()))
-        controller = AnnotationSessionController(host, password, schema, user)
+        controller = AnnotationSessionController(self.animal)
 
         with open(self.registered_point_file, "r") as f:                
             lines=f.readlines()
@@ -293,6 +324,7 @@ class VolumeRegistration:
                 print(annotation_session.id, self.animal, brain_region.id, source, 
                       structure, lf, x, int(y), int(z), lx)
 
+
     def get_file_information(self):
         """Get information about the mid file in the image stack
 
@@ -314,26 +346,67 @@ class VolumeRegistration:
 
         fixed_image = itk.imread(self.fixed_volume_path, itk.F)
         moving_image = itk.imread(self.moving_volume_path, itk.F)
+        # init transform start
+        # Translate to roughly position sample data on top of CCF data
+
+        init_transform = itk.VersorRigid3DTransform[
+            itk.D
+        ].New()  # Represents 3D rigid transformation with unit quaternion
+        init_transform.SetIdentity()
+
+        transform_initializer = itk.CenteredVersorTransformInitializer[
+            type(fixed_image), type(moving_image)
+        ].New()
+        transform_initializer.SetFixedImage(fixed_image)
+        transform_initializer.SetMovingImage(moving_image)
+        transform_initializer.SetTransform(init_transform)
+        transform_initializer.GeometryOn()  # We compute translation between the center of each image
+        transform_initializer.ComputeRotationOff()  # We have previously verified that spatial orientation aligns
+        transform_initializer.InitializeTransform()
+        # initializer maps from the fixed image to the moving image,
+        # whereas we want to map from the moving image to the fixed image.
+        init_transform = init_transform.GetInverseTransform()
+        # init transform end
+        # Apply translation without resampling the image by updating the image origin directly
+        change_information_filter = itk.ChangeInformationImageFilter[type(moving_image)].New()
+        change_information_filter.SetInput(moving_image)
+        change_information_filter.SetOutputOrigin(
+            init_transform.TransformPoint(itk.origin(moving_image))
+        )
+        change_information_filter.ChangeOriginOn()
+        change_information_filter.UpdateOutputInformation()
+        source_image_init = change_information_filter.GetOutput()
+        # end apply translation        
+
         parameter_object = itk.ParameterObject.New()
-        trans_parameter_map = parameter_object.GetDefaultParameterMap('translation')
         rigid_parameter_map = parameter_object.GetDefaultParameterMap('rigid')
         affine_parameter_map = parameter_object.GetDefaultParameterMap('affine')
         bspline_parameter_map = parameter_object.GetDefaultParameterMap("bspline")
         bspline_parameter_map["FinalGridSpacingInVoxels"] = (f"{self.um}",)
-        parameter_object.AddParameterMap(trans_parameter_map)
         parameter_object.AddParameterMap(rigid_parameter_map)
         parameter_object.AddParameterMap(affine_parameter_map)
         parameter_object.AddParameterMap(bspline_parameter_map)
         parameter_object.RemoveParameter("FinalGridSpacingInPhysicalUnits")
-        elastix_object = itk.ElastixRegistrationMethod.New(fixed_image, moving_image)
-        elastix_object.SetParameterObject(parameter_object)
-        # Set additional options
-        elastix_object.SetLogToConsole(False)
-        # Update filter object (required)
-        elastix_object.UpdateLargestPossibleRegion()
-        resultImage = elastix_object.GetOutput()
-        result_transform_parameters = elastix_object.GetTransformParameterObject() 
-        itk.imwrite(resultImage, os.path.join(self.registered_output, 'result.tif'))  
+        registration_method = itk.ElastixRegistrationMethod[type(fixed_image), type(moving_image)
+        ].New(
+            fixed_image=fixed_image,
+            moving_image=source_image_init,
+            parameter_object=parameter_object,
+            log_to_console=False,
+        )
+        registration_method.Update()
+        resultImage = registration_method.GetOutput()
+
+
+        itk.imwrite(resultImage, os.path.join(self.registered_output, 'result.tif'), compression=True) 
+        ## write transformation 
+        os.makedirs(self.registered_output, exist_ok=True)
+        outputpath = os.path.join(self.registered_output, 'init-transform.hdf5')
+        itk.transformwrite([init_transform], outputpath)
+        for index in range(parameter_object.GetNumberOfParameterMaps()):
+            outputpath = os.path.join(self.registered_output, f'elastix-transform.{index}.txt')
+            registration_method.GetTransformParameterObject().WriteParameterFile(
+                registration_method.GetTransformParameterObject().GetParameterMap(index), outputpath) 
 
     def create_volume(self):
         """Create a 3D volume of the image stack

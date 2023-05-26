@@ -1,12 +1,13 @@
 import datetime
 
+from library.controller.sql_controller import SqlController
 from library.database_model.brain_region import BrainRegion
 from library.database_model.annotation_points import StructureCOM
 from library.database_model.annotation_points import AnnotationSession, AnnotationType
 
 
 
-class AnnotationSessionController():
+class AnnotationSessionController(SqlController):
     """The class that queries and addes entry to the annotation_session table
     """
 
