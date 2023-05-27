@@ -231,6 +231,69 @@ class VolumeRegistration:
         transformixImageFilter.SetFixedPointSetFileName(self.unregistered_point_file)
         transformixImageFilter.Execute()
 
+    def create_itk(self):
+        os.makedirs(self.registered_output, exist_ok=True)
+
+        fixed_image = itk.imread(self.fixed_volume_path, itk.F)
+        moving_image = itk.imread(self.moving_volume_path, itk.F)
+        # init transform start
+        # Translate to roughly position sample data on top of CCF data
+        init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
+        init_transform.SetIdentity()
+        transform_initializer = itk.CenteredVersorTransformInitializer[
+            type(fixed_image), type(moving_image)
+        ].New()
+        transform_initializer.SetFixedImage(fixed_image)
+        transform_initializer.SetMovingImage(moving_image)
+        transform_initializer.SetTransform(init_transform)
+        transform_initializer.GeometryOn()  # We compute translation between the center of each image
+        transform_initializer.ComputeRotationOff()  # We have previously verified that spatial orientation aligns
+        transform_initializer.InitializeTransform()
+        # initializer maps from the fixed image to the moving image,
+        # whereas we want to map from the moving image to the fixed image.
+        init_transform = init_transform.GetInverseTransform()
+        # init transform end
+        # Apply translation without resampling the image by updating the image origin directly
+        change_information_filter = itk.ChangeInformationImageFilter[type(moving_image)].New()
+        change_information_filter.SetInput(moving_image)
+        change_information_filter.SetOutputOrigin(
+            init_transform.TransformPoint(itk.origin(moving_image))
+        )
+        change_information_filter.ChangeOriginOn()
+        change_information_filter.UpdateOutputInformation()
+        source_image_init = change_information_filter.GetOutput()
+        # end apply translation        
+
+        parameter_object = itk.ParameterObject.New()
+        rigid_parameter_map = parameter_object.GetDefaultParameterMap('rigid')
+        affine_parameter_map = parameter_object.GetDefaultParameterMap('affine')
+        bspline_parameter_map = parameter_object.GetDefaultParameterMap("bspline")
+        bspline_parameter_map["FinalGridSpacingInVoxels"] = (f"{self.um}",)
+        parameter_object.AddParameterMap(rigid_parameter_map)
+        parameter_object.AddParameterMap(affine_parameter_map)
+        parameter_object.AddParameterMap(bspline_parameter_map)
+        parameter_object.RemoveParameter("FinalGridSpacingInPhysicalUnits")
+        registration_method = itk.ElastixRegistrationMethod[type(fixed_image), type(moving_image)
+        ].New(
+            fixed_image=fixed_image,
+            moving_image=source_image_init,
+            parameter_object=parameter_object,
+            log_to_console=False,
+        )
+        registration_method.Update()
+        resultImage = registration_method.GetOutput()
+
+
+        itk.imwrite(resultImage, os.path.join(self.registered_output, 'result.tif'), compression=True) 
+        ## write transformation 
+        os.makedirs(self.registered_output, exist_ok=True)
+        outputpath = os.path.join(self.registered_output, 'init-transform.hdf5')
+        itk.transformwrite([init_transform], outputpath)
+        for index in range(parameter_object.GetNumberOfParameterMaps()):
+            outputpath = os.path.join(self.registered_output, f'elastix-transform.{index}.txt')
+            registration_method.GetTransformParameterObject().WriteParameterFile(
+                registration_method.GetTransformParameterObject().GetParameterMap(index), outputpath)
+
     def transformix_points(self):
         """Helper method when you want to rerun the transform on a set of points.
         Get the pickle file and transform it. It is in full resolution pixel size.
@@ -273,8 +336,52 @@ class VolumeRegistration:
                 input_points.GetPoints().InsertElement(brain_region.id, points)
                 #init_points.GetPoints().InsertElement(idx, init_transform.TransformPoint(point))
 
+        init_points = itk.PointSet[itk.F, 3].New()
+        for idx in range(input_points.GetNumberOfPoints()):
+            point = input_points.GetPoint(idx)
+            init_points.GetPoints().InsertElement(
+                idx, init_transform.TransformPoint(point)
+            )
+            print(f"{point} -> {init_points.GetPoint(idx)}")
         print(input_points)
+        inputpath = os.path.join(self.registered_output, 'init-transform.hdf5')
+        init_transform = itk.transformread(inputpath)[0]
+        print(init_transform)
+        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
+        with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
+            f.write("point\n")
+            f.write(f"{init_points.GetNumberOfPoints()}\n")
+        for idx in range(init_points.GetNumberOfPoints()):
+            point = init_points.GetPoint(idx)
+            f.write(f"{point[0]} {point[1]} {point[2]}\n")
+        NUM_PARAMETER_MAPS = 3
+        N_ELASTIX_STAGES = 3
 
+        toplevel_param = itk.ParameterObject.New()
+        param = itk.ParameterObject.New()
+        ELASTIX_TRANSFORM_FILENAMES = [os.path.join(self.registered_output, f"elastix-transform.{index}.txt")
+            for index in range(N_ELASTIX_STAGES)]
+
+        for elastix_transform_filename in ELASTIX_TRANSFORM_FILENAMES:
+            param.ReadParameterFile(elastix_transform_filename)
+            toplevel_param.AddParameterMap(param.GetParameterMap(0))        
+
+        # Load reference image (required for transformix)
+        average_template = itk.imread(self.fixed_volume_path, pixel_type=itk.F)
+        # Procedural interface of transformix filter
+        result_point_set = itk.transformix_pointset(
+            average_template,
+            toplevel_param,
+            fixed_point_set_file_name=TRANSFORMIX_POINTSET_FILE,
+            output_directory=self.register_volume)
+        print("\n".join(
+        [
+            f"{output_point[11:18]} -> {output_point[27:35]}"
+            for output_point in result_point_set
+        ]))
+
+    # Transformix will write results to RESULTS_PATH/outputpoints.txt        
+    
 
     def insert_points(self):
         """This method will take the pickle file of COMs and insert them.
@@ -340,69 +447,6 @@ class VolumeRegistration:
         columns = midfile.shape[1]
         volume_size = (rows, columns, len(files))
         return files, volume_size
-
-    def create_itk(self):
-        os.makedirs(self.registered_output, exist_ok=True)
-
-        fixed_image = itk.imread(self.fixed_volume_path, itk.F)
-        moving_image = itk.imread(self.moving_volume_path, itk.F)
-        # init transform start
-        # Translate to roughly position sample data on top of CCF data
-        init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
-        init_transform.SetIdentity()
-        transform_initializer = itk.CenteredVersorTransformInitializer[
-            type(fixed_image), type(moving_image)
-        ].New()
-        transform_initializer.SetFixedImage(fixed_image)
-        transform_initializer.SetMovingImage(moving_image)
-        transform_initializer.SetTransform(init_transform)
-        transform_initializer.GeometryOn()  # We compute translation between the center of each image
-        transform_initializer.ComputeRotationOff()  # We have previously verified that spatial orientation aligns
-        transform_initializer.InitializeTransform()
-        # initializer maps from the fixed image to the moving image,
-        # whereas we want to map from the moving image to the fixed image.
-        init_transform = init_transform.GetInverseTransform()
-        # init transform end
-        # Apply translation without resampling the image by updating the image origin directly
-        change_information_filter = itk.ChangeInformationImageFilter[type(moving_image)].New()
-        change_information_filter.SetInput(moving_image)
-        change_information_filter.SetOutputOrigin(
-            init_transform.TransformPoint(itk.origin(moving_image))
-        )
-        change_information_filter.ChangeOriginOn()
-        change_information_filter.UpdateOutputInformation()
-        source_image_init = change_information_filter.GetOutput()
-        # end apply translation        
-
-        parameter_object = itk.ParameterObject.New()
-        rigid_parameter_map = parameter_object.GetDefaultParameterMap('rigid')
-        affine_parameter_map = parameter_object.GetDefaultParameterMap('affine')
-        bspline_parameter_map = parameter_object.GetDefaultParameterMap("bspline")
-        bspline_parameter_map["FinalGridSpacingInVoxels"] = (f"{self.um}",)
-        parameter_object.AddParameterMap(rigid_parameter_map)
-        parameter_object.AddParameterMap(affine_parameter_map)
-        parameter_object.AddParameterMap(bspline_parameter_map)
-        parameter_object.RemoveParameter("FinalGridSpacingInPhysicalUnits")
-        registration_method = itk.ElastixRegistrationMethod[type(fixed_image), type(moving_image)
-        ].New(
-            fixed_image=fixed_image,
-            moving_image=source_image_init,
-            parameter_object=parameter_object,
-            log_to_console=False,
-        )
-        registration_method.Update()
-        resultImage = registration_method.GetOutput()
-
-
-        itk.imwrite(resultImage, os.path.join(self.registered_output, 'result.tif'), compression=True) 
-        ## write transformation 
-        os.makedirs(self.registered_output, exist_ok=True)
-        outputpath = os.path.join(self.registered_output, 'init-transform.hdf5')
-        itk.transformwrite([init_transform], outputpath)
-        for index in range(parameter_object.GetNumberOfParameterMaps()):
-            outputpath = os.path.join(self.registered_output, f'elastix-transform.{index}.txt')
-            registration_method.GetTransformParameterObject().WriteParameterFile(
-                registration_method.GetTransformParameterObject().GetParameterMap(index), outputpath) 
 
     def create_volume(self):
         """Create a 3D volume of the image stack
