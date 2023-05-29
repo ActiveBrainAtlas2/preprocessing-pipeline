@@ -252,6 +252,7 @@ class VolumeRegistration:
         # initializer maps from the fixed image to the moving image,
         # whereas we want to map from the moving image to the fixed image.
         init_transform = init_transform.GetInverseTransform()
+        print(init_transform)
         # init transform end
         # Apply translation without resampling the image by updating the image origin directly
         change_information_filter = itk.ChangeInformationImageFilter[type(moving_image)].New()
@@ -278,7 +279,7 @@ class VolumeRegistration:
             fixed_image=fixed_image,
             moving_image=source_image_init,
             parameter_object=parameter_object,
-            log_to_console=True,
+            log_to_console=False,
         )
         registration_method.Update()
         resultImage = registration_method.GetOutput()
@@ -291,8 +292,15 @@ class VolumeRegistration:
         itk.transformwrite([init_transform], outputpath)
         for index in range(parameter_object.GetNumberOfParameterMaps()):
             outputpath = os.path.join(self.registered_output, f'elastix-transform.{index}.txt')
+            
             registration_method.GetTransformParameterObject().WriteParameterFile(
                 registration_method.GetTransformParameterObject().GetParameterMap(index), outputpath)
+            
+        for index in range(parameter_object.GetNumberOfParameterMaps()):
+            registration_method.GetTransformParameterObject().WriteParameterFile(
+            registration_method.GetTransformParameterObject().GetParameterMap(index),
+            f"{self.registered_output}/elastix-transform.{index}.txt",)
+
 
     def transformix_points(self):
         """Helper method when you want to rerun the transform on a set of points.
