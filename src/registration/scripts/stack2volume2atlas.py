@@ -289,7 +289,7 @@ class VolumeRegistration:
         ## write transformation 
         os.makedirs(self.registered_output, exist_ok=True)
         init_transformpath = os.path.join(self.registered_output, 'init-transform.hd5')
-        itk.transformwrite(init_transform, init_transformpath)
+        itk.transformwrite([init_transform], init_transformpath)
             
         for index in range(parameter_object.GetNumberOfParameterMaps()):
             registration_method.GetTransformParameterObject().WriteParameterFile(
