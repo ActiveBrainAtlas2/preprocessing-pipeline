@@ -339,7 +339,7 @@ class VolumeRegistration:
                 #init_points.GetPoints().InsertElement(idx, init_transform.TransformPoint(point))
 
         """
-        inputpath = os.path.join(self.registered_output, 'init-transform.hd5')
+        inputpath = os.path.join(self.registered_output, 'init-transform.tfm')
         init_transform = itk.transformread(inputpath)
         print(init_transform)
 
