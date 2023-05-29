@@ -315,35 +315,33 @@ class VolumeRegistration:
         controller = AnnotationSessionController(animal=self.animal)
         d = pd.read_pickle(self.unregistered_pickle_file)
         point_dict = dict(sorted(d.items()))
+        print(len(point_dict))
+        
+        inputpath = os.path.join(self.registered_output, 'init-transform.hd5')
+        #init_transform = itk.transformread(inputpath)
+        init_transform = sitk.ReadTransform(inputpath)
         input_points = itk.PointSet[itk.F, 3].New()
-        """
-        with open(self.unregistered_point_file, 'w') as f:
-            f.write('point\n')
-            f.write(f'{len(point_dict)}\n')
-            for _, points in point_dict.items():
+        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
+        with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
+            f.write("point\n")
+            f.write(f"{len(point_dict)}\n")
+            for structure, points in point_dict.items():
                 x = points[0]/self.scaling_factor
                 y = points[1]/self.scaling_factor
                 z = points[2] # the z is not scaled
-                #print(structure, points, x,y,z)
-                f.write(f'{x} {y} {z}')
-                f.write('\n')
-        for structure, points in point_dict.items():
-            x = points[0]/self.scaling_factor
-            y = points[1]/self.scaling_factor
-            z = points[2] # the z is not scaled
-            points = [x,y,z]
-            print(structure, points)
-            brain_region = controller.get_brain_region(structure)
-            if brain_region is not None:
-                input_points.GetPoints().InsertElement(brain_region.id, points)
-                #init_points.GetPoints().InsertElement(idx, init_transform.TransformPoint(point))
+                point = [x,y,z]
+                brain_region = controller.get_brain_region(structure)
+                if 'SC' in structure:
+                    print(structure, brain_region.id, point)
+                if brain_region is not None:
+                    input_points.GetPoints().InsertElement(brain_region.id, point)
+                    #print(init_transform.TransformPoint(points))
+                    input_points.GetPoints().InsertElement(brain_region.id, init_transform.TransformPoint(point))
+                    tpoint = input_points.GetPoint(brain_region.id)
+                    f.write(f"{tpoint[0]} {tpoint[1]} {tpoint[2]}\n")
+
 
         """
-        inputpath = os.path.join(self.registered_output, 'init-transform.tfm')
-        init_transform = itk.transformread(inputpath)
-        print(init_transform)
-
-        return
         init_points = itk.PointSet[itk.F, 3].New()
         for idx in range(input_points.GetNumberOfPoints()):
             point = input_points.GetPoint(idx)
@@ -352,13 +350,12 @@ class VolumeRegistration:
             )
             print(f"{point} -> {init_points.GetPoint(idx)}")
         print(input_points)
-        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
-        with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
-            f.write("point\n")
-            f.write(f"{init_points.GetNumberOfPoints()}\n")
-        for idx in range(init_points.GetNumberOfPoints()):
-            point = init_points.GetPoint(idx)
+        print(f"SC -> {input_points.GetPoint(33)}")
+        
+        for idx in range(input_points.GetNumberOfPoints()):
+            point = input_points.GetPoint(idx)
             f.write(f"{point[0]} {point[1]} {point[2]}\n")
+        """
         NUM_PARAMETER_MAPS = 3
         N_ELASTIX_STAGES = 3
 
@@ -378,14 +375,14 @@ class VolumeRegistration:
             average_template,
             toplevel_param,
             fixed_point_set_file_name=TRANSFORMIX_POINTSET_FILE,
-            output_directory=self.register_volume)
+            output_directory=self.registered_output)
+        # Transformix will write results to self.registered_output/outputpoints.txt
         print("\n".join(
         [
             f"{output_point[11:18]} -> {output_point[27:35]}"
             for output_point in result_point_set
         ]))
 
-    # Transformix will write results to RESULTS_PATH/outputpoints.txt        
     
 
     def insert_points(self):
