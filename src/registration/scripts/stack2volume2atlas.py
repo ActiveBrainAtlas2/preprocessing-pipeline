@@ -278,7 +278,7 @@ class VolumeRegistration:
             fixed_image=fixed_image,
             moving_image=source_image_init,
             parameter_object=parameter_object,
-            log_to_console=False,
+            log_to_console=True,
         )
         registration_method.Update()
         resultImage = registration_method.GetOutput()
@@ -337,7 +337,7 @@ class VolumeRegistration:
 
         """
         inputpath = os.path.join(self.registered_output, 'init-transform.hdf5')
-        init_transform = itk.transformread(inputpath)[0]
+        init_transform = itk.transformread(inputpath)
         print(init_transform)
 
         return
