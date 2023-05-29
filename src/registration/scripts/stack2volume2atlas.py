@@ -324,7 +324,6 @@ class VolumeRegistration:
                 #print(structure, points, x,y,z)
                 f.write(f'{x} {y} {z}')
                 f.write('\n')
-        """
         for structure, points in point_dict.items():
             x = points[0]/self.scaling_factor
             y = points[1]/self.scaling_factor
@@ -336,6 +335,12 @@ class VolumeRegistration:
                 input_points.GetPoints().InsertElement(brain_region.id, points)
                 #init_points.GetPoints().InsertElement(idx, init_transform.TransformPoint(point))
 
+        """
+        inputpath = os.path.join(self.registered_output, 'init-transform.hdf5')
+        init_transform = itk.transformread(inputpath)[0]
+        print(init_transform)
+
+        return
         init_points = itk.PointSet[itk.F, 3].New()
         for idx in range(input_points.GetNumberOfPoints()):
             point = input_points.GetPoint(idx)
@@ -344,9 +349,6 @@ class VolumeRegistration:
             )
             print(f"{point} -> {init_points.GetPoint(idx)}")
         print(input_points)
-        inputpath = os.path.join(self.registered_output, 'init-transform.hdf5')
-        init_transform = itk.transformread(inputpath)[0]
-        print(init_transform)
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
         with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
             f.write("point\n")
