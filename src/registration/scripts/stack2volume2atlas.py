@@ -312,7 +312,7 @@ class VolumeRegistration:
         178.1 -10.9 14.5
         180.4 -18.1 78.9
         """
-        controller = AnnotationSessionController(animal=self.animal)
+        #controller = AnnotationSessionController(animal=self.animal)
         d = pd.read_pickle(self.unregistered_pickle_file)
         point_dict = dict(sorted(d.items()))
         print(len(point_dict))
@@ -320,28 +320,16 @@ class VolumeRegistration:
         inputpath = os.path.join(self.registered_output, 'init-transform.tfm')
         #init_transform = itk.transformread(inputpath)
         init_transform = sitk.ReadTransform(inputpath)
+        print(init_transform)
         input_points = itk.PointSet[itk.F, 3].New()
-        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
-        with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
-            f.write("point\n")
-            f.write(f"{len(point_dict)}\n")
-            for structure, points in point_dict.items():
-                x = points[0]/self.scaling_factor
-                y = points[1]/self.scaling_factor
-                z = points[2] # the z is not scaled
-                point = [x,y,z]
-                brain_region = controller.get_brain_region(structure)
-                if 'SC' in structure:
-                    print(structure, brain_region.id, point)
-                if brain_region is not None:
-                    input_points.GetPoints().InsertElement(brain_region.id, point)
-                    #print(init_transform.TransformPoint(points))
-                    input_points.GetPoints().InsertElement(brain_region.id, init_transform.TransformPoint(point))
-                    tpoint = input_points.GetPoint(brain_region.id)
-                    f.write(f"{tpoint[0]} {tpoint[1]} {tpoint[2]}\n")
+        for idx, (key, points) in enumerate(point_dict.items()):
+            x = points[0]/self.scaling_factor
+            y = points[1]/self.scaling_factor
+            z = points[2] # the z is not scaled
+            point = [x,y,z]
+            input_points.GetPoints().InsertElement(idx, point)
 
 
-        """
         init_points = itk.PointSet[itk.F, 3].New()
         for idx in range(input_points.GetNumberOfPoints()):
             point = input_points.GetPoint(idx)
@@ -349,13 +337,17 @@ class VolumeRegistration:
                 idx, init_transform.TransformPoint(point)
             )
             print(f"{point} -> {init_points.GetPoint(idx)}")
-        print(input_points)
         print(f"SC -> {input_points.GetPoint(33)}")
+        return
         
+        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
+        with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
+            f.write("point\n")
+            f.write(f"{len(point_dict)}\n")
         for idx in range(input_points.GetNumberOfPoints()):
             point = input_points.GetPoint(idx)
             f.write(f"{point[0]} {point[1]} {point[2]}\n")
-        """
+        
         NUM_PARAMETER_MAPS = 3
         N_ELASTIX_STAGES = 3
 
