@@ -288,13 +288,8 @@ class VolumeRegistration:
         itk.imwrite(resultImage, os.path.join(self.registered_output, 'result.tif'), compression=True) 
         ## write transformation 
         os.makedirs(self.registered_output, exist_ok=True)
-        outputpath = os.path.join(self.registered_output, 'init-transform.hdf5')
-        itk.transformwrite([init_transform], outputpath)
-        for index in range(parameter_object.GetNumberOfParameterMaps()):
-            outputpath = os.path.join(self.registered_output, f'elastix-transform.{index}.txt')
-            
-            registration_method.GetTransformParameterObject().WriteParameterFile(
-                registration_method.GetTransformParameterObject().GetParameterMap(index), outputpath)
+        init_transformpath = os.path.join(self.registered_output, 'init-transform.hdf5')
+        itk.transformwrite(init_transform, init_transformpath)
             
         for index in range(parameter_object.GetNumberOfParameterMaps()):
             registration_method.GetTransformParameterObject().WriteParameterFile(
