@@ -317,7 +317,7 @@ class VolumeRegistration:
         point_dict = dict(sorted(d.items()))
         print(len(point_dict))
         
-        inputpath = os.path.join(self.registered_output, 'init-transform.hd5')
+        inputpath = os.path.join(self.registered_output, 'init-transform.tfm')
         #init_transform = itk.transformread(inputpath)
         init_transform = sitk.ReadTransform(inputpath)
         input_points = itk.PointSet[itk.F, 3].New()
