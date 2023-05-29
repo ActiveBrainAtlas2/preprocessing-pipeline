@@ -288,7 +288,7 @@ class VolumeRegistration:
         itk.imwrite(resultImage, os.path.join(self.registered_output, 'result.tif'), compression=True) 
         ## write transformation 
         os.makedirs(self.registered_output, exist_ok=True)
-        init_transformpath = os.path.join(self.registered_output, 'init-transform.hdf5')
+        init_transformpath = os.path.join(self.registered_output, 'init-transform.tfm')
         itk.transformwrite(init_transform, init_transformpath)
             
         for index in range(parameter_object.GetNumberOfParameterMaps()):
@@ -339,7 +339,7 @@ class VolumeRegistration:
                 #init_points.GetPoints().InsertElement(idx, init_transform.TransformPoint(point))
 
         """
-        inputpath = os.path.join(self.registered_output, 'init-transform.hdf5')
+        inputpath = os.path.join(self.registered_output, 'init-transform.tfm')
         init_transform = itk.transformread(inputpath)
         print(init_transform)
 
