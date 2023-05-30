@@ -24,7 +24,9 @@ pred  SC: 369, 64, 219
 """
 
 import argparse
+from collections import defaultdict
 import os
+import shutil
 import sys
 import numpy as np
 from pathlib import Path
@@ -35,10 +37,13 @@ import itk
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 import pandas as pd
+import cv2
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
+from library.controller.polygon_sequence_controller import PolygonSequenceController
+from library.controller.sql_controller import SqlController
 from library.image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
 from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.utilities.utilities_mask import normalize16
@@ -312,14 +317,34 @@ class VolumeRegistration:
         178.1 -10.9 14.5
         180.4 -18.1 78.9
         """
+        # initialize init_transform
+        fixed_image = itk.imread(self.fixed_volume_path, itk.F)
+        moving_image = itk.imread(self.moving_volume_path, itk.F)
+        # init transform start
+        # Translate to roughly position sample data on top of CCF data
+        init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
+        init_transform.SetIdentity()
+        transform_initializer = itk.CenteredVersorTransformInitializer[
+            type(fixed_image), type(moving_image)
+        ].New()
+        transform_initializer.SetFixedImage(fixed_image)
+        transform_initializer.SetMovingImage(moving_image)
+        transform_initializer.SetTransform(init_transform)
+        transform_initializer.GeometryOn()  # We compute translation between the center of each image
+        transform_initializer.ComputeRotationOff()  # We have previously verified that spatial orientation aligns
+        transform_initializer.InitializeTransform()
+        # initializer maps from the fixed image to the moving image,
+        # whereas we want to map from the moving image to the fixed image.
+        init_transform = init_transform.GetInverseTransform()
+
         #controller = AnnotationSessionController(animal=self.animal)
         d = pd.read_pickle(self.unregistered_pickle_file)
         point_dict = dict(sorted(d.items()))
         print(len(point_dict))
         
-        inputpath = os.path.join(self.registered_output, 'init-transform.tfm')
+        #inputpath = os.path.join(self.registered_output, 'init-transform.tfm')
         #init_transform = itk.transformread(inputpath)
-        init_transform = sitk.ReadTransform(inputpath)
+        #init_transform = sitk.ReadTransform(inputpath)
         print(init_transform)
         input_points = itk.PointSet[itk.F, 3].New()
         for idx, (key, points) in enumerate(point_dict.items()):
@@ -337,18 +362,15 @@ class VolumeRegistration:
                 idx, init_transform.TransformPoint(point)
             )
             print(f"{point} -> {init_points.GetPoint(idx)}")
-        print(f"SC -> {input_points.GetPoint(33)}")
-        return
         
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
         with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
             f.write("point\n")
             f.write(f"{len(point_dict)}\n")
-        for idx in range(input_points.GetNumberOfPoints()):
-            point = input_points.GetPoint(idx)
-            f.write(f"{point[0]} {point[1]} {point[2]}\n")
-        
-        NUM_PARAMETER_MAPS = 3
+            for idx in range(input_points.GetNumberOfPoints()):
+                point = input_points.GetPoint(idx)
+                f.write(f"{point[0]} {point[1]} {point[2]}\n")
+
         N_ELASTIX_STAGES = 3
 
         toplevel_param = itk.ParameterObject.New()
@@ -375,7 +397,49 @@ class VolumeRegistration:
             for output_point in result_point_set
         ]))
 
-    
+    def fill_contours(self):
+        sqlController = SqlController(animal)
+        # vars
+        INPUT = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_aligned')
+        OUTPUT = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_merged')
+        os.makedirs(OUTPUT, exist_ok=True)
+        polygon = PolygonSequenceController(animal=animal)        
+        df = polygon.get_volume(self.animal, 3, 21)
+        scale_xy = sqlController.scan_run.resolution
+        z_scale = sqlController.scan_run.zresolution
+        polygons = defaultdict(list)
+        color = 254 # set it below the threshold set in mask class
+        
+        for _, row in df.iterrows():
+            x = row['coordinate'][0]
+            y = row['coordinate'][1]
+            z = row['coordinate'][2]
+            xy = (x/scale_xy/self.scaling_factor, y/scale_xy/self.scaling_factor)
+            section = int(np.round(z/z_scale))
+            polygons[section].append(xy)
+                    
+        for section, points in tqdm(polygons.items()):
+            file = str(section).zfill(3) + ".tif"
+            inpath = os.path.join(INPUT, file)
+            if not os.path.exists(inpath):
+                print(f'{inpath} does not exist')
+                continue
+            img = cv2.imread(inpath, cv2.IMREAD_GRAYSCALE)
+            points = np.array(points)
+            points = points.astype(np.int32)
+            cv2.fillPoly(img, pts = [points], color = color)
+            outpath = os.path.join(OUTPUT, file)
+            cv2.imwrite(outpath, img)
+
+        files = sorted(os.listdir(INPUT))
+        for file in files:
+            inpath = os.path.join(INPUT, file)
+            outpath = os.path.join(OUTPUT, file)
+            if not os.path.exists(outpath):
+                print(f'{outpath} does not exist')
+                shutil.copyfile(inpath, outpath)
+
+
 
     def insert_points(self):
         """This method will take the pickle file of COMs and insert them.
@@ -440,22 +504,26 @@ class VolumeRegistration:
         rows = midfile.shape[0]
         columns = midfile.shape[1]
         volume_size = (rows, columns, len(files))
-        return files, volume_size
+        return files, volume_size, midfile.dtype
 
     def create_volume(self):
         """Create a 3D volume of the image stack
         """
         
-        files, volume_size = self.get_file_information()
+        files, volume_size, dtype = self.get_file_information()
         image_stack = np.zeros(volume_size)
+        
         file_list = []
         for ffile in tqdm(files):
             fpath = os.path.join(self.thumbnail_aligned, ffile)
-            farr = read_image(fpath)
+            #farr = read_image(fpath)
+            farr = cv2.imread(fpath, cv2.IMREAD_GRAYSCALE)
+
             #farr = farr[200:-200,200:-200]
+            print(farr.shape)
             file_list.append(farr)
         image_stack = np.stack(file_list, axis = 0)
-        io.imsave(self.moving_volume_path, image_stack.astype(np.uint16))
+        io.imsave(self.moving_volume_path, image_stack.astype(dtype))
         print(f'Saved a 3D volume {self.moving_volume_path} with shape={image_stack.shape} and dtype={image_stack.dtype}')
 
     def create_precomputed(self):
@@ -569,7 +637,8 @@ if __name__ == '__main__':
                         'create_precomputed': volumeRegistration.create_precomputed,
                         'check_registration': volumeRegistration.check_registration,
                         'insert_points': volumeRegistration.insert_points,
-                        'create_itk': volumeRegistration.create_itk
+                        'create_itk': volumeRegistration.create_itk,
+                        'fill_contours': volumeRegistration.fill_contours
     }
 
     if task in function_mapping:

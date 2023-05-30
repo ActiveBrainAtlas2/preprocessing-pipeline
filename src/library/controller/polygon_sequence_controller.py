@@ -1,11 +1,12 @@
 import pandas as pd
 
+from library.controller.sql_controller import SqlController
 from library.database_model.annotation_points import PolygonSequence
 from library.database_model.annotation_points import AnnotationSession,AnnotationType
 
 
 
-class PolygonSequenceController():
+class PolygonSequenceController(SqlController):
     """The class that queries and addes entry to the PolygonSequence table
     """
         
@@ -28,8 +29,8 @@ class PolygonSequenceController():
         #Polygons must be ordered by section(z), then point ordering
         annotation_session = self.session.query(AnnotationSession)\
             .filter(AnnotationSession.FK_prep_id==prep_id)\
-            .filter(AnnotationSession.FK_annotator_id==annotator_id)\
-            .filter(AnnotationSession.FK_structure_id==structure_id)\
+            .filter(AnnotationSession.FK_user_id==annotator_id)\
+            .filter(AnnotationSession.FK_brain_region_id==structure_id)\
             .filter(AnnotationSession.active==1).first()
         volume_points = self.session.query(PolygonSequence)\
             .filter(PolygonSequence.FK_session_id==annotation_session.id)\

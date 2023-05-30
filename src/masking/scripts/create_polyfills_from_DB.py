@@ -37,8 +37,7 @@ def create_segmentation(animal, annotator_id, structure_id, debug=False):
     os.makedirs(NORM_OUTPUT, exist_ok=True)
     MERG_OUTPUT = os.path.join(DATA_PATH, 'tg', 'thumbnail_merged')
     os.makedirs(MERG_OUTPUT, exist_ok=True)
-    #controller = Controller(host, password, schema, user)
-    polygon = PolygonSequenceController(host, password, schema, user)
+    polygon = PolygonSequenceController(animal=animal)
     
     df = polygon.get_volume(animal, annotator_id, structure_id)
     if debug:
