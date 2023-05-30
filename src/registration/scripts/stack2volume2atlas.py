@@ -38,6 +38,8 @@ from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 import pandas as pd
 import cv2
+from allensdk.core.mouse_connectivity_cache import MouseConnectivityCache
+from tifffile import imwrite
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -47,9 +49,47 @@ from library.controller.sql_controller import SqlController
 from library.image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
 from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.utilities.utilities_mask import normalize16
-from library.utilities.utilities_process import read_image
+from library.utilities.utilities_process import read_image, write_image
 from library.controller.annotation_session_controller import AnnotationSessionController
 
+def compute_dice_coefficient(source_image: itk.Image, target_image: itk.Image) -> float:
+    """Compute the dice coefficient to compare volume overlap between two label regions"""
+    dice_filter = itk.LabelOverlapMeasuresImageFilter[type(source_image)].New()
+    dice_filter.SetInput(source_image)
+    dice_filter.SetTargetImage(target_image)
+    dice_filter.Update()
+    return dice_filter.GetDiceCoefficient()
+
+def dice(im1, im2):
+    """
+    Computes the Dice coefficient, a measure of set similarity.
+    Parameters
+    ----------
+    im1 : array-like, bool
+        Any array of arbitrary size. If not boolean, will be converted.
+    im2 : array-like, bool
+        Any other array of identical size. If not boolean, will be converted.
+    Returns
+    -------
+    dice : float
+        Dice coefficient as a float on range [0,1].
+        Maximum similarity = 1
+        No similarity = 0
+        
+    Notes
+    -----
+    The order of inputs for `dice` is irrelevant. The result will be
+    identical if `im1` and `im2` are switched.
+    """
+    im1 = np.asarray(im1).astype(bool)
+    im2 = np.asarray(im2).astype(bool)
+
+    if im1.shape != im2.shape:
+        raise ValueError("Shape mismatch: im1 and im2 must have the same shape.")
+
+    # Compute Dice coefficient
+    intersection = np.logical_and(im1, im2)
+    return 2. * intersection.sum() / (im1.sum() + im2.sum())
 
 class VolumeRegistration:
     """This class takes a downsampled image stack and registers it to the Allen volume    
@@ -300,7 +340,58 @@ class VolumeRegistration:
             registration_method.GetTransformParameterObject().GetParameterMap(index),
             f"{self.registered_output}/elastix-transform.{index}.txt",)
 
+    def evaluate_registrationXXXX(self):
+        TARGET_LABEL_IMAGE_FILEPATH = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/allen_25um_annnotations.tif'
+        INPUT_LABEL_IMAGE_FILEPATH = os.path.join(self.registered_output, 'result.tif')
+        TARGET_LABEL_VALUE = 4
+        target_label_image = itk.imread(TARGET_LABEL_IMAGE_FILEPATH)
+        target_label_image_f = itk.cast_image_filter(target_label_image, ttype=[type(target_label_image), itk.Image[itk.F,3]])
+        target_binary_image = itk.binary_threshold_image_filter(
+            target_label_image_f,
+            lower_threshold=1,
+            upper_threshold=8115,
+            inside_value=1,
+            outside_value=0,
+            ttype=[type(target_label_image_f), itk.Image[itk.UC,target_label_image_f.GetImageDimension()]]
+        )
 
+        print(f'Binary labels: {np.unique(target_binary_image)}')
+        
+        transformed_source_label_image = itk.imread(INPUT_LABEL_IMAGE_FILEPATH, itk.UC)
+        print(f'type of target fixed {type(target_binary_image)}')
+        print(f'type of source moving {type(transformed_source_label_image)}')
+        
+        dice_score = compute_dice_coefficient(transformed_source_label_image, target_binary_image)
+        print(f'Evaluated dice value: {dice_score}')
+
+    def evaluate_registration(self):
+        mcc = MouseConnectivityCache(resolution=25)
+        rsp = mcc.get_reference_space()
+        structure_id = 4
+        structure_mask = rsp.make_structure_mask([structure_id], direct_only=False)
+        structure_mask = np.swapaxes(structure_mask, 0, 2)
+        structure_mask = structure_mask * 254
+        ids, counts = np.unique(structure_mask, return_counts=True)
+        print(ids)
+        print(counts)
+        outpath = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/structure_mask.tif'
+        imwrite(outpath, structure_mask)
+        
+
+        print(f'mask dtype={structure_mask.dtype} shape={structure_mask.shape}')
+        resultpath = os.path.join(self.registered_output, 'result.tif')
+        #annotation = io.imread(annotationpath)
+
+        resultImage = io.imread(resultpath)
+        print(f'resultImage dtype={resultImage.dtype} shape={resultImage.shape}')
+        resultImage = (resultImage == 254)
+
+        dice_coefficient = dice(structure_mask, resultImage)
+        
+        print(f'Dice={dice_coefficient}')
+
+
+        
     def transformix_points(self):
         """Helper method when you want to rerun the transform on a set of points.
         Get the pickle file and transform it. It is in full resolution pixel size.
@@ -634,7 +725,8 @@ if __name__ == '__main__':
                         'check_registration': volumeRegistration.check_registration,
                         'insert_points': volumeRegistration.insert_points,
                         'create_itk': volumeRegistration.create_itk,
-                        'fill_contours': volumeRegistration.fill_contours
+                        'fill_contours': volumeRegistration.fill_contours,
+                        'evaluate':volumeRegistration.evaluate_registration
     }
 
     if task in function_mapping:
