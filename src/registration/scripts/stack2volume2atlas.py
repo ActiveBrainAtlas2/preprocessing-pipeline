@@ -494,12 +494,19 @@ class VolumeRegistration:
         OUTPUT = os.path.join(self.fileLocationManager.prep, 'CH1', 'thumbnail_merged')
         os.makedirs(OUTPUT, exist_ok=True)
         polygon = PolygonSequenceController(animal=animal)        
-        df = polygon.get_volume(self.animal, 3, 21)
         scale_xy = sqlController.scan_run.resolution
         z_scale = sqlController.scan_run.zresolution
         polygons = defaultdict(list)
-        color = 254 # set it below the threshold set in mask class
-        
+        color = 0 # set it below the threshold set in mask class
+        df_L = polygon.get_volume(self.animal, 3, 12)
+        df_R = polygon.get_volume(self.animal, 3, 13)
+        frames = [df_L, df_R]
+        df = pd.concat(frames)
+        len_L = df_L.shape[0]
+        len_R = df_R.shape[0]
+        len_total = df.shape[0]
+        assert len_L + len_R == len_total, "Lengths of dataframes do not add up."
+
         for _, row in df.iterrows():
             x = row['coordinate'][0]
             y = row['coordinate'][1]
@@ -522,13 +529,11 @@ class VolumeRegistration:
             cv2.imwrite(outpath, img)
 
         files = sorted(os.listdir(INPUT))
-        for file in files:
+        for file in tqdm(files):
             inpath = os.path.join(INPUT, file)
             outpath = os.path.join(OUTPUT, file)
             if not os.path.exists(outpath):
-                print(f'{outpath} does not exist')
                 shutil.copyfile(inpath, outpath)
-
 
 
     def insert_points(self):
