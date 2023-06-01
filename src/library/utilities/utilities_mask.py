@@ -149,6 +149,13 @@ def equalized(fixed, cliplimit=5):
     fixed = clahe.apply(fixed)
     return fixed
 
+def normalize8(img):
+    mn = img.min()
+    mx = img.max()
+    mx -= mn
+    img = ((img - mn)/mx) * 2**8 - 1
+    return np.round(img).astype(np.uint8) 
+
 def normalize16(img):
     if img.dtype == np.uint32:
         print('image dtype is 32bit')

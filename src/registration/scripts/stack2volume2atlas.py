@@ -48,7 +48,7 @@ from library.controller.polygon_sequence_controller import PolygonSequenceContro
 from library.controller.sql_controller import SqlController
 from library.image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
 from library.image_manipulation.filelocation_manager import FileLocationManager
-from library.utilities.utilities_mask import normalize16
+from library.utilities.utilities_mask import normalize16, normalize8
 from library.utilities.utilities_process import read_image, write_image
 from library.controller.annotation_session_controller import AnnotationSessionController
 
@@ -367,15 +367,13 @@ class VolumeRegistration:
     def evaluate_registration(self):
         mcc = MouseConnectivityCache(resolution=25)
         rsp = mcc.get_reference_space()
-        structure_id = 4
+        structure_id = 661
         structure_mask = rsp.make_structure_mask([structure_id], direct_only=False)
         structure_mask = np.swapaxes(structure_mask, 0, 2)
-        structure_mask = structure_mask * 254
         ids, counts = np.unique(structure_mask, return_counts=True)
+        print('structure mask, ids counts')
         print(ids)
         print(counts)
-        outpath = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/structure_mask.tif'
-        imwrite(outpath, structure_mask)
         
 
         print(f'mask dtype={structure_mask.dtype} shape={structure_mask.shape}')
@@ -383,8 +381,18 @@ class VolumeRegistration:
         #annotation = io.imread(annotationpath)
 
         resultImage = io.imread(resultpath)
+        resultImage = normalize8(resultImage)
+        resultImage[resultImage == 111] = 1
+        resultImage[resultImage != 1] = 0
+        resultImage = (resultImage == True)
+        #resultImage = (resultImage * 254).astype(np.uint8)
+        outpath = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/facialmask.tif'
+        #imwrite(outpath, resultImage)
         print(f'resultImage dtype={resultImage.dtype} shape={resultImage.shape}')
-        resultImage = (resultImage == 254)
+        ids, counts = np.unique(resultImage, return_counts=True)
+        print('result image, ids counts')
+        print(ids)
+        print(counts)
 
         dice_coefficient = dice(structure_mask, resultImage)
         
@@ -426,24 +434,45 @@ class VolumeRegistration:
         # initializer maps from the fixed image to the moving image,
         # whereas we want to map from the moving image to the fixed image.
         init_transform = init_transform.GetInverseTransform()
+        input_points = itk.PointSet[itk.F, 3].New()
 
-        #controller = AnnotationSessionController(animal=self.animal)
+        sqlController = SqlController(animal)
+        """
+        controller = AnnotationSessionController(animal=self.animal)
         d = pd.read_pickle(self.unregistered_pickle_file)
         point_dict = dict(sorted(d.items()))
         print(len(point_dict))
         
-        #inputpath = os.path.join(self.registered_output, 'init-transform.tfm')
-        #init_transform = itk.transformread(inputpath)
-        #init_transform = sitk.ReadTransform(inputpath)
-        print(init_transform)
-        input_points = itk.PointSet[itk.F, 3].New()
         for idx, (key, points) in enumerate(point_dict.items()):
             x = points[0]/self.scaling_factor
             y = points[1]/self.scaling_factor
             z = points[2] # the z is not scaled
             point = [x,y,z]
             input_points.GetPoints().InsertElement(idx, point)
+        """
+        polygon = PolygonSequenceController(animal=animal)        
+        scale_xy = sqlController.scan_run.resolution
+        z_scale = sqlController.scan_run.zresolution
+        polygons = defaultdict(list)
+        color = 0 # set it below the threshold set in mask class
+        df_L = polygon.get_volume(self.animal, 3, 12)
+        df_R = polygon.get_volume(self.animal, 3, 13)
+        frames = [df_L, df_R]
+        df = pd.concat(frames)
+        len_L = df_L.shape[0]
+        len_R = df_R.shape[0]
+        len_total = df.shape[0]
+        assert len_L + len_R == len_total, "Lengths of dataframes do not add up."
 
+        for idx, (_, row) in enumerate(df.iterrows()):
+            x = row['coordinate'][0]/self.um
+            y = row['coordinate'][1]/self.um
+            z = row['coordinate'][2]/self.um
+            point = [x,y,z]
+            #xy = (x/scale_xy/self.scaling_factor, y/scale_xy/self.scaling_factor)
+            #section = int(np.round(z/z_scale))
+            #polygons[section].append(xy)
+            input_points.GetPoints().InsertElement(idx, point)
 
         init_points = itk.PointSet[itk.F, 3].New()
         for idx in range(input_points.GetNumberOfPoints()):
@@ -456,7 +485,7 @@ class VolumeRegistration:
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
         with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
             f.write("point\n")
-            f.write(f"{len(point_dict)}\n")
+            f.write(f"{df.shape[0]}\n")
             for idx in range(input_points.GetNumberOfPoints()):
                 point = input_points.GetPoint(idx)
                 f.write(f"{point[0]} {point[1]} {point[2]}\n")
