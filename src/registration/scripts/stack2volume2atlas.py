@@ -340,6 +340,74 @@ class VolumeRegistration:
             registration_method.GetTransformParameterObject().WriteParameterFile(
             registration_method.GetTransformParameterObject().GetParameterMap(index),
             f"{self.registered_output}/elastix-transform.{index}.txt",)
+        input_points = itk.PointSet[itk.F, 3].New()
+
+        sqlController = SqlController(animal)
+        
+        polygon = PolygonSequenceController(animal=animal)        
+        scale_xy = sqlController.scan_run.resolution
+        z_scale = sqlController.scan_run.zresolution
+        df_L = polygon.get_volume(self.animal, 3, 12)
+        df_R = polygon.get_volume(self.animal, 3, 13)
+        frames = [df_L, df_R]
+        df = pd.concat(frames)
+        len_L = df_L.shape[0]
+        len_R = df_R.shape[0]
+        len_total = df.shape[0]
+        assert len_L + len_R == len_total, "Lengths of dataframes do not add up."
+
+        for idx, (_, row) in enumerate(df.iterrows()):
+            x = row['coordinate'][0]/scale_xy/self.scaling_factor
+            y = row['coordinate'][1]/scale_xy/self.scaling_factor
+            z = row['coordinate'][2]/z_scale
+            point = [x,y,z]
+            #xy = (x/scale_xy/self.scaling_factor, y/scale_xy/self.scaling_factor)
+            #section = int(np.round(z/z_scale))
+            #polygons[section].append(xy)
+            input_points.GetPoints().InsertElement(idx, point)
+
+        
+        init_points = itk.PointSet[itk.F, 3].New()
+        for idx in range(input_points.GetNumberOfPoints()):
+            point = input_points.GetPoint(idx)
+            init_points.GetPoints().InsertElement(
+                idx, init_transform.TransformPoint(point)
+            )
+            print(f"{point} -> {init_points.GetPoint(idx)}")
+        
+        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
+        with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
+            f.write("point\n")
+            f.write(f"{df.shape[0]}\n")
+            for idx in range(input_points.GetNumberOfPoints()):
+                point = input_points.GetPoint(idx)
+                f.write(f"{point[0]} {point[1]} {point[2]}\n")
+
+        N_ELASTIX_STAGES = 3
+
+        toplevel_param = itk.ParameterObject.New()
+        param = itk.ParameterObject.New()
+        ELASTIX_TRANSFORM_FILENAMES = [os.path.join(self.registered_output, f"elastix-transform.{index}.txt")
+            for index in range(N_ELASTIX_STAGES)]
+
+        for elastix_transform_filename in ELASTIX_TRANSFORM_FILENAMES:
+            param.ReadParameterFile(elastix_transform_filename)
+            toplevel_param.AddParameterMap(param.GetParameterMap(0))        
+
+        # Load reference image (required for transformix)
+        average_template = itk.imread(self.fixed_volume_path, pixel_type=itk.F)
+        # Procedural interface of transformix filter
+        result_point_set = itk.transformix_pointset(
+            average_template,
+            toplevel_param,
+            fixed_point_set_file_name=TRANSFORMIX_POINTSET_FILE,
+            output_directory=self.registered_output)
+        # Transformix will write results to self.registered_output/outputpoints.txt
+        print("\n".join(
+        [
+            f"{output_point[11:18]} ---> {output_point[27:35]}"
+            for output_point in result_point_set
+        ]))
 
     def evaluate_registrationXXXX(self):
         TARGET_LABEL_IMAGE_FILEPATH = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/allen_25um_annnotations.tif'
@@ -435,6 +503,8 @@ class VolumeRegistration:
         # initializer maps from the fixed image to the moving image,
         # whereas we want to map from the moving image to the fixed image.
         init_transform = init_transform.GetInverseTransform()
+        print(init_transform)
+        return
         input_points = itk.PointSet[itk.F, 3].New()
 
         sqlController = SqlController(animal)
