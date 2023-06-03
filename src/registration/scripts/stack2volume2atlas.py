@@ -278,7 +278,7 @@ class VolumeRegistration:
 
     def create_itk(self):
         os.makedirs(self.registered_output, exist_ok=True)
-
+        resolutions = 6
         fixed_image = itk.imread(self.fixed_volume_path, itk.F)
         moving_image = itk.imread(self.moving_volume_path, itk.F)
         # init transform start
@@ -319,12 +319,15 @@ class VolumeRegistration:
         parameter_object.AddParameterMap(affine_parameter_map)
         parameter_object.AddParameterMap(bspline_parameter_map)
         parameter_object.RemoveParameter("FinalGridSpacingInPhysicalUnits")
+        parameter_object.SetParameter("DefaultPixelValue", "0")
+        parameter_object.SetParameter("NumberOfIterations", "1000")
+        parameter_object.SetParameter("ResultImagePixelType", "unsigned char")
         registration_method = itk.ElastixRegistrationMethod[type(fixed_image), type(moving_image)
         ].New(
             fixed_image=fixed_image,
             moving_image=source_image_init,
             parameter_object=parameter_object,
-            log_to_console=False,
+            log_to_console=True,
         )
         registration_method.Update()
         resultImage = registration_method.GetOutput()
@@ -512,7 +515,7 @@ class VolumeRegistration:
         # Transformix will write results to self.registered_output/outputpoints.txt
         print("\n".join(
         [
-            f"{output_point[11:18]} -> {output_point[27:35]}"
+            f"{output_point[11:18]} ---> {output_point[27:35]}"
             for output_point in result_point_set
         ]))
 
