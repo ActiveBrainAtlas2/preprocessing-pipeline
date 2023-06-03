@@ -278,9 +278,9 @@ class VolumeRegistration:
 
     def create_itk(self):
         os.makedirs(self.registered_output, exist_ok=True)
-        resolutions = 6
         fixed_image = itk.imread(self.fixed_volume_path, itk.F)
         moving_image = itk.imread(self.moving_volume_path, itk.F)
+        """
         # init transform start
         # Translate to roughly position sample data on top of CCF data
         init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
@@ -308,13 +308,16 @@ class VolumeRegistration:
         change_information_filter.ChangeOriginOn()
         change_information_filter.UpdateOutputInformation()
         source_image_init = change_information_filter.GetOutput()
-        # end apply translation        
+        # end apply translation
+        """
 
         parameter_object = itk.ParameterObject.New()
+        trans_parameter_map = parameter_object.GetDefaultParameterMap('translation')
         rigid_parameter_map = parameter_object.GetDefaultParameterMap('rigid')
         affine_parameter_map = parameter_object.GetDefaultParameterMap('affine')
         bspline_parameter_map = parameter_object.GetDefaultParameterMap("bspline")
         bspline_parameter_map["FinalGridSpacingInVoxels"] = (f"{self.um}",)
+        parameter_object.AddParameterMap(trans_parameter_map)
         parameter_object.AddParameterMap(rigid_parameter_map)
         parameter_object.AddParameterMap(affine_parameter_map)
         parameter_object.AddParameterMap(bspline_parameter_map)
@@ -325,7 +328,7 @@ class VolumeRegistration:
         registration_method = itk.ElastixRegistrationMethod[type(fixed_image), type(moving_image)
         ].New(
             fixed_image=fixed_image,
-            moving_image=source_image_init,
+            moving_image=moving_image,
             parameter_object=parameter_object,
             log_to_console=True,
         )
@@ -423,6 +426,7 @@ class VolumeRegistration:
         moving_image = itk.imread(self.moving_volume_path, itk.F)
         # init transform start
         # Translate to roughly position sample data on top of CCF data
+        """
         init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
         init_transform.SetIdentity()
         transform_initializer = itk.CenteredVersorTransformInitializer[
@@ -437,6 +441,7 @@ class VolumeRegistration:
         # initializer maps from the fixed image to the moving image,
         # whereas we want to map from the moving image to the fixed image.
         init_transform = init_transform.GetInverseTransform()
+        """
         input_points = itk.PointSet[itk.F, 3].New()
 
         sqlController = SqlController(animal)
@@ -468,9 +473,9 @@ class VolumeRegistration:
         assert len_L + len_R == len_total, "Lengths of dataframes do not add up."
 
         for idx, (_, row) in enumerate(df.iterrows()):
-            x = row['coordinate'][0]/self.um
-            y = row['coordinate'][1]/self.um
-            z = row['coordinate'][2]/self.um
+            x = row['coordinate'][0]/scale_xy/self.scaling_factor
+            y = row['coordinate'][1]/scale_xy/self.scaling_factor
+            z = row['coordinate'][2]/z_scale
             point = [x,y,z]
             #xy = (x/scale_xy/self.scaling_factor, y/scale_xy/self.scaling_factor)
             #section = int(np.round(z/z_scale))
