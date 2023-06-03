@@ -280,7 +280,7 @@ class VolumeRegistration:
         os.makedirs(self.registered_output, exist_ok=True)
         fixed_image = itk.imread(self.fixed_volume_path, itk.F)
         moving_image = itk.imread(self.moving_volume_path, itk.F)
-        """
+        
         # init transform start
         # Translate to roughly position sample data on top of CCF data
         init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
@@ -309,33 +309,28 @@ class VolumeRegistration:
         change_information_filter.UpdateOutputInformation()
         source_image_init = change_information_filter.GetOutput()
         # end apply translation
-        """
-
+        
         parameter_object = itk.ParameterObject.New()
-        trans_parameter_map = parameter_object.GetDefaultParameterMap('translation')
         rigid_parameter_map = parameter_object.GetDefaultParameterMap('rigid')
         affine_parameter_map = parameter_object.GetDefaultParameterMap('affine')
         bspline_parameter_map = parameter_object.GetDefaultParameterMap("bspline")
         bspline_parameter_map["FinalGridSpacingInVoxels"] = (f"{self.um}",)
-        parameter_object.AddParameterMap(trans_parameter_map)
         parameter_object.AddParameterMap(rigid_parameter_map)
         parameter_object.AddParameterMap(affine_parameter_map)
         parameter_object.AddParameterMap(bspline_parameter_map)
         parameter_object.RemoveParameter("FinalGridSpacingInPhysicalUnits")
         parameter_object.SetParameter("DefaultPixelValue", "0")
         parameter_object.SetParameter("NumberOfIterations", "1000")
-        parameter_object.SetParameter("ResultImagePixelType", "unsigned char")
+        parameter_object.SetParameter("ResultImagePixelType", "float")
         registration_method = itk.ElastixRegistrationMethod[type(fixed_image), type(moving_image)
         ].New(
             fixed_image=fixed_image,
-            moving_image=moving_image,
+            moving_image=source_image_init,
             parameter_object=parameter_object,
-            log_to_console=True,
+            log_to_console=False,
         )
         registration_method.Update()
         resultImage = registration_method.GetOutput()
-
-
         itk.imwrite(resultImage, os.path.join(self.registered_output, 'result.tif'), compression=True) 
         ## write transformation DOES NOT WORK!
         #init_transformpath = os.path.join(self.registered_output, 'init-transform.tfm')
@@ -426,7 +421,6 @@ class VolumeRegistration:
         moving_image = itk.imread(self.moving_volume_path, itk.F)
         # init transform start
         # Translate to roughly position sample data on top of CCF data
-        """
         init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
         init_transform.SetIdentity()
         transform_initializer = itk.CenteredVersorTransformInitializer[
@@ -441,23 +435,10 @@ class VolumeRegistration:
         # initializer maps from the fixed image to the moving image,
         # whereas we want to map from the moving image to the fixed image.
         init_transform = init_transform.GetInverseTransform()
-        """
         input_points = itk.PointSet[itk.F, 3].New()
 
         sqlController = SqlController(animal)
-        """
-        controller = AnnotationSessionController(animal=self.animal)
-        d = pd.read_pickle(self.unregistered_pickle_file)
-        point_dict = dict(sorted(d.items()))
-        print(len(point_dict))
         
-        for idx, (key, points) in enumerate(point_dict.items()):
-            x = points[0]/self.scaling_factor
-            y = points[1]/self.scaling_factor
-            z = points[2] # the z is not scaled
-            point = [x,y,z]
-            input_points.GetPoints().InsertElement(idx, point)
-        """
         polygon = PolygonSequenceController(animal=animal)        
         scale_xy = sqlController.scan_run.resolution
         z_scale = sqlController.scan_run.zresolution
@@ -482,6 +463,7 @@ class VolumeRegistration:
             #polygons[section].append(xy)
             input_points.GetPoints().InsertElement(idx, point)
 
+        
         init_points = itk.PointSet[itk.F, 3].New()
         for idx in range(input_points.GetNumberOfPoints()):
             point = input_points.GetPoint(idx)
