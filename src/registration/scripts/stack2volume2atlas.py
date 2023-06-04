@@ -112,8 +112,8 @@ class VolumeRegistration:
         self.registered_output = os.path.join(self.fileLocationManager.prep, self.channel,  'registered', self.output_dir)
         self.registered_point_file = os.path.join(self.registered_output, 'outputpoints.txt')
         self.unregistered_pickle_file = os.path.join(self.fileLocationManager.prep, 'points.pkl')
-        self.unregistered_text_file = os.path.join(self.fileLocationManager.prep, 'points.txt')
         self.unregistered_point_file = os.path.join(self.fileLocationManager.prep, 'points.pts')
+        self.init_transformpath = os.path.join(self.elastix_output, 'init_transform.tfm')
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}{um}um')
         self.number_of_sampling_attempts = "10"
         if self.debug:
@@ -166,8 +166,7 @@ class VolumeRegistration:
                                                       sitk.CenteredTransformInitializerFilter.GEOMETRY)
 
         movingImage = sitk.Resample(movingImage, fixedImage, init_transform, sitk.sitkLinear, 0.0, movingImage.GetPixelID())    
-        sitk.WriteTransform(init_transform, os.path.join(outputpath, "init_transform.tfm"))
-        #read_result = sitk.ReadTransform("euler2D.tfm")
+        sitk.WriteTransform(init_transform, self.init_transformpath)
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
@@ -225,11 +224,9 @@ class VolumeRegistration:
         parameterMap0 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.0.txt'))
         parameterMap1 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.1.txt'))
         parameterMap2 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.2.txt'))
-        parameterMap3 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.3.txt'))
         transformixImageFilter.SetTransformParameterMap(parameterMap0)
         transformixImageFilter.AddTransformParameterMap(parameterMap1)
         transformixImageFilter.AddTransformParameterMap(parameterMap2)
-        transformixImageFilter.AddTransformParameterMap(parameterMap3)
         transformixImageFilter.LogToFileOn()
         transformixImageFilter.LogToConsoleOff()
         transformixImageFilter.SetOutputDirectory(self.registered_output)
@@ -492,7 +489,7 @@ class VolumeRegistration:
 
 
         
-    def transformix_pointsYYY(self):
+    def transformix_points(self):
         """Helper method when you want to rerun the transform on a set of points.
         Get the pickle file and transform it. It is in full resolution pixel size.
         The points in the pickle file need to be translated from full res pixel to
@@ -508,36 +505,16 @@ class VolumeRegistration:
         180.4 -18.1 78.9
         """
         # initialize init_transform
-        fixed_image = itk.imread(self.fixed_volume_path, itk.F)
-        moving_image = itk.imread(self.moving_volume_path, itk.F)
         # init transform start
-        # Translate to roughly position sample data on top of CCF data
-        init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
-        init_transform.SetIdentity()
-        transform_initializer = itk.CenteredVersorTransformInitializer[
-            type(fixed_image), type(moving_image)
-        ].New()
-        transform_initializer.SetFixedImage(fixed_image)
-        transform_initializer.SetMovingImage(moving_image)
-        transform_initializer.SetTransform(init_transform)
-        transform_initializer.GeometryOn()  # We compute translation between the center of each image
-        transform_initializer.ComputeRotationOff()  # We have previously verified that spatial orientation aligns
-        transform_initializer.InitializeTransform()
         # initializer maps from the fixed image to the moving image,
         # whereas we want to map from the moving image to the fixed image.
-        init_transform = init_transform.GetInverseTransform()
-        print(init_transform)
-        
+        initpath = os.path.join(self.reverse_elastix_output, 'init_transform.tfm')
+        init_transform = sitk.ReadTransform(initpath)
         input_points = itk.PointSet[itk.F, 3].New()
-
         sqlController = SqlController(animal)
-        
-        """
         polygon = PolygonSequenceController(animal=animal)        
         scale_xy = sqlController.scan_run.resolution
         z_scale = sqlController.scan_run.zresolution
-        polygons = defaultdict(list)
-        color = 0 # set it below the threshold set in mask class
         df_L = polygon.get_volume(self.animal, 3, 12)
         df_R = polygon.get_volume(self.animal, 3, 13)
         frames = [df_L, df_R]
@@ -552,42 +529,23 @@ class VolumeRegistration:
             y = row['coordinate'][1]/scale_xy/self.scaling_factor
             z = row['coordinate'][2]/z_scale
             point = [x,y,z]
-            #xy = (x/scale_xy/self.scaling_factor, y/scale_xy/self.scaling_factor)
-            #section = int(np.round(z/z_scale))
-            #polygons[section].append(xy)
+            point = init_transform.TransformPoint(point)
             input_points.GetPoints().InsertElement(idx, point)
-        """
-        idx = 0
-        #x = 12236.70/25
-        #y = 8549.40/25
-        #z = 3040/25
-        #point = [x,y,z]
-        # good values
-        x = 425 # -> 437
-        y = 292 # -> 263
-        z = 151 # 159
-
-        point = [x,y,z]
-        print(point)
-        input_points.GetPoints().InsertElement(idx, point)
-        
-        init_points = itk.PointSet[itk.F, 3].New()
-        for idx in range(input_points.GetNumberOfPoints()):
-            point = input_points.GetPoint(idx)
-            init_points.GetPoints().InsertElement(
-                idx, init_transform.TransformPoint(point)
-            )
-            print(f"{point} -> {init_points.GetPoint(idx)}")
         
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
         with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
             f.write("point\n")
-            f.write(f"{init_points.GetNumberOfPoints()}\n")
+            f.write(f"{input_points.GetNumberOfPoints()}\n")
 
-            for idx in range(init_points.GetNumberOfPoints()):
-                point = init_points.GetPoint(idx)
+            for idx in range(input_points.GetNumberOfPoints()):
+                point = input_points.GetPoint(idx)
                 f.write(f"{point[0]} {point[1]} {point[2]}\n")
+                
+        transformixImageFilter = self.setup_transformix(self.reverse_elastix_output)
+        transformixImageFilter.SetFixedPointSetFileName(TRANSFORMIX_POINTSET_FILE)
+        transformixImageFilter.Execute()
 
+        return
         N_ELASTIX_STAGES = 3
 
         toplevel_param = itk.ParameterObject.New()
@@ -615,60 +573,16 @@ class VolumeRegistration:
         ]))
 
         
-    def transformix_points(self):
+    def transformix_pointsXXXXXX(self):
         os.makedirs(self.registered_output, exist_ok=True)
-        fixed_image = itk.imread(self.fixed_volume_path, itk.F)
-        moving_image = itk.imread(self.moving_volume_path, itk.F)
-        # Import Default Parameter Map
-        parameter_object = itk.ParameterObject.New()
-        
-        parameter_map_trans = parameter_object.GetDefaultParameterMap('translation')
-        parameter_object.AddParameterMap(parameter_map_trans)
-
-        parameter_map_rigid = parameter_object.GetDefaultParameterMap('rigid')
-        parameter_map_rigid["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
-        parameter_map_rigid["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
-        parameter_map_rigid["UseDirectionCosines"] = ["true"]
-        parameter_map_rigid["NumberOfResolutions"]= ["6"]
-        parameter_map_rigid["NumberOfSpatialSamples"] = ["4000"]
-        parameter_map_rigid["WriteResultImage"] = ["false"]
-        parameter_object.AddParameterMap(parameter_map_rigid)
-
-        parameter_map_affine= parameter_object.GetDefaultParameterMap('affine')
-        parameter_map_affine["UseDirectionCosines"] = ["true"]
-        parameter_map_affine["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
-        parameter_map_affine["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
-        parameter_map_affine["NumberOfResolutions"]= ["6"]
-        parameter_map_affine["NumberOfSpatialSamples"] = ["4000"]
-        parameter_map_affine["WriteResultImage"] = ["false"]
-        parameter_object.AddParameterMap(parameter_map_affine)
-
-        parameter_map_bspline = parameter_object.GetDefaultParameterMap('bspline')
-        parameter_map_bspline["MaximumNumberOfIterations"] = [self.bsplineIterations] # 150 works ok
-        parameter_map_bspline["WriteResultImage"] = ["true"]
-        parameter_map_bspline["UseDirectionCosines"] = ["true"]
-        parameter_map_bspline["FinalGridSpacingInVoxels"] = [f"{self.um}"]
-        parameter_map_bspline["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
-        parameter_map_bspline["NumberOfResolutions"]= ["6"]
-        parameter_map_bspline["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
-        parameter_map_bspline["NumberOfSpatialSamples"] = ["4000"]
-        del parameter_map_bspline["FinalGridSpacingInPhysicalUnits"]
-        parameter_object.AddParameterMap(parameter_map_bspline)
-
-        # Call registration function
-        result_image, result_transform_parameters = itk.elastix_registration_method(
-            fixed_image, moving_image,
-            parameter_object=parameter_object,
-            log_to_console=True) 
-        itk.imwrite(result_image, os.path.join(self.registered_output, 'result.tif'), compression=True) 
-       
+        init_transform = sitk.ReadTransform("euler2D.tfm")       
         idx = 0
         x = 213 # -> 437
         y = 147 # -> 263
         z = 152
         point = [x,y,z]
         print(point)
-        input_points = itk.PointSet[itk.F, 3].New()
+        input_points = sitk.PointSet[itk.F, 3].New()
         input_points.GetPoints().InsertElement(idx, point)        
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
         with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
