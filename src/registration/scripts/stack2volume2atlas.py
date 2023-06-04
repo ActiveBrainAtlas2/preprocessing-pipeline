@@ -160,12 +160,16 @@ class VolumeRegistration:
         fixedImage = sitk.ReadImage(imagepath1)
         movingImage = sitk.ReadImage(imagepath2)
 
+        initial_transform = sitk.CenteredTransformInitializer(fixedImage, 
+                                                      movingImage, 
+                                                      sitk.Euler3DTransform(), 
+                                                      sitk.CenteredTransformInitializerFilter.GEOMETRY)
+
+        movingImage = sitk.Resample(movingImage, fixedImage, initial_transform, sitk.sitkLinear, 0.0, movingImage.GetPixelID())    
+
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
-
-        # The translation is very important as it centers the two volumes
-        translateParameterMap = sitk.GetDefaultParameterMap('translation')
         
         rigidParameterMap = sitk.GetDefaultParameterMap('rigid')        
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
@@ -194,8 +198,7 @@ class VolumeRegistration:
         bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
-        elastixImageFilter.SetParameterMap(translateParameterMap)
-        elastixImageFilter.AddParameterMap(rigidParameterMap)
+        elastixImageFilter.SetParameterMap(rigidParameterMap)
         elastixImageFilter.AddParameterMap(affineParameterMap)
         elastixImageFilter.AddParameterMap(bsplineParameterMap)
         elastixImageFilter.SetOutputDirectory(outputpath)
