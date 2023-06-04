@@ -112,6 +112,7 @@ class VolumeRegistration:
         self.registered_output = os.path.join(self.fileLocationManager.prep, self.channel,  'registered', self.output_dir)
         self.registered_point_file = os.path.join(self.registered_output, 'outputpoints.txt')
         self.unregistered_pickle_file = os.path.join(self.fileLocationManager.prep, 'points.pkl')
+        self.unregistered_text_file = os.path.join(self.fileLocationManager.prep, 'points.txt')
         self.unregistered_point_file = os.path.join(self.fileLocationManager.prep, 'points.pts')
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}{um}um')
         self.number_of_sampling_attempts = "10"
@@ -244,7 +245,7 @@ class VolumeRegistration:
         transformed = transformixImageFilter.GetResultImage()
         sitk.WriteImage(transformed, os.path.join(self.registered_output, 'result.tif'))
 
-    def transformix_pointsXXX(self):
+    def transformix_com(self):
         """Helper method when you want to rerun the transform on a set of points.
         Get the pickle file and transform it. It is in full resolution pixel size.
         The points in the pickle file need to be translated from full res pixel to
@@ -271,6 +272,27 @@ class VolumeRegistration:
                 #print(structure, points, x,y,z)
                 f.write(f'{x} {y} {z}')
                 f.write('\n')
+        
+        transformixImageFilter = self.setup_transformix(self.reverse_elastix_output)
+        transformixImageFilter.SetFixedPointSetFileName(self.unregistered_point_file)
+        transformixImageFilter.Execute()
+
+
+    def transformix_polygons(self):
+        """Helper method when you want to rerun the transform on a set of points.
+        Get the pickle file and transform it. It is in full resolution pixel size.
+        The points in the pickle file need to be translated from full res pixel to
+        the current resolution of the downsampled volume.
+        Points are inserted in the DB in micrometers from the full resolution images
+
+        
+        The points.pts file takes THIS format:
+        point
+        3
+        102.8 -33.4 57.0
+        178.1 -10.9 14.5
+        180.4 -18.1 78.9
+        """
         
         transformixImageFilter = self.setup_transformix(self.reverse_elastix_output)
         transformixImageFilter.SetFixedPointSetFileName(self.unregistered_point_file)
@@ -620,7 +642,8 @@ class VolumeRegistration:
         x = 429 # -> 437
         y = 294 # -> 263
         z = 152
-        # got 408 317 145
+        # got 410 320 147
+        # should be 459 256 150
 
         point = [x,y,z]
         print(point)
@@ -894,7 +917,8 @@ if __name__ == '__main__':
                         'insert_points': volumeRegistration.insert_points,
                         'create_itk': volumeRegistration.create_itk,
                         'fill_contours': volumeRegistration.fill_contours,
-                        'evaluate':volumeRegistration.evaluate_registration
+                        'evaluate':volumeRegistration.evaluate_registration,
+                        'polygons': volumeRegistration.transformix_polygons
     }
 
     if task in function_mapping:
