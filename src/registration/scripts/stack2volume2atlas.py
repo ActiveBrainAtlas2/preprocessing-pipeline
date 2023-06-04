@@ -469,7 +469,7 @@ class VolumeRegistration:
 
 
         
-    def transformix_points(self):
+    def transformix_pointsYYY(self):
         """Helper method when you want to rerun the transform on a set of points.
         Get the pickle file and transform it. It is in full resolution pixel size.
         The points in the pickle file need to be translated from full res pixel to
@@ -504,11 +504,12 @@ class VolumeRegistration:
         # whereas we want to map from the moving image to the fixed image.
         init_transform = init_transform.GetInverseTransform()
         print(init_transform)
-        return
+        
         input_points = itk.PointSet[itk.F, 3].New()
 
         sqlController = SqlController(animal)
         
+        """
         polygon = PolygonSequenceController(animal=animal)        
         scale_xy = sqlController.scan_run.resolution
         z_scale = sqlController.scan_run.zresolution
@@ -532,7 +533,20 @@ class VolumeRegistration:
             #section = int(np.round(z/z_scale))
             #polygons[section].append(xy)
             input_points.GetPoints().InsertElement(idx, point)
+        """
+        idx = 0
+        #x = 12236.70/25
+        #y = 8549.40/25
+        #z = 3040/25
+        #point = [x,y,z]
+        # good values
+        x = 425 # -> 437
+        y = 292 # -> 263
+        z = 151 # 159
 
+        point = [x,y,z]
+        print(point)
+        input_points.GetPoints().InsertElement(idx, point)
         
         init_points = itk.PointSet[itk.F, 3].New()
         for idx in range(input_points.GetNumberOfPoints()):
@@ -545,9 +559,10 @@ class VolumeRegistration:
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
         with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
             f.write("point\n")
-            f.write(f"{df.shape[0]}\n")
-            for idx in range(input_points.GetNumberOfPoints()):
-                point = input_points.GetPoint(idx)
+            f.write(f"{init_points.GetNumberOfPoints()}\n")
+
+            for idx in range(init_points.GetNumberOfPoints()):
+                point = init_points.GetPoint(idx)
                 f.write(f"{point[0]} {point[1]} {point[2]}\n")
 
         N_ELASTIX_STAGES = 3
@@ -575,6 +590,58 @@ class VolumeRegistration:
             f"{output_point[11:18]} ---> {output_point[27:35]}"
             for output_point in result_point_set
         ]))
+
+        
+    def transformix_points(self):
+        fixed_image = itk.imread(self.fixed_volume_path, itk.F)
+        moving_image = itk.imread(self.moving_volume_path, itk.F)
+        # Import Default Parameter Map
+        parameter_object = itk.ParameterObject.New()
+        parameter_map_rigid = parameter_object.GetDefaultParameterMap('rigid')
+        parameter_object.AddParameterMap(parameter_map_rigid)
+        parameter_map_affine= parameter_object.GetDefaultParameterMap('affine')
+        parameter_object.AddParameterMap(parameter_map_affine)
+        parameter_map_bspline = parameter_object.GetDefaultParameterMap('bspline')
+        parameter_object.AddParameterMap(parameter_map_bspline)
+        # Call registration function
+        result_image, result_transform_parameters = itk.elastix_registration_method(
+            fixed_image, moving_image,
+            parameter_object=parameter_object,
+            log_to_console=True)        
+        idx = 0
+
+        #x = 12236.70/25
+        #y = 8549.40/25
+        #z = 3040/25
+        #point = [x,y,z]
+        # good values
+        x = 425 # -> 437
+        y = 292 # -> 263
+        z = 151 # 159
+
+        point = [x,y,z]
+        print(point)
+        input_points = itk.PointSet[itk.F, 3].New()
+        input_points.GetPoints().InsertElement(idx, point)        
+        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
+        with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
+            f.write("point\n")
+            f.write(f"{input_points.GetNumberOfPoints()}\n")
+            for idx in range(input_points.GetNumberOfPoints()):
+                point = input_points.GetPoint(idx)
+                f.write(f"{point[0]} {point[1]} {point[2]}\n")
+
+        # Procedural interface of transformix filter
+        result_point_set = itk.transformix_pointset(
+            moving_image, result_transform_parameters,
+            fixed_point_set_file_name=TRANSFORMIX_POINTSET_FILE,
+            output_directory=self.registered_output)
+        print("\n".join(
+        [
+            f"{output_point[11:18]} ---> {output_point[27:35]}"
+            for output_point in result_point_set
+        ]))
+
 
     def fill_contours(self):
         sqlController = SqlController(animal)
