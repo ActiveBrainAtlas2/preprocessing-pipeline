@@ -157,8 +157,8 @@ class VolumeRegistration:
         elastixImageFilter.Execute()
 
     def setup_registration(self, imagepath1, imagepath2, outputpath):
-        fixedImage = sitk.ReadImage(imagepath1)
-        movingImage = sitk.ReadImage(imagepath2)
+        fixedImage = sitk.ReadImage(imagepath1, sitk.sitkFloat32)
+        movingImage = sitk.ReadImage(imagepath2, sitk.sitkFloat32)
 
         initial_transform = sitk.CenteredTransformInitializer(fixedImage, 
                                                       movingImage, 
