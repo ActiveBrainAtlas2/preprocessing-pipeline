@@ -620,6 +620,7 @@ class VolumeRegistration:
         x = 425 # -> 437
         y = 292 # -> 263
         z = 151 # 159
+        # got 408 317 145
 
         point = [x,y,z]
         print(point)
@@ -635,7 +636,7 @@ class VolumeRegistration:
 
         # Procedural interface of transformix filter
         result_point_set = itk.transformix_pointset(
-            moving_image, result_transform_parameters,
+            fixed_image, result_transform_parameters,
             fixed_point_set_file_name=TRANSFORMIX_POINTSET_FILE,
             output_directory=self.registered_output)
         print("\n".join(
