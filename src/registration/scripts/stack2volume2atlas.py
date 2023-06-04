@@ -617,9 +617,9 @@ class VolumeRegistration:
         #z = 3040/25
         #point = [x,y,z]
         # good values
-        x = 425 # -> 437
-        y = 292 # -> 263
-        z = 151 # 159
+        x = 429 # -> 437
+        y = 294 # -> 263
+        z = 152
         # got 408 317 145
 
         point = [x,y,z]
@@ -634,17 +634,21 @@ class VolumeRegistration:
                 point = input_points.GetPoint(idx)
                 f.write(f"{point[0]} {point[1]} {point[2]}\n")
 
-        # Procedural interface of transformix filter
-        result_point_set = itk.transformix_pointset(
-            fixed_image, result_transform_parameters,
-            fixed_point_set_file_name=TRANSFORMIX_POINTSET_FILE,
-            output_directory=self.registered_output)
-        print("\n".join(
-        [
-            f"{output_point[11:18]} ---> {output_point[27:35]}"
-            for output_point in result_point_set
-        ]))
-
+        # Load Transformix Object
+        transformix_object = itk.TransformixFilter.New(moving_image)
+        transformix_object.SetFixedPointSetFileName(TRANSFORMIX_POINTSET_FILE)
+        transformix_object.SetTransformParameterObject(result_transform_parameters)
+        transformix_object.SetLogToConsole(True)
+        transformix_object.SetOutputDirectory(self.registered_output)
+        # Update object (required)
+        transformix_object.UpdateLargestPossibleRegion()
+        # Results of Transformation
+        # -- Bug? -- Output is saved as .txt file in outputdirectory.
+        # The .GetOutput() function outputs an empty image.
+        output_transformix = transformix_object.GetOutput()
+        result_point_set = np.loadtxt(os.path.join(self.registered_output, 'outputpoints.txt'), dtype='str')[:,30:33].astype('float64')
+        print(output_transformix)
+        print(result_point_set)
 
     def fill_contours(self):
         sqlController = SqlController(animal)
