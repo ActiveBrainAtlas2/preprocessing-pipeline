@@ -607,7 +607,9 @@ class VolumeRegistration:
         result_image, result_transform_parameters = itk.elastix_registration_method(
             fixed_image, moving_image,
             parameter_object=parameter_object,
-            log_to_console=True)        
+            log_to_console=True) 
+        itk.imwrite(result_image, os.path.join(self.registered_output, 'result.tif'), compression=True) 
+       
         idx = 0
 
         #x = 12236.70/25
