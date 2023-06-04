@@ -206,7 +206,6 @@ class VolumeRegistration:
         elastixImageFilter.LogToConsoleOff()
         elastixImageFilter.SetLogFileName('elastix.log');
         if self.debug:
-            elastixImageFilter.PrintParameterMap(translateParameterMap)    
             elastixImageFilter.PrintParameterMap(rigidParameterMap)    
             elastixImageFilter.PrintParameterMap(affineParameterMap)
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)
