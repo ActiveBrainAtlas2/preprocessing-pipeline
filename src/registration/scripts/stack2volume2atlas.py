@@ -160,13 +160,14 @@ class VolumeRegistration:
         fixedImage = sitk.ReadImage(imagepath1, sitk.sitkFloat32)
         movingImage = sitk.ReadImage(imagepath2, sitk.sitkFloat32)
 
-        initial_transform = sitk.CenteredTransformInitializer(fixedImage, 
+        init_transform = sitk.CenteredTransformInitializer(fixedImage, 
                                                       movingImage, 
                                                       sitk.Euler3DTransform(), 
                                                       sitk.CenteredTransformInitializerFilter.GEOMETRY)
 
-        movingImage = sitk.Resample(movingImage, fixedImage, initial_transform, sitk.sitkLinear, 0.0, movingImage.GetPixelID())    
-
+        movingImage = sitk.Resample(movingImage, fixedImage, init_transform, sitk.sitkLinear, 0.0, movingImage.GetPixelID())    
+        sitk.WriteTransform(init_transform, os.path.join(outputpath, "init_transform.tfm"))
+        #read_result = sitk.ReadTransform("euler2D.tfm")
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
