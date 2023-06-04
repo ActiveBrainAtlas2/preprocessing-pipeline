@@ -169,14 +169,12 @@ class VolumeRegistration:
         
         rigidParameterMap = sitk.GetDefaultParameterMap('rigid')        
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
-        
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         rigidParameterMap["UseDirectionCosines"] = ["true"]
         rigidParameterMap["NumberOfResolutions"]= ["6"]
         rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
         rigidParameterMap["WriteResultImage"] = ["false"]
 
-        
         affineParameterMap = sitk.GetDefaultParameterMap('affine')
         affineParameterMap["UseDirectionCosines"] = ["true"]
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
@@ -619,12 +617,40 @@ class VolumeRegistration:
         moving_image = itk.imread(self.moving_volume_path, itk.F)
         # Import Default Parameter Map
         parameter_object = itk.ParameterObject.New()
+        
+        parameter_map_trans = parameter_object.GetDefaultParameterMap('translation')
+        parameter_object.AddParameterMap(parameter_map_trans)
+
         parameter_map_rigid = parameter_object.GetDefaultParameterMap('rigid')
+        parameter_map_rigid["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
+        parameter_map_rigid["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
+        parameter_map_rigid["UseDirectionCosines"] = ["true"]
+        parameter_map_rigid["NumberOfResolutions"]= ["6"]
+        parameter_map_rigid["NumberOfSpatialSamples"] = ["4000"]
+        parameter_map_rigid["WriteResultImage"] = ["false"]
         parameter_object.AddParameterMap(parameter_map_rigid)
+
         parameter_map_affine= parameter_object.GetDefaultParameterMap('affine')
+        parameter_map_affine["UseDirectionCosines"] = ["true"]
+        parameter_map_affine["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
+        parameter_map_affine["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
+        parameter_map_affine["NumberOfResolutions"]= ["6"]
+        parameter_map_affine["NumberOfSpatialSamples"] = ["4000"]
+        parameter_map_affine["WriteResultImage"] = ["false"]
         parameter_object.AddParameterMap(parameter_map_affine)
+
         parameter_map_bspline = parameter_object.GetDefaultParameterMap('bspline')
+        parameter_map_bspline["MaximumNumberOfIterations"] = [self.bsplineIterations] # 150 works ok
+        parameter_map_bspline["WriteResultImage"] = ["true"]
+        parameter_map_bspline["UseDirectionCosines"] = ["true"]
+        parameter_map_bspline["FinalGridSpacingInVoxels"] = [f"{self.um}"]
+        parameter_map_bspline["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
+        parameter_map_bspline["NumberOfResolutions"]= ["6"]
+        parameter_map_bspline["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
+        parameter_map_bspline["NumberOfSpatialSamples"] = ["4000"]
+        del parameter_map_bspline["FinalGridSpacingInPhysicalUnits"]
         parameter_object.AddParameterMap(parameter_map_bspline)
+
         # Call registration function
         result_image, result_transform_parameters = itk.elastix_registration_method(
             fixed_image, moving_image,
@@ -633,18 +659,9 @@ class VolumeRegistration:
         itk.imwrite(result_image, os.path.join(self.registered_output, 'result.tif'), compression=True) 
        
         idx = 0
-
-        #x = 12236.70/25
-        #y = 8549.40/25
-        #z = 3040/25
-        #point = [x,y,z]
-        # good values
-        x = 429 # -> 437
-        y = 294 # -> 263
+        x = 213 # -> 437
+        y = 147 # -> 263
         z = 152
-        # got 410 320 147
-        # should be 459 256 150
-
         point = [x,y,z]
         print(point)
         input_points = itk.PointSet[itk.F, 3].New()
@@ -669,9 +686,7 @@ class VolumeRegistration:
         # -- Bug? -- Output is saved as .txt file in outputdirectory.
         # The .GetOutput() function outputs an empty image.
         output_transformix = transformix_object.GetOutput()
-        result_point_set = np.loadtxt(os.path.join(self.registered_output, 'outputpoints.txt'), dtype='str')[:,30:33].astype('float64')
         print(output_transformix)
-        print(result_point_set)
 
     def fill_contours(self):
         sqlController = SqlController(animal)
