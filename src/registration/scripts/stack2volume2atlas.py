@@ -613,6 +613,7 @@ class VolumeRegistration:
 
         
     def transformix_points(self):
+        os.makedirs(self.registered_output, exist_ok=True)
         fixed_image = itk.imread(self.fixed_volume_path, itk.F)
         moving_image = itk.imread(self.moving_volume_path, itk.F)
         # Import Default Parameter Map
