@@ -117,9 +117,9 @@ class VolumeRegistration:
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}{um}um')
         self.number_of_sampling_attempts = "10"
         if self.debug:
-            self.rigidIterations = "100"
-            self.affineIterations = "100"
-            self.bsplineIterations = "200"
+            self.rigidIterations = "250"
+            self.affineIterations = "250"
+            self.bsplineIterations = "250"
         else:
             self.rigidIterations = "1000"
             self.affineIterations = "2500"
