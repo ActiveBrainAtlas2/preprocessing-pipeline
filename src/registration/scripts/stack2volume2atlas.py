@@ -491,8 +491,8 @@ class VolumeRegistration:
         polygon = PolygonSequenceController(animal=self.animal)        
         scale_xy = sqlController.scan_run.resolution
         z_scale = sqlController.scan_run.zresolution
-        initpath = os.path.join(self.elastix_output, 'init_transform.tfm')
-        init_transform = sitk.ReadTransform(initpath)
+        #initpath = os.path.join(self.elastix_output, 'init_transform.tfm')
+        #init_transform = sitk.ReadTransform(initpath)
         #init_transform = init_transform.GetInverse()
         # with elastix_output
         #without inverse, X is too low
@@ -523,8 +523,8 @@ class VolumeRegistration:
         xr = 390.8289546460
         yr = 162.0727323009
         zr = 215
-        r_point = [xr,yr,zr]
-        point = init_transform.TransformPoint(r_point)
+        point = [xr,yr,zr]
+        #point = init_transform.TransformPoint(r_point)
         print(point)
         
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
