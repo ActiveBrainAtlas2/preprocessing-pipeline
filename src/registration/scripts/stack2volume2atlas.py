@@ -332,7 +332,7 @@ class VolumeRegistration:
         # end apply translation
         """
         parameter_object = itk.ParameterObject.New()
-        transParamterMap = parameter_object.GetDefaultParameterMap('translate')
+        transParameterMap = parameter_object.GetDefaultParameterMap('translate')
         rigidParameterMap = parameter_object.GetDefaultParameterMap('rigid')
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
