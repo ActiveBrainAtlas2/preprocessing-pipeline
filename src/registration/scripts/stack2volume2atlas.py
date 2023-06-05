@@ -303,6 +303,7 @@ class VolumeRegistration:
         moving_image = itk.imread(self.moving_volume_path, itk.F)
         
         # init transform start
+        """
         # Translate to roughly position sample data on top of CCF data
         init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
         init_transform.SetIdentity()
@@ -329,8 +330,9 @@ class VolumeRegistration:
         change_information_filter.UpdateOutputInformation()
         source_image_init = change_information_filter.GetOutput()
         # end apply translation
-        
+        """
         parameter_object = itk.ParameterObject.New()
+        transParamterMap = parameter_object.GetDefaultParameterMap('translate')
         rigidParameterMap = parameter_object.GetDefaultParameterMap('rigid')
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
@@ -358,13 +360,14 @@ class VolumeRegistration:
         bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
+        parameter_object.AddParameterMap(transParameterMap)
         parameter_object.AddParameterMap(rigidParameterMap)
         parameter_object.AddParameterMap(affineParameterMap)
         parameter_object.AddParameterMap(bsplineParameterMap)
         registration_method = itk.ElastixRegistrationMethod[type(fixed_image), type(moving_image)
         ].New(
             fixed_image=fixed_image,
-            moving_image=source_image_init,
+            moving_image=moving_image,
             parameter_object=parameter_object,
             log_to_console=False,
         )
@@ -384,7 +387,8 @@ class VolumeRegistration:
         yr = 162.0727323009
         zr = 215
         r_point = [xr,yr,zr]
-        point = init_transform.TransformPoint(r_point)
+        #point = init_transform.TransformPoint(r_point)
+        point = r_point
         print(point)
         
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
