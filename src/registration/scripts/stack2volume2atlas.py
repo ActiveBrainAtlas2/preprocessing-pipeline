@@ -332,11 +332,18 @@ class VolumeRegistration:
         # end apply translation
         
         parameter_object = itk.ParameterObject.New()
-        rigid_parameter_map = parameter_object.GetDefaultParameterMap('rigid')
+        rigidParameterMap = parameter_object.GetDefaultParameterMap('rigid')
+        rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
+        rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
+        rigidParameterMap["UseDirectionCosines"] = ["true"]
+        rigidParameterMap["NumberOfResolutions"]= ["6"]
+        rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
+        rigidParameterMap["WriteResultImage"] = ["false"]
+
         affine_parameter_map = parameter_object.GetDefaultParameterMap('affine')
         bspline_parameter_map = parameter_object.GetDefaultParameterMap("bspline")
         bspline_parameter_map["FinalGridSpacingInVoxels"] = (f"{self.um}",)
-        parameter_object.AddParameterMap(rigid_parameter_map)
+        parameter_object.AddParameterMap(rigidParameterMap)
         parameter_object.AddParameterMap(affine_parameter_map)
         parameter_object.AddParameterMap(bspline_parameter_map)
         parameter_object.RemoveParameter("FinalGridSpacingInPhysicalUnits")
