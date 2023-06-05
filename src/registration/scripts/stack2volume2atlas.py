@@ -491,14 +491,15 @@ class VolumeRegistration:
 
         
     def transformix_points(self):
-        """
-        initpath = os.path.join(self.reverse_elastix_output, 'init_transform.tfm')
-        init_transform = sitk.ReadTransform(initpath)
-        input_points = itk.PointSet[itk.F, 3].New()
         sqlController = SqlController(self.animal)
         polygon = PolygonSequenceController(animal=self.animal)        
         scale_xy = sqlController.scan_run.resolution
         z_scale = sqlController.scan_run.zresolution
+        initpath = os.path.join(self.elastix_output, 'init_transform.tfm')
+        init_transform = sitk.ReadTransform(initpath)
+        init_transform = init_transform.GetInverse()
+        input_points = itk.PointSet[itk.F, 3].New()
+        """
         df_L = polygon.get_volume(self.animal, 3, 12)
         df_R = polygon.get_volume(self.animal, 3, 13)
         frames = [df_L, df_R]
@@ -507,6 +508,8 @@ class VolumeRegistration:
         len_R = df_R.shape[0]
         len_total = df.shape[0]
         assert len_L + len_R == len_total, "Lengths of dataframes do not add up."
+        """
+        df = polygon.get_volume(self.animal, 3, 33)
 
         for idx, (_, row) in enumerate(df.iterrows()):
             x = row['coordinate'][0]/scale_xy/self.scaling_factor
@@ -515,7 +518,7 @@ class VolumeRegistration:
             point = [x,y,z]
             point = init_transform.TransformPoint(point)
             input_points.GetPoints().InsertElement(idx, point)
-        
+        del df
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
         with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
             f.write("point\n")
@@ -525,12 +528,10 @@ class VolumeRegistration:
                 point = input_points.GetPoint(idx)
                 f.write(f"{point[0]} {point[1]} {point[2]}\n")
                 
-        transformixImageFilter = self.setup_transformix(self.reverse_elastix_output)
+        transformixImageFilter = self.setup_transformix(self.elastix_output)
         transformixImageFilter.SetFixedPointSetFileName(TRANSFORMIX_POINTSET_FILE)
         transformixImageFilter.Execute()
-
-        """
-        
+        return
         polygons = defaultdict(list)
         with open(self.registered_point_file, "r") as f:                
             lines=f.readlines()
