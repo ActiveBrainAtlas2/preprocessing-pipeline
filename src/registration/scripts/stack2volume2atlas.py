@@ -398,7 +398,7 @@ class VolumeRegistration:
             f.write(f"1\n")
             f.write(f"{point[0]} {point[1]} {point[2]}\n")
 
-        N_ELASTIX_STAGES = 3
+        N_ELASTIX_STAGES = 4
 
         toplevel_param = itk.ParameterObject.New()
         param = itk.ParameterObject.New()
