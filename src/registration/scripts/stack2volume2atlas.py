@@ -497,7 +497,7 @@ class VolumeRegistration:
         z_scale = sqlController.scan_run.zresolution
         initpath = os.path.join(self.elastix_output, 'init_transform.tfm')
         init_transform = sitk.ReadTransform(initpath)
-        init_transform = init_transform.GetInverse()
+        #init_transform = init_transform.GetInverse()
         input_points = itk.PointSet[itk.F, 3].New()
         """
         df_L = polygon.get_volume(self.animal, 3, 12)
