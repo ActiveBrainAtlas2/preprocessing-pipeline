@@ -634,9 +634,10 @@ class VolumeRegistration:
         files = sorted(os.listdir(INPUT))
         for file in tqdm(files):
             inpath = os.path.join(INPUT, file)
+            img = cv2.imread(inpath, cv2.IMREAD_GRAYSCALE)
             outpath = os.path.join(OUTPUT, file)
             if not os.path.exists(outpath):
-                shutil.copyfile(inpath, outpath)
+                cv2.imwrite(outpath, img)
 
 
     def insert_points(self):
