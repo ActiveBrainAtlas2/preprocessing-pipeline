@@ -490,29 +490,12 @@ class VolumeRegistration:
 
         
     def transformix_points(self):
-        """Helper method when you want to rerun the transform on a set of points.
-        Get the pickle file and transform it. It is in full resolution pixel size.
-        The points in the pickle file need to be translated from full res pixel to
-        the current resolution of the downsampled volume.
-        Points are inserted in the DB in micrometers from the full resolution images
-
-        
-        The points.pts file takes THIS format:
-        point
-        3
-        102.8 -33.4 57.0
-        178.1 -10.9 14.5
-        180.4 -18.1 78.9
         """
-        # initialize init_transform
-        # init transform start
-        # initializer maps from the fixed image to the moving image,
-        # whereas we want to map from the moving image to the fixed image.
         initpath = os.path.join(self.reverse_elastix_output, 'init_transform.tfm')
         init_transform = sitk.ReadTransform(initpath)
         input_points = itk.PointSet[itk.F, 3].New()
-        sqlController = SqlController(animal)
-        polygon = PolygonSequenceController(animal=animal)        
+        sqlController = SqlController(self.animal)
+        polygon = PolygonSequenceController(animal=self.animal)        
         scale_xy = sqlController.scan_run.resolution
         z_scale = sqlController.scan_run.zresolution
         df_L = polygon.get_volume(self.animal, 3, 12)
@@ -545,6 +528,37 @@ class VolumeRegistration:
         transformixImageFilter.SetFixedPointSetFileName(TRANSFORMIX_POINTSET_FILE)
         transformixImageFilter.Execute()
 
+        """
+        
+        polygons = defaultdict(list)
+        with open(self.registered_point_file, "r") as f:                
+            lines=f.readlines()
+            f.close()
+
+        point_or_index = 'OutputPoint'
+
+        for i in range(len(lines)):        
+            lx=lines[i].split()[lines[i].split().index(point_or_index)+3:lines[i].split().index(point_or_index)+6] #x,y,z
+            lf = [float(f) for f in lx]
+            x = lf[0]
+            y = lf[1]
+            z = lf[2]
+            section = int(np.round(z))
+            polygons[section].append((x,y))
+
+        resultImage = io.imread(os.path.join(self.registered_output, 'result.tif'))
+        resultImage = normalize8(resultImage)
+        for section, points in polygons.items():
+            points = np.array(points)
+            points = points.astype(np.int32)
+            cv2.fillPoly(resultImage[section,:,:], pts = [points], color = 254)
+        outpath = os.path.join(self.registered_output, 'annotated.tif')
+        #resultImage = normalize8(resultImage)
+        io.imsave(outpath, resultImage)
+        print(f'Saved a 3D volume {outpath} with shape={resultImage.shape} and dtype={resultImage.dtype}')
+
+
+
         return
         N_ELASTIX_STAGES = 3
 
@@ -572,39 +586,6 @@ class VolumeRegistration:
             for output_point in result_point_set
         ]))
 
-        
-    def transformix_pointsXXXXXX(self):
-        os.makedirs(self.registered_output, exist_ok=True)
-        init_transform = sitk.ReadTransform("euler2D.tfm")       
-        idx = 0
-        x = 213 # -> 437
-        y = 147 # -> 263
-        z = 152
-        point = [x,y,z]
-        print(point)
-        input_points = sitk.PointSet[itk.F, 3].New()
-        input_points.GetPoints().InsertElement(idx, point)        
-        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
-        with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
-            f.write("point\n")
-            f.write(f"{input_points.GetNumberOfPoints()}\n")
-            for idx in range(input_points.GetNumberOfPoints()):
-                point = input_points.GetPoint(idx)
-                f.write(f"{point[0]} {point[1]} {point[2]}\n")
-
-        # Load Transformix Object
-        transformix_object = itk.TransformixFilter.New(moving_image)
-        transformix_object.SetFixedPointSetFileName(TRANSFORMIX_POINTSET_FILE)
-        transformix_object.SetTransformParameterObject(result_transform_parameters)
-        transformix_object.SetLogToConsole(True)
-        transformix_object.SetOutputDirectory(self.registered_output)
-        # Update object (required)
-        transformix_object.UpdateLargestPossibleRegion()
-        # Results of Transformation
-        # -- Bug? -- Output is saved as .txt file in outputdirectory.
-        # The .GetOutput() function outputs an empty image.
-        output_transformix = transformix_object.GetOutput()
-        print(output_transformix)
 
     def fill_contours(self):
         sqlController = SqlController(animal)
