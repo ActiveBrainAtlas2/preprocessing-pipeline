@@ -117,9 +117,10 @@ class VolumeRegistration:
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}{um}um')
         self.number_of_sampling_attempts = "10"
         if self.debug:
-            self.rigidIterations = "250"
-            self.affineIterations = "250"
-            self.bsplineIterations = "250"
+            iterations = "350"
+            self.rigidIterations = iterations
+            self.affineIterations = iterations
+            self.bsplineIterations = iterations
         else:
             self.rigidIterations = "1000"
             self.affineIterations = "2500"
@@ -553,7 +554,6 @@ class VolumeRegistration:
             points = points.astype(np.int32)
             cv2.fillPoly(resultImage[section,:,:], pts = [points], color = 254)
         outpath = os.path.join(self.registered_output, 'annotated.tif')
-        #resultImage = normalize8(resultImage)
         io.imsave(outpath, resultImage)
         print(f'Saved a 3D volume {outpath} with shape={resultImage.shape} and dtype={resultImage.dtype}')
 
@@ -598,6 +598,7 @@ class VolumeRegistration:
         z_scale = sqlController.scan_run.zresolution
         polygons = defaultdict(list)
         color = 0 # set it below the threshold set in mask class
+        """
         df_L = polygon.get_volume(self.animal, 3, 12)
         df_R = polygon.get_volume(self.animal, 3, 13)
         frames = [df_L, df_R]
@@ -606,6 +607,8 @@ class VolumeRegistration:
         len_R = df_R.shape[0]
         len_total = df.shape[0]
         assert len_L + len_R == len_total, "Lengths of dataframes do not add up."
+        """
+        df = polygon.get_volume(self.animal, 3, 33)
 
         for _, row in df.iterrows():
             x = row['coordinate'][0]
