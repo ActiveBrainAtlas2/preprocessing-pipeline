@@ -361,48 +361,20 @@ class VolumeRegistration:
             registration_method.GetTransformParameterObject().WriteParameterFile(
             registration_method.GetTransformParameterObject().GetParameterMap(index),
             f"{self.registered_output}/elastix-transform.{index}.txt",)
-        input_points = itk.PointSet[itk.F, 3].New()
 
-        sqlController = SqlController(animal)
-        
-        polygon = PolygonSequenceController(animal=animal)        
-        scale_xy = sqlController.scan_run.resolution
-        z_scale = sqlController.scan_run.zresolution
-        df_L = polygon.get_volume(self.animal, 3, 12)
-        df_R = polygon.get_volume(self.animal, 3, 13)
-        frames = [df_L, df_R]
-        df = pd.concat(frames)
-        len_L = df_L.shape[0]
-        len_R = df_R.shape[0]
-        len_total = df.shape[0]
-        assert len_L + len_R == len_total, "Lengths of dataframes do not add up."
-
-        for idx, (_, row) in enumerate(df.iterrows()):
-            x = row['coordinate'][0]/scale_xy/self.scaling_factor
-            y = row['coordinate'][1]/scale_xy/self.scaling_factor
-            z = row['coordinate'][2]/z_scale
-            point = [x,y,z]
-            #xy = (x/scale_xy/self.scaling_factor, y/scale_xy/self.scaling_factor)
-            #section = int(np.round(z/z_scale))
-            #polygons[section].append(xy)
-            input_points.GetPoints().InsertElement(idx, point)
-
-        
-        init_points = itk.PointSet[itk.F, 3].New()
-        for idx in range(input_points.GetNumberOfPoints()):
-            point = input_points.GetPoint(idx)
-            init_points.GetPoints().InsertElement(
-                idx, init_transform.TransformPoint(point)
-            )
-            print(f"{point} -> {init_points.GetPoint(idx)}")
+        xr = 390.8289546460
+        yr = 162.0727323009
+        zr = 215
+        r_point = [xr,yr,zr]
+        point = init_transform.TransformPoint(r_point)
+        print(point)
         
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
         with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
             f.write("point\n")
-            f.write(f"{df.shape[0]}\n")
-            for idx in range(input_points.GetNumberOfPoints()):
-                point = input_points.GetPoint(idx)
-                f.write(f"{point[0]} {point[1]} {point[2]}\n")
+            #f.write(f"{input_points.GetNumberOfPoints()}\n")
+            f.write(f"1\n")
+            f.write(f"{point[0]} {point[1]} {point[2]}\n")
 
         N_ELASTIX_STAGES = 3
 
@@ -424,11 +396,7 @@ class VolumeRegistration:
             fixed_point_set_file_name=TRANSFORMIX_POINTSET_FILE,
             output_directory=self.registered_output)
         # Transformix will write results to self.registered_output/outputpoints.txt
-        print("\n".join(
-        [
-            f"{output_point[11:18]} ---> {output_point[27:35]}"
-            for output_point in result_point_set
-        ]))
+        print(result_point_set)
 
     def evaluate_registrationXXXX(self):
         TARGET_LABEL_IMAGE_FILEPATH = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/allen_25um_annnotations.tif'
@@ -498,6 +466,11 @@ class VolumeRegistration:
         initpath = os.path.join(self.elastix_output, 'init_transform.tfm')
         init_transform = sitk.ReadTransform(initpath)
         #init_transform = init_transform.GetInverse()
+        # with elastix_output
+        #without inverse, X is too low
+        #(313.328954646, 69.07273230089999, 219.5)
+        # with getinverse, structure Y is too great
+        #(468.328954646, 255.0727323009, 210.5)
         input_points = itk.PointSet[itk.F, 3].New()
         """
         df_L = polygon.get_volume(self.animal, 3, 12)
@@ -508,7 +481,6 @@ class VolumeRegistration:
         len_R = df_R.shape[0]
         len_total = df.shape[0]
         assert len_L + len_R == len_total, "Lengths of dataframes do not add up."
-        """
         df = polygon.get_volume(self.animal, 3, 33)
 
         for idx, (_, row) in enumerate(df.iterrows()):
@@ -519,26 +491,36 @@ class VolumeRegistration:
             point = init_transform.TransformPoint(point)
             input_points.GetPoints().InsertElement(idx, point)
         del df
+        """
+        xr = 390.8289546460
+        yr = 162.0727323009
+        zr = 215
+        r_point = [xr,yr,zr]
+        point = init_transform.TransformPoint(r_point)
+        print(point)
+        
         TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
         with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
             f.write("point\n")
-            f.write(f"{input_points.GetNumberOfPoints()}\n")
+            #f.write(f"{input_points.GetNumberOfPoints()}\n")
+            f.write(f"1\n")
+            f.write(f"{point[0]} {point[1]} {point[2]}\n")
 
-            for idx in range(input_points.GetNumberOfPoints()):
-                point = input_points.GetPoint(idx)
-                f.write(f"{point[0]} {point[1]} {point[2]}\n")
+            #for idx in range(input_points.GetNumberOfPoints()):
+            #    point = input_points.GetPoint(idx)
+            #    f.write(f"{point[0]} {point[1]} {point[2]}\n")
                 
-        transformixImageFilter = self.setup_transformix(self.elastix_output)
+        transformixImageFilter = self.setup_transformix(self.reverse_elastix_output)
         transformixImageFilter.SetFixedPointSetFileName(TRANSFORMIX_POINTSET_FILE)
         transformixImageFilter.Execute()
-        return
-        polygons = defaultdict(list)
+        
+        #polygons = defaultdict(list)
         with open(self.registered_point_file, "r") as f:                
             lines=f.readlines()
             f.close()
 
         point_or_index = 'OutputPoint'
-
+        points = []
         for i in range(len(lines)):        
             lx=lines[i].split()[lines[i].split().index(point_or_index)+3:lines[i].split().index(point_or_index)+6] #x,y,z
             lf = [float(f) for f in lx]
@@ -546,14 +528,24 @@ class VolumeRegistration:
             y = lf[1]
             z = lf[2]
             section = int(np.round(z))
-            polygons[section].append((x,y))
-
+            points.append([x,y,section])
+            #polygons[section].append((x,y))
+        print(points)
         resultImage = io.imread(os.path.join(self.registered_output, 'result.tif'))
         resultImage = normalize8(resultImage)
+        """
         for section, points in polygons.items():
             points = np.array(points)
             points = points.astype(np.int32)
             cv2.fillPoly(resultImage[section,:,:], pts = [points], color = 254)
+        """
+        for i in range(resultImage.shape[0]):
+            section = int(points[0][2])
+            x = int(points[0][0])
+            y = int(points[0][1])
+            if i == section:
+                print(x,y,section)
+                cv2.circle(resultImage[section,:,:], (x,y), 12, 254, thickness=3)
         outpath = os.path.join(self.registered_output, 'annotated.tif')
         io.imsave(outpath, resultImage)
         print(f'Saved a 3D volume {outpath} with shape={resultImage.shape} and dtype={resultImage.dtype}')
