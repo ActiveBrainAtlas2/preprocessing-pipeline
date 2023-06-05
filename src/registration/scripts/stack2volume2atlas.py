@@ -160,7 +160,7 @@ class VolumeRegistration:
     def setup_registration(self, imagepath1, imagepath2, outputpath):
         fixedImage = sitk.ReadImage(imagepath1, sitk.sitkFloat32)
         movingImage = sitk.ReadImage(imagepath2, sitk.sitkFloat32)
-
+        """
         init_transform = sitk.CenteredTransformInitializer(fixedImage, 
                                                       movingImage, 
                                                       sitk.Euler3DTransform(), 
@@ -168,10 +168,12 @@ class VolumeRegistration:
 
         movingImage = sitk.Resample(movingImage, fixedImage, init_transform, sitk.sitkLinear, 0.0, movingImage.GetPixelID())    
         sitk.WriteTransform(init_transform, self.init_transformpath)
+        """
         elastixImageFilter = sitk.ElastixImageFilter()
         elastixImageFilter.SetFixedImage(fixedImage)
         elastixImageFilter.SetMovingImage(movingImage)
         
+        transParameterMap = sitk.GetDefaultParameterMap('translation')
         rigidParameterMap = sitk.GetDefaultParameterMap('rigid')        
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
@@ -199,7 +201,8 @@ class VolumeRegistration:
         bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
-        elastixImageFilter.SetParameterMap(rigidParameterMap)
+        elastixImageFilter.SetParameterMap(transParameterMap)
+        elastixImageFilter.AddParameterMap(rigidParameterMap)
         elastixImageFilter.AddParameterMap(affineParameterMap)
         elastixImageFilter.AddParameterMap(bsplineParameterMap)
         elastixImageFilter.SetOutputDirectory(outputpath)
@@ -207,6 +210,7 @@ class VolumeRegistration:
         elastixImageFilter.LogToConsoleOff()
         elastixImageFilter.SetLogFileName('elastix.log');
         if self.debug:
+            elastixImageFilter.PrintParameterMap(transParameterMap)    
             elastixImageFilter.PrintParameterMap(rigidParameterMap)    
             elastixImageFilter.PrintParameterMap(affineParameterMap)
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)
@@ -225,9 +229,11 @@ class VolumeRegistration:
         parameterMap0 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.0.txt'))
         parameterMap1 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.1.txt'))
         parameterMap2 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.2.txt'))
+        parameterMap3 = sitk.ReadParameterFile(os.path.join(outputpath, 'TransformParameters.3.txt'))
         transformixImageFilter.SetTransformParameterMap(parameterMap0)
         transformixImageFilter.AddTransformParameterMap(parameterMap1)
         transformixImageFilter.AddTransformParameterMap(parameterMap2)
+        transformixImageFilter.AddTransformParameterMap(parameterMap3)
         transformixImageFilter.LogToFileOn()
         transformixImageFilter.LogToConsoleOff()
         transformixImageFilter.SetOutputDirectory(self.registered_output)
