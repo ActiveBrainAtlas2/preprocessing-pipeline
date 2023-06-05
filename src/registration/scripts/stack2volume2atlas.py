@@ -317,7 +317,7 @@ class VolumeRegistration:
         transform_initializer.InitializeTransform()
         # initializer maps from the fixed image to the moving image,
         # whereas we want to map from the moving image to the fixed image.
-        init_transform = init_transform.GetInverseTransform()
+        #init_transform = init_transform.GetInverseTransform()
         print(init_transform)
         # init transform end
         # Apply translation without resampling the image by updating the image origin directly
