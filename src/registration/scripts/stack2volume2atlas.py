@@ -347,15 +347,20 @@ class VolumeRegistration:
         affineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         affineParameterMap["WriteResultImage"] = ["false"]
 
-        bspline_parameter_map = parameter_object.GetDefaultParameterMap("bspline")
-        bspline_parameter_map["FinalGridSpacingInVoxels"] = (f"{self.um}",)
+        bsplineParameterMap = parameter_object.GetDefaultParameterMap("bspline")
+        bsplineParameterMap["MaximumNumberOfIterations"] = [self.bsplineIterations] # 150 works ok
+        bsplineParameterMap["WriteResultImage"] = ["true"]
+        bsplineParameterMap["UseDirectionCosines"] = ["true"]
+        bsplineParameterMap["FinalGridSpacingInVoxels"] = [f"{self.um}"]
+        bsplineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
+        bsplineParameterMap["NumberOfResolutions"]= ["6"]
+        bsplineParameterMap["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
+        bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
+        del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
+
         parameter_object.AddParameterMap(rigidParameterMap)
         parameter_object.AddParameterMap(affineParameterMap)
-        parameter_object.AddParameterMap(bspline_parameter_map)
-        parameter_object.RemoveParameter("FinalGridSpacingInPhysicalUnits")
-        parameter_object.SetParameter("DefaultPixelValue", "0")
-        parameter_object.SetParameter("NumberOfIterations", "1000")
-        parameter_object.SetParameter("ResultImagePixelType", "float")
+        parameter_object.AddParameterMap(bsplineParameterMap)
         registration_method = itk.ElastixRegistrationMethod[type(fixed_image), type(moving_image)
         ].New(
             fixed_image=fixed_image,
