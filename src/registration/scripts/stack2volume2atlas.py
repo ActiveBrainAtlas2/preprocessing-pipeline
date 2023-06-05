@@ -339,11 +339,18 @@ class VolumeRegistration:
         rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
         rigidParameterMap["WriteResultImage"] = ["false"]
 
-        affine_parameter_map = parameter_object.GetDefaultParameterMap('affine')
+        affineParameterMap = parameter_object.GetDefaultParameterMap('affine')
+        affineParameterMap["UseDirectionCosines"] = ["true"]
+        affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
+        affineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
+        affineParameterMap["NumberOfResolutions"]= ["6"]
+        affineParameterMap["NumberOfSpatialSamples"] = ["4000"]
+        affineParameterMap["WriteResultImage"] = ["false"]
+
         bspline_parameter_map = parameter_object.GetDefaultParameterMap("bspline")
         bspline_parameter_map["FinalGridSpacingInVoxels"] = (f"{self.um}",)
         parameter_object.AddParameterMap(rigidParameterMap)
-        parameter_object.AddParameterMap(affine_parameter_map)
+        parameter_object.AddParameterMap(affineParameterMap)
         parameter_object.AddParameterMap(bspline_parameter_map)
         parameter_object.RemoveParameter("FinalGridSpacingInPhysicalUnits")
         parameter_object.SetParameter("DefaultPixelValue", "0")
