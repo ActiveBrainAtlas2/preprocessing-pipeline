@@ -52,6 +52,23 @@ from library.utilities.utilities_mask import normalize16, normalize8
 from library.utilities.utilities_process import read_image, write_image
 from library.controller.annotation_session_controller import AnnotationSessionController
 
+def sort_from_center(polygon:list) -> list:
+    """Get the center of the unique points in a polygon and then use math.atan2 to get
+    the angle from the x-axis to the x,y point. Use that to sort.
+    This only works with convex shaped polygons.
+    
+    :param polygon:
+    """
+
+    coords = np.array(polygon)
+    coords = np.unique(coords, axis=0)
+    center = coords.mean(axis=0)
+    centered = coords - center
+    angles = -np.arctan2(centered[:, 1], centered[:, 0])
+    sorted_coords = coords[np.argsort(angles)]
+    return list(map(tuple, sorted_coords))
+
+
 def compute_dice_coefficient(source_image: itk.Image, target_image: itk.Image) -> float:
     """Compute the dice coefficient to compare volume overlap between two label regions"""
     dice_filter = itk.LabelOverlapMeasuresImageFilter[type(source_image)].New()
@@ -100,6 +117,7 @@ class VolumeRegistration:
         self.debug = debug
         self.atlas = atlas
         self.um = um
+        self.mask_color = 1
         self.channel = f'CH{channel}'
         self.output_dir = f'{self.atlas}{um}um'
         self.scaling_factor = 64 # This is the downsampling factor used to create the aligned volume
@@ -361,8 +379,8 @@ class VolumeRegistration:
         bsplineParameterMap["UseDirectionCosines"] = ["true"]
         bsplineParameterMap["FinalGridSpacingInVoxels"] = [f"{self.um}"]
         bsplineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
-        bsplineParameterMap["NumberOfResolutions"]= ["6"]
-        bsplineParameterMap["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
+        #bsplineParameterMap["NumberOfResolutions"]= ["6"]
+        #bsplineParameterMap["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
         bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
@@ -453,7 +471,7 @@ class VolumeRegistration:
     def evaluate_registration(self):
         mcc = MouseConnectivityCache(resolution=25)
         rsp = mcc.get_reference_space()
-        structure_id = 661
+        structure_id = 661 # facial nucleus
         structure_mask = rsp.make_structure_mask([structure_id], direct_only=False)
         structure_mask = np.swapaxes(structure_mask, 0, 2)
         ids, counts = np.unique(structure_mask, return_counts=True)
@@ -461,27 +479,30 @@ class VolumeRegistration:
         print(ids)
         print(counts)
         
-
         print(f'mask dtype={structure_mask.dtype} shape={structure_mask.shape}')
-        resultpath = os.path.join(self.registered_output, 'result.tif')
-        #annotation = io.imread(annotationpath)
+        annotatedpath = os.path.join(self.registered_output, 'annotated.tif')
+        resultImage = io.imread(annotatedpath)
 
-        resultImage = io.imread(resultpath)
-        resultImage = normalize8(resultImage)
-        resultImage[resultImage == 111] = 1
+        #resultImage[resultImage == 111] = 1
         resultImage[resultImage != 1] = 0
-        resultImage = (resultImage == True)
-        #resultImage = (resultImage * 254).astype(np.uint8)
-        outpath = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/facialmask.tif'
-        #imwrite(outpath, resultImage)
-        print(f'resultImage dtype={resultImage.dtype} shape={resultImage.shape}')
+        #resultImage = (resultImage == True)
+        print(f'annotated dtype={resultImage.dtype} shape={resultImage.shape}')
         ids, counts = np.unique(resultImage, return_counts=True)
         print('result image, ids counts')
         print(ids)
         print(counts)
-
+        
         dice_coefficient = dice(structure_mask, resultImage)
         
+        resultImage = (resultImage * 254).astype(np.uint8)
+        outpath = os.path.join(self.registered_output,'facialmask.tif')
+        imwrite(outpath, resultImage)
+
+        structure_mask = (structure_mask * 100).astype(np.uint8)
+        outpath = os.path.join(self.registered_output,'structure_mask.tif')
+        imwrite(outpath, structure_mask)
+
+
         print(f'Dice={dice_coefficient}')
 
 
@@ -491,16 +512,8 @@ class VolumeRegistration:
         polygon = PolygonSequenceController(animal=self.animal)        
         scale_xy = sqlController.scan_run.resolution
         z_scale = sqlController.scan_run.zresolution
-        #initpath = os.path.join(self.elastix_output, 'init_transform.tfm')
-        #init_transform = sitk.ReadTransform(initpath)
-        #init_transform = init_transform.GetInverse()
-        # with elastix_output
-        #without inverse, X is too low
-        #(313.328954646, 69.07273230089999, 219.5)
-        # with getinverse, structure Y is too great
-        #(468.328954646, 255.0727323009, 210.5)
         input_points = itk.PointSet[itk.F, 3].New()
-        """
+        
         df_L = polygon.get_volume(self.animal, 3, 12)
         df_R = polygon.get_volume(self.animal, 3, 13)
         frames = [df_L, df_R]
@@ -509,46 +522,36 @@ class VolumeRegistration:
         len_R = df_R.shape[0]
         len_total = df.shape[0]
         assert len_L + len_R == len_total, "Lengths of dataframes do not add up."
-        df = polygon.get_volume(self.animal, 3, 33)
+        
+        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
+        #df = polygon.get_volume(self.animal, 3, 33)
 
         for idx, (_, row) in enumerate(df.iterrows()):
             x = row['coordinate'][0]/scale_xy/self.scaling_factor
             y = row['coordinate'][1]/scale_xy/self.scaling_factor
             z = row['coordinate'][2]/z_scale
             point = [x,y,z]
-            point = init_transform.TransformPoint(point)
             input_points.GetPoints().InsertElement(idx, point)
         del df
-        """
-        xr = 390.8289546460
-        yr = 162.0727323009
-        zr = 215
-        point = [xr,yr,zr]
-        #point = init_transform.TransformPoint(r_point)
-        print(point)
         
-        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
         with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
             f.write("point\n")
-            #f.write(f"{input_points.GetNumberOfPoints()}\n")
-            f.write(f"1\n")
+            f.write(f"{input_points.GetNumberOfPoints()}\n")
             f.write(f"{point[0]} {point[1]} {point[2]}\n")
-
-            #for idx in range(input_points.GetNumberOfPoints()):
-            #    point = input_points.GetPoint(idx)
-            #    f.write(f"{point[0]} {point[1]} {point[2]}\n")
+            for idx in range(input_points.GetNumberOfPoints()):
+                point = input_points.GetPoint(idx)
+                f.write(f"{point[0]} {point[1]} {point[2]}\n")
                 
         transformixImageFilter = self.setup_transformix(self.reverse_elastix_output)
         transformixImageFilter.SetFixedPointSetFileName(TRANSFORMIX_POINTSET_FILE)
         transformixImageFilter.Execute()
         
-        #polygons = defaultdict(list)
+        polygons = defaultdict(list)
         with open(self.registered_point_file, "r") as f:                
             lines=f.readlines()
             f.close()
 
         point_or_index = 'OutputPoint'
-        points = []
         for i in range(len(lines)):        
             lx=lines[i].split()[lines[i].split().index(point_or_index)+3:lines[i].split().index(point_or_index)+6] #x,y,z
             lf = [float(f) for f in lx]
@@ -556,57 +559,27 @@ class VolumeRegistration:
             y = lf[1]
             z = lf[2]
             section = int(np.round(z))
-            points.append([x,y,section])
-            #polygons[section].append((x,y))
-        print(points)
+            polygons[section].append((x,y))
         resultImage = io.imread(os.path.join(self.registered_output, 'result.tif'))
         resultImage = normalize8(resultImage)
-        """
+        
         for section, points in polygons.items():
+            points = sort_from_center(points)
             points = np.array(points)
             points = points.astype(np.int32)
-            cv2.fillPoly(resultImage[section,:,:], pts = [points], color = 254)
-        """
-        for i in range(resultImage.shape[0]):
-            section = int(points[0][2])
-            x = int(points[0][0])
-            y = int(points[0][1])
-            if i == section:
-                print(x,y,section)
-                cv2.circle(resultImage[section,:,:], (x,y), 12, 254, thickness=3)
+            cv2.fillPoly(resultImage[section,:,:], pts = [points], color = self.mask_color)
+            #cv2.polylines(resultImage[section,:,:], [points], isClosed=True, color=(0), thickness=4)
+        
+        #for i in range(resultImage.shape[0]):
+        #    section = int(points[0][2])
+        #    x = int(points[0][0])
+        #    y = int(points[0][1])
+        #    if i == section:
+        #        print(x,y,section)
+        #        cv2.circle(resultImage[section,:,:], (x,y), 12, 254, thickness=3)
         outpath = os.path.join(self.registered_output, 'annotated.tif')
         io.imsave(outpath, resultImage)
         print(f'Saved a 3D volume {outpath} with shape={resultImage.shape} and dtype={resultImage.dtype}')
-
-
-
-        return
-        N_ELASTIX_STAGES = 3
-
-        toplevel_param = itk.ParameterObject.New()
-        param = itk.ParameterObject.New()
-        ELASTIX_TRANSFORM_FILENAMES = [os.path.join(self.registered_output, f"elastix-transform.{index}.txt")
-            for index in range(N_ELASTIX_STAGES)]
-
-        for elastix_transform_filename in ELASTIX_TRANSFORM_FILENAMES:
-            param.ReadParameterFile(elastix_transform_filename)
-            toplevel_param.AddParameterMap(param.GetParameterMap(0))        
-
-        # Load reference image (required for transformix)
-        average_template = itk.imread(self.fixed_volume_path, pixel_type=itk.F)
-        # Procedural interface of transformix filter
-        result_point_set = itk.transformix_pointset(
-            average_template,
-            toplevel_param,
-            fixed_point_set_file_name=TRANSFORMIX_POINTSET_FILE,
-            output_directory=self.registered_output)
-        # Transformix will write results to self.registered_output/outputpoints.txt
-        print("\n".join(
-        [
-            f"{output_point[11:18]} ---> {output_point[27:35]}"
-            for output_point in result_point_set
-        ]))
-
 
     def fill_contours(self):
         sqlController = SqlController(animal)
