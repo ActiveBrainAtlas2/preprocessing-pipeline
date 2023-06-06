@@ -214,8 +214,8 @@ class VolumeRegistration:
         bsplineParameterMap["UseDirectionCosines"] = ["true"]
         bsplineParameterMap["FinalGridSpacingInVoxels"] = [f"{self.um}"]
         bsplineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
-        bsplineParameterMap["NumberOfResolutions"]= ["6"]
-        bsplineParameterMap["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
+        #bsplineParameterMap["NumberOfResolutions"]= ["6"]
+        #bsplineParameterMap["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
         bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
