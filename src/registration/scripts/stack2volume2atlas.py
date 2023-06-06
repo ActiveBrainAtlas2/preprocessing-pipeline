@@ -40,6 +40,7 @@ import pandas as pd
 import cv2
 from allensdk.core.mouse_connectivity_cache import MouseConnectivityCache
 from tifffile import imwrite
+from scipy.interpolate import splprep, splev
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
@@ -51,6 +52,47 @@ from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.utilities.utilities_mask import normalize16, normalize8
 from library.utilities.utilities_process import read_image, write_image
 from library.controller.annotation_session_controller import AnnotationSessionController
+
+def interpolate(points, new_len):
+    pu = points.astype(int)
+    indexes = np.unique(pu, axis=0, return_index=True)[1]
+    points = np.array([points[index] for index in sorted(indexes)])
+    addme = points[0].reshape(1,2)
+    points = np.concatenate((points,addme), axis=0)
+
+    tck, u = splprep(points.T, u=None, s=3, per=1)
+    u_new = np.linspace(u.min(), u.max(), new_len)
+    x_array, y_array = splev(u_new, tck, der=0)
+    return np.concatenate([x_array[:,None],y_array[:,None]], axis=1)
+
+
+def interpolate2d(points:list, new_len:int) -> list:
+    """Interpolates a list of tuples to the specified length. The points param
+    must be a list of tuples in 2d
+    
+    :param points: list of floats
+    :param new_len: integer you want to interpolate to. This will be the new length of the array
+    There can't be any consecutive identical points or an error will be thrown
+    unique_rows = np.unique(original_array, axis=0)
+    """
+
+    points = np.array(points)
+    lastcolumn = np.round(points[:, -1])
+    z = mode(lastcolumn)
+    points2d = np.delete(points, -1, axis=1)
+    pu = points2d.astype(int)
+    indexes = np.unique(pu, axis=0, return_index=True)[1]
+    points = np.array([points2d[index] for index in sorted(indexes)])
+    addme = points2d[0].reshape(1, 2)
+    points2d = np.concatenate((points2d, addme), axis=0)
+
+    tck, u = splprep(points2d.T, u=None, s=3, per=1)
+    u_new = np.linspace(u.min(), u.max(), new_len)
+    x_array, y_array = splev(u_new, tck, der=0)
+    arr_2d = np.concatenate([x_array[:, None], y_array[:, None]], axis=1)
+    arr_3d = np.c_[ arr_2d, np.zeros(new_len) + z ]
+    return list(map(tuple, arr_3d))
+
 
 def sort_from_center(polygon:list) -> list:
     """Get the center of the unique points in a polygon and then use math.atan2 to get
@@ -117,7 +159,7 @@ class VolumeRegistration:
         self.debug = debug
         self.atlas = atlas
         self.um = um
-        self.mask_color = 1
+        self.mask_color = 254
         self.channel = f'CH{channel}'
         self.output_dir = f'{self.atlas}{um}um'
         self.scaling_factor = 64 # This is the downsampling factor used to create the aligned volume
@@ -484,7 +526,7 @@ class VolumeRegistration:
         resultImage = io.imread(annotatedpath)
 
         #resultImage[resultImage == 111] = 1
-        resultImage[resultImage != 1] = 0
+        resultImage[resultImage != self.mask_color] = 0
         #resultImage = (resultImage == True)
         print(f'annotated dtype={resultImage.dtype} shape={resultImage.shape}')
         ids, counts = np.unique(resultImage, return_counts=True)
@@ -514,8 +556,8 @@ class VolumeRegistration:
         z_scale = sqlController.scan_run.zresolution
         input_points = itk.PointSet[itk.F, 3].New()
         
-        df_L = polygon.get_volume(self.animal, 3, 12)
-        df_R = polygon.get_volume(self.animal, 3, 13)
+        df_L = polygon.get_volume(self.animal, 38, 12)
+        df_R = polygon.get_volume(self.animal, 38, 13)
         frames = [df_L, df_R]
         df = pd.concat(frames)
         len_L = df_L.shape[0]
@@ -568,7 +610,8 @@ class VolumeRegistration:
             points = np.array(points)
             points = points.astype(np.int32)
             cv2.fillPoly(resultImage[section,:,:], pts = [points], color = self.mask_color)
-            #cv2.polylines(resultImage[section,:,:], [points], isClosed=True, color=(0), thickness=4)
+            cv2.polylines(resultImage[section,:,:], [points], isClosed=True, color=(self.mask_color), 
+                          thickness=4)
         
         #for i in range(resultImage.shape[0]):
         #    section = int(points[0][2])
