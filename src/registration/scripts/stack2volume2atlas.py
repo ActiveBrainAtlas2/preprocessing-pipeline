@@ -204,7 +204,7 @@ class VolumeRegistration:
         affineParameterMap["UseDirectionCosines"] = ["true"]
         affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
         affineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
-        affineParameterMap["NumberOfResolutions"]= ["6"]
+        affineParameterMap["NumberOfResolutions"]= ["4"]
         affineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         affineParameterMap["WriteResultImage"] = ["false"]
 
@@ -214,9 +214,9 @@ class VolumeRegistration:
         bsplineParameterMap["UseDirectionCosines"] = ["true"]
         bsplineParameterMap["FinalGridSpacingInVoxels"] = [f"{self.um}"]
         bsplineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
-        #bsplineParameterMap["NumberOfResolutions"]= ["6"]
-        #bsplineParameterMap["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
-        bsplineParameterMap["NumberOfSpatialSamples"] = ["1000"]
+        bsplineParameterMap["NumberOfResolutions"]= ["6"]
+        bsplineParameterMap["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
+        bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
         elastixImageFilter.SetParameterMap(transParameterMap)
