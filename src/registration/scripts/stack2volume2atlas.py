@@ -177,7 +177,7 @@ class VolumeRegistration:
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}{um}um')
         self.number_of_sampling_attempts = "10"
         if self.debug:
-            iterations = "350"
+            iterations = "35"
             self.rigidIterations = iterations
             self.affineIterations = iterations
             self.bsplineIterations = iterations
@@ -265,10 +265,11 @@ class VolumeRegistration:
         elastixImageFilter.AddParameterMap(rigidParameterMap)
         elastixImageFilter.AddParameterMap(affineParameterMap)
         elastixImageFilter.AddParameterMap(bsplineParameterMap)
+        elastixImageFilter.SetLogToFile(True)
         elastixImageFilter.SetOutputDirectory(outputpath)
-        elastixImageFilter.LogToFileOn();
         elastixImageFilter.LogToConsoleOff()
-        elastixImageFilter.SetLogFileName('elastix.log');
+        elastixImageFilter.SetParameter("WriteIterationInfo",["true"])
+        elastixImageFilter.SetLogFileName('elastix.log')
         if self.debug:
             elastixImageFilter.PrintParameterMap(transParameterMap)    
             elastixImageFilter.PrintParameterMap(rigidParameterMap)    
