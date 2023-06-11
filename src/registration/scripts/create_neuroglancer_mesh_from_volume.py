@@ -22,17 +22,10 @@ from library.image_manipulation.filelocation_manager import FileLocationManager
 from library.image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
 from library.utilities.utilities_process import get_hostname, read_image
 
-def get_labels_from_csv(csvfile, ids):
+def get_labels_from_csv(csvfile):
     df = pd.read_csv(csvfile)
-    print(df.head())
-    labels = {}
-    
-    for row in df.iterrows():
-        acronym = row[1][0]
-        id = row[1][1]
-        description = row[1][2]
-        labels[id] = f"{acronym}: {description}" 
-    return labels
+    print(df.head(2))
+    return pd.Series(df.acronym.values + ": " + df.name.values,index=df.id).to_dict()
 
 
 def create_mesh():
@@ -41,28 +34,23 @@ def create_mesh():
     INPUT = os.path.join(HOME, ".brainglobe/allen_mouse_25um_v1.2")
     volume_file = os.path.join(INPUT, 'annotation.tiff')
     csvfile = os.path.join(INPUT, 'structures.csv')
+    if not os.path.exists(volume_file):
+        print(f'Volume does not exist at {volume_file}')
+        return
     scales = (25000, 25000, 25000)
-
     infile = os.path.join(INPUT, volume_file)
-    volume = read_image(infile)
-    
-    ids, counts = np.unique(volume, return_counts=True)
-
-    data_type = volume.dtype
-    
-    print()
-    print(f'Volume: {infile} dtype={data_type}, shape={volume.shape}')
+    volume = read_image(infile)    
+    print(f'Volume: {infile} dtype={volume.dtype}, shape={volume.shape}')
     print(f'Initial chunks at {chunks} and chunks for downsampling={chunks} and scales with {scales}')
-    #print(f'counts={counts}')
-    segment_properties = get_labels_from_csv(csvfile, ids)
+    segment_properties = get_labels_from_csv(csvfile)
     for k,v in segment_properties.items():
         if k == 661:
             print(k,v)
-    #outpath = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures"
-    outpath = "/home/httpd/html/data"
+    outpath = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures"
     MESH_DIR = os.path.join(outpath, 'allen')
     PROGRESS_DIR = os.path.join(outpath, 'progress', 'allen')
-    if 'godzilla' in get_hostname():
+    if 'godzilla' in get_hostname() or 'mothra' in get_hostname():
+        outpath = "/home/httpd/html/data"
         print(f'Cleaning {MESH_DIR}')
         if os.path.exists(MESH_DIR):
             shutil.rmtree(MESH_DIR)
@@ -72,32 +60,22 @@ def create_mesh():
     
     
     ng = NumpyToNeuroglancer('allen', volume, scales, layer_type='segmentation', 
-        data_type=data_type, chunk_size=chunks)
+        data_type=volume.dtype, chunk_size=chunks)
 
     ng.init_volume(MESH_DIR)
-    
-    # This calls the igneous create_transfer_tasks
-    #ng.add_rechunking(MESH_DIR, chunks=chunks, mip=0, skip_downsamples=True)
-
-    #tq = LocalTaskQueue(parallel=4)
     cloudpath2 = f'file://{MESH_DIR}'
-    #ng.add_downsampled_volumes(chunk_size = chunks, num_mips = 1)
-
     ##### add segment properties
     print('Adding segment properties')
     cv2 = CloudVolume(cloudpath2, 0)
     ng.add_segment_properties(cv2, segment_properties)
-
     ##### first mesh task, create meshing tasks
     print(f'Creating meshing tasks on volume from {cloudpath2}')
     ##### first mesh task, create meshing tasks
     ng.add_segmentation_mesh(cv2.layer_cloudpath, mip=0)
-
     print("Done!")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on atlas')
-    
     create_mesh()
 
