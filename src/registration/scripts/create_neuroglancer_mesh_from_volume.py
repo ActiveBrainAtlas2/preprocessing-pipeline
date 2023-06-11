@@ -26,10 +26,11 @@ def get_labels_from_csv(csvfile, ids):
     df = pd.read_csv(csvfile)
     print(df.head())
     labels = {}
-    for id in ids:
-        row = df.loc[df['id'] == id]
-        acronym = row.iat[0, 1]
-        description = row.iat[0,4]
+    
+    for row in df.iterrows():
+        acronym = row[1][0]
+        id = row[1][1]
+        description = row[1][2]
         labels[id] = f"{acronym}: {description}" 
     return labels
 
@@ -40,17 +41,7 @@ def create_mesh():
     INPUT = os.path.join(HOME, ".brainglobe/allen_mouse_25um_v1.2")
     volume_file = os.path.join(INPUT, 'annotation.tiff')
     csvfile = os.path.join(INPUT, 'structures.csv')
-    outpath = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures"
-    MESH_DIR = os.path.join(outpath, 'allen')
-    PROGRESS_DIR = os.path.join(outpath, 'progress', 'allen')
     scales = (25000, 25000, 25000)
-    if 'godzilla' in get_hostname():
-        print(f'Cleaning {MESH_DIR}')
-        if os.path.exists(MESH_DIR):
-            shutil.rmtree(MESH_DIR)
-
-    os.makedirs(MESH_DIR, exist_ok=True)
-    os.makedirs(PROGRESS_DIR, exist_ok=True)
 
     infile = os.path.join(INPUT, volume_file)
     volume = read_image(infile)
@@ -64,11 +55,23 @@ def create_mesh():
     print(f'Initial chunks at {chunks} and chunks for downsampling={chunks} and scales with {scales}')
     #print(f'counts={counts}')
     segment_properties = get_labels_from_csv(csvfile, ids)
-    print(segment_properties)
-    return
+    for k,v in segment_properties.items():
+        if k == 661:
+            print(k,v)
+    #outpath = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures"
+    outpath = "/home/httpd/html/data"
+    MESH_DIR = os.path.join(outpath, 'allen')
+    PROGRESS_DIR = os.path.join(outpath, 'progress', 'allen')
+    if 'godzilla' in get_hostname():
+        print(f'Cleaning {MESH_DIR}')
+        if os.path.exists(MESH_DIR):
+            shutil.rmtree(MESH_DIR)
+
+    os.makedirs(MESH_DIR, exist_ok=True)
+    os.makedirs(PROGRESS_DIR, exist_ok=True)
     
     
-    ng = NumpyToNeuroglancer(animal, volume, scales, layer_type='segmentation', 
+    ng = NumpyToNeuroglancer('allen', volume, scales, layer_type='segmentation', 
         data_type=data_type, chunk_size=chunks)
 
     ng.init_volume(MESH_DIR)
