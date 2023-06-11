@@ -28,7 +28,7 @@ def get_labels_from_csv(csvfile):
     return pd.Series(df.acronym.values + ": " + df.name.values,index=df.id).to_dict()
 
 
-def create_mesh():
+def create_mesh(atlas):
     HOME = os.path.expanduser("~")    
     chunks = (64, 64, 64)
     INPUT = os.path.join(HOME, ".brainglobe/allen_mouse_25um_v1.2")
@@ -47,8 +47,8 @@ def create_mesh():
         if k == 661:
             print(k,v)
     outpath = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures"
-    MESH_DIR = os.path.join(outpath, 'allen')
-    PROGRESS_DIR = os.path.join(outpath, 'progress', 'allen')
+    MESH_DIR = os.path.join(outpath, atlas)
+    PROGRESS_DIR = os.path.join(outpath, 'progress', atlas)
     if 'godzilla' in get_hostname() or 'mothra' in get_hostname():
         outpath = "/home/httpd/html/data"
         print(f'Cleaning {MESH_DIR}')
@@ -59,7 +59,7 @@ def create_mesh():
     os.makedirs(PROGRESS_DIR, exist_ok=True)
     
     
-    ng = NumpyToNeuroglancer('allen', volume, scales, layer_type='segmentation', 
+    ng = NumpyToNeuroglancer(atlas, volume, scales, layer_type='segmentation', 
         data_type=volume.dtype, chunk_size=chunks)
 
     ng.init_volume(MESH_DIR)
@@ -77,5 +77,9 @@ def create_mesh():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on atlas')
-    create_mesh()
+    parser.add_argument('--atlas', help='Enter the atlas', required=True)
+    args = parser.parse_args()
+    atlas = args.atlas
+
+    create_mesh(atlas)
 
