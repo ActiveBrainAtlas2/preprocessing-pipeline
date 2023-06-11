@@ -20,37 +20,34 @@ from library.image_manipulation.filelocation_manager import FileLocationManager
 
 # from library.controller.sql_controller import SqlController
 from library.image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
-from library.utilities.utilities_process import SCALING_FACTOR, get_hostname, read_image
-DTYPE = np.uint64
+from library.utilities.utilities_process import get_hostname, read_image
 
-def get_ids_from_csv(csvfile, ids):
+def get_labels_from_csv(csvfile, ids):
     df = pd.read_csv(csvfile)
     print(df.head())
+    labels = {}
     for id in ids:
-        pass 
+        row = df.loc[df['id'] == id]
+        acronym = row.iat[0, 1]
+        description = row.iat[0,4]
+        labels[id] = f"{acronym}: {description}" 
+    return labels
 
 
-def create_mesh(animal, volume_file, csvfile=None):
+def create_mesh():
+    HOME = os.path.expanduser("~")    
     chunks = (64, 64, 64)
-    #sqlController = SqlController(animal)
-    fileLocationManager = FileLocationManager(animal)
-    #xy = sqlController.scan_run.resolution * 1000
-    #z = sqlController.scan_run.zresolution * 1000
-    INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'registration')
-    outpath = os.path.basename(volume_file)
-    outpath = outpath.split('.')[0]
-    MESH_DIR = os.path.join(fileLocationManager.neuroglancer_data, f'mesh_{outpath}')
-    PROGRESS_DIR = os.path.join(fileLocationManager.neuroglancer_data, 'progress', f'mesh_{outpath}')
-    
-    #xy *=  SCALING_FACTOR
-
-    #scales = (int(xy), int(xy), int(z))
+    INPUT = os.path.join(HOME, ".brainglobe/allen_mouse_25um_v1.2")
+    volume_file = os.path.join(INPUT, 'annotation.tiff')
+    csvfile = os.path.join(INPUT, 'structures.csv')
+    outpath = "/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/structures"
+    MESH_DIR = os.path.join(outpath, 'allen')
+    PROGRESS_DIR = os.path.join(outpath, 'progress', 'allen')
     scales = (25000, 25000, 25000)
     if 'godzilla' in get_hostname():
         print(f'Cleaning {MESH_DIR}')
         if os.path.exists(MESH_DIR):
             shutil.rmtree(MESH_DIR)
-
 
     os.makedirs(MESH_DIR, exist_ok=True)
     os.makedirs(PROGRESS_DIR, exist_ok=True)
@@ -65,8 +62,10 @@ def create_mesh(animal, volume_file, csvfile=None):
     print()
     print(f'Volume: {infile} dtype={data_type}, shape={volume.shape}')
     print(f'Initial chunks at {chunks} and chunks for downsampling={chunks} and scales with {scales}')
-    print(f'IDS={ids}')
     #print(f'counts={counts}')
+    segment_properties = get_labels_from_csv(csvfile, ids)
+    print(segment_properties)
+    return
     
     
     ng = NumpyToNeuroglancer(animal, volume, scales, layer_type='segmentation', 
@@ -84,7 +83,6 @@ def create_mesh(animal, volume_file, csvfile=None):
     ##### add segment properties
     print('Adding segment properties')
     cv2 = CloudVolume(cloudpath2, 0)
-    segment_properties = {str(id): str(id) for id in ids}
     ng.add_segment_properties(cv2, segment_properties)
 
     ##### first mesh task, create meshing tasks
@@ -96,14 +94,7 @@ def create_mesh(animal, volume_file, csvfile=None):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Work on Animal')
-    parser.add_argument('--animal', help='Enter the animal', required=True)
-    parser.add_argument('--volume', help='Enter the name of the volume file', required=True)
-    parser.add_argument('--csvfile', help='Enter the path of the csv file', required=False)
-    args = parser.parse_args()
-    animal = args.animal
-    volume = args.volume
-    csvfile = args.csvfile
+    parser = argparse.ArgumentParser(description='Work on atlas')
     
-    create_mesh(animal, volume, csvfile)
+    create_mesh()
 
