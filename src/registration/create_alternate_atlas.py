@@ -10,7 +10,7 @@ def create_boundary_mesh(animal):
 
     ROOT = f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{animal}/preps/CH1'
 
-    boundary_tiff_path = os.path.join(ROOT, 'allen_mouse_25um', 'boundaries.tiff')
+    boundary_tiff_path = os.path.join(ROOT, 'allen_mouse_25um', 'annotation.tiff')
     volume = io.imread(boundary_tiff_path)
 
     print(f'volume info {volume.shape}, {volume.dtype}')

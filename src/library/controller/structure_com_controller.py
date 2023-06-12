@@ -1,15 +1,14 @@
-import pandas as pd
-
+from library.controller.sql_controller import SqlController
 from library.database_model.annotation_points import AnnotationSession, AnnotationType, StructureCOM
 from library.database_model.brain_region import BrainRegion
 
 
 
-class StructureCOMController():
+class StructureCOMController(SqlController):
     """The class that queries and addes entry to the StructureCOM table
     """
 
-    def get_annotation_dict(self, prep_id, annotator_id, source):
+    def get_annotation_dict(self, prep_id, annotator_id):
         """This method replaces get_centers_dict and get_layer_data_row.
 
         :param prep_id: string name of animal
@@ -37,7 +36,7 @@ class StructureCOMController():
             .filter(StructureCOM.FK_session_id.in_(sids))\
             .join(AnnotationSession)\
                 .filter(AnnotationSession.FK_prep_id==prep_id)\
-                .filter(AnnotationSession.FK_annotator_id==annotator_id)\
+                .filter(AnnotationSession.FK_user_id==annotator_id)\
             .   all()
         brain_region_dict = {}
         brain_regions = self.session.query(BrainRegion).filter(BrainRegion.active==True).all()
@@ -57,6 +56,6 @@ class StructureCOMController():
         annotation_session = self.session.query(AnnotationSession).filter(AnnotationSession.active==True)\
             .filter(AnnotationSession.annotation_type==AnnotationType.STRUCTURE_COM)\
             .filter(AnnotationSession.FK_prep_id==prep_id)\
-            .filter(AnnotationSession.FK_annotator_id==annotator_id)\
+            .filter(AnnotationSession.FK_user_id==annotator_id)\
             .order_by(AnnotationSession.created).all()
         return annotation_session
