@@ -17,24 +17,132 @@ this code does the following:
 
 from collections import defaultdict
 import os
+import sys
 import numpy as np
 import pandas as pd
 import ast
 from tqdm import tqdm
-from library.utilities.utilities_process import get_image_size
 from scipy.interpolate import splprep, splev
-from  abakit.lib.utilities_contour import get_contours_from_annotations
-from lib.file_location import DATA_PATH
-from  abakit.lib.utilities_alignment import transform_points, create_downsampled_transforms
-from  abakit.lib.utilities_create_alignment import parse_elastix
+from skimage import io
+from pathlib import Path
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
+
+from library.utilities.utilities_process import get_image_size
+from library.utilities.utilities_contour import get_contours_from_annotations
+from library.controller.elastix_controller import ElastixController
+from library.image_manipulation.filelocation_manager import data_path as DATA_PATH
+from library.image_manipulation.filelocation_manager import FileLocationManager
 DOWNSAMPLE_FACTOR = 32
-from atlas.BrainStructureManager import BrainStructureManager
+from brain_structure_manager import BrainStructureManager
+
+def create_downsampled_transforms(animal, transforms, downsample):
+    """
+    Changes the dictionary of transforms to the correct resolution
+    :param animal: prep_id of animal we are working on
+    :param transforms: dictionary of filename:array of transforms
+    :param transforms_resol:
+    :param downsample; either true for thumbnails, false for full resolution images
+    :return: corrected dictionary of filename: array  of transforms
+    """
+
+    if downsample:
+        transforms_scale_factor = 1
+    else:
+        transforms_scale_factor = 32
+
+    tf_mat_mult_factor = np.array([[1, 1, transforms_scale_factor], [1, 1, transforms_scale_factor]])
+
+    transforms_to_anchor = {}
+    for img_name, tf in transforms.items():
+        transforms_to_anchor[img_name] = \
+            convert_2d_transform_forms(np.reshape(tf, (3, 3))[:2] * tf_mat_mult_factor) 
+    return transforms_to_anchor
+
+def convert_2d_transform_forms(arr):
+    return np.vstack([arr, [0, 0, 1]])
+
+
+def transform_points(points, transform):
+    a = np.hstack((points, np.ones((points.shape[0], 1))))
+    b = transform.T[:, 0:2]
+    c = np.matmul(a, b)
+    return c
+
+
+def create_elastix_transformation(rotation, xshift, yshift, center):
+    R = np.array([[np.cos(rotation), -np.sin(rotation)],
+                    [np.sin(rotation), np.cos(rotation)]])
+    shift = center + (xshift, yshift) - np.dot(R, center)
+    T = np.vstack([np.column_stack([R, shift]), [0, 0, 1]])
+    return T
+
+
+def load_elastix_transformation(animal, moving_index):
+    controller = ElastixController(animal)
+
+    elastixTransformation = controller.get_elastix_row(animal, moving_index)
+    #elastixTransformation = session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
+    #    .filter(ElastixTransformation.section == moving_index).one()
+
+    R = elastixTransformation.rotation
+    xshift = elastixTransformation.xshift
+    yshift = elastixTransformation.yshift
+    return R, xshift, yshift
+
+def parse_elastix(animal):
+    """
+    After the elastix job is done, this goes into each subdirectory and parses the Transformation.0.txt file
+    Args:
+        animal: the animal
+    Returns: a dictionary of key=filename, value = coordinates
+    """
+    fileLocationManager = FileLocationManager(animal)
+    DIR = fileLocationManager.prep
+    INPUT = os.path.join(DIR, 'CH1', 'thumbnail_cleaned')
+
+    files = sorted(os.listdir(INPUT))
+    midpoint = len(files) // 2
+    transformation_to_previous_sec = {}
+    midfilepath = os.path.join(INPUT, files[midpoint])
+    midfile = io.imread(midfilepath, img_num=0)
+    height = midfile.shape[0]
+    width = midfile.shape[1]
+    center = np.array([width, height]) / 2
+    
+    for i in range(1, len(files)):
+        moving_index = os.path.splitext(files[i])[0]
+        rotation, xshift, yshift = load_elastix_transformation(animal, moving_index)
+        T = create_elastix_transformation(rotation, xshift, yshift, center)
+        transformation_to_previous_sec[i] = T
+    
+    
+    transformations = {}
+    # Converts every transformation
+    for moving_index in range(len(files)):
+        if moving_index == midpoint:
+            transformations[files[moving_index]] = np.eye(3)
+        elif moving_index < midpoint:
+            T_composed = np.eye(3)
+            for i in range(midpoint, moving_index, -1):
+                T_composed = np.dot(np.linalg.inv(transformation_to_previous_sec[i]), T_composed)
+            transformations[files[moving_index]] = T_composed
+        else:
+            T_composed = np.eye(3)
+            for i in range(midpoint + 1, moving_index + 1):
+                T_composed = np.dot(transformation_to_previous_sec[i], T_composed)
+            transformations[files[moving_index]] = T_composed
+
+    return transformations
+
+
 
 class FoundationContourAligner(BrainStructureManager):
-    def __init__(self,animal, *args, **kwrds):
-        super().__init__(animal,*args, **kwrds)
-        self.contour_path = os.path.join(DATA_PATH, 'atlas_data','foundation_brain_annotations',f'{self.animal}_annotation.csv')
-    
+    def __init__(self, animal, *args, **kwrds):
+        super().__init__(animal, *args, **kwrds)
+        self.contour_path = os.path.join(
+            DATA_PATH, 'atlas_data', 'foundation_brain_annotations', f'{self.animal}_annotation.csv')
+
     def create_clean_transform(self):
         section_size = np.array((self.sqlController.scan_run.width, self.sqlController.scan_run.height))
         downsampled_section_size = np.round(section_size / DOWNSAMPLE_FACTOR).astype(int)
@@ -92,7 +200,9 @@ class FoundationContourAligner(BrainStructureManager):
                 self.contour_per_structure_per_section[structurei][section] = contour_for_structurei[section]
 
     def align_contours(self):
-        md585_fixes = {161: 100, 182: 60, 223: 60, 231: 80, 229 :76,253 : 8,253:60}
+        #TODO check section 253, it had two values, 8 and 60
+        md585_fixes = {161: 100, 182: 60, 223: 60,
+                       231: 80, 229: 76, 253: 60}
         self.original_structures = defaultdict(dict)
         self.centered_structures = defaultdict(dict)
         self.aligned_structures = defaultdict(dict)

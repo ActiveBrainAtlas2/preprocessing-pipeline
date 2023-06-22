@@ -102,7 +102,6 @@ class AtlasCreator:
         self.fixed_brain = 'MD589'
         self.INPUT = os.path.join(f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{self.fixed_brain}/preps/CH1/thumbnail_aligned')
         self.ATLAS_PATH = os.path.join(self.DATA_PATH, 'atlas_data', atlas_name)
-        self.VOLUME_PATH = os.path.join(self.ATLAS_PATH, 'structure')
         self.OUTPUT_DIR = f'/home/httpd/html/data/{atlas}'
         if os.path.exists(self.OUTPUT_DIR):
             shutil.rmtree(self.OUTPUT_DIR)
@@ -110,139 +109,74 @@ class AtlasCreator:
         self.sqlController = SqlController(self.fixed_brain)
         self.to_um = 32 * 0.452
     
-    def create_atlasXXX(self):
-        # origin is in animal scan_run.resolution coordinates
-        # volume is in 10um coo
-        volume_files = sorted(os.listdir(self.VOLUME_PATH))
-        SCALE = 10
-        resolution = np.array([SCALE, SCALE, 20])
-        controller = StructureCOMController('Atlas')        
-        com_dict_um = controller.get_annotation_dict('Atlas', annotator_id=16)
-        width = (self.sqlController.scan_run.width * 0.452) / SCALE
-        height = (self.sqlController.scan_run.height * 0.452) / SCALE
-        z_length = len(os.listdir(self.INPUT))
-        atlas_volume = np.zeros(( int(height), int(width), z_length), dtype=np.uint8)
-        color = 100
-        for volume_filename in volume_files:
-            structure = os.path.splitext(volume_filename)[0]
-            try:
-                com_um = com_dict_um[structure]
-            except:
-                print(f'{structure} not in dictionary')
-                continue
-            
-            com_ng = (com_um / resolution)
-            volumepath = os.path.join(self.VOLUME_PATH, volume_filename)
-            volume = np.load(volumepath)
-            color += 2
-            max_quantile = 0.8
-            threshold = np.quantile(volume[volume > 0], max_quantile)
-
-            volume[volume >= threshold] = color
-            volume[volume != color] = 0
-            volume = volume.astype(np.uint8)
-            z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
-            volume = volume[:, :, z_indices]
-
-            ndcom = center_of_mass(volume)
-            colshift = ndcom[1]
-            rowshift = ndcom[0]
-            zshift = ndcom[2]
-            com_shift = np.array([colshift, rowshift, zshift])
-            #com_shift = np.array([0, 0, 0])
-            mincol, minrow, minz = (com_ng - com_shift) 
-            row_start = int( round(minrow) ) 
-            col_start = int( round(mincol) )
-            z_start = int( round(minz) )
-            row_end = row_start + volume.shape[0]
-            col_end = col_start + volume.shape[1]
-            z_end = z_start + volume.shape[2]
-            print(structure, mincol, minrow, minz, com_um, com_ng, color)                
-            try:
-                atlas_volume[row_start:row_end, col_start:col_end, z_start:z_end,] += volume
-            except ValueError as ve:
-                print(f'Error adding {structure} to atlas: {ve}')
-        print()
-        print('Resolution', resolution)
-        ids, counts = np.unique(atlas_volume, return_counts=True)
-        outpath = f'/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/{atlas}.tif'
-        print(f'Shape of atlas volume {atlas_volume.shape} dtype={atlas_volume.dtype}')
-        atlas_volume = np.swapaxes(atlas_volume, 0, 2)
-        print(f'Shape of atlas volume {atlas_volume.shape} after swapping 0 and 2')
-        atlas_volume = np.swapaxes(atlas_volume, 1, 2)
-        print(f'Shape of atlas volume {atlas_volume.shape} after swapping 1 and 2')
-        ng = NumpyToNeuroglancer(atlas_volume, [10000, 10000, 20000], offset=[0,0,0])
-        ng.init_precomputed(self.OUTPUT_DIR)
-        ng.add_segment_properties(ids)
-        ng.add_downsampled_volumes()
-        ng.add_segmentation_mesh()
-
-    
     def create_atlas(self):
         # origin is in animal scan_run.resolution coordinates
         # volume is in 10um coo
-        volume_files = sorted(os.listdir(self.VOLUME_PATH))
         SCALE = 10
-        resolution = np.array([SCALE, SCALE, 20])
-        controller = StructureCOMController('Atlas')        
-        com_dict_um = controller.get_annotation_dict('Atlas', annotator_id=16)
         width = (self.sqlController.scan_run.width * 0.452) / SCALE
         height = (self.sqlController.scan_run.height * 0.452) / SCALE
         z_length = len(os.listdir(self.INPUT))
         atlas_volume = np.zeros(( int(height), int(width), z_length), dtype=np.uint8)
         color = 100
-        atlas_dir = Path('/net/birdstore/Active_Atlas_Data/data_root/atlas_data/Atlas')
-        origin_dir = atlas_dir / 'origin'
-        volume_dir = atlas_dir / 'structure'
-        size = 1000
-        atlas_box_size=(size, size, 300)
+        origin_dir = os.path.join(self.ATLAS_PATH, 'origin')
+        volume_dir = os.path.join(self.ATLAS_PATH, 'structure')
+        y_length = 800
+        x_length = 1320
+        z_length = 1140
+        atlas_box_size=(x_length, y_length, z_length)
         
-        atlas_box_scales=[10000, 10000, 20000]
+        atlas_box_scales=[10000, 10000, 10000]
         atlas_box_scales = np.array(atlas_box_scales)
         atlas_box_size = np.array(atlas_box_size)
         atlas_box_center = atlas_box_size / 2
         atlas_volume = np.zeros( atlas_box_size, dtype=np.uint8)
         color = 100
         print(f'box center {atlas_box_center}')
+        print(f'Using data from {self.ATLAS_PATH}')
+        origins = sorted(os.listdir(origin_dir))
+        volumes = sorted(os.listdir(volume_dir))
+        print(f'Working with {len(origins)} origins and {len(volumes)} volumes.')
 
-        for origin_file, volume_file in zip(sorted(origin_dir.iterdir()), sorted(volume_dir.iterdir())):
-            assert origin_file.stem == volume_file.stem
-            name = origin_file.stem
+        for origin_file, volume_file in zip(origins, volumes):
+            assert Path(origin_file).stem == Path(volume_file).stem
+            structure = Path(origin_file).stem
             color += 2
 
-            origin = np.loadtxt(origin_file)
-            volume = np.load(volume_file)
+            origin = np.loadtxt(os.path.join(origin_dir, origin_file))
+            volume = np.load(os.path.join(volume_dir, volume_file))
 
             volume = np.rot90(volume, axes=(0,1))
             volume = np.flip(volume, axis=0)
             volume[volume > 0.8] = color
             volume = volume.astype(np.uint8)
             x, y, z = origin
-            x_start = int(x) + size//2
-            y_start = int(y) + size//2
-            z_start = int(z) // 2 + atlas_box_size[2] // 2
+            x_start = int(round(x + x_length/2))
+            y_start = int(round(y + y_length/2))
+            #z_start = int(z) // 2 + atlas_box_size[2] // 2
+            z_start = int(round(z + z_length/2))
             x_end = x_start + volume.shape[0]
             y_end = y_start + volume.shape[1]
-            z_end = z_start + (volume.shape[2] + 1) // 2
-            z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
-            volume = volume[:, :, z_indices]
-            print(name,x_start, y_start, z_start)
-
+            #z_end = z_start + (volume.shape[2] + 1) // 2
+            z_end = z_start + volume.shape[2]
+            #z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
+            #volume = volume[:, :, z_indices]
+            print(structure, x_start, y_start, z_start)
+            
             try:
                 atlas_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
             except ValueError as ve:
-                print(f'Error adding {name} to atlas: {ve}')
+                print(f'Error adding {structure} to atlas: {ve}')
         print()
-        
-        ids, counts = np.unique(atlas_volume, return_counts=True)
+        #ids, counts = np.unique(atlas_volume, return_counts=True)
         print(f'Shape of atlas volume {atlas_volume.shape} dtype={atlas_volume.dtype}')
-        #save_volume = np.swapaxes(atlas_volume, 0, 2)
-        #print(f'Shape of atlas volume {atlas_volume.shape} after swapping 0 and 2')
+        save_volume = np.swapaxes(atlas_volume, 0, 2)
+        #atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
+        print(f'Shape of atlas volume {atlas_volume.shape} after swapping 0 and 2')
         #save_volume = np.swapaxes(save_volume, 1, 2)
-        #outpath = f'/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/{atlas}.tif'
-        #io.imsave(outpath, save_volume)
-        #return
-        print(f'Shape of atlas volume {atlas_volume.shape} after swapping 1 and 2')
+        #print(f'Shape of atlas volume {atlas_volume.shape} after swapping 1 and 2')
+        outpath = f'/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/{atlas}.tif'
+        io.imsave(outpath, save_volume)
+        return
         ng = NumpyToNeuroglancer(atlas_volume, atlas_box_scales, offset=[0,0,0])
         ng.init_precomputed(self.OUTPUT_DIR)
         ng.add_segment_properties(ids)

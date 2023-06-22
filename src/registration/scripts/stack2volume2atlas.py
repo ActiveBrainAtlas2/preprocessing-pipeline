@@ -276,6 +276,7 @@ class VolumeRegistration:
             elastixImageFilter.PrintParameterMap(affineParameterMap)
             elastixImageFilter.PrintParameterMap(bsplineParameterMap)
 
+        elastixImageFilter.AddParameter( "Metric", "CorrespondingPointsEuclideanDistanceMetric" )
         return elastixImageFilter
 
         
@@ -548,8 +549,6 @@ class VolumeRegistration:
 
         print(f'Dice={dice_coefficient}')
 
-
-        
     def transformix_points(self):
         sqlController = SqlController(self.animal)
         polygon = PolygonSequenceController(animal=self.animal)        
@@ -798,7 +797,6 @@ class VolumeRegistration:
         tasks = tc.create_downsampling_tasks(cloudpath, num_mips=2)
         tq.insert(tasks)
         tq.execute()
-
 
     def check_registration(self):
         """Starter method to check for existing directories and files

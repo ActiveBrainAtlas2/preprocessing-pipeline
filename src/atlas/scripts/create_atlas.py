@@ -1,8 +1,8 @@
 from foundation_contour_aligner import FoundationContourAligner
-from atlas.BrainStructureManager import BrainStructureManager
-from atlas.VolumeMaker import VolumeMaker
-from atlas.BrainMerger import BrainMerger
-from atlas.NgSegmentMaker import AtlasNgMaker
+from brain_structure_manager import BrainStructureManager
+from volume_maker import VolumeMaker
+from brain_merger import BrainMerger
+from ng_segment_maker import AtlasNgMaker
 
 
 def align_contour(animal):

@@ -13,13 +13,14 @@ import sys
 import cv2
 import numpy as np
 from tqdm import tqdm
-from scipy.ndimage.measurements import center_of_mass
-HOME = os.path.expanduser("~")
-PATH = os.path.join(HOME, 'programming/pipeline_utility/src')
-sys.path.append(PATH)
-from settings import DATA_PATH
-from settings import ATLAS
-from Controllers.SqlController import SqlController
+from scipy.ndimage import center_of_mass
+from pathlib import Path
+
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
+
+from library.controller.sql_controller import SqlController
+from settings import data_path as DATA_PATH, atlas as ATLAS
 
 DOWNSAMPLE_FACTOR = 32
 

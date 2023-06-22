@@ -1,5 +1,5 @@
 """
-William this is the 3rd script.
+This is the 3rd atlas creation script.
 
 This script will take a source brain (where the data comes from) and an image brain 
 (the brain whose images you want to display unstriped) and align the data from the point brain
@@ -17,20 +17,21 @@ from collections import defaultdict
 from pathlib import Path
 from tqdm import tqdm
 from datetime import datetime
-from registration.algorithm import brain_to_atlas_transform, umeyama
-from scipy.ndimage.measurements import center_of_mass
+from scipy.ndimage import center_of_mass
 from skimage.filters import gaussian
 from math import isnan
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from model.structure import Structure
-from model.layer_data import LayerData
-from lib.sql_setup import session
-from settings import DATA_PATH
-from utilities.utilities_atlas import singular_structures
-from Controllers.SqlController import SqlController
+from library.utilities.algorithm import brain_to_atlas_transform, umeyama
+#from model.structure import Structure
+#from model.layer_data import LayerData
+#from lib.sql_setup import session
+# from utilities.utilities_atlas import singular_structures
+from library.controller.sql_controller import SqlController
+from settings import data_path as DATA_PATH, atlas as ATLAS
+from library.utilities.u
 from utilities.utilities_atlas import convert_vol_bbox_dict_to_overall_vol, symmetricalize_volume, \
     volume_to_polydata, save_mesh_stl
 

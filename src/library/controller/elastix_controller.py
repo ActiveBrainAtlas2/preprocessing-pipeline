@@ -24,6 +24,25 @@ class ElastixController():
             ElastixTransformation.section == section).first())
         return row_exists
 
+    def get_elastix_row(self, animal, section, iteration=0):
+        """gets a given elastix row exists in the database
+
+        :param animal: (str): Animal ID
+        :section (int): Section Number
+        :iteration (int): Iteration, which pass are we working on.
+        :return boolean: if the row in question exists
+        """
+        row = None
+        try:
+            row = self.session.query(ElastixTransformation).filter(
+                ElastixTransformation.FK_prep_id == animal,
+                ElastixTransformation.iteration == iteration,
+                ElastixTransformation.section == section).first()
+        except NoResultFound as nrf:
+            print('No value for {} {} error: {}'.format(animal, moving_index, nrf))
+
+        return row
+
     def check_elastix_metric_row(self, animal, section, iteration=0):
         """checks that a given elastix row exists in the database
 
