@@ -1,4 +1,5 @@
 import numpy as np
+
 def get_contours_from_annotations(prep_id, target_structure, hand_annotations, densify=0):
     num_annotations = len(hand_annotations)
     contours_for_structurei = {}

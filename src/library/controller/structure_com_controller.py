@@ -1,3 +1,5 @@
+import numpy as np
+
 from library.controller.sql_controller import SqlController
 from library.database_model.annotation_points import AnnotationSession, AnnotationType, StructureCOM
 from library.database_model.brain_region import BrainRegion
@@ -30,7 +32,6 @@ class StructureCOMController(SqlController):
         sessions = self.get_available_sessions(prep_id, annotator_id)
 
         sids = [session.id for session in sessions]
-        # ses.query(FooBar).join(Bar).join(Foo).filter(Foo.name == "blah")
         
         rows = self.session.query(StructureCOM)\
             .filter(StructureCOM.FK_session_id.in_(sids))\
@@ -49,13 +50,53 @@ class StructureCOMController(SqlController):
             row_dict[abbreviation] = [row.x, row.y, row.z]
         return row_dict
 
+    def get_COM(self, prep_id, annotator_id=2):
+        """returns the Center Of Mass of structures for a Animal ID and annotator combination
 
-        
+        Args:
+            prep_id (str): Animal ID
+            annotator_id (int): Annotator Id
+
+        Returns:
+            dict: dictionary of x,y,z coordinates indexed by structure name
+        """
+
+        sessions = self.get_available_sessions(prep_id, annotator_id)
+        coms = []
+        for session in sessions:
+            com = self.session.query(StructureCOM)\
+                .filter(StructureCOM.FK_session_id == session.id).first()
+            coms.append(com)
+        coordinate = [[i.x, i.y, i.z] for i in coms if i is not None]
+        structure = [
+            i.session.brain_region.abbreviation for i in coms if i is not None]
+        return dict(zip(structure, coordinate))
+
+    def get_all_manual_COM(self):
+        import sys
+        coms = self.session.query(StructureCOM)\
+            .filter(StructureCOM.source == 'MANUAL').all()
+        coms = np.array(coms)
+        animals = np.array([i.session.FK_prep_id for i in coms])
+        unique_animals = np.unique(animals)
+        #animals = [com.session.FK_prep_id for com in coms]
+        #animals = np.unique(animals)
+        #coms = np.array(coms)
+        all_coms = {}
+        for animal in unique_animals:
+            animal_com = coms[animals==animal]
+            print(animal, animal_com.shape)
+            names = [self.structure_id_to_abbreviation(i.FK_structure_id) for i in animal_com]
+            coords = [np.floor([i.x,i.y,i.z]).astype(int) for i in animal_com]
+            #print(animal, names, coords)
+            all_coms[animal] = dict(zip(names,coords))
+        return all_coms        
     
     def get_available_sessions(self, prep_id, annotator_id):
-        annotation_session = self.session.query(AnnotationSession).filter(AnnotationSession.active==True)\
+        sessions = self.session.query(AnnotationSession)\
+            .filter(AnnotationSession.active==True)\
             .filter(AnnotationSession.annotation_type==AnnotationType.STRUCTURE_COM)\
             .filter(AnnotationSession.FK_prep_id==prep_id)\
             .filter(AnnotationSession.FK_user_id==annotator_id)\
             .order_by(AnnotationSession.created).all()
-        return annotation_session
+        return sessions

@@ -1,13 +1,13 @@
 import os
 import numpy as np 
 
-from abakit.atlas.brain_structure_manager import BrainStructureManager
-from abakit.registration.utilities import get_similarity_transformation_from_dicts
-from abakit.registration.algorithm import brain_to_atlas_transform, umeyama
+from brain_structure_manager import BrainStructureManager
+from library.registration.utilities import get_similarity_transformation_from_dicts
+from library.registration.algorithm import brain_to_atlas_transform, umeyama
+from library.image_manipulation.filelocation_manager import data_path
+from library.controller.structure_com_controller import StructureCOMController
+
 atlas = 'atlasV8'
-data_path = '/net/birdstore/Active_Atlas_Data/data_root'
-
-
 
 class Atlas(BrainStructureManager):
     def __init__(self, atlas = atlas):
@@ -49,14 +49,21 @@ class Atlas(BrainStructureManager):
         self.COM = self.sqlController.get_atlas_centers()
     
     def get_average_coms(self):
-        coms = self.sqlController.get_all_manual_COM()
-        annotated_animals = np.array(list(coms.keys()))
+        import sys
+
         fixed_brain = self.fixed_brain.animal
+        controller = StructureCOMController(fixed_brain)
+        coms = controller.get_all_manual_COM()
+        print(coms)
+        sys.exit()
+        annotated_animals = np.array(list(coms.keys()))
         annotated_animals = annotated_animals[annotated_animals!=fixed_brain]
         annotations = [coms[fixed_brain]]
         self.fixed_brain.load_com()
-        for prepi in annotated_animals:
-            com = coms[prepi]
+        for animal in annotated_animals:
+            com = coms[animal]
+            print(type(com))
+            print(com)
             r, t = get_similarity_transformation_from_dicts(fixed = coms[fixed_brain],\
                     moving = com)
             transformed = np.array([brain_to_atlas_transform(point, r, t) for point in com.values()])

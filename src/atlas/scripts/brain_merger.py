@@ -5,15 +5,19 @@ to the image brain. It first aligns the point brain data to the atlas, then that
 to the image brain. It prints out the data by default and also will insert
 into the database if given a layer name.
 """
-
+import sys
 import numpy as np
 from collections import defaultdict
-from abakit.registration.algorithm import brain_to_atlas_transform
-from abakit.controller.sql_controller import SqlController
+from pathlib import Path
+PIPELINE_ROOT = Path('./src').absolute()
+sys.path.append(PIPELINE_ROOT.as_posix())
+
+from library.registration.algorithm import brain_to_atlas_transform
+from library.controller.sql_controller import SqlController
 from brain_structure_manager import BrainStructureManager
 from atlas_manager import Atlas
-from abakit.registration.affine_registration import AffineRegistration
-from abakit.atlas.atlas import singular_structures
+from library.registration.affine_registration import AffineRegistration
+from library.utilities.atlas import singular_structures, symmetricalize_volume
 
 MANUAL = 1
 CORRECTED = 2
@@ -21,10 +25,11 @@ DETECTED = 3
 
 class BrainMerger(Atlas):
 
-    def __init__(self,threshold = 0.8, moving_brains = ['MD594', 'MD585']):
+    def __init__(self, threshold=0.8, moving_brains=['MD594', 'MD585']):
         super().__init__()
-        self.fixed_brain = BrainStructureManager('MD589',sql=True)
-        self.moving_brains = [BrainStructureManager(braini,sql=True) for braini in moving_brains]
+        self.fixed_brain = BrainStructureManager('MD589', sql=True)
+        self.moving_brains = [BrainStructureManager(
+            braini, sql=True) for braini in moving_brains]
         self.sqlController = SqlController(self.fixed_brain.animal)
         self.threshold = threshold
         self.volumes_to_merge = defaultdict(list)
@@ -86,11 +91,11 @@ class BrainMerger(Atlas):
             merged_volume_prob = symmetricalize_volume(merged_volume_prob)
         return merged_volume_prob
 
-    def load_data(self,brains):
-        for braini in brains:
-            braini.load_origins()
-            braini.load_volumes()
-            braini.load_com()
+    def load_data(self, brains):
+        for brain in brains:
+            brain.load_origins()
+            brain.load_volumes()
+            brain.load_com()
 
     def load_data_from_fixed_and_moving_brains(self):
         self.load_data([self.fixed_brain]+self.moving_brains)

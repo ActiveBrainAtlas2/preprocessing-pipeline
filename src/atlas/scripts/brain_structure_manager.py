@@ -4,10 +4,10 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
-from abakit.atlas.brain import Brain
-from abakit.atlas.volume_utilities import VolumeUtilities
-from abakit.atlas.atlas import volume_to_polygon, save_mesh
-from abakit.registration.utilities_registration import SCALING_FACTOR
+from library.utilities.brain import Brain
+from library.utilities.volume_utilities import VolumeUtilities
+from library.utilities.atlas import volume_to_polygon, save_mesh
+from library.registration.utilities_registration import SCALING_FACTOR
 
 atlas = 'atlasV8'
 data_path = '/net/birdstore/Active_Atlas_Data/data_root'
@@ -17,7 +17,7 @@ class BrainStructureManager(Brain, VolumeUtilities):
     def __init__(self, animal, atlas = atlas, downsample_factor = SCALING_FACTOR, check_path = True, sql = False):
         self.DOWNSAMPLE_FACTOR = downsample_factor
         if sql:
-            Brain.__init__(self,animal,sql = True)
+            Brain.__init__(self,animal)
             to_um = self.DOWNSAMPLE_FACTOR * self.get_resolution()
             self.pixel_to_um = np.array([to_um, to_um, 20])
             self.um_to_pixel = 1 / self.pixel_to_um

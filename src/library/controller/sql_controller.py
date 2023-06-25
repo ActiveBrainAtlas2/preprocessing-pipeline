@@ -48,7 +48,6 @@ class SqlController(AnimalController, ElastixController, HistologyController,
         connection_string = f'mysql+pymysql://{user}:{password}@{host}/{schema}?charset=utf8'
         engine = create_engine(connection_string, poolclass=NullPool)
         self.session = scoped_session(sessionmaker(bind=engine)) 
-        print('Creating session')        
         self.session.begin()
 
         if self.animal_exists(animal):

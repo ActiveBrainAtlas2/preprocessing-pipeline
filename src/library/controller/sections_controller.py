@@ -43,7 +43,7 @@ class SectionsController():
         return sections
 
 
-    def get_section_count(self, animal, rescan_number):
+    def get_section_count(self, animal, rescan_number=0):
         count = self.session.query(Section)\
             .filter(Section.prep_id == animal)\
             .filter(Section.channel == 1)\
