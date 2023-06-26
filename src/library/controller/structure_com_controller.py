@@ -1,4 +1,6 @@
 import numpy as np
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy import func
 
 from library.controller.sql_controller import SqlController
 from library.database_model.annotation_points import AnnotationSession, AnnotationType, StructureCOM
@@ -73,22 +75,19 @@ class StructureCOMController(SqlController):
         return dict(zip(structure, coordinate))
 
     def get_all_manual_COM(self):
-        import sys
         coms = self.session.query(StructureCOM)\
-            .filter(StructureCOM.source == 'MANUAL').all()
+            .filter(StructureCOM.source == 'MANUAL')\
+            .join(AnnotationSession).filter(AnnotationSession.FK_brain_region_id != 52)\
+            .all()
         coms = np.array(coms)
         animals = np.array([i.session.FK_prep_id for i in coms])
         unique_animals = np.unique(animals)
-        #animals = [com.session.FK_prep_id for com in coms]
-        #animals = np.unique(animals)
-        #coms = np.array(coms)
         all_coms = {}
         for animal in unique_animals:
             animal_com = coms[animals==animal]
-            print(animal, animal_com.shape)
-            names = [self.structure_id_to_abbreviation(i.FK_structure_id) for i in animal_com]
-            coords = [np.floor([i.x,i.y,i.z]).astype(int) for i in animal_com]
-            #print(animal, names, coords)
+            names = [self.structure_id_to_abbreviation(i.session.FK_brain_region_id) for i in animal_com]
+            #coords = [np.floor([i.x,i.y,i.z]).astype(int) for i in animal_com]
+            coords = [[i.x,i.y,i.z] for i in animal_com]
             all_coms[animal] = dict(zip(names,coords))
         return all_coms        
     
@@ -100,3 +99,37 @@ class StructureCOMController(SqlController):
             .filter(AnnotationSession.FK_user_id==annotator_id)\
             .order_by(AnnotationSession.created).all()
         return sessions
+
+    def structure_abbreviation_to_id(self, abbreviation):
+        try:
+            structure = self.get_structure(str(abbreviation).strip())
+        except NoResultFound as nrf:
+            print(f'No structure found for {abbreviation} {nrf}')
+            return
+        return structure.id
+
+    def get_structure(self, abbrv):
+        """
+        Returns a structure ORM object
+        This search has to be case sensitive!
+        :param abbrv: the abbreviation of the structure
+        :return: structure object
+        """
+        return self.session.query(BrainRegion).filter(BrainRegion.abbreviation == func.binary(abbrv)).one()
+
+    def structure_id_to_abbreviation(self, id):
+        try:
+            structure = self.get_row({'id': id}, BrainRegion)
+        except NoResultFound as nrf:
+            print(f'No structure found for {id} {nrf}')
+            return
+        return structure.abbreviation
+    
+    def get_structures(self):
+        """return a list of active structures
+
+        Returns:
+            list: list of structure ORM
+        """        
+        return self.session.query(BrainRegion).filter(BrainRegion.active.is_(True)).all()
+

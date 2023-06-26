@@ -4,6 +4,7 @@ Trimmed down version of the original atlas utilities and also utilities_atlas_li
 import sys
 import numpy as np
 import vtk
+from vtk.util import numpy_support
 
 import mcubes # https://github.com/pmneila/PyMCubes
 
@@ -43,7 +44,6 @@ def get_transformation(animal):
     
     dst_point_set = np.array([atlas_centers[s] for s in point_structures if s in common_structures and s in atlas_centers]).T
     point_set = np.array([pointdata[s] for s in point_structures if s in common_structures and s in atlas_centers]).T
-    
     R, t = umeyama(point_set, dst_point_set)
     return R, t 
 
@@ -178,12 +178,12 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
 
     if len(faces) > 0:
         cells = vtk.vtkCellArray()
-        cell_arr = np.empty((len(faces)*4, ), np.int)
+        cell_arr = np.empty((len(faces)*4, ), int)
         cell_arr[::4] = 3
         cell_arr[1::4] = faces[:,0]
         cell_arr[2::4] = faces[:,1]
         cell_arr[3::4] = faces[:,2]
-        cell_vtkArray = vtk.util.numpy_support.numpy_to_vtkIdTypeArray(cell_arr, deep=1)
+        cell_vtkArray = numpy_support.numpy_to_vtkIdTypeArray(cell_arr, deep=1)
         cells.SetCells(len(faces), cell_vtkArray)
         colors.InsertNextTuple3(255,255,0)
 

@@ -14,19 +14,16 @@ data_path = '/net/birdstore/Active_Atlas_Data/data_root'
 
 class BrainStructureManager(Brain, VolumeUtilities):
 
-    def __init__(self, animal, atlas = atlas, downsample_factor = SCALING_FACTOR, check_path = True, sql = False):
+    def __init__(self, animal, atlas = atlas, downsample_factor = SCALING_FACTOR, check_path = True):
         self.DOWNSAMPLE_FACTOR = downsample_factor
-        if sql:
-            Brain.__init__(self,animal)
-            to_um = self.DOWNSAMPLE_FACTOR * self.get_resolution()
-            self.pixel_to_um = np.array([to_um, to_um, 20])
-            self.um_to_pixel = 1 / self.pixel_to_um
-        else:
-            Brain.__init__(self, animal, sql = False)
-            self.animal = animal
+        Brain.__init__(self,animal)
+        to_um = self.DOWNSAMPLE_FACTOR * self.get_resolution()
+        self.pixel_to_um = np.array([to_um, to_um, 20])
+        self.um_to_pixel = 1 / self.pixel_to_um
         self.origins = {}
         self.COM = {}
         self.volumes = {}
+        self.structures = []
         self.aligned_contours = {}
         self.thresholded_volumes = {}
         self.atlas = atlas
@@ -45,13 +42,13 @@ class BrainStructureManager(Brain, VolumeUtilities):
         os.makedirs(self.origin_path, exist_ok=True)
 
     def load_origins(self):
-        if not hasattr(self,'origins'):
-            assert(os.path.exists(self.origin_path))
-            origin_files = sorted(os.listdir(self.origin_path))
-            for filei in origin_files:
-                structure = os.path.splitext(filei)[0]    
-                self.origins[structure] = np.loadtxt(os.path.join(self.origin_path, filei))
-                self.set_structures(list(self.origins.keys()))
+        assert(os.path.exists(self.origin_path))
+        print(self.origin_path)
+        origin_files = sorted(os.listdir(self.origin_path))
+        for filei in origin_files:
+            structure = os.path.splitext(filei)[0]    
+            self.origins[structure] = np.loadtxt(os.path.join(self.origin_path, filei))
+            self.set_structures(list(self.origins.keys()))
         
     def load_volumes(self):
         if not hasattr(self,'volumes'):
@@ -74,9 +71,9 @@ class BrainStructureManager(Brain, VolumeUtilities):
 
     def set_aligned_contours(self,contours):
         self.aligned_contours = contours
-    
-    def set_structures(self,structures):
-        if not hasattr(self,'structures'):
+
+    def set_structures(self, structures):
+        if not hasattr(self, 'structures'):
             self.structures = structures
 
     def save_contours(self):
@@ -91,32 +88,47 @@ class BrainStructureManager(Brain, VolumeUtilities):
             json.dump(self.aligned_structures, f, sort_keys=True)
 
     def save_volumes(self):
-        assert hasattr(self,'volumes')
-        assert hasattr(self,'structures')
+        assert hasattr(self, 'volumes')
+        assert hasattr(self, 'structures')
         os.makedirs(self.volume_path, exist_ok=True)
         for structurei in self.structures:
-            volume = self.volumes[structurei]
-            volume_filepath = os.path.join(self.volume_path, f'{structurei}.npy')
-            np.save(volume_filepath, volume)
-    
+            if structurei in self.volumes:
+                volume = self.volumes[structurei]
+                volume_filepath = os.path.join(
+                    self.volume_path, f'{structurei}.npy')
+                print(volume_filepath)
+                np.save(volume_filepath, volume)
+
     def save_mesh_files(self):
         assert hasattr(self,'volumes')
         self.calculate_fixed_brain_center()
         self.COM = self.get_average_coms()
         self.convert_unit_of_com_dictionary(self.COM, self.fixed_brain.um_to_pixel)
         self.origins = self.get_origin_from_coms()
-        for structurei in self.structures:
-            origin, volume = self.origins[structurei], self.volumes[structurei]
-            centered_origin = origin - self.get_origin_array().mean(0)
-            aligned_structure = volume_to_polygon(volume=volume, origin=centered_origin , times_to_simplify=3)
-            filepath = os.path.join(self.animal_directory, 'mesh', f'{structurei}.stl')
-            save_mesh(aligned_structure, filepath)
+
+        for structure in self.volumes.keys():
+            if structure in self.origins:
+                #print('save mesh',structurei)
+                #if structurei in self.origins:
+                origin = self.origins[structure]
+                volume = self.volumes[structure]
+                centered_origin = origin - self.get_origin_array().mean(0)
+                aligned_structure = volume_to_polygon(volume=volume, origin=centered_origin , times_to_simplify=3)
+                filepath = os.path.join(self.animal_directory, 'mesh', f'{structure}.stl')
+                print(filepath)
+                save_mesh(aligned_structure, filepath)
+            else:
+                print(f'structure={structure} is not in self.origins')
 
     def save_origins(self):
+        self.origins = self.get_origin_from_coms()
+        print('save origins', len(self.origins))
         assert hasattr(self,'origins')
         self.set_structures(list(self.origins.values()))
         os.makedirs(self.origin_path, exist_ok=True)
-        for structurei in self.structures:
+
+        
+        for structurei in self.origins.keys():
             x, y, z = self.origins[structurei]
             origin_filepath = os.path.join(self.origin_path, f'{structurei}.txt')
             np.savetxt(origin_filepath, (x, y, z))

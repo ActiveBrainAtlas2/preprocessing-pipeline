@@ -27,9 +27,9 @@ class BrainMerger(Atlas):
 
     def __init__(self, threshold=0.8, moving_brains=['MD594', 'MD585']):
         super().__init__()
-        self.fixed_brain = BrainStructureManager('MD589', sql=True)
+        self.fixed_brain = BrainStructureManager('MD589')
         self.moving_brains = [BrainStructureManager(
-            braini, sql=True) for braini in moving_brains]
+            braini) for braini in moving_brains]
         self.sqlController = SqlController(self.fixed_brain.animal)
         self.threshold = threshold
         self.volumes_to_merge = defaultdict(list)
@@ -93,29 +93,30 @@ class BrainMerger(Atlas):
 
     def load_data(self, brains):
         for brain in brains:
+            print(brain.animal)
             brain.load_origins()
             brain.load_volumes()
             brain.load_com()
 
     def load_data_from_fixed_and_moving_brains(self):
         self.load_data([self.fixed_brain]+self.moving_brains)
-        for structure in self.fixed_brain.origins:            
+        for structure in self.fixed_brain.origins:
             if structure == 'RtTg':
                 braini = self.moving_brains[0]
-                origin,volume = braini.origins[structure],braini.volumes[structure]
-                r,t = self.get_transform_to_align_brain(braini)
+                origin, volume = braini.origins[structure], braini.volumes[structure]
+                r, t = self.get_transform_to_align_brain(braini)
                 origin = brain_to_atlas_transform(origin, r, t)
             else:
-                origin,volume = self.fixed_brain.origins[structure],self.fixed_brain.volumes[structure]
+                origin, volume = self.fixed_brain.origins[structure], self.fixed_brain.volumes[structure]
             self.volumes_to_merge[structure].append(volume)
             self.origins_to_merge[structure].append(origin)
         for brain in self.moving_brains:
             brain.transformed_origins = {}
-            r,t = self.get_transform_to_align_brain(brain)
+            r, t = self.get_transform_to_align_brain(brain)
             for structure in brain.origins:
-                origin,volume = brain.origins[structure],brain.volumes[structure]
-                aligned_origin = brain_to_atlas_transform(origin, r, t)   
-                brain.transformed_origins[structure] =  aligned_origin            
+                origin, volume = brain.origins[structure], brain.volumes[structure]
+                aligned_origin = brain_to_atlas_transform(origin, r, t)
+                brain.transformed_origins[structure] = aligned_origin
                 self.volumes_to_merge[structure].append(volume)
                 self.origins_to_merge[structure].append(aligned_origin)
 
@@ -123,10 +124,13 @@ class BrainMerger(Atlas):
         self.load_data_from_fixed_and_moving_brains()
         for structure in self.volumes_to_merge:
             self.volumes[structure]= self.get_merged_landmark_probability(structure)
+            #self.structures.append(structure)
+            
         
 
 if __name__ == '__main__':
     merger = BrainMerger()
     merger.create_average_com_and_volume()
     merger.save_mesh_files()
+    merger.save_origins()
     merger.save_volumes()

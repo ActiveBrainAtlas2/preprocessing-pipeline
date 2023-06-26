@@ -11,12 +11,12 @@ atlas = 'atlasV8'
 
 class Atlas(BrainStructureManager):
     def __init__(self, atlas = atlas):
-        BrainStructureManager.__init__(self,'Atlas',sql=True)
+        BrainStructureManager.__init__(self,'Atlas')
         self.atlas = atlas
         self.animal = atlas
         self.set_path_and_create_folders()
-        self.fixed_brain = BrainStructureManager('MD589',sql=True)
-        self.moving_brain = [BrainStructureManager(braini,sql=True) for braini in ['MD594', 'MD585']]
+        self.fixed_brain = BrainStructureManager('MD589')
+        self.moving_brain = [BrainStructureManager(braini) for braini in ['MD594', 'MD585']]
         self.brains = self.moving_brain
         self.brains.append(self.fixed_brain)
         super().__init__('Atlas')
@@ -28,15 +28,16 @@ class Atlas(BrainStructureManager):
         os.makedirs(self.animal_directory, exist_ok=True)
         os.makedirs(self.volume_path, exist_ok=True)
         os.makedirs(self.origin_path, exist_ok=True)
-    
-    def get_transform_to_align_brain(self,brain):
-        # import pdb
-        # pdb.set_trace()
+
+    def get_transform_to_align_brain(self, brain):
         moving_com = (brain.get_com_array()*self.um_to_pixel).T
         fixed_com = (self.fixed_brain.get_com_array()*self.um_to_pixel).T
-        r, t = umeyama(moving_com,fixed_com)
-        return r,t
-    
+        
+        print(f'moving brain={brain.animal} data={moving_com.shape}')
+        print(f'fixed brain={self.fixed_brain.animal} data={fixed_com.shape}')
+        r, t = umeyama(moving_com, fixed_com)
+        return r, t
+
     def align_point_from_braini(self,braini,point):
         r,t = self.get_transform_to_align_brain(braini)
         return brain_to_atlas_transform(point, r, t)
@@ -49,27 +50,21 @@ class Atlas(BrainStructureManager):
         self.COM = self.sqlController.get_atlas_centers()
     
     def get_average_coms(self):
-        import sys
-
         fixed_brain = self.fixed_brain.animal
         controller = StructureCOMController(fixed_brain)
         coms = controller.get_all_manual_COM()
-        print(coms)
-        sys.exit()
         annotated_animals = np.array(list(coms.keys()))
         annotated_animals = annotated_animals[annotated_animals!=fixed_brain]
         annotations = [coms[fixed_brain]]
         self.fixed_brain.load_com()
         for animal in annotated_animals:
             com = coms[animal]
-            print(type(com))
-            print(com)
             r, t = get_similarity_transformation_from_dicts(fixed = coms[fixed_brain],\
                     moving = com)
             transformed = np.array([brain_to_atlas_transform(point, r, t) for point in com.values()])
             annotations.append(dict(zip(com.keys(),transformed)))
         averages = {}
-        self.structures = [i.abbreviation for i in self.sqlController.get_structures()]
+        self.structures = [structure.abbreviation for structure in controller.get_structures()]
         for structurei in self.structures:
             averages[structurei] = np.average([ prepi[structurei] for prepi \
                 in annotations if structurei in prepi],0)
