@@ -1,6 +1,7 @@
 from datetime import datetime
-
+from sqlalchemy.orm.exc import NoResultFound
 from library.database_model.elastix_transformation import ElastixTransformation
+#from library.controller.sql_controller import SqlController
 
 class ElastixController():
     """Controller class for the elastix table
@@ -39,7 +40,7 @@ class ElastixController():
                 ElastixTransformation.iteration == iteration,
                 ElastixTransformation.section == section).first()
         except NoResultFound as nrf:
-            print('No value for {} {} error: {}'.format(animal, moving_index, nrf))
+            print(f'No value for {animal} {section} error: {nrf}')
 
         return row
 

@@ -30,7 +30,9 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 from library.utilities.utilities_process import get_image_size
 from library.utilities.utilities_contour import get_contours_from_annotations
-from library.controller.elastix_controller import ElastixController
+#from library.controller.elastix_controller import ElastixController
+from library.controller.sql_controller import SqlController
+from library.controller.structure_com_controller import StructureCOMController
 from library.image_manipulation.filelocation_manager import data_path as DATA_PATH
 from library.image_manipulation.filelocation_manager import FileLocationManager
 DOWNSAMPLE_FACTOR = 32
@@ -79,7 +81,7 @@ def create_elastix_transformation(rotation, xshift, yshift, center):
 
 
 def load_elastix_transformation(animal, moving_index):
-    controller = ElastixController(animal)
+    controller = SqlController(animal)
 
     elastixTransformation = controller.get_elastix_row(animal, moving_index)
     #elastixTransformation = session.query(ElastixTransformation).filter(ElastixTransformation.prep_id == animal)\
@@ -193,11 +195,13 @@ class FoundationContourAligner(BrainStructureManager):
             .apply(lambda x: x.replace(',,', ',')).apply(lambda x: x.replace(',,', ','))
         hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
         self.contour_per_structure_per_section = defaultdict(dict)
-        structures = self.sqlController.get_structures_dict()
-        for structurei, _ in structures.items():
-            contour_for_structurei, _, _ = get_contours_from_annotations(self.animal, structurei, hand_annotations, densify=0)#7-MAR-2022 MOD (PREV densify=4)
+        #structures = self.sqlController.get_structures_dict()
+        controller = StructureCOMController(self.animal)
+        structures = controller.get_structures()
+        for structure in structures:
+            contour_for_structurei, _, _ = get_contours_from_annotations(self.animal, structure, hand_annotations, densify=0)#7-MAR-2022 MOD (PREV densify=4)
             for section in contour_for_structurei:
-                self.contour_per_structure_per_section[structurei][section] = contour_for_structurei[section]
+                self.contour_per_structure_per_section[structure][section] = contour_for_structurei[section]
 
     def align_contours(self):
         #TODO check section 253, it had two values, 8 and 60
