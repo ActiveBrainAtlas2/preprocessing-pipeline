@@ -111,14 +111,13 @@ class BrainStructureManager(Brain, VolumeUtilities):
                 centered_origin = origin - self.get_origin_array().mean(0)
                 aligned_structure = volume_to_polygon(volume=volume, origin=centered_origin , times_to_simplify=3)
                 filepath = os.path.join(self.animal_directory, 'mesh', f'{structure}.stl')
-                print(filepath)
                 save_mesh(aligned_structure, filepath)
             else:
                 print(f'structure={structure} is not in self.origins')
 
     def save_origins(self):
         self.origins = self.get_origin_from_coms()
-        print('save origins', len(self.origins))
+        print('save origins', len(self.origins), type(self.origins))
         assert hasattr(self,'origins')
         self.set_structures(list(self.origins.values()))
         os.makedirs(self.origin_path, exist_ok=True)
@@ -127,6 +126,7 @@ class BrainStructureManager(Brain, VolumeUtilities):
         for structurei in self.origins.keys():
             x, y, z = self.origins[structurei]
             origin_filepath = os.path.join(self.origin_path, f'{structurei}.txt')
+            print(origin_filepath)
             np.savetxt(origin_filepath, (x, y, z))
     
     def save_coms(self):
