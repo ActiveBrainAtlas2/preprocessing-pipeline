@@ -26,13 +26,20 @@ class VolumeUtilities:
             self.thresholded_volumes[structurei] = volume > threshold
     
     def get_origin_from_coms(self):
+        average_com_list = []
+        volume_com_list = []
         check_dict(self.COM.keys(), 'COM.keys')
         check_dict(self.volumes.keys(), 'volumes.keys')
         shared_structures = set(self.COM.keys()).intersection(self.volumes.keys())
         check_dict(shared_structures, 'shared structures')
 
-        volume_coms = np.array([center_of_mass(self.volumes[si]) for si in shared_structures]).astype(int)
-        average_com = np.array([self.COM[si] for si in shared_structures])
+        #volume_coms = np.array([center_of_mass(self.volumes[si]) for si in shared_structures]).astype(int)
+        
+        #average_com = np.array([self.COM[shared_structure] for si in shared_structures])
+        for shared_structure in shared_structures:
+            com = center_of_mass(self.volumes[shared_structure])
+            print(f'{shared_structure} origin  = {self.COM[shared_structure]} COM={com}')
+        return
         origins = average_com - volume_coms
         origins = (origins - origins.min(0)).astype(int) + 10
         values = [self.volumes[ki] for ki in shared_structures]
