@@ -57,7 +57,7 @@ class BrainMerger(Atlas):
 
         optimization_setting = dict(
                 learningRate=10,
-                numberOfIterations=100,
+                numberOfIterations=10000,
                 convergenceMinimumValue=1e-5,
                 convergenceWindowSize=50)
 
