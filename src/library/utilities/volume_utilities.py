@@ -31,7 +31,7 @@ class VolumeUtilities:
         shared_structures = set(self.COM.keys()).intersection(self.volumes.keys())
         check_dict(shared_structures, 'shared structures')
 
-        volume_coms = np.array([center_of_mass(self.volumes[si]) for si in shared_structures]).astype(int)
+        volume_coms = np.array([center_of_mass(self.volumes[si]) for si in shared_structures])
         average_com = np.array([self.COM[si] for si in shared_structures])
         for shared_structure in shared_structures:
             if 'SC' in shared_structure:
@@ -40,11 +40,13 @@ class VolumeUtilities:
                 print(f'{shared_structure} origin={self.COM[shared_structure]} COM={com}')
                 print(f'average - volume_com = {avg - com}')
         origins = average_com - volume_coms
-        origins = (origins - origins.min(0)).astype(int) + 10
+        origins = (origins - origins.min(0)) + 10
         print('volume coms')
         print(volume_coms[0:3,:])
         print('average coms')
         print(average_com[0:3,:])
+        print('origins')
+        print(origins[0:3,:])
         values = [self.volumes[ki] for ki in shared_structures]
         self.volumes = dict(zip(shared_structures, values))
         return dict(zip(self.COM.keys(), origins))

@@ -185,7 +185,7 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
         cell_arr[3::4] = faces[:,2]
         cell_vtkArray = numpy_support.numpy_to_vtkIdTypeArray(cell_arr, deep=1)
         cells.SetCells(len(faces), cell_vtkArray)
-        colors.InsertNextTuple3(255,255,0)
+        colors.InsertNextTuple3(10,255,0)
 
     polydata.SetPoints(points)
 
