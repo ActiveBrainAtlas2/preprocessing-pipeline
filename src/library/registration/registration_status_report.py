@@ -26,8 +26,6 @@ class RegistrationStatusReport():
 def report_multi_resolution_events():
     global n_iter, n_resolution
     n_iter = 0
-    if n_resolution == 0:
-        print('starting optimization')
     n_resolution += 1
 
 
