@@ -118,6 +118,8 @@ class BrainMerger(Atlas):
             r, t = self.get_transform_to_align_brain(brain)
             for structure in brain.origins:
                 origin, volume = brain.origins[structure], brain.volumes[structure]
+                if 'SC' in structure:
+                    print(f'SC origin in load moving brain is {origin}')
                 aligned_origin = brain_to_atlas_transform(origin, r, t)
                 brain.transformed_origins[structure] = aligned_origin
                 self.volumes_to_merge[structure].append(volume)
