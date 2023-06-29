@@ -44,10 +44,11 @@ class VolumeUtilities:
         print('origins = average_com - volume_coms', origins.dtype)
         print(origins[0:3,:])
 
-        origins = (origins - origins.min(0)) + 10
-        print('origins - origins.min(0)) + 10', origins.dtype)
-        print(origins[0:3,:])
-        
+        #origins = (origins - origins.min(0)) + 10
+        #print('origins - origins.min(0)) + 10', origins.dtype)
+        #print(origins[0:3,:])
+        print(f'origins.min(0)) + 10 = {origins.min(0) + 10}')
+        print(f'origins.min(0)) = {origins.min(0)}')
         values = [self.volumes[ki] for ki in shared_structures]
         self.volumes = dict(zip(shared_structures, values))
         return dict(zip(self.COM.keys(), origins))
