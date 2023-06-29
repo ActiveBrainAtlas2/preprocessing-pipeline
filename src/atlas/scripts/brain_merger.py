@@ -102,11 +102,15 @@ class BrainMerger(Atlas):
         for structure in self.fixed_brain.origins:
             if structure == 'RtTg':
                 braini = self.moving_brains[0]
-                origin, volume = braini.origins[structure], braini.volumes[structure]
+                origin = braini.origins[structure]
+                volume = braini.volumes[structure]
                 r, t = self.get_transform_to_align_brain(braini)
                 origin = brain_to_atlas_transform(origin, r, t)
             else:
-                origin, volume = self.fixed_brain.origins[structure], self.fixed_brain.volumes[structure]
+                origin = self.fixed_brain.origins[structure]
+                volume = self.fixed_brain.volumes[structure]
+            if 'SC' in structure:
+                print(f'SC origin in load fixed brain is {origin}')
             self.volumes_to_merge[structure].append(volume)
             self.origins_to_merge[structure].append(origin)
         for brain in self.moving_brains:
@@ -121,6 +125,7 @@ class BrainMerger(Atlas):
 
     def create_average_com_and_volume(self):
         self.load_data_from_fixed_and_moving_brains()
+        return
         for structure in self.volumes_to_merge:
             self.volumes[structure]= self.get_merged_landmark_probability(structure)
             #self.structures.append(structure)

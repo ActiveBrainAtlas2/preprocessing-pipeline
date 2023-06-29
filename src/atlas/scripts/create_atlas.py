@@ -51,4 +51,4 @@ if __name__ == '__main__':
         #align_contour(animal)
         #create_volume(animal)
     merge_brains()
-    make_ng_file()
+    #make_ng_file()
