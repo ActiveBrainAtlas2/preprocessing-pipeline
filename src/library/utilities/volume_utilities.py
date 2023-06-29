@@ -34,11 +34,14 @@ class VolumeUtilities:
         volume_coms = np.array([center_of_mass(self.volumes[si]) for si in shared_structures]).astype(int)
         average_com = np.array([self.COM[si] for si in shared_structures])
         for shared_structure in shared_structures:
-            com = center_of_mass(self.volumes[shared_structure])
-            print(f'{shared_structure} origin  = {self.COM[shared_structure]} COM={com}')
+            if 'SC' in shared_structure:
+                com = np.array(center_of_mass(self.volumes[shared_structure]))
+                avg = np.array(self.COM[shared_structure])
+                print(f'{shared_structure} origin={self.COM[shared_structure]} COM={com}')
+                print(f'average - volume_com = {avg - com}')
         origins = average_com - volume_coms
         origins = (origins - origins.min(0)).astype(int) + 10
         values = [self.volumes[ki] for ki in shared_structures]
-        self.volumes = dict(zip(shared_structures,values))
+        self.volumes = dict(zip(shared_structures, values))
         return dict(zip(self.COM.keys(), origins))
     
