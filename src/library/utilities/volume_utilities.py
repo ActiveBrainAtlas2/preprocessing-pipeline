@@ -39,14 +39,15 @@ class VolumeUtilities:
                 avg = np.array(self.COM[shared_structure])
                 print(f'{shared_structure} origin={self.COM[shared_structure]} COM={com}')
                 print(f'average - volume_com = {avg - com}')
+        
         origins = average_com - volume_coms
-        origins = (origins - origins.min(0)) + 10
-        print('volume coms')
-        print(volume_coms[0:3,:])
-        print('average coms')
-        print(average_com[0:3,:])
-        print('origins')
+        print('origins = average_com - volume_coms', origins.dtype)
         print(origins[0:3,:])
+
+        origins = (origins - origins.min(0)) + 10
+        print('origins - origins.min(0)) + 10', origins.dtype)
+        print(origins[0:3,:])
+        
         values = [self.volumes[ki] for ki in shared_structures]
         self.volumes = dict(zip(shared_structures, values))
         return dict(zip(self.COM.keys(), origins))
