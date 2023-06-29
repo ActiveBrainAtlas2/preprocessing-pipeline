@@ -18,7 +18,7 @@ class RegistrationStatusReport():
     def print_values(self):
         global n_iter
         n_iter += 1
-        if n_iter % 10 == 0:
+        if n_iter % 1000 == 0:
             print(
                 f'iteration: {n_iter} {self.registration_method.GetMetricValue():4f}')
 

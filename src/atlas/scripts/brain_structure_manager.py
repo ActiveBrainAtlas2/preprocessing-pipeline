@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 
 from library.utilities.brain import Brain
+from library.utilities.utilities_contour import check_dict
 from library.utilities.volume_utilities import VolumeUtilities
 from library.utilities.atlas import volume_to_polygon, save_mesh
 from library.registration.utilities_registration import SCALING_FACTOR
@@ -43,7 +44,6 @@ class BrainStructureManager(Brain, VolumeUtilities):
 
     def load_origins(self):
         assert(os.path.exists(self.origin_path))
-        print(self.origin_path)
         origin_files = sorted(os.listdir(self.origin_path))
         for filei in origin_files:
             structure = os.path.splitext(filei)[0]    
@@ -62,19 +62,17 @@ class BrainStructureManager(Brain, VolumeUtilities):
         self.set_structures(list(self.volumes.keys()))
         
         
-    def load_aligned_contours(self):
-        if not hasattr(self,'aligned_contours'):
-            with open(self.align_and_padded_contour_path) as f:
-                self.set_aligned_contours(json.load(f))
-                self.set_structures(list(self.aligned_contours.keys()))
+    def load_aligned_contours(self):        
+        print(self.align_and_padded_contour_path)
+        with open(self.align_and_padded_contour_path) as f:
+            self.set_aligned_contours(json.load(f))
+            self.set_structures(list(self.aligned_contours.keys()))
 
-
-    def set_aligned_contours(self,contours):
+    def set_aligned_contours(self, contours):
         self.aligned_contours = contours
 
     def set_structures(self, structures):
-        if not hasattr(self, 'structures'):
-            self.structures = structures
+        self.structures = structures
 
     def save_contours(self):
         assert(hasattr(self, 'original_structures'))
@@ -92,12 +90,10 @@ class BrainStructureManager(Brain, VolumeUtilities):
         assert hasattr(self, 'structures')
         os.makedirs(self.volume_path, exist_ok=True)
         for structurei in self.structures:
-            if structurei in self.volumes:
-                volume = self.volumes[structurei]
-                volume_filepath = os.path.join(
-                    self.volume_path, f'{structurei}.npy')
-                print(volume_filepath)
-                np.save(volume_filepath, volume)
+            volume = self.volumes[structurei]
+            volume_filepath = os.path.join(self.volume_path, f'{structurei}.npy')
+            print(volume_filepath)
+            np.save(volume_filepath, volume)
 
     def save_mesh_files(self):
         assert hasattr(self,'volumes')
@@ -136,13 +132,15 @@ class BrainStructureManager(Brain, VolumeUtilities):
     def save_coms(self):
         self.load_com()
         self.set_structures(list(self.COM.values()))
-        for structurei in self.structures:
-            if structurei in self.COM:
-                coordinates = self.COM[structurei]
-                self.sqlController.add_com(prep_id=self.animal, abbreviation=structurei, \
+        check_dict(self.COM, 'self.COM')
+        return
+        for structure in self.structures:
+            if structure in self.COM.keys():
+                coordinates = self.COM[structure]
+                self.sqlController.add_com(prep_id=self.animal, abbreviation=structure, \
                         coordinates=coordinates)
             else:
-                print(f'{structurei} not in self.COM')
+                print(f'{structure} not in self.COM keys')
 
     def get_contour_list(self, structurei):
         return list(self.aligned_contours[structurei].values())

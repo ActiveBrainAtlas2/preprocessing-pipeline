@@ -185,6 +185,7 @@ class FoundationContourAligner(BrainStructureManager):
             self.transform_per_section[section_num] = transform
 
     def load_contours_for_Foundation_brains(self):
+        print(f'Loading CSV data from {self.contour_path}')
         hand_annotations = pd.read_csv(self.contour_path)
         hand_annotations['vertices'] = hand_annotations['vertices'] \
             .apply(lambda x: x.replace(' ', ',')) \

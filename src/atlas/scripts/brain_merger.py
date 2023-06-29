@@ -74,14 +74,13 @@ class BrainMerger(Atlas):
         xl,yl,zl = size_difference - np.array([xr,yr,zr])
         return np.pad(volume,[[xl,xr],[yl,yr],[zl,zr]])
 
-
     def get_merged_landmark_probability(self, structure):
         print(f'aligning structure: {structure}')
-        force_symmetry=(structure in self.symmetry_list)
+        force_symmetry = (structure in self.symmetry_list)
         volumes = self.volumes_to_merge[structure]
         sizes = np.array([vi.shape for vi in volumes])
         margin = 10
-        volume_size = sizes.max(0)+ margin
+        volume_size = sizes.max(0) + margin
         volumes = [self.pad_volume(volume_size, vi) for vi in volumes]
         volumes = list([(v > 0).astype(np.int32) for v in volumes])
         self.refine_align_volumes(volumes)
@@ -93,7 +92,7 @@ class BrainMerger(Atlas):
 
     def load_data(self, brains):
         for brain in brains:
-            print(brain.animal)
+            print(f'Loading data for {brain.animal}')
             brain.load_origins()
             brain.load_volumes()
             brain.load_com()

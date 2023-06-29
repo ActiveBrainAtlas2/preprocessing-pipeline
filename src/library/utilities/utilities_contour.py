@@ -1,9 +1,16 @@
+import sys
 import numpy as np
+
+def check_dict(d, name):
+    if len(d) < 1:
+        print(f'{name} is empty')
+
 
 def get_contours_from_annotations(prep_id, target_structure, hand_annotations, densify=0):
     num_annotations = len(hand_annotations)
     contours_for_structurei = {}
     for i in range(num_annotations):
+
         structure = hand_annotations['name'][i]
         side = hand_annotations['side'][i]
         section = hand_annotations['section'][i]

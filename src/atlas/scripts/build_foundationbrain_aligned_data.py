@@ -27,10 +27,10 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 from library.utilities.utilities_contour import get_contours_from_annotations
 from library.controller.sql_controller import SqlController
-#from utilities.utilities_alignment import create_downsampled_transforms
-from librar
-#from utilities.utilities_create_alignment import parse_elastix
-#from settings import ATLAS
+from library.controller.structure_com_controller import StructureCOMController
+from library.image_manipulation.filelocation_manager import FileLocationManager
+from foundation_contour_aligner import parse_elastix, create_downsampled_transforms
+from settings import data_path as DATA_PATH, atlas as ATLAS
 from library.utilities.utilities_process import get_image_size
 
 DOWNSAMPLE_FACTOR = 32
@@ -98,10 +98,12 @@ def create_volumes(animal):
         .apply(lambda x: x.replace(',,', ',')).apply(lambda x: x.replace(',,', ','))
 
     hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
-    structures = sqlController.get_structures_dict()
-    for structure, values in structures.items():
+    controller = StructureCOMController(animal)
+    structures = controller.get_structures()
+    for structure in structures:
         contour_annotations, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=4)
         for section in contour_annotations:
+            print(section)
             section_structure_vertices[section][structure] = contour_annotations[section][structure]
 
     section_transform = {}
@@ -134,6 +136,7 @@ def create_volumes(animal):
             aligned_padded_structures[structure][section] = points.tolist()
 
     OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
+    print(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     jsonpath1 = os.path.join(OUTPUT_DIR,  'original_structures.json')
     with open(jsonpath1, 'w') as f:

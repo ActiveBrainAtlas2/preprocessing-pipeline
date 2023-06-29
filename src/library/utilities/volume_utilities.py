@@ -2,6 +2,8 @@ import numpy as np
 from scipy.ndimage.measurements import center_of_mass
 from skimage.filters import gaussian
 
+from library.utilities.utilities_contour import check_dict
+
 
 class VolumeUtilities:
         
@@ -24,11 +26,11 @@ class VolumeUtilities:
             self.thresholded_volumes[structurei] = volume > threshold
     
     def get_origin_from_coms(self):
-        assert(hasattr(self, 'COM'))
-        assert(hasattr(self, 'volumes'))
+        check_dict(self.COM.keys(), 'COM.keys')
+        check_dict(self.volumes.keys(), 'volumes.keys')
         shared_structures = set(self.COM.keys()).intersection(self.volumes.keys())
-        print('get origin from coms shared structures')
-        print(shared_structures)
+        check_dict(shared_structures, 'shared structures')
+
         volume_coms = np.array([center_of_mass(self.volumes[si]) for si in shared_structures]).astype(int)
         average_com = np.array([self.COM[si] for si in shared_structures])
         origins = average_com - volume_coms

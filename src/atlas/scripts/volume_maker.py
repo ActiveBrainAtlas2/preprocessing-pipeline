@@ -17,7 +17,7 @@ from abakit.atlas.volume2contour import average_masks
 
 class VolumeMaker:
 
-    def calculate_origin_and_volume_for_one_segment(self,segmenti,interpolate=0):
+    def calculate_origin_and_volume_for_one_segment(self, segmenti, interpolate=0):
         segment_contours = self.aligned_contours[segmenti]
         segment_contours = self.sort_contours(segment_contours)
         origin,section_size = self.get_origin_and_section_size(segment_contours)
@@ -32,9 +32,10 @@ class VolumeMaker:
         volume = np.array(volume).astype(np.bool8)
         volume = np.swapaxes(volume,0,2)
         for _ in range(interpolate):
-            volume,origin = self.interpolate_volumes(volume,origin)
+            volume, origin = self.interpolate_volumes(volume,origin)
         self.origins[segmenti] = origin
         self.volumes[segmenti] = volume
+        print(f'End of calc origin and volumes and self.volumes type={self.volumes}')
     
     def get_origin_and_section_size(self,segment_contours):
         section_mins = []
@@ -52,12 +53,12 @@ class VolumeMaker:
         size = np.array([xspan,yspan]).astype(int)+5
         return origin,size
 
-    def compute_origins_and_volumes_for_all_segments(self,interpolate=0):
+    def compute_origins_and_volumes_for_all_segments(self, interpolate=0):
         self.origins = {}
         self.volumes = {}
         self.segments = self.aligned_contours.keys()
         for segmenti in self.segments:
-            self.calculate_origin_and_volume_for_one_segment(segmenti,interpolate=interpolate)
+            self.calculate_origin_and_volume_for_one_segment(segmenti, interpolate=interpolate)
     
     def get_COM_in_pixels(self,structurei):
         com = np.array(center_of_mass(self.volumes[structurei]))
@@ -70,7 +71,7 @@ class VolumeMaker:
         values = np.array(list(contour_for_segmenti.values()), dtype=object)[section_order]
         return dict(zip(keys,values))
 
-    def set_aligned_contours(self,contours):
+    def set_aligned_contours(self, contours):
         self.aligned_contours = contours
         self.structures = list(self.aligned_contours.keys())  
     

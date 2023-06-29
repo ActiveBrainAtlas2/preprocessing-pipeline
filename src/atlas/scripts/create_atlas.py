@@ -16,9 +16,15 @@ def create_volume(animal):
     brain.load_aligned_contours()
     volumemaker = VolumeMaker()
     volumemaker.set_aligned_contours(brain.aligned_contours)
+    return
     volumemaker.compute_origins_and_volumes_for_all_segments()
-    # volumemaker.save_coms()
-    brain.origins,brain.volumes,brain.structures = volumemaker.origins,volumemaker.volumes,volumemaker.structures
+    brain.save_coms()
+    brain.origins = volumemaker.origins
+    brain.volumes = volumemaker.volumes
+    brain.structures = volumemaker.structures
+    print(f'len origins={len(brain.origins)}')
+    print(f'len volumes={len(brain.volumes)} and type={type(brain.volumes)}')
+    print(f'len structures={len(brain.structures)}')
     brain.save_origins()
     brain.save_volumes()
 
@@ -26,7 +32,7 @@ def create_volume(animal):
 def merge_brains():
     merger = BrainMerger()
     merger.create_average_com_and_volume()
-    # merger.save_mesh_files() 
+    merger.save_mesh_files() 
     merger.save_origins() 
 
 def make_ng_file():
@@ -40,7 +46,8 @@ def make_ng_file():
 if __name__ == '__main__':
     animals = ['MD585', 'MD589', 'MD594']
     for animal in animals:
-        align_contour(animal)
-        create_volume(animal)
+        print(f'Working on {animal}')
+        #align_contour(animal)
+        #create_volume(animal)
     merge_brains()
     make_ng_file()
