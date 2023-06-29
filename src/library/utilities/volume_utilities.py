@@ -44,7 +44,7 @@ class VolumeUtilities:
         print('volume coms')
         print(volume_coms[0:3,:])
         print('average coms')
-        print(average_coms[0:3,:])
+        print(average_com[0:3,:])
         values = [self.volumes[ki] for ki in shared_structures]
         self.volumes = dict(zip(shared_structures, values))
         return dict(zip(self.COM.keys(), origins))
