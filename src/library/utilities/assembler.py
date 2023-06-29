@@ -2,10 +2,8 @@ import numpy as np
 from scipy.ndimage import center_of_mass
 from skimage.filters import gaussian
 
-from abakit.atlas.atlas_manager import BrainStructureManager
-from abakit.atlas.brain import Brain
-from abakit.atlas.atlas_manager import AtlasInitiator, Atlas
-from abakit.controller.sql_controller import SqlController
+from atlas.scripts.atlas_manager import BrainStructureManager, AtlasInitiator, Atlas
+from library.utilities.brain import Brain
 
 class Assembler(BrainStructureManager):
 
@@ -167,7 +165,7 @@ def get_v7_volume_and_origin():
     atlas.origins  = dict(zip(sorted_keys,[atlas.origins[keyi] for keyi in sorted_keys]))
     return atlas.volumes,atlas.origins
 
-
+"""
 def get_assembled_atlas_v7():
     controller = SqlController('DK39')
     atlas = Atlas(atlas = 'atlasV7')
@@ -179,3 +177,4 @@ def get_assembled_atlas_v7():
     segment_to_id = controller.get_segment_to_id_where_segment_are_brain_regions()
     assembler.assemble_all_structure_volume(segment_to_id)
     return assembler
+"""
