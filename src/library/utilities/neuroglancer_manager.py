@@ -14,7 +14,7 @@ from cloudvolume import CloudVolume
 from cloudvolume.lib import touch
 from collections import defaultdict
 
-from abakit.utilities.utilities_process import get_cpus
+from library.utilities.utilities_process import get_cpus
 
 
 def calculate_chunks(downsample, mip):
