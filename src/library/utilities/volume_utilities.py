@@ -40,6 +40,8 @@ class VolumeUtilities:
                 print(f'{shared_structure} origin={self.COM[shared_structure]} COM={com}')
                 print(f'average - volume_com = {avg - com}')
         
+        average_com[np.isnan(average_com)] = 0
+        volume_coms[np.isnan(volume_coms)] = 0
         origins = average_com - volume_coms
         print('origins = average_com - volume_coms', origins.dtype)
         t = np.argwhere(np.isnan(origins))
