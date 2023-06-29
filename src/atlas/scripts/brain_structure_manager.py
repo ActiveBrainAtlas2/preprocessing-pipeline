@@ -123,10 +123,11 @@ class BrainStructureManager(Brain, VolumeUtilities):
         os.makedirs(self.origin_path, exist_ok=True)
 
         
-        for structurei in self.origins.keys():
-            x, y, z = self.origins[structurei]
-            origin_filepath = os.path.join(self.origin_path, f'{structurei}.txt')
-            print(origin_filepath)
+        for structure in self.origins.keys():
+            x, y, z = self.origins[structure]
+            origin_filepath = os.path.join(self.origin_path, f'{structure}.txt')
+            if 'SC' in structure:
+                print(origin_filepath)
             np.savetxt(origin_filepath, (x, y, z))
     
     def save_coms(self):
