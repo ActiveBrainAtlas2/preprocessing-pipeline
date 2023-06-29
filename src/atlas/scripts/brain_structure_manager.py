@@ -133,7 +133,7 @@ class BrainStructureManager(Brain, VolumeUtilities):
         self.load_com()
         self.set_structures(list(self.COM.values()))
         check_dict(self.COM, 'self.COM')
-        return
+        
         for structure in self.structures:
             if structure in self.COM.keys():
                 coordinates = self.COM[structure]

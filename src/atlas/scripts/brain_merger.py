@@ -127,7 +127,6 @@ class BrainMerger(Atlas):
 
     def create_average_com_and_volume(self):
         self.load_data_from_fixed_and_moving_brains()
-        return
         for structure in self.volumes_to_merge:
             self.volumes[structure]= self.get_merged_landmark_probability(structure)
             #self.structures.append(structure)
