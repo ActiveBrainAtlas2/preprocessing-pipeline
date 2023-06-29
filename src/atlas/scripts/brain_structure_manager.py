@@ -111,6 +111,7 @@ class BrainStructureManager(Brain, VolumeUtilities):
                 centered_origin = origin - self.get_origin_array().mean(0)
                 aligned_structure = volume_to_polygon(volume=volume, origin=centered_origin , times_to_simplify=3)
                 filepath = os.path.join(self.animal_directory, 'mesh', f'{structure}.stl')
+                print(filepath)
                 save_mesh(aligned_structure, filepath)
             else:
                 print(f'structure={structure} is not in self.origins')
