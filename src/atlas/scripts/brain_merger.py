@@ -129,9 +129,7 @@ class BrainMerger(Atlas):
         self.load_data_from_fixed_and_moving_brains()
         for structure in self.volumes_to_merge:
             self.volumes[structure]= self.get_merged_landmark_probability(structure)
-            #self.structures.append(structure)
             
-        
 
 if __name__ == '__main__':
     merger = BrainMerger()
