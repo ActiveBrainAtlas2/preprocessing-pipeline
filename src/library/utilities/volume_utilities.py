@@ -32,7 +32,7 @@ class VolumeUtilities:
         check_dict(shared_structures, 'shared structures')
 
         volume_coms = np.array([center_of_mass(self.volumes[si]) for si in shared_structures]).astype(int)
-        average_com = np.array([self.COM[shared_structure] for si in shared_structures])
+        average_com = np.array([self.COM[si] for si in shared_structures])
         for shared_structure in shared_structures:
             com = center_of_mass(self.volumes[shared_structure])
             print(f'{shared_structure} origin  = {self.COM[shared_structure]} COM={com}')
