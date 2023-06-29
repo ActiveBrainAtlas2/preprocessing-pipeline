@@ -13,7 +13,7 @@ import cv2
 import numpy as np
 from scipy.ndimage.measurements import center_of_mass
 
-from abakit.atlas.volume2contour import average_masks
+from library.utilities.volume2contour import average_masks
 
 class VolumeMaker:
 
