@@ -131,6 +131,8 @@ class AtlasCreator:
         atlas_box_center = atlas_box_size / 2
         atlas_volume = np.zeros( atlas_box_size, dtype=np.uint8)
         color = 100
+        print(f'origin dir {origin_dir}')
+        print(f'origin dir {volume_dir}')
         print(f'box center {atlas_box_center}')
         print(f'Using data from {self.ATLAS_PATH}')
         origins = sorted(os.listdir(origin_dir))
