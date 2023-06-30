@@ -5,6 +5,7 @@ to the image brain. It first aligns the point brain data to the atlas, then that
 to the image brain. It prints out the data by default and also will insert
 into the database if given a layer name.
 """
+import os
 import sys
 import numpy as np
 from collections import defaultdict
@@ -128,7 +129,11 @@ class BrainMerger(Atlas):
     def create_average_com_and_volume(self):
         self.load_data_from_fixed_and_moving_brains()
         for structure in self.volumes_to_merge:
-            self.volumes[structure]= self.get_merged_landmark_probability(structure)
+            volume = self.get_merged_landmark_probability(structure)
+            self.volumes[structure]= volume
+            volume_filepath = os.path.join(self.volume_path, f'{structure}.npy')
+            print(volume_filepath)
+            np.save(volume_filepath, volume)
             
 
 if __name__ == '__main__':
