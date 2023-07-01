@@ -32,7 +32,10 @@ class VolumeUtilities:
         check_dict(shared_structures, 'shared structures')
 
         volume_coms = np.array([center_of_mass(self.volumes[si]) for si in shared_structures])
-        average_com = np.array([self.COM[si] for si in shared_structures])
+        average_coms = np.array([self.COM[si] for si in shared_structures])
+        for s in shared_structures:
+            arr = self.COM[s]
+            print(s, arr.shape, np.unique(arr, return_counts=True))
         for shared_structure in shared_structures:
             if 'SC' in shared_structure:
                 com = np.array(center_of_mass(self.volumes[shared_structure]))
@@ -40,15 +43,18 @@ class VolumeUtilities:
                 print(f'{shared_structure} origin={self.COM[shared_structure]} COM={com}')
                 print(f'average - volume_com = {avg - com}')
         
-        average_com[np.isnan(average_com)] = 0
+        t = np.argwhere(np.isnan(average_coms))
+        print('average coms NAN')
+        print(t)
+        t = np.argwhere(np.isnan(volume_coms))
+        print('volume coms NAN')
+        print(t)
+        average_coms[np.isnan(average_coms)] = 0
         volume_coms[np.isnan(volume_coms)] = 0
-        origins = average_com - volume_coms
-        print('origins = average_com - volume_coms', origins.dtype)
+        origins = average_coms - volume_coms
+        print('origins.min(0) + 10', origins.min(0) + 10)
         t = np.argwhere(np.isnan(origins))
-        print(f'NAN before math = {t}')
-        origins = (origins - origins.min(0)) + 10
-        t = np.argwhere(np.isnan(origins))
-        print(f'NAN after math = {t}')
+        #origins = (origins - origins.min(0)) + 10
         values = [self.volumes[ki] for ki in shared_structures]
         self.volumes = dict(zip(shared_structures, values))
         return dict(zip(self.COM.keys(), origins))

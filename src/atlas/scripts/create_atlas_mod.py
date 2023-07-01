@@ -8,6 +8,8 @@ import os
 import sys
 import json
 import numpy as np
+np.finfo(np.dtype("float32"))
+np.finfo(np.dtype("float64"))
 import shutil
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
@@ -21,6 +23,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 from library.controller.sql_controller import SqlController
 from library.controller.structure_com_controller import StructureCOMController
+
 
 RESOLUTION = 0.325
 
@@ -120,12 +123,12 @@ class AtlasCreator:
         color = 100
         origin_dir = os.path.join(self.ATLAS_PATH, 'origin')
         volume_dir = os.path.join(self.ATLAS_PATH, 'structure')
-        y_length = 800
-        x_length = 1320
-        z_length = 1140
+        y_length = 1000
+        x_length = 1000
+        z_length = 300
         atlas_box_size=(x_length, y_length, z_length)
         
-        atlas_box_scales=[10000, 10000, 10000]
+        atlas_box_scales=[10000, 10000, 20000]
         atlas_box_scales = np.array(atlas_box_scales)
         atlas_box_size = np.array(atlas_box_size)
         atlas_box_center = atlas_box_size / 2
@@ -140,7 +143,8 @@ class AtlasCreator:
         print(f'Working with {len(origins)} origins and {len(volumes)} volumes.')
 
         for origin_file, volume_file in zip(origins, volumes):
-            assert Path(origin_file).stem == Path(volume_file).stem
+            if Path(origin_file).stem != Path(volume_file).stem:
+                print(f'{Path(origin_file).stem} and {Path(volume_file).stem} do not match')
             structure = Path(origin_file).stem
             color += 2
 
@@ -154,23 +158,25 @@ class AtlasCreator:
             x, y, z = origin
             x_start = int(round(x + x_length/2))
             y_start = int(round(y + y_length/2))
-            #z_start = int(z) // 2 + atlas_box_size[2] // 2
-            z_start = int(round(z + z_length/2))
+            z_start = int(z) // 2 + atlas_box_size[2] // 2
+            #z_start = int(round(z + z_length/2))
             x_end = x_start + volume.shape[0]
             y_end = y_start + volume.shape[1]
-            #z_end = z_start + (volume.shape[2] + 1) // 2
-            z_end = z_start + volume.shape[2]
-            #z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
-            #volume = volume[:, :, z_indices]
-            print(structure, x_start, y_start, z_start)
-            
+            z_end = z_start + (volume.shape[2] + 1) // 2
+            #z_end = z_start + volume.shape[2]
+            z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
+            volume = volume[:, :, z_indices]
+            if 'SC' in structure:
+                print(structure, x_start, y_start, z_start)
+            continue
             try:
                 atlas_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
             except ValueError as ve:
                 print(f'Error adding {structure} to atlas: {ve}')
-        print()
+        
         #ids, counts = np.unique(atlas_volume, return_counts=True)
         print(f'Shape of atlas volume {atlas_volume.shape} dtype={atlas_volume.dtype}')
+        return
         save_volume = np.swapaxes(atlas_volume, 0, 2)
         #atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
         print(f'Shape of atlas volume {atlas_volume.shape} after swapping 0 and 2')
@@ -178,7 +184,6 @@ class AtlasCreator:
         #print(f'Shape of atlas volume {atlas_volume.shape} after swapping 1 and 2')
         outpath = f'/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/{atlas}.tif'
         io.imsave(outpath, save_volume)
-        return
         ng = NumpyToNeuroglancer(atlas_volume, atlas_box_scales, offset=[0,0,0])
         ng.init_precomputed(self.OUTPUT_DIR)
         ng.add_segment_properties(ids)

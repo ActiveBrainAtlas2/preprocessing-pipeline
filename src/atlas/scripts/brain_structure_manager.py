@@ -115,20 +115,41 @@ class BrainStructureManager(Brain, VolumeUtilities):
             else:
                 print(f'structure={structure} is not in self.origins')
 
-    def save_origins(self):
+
+    def save_origins_and_volumes(self):
+        self.calculate_fixed_brain_center()
+        self.COM = self.get_average_coms()
+        self.convert_unit_of_com_dictionary(self.COM, self.fixed_brain.um_to_pixel)
         self.origins = self.get_origin_from_coms()
-        print('save origins', len(self.origins), type(self.origins))
         assert hasattr(self, 'origins')
         self.set_structures(list(self.origins.values()))
         os.makedirs(self.origin_path, exist_ok=True)
+        origin_keys = self.origins.keys()
+        volume_keys = self.volumes.keys()
+        shared_structures = set(origin_keys).intersection(volume_keys)
 
         
-        for structure in self.origins.keys():
-            x, y, z = self.origins[structure]
-            origin_filepath = os.path.join(self.origin_path, f'{structure}.txt')
-            if 'SC' in structure:
-                print(origin_filepath)
-            np.savetxt(origin_filepath, (x, y, z))
+        for structure in shared_structures:
+            if structure in origin_keys and structure in volume_keys:
+                x, y, z = self.origins[structure]
+                volume = self.volumes[structure]
+                #centered_origin = (x,y,z) - self.get_origin_array().mean(0)
+                centered_origin = (x,y,z)
+                aligned_structure = volume_to_polygon(volume=volume, origin=centered_origin , times_to_simplify=3)
+                origin_filepath = os.path.join(self.origin_path, f'{structure}.txt')
+                volume_filepath = os.path.join(self.volume_path, f'{structure}.npy')
+                mesh_filepath = os.path.join(self.animal_directory, 'mesh', f'{structure}.stl')
+                if 'SC' in structure:
+                    print(origin_filepath)
+                    print(volume_filepath)
+                    print(mesh_filepath)
+                np.savetxt(origin_filepath, (x, y, z))
+                np.save(volume_filepath, volume)
+                save_mesh(aligned_structure, mesh_filepath)
+            else:
+                print(f'structure={structure} is not in self.origins or self.volumes')
+
+
     
     def save_coms(self):
         self.load_com()

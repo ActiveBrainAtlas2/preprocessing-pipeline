@@ -32,8 +32,8 @@ def create_volume(animal):
 def merge_brains():
     merger = BrainMerger()
     merger.create_average_com_and_volume()
-    merger.save_mesh_files() 
-    merger.save_origins()
+    #merger.save_mesh_files() 
+    merger.save_origins_and_volumes()
 
 def make_ng_file():
     atlas = 'atlasV8'

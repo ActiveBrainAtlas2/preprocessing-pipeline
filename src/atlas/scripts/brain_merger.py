@@ -84,7 +84,7 @@ class BrainMerger(Atlas):
         volume_size = sizes.max(0) + margin
         volumes = [self.pad_volume(volume_size, vi) for vi in volumes]
         volumes = list([(v > 0).astype(np.int32) for v in volumes])
-        self.refine_align_volumes(volumes)
+        #self.refine_align_volumes(volumes)
         merged_volume = np.sum(volumes, axis=0)
         merged_volume_prob = merged_volume / float(np.max(merged_volume))
         if force_symmetry:
@@ -131,9 +131,6 @@ class BrainMerger(Atlas):
         for structure in self.volumes_to_merge:
             volume = self.get_merged_landmark_probability(structure)
             self.volumes[structure]= volume
-            volume_filepath = os.path.join(self.volume_path, f'{structure}.npy')
-            print(volume_filepath)
-            np.save(volume_filepath, volume)
             
 
 if __name__ == '__main__':
