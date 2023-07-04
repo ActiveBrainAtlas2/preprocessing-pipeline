@@ -14,4 +14,4 @@ class HistologyController():
         :param animal: string of the animal primary key
         """
         
-        return self.get_row(search_dictionary=dict(prep_id = animal), model = Histology)
+        return self.get_row(search_dictionary=dict(FK_prep_id = animal), model = Histology)

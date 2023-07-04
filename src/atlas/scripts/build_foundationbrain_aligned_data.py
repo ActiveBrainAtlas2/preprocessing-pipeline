@@ -98,13 +98,14 @@ def create_volumes(animal):
         .apply(lambda x: x.replace(',,', ',')).apply(lambda x: x.replace(',,', ','))
 
     hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
+    print(hand_annotations.head())
     controller = StructureCOMController(animal)
     structures = controller.get_structures()
     for structure in structures:
-        contour_annotations, first_sec, last_sec = get_contours_from_annotations(animal, structure, hand_annotations, densify=4)
+        abbreviation = structure.abbreviation
+        contour_annotations, first_sec, last_sec = get_contours_from_annotations(animal, abbreviation, hand_annotations, densify=4)
         for section in contour_annotations:
-            print(section)
-            section_structure_vertices[section][structure] = contour_annotations[section][structure]
+            section_structure_vertices[section][abbreviation] = contour_annotations[section]
 
     section_transform = {}
     for section, transform in ordered_downsampled_transforms:
@@ -121,8 +122,8 @@ def create_volumes(animal):
         for structure in section_structure_vertices[section]:
 
             points = np.array(section_structure_vertices[section][structure]) / DOWNSAMPLE_FACTOR
-            points = interpolate(points, max(500, len(points)))
-            original_structures[structure][section] = points
+            #points = interpolate(points, max(500, len(points)))
+            original_structures[structure][section] = points.tolist()
             offset = section_offsets[section]
             if animal == 'MD585' and section in md585_fixes.keys():
                 offset = offset - np.array([0, md585_fixes[section]])
@@ -135,9 +136,10 @@ def create_volumes(animal):
             points = transform_create_alignment(points, section_transform[section])  # create_alignment transform
             aligned_padded_structures[structure][section] = points.tolist()
 
-    OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
-    print(OUTPUT_DIR)
+    OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', animal)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    print(OUTPUT_DIR)
+    
     jsonpath1 = os.path.join(OUTPUT_DIR,  'original_structures.json')
     with open(jsonpath1, 'w') as f:
         json.dump(original_structures, f, sort_keys=True)

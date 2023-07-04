@@ -24,14 +24,14 @@ from settings import data_path as DATA_PATH, atlas as ATLAS
 
 DOWNSAMPLE_FACTOR = 32
 
-def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
+def save_volume_origin(animal, structure, volume, xyz_offsets):
     x, y, z = xyz_offsets
 
     volume = np.swapaxes(volume, 0, 2)
     volume = np.rot90(volume, axes=(0,1))
     volume = np.flip(volume, axis=0)
 
-    OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', atlas_name, animal)
+    OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', animal)
     volume_filepath = os.path.join(OUTPUT_DIR, 'structure', f'{structure}.npy')
     os.makedirs(os.path.join(OUTPUT_DIR, 'structure'), exist_ok=True)
     np.save(volume_filepath, volume)
@@ -42,12 +42,14 @@ def save_volume_origin(atlas_name, animal, structure, volume, xyz_offsets):
 
 def create_volumes(animal, debug):
     sqlController = SqlController(animal)
-    CSVPATH = os.path.join(DATA_PATH, 'atlas_data', ATLAS, animal)
-    jsonpath = os.path.join(CSVPATH,  'aligned_padded_structures.json')
+    jsonpath = os.path.join(DATA_PATH, 'atlas_data', animal,  'aligned_padded_structures.json')
+    if not os.path.exists(jsonpath):
+        print(f'{jsonpath} does not exist')
+        sys.exit()
     with open(jsonpath) as f:
         aligned_dict = json.load(f)
     structures = list(aligned_dict.keys())
-    for structure in tqdm(structures):
+    for structure in structures:
         onestructure = aligned_dict[structure]
         mins = []
         maxs = []
@@ -112,7 +114,7 @@ def create_volumes(animal, debug):
             #sqlController.add_layer_data(abbreviation=structure, animal=animal, 
             #                         layer='COM', x=comx, y=comy, section=comz, 
             #                         person_id=222222, input_type_id=1)
-            save_volume_origin(ATLAS, animal, structure, volume, (min_x, min_y, min_z))
+            save_volume_origin(animal, structure, volume, (min_x, min_y, min_z))
 
 
 if __name__ == '__main__':

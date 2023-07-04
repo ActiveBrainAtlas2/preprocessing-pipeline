@@ -1,21 +1,59 @@
+import os
 import numpy as np
 from scipy.ndimage import center_of_mass
 from skimage.filters import gaussian
 
-from atlas.scripts.atlas_manager import BrainStructureManager, AtlasInitiator, Atlas
-from library.utilities.brain import Brain
+from library.image_manipulation.filelocation_manager import data_path
+from atlas.scripts.atlas_manager import AtlasInitiator
 
-class Assembler(BrainStructureManager):
+class Assembler():
 
-    def __init__(self,check = True,*arg,**kwarg):
-        if check:
-            self.load_volumes()
-            self.load_origins()
+    def __init__(self, *arg, **kwarg):
+        self.load_volumes()
+        self.load_origins()
+        self.data_path = os.path.join(data_path, 'atlas_data')
+        self.volume_path = os.path.join(self.data_path, self.atlas, 'structure')
+        self.origin_path = os.path.join(self.data_path, self.atlas, 'origin')
+
+
+
+    def load_origins(self, brain):
+        """Load origins
+        """
+        origin_path = os.path.join(self.data_path, brain.animal, 'origin')
+        print(f'load_origins from {origin_path}')
+        assert(os.path.exists(origin_path))
+        origin_files = sorted(os.listdir(origin_path))
+        for f in origin_files:
+            structure = os.path.splitext(f)[0]    
+            brain.origins[structure] = np.loadtxt(os.path.join(origin_path, f))
+            brain.set_structures(list(self.origins.keys()))
+        
+    def load_volumes(self, brain):
+        """load volumes
+        """
+        volume_path = os.path.join(self.data_path, brain.animal, 'structure')
+        print(f'load volumes from {volume_path}')
+        assert(os.path.exists(volume_path))
+
+
+        if not hasattr(self,'volumes'):
+            self.volumes = {}
+        assert(os.path.exists(volume_path))
+        volume_files = sorted(os.listdir(volume_path))
+        for f in volume_files:
+            structure = os.path.splitext(f)[0]
+            #if structure not in self.volumes:
+            brain.volumes[structure] = np.load(os.path.join(volume_path, f))
+        brain.set_structures(list(self.volumes.keys()))
+
 
     def initialize_origins_and_volumes(self):
-        if not len(self.origins) == 1:
-            self.origins = np.array(list(self.origins.values()))
-            self.volumes = list(self.volumes.values())
+        assert len(self.origins) > 1000000, 'Error, length of origins is too small'
+
+
+        self.origins = np.array(list(self.origins.values()))
+        self.volumes = list(self.volumes.values())
 
     def calculate_structure_boundary(self):
         shapes = np.array([s.shape for s in self.volumes])
@@ -121,6 +159,15 @@ class Assembler(BrainStructureManager):
                     self.volumes[structure] = self.volumes[structure_right][:,:,::-1]
 
 
+class AtlasAssembler(AtlasInitiator, Assembler):
+
+    def __init__(self, atlas, com_function=None, threshold=0.9, sigma=3.0, conversion_factor=None):
+        #AtlasInitiator.__init__(self, com_function=com_function, threshold=threshold, sigma=sigma, conversion_factor=conversion_factor)
+        self.standardize_volumes()
+        self.origins = self.get_origin_from_coms()
+        Assembler.__init__(self)    
+
+"""
 class CustomAssembler(Assembler):
 
     def __init__(self, animal,*arg,**kwarg):
@@ -138,14 +185,6 @@ class BrainAssembler(Assembler):
 
         Assembler.__init__(self)
 
-
-class AtlasAssembler(AtlasInitiator, Assembler):
-
-    def __init__(self, atlas, com_function=None, threshold=0.9, sigma=3.0, conversion_factor=None):
-        AtlasInitiator.__init__(self, com_function=com_function, threshold=threshold, sigma=sigma, conversion_factor=conversion_factor)
-        self.standardize_volumes()
-        self.origins = self.get_origin_from_coms()
-        Assembler.__init__(self)    
 
 def get_v7_volume_and_origin():
     atlas = Atlas(atlas = 'atlasV7')
@@ -165,7 +204,6 @@ def get_v7_volume_and_origin():
     atlas.origins  = dict(zip(sorted_keys,[atlas.origins[keyi] for keyi in sorted_keys]))
     return atlas.volumes,atlas.origins
 
-"""
 def get_assembled_atlas_v7():
     controller = SqlController('DK39')
     atlas = Atlas(atlas = 'atlasV7')

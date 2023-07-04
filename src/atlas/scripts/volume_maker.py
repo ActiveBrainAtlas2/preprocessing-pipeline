@@ -35,7 +35,6 @@ class VolumeMaker:
             volume, origin = self.interpolate_volumes(volume,origin)
         self.origins[segmenti] = origin
         self.volumes[segmenti] = volume
-        print(f'End of calc origin and volumes and self.volumes type={self.volumes}')
     
     def get_origin_and_section_size(self,segment_contours):
         section_mins = []

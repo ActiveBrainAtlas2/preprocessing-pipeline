@@ -59,3 +59,8 @@ class VolumeUtilities:
         self.volumes = dict(zip(shared_structures, values))
         return dict(zip(self.COM.keys(), origins))
     
+    def get_origin_means(self):
+        return {structure:np.mean(origin, axis=0) for structure, origin in self.origins_to_merge.items() }
+
+
+    

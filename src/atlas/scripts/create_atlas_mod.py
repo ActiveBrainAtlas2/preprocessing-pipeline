@@ -22,10 +22,8 @@ PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
 from library.controller.sql_controller import SqlController
-from library.controller.structure_com_controller import StructureCOMController
+from library.utilities.utilities_process import SCALING_FACTOR
 
-
-RESOLUTION = 0.325
 
 class NumpyToNeuroglancer():
     viewer = None
@@ -103,36 +101,42 @@ class AtlasCreator:
         self.debug = debug
         self.DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
         self.fixed_brain = 'MD589'
-        self.INPUT = os.path.join(f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/{self.fixed_brain}/preps/CH1/thumbnail_aligned')
+        self.INPUT = os.path.join(f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/MD589/preps/CH1/thumbnail_aligned')
         self.ATLAS_PATH = os.path.join(self.DATA_PATH, 'atlas_data', atlas_name)
-        self.OUTPUT_DIR = f'/home/httpd/html/data/{atlas}'
+        self.OUTPUT_DIR = f'/home/httpd/html/data/{atlas_name}'
         if os.path.exists(self.OUTPUT_DIR):
             shutil.rmtree(self.OUTPUT_DIR)
         os.makedirs(self.OUTPUT_DIR, exist_ok=True)
-        self.sqlController = SqlController(self.fixed_brain)
-        self.to_um = 32 * 0.452
+        if 'atlas' in atlas_name:
+            atlas_name = 'MD589'
+
+        self.sqlController = SqlController(atlas_name)
+        self.xy_resolution = self.sqlController.get_resolution(atlas_name)[0]
     
-    def create_atlas(self):
+    def create_atlas(self, save, ng):
         # origin is in animal scan_run.resolution coordinates
         # volume is in 10um coo
-        SCALE = 10
-        width = (self.sqlController.scan_run.width * 0.452) / SCALE
-        height = (self.sqlController.scan_run.height * 0.452) / SCALE
+        width = (self.sqlController.scan_run.width) / SCALING_FACTOR
+        height = (self.sqlController.scan_run.height) / SCALING_FACTOR
         z_length = len(os.listdir(self.INPUT))
-        atlas_volume = np.zeros(( int(height), int(width), z_length), dtype=np.uint8)
+        atlas_volume = np.zeros(( int(width), int(height), z_length), dtype=np.uint8)
         color = 100
         origin_dir = os.path.join(self.ATLAS_PATH, 'origin')
         volume_dir = os.path.join(self.ATLAS_PATH, 'structure')
-        y_length = 1000
-        x_length = 1000
-        z_length = 300
+        if not os.path.exists(origin_dir):
+            print(f'{origin_dir} does not exist, exiting.')
+            sys.exit()
+        if not os.path.exists(volume_dir):
+            print(f'{volume_dir} does not exist, exiting.')
+            sys.exit()
+        y_length = int(height)
+        x_length = int(width)
         atlas_box_size=(x_length, y_length, z_length)
-        
-        atlas_box_scales=[10000, 10000, 20000]
+        print(f'atlas box size={atlas_box_size} shape={atlas_volume.shape}')
+        atlas_box_scales=[14464, 14464, 20000]
         atlas_box_scales = np.array(atlas_box_scales)
         atlas_box_size = np.array(atlas_box_size)
         atlas_box_center = atlas_box_size / 2
-        atlas_volume = np.zeros( atlas_box_size, dtype=np.uint8)
         color = 100
         print(f'origin dir {origin_dir}')
         print(f'origin dir {volume_dir}')
@@ -141,7 +145,6 @@ class AtlasCreator:
         origins = sorted(os.listdir(origin_dir))
         volumes = sorted(os.listdir(volume_dir))
         print(f'Working with {len(origins)} origins and {len(volumes)} volumes.')
-
         for origin_file, volume_file in zip(origins, volumes):
             if Path(origin_file).stem != Path(volume_file).stem:
                 print(f'{Path(origin_file).stem} and {Path(volume_file).stem} do not match')
@@ -151,44 +154,58 @@ class AtlasCreator:
             origin = np.loadtxt(os.path.join(origin_dir, origin_file))
             volume = np.load(os.path.join(volume_dir, volume_file))
 
-            volume = np.rot90(volume, axes=(0,1))
-            volume = np.flip(volume, axis=0)
-            volume[volume > 0.8] = color
+            #volume = np.rot90(volume, axes=(0,1))
+            #volume = np.flip(volume, axis=0)
             volume = volume.astype(np.uint8)
+            volume[volume > 0.8] = color
             x, y, z = origin
+            """
             x_start = int(round(x + x_length/2))
             y_start = int(round(y + y_length/2))
             z_start = int(z) // 2 + atlas_box_size[2] // 2
-            #z_start = int(round(z + z_length/2))
             x_end = x_start + volume.shape[0]
             y_end = y_start + volume.shape[1]
             z_end = z_start + (volume.shape[2] + 1) // 2
-            #z_end = z_start + volume.shape[2]
-            z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
-            volume = volume[:, :, z_indices]
-            if 'SC' in structure:
-                print(structure, x_start, y_start, z_start)
-            continue
+            """
+            x_start = int(round(x))
+            y_start = int(round(y))
+            z_start = int(round(z))
+            x_end = x_start + volume.shape[0]
+            y_end = y_start + volume.shape[1]
+
+            #z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
+            #volume = volume[:, :, z_indices]
+            z_end = z_start + volume.shape[2]
+            ids, counts = np.unique(volume, return_counts=True)
+            print(f'{structure} origin={origin}, \
+                  {x_start}->{x_end}, {y_start}->{y_end}, {z_start}->{z_end} \
+                  color={color} ids={ids} counts={counts}')
+            
             try:
                 atlas_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
             except ValueError as ve:
                 print(f'Error adding {structure} to atlas: {ve}')
         
-        #ids, counts = np.unique(atlas_volume, return_counts=True)
         print(f'Shape of atlas volume {atlas_volume.shape} dtype={atlas_volume.dtype}')
-        return
+        
         save_volume = np.swapaxes(atlas_volume, 0, 2)
+        ids, counts = np.unique(atlas_volume, return_counts=True)
+        print('ids')
+        print(ids)
+        print('counts')
+        print(counts)
         #atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
-        print(f'Shape of atlas volume {atlas_volume.shape} after swapping 0 and 2')
-        #save_volume = np.swapaxes(save_volume, 1, 2)
-        #print(f'Shape of atlas volume {atlas_volume.shape} after swapping 1 and 2')
-        outpath = f'/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/{atlas}.tif'
-        io.imsave(outpath, save_volume)
-        ng = NumpyToNeuroglancer(atlas_volume, atlas_box_scales, offset=[0,0,0])
-        ng.init_precomputed(self.OUTPUT_DIR)
-        ng.add_segment_properties(ids)
-        ng.add_downsampled_volumes()
-        ng.add_segmentation_mesh()
+        #print(f'Shape of atlas volume {atlas_volume.shape} after swapping 0 and 2')
+        if save:
+            save_volume = np.swapaxes(save_volume, 1, 2)
+            outpath = f'/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/{atlas}.tif'
+            io.imsave(outpath, save_volume)
+        if ng:
+            neuroglancer = NumpyToNeuroglancer(atlas_volume, atlas_box_scales, offset=[0,0,0])
+            neuroglancer.init_precomputed(self.OUTPUT_DIR)
+            neuroglancer.add_segment_properties(ids)
+            neuroglancer.add_downsampled_volumes()
+            neuroglancer.add_segmentation_mesh()
 
 
 
@@ -196,10 +213,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Work on Atlas')
     parser.add_argument('--atlas', required=False, default='atlasV8')
     parser.add_argument('--debug', required=False, default='true', type=str)
+    parser.add_argument('--save', required=False, default='false', type=str)
+    parser.add_argument('--ng', required=False, default='false', type=str)
     args = parser.parse_args()
     debug = bool({'true': True, 'false': False}[args.debug.lower()])    
+    save = bool({'true': True, 'false': False}[args.save.lower()])    
+    ng = bool({'true': True, 'false': False}[args.ng.lower()])    
     atlas = args.atlas
-    #atlas = 'atlasV8'
-    #debug = False
     atlasCreator = AtlasCreator(atlas, debug)
-    atlasCreator.create_atlas()
+    atlasCreator.create_atlas(save, ng)

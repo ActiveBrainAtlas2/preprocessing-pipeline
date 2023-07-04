@@ -16,6 +16,7 @@ this code does the following:
 """
 
 from collections import defaultdict
+import json
 import os
 import sys
 import numpy as np
@@ -142,13 +143,18 @@ def parse_elastix(animal):
 class FoundationContourAligner(BrainStructureManager):
     def __init__(self, animal, *args, **kwrds):
         super().__init__(animal, *args, **kwrds)
+        self.data_path = DATA_PATH
+        self.file_location_manager = FileLocationManager(animal)
+        self.thumbnail_path = self.file_location_manager.get_thumbnail()
         self.contour_path = os.path.join(
-            DATA_PATH, 'atlas_data', 'foundation_brain_annotations', f'{self.animal}_annotation.csv')
+            self.data_path, 'atlas_data', 'foundation_brain_annotations', f'{self.animal}_annotation.csv')
 
     def create_clean_transform(self):
+        """creates clean transforms"""
+
         section_size = np.array((self.sqlController.scan_run.width, self.sqlController.scan_run.height))
         downsampled_section_size = np.round(section_size / DOWNSAMPLE_FACTOR).astype(int)
-        INPUT = os.path.join(self.path.prep, 'CH1', 'thumbnail')
+        INPUT = self.thumbnail_path
         files = sorted(os.listdir(INPUT))
         section_offsets = {}
         for file in tqdm(files):
@@ -174,7 +180,9 @@ class FoundationContourAligner(BrainStructureManager):
         return list(map(tuple, arr_2d))
 
     def load_transformation_to_align_contours(self):
-        self.create_clean_transform()
+        """load_transformation_to_align_contours
+        """
+
         transforms = parse_elastix(self.animal)
         downsampled_transforms = create_downsampled_transforms(self.animal, transforms, downsample=True)
         downsampled_transforms = sorted(downsampled_transforms.items())
@@ -184,7 +192,10 @@ class FoundationContourAligner(BrainStructureManager):
             transform = np.linalg.inv(transform)
             self.transform_per_section[section_num] = transform
 
-    def load_contours_for_Foundation_brains(self):
+    def load_contours_for_foundation_brains(self):
+        """load contours for foundation brains
+        """
+        
         print(f'Loading CSV data from {self.contour_path}')
         hand_annotations = pd.read_csv(self.contour_path)
         hand_annotations['vertices'] = hand_annotations['vertices'] \
@@ -196,16 +207,19 @@ class FoundationContourAligner(BrainStructureManager):
             .apply(lambda x: x.replace(',,', ',')).apply(lambda x: x.replace(',,', ','))
         hand_annotations['vertices'] = hand_annotations['vertices'].apply(lambda x: ast.literal_eval(x))
         self.contour_per_structure_per_section = defaultdict(dict)
-        #structures = self.sqlController.get_structures_dict()
         controller = StructureCOMController(self.animal)
         structures = controller.get_structures()
         for structure in structures:
-            contour_for_structurei, _, _ = get_contours_from_annotations(self.animal, structure, hand_annotations, densify=0)#7-MAR-2022 MOD (PREV densify=4)
+            abbreviation = structure.abbreviation
+            contour_for_structurei, _, _ = get_contours_from_annotations(self.animal, abbreviation, hand_annotations, densify=0)#7-MAR-2022 MOD (PREV densify=4)
             for section in contour_for_structurei:
-                self.contour_per_structure_per_section[structure][section] = contour_for_structurei[section]
+                self.contour_per_structure_per_section[abbreviation][section] = contour_for_structurei[section]
 
     def align_contours(self):
-        #TODO check section 253, it had two values, 8 and 60
+        """align contours
+        TODO check section 253, it had two values, 8 and 60
+        """
+        
         md585_fixes = {161: 100, 182: 60, 223: 60,
                        231: 80, 229: 76, 253: 60}
         self.original_structures = defaultdict(dict)
@@ -215,7 +229,7 @@ class FoundationContourAligner(BrainStructureManager):
             for section in self.contour_per_structure_per_section[structure]:
                 section_str = str(section)
                 points = np.array(self.contour_per_structure_per_section[structure][section]) / DOWNSAMPLE_FACTOR
-                points = self.interpolate(points, max(500, len(points)))
+                points = self.interpolate(points, max(750, len(points)))
                 self.original_structures[structure][section_str] = points
                 offset = self.section_offsets[section]
                 if self.animal == 'MD585' and section in md585_fixes.keys():
@@ -229,10 +243,19 @@ class FoundationContourAligner(BrainStructureManager):
                 points = transform_points(points, self.transform_per_section[section]) 
                 self.aligned_structures[structure][section_str] = points.tolist()
 
-    def create_aligned_contours(self):
-        self.load_contours_for_Foundation_brains()
-        self.load_transformation_to_align_contours()
-        self.align_contours()
+    def save_json_contours(self):
+        original_contour_path = os.path.join(self.animal_directory, 'original_structures.json')
+        padded_contour_path = os.path.join(self.animal_directory, 'padded_structures.json')
+
+        assert(hasattr(self, 'original_structures'))
+        assert(hasattr(self, 'centered_structures'))
+        assert(hasattr(self, 'aligned_structures'))
+        with open(original_contour_path, 'w') as f:
+            json.dump(self.original_structures, f, sort_keys=True)
+        with open(padded_contour_path, 'w') as f:
+            json.dump(self.centered_structures, f, sort_keys=True)
+        with open(self.aligned_and_padded_contour_path, 'w') as f:
+            json.dump(self.aligned_structures, f, sort_keys=True)
 
     def show_steps(self,structurei='10N_L'):
         self.plot_contours(self.original_structures[structurei])
@@ -244,4 +267,4 @@ if __name__ == '__main__':
         aligner = FoundationContourAligner(animal)
         aligner.create_aligned_contours()
         # aligner.show_steps()
-        aligner.save_contours()
+        aligner.save_json_contours()

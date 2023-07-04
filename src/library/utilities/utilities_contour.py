@@ -8,9 +8,8 @@ def check_dict(d, name):
 
 def get_contours_from_annotations(prep_id, target_structure, hand_annotations, densify=0):
     num_annotations = len(hand_annotations)
-    contours_for_structurei = {}
+    contours_for_structure = {}
     for i in range(num_annotations):
-
         structure = hand_annotations['name'][i]
         side = hand_annotations['side'][i]
         section = hand_annotations['section'][i]
@@ -24,13 +23,14 @@ def get_contours_from_annotations(prep_id, target_structure, hand_annotations, d
                 vertices = get_dense_coordinates(vertices)
             if is_bad_section_for_MD585(prep_id,section):
                 continue
-            contours_for_structurei[section] = vertices
+            contours_for_structure[section] = vertices
     try:
-        first_section = np.min(list(contours_for_structurei.keys()))
-        last_section = np.max(list(contours_for_structurei.keys()))
+        first_section = np.min(list(contours_for_structure.keys()))
+        last_section = np.max(list(contours_for_structure.keys()))
     except:
+        print(f'Could not get first and last section of {target_structure}')
         pass
-    return contours_for_structurei, first_section, last_section
+    return contours_for_structure, first_section, last_section
 
 def is_bad_section_for_MD585(stack,section):
     # Skip sections before the 22nd prep2 section for MD585 as there are clear errors

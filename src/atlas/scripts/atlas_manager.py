@@ -70,20 +70,20 @@ class Atlas(BrainStructureManager):
                 in annotations if structurei in prepi],0)
         return averages
 
+
 class AtlasInitiator(Atlas):
-    def __init__(self,atlas = atlas, com_function = None,threshold = 0.9,sigma = 3.0,conversion_factor = None):
-        Atlas.__init__(self,atlas)
+    def __init__(self, atlas=atlas, com_function=None, threshold=0.9, sigma=3.0, conversion_factor=None):
+        Atlas.__init__(self, atlas)
         if com_function == None:
             com_function = self.get_average_coms
         if isinstance(conversion_factor, type(None)):
             conversion_factor = self.fixed_brain.um_to_pixel
         self.load_volumes()
-        self.gaussian_filter_volumes(sigma = sigma)
+        self.gaussian_filter_volumes(sigma=sigma)
         self.threshold = threshold
         self.threshold_volumes()
         self.volumes = self.thresholded_volumes
         self.COM = com_function()
         self.structures = list(self.COM.keys())
-        self.convert_unit_of_com_dictionary(self.COM,conversion_factor)
+        self.convert_unit_of_com_dictionary(self.COM, conversion_factor)
         self.origins = self.get_origin_from_coms()
- 
