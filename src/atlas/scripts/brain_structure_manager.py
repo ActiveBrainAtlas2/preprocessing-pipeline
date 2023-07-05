@@ -202,8 +202,8 @@ class BrainStructureManager():
                 braini = self.moving_brains[0]
                 origin = braini.origins[structure]
                 volume = braini.volumes[structure]
-                r, t = self.get_transform_to_align_brain(braini)
-                origin = brain_to_atlas_transform(origin, r, t)
+                #####r, t = self.get_transform_to_align_brain(braini)
+                #####origin = brain_to_atlas_transform(origin, r, t)
             else:
                 origin = self.fixed_brain.origins[structure]
                 volume = self.fixed_brain.volumes[structure]
@@ -222,8 +222,8 @@ class BrainStructureManager():
                 brain.transformed_origins[structure] = aligned_origin
                 brain.transformed_origins[structure] = origin
                 self.volumes_to_merge[structure].append(volume)
-                self.origins_to_merge[structure].append(aligned_origin)
-                #self.origins_to_merge[structure].append(origin)
+                #self.origins_to_merge[structure].append(aligned_origin)
+                self.origins_to_merge[structure].append(origin)
         print(f'load_data_from_fixed_and_moving_brains len={len(self.origins_to_merge)}')
     
     ##### import from volume maker
@@ -334,6 +334,8 @@ class BrainStructureManager():
         #self.convert_unit_of_com_dictionary(self.COM, fixed_brain.um_to_pixel)
         #####self.origins = self.get_origin_from_coms()
         self.origins = {structure:np.mean(origin, axis=0) for structure, origin in self.origins_to_merge.items() }
+        for structure, origin in self.origins_to_merge.items():
+            print(structure, origin)
         assert hasattr(self, 'origins')
         self.set_structures(list(self.origins.values()))
         origin_keys = self.origins.keys()

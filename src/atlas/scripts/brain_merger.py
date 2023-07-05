@@ -10,6 +10,8 @@ import sys
 import numpy as np
 from collections import defaultdict
 from pathlib import Path
+from skimage.filters import gaussian
+
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
@@ -75,20 +77,27 @@ class BrainMerger(Atlas):
         return np.pad(volume,[[xl,xr],[yl,yr],[zl,zr]])
 
     def get_merged_landmark_probability(self, structure, volumes):
-        print(f'aligning structure: {structure}')
         force_symmetry = (structure in self.symmetry_list)
         if len(volumes) > 0:
             sizes = np.array([vi.shape for vi in volumes])
-            margin = 10
+            margin = 50
             volume_size = sizes.max(0) + margin
             volumes = [self.pad_volume(volume_size, vi) for vi in volumes]
             volumes = list([(v > 0).astype(np.int32) for v in volumes])
-            volumes = self.refine_align_volumes(volumes)
+            #volumes = self.refine_align_volumes(volumes)
+
             merged_volume = np.sum(volumes, axis=0)
             merged_volume_prob = merged_volume / float(np.max(merged_volume))
             if force_symmetry:
                 merged_volume_prob = symmetricalize_volume(merged_volume_prob)
-            return merged_volume_prob
+
+            # increasing the STD makes the volume smoother
+            average_volume = gaussian(merged_volume_prob, 3.0) # Smooth the probability
+            color = 1
+            average_volume[average_volume > 0.5] = color
+            average_volume[average_volume != color] = 0
+            average_volume = average_volume.astype(np.uint8)
+            return average_volume
         else:
             print(f'{structure} has no volumes to merge')
             return None
@@ -131,12 +140,47 @@ class BrainMerger(Atlas):
                 #####self.origins_to_merge[structure].append(aligned_origin)
                 self.origins_to_merge[structure].append(origin)
 
-    def create_average_com_and_volume(self):
+    def create_average_com_and_volumeXXX(self):
         self.load_data_from_fixed_and_moving_brains()
         for structure in self.volumes_to_merge:
             volume = self.get_merged_landmark_probability(structure)
             self.volumes[structure]= volume
-            
+
+    def create_average_com_and_volume(self):
+        self.load_data_from_fixed_and_moving_brains()
+        for structure in zip(self.volumes_to_merge, self.origins_to_merge):
+            volume, origin = average_shape()
+            self.volumes[structure]= volume
+
+
+def average_shape(volume_list, origin_list, force_symmetric=False, sigma=2.0):
+    """
+    Compute the mean shape based on many co-registered volumes.
+
+    Args:
+        force_symmetric (bool): If True, force the resulting volume and mesh to be symmetric wrt z.
+        sigma (float): sigma of gaussian kernel used to smooth the probability values.
+
+    Returns:
+        average_volume_prob (3D ndarray):
+        common_mins ((3,)-ndarray): coordinate of the volume's origin
+    """
+    volume_list, origin_list = list(map(list, list(zip(*volume_origin_list))))
+    #bbox_list = [(xm, xm+v.shape[1]-1, ym, ym+v.shape[0]-1, zm, zm+v.shape[2]-1) for v,(xm,ym,zm) in zip(volume_list, origin_list)]
+    #common_volume_list, common_volume_bbox = convert_vol_bbox_dict_to_overall_vol(vol_bbox_tuples=list(zip(volume_list, bbox_list)))
+    common_volume_list = list([(v > 0).astype(np.int32) for v in common_volume_list])
+    average_volume = np.sum(common_volume_list, axis=0)
+    average_volume_prob = average_volume / float(np.max(average_volume))
+    if force_symmetric:
+        average_volume_prob = symmetricalize_volume(average_volume_prob)
+
+    average_volume_prob = gaussian(average_volume_prob, sigma) # Smooth the probability
+    # print('1',type(average_volume_prob), average_volume_prob.dtype, average_volume_prob.shape, np.mean(average_volume_prob), np.amax(average_volume_prob))
+    #common_origin = np.array(common_volume_bbox)[[0,2,4]]
+    common_origin = (1,1,1)
+    return average_volume_prob, common_origin
+
+
 
 if __name__ == '__main__':
     merger = BrainMerger()
