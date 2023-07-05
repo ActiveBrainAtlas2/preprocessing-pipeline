@@ -78,7 +78,6 @@ if __name__ == '__main__':
        
     for animal in animals:
         print(f'Working on {animal}')
-        continue
         create_foundation_brain_contours(animal)
         create_foundation_brain_origins_volumes(animal)
     
