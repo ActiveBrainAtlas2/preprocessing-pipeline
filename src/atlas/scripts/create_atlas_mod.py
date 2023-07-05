@@ -158,6 +158,7 @@ class AtlasCreator:
             #volume = np.flip(volume, axis=0)
             volume = volume.astype(np.uint8)
             volume[volume > 0.8] = color
+            com = center_of_mass(volume)
             x, y, z = origin
             """
             x_start = int(round(x + x_length/2))
@@ -177,9 +178,9 @@ class AtlasCreator:
             #volume = volume[:, :, z_indices]
             z_end = z_start + volume.shape[2]
             ids, counts = np.unique(volume, return_counts=True)
-            print(f'{structure} origin={origin}, \
+            print(f'{structure} origin={np.round(origin)}, \
                   {x_start}->{x_end}, {y_start}->{y_end}, {z_start}->{z_end} \
-                  color={color} ids={ids} counts={counts}')
+                  color={color} ids={ids} counts={counts} com={np.round(com)}')
             
             try:
                 atlas_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
@@ -190,14 +191,15 @@ class AtlasCreator:
         
         save_volume = np.swapaxes(atlas_volume, 0, 2)
         ids, counts = np.unique(atlas_volume, return_counts=True)
-        print('ids')
-        print(ids)
-        print('counts')
-        print(counts)
+        if self.debug:
+            print('ids')
+            print(ids)
+            print('counts')
+            print(counts)
         #atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
         #print(f'Shape of atlas volume {atlas_volume.shape} after swapping 0 and 2')
         if save:
-            save_volume = np.swapaxes(save_volume, 1, 2)
+            #save_volume = np.swapaxes(save_volume, 1, 2)
             outpath = f'/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/{atlas}.tif'
             io.imsave(outpath, save_volume)
         if ng:

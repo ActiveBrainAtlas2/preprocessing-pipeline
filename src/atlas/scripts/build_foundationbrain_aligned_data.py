@@ -47,15 +47,17 @@ def create_clean_transform(animal):
     fileLocationManager = FileLocationManager(animal)
     aligned_shape = np.array((sqlController.scan_run.width, 
                               sqlController.scan_run.height))
-    downsampled_aligned_shape = np.round(aligned_shape / DOWNSAMPLE_FACTOR).astype(int)
+    #downsampled_aligned_shape = np.round(aligned_shape / DOWNSAMPLE_FACTOR).astype(int)
+    downsampled_aligned_shape = aligned_shape / DOWNSAMPLE_FACTOR
+    print(f'downsampled shape {downsampled_aligned_shape}')
     INPUT = os.path.join(fileLocationManager.prep, 'CH1', 'thumbnail')
     files = sorted(os.listdir(INPUT))
     section_offsets = {}
     for file in tqdm(files):
         filepath = os.path.join(INPUT, file)
         width, height = get_image_size(filepath)
-        width = int(width)
-        height = int(height)
+        #width = int(width)
+        #height = int(height
         downsampled_shape = np.array((width, height))
         section = int(file.split('.')[0])
         section_offsets[section] = (downsampled_aligned_shape - downsampled_shape) / 2
@@ -122,8 +124,8 @@ def create_volumes(animal):
         for structure in section_structure_vertices[section]:
 
             points = np.array(section_structure_vertices[section][structure]) / DOWNSAMPLE_FACTOR
-            #points = interpolate(points, max(500, len(points)))
-            original_structures[structure][section] = points.tolist()
+            points = interpolate(points, max(1500, len(points)))
+            original_structures[structure][section] = points
             offset = section_offsets[section]
             if animal == 'MD585' and section in md585_fixes.keys():
                 offset = offset - np.array([0, md585_fixes[section]])
@@ -138,7 +140,7 @@ def create_volumes(animal):
 
     OUTPUT_DIR = os.path.join(DATA_PATH, 'atlas_data', animal)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    print(OUTPUT_DIR)
+    print(f'Saving data to {OUTPUT_DIR}')
     
     jsonpath1 = os.path.join(OUTPUT_DIR,  'original_structures.json')
     with open(jsonpath1, 'w') as f:

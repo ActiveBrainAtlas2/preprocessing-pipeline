@@ -2,8 +2,9 @@ import os
 
 from foundation_contour_aligner import FoundationContourAligner
 from brain_structure_manager import BrainStructureManager
+from brain_merger import BrainMerger
 
-def create_contours(animal):
+def create_foundation_brain_contours(animal):
     aligner = FoundationContourAligner(animal)
     if os.path.exists(aligner.aligned_and_padded_contour_path):
         print(f'{aligner.aligned_and_padded_contour_path} already exists.')
@@ -29,9 +30,15 @@ def create_atlas_origins_volumes():
     print(f'Length atlas structures={len(brainManager.structures)}')
     brainManager.load_data([brainManager.fixed_brain]+brainManager.moving_brains)
     brainManager.load_data_from_fixed_and_moving_brains()
+    brainMerger = BrainMerger()
+    for structure in brainManager.volumes_to_merge:
+        volumes = brainManager.volumes_to_merge[structure]
+        volume = brainMerger.get_merged_landmark_probability(structure, volumes)
+        brainManager.volumes[structure]= volume
+
     brainManager.save_atlas_origins_and_volumes_and_meshes()
 
-def create_brain_origins_volumes(animal):
+def create_foundation_brain_origins_volumes(animal):
     brainManager = BrainStructureManager(animal)
     brainManager.load_aligned_contours()
     brainManager.compute_origins_and_volumes_for_all_segments()
@@ -51,6 +58,7 @@ def test_brain_origins(animal):
     brainManager = BrainStructureManager(animal)
     brainManager.load_aligned_contours()
     brainManager.test_origins_and_volumes_for_all_segments()
+    return
     aligner = FoundationContourAligner(animal)
     if not os.path.exists(aligner.aligned_and_padded_contour_path):
         print(f'{aligner.aligned_and_padded_contour_path} does not exists.')
@@ -66,12 +74,14 @@ def test_brain_origins(animal):
 
 if __name__ == '__main__':
     animals = ['MD585', 'MD589', 'MD594']
-    """
+
+       
     for animal in animals:
         print(f'Working on {animal}')
-        create_contours(animal)
-        create_brain_origins_volumes(animal)
-    """
-    create_brain_origins_volumes('MD589')
-    #create_atlas_origins_volumes()
+        continue
+        create_foundation_brain_contours(animal)
+        create_foundation_brain_origins_volumes(animal)
+    
+    #create_brain_origins_volumes('MD589')
+    create_atlas_origins_volumes()
     #test_brain_origins('MD589')

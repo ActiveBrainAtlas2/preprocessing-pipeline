@@ -1,12 +1,10 @@
 import os
 import json
 import numpy as np
-import xml.etree.ElementTree as ET
 from collections import defaultdict
 import cv2
 from scipy.ndimage.measurements import center_of_mass
 
-from library.utilities.volume2contour import average_masks
 
 from library.utilities.utilities_contour import check_dict
 from library.utilities.atlas import volume_to_polygon, save_mesh
@@ -16,6 +14,8 @@ from library.registration.affine_registration import AffineRegistration
 from library.utilities.atlas import singular_structures, symmetricalize_volume
 from library.controller.structure_com_controller import StructureCOMController
 from library.image_manipulation.filelocation_manager import data_path
+from library.utilities.volume2contour import average_masks
+from library.utilities.algorithm import brain_to_atlas_transform, umeyama
 
 
 
@@ -28,6 +28,7 @@ class BrainStructureManager():
         self.DOWNSAMPLE_FACTOR = downsample_factor
         self.animal = animal
         
+        self.coms = {}
         self.origins = {}
         self.COM = {}
         self.volumes = {}
@@ -52,7 +53,30 @@ class BrainStructureManager():
         self.volume_path = os.path.join(self.data_path, atlas, 'structure')
         self.origin_path = os.path.join(self.data_path, atlas, 'origin')
         self.mesh_path = os.path.join(self.data_path, atlas, 'mesh')
-             
+
+    def get_com_array(self):
+        """Get the center of mass values for this brain as an array
+
+        Returns:
+            np array: COM of the brain
+        """
+        #self.load_com()
+        controller = StructureCOMController(self.animal)
+        self.COM = controller.get_COM(self.animal)
+        return np.array(list(self.COM.values()))
+
+    def get_transform_to_align_brain(self, brain):
+        """Used in aligning data to fixed brain
+        """
+        
+        moving_com = (brain.get_com_array()*self.um_to_pixel).T
+        fixed_com = (self.fixed_brain.get_com_array()*self.um_to_pixel).T
+        
+        print(f'moving brain={brain.animal} data={moving_com.shape}')
+        print(f'fixed brain={self.fixed_brain.animal} data={fixed_com.shape}')
+        r, t = umeyama(moving_com, fixed_com)
+        return r, t
+
     def load_aligned_contours(self):
         """load aligned contours
         """       
@@ -173,14 +197,13 @@ class BrainStructureManager():
         """Loads data from the 3 foundation brains
         """
 
-        
         for structure in self.fixed_brain.origins:            
             if structure == 'RtTg':
                 braini = self.moving_brains[0]
                 origin = braini.origins[structure]
                 volume = braini.volumes[structure]
-                #####r, t = self.get_transform_to_align_brain(braini)
-                #####origin = brain_to_atlas_transform(origin, r, t)
+                r, t = self.get_transform_to_align_brain(braini)
+                origin = brain_to_atlas_transform(origin, r, t)
             else:
                 origin = self.fixed_brain.origins[structure]
                 volume = self.fixed_brain.volumes[structure]
@@ -190,17 +213,17 @@ class BrainStructureManager():
             self.origins_to_merge[structure].append(origin)
         for brain in self.moving_brains:
             brain.transformed_origins = {}
-            #####r, t = self.get_transform_to_align_brain(brain)
+            r, t = self.get_transform_to_align_brain(brain)
             for structure in brain.origins:
                 origin, volume = brain.origins[structure], brain.volumes[structure]
                 if 'SC' in structure:
                     print(f'SC origin in load moving brain is {origin}')
-                #####aligned_origin = brain_to_atlas_transform(origin, r, t)
-                #####brain.transformed_origins[structure] = aligned_origin
+                aligned_origin = brain_to_atlas_transform(origin, r, t)
+                brain.transformed_origins[structure] = aligned_origin
                 brain.transformed_origins[structure] = origin
                 self.volumes_to_merge[structure].append(volume)
-                #####self.origins_to_merge[structure].append(aligned_origin)
-                self.origins_to_merge[structure].append(origin)
+                self.origins_to_merge[structure].append(aligned_origin)
+                #self.origins_to_merge[structure].append(origin)
         print(f'load_data_from_fixed_and_moving_brains len={len(self.origins_to_merge)}')
     
     ##### import from volume maker
@@ -210,7 +233,7 @@ class BrainStructureManager():
 
         segment_contours = self.aligned_contours[segment]
         segment_contours = self.sort_contours(segment_contours)
-        origin,section_size = self.get_origin_and_section_size(segment_contours)
+        origin, section_size = self.get_origin_and_section_size(segment_contours)
         volume = []
         for _, contour_points in segment_contours.items():
             vertices = np.array(contour_points) - origin[:2]
@@ -221,9 +244,10 @@ class BrainStructureManager():
             volume.append(volume_slice)
         volume = np.array(volume).astype(np.bool8)
         volume = np.swapaxes(volume,0,2)
-        for _ in range(interpolate):
+        for i in range(interpolate):
+            print(f'interpolate {i}')
             volume, origin = self.interpolate_volumes(volume,origin)
-        self.origins[segment] = origin
+        self.origins[segment] = origin 
         self.volumes[segment] = volume
 
     def test_origin_and_volume_for_one_segment(self, segment):
@@ -236,16 +260,27 @@ class BrainStructureManager():
             segment_contours = self.aligned_contours[segment]
             segment_contours = self.sort_contours(segment_contours)
             origin, section_size = self.get_origin_and_section_size(segment_contours)
-            print(segment, origin, section_size)
             volume = []
             for _, contour_points in segment_contours.items():
                 vertices = np.array(contour_points) - origin[:2]
                 contour_points = (vertices).astype(np.int32)
+                volume_slice = np.zeros(section_size, dtype=np.uint8)
+                volume_slice = cv2.polylines(volume_slice, [contour_points], isClosed=True, color=1, thickness=1)
+                volume_slice = cv2.fillPoly(volume_slice, pts=[contour_points], color=1)
+                volume.append(volume_slice)
+            volume = np.array(volume).astype(np.bool8)
+            volume = np.swapaxes(volume,0,2)
+            ids, counts = np.unique(volume, return_counts=True)
+            print(f'SC dtype={volume.dtype} ids={ids} counts={counts}')
+            print(f'SC shape={volume.shape}')
+            print(f'COM={center_of_mass(volume)} {origin}')
+
 
     def get_origin_and_section_size(self, segment_contours):
         """Gets the origin and section size
+        Set the pad to make sure we get all the volume
         """
-
+        pad = 50
         section_mins = []
         section_maxs = []
         for _, contour_points in segment_contours.items():
@@ -255,11 +290,13 @@ class BrainStructureManager():
         min_z = min([int(i) for i in segment_contours.keys()])
         min_x, min_y = np.min(section_mins, axis=0)
         max_x, max_y = np.max(section_maxs, axis=0)
+        max_x += pad
+        max_y += pad
         xspan = max_x - min_x
         yspan = max_y - min_y
         origin = np.array([min_x, min_y, min_z])
-        size = np.array([xspan, yspan]).astype(int)+5
-        return origin, size
+        section_size = np.array([xspan, yspan]).astype(int)
+        return origin, section_size
 
     def compute_origins_and_volumes_for_all_segments(self, interpolate=0):
         """compute_origins_and_volumes_for_all_segments
@@ -281,10 +318,12 @@ class BrainStructureManager():
         for segment in self.segments:
             self.test_origin_and_volume_for_one_segment(segment)
 
-
     def save_atlas_origins_and_volumes_and_meshes(self):
         """Saves everything to disk
         """
+        os.makedirs(self.origin_path, exist_ok=True)    
+        os.makedirs(self.volume_path, exist_ok=True)
+        os.makedirs(self.mesh_path, exist_ok=True)
 
         #width = self.sqlController.scan_run.width // 32
         #height = self.sqlController.scan_run.height // 32
@@ -297,7 +336,6 @@ class BrainStructureManager():
         self.origins = {structure:np.mean(origin, axis=0) for structure, origin in self.origins_to_merge.items() }
         assert hasattr(self, 'origins')
         self.set_structures(list(self.origins.values()))
-        os.makedirs(self.origin_path, exist_ok=True)
         origin_keys = self.origins.keys()
         volume_keys = self.volumes.keys()
         shared_structures = set(origin_keys).intersection(volume_keys)
