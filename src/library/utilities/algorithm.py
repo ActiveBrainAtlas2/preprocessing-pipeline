@@ -10,8 +10,9 @@ def umeyama(src, dst, with_scaling=True):
     """
     src = np.array(src)
     dst = np.array(dst)
-    assert src.shape == dst.shape
-    assert len(src.shape) == 2
+    assert src.shape == dst.shape, 'Shapes of destination and sources are not the same'
+    assert len(src.shape) == 2, 'Shapes of destination and sources are not two dimensional'
+    assert src.shape[0] > 3, 'There are not enough points to work with in umeyama'
     m, n = src.shape
 
     src_mean = np.mean(src, axis=1).reshape(-1, 1)

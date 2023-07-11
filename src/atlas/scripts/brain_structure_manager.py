@@ -4,18 +4,20 @@ import numpy as np
 from collections import defaultdict
 import cv2
 from scipy.ndimage.measurements import center_of_mass
+from tqdm import tqdm
 
-
+from library.controller.polygon_sequence_controller import PolygonSequenceController
 from library.utilities.utilities_contour import check_dict
 from library.utilities.atlas import volume_to_polygon, save_mesh
 from library.registration.utilities_registration import SCALING_FACTOR
 from library.controller.sql_controller import SqlController
 from library.registration.affine_registration import AffineRegistration
-from library.utilities.atlas import singular_structures, symmetricalize_volume
+from library.utilities.atlas import singular_structures
 from library.controller.structure_com_controller import StructureCOMController
 from library.image_manipulation.filelocation_manager import data_path
 from library.utilities.volume2contour import average_masks
 from library.utilities.algorithm import brain_to_atlas_transform, umeyama
+from library.image_manipulation.filelocation_manager import FileLocationManager
 
 
 
@@ -24,7 +26,7 @@ data_path = '/net/birdstore/Active_Atlas_Data/data_root'
 
 class BrainStructureManager():
 
-    def __init__(self, animal, atlas = atlas, downsample_factor = SCALING_FACTOR):
+    def __init__(self, animal = 'MD589', atlas = atlas, downsample_factor = SCALING_FACTOR):
         self.DOWNSAMPLE_FACTOR = downsample_factor
         self.animal = animal
         
@@ -38,7 +40,8 @@ class BrainStructureManager():
         self.atlas = atlas
         self.fixed_brain = None
         self.moving_brains = []
-        self.sqlController = SqlController('MD589')
+        self.sqlController = SqlController(animal)
+        self.fileLocationManager = FileLocationManager(animal)
         to_um = self.DOWNSAMPLE_FACTOR * self.sqlController.scan_run.resolution
         self.pixel_to_um = np.array([to_um, to_um, 20])
         self.um_to_pixel = 1 / self.pixel_to_um
@@ -227,15 +230,15 @@ class BrainStructureManager():
         print(f'load_data_from_fixed_and_moving_brains len={len(self.origins_to_merge)}')
     
     ##### import from volume maker
-    def calculate_origin_and_volume_for_one_segment(self, segment, interpolate=0):
-        """Gets called every segment
+    def calculate_origin_and_volume_for_one_structure(self, structure, interpolate=0):
+        """Gets called every structure
         """
 
-        segment_contours = self.aligned_contours[segment]
-        segment_contours = self.sort_contours(segment_contours)
-        origin, section_size = self.get_origin_and_section_size(segment_contours)
+        structure_contours = self.aligned_contours[structure]
+        structure_contours = self.sort_contours(structure_contours)
+        origin, section_size = self.get_origin_and_section_size(structure_contours)
         volume = []
-        for _, contour_points in segment_contours.items():
+        for _, contour_points in structure_contours.items():
             vertices = np.array(contour_points) - origin[:2]
             contour_points = (vertices).astype(np.int32)
             volume_slice = np.zeros(section_size, dtype=np.uint8)
@@ -247,21 +250,21 @@ class BrainStructureManager():
         for i in range(interpolate):
             print(f'interpolate {i}')
             volume, origin = self.interpolate_volumes(volume,origin)
-        self.origins[segment] = origin 
-        self.volumes[segment] = volume
+        self.origins[structure] = origin 
+        self.volumes[structure] = volume
 
-    def test_origin_and_volume_for_one_segment(self, segment):
-        """testing segment
+    def test_origin_and_volume_for_one_structure(self, structure):
+        """testing structure
         SC thumbnail_aligned should be x=760, y=350, z=128
         SC thumbnail should be x=590, y=220  
         """
-        if 'SC' in segment:
+        if 'SC' in structure:
 
-            segment_contours = self.aligned_contours[segment]
-            segment_contours = self.sort_contours(segment_contours)
-            origin, section_size = self.get_origin_and_section_size(segment_contours)
+            structure_contours = self.aligned_contours[structure]
+            structure_contours = self.sort_contours(structure_contours)
+            origin, section_size = self.get_origin_and_section_size(structure_contours)
             volume = []
-            for _, contour_points in segment_contours.items():
+            for _, contour_points in structure_contours.items():
                 vertices = np.array(contour_points) - origin[:2]
                 contour_points = (vertices).astype(np.int32)
                 volume_slice = np.zeros(section_size, dtype=np.uint8)
@@ -276,18 +279,18 @@ class BrainStructureManager():
             print(f'COM={center_of_mass(volume)} {origin}')
 
 
-    def get_origin_and_section_size(self, segment_contours):
+    def get_origin_and_section_size(self, structure_contours):
         """Gets the origin and section size
         Set the pad to make sure we get all the volume
         """
         pad = 50
         section_mins = []
         section_maxs = []
-        for _, contour_points in segment_contours.items():
+        for section, contour_points in structure_contours.items():
             contour_points = np.array(contour_points)
             section_mins.append(np.min(contour_points, axis=0))
             section_maxs.append(np.max(contour_points, axis=0))
-        min_z = min([int(i) for i in segment_contours.keys()])
+        min_z = min([int(i) for i in structure_contours.keys()])
         min_x, min_y = np.min(section_mins, axis=0)
         max_x, max_y = np.max(section_maxs, axis=0)
         max_x += pad
@@ -298,15 +301,67 @@ class BrainStructureManager():
         section_size = np.array([xspan, yspan]).astype(int)
         return origin, section_size
 
-    def compute_origins_and_volumes_for_all_segments(self, interpolate=0):
-        """compute_origins_and_volumes_for_all_segments
+    def compute_origins_and_volumes_for_all_structure_segments(self, interpolate=0):
+        """compute_origins_and_volumes_for_all_structures
         """
         
         self.origins = {}
         self.volumes = {}
         self.segments = self.aligned_contours.keys()
-        for segment in self.segments:
-            self.calculate_origin_and_volume_for_one_segment(segment, interpolate=interpolate)
+        for structure in self.segments:
+            self.calculate_origin_and_volume_for_one_structure(structure, interpolate=interpolate)
+
+    def compute_origin_and_volume_for_brain_structures(self, animal, annotator_id):
+        polygon = PolygonSequenceController(animal=animal)
+        controller = StructureCOMController(animal)
+        structures = controller.get_structures()
+        for structure in structures:
+            df = polygon.get_volume(animal, annotator_id, structure.id)
+            if df.empty:
+                print(f'{animal} {structure.abbreviation} has no data.')
+                continue;
+            
+            scale_xy = self.sqlController.scan_run.resolution
+            z_scale = self.sqlController.scan_run.zresolution        
+            polygons = defaultdict(list)
+
+            if animal in ('DK55', 'DK73', 'DK78'):
+                sfactor = 32
+            else:
+                sfactor = SCALING_FACTOR
+            
+            for _, row in df.iterrows():
+                x = row['coordinate'][0]
+                y = row['coordinate'][1]
+                z = row['coordinate'][2]
+                xy = (x/scale_xy/sfactor, y/scale_xy/sfactor)
+                section = int(np.round(z/z_scale))
+                #print(x,y,section)
+                polygons[section].append(xy)
+                
+            color = 1 # set it below the threshold set in mask class
+            
+            origin, section_size = self.get_origin_and_section_size(polygons)
+            volume = []
+            for _, contour_points in polygons.items():
+                vertices = np.array(contour_points) - origin[:2]
+                contour_points = (vertices).astype(np.int32)
+                volume_slice = np.zeros(section_size, dtype=np.uint8)
+                volume_slice = cv2.polylines(volume_slice, [contour_points], isClosed=True, color=color, thickness=1)
+                volume_slice = cv2.fillPoly(volume_slice, pts=[contour_points], color=color)
+                volume.append(volume_slice)
+            volume = np.array(volume).astype(np.bool8)
+            volume = np.swapaxes(volume,0,2)
+            print(animal, structure.abbreviation, origin, section_size, end="\t")
+            print(volume.dtype, volume.shape, end="\t")
+            ids, counts = np.unique(volume, return_counts=True)
+            print(ids, counts)
+            self.volumes_to_merge[structure.abbreviation].append(volume)
+            self.origins_to_merge[structure.abbreviation].append(origin)
+
+
+
+
 
     def test_origins_and_volumes_for_all_segments(self, interpolate=0):
         """compute_origins_and_volumes_for_all_segments

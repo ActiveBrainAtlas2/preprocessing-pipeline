@@ -32,6 +32,10 @@ class PolygonSequenceController(SqlController):
             .filter(AnnotationSession.FK_user_id==annotator_id)\
             .filter(AnnotationSession.FK_brain_region_id==structure_id)\
             .filter(AnnotationSession.active==1).first()
+        if annotation_session is None:
+            df = pd.DataFrame()
+            return df
+        
         volume_points = self.session.query(PolygonSequence)\
             .filter(PolygonSequence.FK_session_id==annotation_session.id)\
                 .order_by(PolygonSequence.z)\

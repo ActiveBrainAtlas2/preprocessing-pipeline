@@ -31,7 +31,6 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 from library.utilities.utilities_process import get_image_size
 from library.utilities.utilities_contour import get_contours_from_annotations
-#from library.controller.elastix_controller import ElastixController
 from library.controller.sql_controller import SqlController
 from library.controller.structure_com_controller import StructureCOMController
 from library.image_manipulation.filelocation_manager import data_path as DATA_PATH
@@ -192,7 +191,7 @@ class FoundationContourAligner(BrainStructureManager):
             transform = np.linalg.inv(transform)
             self.transform_per_section[section_num] = transform
 
-    def load_contours_for_foundation_brains(self):
+    def load_csv_for_foundation_brains(self):
         """load contours for foundation brains
         """
         
@@ -228,10 +227,13 @@ class FoundationContourAligner(BrainStructureManager):
         for structure in self.contour_per_structure_per_section:
             for section in self.contour_per_structure_per_section[structure]:
                 section_str = str(section)
-                points = np.array(self.contour_per_structure_per_section[structure][section]) / DOWNSAMPLE_FACTOR
-                points = self.interpolate(points, max(750, len(points)))
+                points = np.array(self.contour_per_structure_per_section[structure][section]) / 32
+                points = self.interpolate(points, max(600, len(points)))
                 self.original_structures[structure][section_str] = points
-                offset = self.section_offsets[section]
+                try:
+                    offset = self.section_offsets[section]
+                except KeyError:
+                    offset = 0
                 if self.animal == 'MD585' and section in md585_fixes.keys():
                     offset = offset - np.array([0, md585_fixes[section]])
                 if self.animal == 'MD589' and section == 297:

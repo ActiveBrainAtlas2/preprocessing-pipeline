@@ -1,6 +1,6 @@
 import numpy as np
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy import func
+from sqlalchemy import func, not_
 
 from library.controller.sql_controller import SqlController
 from library.database_model.annotation_points import AnnotationSession, AnnotationType, StructureCOM
@@ -99,6 +99,13 @@ class StructureCOMController(SqlController):
             .filter(AnnotationSession.FK_user_id==annotator_id)\
             .order_by(AnnotationSession.created).all()
         return sessions
+    
+    def get_active_sessions(self):
+        sessions = self.session.query(AnnotationSession)\
+            .filter(AnnotationSession.active==True)\
+            .filter(AnnotationSession.annotation_type==AnnotationType.STRUCTURE_COM)\
+            .order_by(AnnotationSession.FK_prep_id).all()
+        return sessions
 
     def structure_abbreviation_to_id(self, abbreviation):
         try:
@@ -126,10 +133,12 @@ class StructureCOMController(SqlController):
         return structure.abbreviation
     
     def get_structures(self):
-        """return a list of active structures
+        """return a list of active structures. We don't want line, point, polygon
+        with ids 52, 53, 54
 
         Returns:
             list: list of structure ORM
         """        
-        return self.session.query(BrainRegion).filter(BrainRegion.active.is_(True)).all()
+        return self.session.query(BrainRegion).filter(BrainRegion.active.is_(True))\
+            .filter(not_(BrainRegion.id.in_([52, 53, 54]))).all()
 

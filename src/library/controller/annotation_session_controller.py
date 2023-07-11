@@ -73,4 +73,16 @@ class AnnotationSessionController(SqlController):
                 .filter(StructureCOM.FK_session_id == FK_session_id).update(entry)
             self.session.commit()
 
+    def create_annotation_session(self, annotation_type, FK_user_id, FK_prep_id, FK_brain_region_id):
+        data = AnnotationSession(
+            annotation_type=annotation_type,
+            FK_user_id=FK_user_id,
+            FK_prep_id=FK_prep_id,
+            FK_brain_region_id=FK_brain_region_id,
+            created=datetime.datetime.now(),
+            active=True
+        )
+        self.add_row(data)
+        self.session.commit()
+        return data.id
 
