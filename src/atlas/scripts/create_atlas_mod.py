@@ -51,7 +51,6 @@ class NumpyToNeuroglancer():
         self.precomputed_vol[:, :, :] = self.volume[:, :, :]
 
     def add_segment_properties(self, ids):
-        segment_properties = [(number, f'{number}: {number}') for number in ids]
 
         if self.precomputed_vol is None:
             raise NotImplementedError('You have to call init_precomputed before calling this function.')
@@ -62,11 +61,11 @@ class NumpyToNeuroglancer():
         info = {
             "@type": "neuroglancer_segment_properties",
             "inline": {
-                "ids": [str(number) for number, label in segment_properties],
+                "ids": [str(label) for label in ids.values()],
                 "properties": [{
                     "id": "label",
                     "type": "label",
-                    "values": [str(label) for number, label in segment_properties]
+                    "values": [str(id) for id in ids.keys()]
                 }]
             }
         }
@@ -145,6 +144,7 @@ class AtlasCreator:
         origins = sorted(os.listdir(origin_dir))
         volumes = sorted(os.listdir(volume_dir))
         print(f'Working with {len(origins)} origins and {len(volumes)} volumes.')
+        ids = {}
         for origin_file, volume_file in zip(origins, volumes):
             if Path(origin_file).stem != Path(volume_file).stem:
                 print(f'{Path(origin_file).stem} and {Path(volume_file).stem} do not match')
@@ -157,7 +157,8 @@ class AtlasCreator:
             #volume = np.rot90(volume, axes=(0,1))
             #volume = np.flip(volume, axis=0)
             volume = volume.astype(np.uint8)
-            volume[volume > 0.8] = color
+            volume[volume > 0] = color
+            ids[structure] = color
             com = center_of_mass(volume)
             x, y, z = origin
             """
@@ -177,10 +178,10 @@ class AtlasCreator:
             #z_indices = [z for z in range(volume.shape[2]) if z % 2 == 0]
             #volume = volume[:, :, z_indices]
             z_end = z_start + volume.shape[2]
-            ids, counts = np.unique(volume, return_counts=True)
+            volume_ids, counts = np.unique(volume, return_counts=True)
             print(f'{structure} origin={np.round(origin)}, \
                   {x_start}->{x_end}, {y_start}->{y_end}, {z_start}->{z_end} \
-                  color={color} ids={ids} counts={counts} com={np.round(com)}')
+                  color={color} ids={volume_ids} counts={counts} com={np.round(com)}')
             
             try:
                 atlas_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
@@ -190,10 +191,10 @@ class AtlasCreator:
         print(f'Shape of atlas volume {atlas_volume.shape} dtype={atlas_volume.dtype}')
         
         save_volume = np.swapaxes(atlas_volume, 0, 2)
-        ids, counts = np.unique(atlas_volume, return_counts=True)
+        atlas_volume_ids, counts = np.unique(atlas_volume, return_counts=True)
         if self.debug:
             print('ids')
-            print(ids)
+            print(atlas_volume_ids)
             print('counts')
             print(counts)
         #atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
