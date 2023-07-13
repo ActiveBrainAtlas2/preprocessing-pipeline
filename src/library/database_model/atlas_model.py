@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, Boolean, DateTime
 from datetime import datetime
 

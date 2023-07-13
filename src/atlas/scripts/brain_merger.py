@@ -5,6 +5,9 @@ to the image brain. It first aligns the point brain data to the atlas, then that
 to the image brain. It prints out the data by default and also will insert
 into the database if given a layer name.
 """
+from library.image_manipulation.filelocation_manager import data_path
+from library.utilities.atlas import volume_to_polygon, save_mesh
+from library.utilities.atlas import singular_structures, symmetricalize_volume
 import os
 import sys
 import numpy as np
@@ -15,76 +18,40 @@ from skimage.filters import gaussian
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
 
-from library.controller.sql_controller import SqlController
-from brain_structure_manager import BrainStructureManager
-from atlas_manager import Atlas
-from library.registration.affine_registration import AffineRegistration
-from library.utilities.atlas import singular_structures, symmetricalize_volume
 
-MANUAL = 1
-CORRECTED = 2
-DETECTED = 3
+class BrainMerger():
 
-class BrainMerger(Atlas):
-
-    def __init__(self, threshold=0.8, moving_brains=['MD594', 'MD585']):
-        super().__init__()
-        self.fixed_brain = BrainStructureManager('MD589')
-        self.moving_brains = [BrainStructureManager(
-            braini) for braini in moving_brains]
-        self.sqlController = SqlController(self.fixed_brain.animal)
-        self.threshold = threshold
+    def __init__(self):
+        self.symmetry_list = singular_structures
         self.volumes_to_merge = defaultdict(list)
         self.origins_to_merge = defaultdict(list)
-        self.registrator = AffineRegistration()
-        self.symmetry_list = singular_structures
+        atlas = 'atlasV8'
+        self.data_path = os.path.join(data_path, 'atlas_data', atlas)
+        self.volume_path = os.path.join(self.data_path, 'structure')
+        self.origin_path = os.path.join(self.data_path, 'origin')
+        self.mesh_path = os.path.join(self.data_path, 'mesh')
+        self.volumes = {}
+        self.margin = 25
+        self.threshold = 0.25  # the closer to zero, the bigger the structures
+        # a value of 0.01 results in very big close fitting structures
 
-    def fine_tune_volume_position(self,fixed_volume,moving_volume,
-        optimization_setting,sampling_percentage):
-        assert(fixed_volume.size == moving_volume.size)
-        self.registrator.load_fixed_image_from_np_array(fixed_volume)
-        self.registrator.load_moving_image_from_np_array(moving_volume)
-        self.registrator.set_least_squares_as_similarity_metrics(sampling_percentage)
-        self.registrator.set_optimizer_as_gradient_descent(optimization_setting)
-        self.registrator.set_initial_transformation()
-        self.registrator.status_reporter.set_report_events()
-        self.registrator.registration_method.Execute(self.registrator.fixed,
-         self.registrator.moving)
-        self.registrator.applier.transform = self.registrator.transform
-        transformed_volume = self.registrator.applier.transform_and_resample_np_array(fixed_volume,
-         moving_volume)
-        return transformed_volume
-    
-    def refine_align_volumes(self,volumes):
-
-        optimization_setting = dict(
-                learningRate=10,
-                numberOfIterations=10000,
-                convergenceMinimumValue=1e-5,
-                convergenceWindowSize=50)
-
-        volumes_to_align = [1,2]
-        for volumei in volumes_to_align:
-            transformed_volume = self.fine_tune_volume_position(volumes[0],volumes[volumei],
-            optimization_setting,sampling_percentage = 1)
-            volumes[volumei] = transformed_volume
-        return volumes
-    
-    def pad_volume(self,size,volume):
+    def pad_volume(self, size, volume):
         size_difference = size - volume.shape
-        xr,yr,zr = ((size_difference)/2).astype(int)
-        xl,yl,zl = size_difference - np.array([xr,yr,zr])
-        return np.pad(volume,[[xl,xr],[yl,yr],[zl,zr]])
+        xr, yr, zr = ((size_difference)/2).astype(int)
+        xl, yl, zl = size_difference - np.array([xr, yr, zr])
+        return np.pad(volume, [[xl, xr], [yl, yr], [zl, zr]])
 
     def get_merged_landmark_probability(self, structure, volumes):
         force_symmetry = (structure in self.symmetry_list)
-        if len(volumes) > 0:
+        lvolumes = len(volumes)
+        if lvolumes == 1:
+            print(f'{structure} has only one volume')
+            return volumes[0]
+        elif lvolumes > 1:
             sizes = np.array([vi.shape for vi in volumes])
-            margin = 50
-            volume_size = sizes.max(0) + margin
+            volume_size = sizes.max(0) + self.margin
             volumes = [self.pad_volume(volume_size, vi) for vi in volumes]
             volumes = list([(v > 0).astype(np.int32) for v in volumes])
-            #volumes = self.refine_align_volumes(volumes)
 
             merged_volume = np.sum(volumes, axis=0)
             merged_volume_prob = merged_volume / float(np.max(merged_volume))
@@ -92,9 +59,10 @@ class BrainMerger(Atlas):
                 merged_volume_prob = symmetricalize_volume(merged_volume_prob)
 
             # increasing the STD makes the volume smoother
-            average_volume = gaussian(merged_volume_prob, 3.0) # Smooth the probability
+            # Smooth the probability
+            average_volume = gaussian(merged_volume_prob, 3.0)
             color = 1
-            average_volume[average_volume > 0.5] = color
+            average_volume[average_volume > self.threshold] = color
             average_volume[average_volume != color] = 0
             average_volume = average_volume.astype(np.uint8)
             return average_volume
@@ -102,87 +70,31 @@ class BrainMerger(Atlas):
             print(f'{structure} has no volumes to merge')
             return None
 
+    def save_atlas_origins_and_volumes_and_meshes(self):
+        """Saves everything to disk
+        """
+        os.makedirs(self.origin_path, exist_ok=True)
+        os.makedirs(self.volume_path, exist_ok=True)
+        os.makedirs(self.mesh_path, exist_ok=True)
 
-    def load_data(self, brains):
-        for brain in brains:
-            print(f'Loading data for {brain.animal}')
-            brain.load_origins()
-            brain.load_volumes()
-            brain.load_com()
-
-    def load_data_from_fixed_and_moving_brains(self):
-        self.load_data([self.fixed_brain]+self.moving_brains)
-        for structure in self.fixed_brain.origins:
-            if structure == 'RtTg':
-                braini = self.moving_brains[0]
-                origin = braini.origins[structure]
-                volume = braini.volumes[structure]
-                #####r, t = self.get_transform_to_align_brain(braini)
-                #####origin = brain_to_atlas_transform(origin, r, t)
-            else:
-                origin = self.fixed_brain.origins[structure]
-                volume = self.fixed_brain.volumes[structure]
+        origins = {structure: np.mean(
+            origin, axis=0) for structure, origin in self.origins_to_merge.items()}
+        for structure in self.volumes.keys():
+            x, y, z = origins[structure]
+            volume = self.volumes[structure]
+            origin_array = np.array(list(origins.values()))
+            centered_origin = (x, y, z) - origin_array.mean(0)
+            aligned_structure = volume_to_polygon(
+                volume=volume, origin=centered_origin, times_to_simplify=3)
+            origin_filepath = os.path.join(
+                self.origin_path, f'{structure}.txt')
+            volume_filepath = os.path.join(
+                self.volume_path, f'{structure}.npy')
+            mesh_filepath = os.path.join(self.mesh_path, f'{structure}.stl')
             if 'SC' in structure:
-                print(f'SC origin in load fixed brain is {origin}')
-            self.volumes_to_merge[structure].append(volume)
-            self.origins_to_merge[structure].append(origin)
-        for brain in self.moving_brains:
-            brain.transformed_origins = {}
-            #####r, t = self.get_transform_to_align_brain(brain)
-            for structure in brain.origins:
-                origin, volume = brain.origins[structure], brain.volumes[structure]
-                if 'SC' in structure:
-                    print(f'SC origin in load moving brain is {origin}')
-                #####aligned_origin = brain_to_atlas_transform(origin, r, t)
-                #####brain.transformed_origins[structure] = aligned_origin
-                brain.transformed_origins[structure] = origin
-                self.volumes_to_merge[structure].append(volume)
-                #####self.origins_to_merge[structure].append(aligned_origin)
-                self.origins_to_merge[structure].append(origin)
-
-    def create_average_com_and_volumeXXX(self):
-        self.load_data_from_fixed_and_moving_brains()
-        for structure in self.volumes_to_merge:
-            volume = self.get_merged_landmark_probability(structure)
-            self.volumes[structure]= volume
-
-    def create_average_com_and_volume(self):
-        self.load_data_from_fixed_and_moving_brains()
-        for structure in zip(self.volumes_to_merge, self.origins_to_merge):
-            volume, origin = average_shape()
-            self.volumes[structure]= volume
-
-
-def average_shape(volume_list, origin_list, force_symmetric=False, sigma=2.0):
-    """
-    Compute the mean shape based on many co-registered volumes.
-
-    Args:
-        force_symmetric (bool): If True, force the resulting volume and mesh to be symmetric wrt z.
-        sigma (float): sigma of gaussian kernel used to smooth the probability values.
-
-    Returns:
-        average_volume_prob (3D ndarray):
-        common_mins ((3,)-ndarray): coordinate of the volume's origin
-    """
-    volume_list, origin_list = list(map(list, list(zip(*volume_origin_list))))
-    #bbox_list = [(xm, xm+v.shape[1]-1, ym, ym+v.shape[0]-1, zm, zm+v.shape[2]-1) for v,(xm,ym,zm) in zip(volume_list, origin_list)]
-    #common_volume_list, common_volume_bbox = convert_vol_bbox_dict_to_overall_vol(vol_bbox_tuples=list(zip(volume_list, bbox_list)))
-    common_volume_list = list([(v > 0).astype(np.int32) for v in common_volume_list])
-    average_volume = np.sum(common_volume_list, axis=0)
-    average_volume_prob = average_volume / float(np.max(average_volume))
-    if force_symmetric:
-        average_volume_prob = symmetricalize_volume(average_volume_prob)
-
-    average_volume_prob = gaussian(average_volume_prob, sigma) # Smooth the probability
-    # print('1',type(average_volume_prob), average_volume_prob.dtype, average_volume_prob.shape, np.mean(average_volume_prob), np.amax(average_volume_prob))
-    #common_origin = np.array(common_volume_bbox)[[0,2,4]]
-    common_origin = (1,1,1)
-    return average_volume_prob, common_origin
-
-
-
-if __name__ == '__main__':
-    merger = BrainMerger()
-    merger.create_average_com_and_volume()
-    merger.save_origins_and_volumes()
+                print(origin_filepath)
+                print(volume_filepath)
+                print(mesh_filepath)
+            np.savetxt(origin_filepath, (x, y, z))
+            np.save(volume_filepath, volume)
+            save_mesh(aligned_structure, mesh_filepath)
