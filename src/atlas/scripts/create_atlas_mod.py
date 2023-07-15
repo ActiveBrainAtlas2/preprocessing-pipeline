@@ -99,8 +99,7 @@ class AtlasCreator:
         self.atlas_name = atlas_name
         self.debug = debug
         self.DATA_PATH = '/net/birdstore/Active_Atlas_Data/data_root'
-        self.fixed_brain = 'MD589'
-        self.INPUT = os.path.join(f'/net/birdstore/Active_Atlas_Data/data_root/pipeline_data/MD589/preps/CH1/thumbnail_aligned')
+        self.fixed_brain = 'Allen'
         self.ATLAS_PATH = os.path.join(self.DATA_PATH, 'atlas_data', atlas_name)
         self.OUTPUT_DIR = f'/home/httpd/html/data/{atlas_name}'
         if os.path.exists(self.OUTPUT_DIR):
@@ -109,16 +108,17 @@ class AtlasCreator:
         if 'atlas' in atlas_name:
             atlas_name = 'MD589'
 
-        self.sqlController = SqlController(atlas_name)
-        self.xy_resolution = self.sqlController.get_resolution(atlas_name)[0]
+        self.sqlController = SqlController(self.fixed_brain)
+        self.xy_resolution = 25
     
     def create_atlas(self, save, ng):
         # origin is in animal scan_run.resolution coordinates
         # volume is in 10um coo
-        width = (self.sqlController.scan_run.width) / SCALING_FACTOR
-        height = (self.sqlController.scan_run.height) / SCALING_FACTOR
-        z_length = len(os.listdir(self.INPUT))
+        width = (self.sqlController.scan_run.width)
+        height = (self.sqlController.scan_run.height)
+        z_length = self.sqlController.scan_run.number_of_slides
         atlas_volume = np.zeros(( int(width), int(height), z_length), dtype=np.uint8)
+        
         color = 100
         origin_dir = os.path.join(self.ATLAS_PATH, 'origin')
         volume_dir = os.path.join(self.ATLAS_PATH, 'structure')
@@ -132,7 +132,7 @@ class AtlasCreator:
         x_length = int(width)
         atlas_box_size=(x_length, y_length, z_length)
         print(f'atlas box size={atlas_box_size} shape={atlas_volume.shape}')
-        atlas_box_scales=[14464, 14464, 20000]
+        atlas_box_scales=[25000, 25000, 25000]
         atlas_box_scales = np.array(atlas_box_scales)
         atlas_box_size = np.array(atlas_box_size)
         atlas_box_center = atlas_box_size / 2
@@ -154,8 +154,6 @@ class AtlasCreator:
             origin = np.loadtxt(os.path.join(origin_dir, origin_file))
             volume = np.load(os.path.join(volume_dir, volume_file))
 
-            #volume = np.rot90(volume, axes=(0,1))
-            #volume = np.flip(volume, axis=0)
             volume = volume.astype(np.uint8)
             volume[volume > 0] = color
             ids[structure] = color
@@ -197,6 +195,7 @@ class AtlasCreator:
             print(atlas_volume_ids)
             print('counts')
             print(counts)
+            return
         #atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
         #print(f'Shape of atlas volume {atlas_volume.shape} after swapping 0 and 2')
         if save:

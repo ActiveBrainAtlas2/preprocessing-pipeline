@@ -193,8 +193,6 @@ def mesh_to_polydata(vertices, faces, num_simplify_iter=0, smooth=False):
         polydata.SetPolys(cells)
         polydata.GetCellData().SetScalars(colors)
         polydata = simplify_polydata(polydata, num_simplify_iter, smooth)
-    else:
-        sys.stderr.write('mesh_to_polydata: No faces are provided, so skip simplification.\n')
 
     return polydata
 

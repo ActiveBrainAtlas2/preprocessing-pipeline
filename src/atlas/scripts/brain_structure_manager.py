@@ -29,6 +29,7 @@ class BrainStructureManager():
         self.origin_path = os.path.join(self.data_path, animal, 'origin')
         self.mesh_path = os.path.join(self.data_path, animal, 'mesh')
         self.aligned_contours = {}
+        self.annotator_id = 2
 
     def load_aligned_contours(self):
         """load aligned contours
@@ -40,7 +41,7 @@ class BrainStructureManager():
 
 
 
-    def get_coms(self):
+    def get_coms(self, annotator_id=2):
         """Get the center of mass values for this brain as an array
 
         Returns:
@@ -48,7 +49,7 @@ class BrainStructureManager():
         """
         #self.load_com()
         controller = StructureCOMController(self.animal)
-        coms = controller.get_COM(self.animal)
+        coms = controller.get_COM(self.animal, annotator_id=annotator_id)
         return coms
 
     def get_transform_to_align_brain(self, brain):
@@ -57,35 +58,20 @@ class BrainStructureManager():
         if brain.animal == self.fixed_brain.animal:
             return np.eye(3), np.zeros((3,1))
 
-
         moving_coms = brain.get_coms()
-        fixed_coms = self.fixed_brain.get_coms()
+        fixed_coms = self.fixed_brain.get_coms(annotator_id=self.fixed_brain.annotator_id)
+        
         common_keys = fixed_coms.keys() & moving_coms.keys()
         brain_regions = sorted(moving_coms.keys())
+
         fixed_points = np.array([fixed_coms[s] for s in brain_regions if s in common_keys])
         moving_points = np.array([moving_coms[s] for s in brain_regions if s in common_keys])
 
         if fixed_points.shape != moving_points.shape or len(fixed_points.shape) != 2 or fixed_points.shape[0] < 3:
+            print(brain.animal, fixed_points.shape, moving_points.shape, common_keys)
             return None, None
 
-
-        sfactor = self.DOWNSAMPLE_FACTOR
-        f_scale_xy = self.fixed_brain.sqlController.scan_run.resolution
-        f_z_scale = self.fixed_brain.sqlController.scan_run.zresolution
-        f_scales = np.array([f_scale_xy, f_scale_xy, f_z_scale])
-        sfactor = np.array([sfactor, sfactor, 1])
-        fixed_com_set = fixed_points / f_scales / sfactor
-
-        m_scale_xy = self.sqlController.scan_run.resolution
-        m_z_scale = self.sqlController.scan_run.zresolution
-        m_scales = np.array([m_scale_xy, m_scale_xy, m_z_scale])
-        moving_com_set = moving_points / m_scales / sfactor
-
-
-
-        #moving_com = (moving_com_set * self.um_to_pixel).T
-        #fixed_com = (fixed_com_set * self.fixed_brain.um_to_pixel).T       
-        r, t = umeyama(moving_com_set.T, fixed_com_set.T)
+        r, t = umeyama(moving_points.T, fixed_points.T)
         return r, t
 
 
@@ -96,15 +82,17 @@ class BrainStructureManager():
         pad = 50
         section_mins = []
         section_maxs = []
-        for section, contour_points in structure_contours.items():
+        for _, contour_points in structure_contours.items():
             contour_points = np.array(contour_points)
             section_mins.append(np.min(contour_points, axis=0))
             section_maxs.append(np.max(contour_points, axis=0))
         min_z = min([int(i) for i in structure_contours.keys()])
         min_x, min_y = np.min(section_mins, axis=0)
         max_x, max_y = np.max(section_maxs, axis=0)
+
         max_x += pad
         max_y += pad
+
         xspan = max_x - min_x
         yspan = max_y - min_y
         origin = np.array([min_x, min_y, min_z])
@@ -117,33 +105,40 @@ class BrainStructureManager():
         polygon = PolygonSequenceController(animal=animal)
         controller = StructureCOMController(animal)
         structures = controller.get_structures()
-        removes = []
+        # get transformation at um 
+        r, t = self.get_transform_to_align_brain(brainManager)
+        allen_um = 25
+        if r is None:
+            return
         for structure in structures:
             df = polygon.get_volume(animal, annotator_id, structure.id)
             if df.empty:
                 continue;
-            
-            scale_xy = self.sqlController.scan_run.resolution
-            z_scale = self.sqlController.scan_run.zresolution        
+
             polygons = defaultdict(list)
             
-            
             for _, row in df.iterrows():
-                x = row['coordinate'][0]
-                y = row['coordinate'][1]
+                x = row['coordinate'][0] 
+                y = row['coordinate'][1] 
                 z = row['coordinate'][2]
-                xy = (x/scale_xy/self.DOWNSAMPLE_FACTOR, y/scale_xy/self.DOWNSAMPLE_FACTOR)
-                section = int(np.round(z/z_scale))
+                # transform points to fixed brain um 
+                x,y,z = brain_to_atlas_transform((x,y,z), r, t)
+                # scale transformed points to 25um
+                x /= allen_um
+                y /= allen_um
+                z /= allen_um
+
+                xy = (x, y)
+                section = int(np.round(z))
                 polygons[section].append(xy)
-                
+
             color = 1 # on/off
             origin, section_size = self.get_origin_and_section_size(polygons)
-            r, t = self.get_transform_to_align_brain(brainManager)
-            if r is None:
-                continue
 
             volume = []
             for _, contour_points in polygons.items():
+                vertices = np.array(contour_points)
+                # subtract origin so the array starts drawing in the upper top left
                 vertices = np.array(contour_points) - origin[:2]
                 contour_points = (vertices).astype(np.int32)
                 volume_slice = np.zeros(section_size, dtype=np.uint8)
@@ -153,14 +148,12 @@ class BrainStructureManager():
             volume = np.array(volume).astype(np.bool8)
             volume = np.swapaxes(volume,0,2)
             ids, counts = np.unique(volume, return_counts=True)
-            new_origin = brain_to_atlas_transform(origin, r, t)
-            print(annotator_id, animal, structure.abbreviation, origin, new_origin, section_size, end="\t")
+            print(annotator_id, animal, structure.abbreviation, origin, section_size, end="\t")
             print(volume.dtype, volume.shape, end="\t")
             print(ids, counts)
-
             brainMerger.volumes_to_merge[structure.abbreviation].append(volume)
-            brainMerger.origins_to_merge[structure.abbreviation].append(new_origin)
-            self.save_brain_origins_and_volumes_and_meshes(structure.abbreviation, new_origin, volume)
+            brainMerger.origins_to_merge[structure.abbreviation].append(origin)
+            self.save_brain_origins_and_volumes_and_meshes(structure.abbreviation, origin, volume)
 
     def save_brain_origins_and_volumes_and_meshes(self, structure ,origin, volume):
         """Saves everything to disk

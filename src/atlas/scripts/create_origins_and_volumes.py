@@ -19,6 +19,7 @@ def volume_origin_creation():
         animal_users.add((session.FK_prep_id, session.FK_user_id))
     for session in pg_sessions:
         animal_users.add((session.FK_prep_id, session.FK_user_id))
+
     
     animal_users = list(animal_users)
     #animal_users = [['MD585', 1],['MD589', 1], ['MD594', 1]]
@@ -28,8 +29,12 @@ def volume_origin_creation():
         annotator_id = animal_user[1]
         if 'test' in animal or 'Atlas' in animal or annotator_id in (3, 34, 37):
             continue
+        if annotator_id != 1:
+            continue
         brainManager = BrainStructureManager(animal)
-        brainManager.fixed_brain = BrainStructureManager('MD589')
+        brainManager.annotator_id = annotator_id
+        brainManager.fixed_brain = BrainStructureManager('Allen')
+        brainManager.fixed_brain.annotator_id = 1
         brainManager.compute_origin_and_volume_for_brain_structures(brainManager, brainMerger, annotator_id=annotator_id)
 
     for structure in brainMerger.volumes_to_merge:

@@ -12,7 +12,7 @@ class StructureCOMController(SqlController):
     """The class that queries and addes entry to the StructureCOM table
     """
 
-    def get_annotation_dict(self, prep_id, annotator_id):
+    def get_annotation_dict(self, prep_id, annotator_id=2):
         """This method replaces get_centers_dict and get_layer_data_row.
 
         :param prep_id: string name of animal

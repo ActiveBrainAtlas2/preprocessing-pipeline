@@ -44,6 +44,7 @@ class BrainMerger():
     def get_merged_landmark_probability(self, structure, volumes):
         force_symmetry = (structure in self.symmetry_list)
         lvolumes = len(volumes)
+        threshold = self.threshold
         if lvolumes == 1:
             print(f'{structure} has only one volume')
             return volumes[0]
@@ -56,13 +57,14 @@ class BrainMerger():
             merged_volume = np.sum(volumes, axis=0)
             merged_volume_prob = merged_volume / float(np.max(merged_volume))
             if force_symmetry:
+                threshold = 0.1
                 merged_volume_prob = symmetricalize_volume(merged_volume_prob)
 
             # increasing the STD makes the volume smoother
             # Smooth the probability
             average_volume = gaussian(merged_volume_prob, 3.0)
             color = 1
-            average_volume[average_volume > self.threshold] = color
+            average_volume[average_volume > threshold] = color
             average_volume[average_volume != color] = 0
             average_volume = average_volume.astype(np.uint8)
             return average_volume
