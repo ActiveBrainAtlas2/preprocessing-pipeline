@@ -27,7 +27,6 @@ TODO, transform polygons in DB using the transformation below
 import argparse
 from collections import defaultdict
 import os
-import shutil
 import sys
 import numpy as np
 from pathlib import Path
@@ -38,7 +37,7 @@ from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 import pandas as pd
 import cv2
-from allensdk.core.mouse_connectivity_cache import MouseConnectivityCache
+#from allensdk.core.mouse_connectivity_cache import MouseConnectivityCache
 from scipy.interpolate import splprep, splev
 
 PIPELINE_ROOT = Path('./src').absolute()
