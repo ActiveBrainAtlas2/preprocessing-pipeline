@@ -192,6 +192,12 @@ class VolumeRegistration:
         elastixImageFilter.Execute()
 
     def setup_registration(self, imagepath1, imagepath2, outputpath):
+        if not os.path.exists(imagepath1):
+            print(f'{imagepath1} does not exist')
+            return
+        if not os.path.exists(imagepath2):
+            print(f'{imagepath2} does not exist')
+            return
         fixedImage = sitk.ReadImage(imagepath1, sitk.sitkFloat32)
         movingImage = sitk.ReadImage(imagepath2, sitk.sitkFloat32)
         """
@@ -236,9 +242,9 @@ class VolumeRegistration:
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
         elastixImageFilter.SetParameterMap(transParameterMap)
-        #elastixImageFilter.AddParameterMap(rigidParameterMap)
-        #elastixImageFilter.AddParameterMap(affineParameterMap)
-        #elastixImageFilter.AddParameterMap(bsplineParameterMap)
+        elastixImageFilter.AddParameterMap(rigidParameterMap)
+        elastixImageFilter.AddParameterMap(affineParameterMap)
+        elastixImageFilter.AddParameterMap(bsplineParameterMap)
         elastixImageFilter.SetLogToFile(True)
         elastixImageFilter.SetOutputDirectory(outputpath)
         elastixImageFilter.LogToConsoleOff()
@@ -246,12 +252,11 @@ class VolumeRegistration:
         elastixImageFilter.SetLogFileName('elastix.log')
         if self.debug:
             elastixImageFilter.PrintParameterMap(transParameterMap)    
-            #elastixImageFilter.PrintParameterMap(rigidParameterMap)    
-            #elastixImageFilter.PrintParameterMap(affineParameterMap)
-            #elastixImageFilter.PrintParameterMap(bsplineParameterMap)
+            elastixImageFilter.PrintParameterMap(rigidParameterMap)    
+            elastixImageFilter.PrintParameterMap(affineParameterMap)
+            elastixImageFilter.PrintParameterMap(bsplineParameterMap)
             elastixImageFilter.LogToConsoleOn()
 
-        elastixImageFilter.AddParameter( "Metric", "CorrespondingPointsEuclideanDistanceMetric" )
         return elastixImageFilter
 
         
@@ -340,29 +345,7 @@ class VolumeRegistration:
         transformixImageFilter.SetFixedPointSetFileName(self.unregistered_point_file)
         transformixImageFilter.Execute()
 
-    def evaluate_registration(self):
-        mcc = MouseConnectivityCache(resolution=25)
-        rsp = mcc.get_reference_space()
-        allen_structure_id = 661 # facial nucleus
-        sc_dict = {'Superior colliculus, sensory related': 302,
-                   'Superior colliculus, optic layer': 851,
-                   'Superior colliculus, superficial gray layer': 842,
-                   'Superior colliculus, zonal layer': 834}
-        for structure, allen_structure_id in allen_structures.items():
-            structure_mask = rsp.make_structure_mask([allen_structure_id], direct_only=False)
-            structure_mask = np.swapaxes(structure_mask, 0, 2)
-            atlaspath = os.path.join(self.atlas_path, 'atlasV8.tif')
-            atlasImage = io.imread(atlaspath)
-            atlasImage[atlasImage != allen_structure_id] = 0
-            #print('atlas ', atlasImage.shape)
-            #print('structure_mask', structure_mask.shape)
-            structure_mask_padded = np.pad(structure_mask, ((0,0), (0,100), (0, 100)), 'constant')
-            #print('padded ', structure_mask_padded.shape)
-
-            #break            
-            dice_coefficient = dice(structure_mask_padded, atlasImage)
-            print(f'Structure: {structure} dice coefficient={dice_coefficient}')
-
+ 
         """      
         resultImage = (resultImage * 254).astype(np.uint8)
         outpath = os.path.join(self.registered_output,'facialmask.tif')
@@ -695,7 +678,6 @@ if __name__ == '__main__':
                         'check_registration': volumeRegistration.check_registration,
                         'insert_points': volumeRegistration.insert_points,
                         'fill_contours': volumeRegistration.fill_contours,
-                        'evaluate':volumeRegistration.evaluate_registration,
                         'polygons': volumeRegistration.transformix_polygons
     }
 
