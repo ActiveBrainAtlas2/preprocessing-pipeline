@@ -34,13 +34,11 @@ from pathlib import Path
 from skimage import io
 from tqdm import tqdm
 import SimpleITK as sitk
-import itk
 from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 import pandas as pd
 import cv2
 from allensdk.core.mouse_connectivity_cache import MouseConnectivityCache
-from tifffile import imwrite
 from scipy.interpolate import splprep, splev
 
 PIPELINE_ROOT = Path('./src').absolute()
@@ -87,9 +85,9 @@ def sort_from_center(polygon:list) -> list:
     return list(map(tuple, sorted_coords))
 
 
-def compute_dice_coefficient(source_image: itk.Image, target_image: itk.Image) -> float:
+def compute_dice_coefficient(source_image: sitk.Image, target_image: sitk.Image) -> float:
     """Compute the dice coefficient to compare volume overlap between two label regions"""
-    dice_filter = itk.LabelOverlapMeasuresImageFilter[type(source_image)].New()
+    dice_filter = sitk.LabelOverlapMeasuresImageFilter[type(source_image)].New()
     dice_filter.SetInput(source_image)
     dice_filter.SetTargetImage(target_image)
     dice_filter.Update()
@@ -211,7 +209,7 @@ class VolumeRegistration:
         elastixImageFilter.SetMovingImage(movingImage)
         
         transParameterMap = sitk.GetDefaultParameterMap('translation')
-        rigidParameterMap = sitk.GetDefaultParameterMap('rigid')        
+        rigidParameterMap = sitk.GetDefaultParameterMap('rigid')
         rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
         rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
         rigidParameterMap["UseDirectionCosines"] = ["true"]
@@ -239,9 +237,9 @@ class VolumeRegistration:
         del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
 
         elastixImageFilter.SetParameterMap(transParameterMap)
-        elastixImageFilter.AddParameterMap(rigidParameterMap)
-        elastixImageFilter.AddParameterMap(affineParameterMap)
-        elastixImageFilter.AddParameterMap(bsplineParameterMap)
+        #elastixImageFilter.AddParameterMap(rigidParameterMap)
+        #elastixImageFilter.AddParameterMap(affineParameterMap)
+        #elastixImageFilter.AddParameterMap(bsplineParameterMap)
         elastixImageFilter.SetLogToFile(True)
         elastixImageFilter.SetOutputDirectory(outputpath)
         elastixImageFilter.LogToConsoleOff()
@@ -249,9 +247,10 @@ class VolumeRegistration:
         elastixImageFilter.SetLogFileName('elastix.log')
         if self.debug:
             elastixImageFilter.PrintParameterMap(transParameterMap)    
-            elastixImageFilter.PrintParameterMap(rigidParameterMap)    
-            elastixImageFilter.PrintParameterMap(affineParameterMap)
-            elastixImageFilter.PrintParameterMap(bsplineParameterMap)
+            #elastixImageFilter.PrintParameterMap(rigidParameterMap)    
+            #elastixImageFilter.PrintParameterMap(affineParameterMap)
+            #elastixImageFilter.PrintParameterMap(bsplineParameterMap)
+            elastixImageFilter.LogToConsoleOn()
 
         elastixImageFilter.AddParameter( "Metric", "CorrespondingPointsEuclideanDistanceMetric" )
         return elastixImageFilter
@@ -342,153 +341,6 @@ class VolumeRegistration:
         transformixImageFilter.SetFixedPointSetFileName(self.unregistered_point_file)
         transformixImageFilter.Execute()
 
-    def create_itk(self):
-        os.makedirs(self.registered_output, exist_ok=True)
-        fixed_image = itk.imread(self.fixed_volume_path, itk.F)
-        moving_image = itk.imread(self.moving_volume_path, itk.F)
-        
-        # init transform start
-        """
-        # Translate to roughly position sample data on top of CCF data
-        init_transform = itk.VersorRigid3DTransform[itk.D].New()  # Represents 3D rigid transformation with unit quaternion
-        init_transform.SetIdentity()
-        transform_initializer = itk.CenteredVersorTransformInitializer[
-            type(fixed_image), type(moving_image)
-        ].New()
-        transform_initializer.SetFixedImage(fixed_image)
-        transform_initializer.SetMovingImage(moving_image)
-        transform_initializer.SetTransform(init_transform)
-        transform_initializer.GeometryOn()  # We compute translation between the center of each image
-        transform_initializer.ComputeRotationOff()  # We have previously verified that spatial orientation aligns
-        transform_initializer.InitializeTransform()
-        # initializer maps from the fixed image to the moving image,
-        # whereas we want to map from the moving image to the fixed image.
-        init_transform = init_transform.GetInverseTransform()
-        # init transform end
-        # Apply translation without resampling the image by updating the image origin directly
-        change_information_filter = itk.ChangeInformationImageFilter[type(moving_image)].New()
-        change_information_filter.SetInput(moving_image)
-        change_information_filter.SetOutputOrigin(
-            init_transform.TransformPoint(itk.origin(moving_image))
-        )
-        change_information_filter.ChangeOriginOn()
-        change_information_filter.UpdateOutputInformation()
-        source_image_init = change_information_filter.GetOutput()
-        # end apply translation
-        """
-        parameter_object = itk.ParameterObject.New()
-        transParameterMap = parameter_object.GetDefaultParameterMap('translation')
-        rigidParameterMap = parameter_object.GetDefaultParameterMap('rigid')
-        rigidParameterMap["MaximumNumberOfIterations"] = [self.rigidIterations] # 250 works ok
-        rigidParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
-        rigidParameterMap["UseDirectionCosines"] = ["true"]
-        rigidParameterMap["NumberOfResolutions"]= ["6"]
-        rigidParameterMap["NumberOfSpatialSamples"] = ["4000"]
-        rigidParameterMap["WriteResultImage"] = ["false"]
-
-        affineParameterMap = parameter_object.GetDefaultParameterMap('affine')
-        affineParameterMap["UseDirectionCosines"] = ["true"]
-        affineParameterMap["MaximumNumberOfIterations"] = [self.affineIterations] # 250 works ok
-        affineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
-        affineParameterMap["NumberOfResolutions"]= ["6"]
-        affineParameterMap["NumberOfSpatialSamples"] = ["4000"]
-        affineParameterMap["WriteResultImage"] = ["false"]
-
-        bsplineParameterMap = parameter_object.GetDefaultParameterMap("bspline")
-        bsplineParameterMap["MaximumNumberOfIterations"] = [self.bsplineIterations] # 150 works ok
-        bsplineParameterMap["WriteResultImage"] = ["true"]
-        bsplineParameterMap["UseDirectionCosines"] = ["true"]
-        bsplineParameterMap["FinalGridSpacingInVoxels"] = [f"{self.um}"]
-        bsplineParameterMap["MaximumNumberOfSamplingAttempts"] = [self.number_of_sampling_attempts]
-        #bsplineParameterMap["NumberOfResolutions"]= ["6"]
-        #bsplineParameterMap["GridSpacingSchedule"] = ["6.219", "4.1", "2.8", "1.9", "1.4", "1.0"]
-        bsplineParameterMap["NumberOfSpatialSamples"] = ["4000"]
-        del bsplineParameterMap["FinalGridSpacingInPhysicalUnits"]
-
-        parameter_object.AddParameterMap(transParameterMap)
-        parameter_object.AddParameterMap(rigidParameterMap)
-        parameter_object.AddParameterMap(affineParameterMap)
-        parameter_object.AddParameterMap(bsplineParameterMap)
-        registration_method = itk.ElastixRegistrationMethod[type(fixed_image), type(moving_image)
-        ].New(
-            fixed_image=fixed_image,
-            moving_image=moving_image,
-            parameter_object=parameter_object,
-            log_to_console=False,
-        )
-        registration_method.Update()
-        resultImage = registration_method.GetOutput()
-        itk.imwrite(resultImage, os.path.join(self.registered_output, 'result.tif'), compression=True) 
-        ## write transformation DOES NOT WORK!
-        #init_transformpath = os.path.join(self.registered_output, 'init-transform.tfm')
-        #itk.transformwrite([init_transform], init_transformpath)
-            
-        for index in range(parameter_object.GetNumberOfParameterMaps()):
-            registration_method.GetTransformParameterObject().WriteParameterFile(
-            registration_method.GetTransformParameterObject().GetParameterMap(index),
-            f"{self.registered_output}/elastix-transform.{index}.txt",)
-
-        xr = 390.8289546460
-        yr = 162.0727323009
-        zr = 215
-        r_point = [xr,yr,zr]
-        #point = init_transform.TransformPoint(r_point)
-        point = r_point
-        print(point)
-        
-        TRANSFORMIX_POINTSET_FILE = os.path.join(self.registered_output,"transformix_input_points.txt")        
-        with open(TRANSFORMIX_POINTSET_FILE, "w") as f:
-            f.write("point\n")
-            #f.write(f"{input_points.GetNumberOfPoints()}\n")
-            f.write(f"1\n")
-            f.write(f"{point[0]} {point[1]} {point[2]}\n")
-
-        N_ELASTIX_STAGES = 4
-
-        toplevel_param = itk.ParameterObject.New()
-        param = itk.ParameterObject.New()
-        ELASTIX_TRANSFORM_FILENAMES = [os.path.join(self.registered_output, f"elastix-transform.{index}.txt")
-            for index in range(N_ELASTIX_STAGES)]
-
-        for elastix_transform_filename in ELASTIX_TRANSFORM_FILENAMES:
-            param.ReadParameterFile(elastix_transform_filename)
-            toplevel_param.AddParameterMap(param.GetParameterMap(0))        
-
-        # Load reference image (required for transformix)
-        average_template = itk.imread(self.fixed_volume_path, pixel_type=itk.F)
-        # Procedural interface of transformix filter
-        result_point_set = itk.transformix_pointset(
-            average_template,
-            toplevel_param,
-            fixed_point_set_file_name=TRANSFORMIX_POINTSET_FILE,
-            output_directory=self.registered_output)
-        # Transformix will write results to self.registered_output/outputpoints.txt
-        print(result_point_set)
-
-    def evaluate_registrationXXXX(self):
-        TARGET_LABEL_IMAGE_FILEPATH = '/net/birdstore/Active_Atlas_Data/data_root/brains_info/registration/allen_25um_annnotations.tif'
-        INPUT_LABEL_IMAGE_FILEPATH = os.path.join(self.registered_output, 'result.tif')
-        TARGET_LABEL_VALUE = 4
-        target_label_image = itk.imread(TARGET_LABEL_IMAGE_FILEPATH)
-        target_label_image_f = itk.cast_image_filter(target_label_image, ttype=[type(target_label_image), itk.Image[itk.F,3]])
-        target_binary_image = itk.binary_threshold_image_filter(
-            target_label_image_f,
-            lower_threshold=1,
-            upper_threshold=8115,
-            inside_value=1,
-            outside_value=0,
-            ttype=[type(target_label_image_f), itk.Image[itk.UC,target_label_image_f.GetImageDimension()]]
-        )
-
-        print(f'Binary labels: {np.unique(target_binary_image)}')
-        
-        transformed_source_label_image = itk.imread(INPUT_LABEL_IMAGE_FILEPATH, itk.UC)
-        print(f'type of target fixed {type(target_binary_image)}')
-        print(f'type of source moving {type(transformed_source_label_image)}')
-        
-        dice_score = compute_dice_coefficient(transformed_source_label_image, target_binary_image)
-        print(f'Evaluated dice value: {dice_score}')
-
     def evaluate_registration(self):
         mcc = MouseConnectivityCache(resolution=25)
         rsp = mcc.get_reference_space()
@@ -528,8 +380,8 @@ class VolumeRegistration:
         polygon = PolygonSequenceController(animal=self.animal)        
         scale_xy = sqlController.scan_run.resolution
         z_scale = sqlController.scan_run.zresolution
-        input_points = itk.PointSet[itk.F, 3].New()
-        
+        #input_points = itk.PointSet[itk.F, 3].New()
+        input_points = None
         df_L = polygon.get_volume(self.animal, 38, 12)
         df_R = polygon.get_volume(self.animal, 38, 13)
         frames = [df_L, df_R]
@@ -843,7 +695,6 @@ if __name__ == '__main__':
                         'create_precomputed': volumeRegistration.create_precomputed,
                         'check_registration': volumeRegistration.check_registration,
                         'insert_points': volumeRegistration.insert_points,
-                        'create_itk': volumeRegistration.create_itk,
                         'fill_contours': volumeRegistration.fill_contours,
                         'evaluate':volumeRegistration.evaluate_registration,
                         'polygons': volumeRegistration.transformix_polygons
