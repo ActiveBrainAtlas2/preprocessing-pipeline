@@ -22,14 +22,12 @@ def volume_origin_creation():
 
     
     animal_users = list(animal_users)
-    #animal_users = [['MD585', 1],['MD589', 1], ['MD594', 1]]
+    #animal_users = [['MD589', 1]]
     brainMerger = BrainMerger()
     for animal_user in sorted(animal_users):
         animal = animal_user[0]
         annotator_id = animal_user[1]
-        if 'test' in animal or 'Atlas' in animal or annotator_id in (3, 34, 37):
-            continue
-        if annotator_id != 1:
+        if 'test' in animal or 'Atlas' in animal or annotator_id in (6663, 66634, 66637):
             continue
         brainManager = BrainStructureManager(animal)
         brainManager.annotator_id = annotator_id
@@ -44,7 +42,7 @@ def volume_origin_creation():
         
         volume = brainMerger.get_merged_landmark_probability(structure, volumes)
         brainMerger.volumes[structure]= volume
-
+    print('Finished filling up volumes and origins')
     brainMerger.save_atlas_origins_and_volumes_and_meshes()
 
 

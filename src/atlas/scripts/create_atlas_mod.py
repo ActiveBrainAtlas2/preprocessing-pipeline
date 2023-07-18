@@ -15,7 +15,6 @@ from taskqueue import LocalTaskQueue
 import igneous.task_creation as tc
 from cloudvolume import CloudVolume
 from pathlib import Path
-from scipy.ndimage import center_of_mass
 from skimage import io
 
 PIPELINE_ROOT = Path('./src').absolute()
@@ -23,6 +22,7 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 
 from library.controller.sql_controller import SqlController
 from library.utilities.utilities_process import SCALING_FACTOR
+from library.utilities.atlas import allen_structures
 
 
 class NumpyToNeuroglancer():
@@ -110,16 +110,22 @@ class AtlasCreator:
 
         self.sqlController = SqlController(self.fixed_brain)
         self.xy_resolution = 25
+
+    def get_allen_id(self, color, structure):
+        try:
+            allen_color = allen_structures[structure]
+        except KeyError:
+            allen_color = color
+
+        return allen_color
     
     def create_atlas(self, save, ng):
         # origin is in animal scan_run.resolution coordinates
         # volume is in 10um coo
-        width = (self.sqlController.scan_run.width)
-        height = (self.sqlController.scan_run.height)
+        width = (self.sqlController.scan_run.width) + 100
+        height = (self.sqlController.scan_run.height) + 100
         z_length = self.sqlController.scan_run.number_of_slides
-        atlas_volume = np.zeros(( int(width), int(height), z_length), dtype=np.uint8)
-        
-        color = 100
+        atlas_volume = np.zeros(( int(width), int(height), z_length), dtype=np.uint32)
         origin_dir = os.path.join(self.ATLAS_PATH, 'origin')
         volume_dir = os.path.join(self.ATLAS_PATH, 'structure')
         if not os.path.exists(origin_dir):
@@ -136,7 +142,7 @@ class AtlasCreator:
         atlas_box_scales = np.array(atlas_box_scales)
         atlas_box_size = np.array(atlas_box_size)
         atlas_box_center = atlas_box_size / 2
-        color = 100
+        color = 1000
         print(f'origin dir {origin_dir}')
         print(f'origin dir {volume_dir}')
         print(f'box center {atlas_box_center}')
@@ -145,19 +151,23 @@ class AtlasCreator:
         volumes = sorted(os.listdir(volume_dir))
         print(f'Working with {len(origins)} origins and {len(volumes)} volumes.')
         ids = {}
+        
         for origin_file, volume_file in zip(origins, volumes):
             if Path(origin_file).stem != Path(volume_file).stem:
                 print(f'{Path(origin_file).stem} and {Path(volume_file).stem} do not match')
             structure = Path(origin_file).stem
+            allen_color = self.get_allen_id(color, structure)
             color += 2
+
+            #if structure != 'TG_R':
+            #    continue
 
             origin = np.loadtxt(os.path.join(origin_dir, origin_file))
             volume = np.load(os.path.join(volume_dir, volume_file))
 
-            volume = volume.astype(np.uint8)
-            volume[volume > 0] = color
-            ids[structure] = color
-            com = center_of_mass(volume)
+            volume = volume.astype(np.uint32)
+            volume[volume > 0] = allen_color
+            ids[structure] = allen_color
             x, y, z = origin
             """
             x_start = int(round(x + x_length/2))
@@ -177,9 +187,10 @@ class AtlasCreator:
             #volume = volume[:, :, z_indices]
             z_end = z_start + volume.shape[2]
             volume_ids, counts = np.unique(volume, return_counts=True)
-            print(f'{structure} origin={np.round(origin)}, \
-                  {x_start}->{x_end}, {y_start}->{y_end}, {z_start}->{z_end} \
-                  color={color} ids={volume_ids} counts={counts} com={np.round(com)}')
+            if debug:
+                print(f'{structure} origin={np.round(origin)}, \
+                    x: {x_start}->{x_end}, y: {y_start}->{y_end}, z: {z_start}->{z_end} \
+                    color={allen_color} ids={volume_ids} counts={counts}')
             
             try:
                 atlas_volume[x_start:x_end, y_start:y_end, z_start:z_end] += volume
@@ -195,7 +206,6 @@ class AtlasCreator:
             print(atlas_volume_ids)
             print('counts')
             print(counts)
-            return
         #atlas_volume = np.rot90(atlas_volume, axes=(0, 1))
         #print(f'Shape of atlas volume {atlas_volume.shape} after swapping 0 and 2')
         if save:

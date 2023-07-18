@@ -5,18 +5,22 @@ to the image brain. It first aligns the point brain data to the atlas, then that
 to the image brain. It prints out the data by default and also will insert
 into the database if given a layer name.
 """
-from library.image_manipulation.filelocation_manager import data_path
-from library.utilities.atlas import volume_to_polygon, save_mesh
-from library.utilities.atlas import singular_structures, symmetricalize_volume
 import os
 import sys
 import numpy as np
 from collections import defaultdict
 from pathlib import Path
 from skimage.filters import gaussian
+from scipy.ndimage import center_of_mass
 
 PIPELINE_ROOT = Path('./src').absolute()
 sys.path.append(PIPELINE_ROOT.as_posix())
+
+from library.image_manipulation.filelocation_manager import data_path
+from library.utilities.algorithm import brain_to_atlas_transform, umeyama
+from library.utilities.atlas import volume_to_polygon, save_mesh
+from library.utilities.atlas import singular_structures
+from atlas.scripts.brain_structure_manager import BrainStructureManager
 
 
 class BrainMerger():
@@ -31,7 +35,7 @@ class BrainMerger():
         self.origin_path = os.path.join(self.data_path, 'origin')
         self.mesh_path = os.path.join(self.data_path, 'mesh')
         self.volumes = {}
-        self.margin = 25
+        self.margin = 50
         self.threshold = 0.25  # the closer to zero, the bigger the structures
         # a value of 0.01 results in very big close fitting structures
 
@@ -42,9 +46,7 @@ class BrainMerger():
         return np.pad(volume, [[xl, xr], [yl, yr], [zl, zr]])
 
     def get_merged_landmark_probability(self, structure, volumes):
-        force_symmetry = (structure in self.symmetry_list)
         lvolumes = len(volumes)
-        threshold = self.threshold
         if lvolumes == 1:
             print(f'{structure} has only one volume')
             return volumes[0]
@@ -56,15 +58,11 @@ class BrainMerger():
 
             merged_volume = np.sum(volumes, axis=0)
             merged_volume_prob = merged_volume / float(np.max(merged_volume))
-            if force_symmetry:
-                threshold = 0.1
-                merged_volume_prob = symmetricalize_volume(merged_volume_prob)
-
             # increasing the STD makes the volume smoother
             # Smooth the probability
             average_volume = gaussian(merged_volume_prob, 3.0)
             color = 1
-            average_volume[average_volume > threshold] = color
+            average_volume[average_volume > self.threshold] = color
             average_volume[average_volume != color] = 0
             average_volume = average_volume.astype(np.uint8)
             return average_volume
@@ -79,8 +77,10 @@ class BrainMerger():
         os.makedirs(self.volume_path, exist_ok=True)
         os.makedirs(self.mesh_path, exist_ok=True)
 
-        origins = {structure: np.mean(
-            origin, axis=0) for structure, origin in self.origins_to_merge.items()}
+        average_origins = {structure: np.mean(origin, axis=0) for structure, origin in self.origins_to_merge.items()}
+        origins = self.transform_origins(average_origins)
+
+
         for structure in self.volumes.keys():
             x, y, z = origins[structure]
             volume = self.volumes[structure]
@@ -100,3 +100,62 @@ class BrainMerger():
             np.savetxt(origin_filepath, (x, y, z))
             np.save(volume_filepath, volume)
             save_mesh(aligned_structure, mesh_filepath)
+
+    def calculate_distance(self, com1, com2):
+        return (np.linalg.norm(com1 - com2))
+
+    def transform_origins(self, moving_origins):
+        """moving origins VS fixed COMs
+        fixed_coms have to be adjusted to subtract half the volume size
+        so they become origins
+        """
+        fixed_brain = BrainStructureManager('Allen')
+        fixed_coms = fixed_brain.get_coms(annotator_id=1)
+
+        common_keys = fixed_coms.keys() & moving_origins.keys()
+        brain_regions = sorted(moving_origins.keys())
+
+        #fixed_points_list = []
+        fixed_volume_list = []
+        fixed_volume_dict = {}
+        for structure in brain_regions:
+            if structure in common_keys:
+                #fixed_points_list.append(fixed_coms[structure])
+                volume_com = center_of_mass(self.volumes[structure])
+                fixed_volume_list.append(volume_com)
+                fixed_volume_dict[structure] = volume_com
+
+        fixed_volume_arr = np.array(fixed_volume_list)
+        
+        fixed_points = np.array([fixed_coms[s] for s in brain_regions if s in common_keys]) / 25 - fixed_volume_arr
+        moving_points = np.array([moving_origins[s] for s in brain_regions if s in common_keys])
+        fixed_point_dict = {s:fixed_coms[s] for s in brain_regions if s in common_keys}
+        moving_point_dict = {s:moving_origins[s] for s in brain_regions if s in common_keys}
+
+        assert fixed_points.shape == moving_points.shape, 'Shapes do not match'
+        assert len(fixed_points.shape) == 2, f'Dimensions are wrong fixed shape={fixed_points.shape} commonkeys={common_keys}'
+        assert fixed_points.shape[0] > 2, 'Not enough points'
+
+        transformed_coms = {}
+        R, t = umeyama(moving_points.T, fixed_points.T)
+        for structure, origin in moving_origins.items():
+            point = brain_to_atlas_transform(origin, R, t)
+            transformed_coms[structure] = point
+
+
+        distances = []
+        for structure in common_keys:
+            (x,y,z) = fixed_point_dict[structure]
+            x = (x/25 - fixed_volume_dict[structure][0])
+            y = (x/25 - fixed_volume_dict[structure][1])
+            z = (x/25 - fixed_volume_dict[structure][2])
+            fixed_point = np.array([x,y,z])    
+            moving_point = np.array(moving_point_dict[structure])
+            reg_point = brain_to_atlas_transform(moving_point, R, t)
+            d = self.calculate_distance(fixed_point, reg_point)
+            distances.append(d)
+            print(f'{structure} distance={round(d,2)}')
+        
+        print(f'length={len(distances)} mean={round(np.mean(distances))} min={round(min(distances))} max={round(max(distances))}')
+
+        return transformed_coms

@@ -21,6 +21,7 @@ Need to scale a moving image as close as possible to the fixed image
 COM info:
 allen SC: (368, 62, 227)
 pred  SC: 369, 64, 219
+TODO, transform polygons in DB using the transformation below
 """
 
 import argparse
@@ -48,10 +49,12 @@ sys.path.append(PIPELINE_ROOT.as_posix())
 from library.controller.polygon_sequence_controller import PolygonSequenceController
 from library.controller.sql_controller import SqlController
 from library.image_manipulation.neuroglancer_manager import NumpyToNeuroglancer
-from library.image_manipulation.filelocation_manager import FileLocationManager
+from library.image_manipulation.filelocation_manager import FileLocationManager, data_path
 from library.utilities.utilities_mask import normalize16, normalize8
 from library.utilities.utilities_process import read_image, write_image
 from library.controller.annotation_session_controller import AnnotationSessionController
+from library.utilities.atlas import allen_structures
+
 
 def interpolate(points, new_len):
     pu = points.astype(int)
@@ -65,33 +68,6 @@ def interpolate(points, new_len):
     x_array, y_array = splev(u_new, tck, der=0)
     return np.concatenate([x_array[:,None],y_array[:,None]], axis=1)
 
-
-def interpolate2d(points:list, new_len:int) -> list:
-    """Interpolates a list of tuples to the specified length. The points param
-    must be a list of tuples in 2d
-    
-    :param points: list of floats
-    :param new_len: integer you want to interpolate to. This will be the new length of the array
-    There can't be any consecutive identical points or an error will be thrown
-    unique_rows = np.unique(original_array, axis=0)
-    """
-
-    points = np.array(points)
-    lastcolumn = np.round(points[:, -1])
-    z = mode(lastcolumn)
-    points2d = np.delete(points, -1, axis=1)
-    pu = points2d.astype(int)
-    indexes = np.unique(pu, axis=0, return_index=True)[1]
-    points = np.array([points2d[index] for index in sorted(indexes)])
-    addme = points2d[0].reshape(1, 2)
-    points2d = np.concatenate((points2d, addme), axis=0)
-
-    tck, u = splprep(points2d.T, u=None, s=3, per=1)
-    u_new = np.linspace(u.min(), u.max(), new_len)
-    x_array, y_array = splev(u_new, tck, der=0)
-    arr_2d = np.concatenate([x_array[:, None], y_array[:, None]], axis=1)
-    arr_3d = np.c_[ arr_2d, np.zeros(new_len) + z ]
-    return list(map(tuple, arr_3d))
 
 
 def sort_from_center(polygon:list) -> list:
@@ -175,6 +151,7 @@ class VolumeRegistration:
         self.unregistered_point_file = os.path.join(self.fileLocationManager.prep, 'points.pts')
         self.init_transformpath = os.path.join(self.elastix_output, 'init_transform.tfm')
         self.neuroglancer_data_path = os.path.join(self.fileLocationManager.neuroglancer_data, f'{self.channel}_{self.atlas}{um}um')
+        self.atlas_path = os.path.join(data_path, 'brains_info', 'registration')
         self.number_of_sampling_attempts = "10"
         if self.debug:
             iterations = "35"
@@ -515,29 +492,27 @@ class VolumeRegistration:
     def evaluate_registration(self):
         mcc = MouseConnectivityCache(resolution=25)
         rsp = mcc.get_reference_space()
-        structure_id = 661 # facial nucleus
-        structure_mask = rsp.make_structure_mask([structure_id], direct_only=False)
-        structure_mask = np.swapaxes(structure_mask, 0, 2)
-        ids, counts = np.unique(structure_mask, return_counts=True)
-        print('structure mask, ids counts')
-        print(ids)
-        print(counts)
-        
-        print(f'mask dtype={structure_mask.dtype} shape={structure_mask.shape}')
-        annotatedpath = os.path.join(self.registered_output, 'annotated.tif')
-        resultImage = io.imread(annotatedpath)
+        allen_structure_id = 661 # facial nucleus
+        sc_dict = {'Superior colliculus, sensory related': 302,
+                   'Superior colliculus, optic layer': 851,
+                   'Superior colliculus, superficial gray layer': 842,
+                   'Superior colliculus, zonal layer': 834}
+        for structure, allen_structure_id in allen_structures.items():
+            structure_mask = rsp.make_structure_mask([allen_structure_id], direct_only=False)
+            structure_mask = np.swapaxes(structure_mask, 0, 2)
+            atlaspath = os.path.join(self.atlas_path, 'atlasV8.tif')
+            atlasImage = io.imread(atlaspath)
+            atlasImage[atlasImage != allen_structure_id] = 0
+            #print('atlas ', atlasImage.shape)
+            #print('structure_mask', structure_mask.shape)
+            structure_mask_padded = np.pad(structure_mask, ((0,0), (0,100), (0, 100)), 'constant')
+            #print('padded ', structure_mask_padded.shape)
 
-        #resultImage[resultImage == 111] = 1
-        resultImage[resultImage != self.mask_color] = 0
-        #resultImage = (resultImage == True)
-        print(f'annotated dtype={resultImage.dtype} shape={resultImage.shape}')
-        ids, counts = np.unique(resultImage, return_counts=True)
-        print('result image, ids counts')
-        print(ids)
-        print(counts)
-        
-        dice_coefficient = dice(structure_mask, resultImage)
-        
+            #break            
+            dice_coefficient = dice(structure_mask_padded, atlasImage)
+            print(f'Structure: {structure} dice coefficient={dice_coefficient}')
+
+        """      
         resultImage = (resultImage * 254).astype(np.uint8)
         outpath = os.path.join(self.registered_output,'facialmask.tif')
         imwrite(outpath, resultImage)
@@ -545,9 +520,8 @@ class VolumeRegistration:
         structure_mask = (structure_mask * 100).astype(np.uint8)
         outpath = os.path.join(self.registered_output,'structure_mask.tif')
         imwrite(outpath, structure_mask)
+        """
 
-
-        print(f'Dice={dice_coefficient}')
 
     def transformix_points(self):
         sqlController = SqlController(self.animal)

@@ -71,15 +71,15 @@ class BrainStructureManager():
             print(brain.animal, fixed_points.shape, moving_points.shape, common_keys)
             return None, None
 
-        r, t = umeyama(moving_points.T, fixed_points.T)
-        return r, t
+        R, t = umeyama(moving_points.T, fixed_points.T)
+        return R, t
 
 
     def get_origin_and_section_size(self, structure_contours):
         """Gets the origin and section size
         Set the pad to make sure we get all the volume
         """
-        pad = 50
+        pad = 0
         section_mins = []
         section_maxs = []
         for _, contour_points in structure_contours.items():
@@ -106,14 +106,17 @@ class BrainStructureManager():
         controller = StructureCOMController(animal)
         structures = controller.get_structures()
         # get transformation at um 
-        r, t = self.get_transform_to_align_brain(brainManager)
+        R, t = self.get_transform_to_align_brain(brainManager)
         allen_um = 25
-        if r is None:
+        if R is None:
             return
         for structure in structures:
             df = polygon.get_volume(animal, annotator_id, structure.id)
             if df.empty:
                 continue;
+
+            #if structure.id not in (1,2,6,7,11,12,13,33):
+            #    continue
 
             polygons = defaultdict(list)
             
@@ -122,7 +125,7 @@ class BrainStructureManager():
                 y = row['coordinate'][1] 
                 z = row['coordinate'][2]
                 # transform points to fixed brain um 
-                x,y,z = brain_to_atlas_transform((x,y,z), r, t)
+                x,y,z = brain_to_atlas_transform((x,y,z), R, t)
                 # scale transformed points to 25um
                 x /= allen_um
                 y /= allen_um
